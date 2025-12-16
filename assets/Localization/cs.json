@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "Angličtina",
+        "uk": "Ukrajinština",
+        "de": "Němčina",
+        "fr": "Francouzština",
+        "es": "Španělština",
+        "pl": "Polština",
+        "ru": "Ruština",
+        "pt_br": "Brazilská portugalština",
+        "it": "Italština",
+        "nl": "Nizozemština",
+        "tr": "Turečtina",
+        "cs": "Čeština",
+        "zh": "Čínština (zjednodušená)",
+        "ja": "Japonština",
+        "ko": "Korejština"
+    },
+    "main_window": {
+        "title": "Hlavní okno - SPF Framework",
+        "patrons_button_tooltip": "Moji patroni",
+        "update_button_tooltip": "Zkontrolovat aktualizace",
+        "version_label": "Vaše verze ",
+        "update_checking": "Kontrola aktualizací...",
+        "menu": {
+            "manual": "Manuál / FAQ",
+            "about": "O nás / Kontakty",
+            "legal": "Právní informace",
+            "reload": "Znovu načíst Framework",
+            "reload_disabled_tooltip": "Pro použití této funkce povolte hook 'Herní konzole' v okně Hooků.",
+            "shutdown": "Vypnout Framework",
+            "open_plugins_folder": "Otevřít složku s pluginy"
+        },
+        "game_status": {
+            "running_game_label": "Běžící hra:",
+            "current_version_label": "Verze hry:"
+        },
+        "performance": {
+            "graphics_api_label": "Grafické API:",
+            "fps_avg_label": "Průměrné FPS:",
+            "fps_roll_minmax_label": "FPSRoll Min/Max:",
+            "fps_gbl_minmax_label": "FPSGbl Min/Max:",
+            "tooltip_fps_avg": "Průměrné FPS za posledních 60 snímků.",
+            "tooltip_fps_roll_minmax": "Nevyhlazené minimální a maximální FPS za posledních 600 snímků.",
+            "tooltip_fps_gbl_minmax": "Vyhlazené (pouze pokud FPS bylo drženo po dobu 15 snímků) FPS za celou herní relaci."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "Načtené/Aktivované pluginy:",
+            "hooks_loaded_activated_label": "Načtené/Aktivované hooky:"
+        }
+    },
+    "update_popup": {
+        "title": "Stav aktualizace",
+        "no_update": "Máte nejnovější verzi frameworku.",
+        "update_available": "Nová verze {} je k dispozici ke stažení.",
+        "switch_to_release": "Beta testování je dokončeno! Stáhněte si prosím nejnovější stabilní vydání.",
+        "download_link": "Klikněte zde pro stažení",
+        "download_tooltip": "Stáhnout verzi frameworku {}",
+        "developers_note_intro": "Aktuální knihovny C API lze stáhnout z",
+        "developers_note_link": "našeho GitHubu",
+        "github_tooltip": "Přejít na projekt GitHub",
+        "close_button": "Zavřít"
+    },
+    "common": {
+        "for_developers": "Pro vývojáře:",
+        "for_users": "Pro uživatele:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "Kontrola aktualizací selhala. Zkontrolujte prosím své připojení k internetu.",
+            "server_unavailable": "Aktualizační server je dočasně nedostupný. Zkuste to prosím znovu později.",
+            "generic": "Při kontrole aktualizací došlo k neočekávané chybě.",
+            "invalid_response": "Aktualizační server vrátil neplatnou odpověď.",
+            "patrons_fetch_failed": "Nepodařilo se načíst seznam patronů. Zkuste to prosím znovu později."
+        }
+    },
+    "plugins_window": {
+        "title": "Správce pluginů",
+        "table": {
+            "status": "Stav",
+            "name": "Název pluginu",
+            "actions": "Akce"
+        },
+        "buttons": {
+            "enable": "Povolit",
+            "disable": "Zakázat"
+        },
+        "tooltips": {
+            "info": "Informace o pluginu",
+            "description": "Popis",
+            "settings": "Nastavení"
+        },
+        "info_popup": {
+            "author": "Autor:",
+            "version": "Verze:"
+        },
+        "status": {
+            "incompatible": " (Vyžaduje verzi hry:)"
+        }
+    },
+    "settings_window": {
+        "title": "Nastavení",
+        "system_titles": {
+            "logging": "Logování",
+            "localization": "Lokalizace",
+            "ui": "Uživatelské rozhraní",
+            "settings": "Obecná nastavení"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "Úroveň logování",
+                    "description": "Nastaví minimální úroveň zpráv, které se mají logovat."
+                },
+                "sinks": {
+                    "title": "Cíle logování",
+                    "file": {
+                        "title": "Cíl souboru",
+                        "description": "Povolit nebo zakázat logování do souboru."
+                    },
+                    "ui": {
+                        "title": "Cíl UI",
+                        "description": "Povolit nebo zakázat zobrazování logů v okně UI."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "Jazyk",
+                    "description": "Nastaví jazyk rozhraní pro tuto komponentu."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "Okna",
+                    "main_window": {
+                        "title": "Hlavní okno"
+                    },
+                    "plugins_window": {
+                        "title": "Správce pluginů"
+                    },
+                    "settings_window": {
+                        "title": "Nastavení"
+                    },
+                    "logger_window": {
+                        "title": "Logger"
+                    },
+                    "telemetry_window": {
+                        "title": "Telemetrie"
+                    },
+                    "hooks_window": {
+                        "title": "Hooky"
+                    },
+                    "game_console_window": {
+                        "title": "Herní konzole"
+                    },
+                    "camera_window": {
+                        "title": "Kamera"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "Je viditelné",
+                        "description": "Přepíná viditelnost okna."
+                    },
+                    "is_interactive": {
+                        "title": "Je interaktivní",
+                        "description": "Přepíná, zda lze s oknem interagovat."
+                    },
+                    "pos_x": {
+                        "title": "Pozice X",
+                        "description": "Souřadnice X pozice okna."
+                    },
+                    "pos_y": {
+                        "title": "Pozice Y",
+                        "description": "Souřadnice Y pozice okna."
+                    },
+                    "size_w": {
+                        "title": "Šířka",
+                        "description": "Šířka okna."
+                    },
+                    "size_h": {
+                        "title": "Výška",
+                        "description": "Výška okna."
+                    },
+                    "is_collapsed": {
+                        "title": "Je sbalené",
+                        "description": "Přepíná sbalený stav okna."
+                    },
+                    "is_docked": {
+                        "title": "Je ukotvené",
+                        "description": "Přepíná ukotvený stav okna."
+                    },
+                    "dock_priority": {
+                        "title": "Priorita ukotvení",
+                        "description": "Priorita okna při ukotvení."
+                    },
+                    "allow_undocking": {
+                        "title": "Povolit odkotvení",
+                        "description": "Přepíná, zda lze okno odkotvit."
+                    },
+                    "auto_scroll": {
+                        "title": "Automatické posouvání",
+                        "description": "Přepíná automatické posouvání na konec okna."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "Stavy pluginů",
+                    "description": "Spravuje povolený/zakázaný stav pluginů."
+                },
+                "hook_states": {
+                    "title": "Stavy hooků",
+                    "description": "Spravuje povolený/zakázaný stav hooků."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "Nastavení klávesových zkratek",
+            "tooltip_open": "Otevřít nastavení klávesových zkratek",
+            "tooltip_close": "Zavřít nastavení klávesových zkratek",
+            "table": {
+                "action": "Akce",
+                "key": "Klávesa",
+                "add_button_tooltip": "Přidat klávesovou zkratku",
+                "key_button_tooltip": "Kliknutím změníte nebo odstraníte klávesovou zkratku",
+                "details_button_tooltip": "Konfigurovat chování klávesové zkratky"
+            },
+            "unassigned_text": "Nepřiřazeno"
+        },
+        "component_selector": {
+            "tooltip": "Vyberte plugin pro konfiguraci"
+        },
+        "key_capture_popup": {
+            "title": "Zachytit klávesu",
+            "press_key_text": "Stiskněte libovolnou klávesu pro přiřazení k akci:",
+            "delete_button": "Odstranit",
+            "cancel_button": "Zrušit",
+            "conflict_title": "Detekován konflikt!",
+            "conflict_text": "Klávesa '%s' je již přiřazena k:",
+            "reassign_question": "Chcete ji znovu přiřadit?",
+            "yes_button": "Ano",
+            "no_button": "Ne"
+        },
+        "binding_details_popup": {
+            "title": "Podrobnosti vazby",
+            "press_type_label": "Typ stisku:",
+            "behavior_label": "Chování:",
+            "behavior_toggle": "Přepnout",
+            "behavior_hold": "Držet",
+            "consume_label": "Zásada spotřeby:",
+            "threshold_label": "Prah stisku (ms):",
+            "close_button": "Zavřít"
+        }
+    },
+    "logger_window": {
+        "title": "Logger",
+        "button_clear": "Vymazat",
+        "checkbox_autoscroll": "Automatické posouvání"
+    },
+    "telemetry_window": {
+        "title": "Telemetrie",
+        "tabs": {
+            "game": "Hra",
+            "job": "Práce",
+            "navigation": "Navigace",
+            "truck": "Tahač",
+            "positioning": "Polohování",
+            "trailers": "Návěsy",
+            "controls_events": "Ovládání a události"
+        },
+        "headers": {
+            "game_state": "Stav hry",
+            "constants": "Konstanty",
+            "live_data": "Živá data",
+            "physics": "Fyzika",
+            "wheels": "Kola",
+            "damage": "Poškození",
+            "truck_positioning": "Polohování tahače",
+            "controls": "Ovládání",
+            "events": "Události"
+        },
+        "labels": {
+            "game_time": "Herní čas: %u",
+            "next_rest_stop": "Další odpočívadlo: %d min",
+            "next_rest_stop_real": "Další odpočívadlo reálný čas: ~%.1f min",
+            "next_rest_stop_time": "Čas dalšího odpočívadla: %s, %02d:%02d",
+            "paused": "Pozastaveno: %s",
+            "game_id": "ID hry: %u",
+            "local_scale": "Lokální měřítko: %.2f",
+            "multiplayer_time_offset": "Časový posun pro více hráčů: %d",
+            "scs_game_version": "Verze hry SCS: %u.%u",
+            "telemetry_plugin_version": "Verze telemetrického pluginu: %u.%u",
+            "telemetry_game_version": "Verze herní telemetrie: %u.%u",
+            "game_name": "Název hry: %s",
+            "substances": "Látky",
+            "substances_not_received": "Seznam ještě nebyl přijat.",
+            "simulation_time": "Čas simulace: %llu",
+            "render_time": "Čas vykreslování: %llu",
+            "paused_simulation_time": "Pozastavený čas simulace: %llu",
+            "no_active_job": "Žádná aktivní práce.",
+            "contract": "Smlouva",
+            "market": "Trh: %s",
+            "income": "Příjem: %llu",
+            "planned_distance": "Plánovaná vzdálenost: %u km",
+            "cargo": "Náklad",
+            "cargo_info": "Náklad: %s (%s)",
+            "mass": "Hmotnost: %.0f kg (%u jednotek x %.0f kg)",
+            "damage": "Poškození: %.2f%%",
+            "loaded": "Naloženo: %s",
+            "special_job": "Speciální práce: %s",
+            "route": "Trasa",
+            "source": "Zdroj: %s (%s), %s (%s)",
+            "destination": "Cíl: %s (%s), %s (%s)",
+            "time": "Čas",
+            "delivery_deadline": "Termín dodání (herní čas): %u min",
+            "remaining_game_time": "Zbývající (herní čas): %.0f min",
+            "speed_limit": "Rychlostní limit: %.0f km/h",
+            "next_waypoint_dist": "Vzdálenost k dalšímu bodu trasy: %.1f m",
+            "next_waypoint_time_game": "Čas k dalšímu bodu trasy (hra): %.0f s",
+            "next_waypoint_time_real": "Čas k dalšímu bodu trasy (reálný): ~%.0f s",
+            "id": "ID: %s",
+            "brand": "Značka: %s (%s)",
+            "name": "Název: %s",
+            "license_plate": "SPZ: %s (%s)",
+            "engine_gearbox": "Motor a převodovka",
+            "rpm_limit": "Limit otáček: %.0f",
+            "gears": "Převody: %d vpřed, %d vzad",
+            "retarder_steps": "Stupně retardéru: %d",
+            "selector_count": "Počet voličů: %zu",
+            "differential_ratio": "Diferenciální poměr: %.2f",
+            "shifter_type": "Typ řazení: %s",
+            "hshifter_layout": "Rozložení H-řazení",
+            "hshifter_table": {
+                "slot": "Slot",
+                "gear": "Převod",
+                "handle_pos": "Pozice rukojeti",
+                "selectors": "Voliče"
+            },
+            "gear_ratios": "Převodové poměry",
+            "forward": "Vpřed",
+            "reverse": "Vzad",
+            "gear_x": "Převod %2zu: %.2f",
+            "gear_rx": "Převod R%zu: %.2f",
+            "capacities": "Kapacity",
+            "fuel_capacity": "Kapacita paliva: %.1f L",
+            "adblue_capacity": "Kapacita AdBlue: %.1f L",
+            "warning_factors": "Varovné faktory",
+            "fuel_warning": "Varování paliva: %.0f%%",
+            "adblue_warning": "Varování AdBlue: %.0f%%",
+            "air_pressure_warning": "Varování tlaku vzduchu: %.1f psi",
+            "air_pressure_emergency": "Nouzový tlak vzduchu: %.1f psi",
+            "oil_pressure_warning": "Varování tlaku oleje: %.1f psi",
+            "water_temp_warning": "Varování teploty vody: %.0f C",
+            "battery_voltage_warning": "Varování napětí baterie: %.1f V",
+            "dashboard_info": "Informace na palubní desce",
+            "speed": "Rychlost: %.2f km/h",
+            "engine_rpm": "Otáčky motoru: %.0f",
+            "gear": "Převod: %d (Zobrazeno: %d)",
+            "odometer": "Počítadlo kilometrů: %.1f km",
+            "cruise_control": "Tempomat: %s (%.0f km/h)",
+            "fuel": "Palivo: %.1f L (Průměr: %.2f L/km, Dojezd: %.0f km)",
+            "adblue": "AdBlue: %.1f L (Průměr: %.3f L/km)",
+            "oil": "Olej: %.1f psi, %.1f C",
+            "water_temp": "Teplota vody: %.1f C",
+            "battery_voltage": "Napětí baterie: %.1f V",
+            "dashboard_warnings": "Varování na palubní desce",
+            "fuel_warn_state": "Palivo: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "Tlak vzduchu: %s",
+            "oil_pressure_warn_state": "Tlak oleje: %s",
+            "water_temp_warn_state": "Teplota vody: %s",
+            "battery_voltage_warn_state": "Napětí baterie: %s",
+            "system_states": "Stavy systému",
+            "electric_enabled": "Elektrický pohon povolen: %s",
+            "engine_enabled": "Motor povolen: %s",
+            "differential_lock": "Uzávěrka diferenciálu: %s",
+            "wipers": "Stěrače: %s",
+            "truck_lift_axle": "Zvedací náprava tahače: %s (Indikátor: %s)",
+            "trailer_lift_axle": "Zvedací náprava návěsu: %s (Indikátor: %s)",
+            "lights": "Světla",
+            "blinkers": "Blinkry: Levý[%s,%s] Pravý[%s,%s] Výstražné[%s]",
+            "light_states": "Parkovací: %s, Potkávací: %s, Dálkové: %s",
+            "aux_lights": "Přídavná přední: %s, Přídavná střešní: %s, Maják: %s",
+            "brake_reverse_lights": "Brzdové: %s, Zpátečka: %s",
+            "dashboard_backlight": "Podsvícení palubní desky: %.2f",
+            "brakes": "Brzdy",
+            "air_pressure": "Tlak vzduchu: %.1f psi",
+            "parking_brake": "Parkovací brzda: %s",
+            "motor_brake": "Motorová brzda: %s",
+            "retarder_level": "Úroveň retardéru: %d",
+            "brake_temp": "Teplota brzd: %.1f C",
+            "hshifter": "H-řazení",
+            "slot": "Slot: %u",
+            "selectors": "Voliče: %s",
+            "linear_velocity": "Lineární rychlost",
+            "angular_velocity": "Úhlová rychlost",
+            "linear_accel": "Lineární zrychlení",
+            "angular_accel": "Úhlové zrychlení",
+            "cabin_ang_vel": "Úhlová rychlost kabiny",
+            "cabin_ang_accel": "Úhlové zrychlení kabiny",
+            "wheel_x": "Kolo {}",
+            "substance": "Látka: %s (%u)",
+            "substance_unknown": "Látka: Neznámá (%u)",
+            "on_ground": "Na zemi: %s",
+            "susp_deflection": "Prohnutí zavěšení: %.3f",
+            "wheel_velocity": "Rychlost: %.2f",
+            "steering": "Řízení: %.2f",
+            "rotation": "Rotace: %.2f",
+            "lift": "Zvednutí: %.2f (Odsazení: %.3f)",
+            "steerable": "Řiditelné: %s",
+            "powered": "Poháněné: %s",
+            "liftable": "Zvedatelné: %s",
+            "simulated": "Simulované: %s",
+            "radius": "Poloměr: %.2f",
+            "position": "Pozice",
+            "engine_damage": "Motor: %.1f%%",
+            "transmission_damage": "Převodovka: %.1f%%",
+            "cabin_damage": "Kabina: %.1f%%",
+            "chassis_damage": "Podvozek: %.1f%%",
+            "wheels_damage": "Kola (průměr): %.1f%%",
+            "world_space": "Světový prostor",
+            "world_placement": "Umístění ve světě",
+            "component_offsets": "Odsazení komponent",
+            "cabin_offset": "Odsazení kabiny",
+            "head_offset": "Odsazení hlavy",
+            "component_base_pos": "Základní pozice komponent",
+            "cabin_pos": "Pozice kabiny",
+            "head_pos": "Pozice hlavy",
+            "hook_pos": "Pozice háku",
+            "trailer_x": "Návěs {} ({})",
+            "trailer_na": "N/A",
+            "connected": "Připojeno: %s",
+            "general": "Obecné",
+            "trailer_brand": "Značka: %s (ID: %s)",
+            "trailer_license_plate": "SPZ: %s (Země: %s, ID: %s)",
+            "body_type": "Typ karoserie: %s",
+            "chain_type": "Typ řetězu: %s",
+            "cargo_accessory_id": "ID příslušenství nákladu: %s",
+            "physics_pos": "Fyzika a pozice",
+            "trailer_hook_pos": "Pozice háku",
+            "trailer_world_pos": "Pozice ve světě: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "Karoserie: %.2f%%",
+            "trailer_damage_chassis": "Podvozek: %.2f%%",
+            "trailer_damage_wheels": "Kola: %.2f%%",
+            "trailer_damage_cargo": "Náklad: %.2f%%",
+            "wheels_count": "Kola (počet: {})",
+            "wheel_susp_deflection": "Prohnutí zavěšení: %.3f",
+            "wheel_angular_velocity": "Úhlová rychlost: %.2f",
+            "wheel_lift": "Zvednutí: %.2f",
+            "wheel_lift_offset": "Odsazení zvednutí: %.2f",
+            "user_input": "--- Vstup uživatele ---",
+            "effective_input": "--- Efektivní vstup ---",
+            "input_steering": "Řízení: %.2f",
+            "input_throttle": "Plyn: %.2f",
+            "input_brake": "Brzda: %.2f",
+            "input_clutch": "Spojka: %.2f",
+            "special_events": "--- Speciální události (vlajky) ---",
+            "on_job": "V práci: %s",
+            "job_cancelled": "Práce zrušena: %s",
+            "job_delivered": "Práce doručena: %s",
+            "fined": "Pokutováno: %s",
+            "tollgate": "Mýtná brána: %s",
+            "ferry": "Trajekt: %s",
+            "train": "Vlak: %s",
+            "last_gameplay_event": "--- Poslední herní událost ---",
+            "no_event_yet": "Zatím žádná událost.",
+            "event_job_delivered": "Práce doručena: Příjem %lld, ZK %d, Poškození %.1f%%",
+            "event_job_delivered_details": "  Vzdálenost: %.1f km, Čas: %u min",
+            "event_job_delivered_flags": "  Automatické parkování: %s, Automatické nakládání: %s",
+            "event_job_cancelled": "Práce zrušena: Pokuta %lld",
+            "event_fined": "Pokutováno: %lld za '%s'",
+            "event_tollgate": "Mýtná brána: Zaplaceno %lld",
+            "event_ferry": "Trajekt: Zaplaceno %lld",
+            "event_ferry_route": "  Z: %s (ID: %s)",
+            "event_ferry_route_to": "  Do:   %s (ID: %s)",
+            "event_train": "Vlak: Zaplaceno %lld",
+            "event_train_route": "  Z: %s (ID: %s)",
+            "event_train_route_to": "  Do:   %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02d:%02d)",
+            "days_hours_minutes": "(%d d, %d h, %d m)",
+            "hours_minutes": "(%d h, %d m)",
+            "real_time_minutes": "~%.1f min",
+            "real_time_hours_minutes": "(%d h, %d m)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f km/h",
+            "meters": "%.1f m",
+            "game_time_seconds": "%.0f s",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f s",
+            "m_s": "(%d m, %d s)",
+            "gears_fwd_rev": "%d vpřed, %d vzad",
+            "liters": "%.1f L",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f km/h",
+            "cruise_control_speed": "%.0f km/h",
+            "fuel_consumption": "%.2f L/km",
+            "fuel_range": "%.0f km",
+            "adblue_consumption": "%.3f L/km",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "Levý[%s,%s] Pravý[%s,%s] Výstražné[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "Poz: (%.2f, %.2f, %.2f)",
+            "placement_ori": "Ori: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "Pondělí",
+            "tuesday": "Úterý",
+            "wednesday": "Středa",
+            "thursday": "Čtvrtek",
+            "friday": "Pátek",
+            "saturday": "Sobota",
+            "sunday": "Neděle",
+            "unknown": "Neznámý"
+        },
+        "generic": {
+            "yes": "Ano",
+            "no": "Ne",
+            "on": "ZAP",
+            "off": "VYP",
+            "warn": "VAROVÁNÍ",
+            "emergency": "NOUZOVÝ",
+            "ok": "OK",
+            "engaged": "ZAPOJENO",
+            "lifted": "ZVEDNUTO",
+            "down": "DOLŮ",
+            "dimmed": "Ztlumeno",
+            "full": "Plné"
+        }
+    },
+    "hooks_window": {
+        "title": "Hooky",
+        "no_hooks_text": "Žádné hooky nejsou k dispozici.",
+        "enabled_checkbox": "Povoleno",
+        "required_by_plugin_text": "(Vyžadováno pluginem)",
+        "tooltip": {
+            "internal_name": "Pro použití tohoto hooku ve vašem pluginu zadejte následující název v zásadě `requiredHooks`:"
+        }
+    },
+    "game_console_window": {
+        "title": "Herní konzole",
+        "info_text": "Testovací pole pro zadávání příkazů do herní konzole. Funguje i v případě, že jsou g_console a g_developer v souboru config.cfg zakázány (tj. nastaveny na '0').",
+        "enable_hook_text": "Povolte hook GameConsole v okně '%s'.",
+        "send_button": "Odeslat"
+    },
+    "camera_window": {
+        "title": "Kamera",
+        "current_camera": "Aktuální kamera: %s (%d)",
+        "camera_world_coordinates": "Světové souřadnice kamery: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "Světové souřadnice kamery: NENALEZENO",
+        "select_camera": "Vybrat kameru:",
+        "interior": "Interiér",
+        "behind": "Za vozidlem",
+        "top": "Shora",
+        "cabin": "Kabina",
+        "window": "Okno",
+        "bumper": "Nárazník",
+        "wheel": "Kolo",
+        "tv": "TV",
+        "developer_free_camera": "Volná kamera vývojáře (ID 0)",
+        "tabs": {
+            "interior_camera": "Kamera interiéru",
+            "behind_camera": "Kamera za vozidlem",
+            "top_camera": "Kamera shora",
+            "cabin_camera": "Kamera v kabině",
+            "window_camera": "Kamera z okna",
+            "bumper_camera": "Kamera z nárazníku",
+            "wheel_camera": "Kamera z kola",
+            "tv_camera": "TV kamera",
+            "free_camera": "Volná kamera",
+            "debug": "Ladění"
+        },
+        "interior_camera": {
+            "fov_zoom": "FOV / Zoom",
+            "base_fov": "Základní FOV",
+            "base_fov_not_found": "Základní FOV: data nenalezena",
+            "final_h_fov": "Finální H-FOV: %.1f",
+            "final_v_fov": "Finální V-FOV: %.1f",
+            "final_fov_not_found": "Finální FOV: data nenalezena",
+            "seat_position": "Pozice sedadla",
+            "seat_lr": "Sedadlo L/P (X)",
+            "seat_ud": "Sedadlo H/D (Y)",
+            "seat_fb": "Sedadlo P/Z (Z)",
+            "seat_position_not_found": "Pozice sedadla: data nenalezena",
+            "head_rotation": "Rotace hlavy",
+            "yaw_lr": "Otáčení (L/P)",
+            "pitch_ud": "Náklon (H/D)",
+            "head_rotation_not_found": "Rotace hlavy: data nenalezena",
+            "mouse_rotation_limits": "Limity rotace myší",
+            "left_limit": "Levý limit",
+            "right_limit": "Pravý limit",
+            "up_limit": "Horní limit",
+            "down_limit": "Dolní limit",
+            "rotation_limits_not_found": "Limity rotace: data nenalezena",
+            "rotation_defaults": "Výchozí rotace",
+            "default_lr": "Výchozí L/P##Interiér",
+            "default_ud": "Výchozí H/D##Interiér",
+            "rotation_defaults_not_found": "Výchozí rotace: data nenalezena",
+            "reset_to_defaults": "Obnovit výchozí",
+            "not_available": "Objekt kamery interiéru není k dispozici."
+        },
+        "behind_camera": {
+            "live_state": "Živý stav",
+            "live_pitch": "Živý náklon",
+            "live_yaw": "Živé otáčení",
+            "live_zoom": "Živý zoom",
+            "live_state_not_found": "Živý stav: data nenalezena",
+            "distance_zoom_settings": "Nastavení vzdálenosti / zoomu",
+            "min_distance": "Minimální vzdálenost",
+            "max_distance": "Maximální vzdálenost",
+            "trailer_max_offset": "Maximální odsazení návěsu",
+            "default_distance": "Výchozí vzdálenost",
+            "trailer_default_dist": "Výchozí vzdálenost návěsu",
+            "zoom_speed": "Rychlost zoomu",
+            "distance_laziness": "Lenivost vzdálenosti",
+            "distance_zoom_settings_not_found": "Nastavení vzdálenosti / zoomu: data nenalezena",
+            "elevation_pitch_settings": "Nastavení elevace / náklonu",
+            "azimuth_laziness": "Lenivost azimutu",
+            "min_elevation": "Minimální elevace",
+            "max_elevation": "Maximální elevace",
+            "default_elevation": "Výchozí elevace",
+            "trailer_default_elev": "Výchozí elevace návěsu",
+            "height_limit": "Výškový limit",
+            "elevation_pitch_settings_not_found": "Nastavení elevace / náklonu: data nenalezena",
+            "pivot_offset": "Odsazení pivotu (střed rotace)",
+            "pivot_x": "Pivot X",
+            "pivot_y": "Pivot Y",
+            "pivot_z": "Pivot Z",
+            "pivot_offset_not_found": "Odsazení pivotu: data nenalezena",
+            "dynamic_offset": "Dynamické odsazení (založené na rychlosti)",
+            "max_dynamic_offset": "Maximální dynamické odsazení",
+            "dyn_offset_speed_min": "Minimální rychlost dyn. odsazení (km/h)",
+            "dyn_offset_speed_max": "Maximální rychlost dyn. odsazení (km/h)",
+            "dyn_offset_laziness": "Lenivost dyn. odsazení",
+            "dynamic_offset_not_found": "Dynamické odsazení: data nenalezena",
+            "base_fov_behind": "Základní FOV##Za vozidlem",
+            "reset_to_defaults_behind": "Obnovit výchozí##Za vozidlem",
+            "not_available": "Objekt kamery za vozidlem není k dispozici."
+        },
+        "top_camera": {
+            "height_zoom": "Výška / Zoom",
+            "minimum_height": "Minimální výška",
+            "maximum_height": "Maximální výška",
+            "height_zoom_not_found": "Výška / Zoom: data nenalezena",
+            "movement": "Pohyb",
+            "movement_speed": "Rychlost pohybu",
+            "movement_not_found": "Pohyb: data nenalezena",
+            "dynamic_offset": "Dynamické odsazení",
+            "forward_offset": "Přední odsazení",
+            "backward_offset": "Zadní odsazení",
+            "dynamic_offset_not_found": "Dynamické odsazení: data nenalezena",
+            "base_fov_top": "Základní FOV##Shora",
+            "reset_to_defaults_top": "Obnovit výchozí##Shora",
+            "not_available": "Objekt kamery shora není k dispozici."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "Základní FOV##Kabina",
+            "reset_to_defaults_cabin": "Obnovit výchozí##Kabina",
+            "not_available": "Objekt kamery v kabině není k dispozici."
+        },
+        "window_camera": {
+            "head_offset": "Odsazení hlavy",
+            "head_x_window": "Hlava X##Okno",
+            "head_y_window": "Hlava Y##Okno",
+            "head_z_window": "Hlava Z##Okno",
+            "head_offset_not_found": "Odsazení hlavy: data nenalezena",
+            "live_rotation": "Živá rotace",
+            "live_yaw_window": "Živé otáčení (L/P)##Okno",
+            "live_pitch_window": "Živý náklon (H/D)##Okno",
+            "live_rotation_not_found": "Živá rotace: data nenalezena",
+            "mouse_rotation_limits_defaults": "Limity a výchozí hodnoty rotace myší",
+            "left_limit_window": "Levý limit##Okno",
+            "right_limit_window": "Pravý limit##Okno",
+            "up_limit_window": "Horní limit##Okno",
+            "down_limit_window": "Dolní limit##Okno",
+            "rotation_limits_not_found_window": "Limity rotace: data nenalezena",
+            "default_lr_window": "Výchozí L/P##Okno",
+            "default_ud_window": "Výchozí H/D##Okno",
+            "rotation_defaults_not_found_window": "Výchozí rotace: data nenalezena",
+            "base_fov_window": "Základní FOV##Okno",
+            "reset_to_defaults_window": "Obnovit výchozí##Okno",
+            "not_available": "Objekt kamery z okna není k dispozici."
+        },
+        "bumper_camera": {
+            "offset": "Odsazení",
+            "offset_x_bumper": "Odsazení X##Nárazník",
+            "offset_y_bumper": "Odsazení Y##Nárazník",
+            "offset_z_bumper": "Odsazení Z##Nárazník",
+            "offset_not_found": "Odsazení: data nenalezena",
+            "base_fov_bumper": "Základní FOV##Nárazník",
+            "reset_to_defaults_bumper": "Obnovit výchozí##Nárazník",
+            "not_available": "Objekt kamery z nárazníku není k dispozici."
+        },
+        "wheel_camera": {
+            "offset": "Odsazení",
+            "offset_x_wheel": "Odsazení X##Kolo",
+            "offset_y_wheel": "Odsazení Y##Kolo",
+            "offset_z_wheel": "Odsazení Z##Kolo",
+            "offset_not_found": "Odsazení: data nenalezena",
+            "base_fov_wheel": "Základní FOV##Kolo",
+            "reset_to_defaults_wheel": "Obnovit výchozí##Kolo",
+            "not_available": "Objekt kamery z kola není k dispozici."
+        },
+        "tv_camera": {
+            "distance": "Vzdálenost",
+            "max_distance_tv": "Max vzdálenost##TV",
+            "distance_not_found": "Vzdálenost: data nenalezena",
+            "prefab_uplift": "Prefab Uplift",
+            "prefab_uplift_x_tv": "Prefab Uplift X##TV",
+            "prefab_uplift_y_tv": "Prefab Uplift Y##TV",
+            "prefab_uplift_z_tv": "Prefab Uplift Z##TV",
+            "prefab_uplift_not_found": "Prefab Uplift: data nenalezena",
+            "road_uplift": "Road Uplift",
+            "road_uplift_x_tv": "Road Uplift X##TV",
+            "road_uplift_y_tv": "Road Uplift Y##TV",
+            "road_uplift_z_tv": "Road Uplift Z##TV",
+            "road_uplift_not_found": "Road Uplift: data nenalezena",
+            "base_fov_tv": "Základní FOV##TV",
+            "reset_to_defaults_tv": "Obnovit výchozí##TV",
+            "not_available": "Objekt TV kamery není k dispozici."
+        },
+        "free_camera": {
+            "position": "Pozice",
+            "position_x_freecam": "Pozice X",
+            "position_y_freecam": "Pozice Y",
+            "position_z_freecam": "Pozice Z",
+            "position_not_found": "Pozice: data nenalezena",
+            "orientation": "Orientace",
+            "mouse_horizontal_freecam": "Myš horizontálně",
+            "mouse_vertical_freecam": "Myš vertikálně",
+            "roll_freecam": "Náklon",
+            "orientation_not_found": "Orientace: data nenalezena",
+            "quaternion": "Kvaternion",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "Kvaternion: data nenalezena",
+            "base_fov_freecam": "Základní FOV##FreeCam",
+            "movement_speed": "Rychlost pohybu",
+            "speed_freecam": "Rychlost",
+            "movement_speed_not_found": "Rychlost pohybu: data nenalezena",
+            "reset_to_defaults_freecam": "Obnovit výchozí##FreeCam",
+            "not_available": "Objekt volné kamery není k dispozici."
+        },
+        "debug": {
+            "current_mode": "Aktuální režim: %s (%d)",
+            "current_mode_na": "Aktuální režim: [N/A]",
+            "enable_debug_camera": "Povolit ladicí kameru",
+            "enable_debug_camera_not_found": "Povolit ladicí kameru: data nenalezena",
+            "clean_ui": "Čisté UI (bez obrysů)",
+            "clean_ui_not_found": "Čisté UI: data nenalezena",
+            "show_debug_hud": "Zobrazit ladicí HUD",
+            "show_debug_hud_not_found": "Zobrazit ladicí HUD: data nenalezena",
+            "enable_debug_camera_to_select_mode": "Povolte ladicí kameru pro výběr režimu.",
+            "simple_debug": "Jednoduchý",
+            "basic_debug_camera_mode": "Základní režim ladicí kamery.",
+            "video_debug": "Video",
+            "hud_position_debug": "Pozice HUD:",
+            "top_left_debug": "Vlevo nahoře",
+            "bottom_left_debug": "Vlevo dole",
+            "top_right_debug": "Vpravo nahoře",
+            "bottom_right_debug": "Vpravo dole",
+            "current_debug": "(Aktuální: %s)",
+            "current_na_debug": "(Aktuální: N/A)",
+            "traffic_debug": "Doprava",
+            "camera_focuses_traffic": "Kamera se zaměřuje na vozidla v dopravě.",
+            "cinematic_debug": "Kinematografický",
+            "cinematic_camera_mode": "Kinematografický režim kamery.",
+            "animated_debug": "Animovaný",
+            "create_play_animations": "Vytvářejte a přehrávejte animace kamery.",
+            "activate_game_animated_mode": "Aktivovat animovaný režim hry",
+            "custom_animation_controls": "Vlastní ovládání animace",
+            "playing_status": "Přehrává se",
+            "pause_button": "Pozastavit",
+            "paused_status": "Pozastaveno",
+            "stopped_status": "Zastaveno",
+            "play_button": "Přehrát",
+            "stop_button": "Zastavit",
+            "status_label": "Stav: %s",
+            "reverse_playback": "Zpětné přehrávání",
+            "timeline_label": "Časová osa:",
+            "state_camera_debug": "Stavová kamera",
+            "create_state_camera": "Vytvořit stavovou kameru.",
+            "save_keyframe": "Uložit klíčový snímek",
+            "reload_from_file": "Znovu načíst ze souboru",
+            "clear_all_memory": "Vymazat vše (paměť)",
+            "animation_controls": "Ovládání animace",
+            "add_edit_state": "Přidat/Upravit stav",
+            "position_xyz": "Pozice (X,Y,Z)",
+            "mystery_float": "Záhadný float",
+            "quaternion_xyzw": "Kvaternion (X,Y,Z,W)",
+            "fov_label": "FOV",
+            "add_state_memory": "Přidat stav (paměť)",
+            "update_state_memory": "Aktualizovat stav (paměť)",
+            "delete_state_memory": "Odstranit stav (paměť)",
+            "previous_state": "Předchozí stav",
+            "next_state": "Další stav",
+            "active_state_label": "Aktivní stav [%d]:",
+            "pos_label": "  Poz: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  Záhada: %.4f",
+            "quat_label": "  Kvat: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  FOV: %.2f",
+            "active_state_none": "Aktivní stav: [Žádný]",
+            "saved_states_label": "Uložené stavy: %d",
+            "states_combo_label": "Stavy",
+            "state_item_label": "Stav %d",
+            "no_states_saved": "Žádné uložené stavy",
+            "oversize_debug": "Nadměrný náklad",
+            "camera_oversized_trailers": "Kamera pro nadměrné náklady.",
+            "vehicle_list": "Seznam vozidel"
+        }
+    },
+    "description": {
+        "detailed": "Výkonný a flexibilní framework pro vytváření a správu pluginů pro hry od SCS. Poskytuje základní sadu služeb pro logování, konfiguraci, správu UI a další."
+    },
+    "patrons_popup": {
+        "title": "Podpořte projekt",
+        "intro_text": "Podpora naší komunity je palivem pro tento projekt. Pokud vám naše práce přijde užitečná, zvažte, že se stanete patronem. Váš příspěvek nám umožňuje pokračovat ve vývoji a vytvářet nové, vzrušující pluginy pro všechny!",
+        "link_intro": "Můžete nás podpořit na naší oficiální stránce:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Kliknutím otevřete stránku Patreon ve vašem prohlížeči",
+        "hof_title": "Síň slávy",
+        "hof_empty": "Naše Síň slávy je stále prázdná... Buďte první, kdo se zde objeví a odstartuje naši cestu!",
+        "hof_teaser": "Podpořte nás a dostanete se do naší",
+        "close_button": "Zavřít",
+        "tiers": {
+            "magnate": "--- Logističtí magnáti ---",
+            "manager": "--- Správci vozového parku ---",
+            "master": "--- Mistři silnic ---"
+        }
+    },
+    "manual_popup": {
+        "title": "FAQ",
+        "q1_question": "Jak nainstalovat a aktivovat plugin?",
+        "q1_answer": "Zkopírujte váš SPF-kompatibilní plugin do adresáře ```{}``` Ujistěte se, že `.dll` soubor pluginu je uvnitř adresáře, který odpovídá jeho názvu,\n\t\tnapříklad `...\\MyPlugin\\MyPlugin.dll`\n\t\tFramework tento plugin automaticky najde a načte. Stačí ho povolit v záložce `Správce pluginů`.",
+        "q2_question": "Jak vytvořit vlastní plugin?",
+        "q2_answer": "Pro vývoj pluginu si musíte stáhnout balíček hlavičkových souborů `SPF_-_API.h` z sekce \"Releases\" na naší [GitHub]({}) stránce a zahrnout ho do vašeho projektu.",
+        "q3_question": "Jak přidat nový překlad?",
+        "q3_answer": "Pro překlad `frameworku` najděte soubory v ```{}``` * zkopírujte existující překlad, například `en.json`\n * přejmenujte ho na váš jazyk překladu, například `de.json`\n * přeložte řetězce.\n\nPřekladové soubory pro `plugin` se nacházejí v jeho vlastní složce lokalizace, například: ```{}```",
+        "q4_question": "Co když potřebuji novou funkcionalitu?",
+        "q4_answer": "Pokud jste vývojář, můžete si požadovanou funkcionalitu implementovat sami pomocí našeho `SPF_-_API.h`.\n V opačném případě můžete vytvořit návrh na [GitHub]({}) nebo na naší [Patreon]({}) stránce.",
+        "q5_question": "Kde jsou uložena nastavení?",
+        "q5_answer": "Nastavení frameworku se nacházejí v ```{}```. Nastavení pluginů jsou v jejich vlastních konfiguračních složkách, například: ```{}```. **Doporučuje se měnit nastavení pouze prostřednictvím herního rozhraní.**",
+        "q6_question": "Framework nebo plugin způsobuje pád hry. Co dělat?",
+        "q6_answer": " * Zkontrolujte logovací soubory ve složce `\\spfAssets\\logs`.\n * Zkuste zakázat pluginy jeden po druhém, abyste našli zdroj problému.\n * Pokud je problém ve frameworku, vytvořte prosím `issue` na našem [GitHub]({}), kde podrobně popíšete problém a přiložíte logovací soubor."
+    },
+    "about_popup": {
+        "title": "O nás / Kontakty",
+        "about_us_title": "O nás",
+        "about_us_text": "Jsme tým nadšenců {}, kteří se věnují vylepšování herního zážitku z truck simulátorů. Náš {} je nástroj vytvořený komunitou pro komunitu.",
+        "framework_title": "O frameworku",
+        "contacts_title": "Naše kontakty",
+        "email_text": "Pro obchodní dotazy nebo přímý kontakt nás kontaktujte prostřednictvím [e-mailu]({}).",
+        "discord_text": "Připojte se k naší [Discord]({}) komunitě a spojte se s ostatními hráči a vývojáři.",
+        "youtube_text": "Odebírejte náš [YouTube]({}) kanál, kde zveřejňujeme aktualizace, návody a zajímavý obsah o hrách ETS2 a ATS.",
+        "github_text": "Sledujte vývoj, hlaste chyby nebo přispívejte na našem [GitHub]({}).",
+        "patreon_text": "Podpořte naši práci a získejte exkluzivní výhody tím, že se stanete naším patronem na [Patreon]({}).",
+        "scs_forum_text": "Diskutujte o frameworku a ptejte se na oficiální [stránce fóra SCS Software]({}).",
+        "steam_profile_text": "Přidejte si nás jako přátele a sledujte naši aktivitu na [Steam]({})."
+    },
+    "legal_popup": {
+        "title": "Právní informace",
+        "license_title": "Licence",
+        "license_text": "SPF Framework je distribuován pod podmínkami licence Apache 2.0. Plné znění licence si můžete prohlédnout na našem [GitHub]({}).",
+        "disclaimer_title": "Zřeknutí se odpovědnosti",
+        "disclaimer_text": "Software SPF Framework je poskytován 'tak, jak je', bez jakýchkoli výslovných nebo předpokládaných záruk. Vývojáři nenesou odpovědnost za jakékoli poškození herních souborů, uložených pozic, konfiguračních souborů nebo jakékoli jiné škody, které mohou vzniknout použitím tohoto frameworku.\n\n Framework funguje jako platforma pro správu pluginů vyvinutých třetími stranami. Tyto pluginy nevytváříme, nekontrolujeme jejich obsah a nemáme k nim přístup. Instalací a používáním pluginů třetích stran přebíráte veškerá rizika. **Důrazně doporučujeme pravidelně zálohovat své uložené pozice a konfigurační soubory.**",
+        "fair_play_title": "Zásady fair play",
+        "fair_play_text": "Přísně odsuzujeme jakékoli použití nástrojů poskytovaných naším frameworkem k získání nespravedlivé výhody nad ostatními hráči. Účelem SPF Framework je pouze vylepšit a rozšířit váš zážitek z hraní pro jednoho hráče.",
+        "contact_title": "Kontakty",
+        "contact_text": "Pokud máte jakékoli dotazy, návrhy nebo stížnosti, kontaktujte nás prosím prostřednictvím [e-mailu]({})."
+    },
+    "shutdown_popup": {
+        "title": "Potvrzení vypnutí",
+        "content": "Jste si jisti, že chcete vypnout framework?\n\n **Tím se odpojí všechny pluginy a framework se deaktivuje až do dalšího restartu hry.**\n\n Pokud potřebujete povolit pluginy bez restartování hry, použijte herní konzoli a zadejte příkaz ```sdk reload```",
+        "confirm_button": "Ano, vypnout",
+        "confirm_disabled_tooltip": "Pro použití této funkce povolte hook 'Herní konzole' v okně Hooků.",
+        "cancel_button": "Zrušit"
+    },
+    "ui": {
+        "actions": {
+            "dock": "Připojit",
+            "undock": "Odpojit"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "Přepnout hlavní okno",
+            "description": "Přepíná viditelnost hlavního okna frameworku."
+        },
+        "ui.close_focused": {
+            "title": "Zavřít/Cyklovat okno",
+            "description": "Zavírá vyskakovací okna, ukotvuje plovoucí okna nebo zavírá hlavní UI."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "Přepsat ovládání myší",
+            "description": "Když je UI viditelné, podržte tuto klávesu, abyste dočasně vrátili ovládání myši hře."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "Krátký",
+            "long": "Dlouhý"
+        },
+        "consumption_policy": {
+            "never": "Nikdy",
+            "on_ui_focus": "Při zaměření na UI",
+            "always": "Vždy"
+        }
+    }
+}

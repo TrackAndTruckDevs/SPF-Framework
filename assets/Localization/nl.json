@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "Engels",
+        "uk": "Oekraïens",
+        "de": "Duits",
+        "fr": "Frans",
+        "es": "Spaans",
+        "pl": "Pools",
+        "ru": "Russisch",
+        "pt_br": "Braziliaans Portugees",
+        "it": "Italiaans",
+        "nl": "Nederlands",
+        "tr": "Turks",
+        "cs": "Tsjechisch",
+        "zh": "Chinees (vereenvoudigd)",
+        "ja": "Japans",
+        "ko": "Koreaans"
+    },
+    "main_window": {
+        "title": "Hoofdvenster - SPF Framework",
+        "patrons_button_tooltip": "Mijn Patrons",
+        "update_button_tooltip": "Controleren op updates",
+        "version_label": "Jouw versie ",
+        "update_checking": "Controleren op updates...",
+        "menu": {
+            "manual": "Handleiding / FAQ",
+            "about": "Over Ons / Contact",
+            "legal": "Legale Informatie",
+            "reload": "Framework Herladen",
+            "reload_disabled_tooltip": "Activeer de 'Game Console' hook in het Hooks-venster om deze functie te gebruiken.",
+            "shutdown": "Framework Afsluiten",
+            "open_plugins_folder": "Open Plugin Map"
+        },
+        "game_status": {
+            "running_game_label": "Lopend Spel:",
+            "current_version_label": "Spelversie:"
+        },
+        "performance": {
+            "graphics_api_label": "Grafische API:",
+            "fps_avg_label": "GemFPS:",
+            "fps_roll_minmax_label": "FPSRoll Min/Max:",
+            "fps_gbl_minmax_label": "FPSGbl Min/Max:",
+            "tooltip_fps_avg": "Gemiddelde FPS over de laatste 60 frames.",
+            "tooltip_fps_roll_minmax": "Niet-afgevlakte minimum en maximum FPS over de laatste 600 frames.",
+            "tooltip_fps_gbl_minmax": "Afgevlakte (alleen als FPS 15 frames werd vastgehouden) FPS over de hele spelsessie."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "Plugins Geladen/Ingeschakeld:",
+            "hooks_loaded_activated_label": "Hooks Geladen/Ingeschakeld:"
+        }
+    },
+    "update_popup": {
+        "title": "Update Status",
+        "no_update": "Je hebt de nieuwste versie van het framework.",
+        "update_available": "Een nieuwe versie {} is beschikbaar om te downloaden.",
+        "switch_to_release": "Bètatesten is voltooid! Download de nieuwste stabiele release.",
+        "download_link": "Klik hier om te downloaden",
+        "download_tooltip": "Download framework versie {}",
+        "developers_note_intro": "De huidige C API-bibliotheken kunnen worden gedownload van",
+        "developers_note_link": "onze GitHub",
+        "github_tooltip": "Ga naar het GitHub-project",
+        "close_button": "Sluiten"
+    },
+    "common": {
+        "for_developers": "Voor ontwikkelaars:",
+        "for_users": "Voor gebruikers:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "Updatecontrole mislukt. Controleer je internetverbinding.",
+            "server_unavailable": "De updateserver is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
+            "generic": "Er is een onverwachte fout opgetreden bij het controleren op updates.",
+            "invalid_response": "De updateserver gaf een ongeldig antwoord.",
+            "patrons_fetch_failed": "Het laden van de lijst met patrons is mislukt. Probeer het later opnieuw."
+        }
+    },
+    "plugins_window": {
+        "title": "Plugin Beheerder",
+        "table": {
+            "status": "Status",
+            "name": "Plugin Naam",
+            "actions": "Acties"
+        },
+        "buttons": {
+            "enable": "Inschakelen",
+            "disable": "Uitschakelen"
+        },
+        "tooltips": {
+            "info": "Plugin Informatie",
+            "description": "Beschrijving",
+            "settings": "Instellingen"
+        },
+        "info_popup": {
+            "author": "Auteur:",
+            "version": "Versie:"
+        },
+        "status": {
+            "incompatible": " (Vereist spelversie:)"
+        }
+    },
+    "settings_window": {
+        "title": "Instellingen",
+        "system_titles": {
+            "logging": "Loggen",
+            "localization": "Lokalisatie",
+            "ui": "Gebruikersinterface",
+            "settings": "Algemene Instellingen"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "Logniveau",
+                    "description": "Stelt het minimumniveau van te loggen berichten in."
+                },
+                "sinks": {
+                    "title": "Log Sinks",
+                    "file": {
+                        "title": "File Sink",
+                        "description": "Schakel loggen naar een bestand in of uit."
+                    },
+                    "ui": {
+                        "title": "UI Sink",
+                        "description": "Schakel het tonen van logs in het UI-venster in of uit."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "Taal",
+                    "description": "Stelt de interfacetaal voor dit component in."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "Vensters",
+                    "main_window": {
+                        "title": "Hoofdvenster"
+                    },
+                    "plugins_window": {
+                        "title": "Plugin Beheerder"
+                    },
+                    "settings_window": {
+                        "title": "Instellingen"
+                    },
+                    "logger_window": {
+                        "title": "Logger"
+                    },
+                    "telemetry_window": {
+                        "title": "Telemetrie"
+                    },
+                    "hooks_window": {
+                        "title": "Hooks"
+                    },
+                    "game_console_window": {
+                        "title": "Spelconsole"
+                    },
+                    "camera_window": {
+                        "title": "Camera"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "Is Zichtbaar",
+                        "description": "Schakelt de zichtbaarheid van het venster."
+                    },
+                    "is_interactive": {
+                        "title": "Is Interactief",
+                        "description": "Schakelt of er met het venster kan worden geïnteracteerd."
+                    },
+                    "pos_x": {
+                        "title": "Positie X",
+                        "description": "De X-coördinaat van de positie van het venster."
+                    },
+                    "pos_y": {
+                        "title": "Positie Y",
+                        "description": "De Y-coördinaat van de positie van het venster."
+                    },
+                    "size_w": {
+                        "title": "Breedte",
+                        "description": "De breedte van het venster."
+                    },
+                    "size_h": {
+                        "title": "Hoogte",
+                        "description": "De hoogte van het venster."
+                    },
+                    "is_collapsed": {
+                        "title": "Is Samengevouwen",
+                        "description": "Schakelt de samengevouwen staat van het venster."
+                    },
+                    "is_docked": {
+                        "title": "Is Gedockt",
+                        "description": "Schakelt de gedockte staat van het venster."
+                    },
+                    "dock_priority": {
+                        "title": "Dock Prioriteit",
+                        "description": "De prioriteit van het venster bij het docken."
+                    },
+                    "allow_undocking": {
+                        "title": "Loskoppelen Toestaan",
+                        "description": "Schakelt of het venster kan worden losgekoppeld."
+                    },
+                    "auto_scroll": {
+                        "title": "Automatisch Scrollen",
+                        "description": "Schakelt automatisch scrollen naar de onderkant van het venster."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "Plugin Staten",
+                    "description": "Beheert de ingeschakelde/uitgeschakelde staat van plugins."
+                },
+                "hook_states": {
+                    "title": "Hook Staten",
+                    "description": "Beheert de ingeschakelde/uitgeschakelde staat van hooks."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "Sneltoets Instellingen",
+            "tooltip_open": "Open sneltoets instellingen",
+            "tooltip_close": "Sluit sneltoets instellingen",
+            "table": {
+                "action": "Actie",
+                "key": "Toets",
+                "add_button_tooltip": "Voeg een sneltoets toe",
+                "key_button_tooltip": "Klik om de sneltoets te wijzigen of te verwijderen",
+                "details_button_tooltip": "Configureer sneltoets gedrag"
+            },
+            "unassigned_text": "Niet toegewezen"
+        },
+        "component_selector": {
+            "tooltip": "Selecteer plugin om te configureren"
+        },
+        "key_capture_popup": {
+            "title": "Toets Vangen",
+            "press_key_text": "Druk op een toets om te binden aan actie:",
+            "delete_button": "Verwijderen",
+            "cancel_button": "Annuleren",
+            "conflict_title": "Conflict Gedetecteerd!",
+            "conflict_text": "Toets '%s' is al gebonden aan:",
+            "reassign_question": "Wil je het opnieuw toewijzen?",
+            "yes_button": "Ja",
+            "no_button": "Nee"
+        },
+        "binding_details_popup": {
+            "title": "Bindingsdetails",
+            "press_type_label": "Druktype:",
+            "behavior_label": "Gedrag:",
+            "behavior_toggle": "Schakelen",
+            "behavior_hold": "Vasthouden",
+            "consume_label": "Verbruiksbeleid:",
+            "threshold_label": "Drukgrens (ms):",
+            "close_button": "Sluiten"
+        }
+    },
+    "logger_window": {
+        "title": "Logger",
+        "button_clear": "Wissen",
+        "checkbox_autoscroll": "Automatisch scrollen"
+    },
+    "telemetry_window": {
+        "title": "Telemetrie",
+        "tabs": {
+            "game": "Spel",
+            "job": "Opdracht",
+            "navigation": "Navigatie",
+            "truck": "Vrachtwagen",
+            "positioning": "Positionering",
+            "trailers": "Opleggers",
+            "controls_events": "Besturing & Gebeurtenissen"
+        },
+        "headers": {
+            "game_state": "Spelstatus",
+            "constants": "Constanten",
+            "live_data": "Live Gegevens",
+            "physics": "Fysica",
+            "wheels": "Wielen",
+            "damage": "Schade",
+            "truck_positioning": "Vrachtwagen Positionering",
+            "controls": "Besturing",
+            "events": "Gebeurtenissen"
+        },
+        "labels": {
+            "game_time": "Speltijd: %u",
+            "next_rest_stop": "Volgende Rustplaats: %d min",
+            "next_rest_stop_real": "Volgende Rustplaats Echte Tijd: ~%.1f min",
+            "next_rest_stop_time": "Tijd Volgende Rustplaats: %s, %02d:%02d",
+            "paused": "Gepauzeerd: %s",
+            "game_id": "Spel ID: %u",
+            "local_scale": "Lokale Schaal: %.2f",
+            "multiplayer_time_offset": "Multiplayer Tijdsverschil: %d",
+            "scs_game_version": "SCS Spelversie: %u.%u",
+            "telemetry_plugin_version": "Telemetrie Plugin Versie: %u.%u",
+            "telemetry_game_version": "Speltelemetrie Versie: %u.%u",
+            "game_name": "Spelnaam: %s",
+            "substances": "Stoffen",
+            "substances_not_received": "Lijst nog niet ontvangen.",
+            "simulation_time": "Simulatietijd: %llu",
+            "render_time": "Rendertijd: %llu",
+            "paused_simulation_time": "Gepauzeerde Simulatietijd: %llu",
+            "no_active_job": "Geen actieve opdracht.",
+            "contract": "Contract",
+            "market": "Markt: %s",
+            "income": "Inkomsten: %llu",
+            "planned_distance": "Geplande Afstand: %u km",
+            "cargo": "Vracht",
+            "cargo_info": "Vracht: %s (%s)",
+            "mass": "Massa: %.0f kg (%u eenheden x %.0f kg)",
+            "damage": "Schade: %.2f%%",
+            "loaded": "Geladen: %s",
+            "special_job": "Speciale Opdracht: %s",
+            "route": "Route",
+            "source": "Bron: %s (%s), %s (%s)",
+            "destination": "Bestemming: %s (%s), %s (%s)",
+            "time": "Tijd",
+            "delivery_deadline": "Leveringstermijn (Speltijd): %u min",
+            "remaining_game_time": "Resterende (Speltijd): %.0f min",
+            "speed_limit": "Snelheidslimiet: %.0f km/u",
+            "next_waypoint_dist": "Afstand Volgend Waypoint: %.1f m",
+            "next_waypoint_time_game": "Tijd Volgend Waypoint (Spel): %.0f s",
+            "next_waypoint_time_real": "Tijd Volgend Waypoint (Echt): ~%.0f s",
+            "id": "ID: %s",
+            "brand": "Merk: %s (%s)",
+            "name": "Naam: %s",
+            "license_plate": "Kenteken: %s (%s)",
+            "engine_gearbox": "Motor & Versnellingsbak",
+            "rpm_limit": "RPM Limiet: %.0f",
+            "gears": "Versnellingen: %d Vooruit, %d Achteruit",
+            "retarder_steps": "Retarder Stappen: %d",
+            "selector_count": "Aantal Selectoren: %zu",
+            "differential_ratio": "Differentieelratio: %.2f",
+            "shifter_type": "Schakeltype: %s",
+            "hshifter_layout": "H-Schakelaar Layout",
+            "hshifter_table": {
+                "slot": "Slot",
+                "gear": "Versnelling",
+                "handle_pos": "Handvat Positie",
+                "selectors": "Selectoren"
+            },
+            "gear_ratios": "Versnellingsratio's",
+            "forward": "Vooruit",
+            "reverse": "Achteruit",
+            "gear_x": "Versnelling %2zu: %.2f",
+            "gear_rx": "Versnelling R%zu: %.2f",
+            "capacities": "Capaciteiten",
+            "fuel_capacity": "Brandstofcapaciteit: %.1f L",
+            "adblue_capacity": "AdBlue Capaciteit: %.1f L",
+            "warning_factors": "Waarschuwingsfactoren",
+            "fuel_warning": "Brandstofwaarschuwing: %.0f%%",
+            "adblue_warning": "AdBlue Waarschuwing: %.0f%%",
+            "air_pressure_warning": "Luchtdrukwaarschuwing: %.1f psi",
+            "air_pressure_emergency": "Luchtdruknoodgeval: %.1f psi",
+            "oil_pressure_warning": "Oliedrukwaarschuwing: %.1f psi",
+            "water_temp_warning": "Watertemperatuurwaarschuwing: %.0f C",
+            "battery_voltage_warning": "Accuspanningwaarschuwing: %.1f V",
+            "dashboard_info": "Dashboard Info",
+            "speed": "Snelheid: %.2f km/u",
+            "engine_rpm": "Motor RPM: %.0f",
+            "gear": "Versnelling: %d (Weergegeven: %d)",
+            "odometer": "Kilometerteller: %.1f km",
+            "cruise_control": "Cruise Control: %s (%.0f km/u)",
+            "fuel": "Brandstof: %.1f L (Gem: %.2f L/km, Bereik: %.0f km)",
+            "adblue": "AdBlue: %.1f L (Gem: %.3f L/km)",
+            "oil": "Olie: %.1f psi, %.1f C",
+            "water_temp": "Watertemperatuur: %.1f C",
+            "battery_voltage": "Accuspanning: %.1f V",
+            "dashboard_warnings": "Dashboard Waarschuwingen",
+            "fuel_warn_state": "Brandstof: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "Luchtdruk: %s",
+            "oil_pressure_warn_state": "Oliedruk: %s",
+            "water_temp_warn_state": "Watertemperatuur: %s",
+            "battery_voltage_warn_state": "Accuspanning: %s",
+            "system_states": "Systeemstatussen",
+            "electric_enabled": "Elektrisch Ingeschakeld: %s",
+            "engine_enabled": "Motor Ingeschakeld: %s",
+            "differential_lock": "Differentieelslot: %s",
+            "wipers": "Ruitenwissers: %s",
+            "truck_lift_axle": "Vrachtwagen Liftas: %s (Indicator: %s)",
+            "trailer_lift_axle": "Oplegger Liftas: %s (Indicator: %s)",
+            "lights": "Verlichting",
+            "blinkers": "Knipperlichten: Links[%s,%s] Rechts[%s,%s] Gevaar[%s]",
+            "light_states": "Parkeerlicht: %s, Dimlicht: %s, Grootlicht: %s",
+            "aux_lights": "Extra Voor: %s, Extra Dak: %s, Zwaailicht: %s",
+            "brake_reverse_lights": "Rem: %s, Achteruit: %s",
+            "dashboard_backlight": "Dashboardverlichting: %.2f",
+            "brakes": "Remmen",
+            "air_pressure": "Luchtdruk: %.1f psi",
+            "parking_brake": "Parkeerrem: %s",
+            "motor_brake": "Motorrem: %s",
+            "retarder_level": "Retarder Niveau: %d",
+            "brake_temp": "Remtemperatuur: %.1f C",
+            "hshifter": "H-Schakelaar",
+            "slot": "Slot: %u",
+            "selectors": "Selectoren: %s",
+            "linear_velocity": "Lineaire Snelheid",
+            "angular_velocity": "Hoeksnelheid",
+            "linear_accel": "Lineaire Versnelling",
+            "angular_accel": "Hoekversnelling",
+            "cabin_ang_vel": "Cabine Hoekvel.",
+            "cabin_ang_accel": "Cabine Hoekversn.",
+            "wheel_x": "Wiel {}",
+            "substance": "Stof: %s (%u)",
+            "substance_unknown": "Stof: Onbekend (%u)",
+            "on_ground": "Op de Grond: %s",
+            "susp_deflection": "Vering Uitslag: %.3f",
+            "wheel_velocity": "Snelheid: %.2f",
+            "steering": "Sturen: %.2f",
+            "rotation": "Rotatie: %.2f",
+            "lift": "Lift: %.2f (Offset: %.3f)",
+            "steerable": "Stuurbaar: %s",
+            "powered": "Aangedreven: %s",
+            "liftable": "Liftbaar: %s",
+            "simulated": "Gesimuleerd: %s",
+            "radius": "Radius: %.2f",
+            "position": "Positie",
+            "engine_damage": "Motor: %.1f%%",
+            "transmission_damage": "Transmissie: %.1f%%",
+            "cabin_damage": "Cabine: %.1f%%",
+            "chassis_damage": "Chassis: %.1f%%",
+            "wheels_damage": "Wielen (Gem): %.1f%%",
+            "world_space": "Wereldruimte",
+            "world_placement": "Wereldplaatsing",
+            "component_offsets": "Component Offsets",
+            "cabin_offset": "Cabine Offset",
+            "head_offset": "Hoofd Offset",
+            "component_base_pos": "Component Basposities",
+            "cabin_pos": "Cabine Positie",
+            "head_pos": "Hoofd Positie",
+            "hook_pos": "Haak Positie",
+            "trailer_x": "Oplegger {} ({})",
+            "trailer_na": "N.v.t.",
+            "connected": "Verbonden: %s",
+            "general": "Algemeen",
+            "trailer_brand": "Merk: %s (ID: %s)",
+            "trailer_license_plate": "Kenteken: %s (Land: %s, ID: %s)",
+            "body_type": "Carrosserietype: %s",
+            "chain_type": "Kettingtype: %s",
+            "cargo_accessory_id": "Vrachtaccessoire ID: %s",
+            "physics_pos": "Fysica & Positie",
+            "trailer_hook_pos": "Haakpositie",
+            "trailer_world_pos": "Wereldpositie: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "Carrosserie: %.2f%%",
+            "trailer_damage_chassis": "Chassis: %.2f%%",
+            "trailer_damage_wheels": "Wielen: %.2f%%",
+            "trailer_damage_cargo": "Vracht: %.2f%%",
+            "wheels_count": "Wielen (Aantal: {})",
+            "wheel_susp_deflection": "Vering Uitslag: %.3f",
+            "wheel_angular_velocity": "Hoeksnelheid: %.2f",
+            "wheel_lift": "Lift: %.2f",
+            "wheel_lift_offset": "Lift Offset: %.2f",
+            "user_input": "--- Gebruikersinvoer ---",
+            "effective_input": "--- Effectieve Invoer ---",
+            "input_steering": "Sturen: %.2f",
+            "input_throttle": "Gas: %.2f",
+            "input_brake": "Rem: %.2f",
+            "input_clutch": "Koppeling: %.2f",
+            "special_events": "--- Speciale Gebeurtenissen (Vlaggen) ---",
+            "on_job": "Aan het Werk: %s",
+            "job_cancelled": "Opdracht Geannuleerd: %s",
+            "job_delivered": "Opdracht Afgeleverd: %s",
+            "fined": "Beboet: %s",
+            "tollgate": "Tolpoort: %s",
+            "ferry": "Veerboot: %s",
+            "train": "Trein: %s",
+            "last_gameplay_event": "--- Laatste Gameplay Gebeurtenis ---",
+            "no_event_yet": "Nog geen gebeurtenis.",
+            "event_job_delivered": "Opdracht Afgeleverd: Opbrengst %lld, XP %d, Schade %.1f%%",
+            "event_job_delivered_details": "  Afstand: %.1f km, Tijd: %u min",
+            "event_job_delivered_flags": "  Automatisch Parkeren: %s, Automatisch Laden: %s",
+            "event_job_cancelled": "Opdracht Geannuleerd: Boete %lld",
+            "event_fined": "Beboet: %lld voor '%s'",
+            "event_tollgate": "Tolpoort: Betaald %lld",
+            "event_ferry": "Veerboot: Betaald %lld",
+            "event_ferry_route": "  Van: %s (ID: %s)",
+            "event_ferry_route_to": "  Naar:   %s (ID: %s)",
+            "event_train": "Trein: Betaald %lld",
+            "event_train_route": "  Van: %s (ID: %s)",
+            "event_train_route_to": "  Naar:   %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d d, %d u, %d m)",
+            "hours_minutes": "(%d u, %d m)",
+            "real_time_minutes": "~%.1f min",
+            "real_time_hours_minutes": "(%d u, %d m)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f km/u",
+            "meters": "%.1f m",
+            "game_time_seconds": "%.0f s",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f s",
+            "m_s": "(%d m, %d s)",
+            "gears_fwd_rev": "%d Voor, %d Achter",
+            "liters": "%.1f L",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f km/u",
+            "cruise_control_speed": "%.0f km/u",
+            "fuel_consumption": "%.2f L/km",
+            "fuel_range": "%.0f km",
+            "adblue_consumption": "%.3f L/km",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "Links[%s,%s] Rechts[%s,%s] Gevaar[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "Pos: (%.2f, %.2f, %.2f)",
+            "placement_ori": "Ori: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "Maandag",
+            "tuesday": "Dinsdag",
+            "wednesday": "Woensdag",
+            "thursday": "Donderdag",
+            "friday": "Vrijdag",
+            "saturday": "Zaterdag",
+            "sunday": "Zondag",
+            "unknown": "Onbekend"
+        },
+        "generic": {
+            "yes": "Ja",
+            "no": "Nee",
+            "on": "AAN",
+            "off": "UIT",
+            "warn": "WAARSCHUWING",
+            "emergency": "NOODGEVAL",
+            "ok": "OK",
+            "engaged": "INGESCHAKELD",
+            "lifted": "OPGEHEVEN",
+            "down": "OMLAAG",
+            "dimmed": "Gedimd",
+            "full": "Volledig"
+        }
+    },
+    "hooks_window": {
+        "title": "Hooks",
+        "no_hooks_text": "Geen hooks beschikbaar.",
+        "enabled_checkbox": "Ingeschakeld",
+        "required_by_plugin_text": "(Vereist door een plugin)",
+        "tooltip": {
+            "internal_name": "Om deze hook in je plugin te gebruiken, specificeer je de volgende naam in het `requiredHooks`-beleid:"
+        }
+    },
+    "game_console_window": {
+        "title": "Spelconsole",
+        "info_text": "Testveld voor het invoeren van commando's in de spelconsole. Werkt zelfs als g_console en g_developer zijn uitgeschakeld in het config.cfg-bestand (d.w.z. ingesteld op '0').",
+        "enable_hook_text": "Activeer de GameConsole hook in het '%s' venster.",
+        "send_button": "Verzenden"
+    },
+    "camera_window": {
+        "title": "Camera",
+        "current_camera": "Huidige Camera: %s (%d)",
+        "camera_world_coordinates": "Camera Wereldcoördinaten: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "Camera Wereldcoördinaten: NIET GEVONDEN",
+        "select_camera": "Selecteer Camera:",
+        "interior": "Interieur",
+        "behind": "Achter",
+        "top": "Boven",
+        "cabin": "Cabine",
+        "window": "Raam",
+        "bumper": "Bumper",
+        "wheel": "Wiel",
+        "tv": "TV",
+        "developer_free_camera": "Ontwikkelaar Vrije Camera (ID 0)",
+        "tabs": {
+            "interior_camera": "Interieurcamera",
+            "behind_camera": "Achteruitrijcamera",
+            "top_camera": "Bovenaanzichtcamera",
+            "cabin_camera": "Cabinecamera",
+            "window_camera": "Raamcamera",
+            "bumper_camera": "Bumpercamera",
+            "wheel_camera": "Wielcamera",
+            "tv_camera": "TV-camera",
+            "free_camera": "Vrije Camera",
+            "debug": "Debug"
+        },
+        "interior_camera": {
+            "fov_zoom": "FOV / Zoom",
+            "base_fov": "Basis FOV",
+            "base_fov_not_found": "Basis FOV: gegevens niet gevonden",
+            "final_h_fov": "Definitieve H-FOV: %.1f",
+            "final_v_fov": "Definitieve V-FOV: %.1f",
+            "final_fov_not_found": "Definitieve FOV: gegevens niet gevonden",
+            "seat_position": "Stoelpositie",
+            "seat_lr": "Stoel L/R (X)",
+            "seat_ud": "Stoel O/N (Y)",
+            "seat_fb": "Stoel V/A (Z)",
+            "seat_position_not_found": "Stoelpositie: gegevens niet gevonden",
+            "head_rotation": "Hoofdrotatie",
+            "yaw_lr": "Gieren (L/R)",
+            "pitch_ud": "Stampen (O/N)",
+            "head_rotation_not_found": "Hoofdrotatie: gegevens niet gevonden",
+            "mouse_rotation_limits": "Muis Rotatielimieten",
+            "left_limit": "Linkerlimiet",
+            "right_limit": "Rechterlimiet",
+            "up_limit": "Bovenlimiet",
+            "down_limit": "Onderlimiet",
+            "rotation_limits_not_found": "Rotatielimieten: gegevens niet gevonden",
+            "rotation_defaults": "Standaard Rotatie",
+            "default_lr": "Standaard L/R##Interior",
+            "default_ud": "Standaard O/N##Interior",
+            "rotation_defaults_not_found": "Standaard Rotatie: gegevens niet gevonden",
+            "reset_to_defaults": "Herstel naar Standaard",
+            "not_available": "Interieurcamera-object niet beschikbaar."
+        },
+        "behind_camera": {
+            "live_state": "Live Status",
+            "live_pitch": "Live Stampen",
+            "live_yaw": "Live Gieren",
+            "live_zoom": "Live Zoom",
+            "live_state_not_found": "Live Status: gegevens niet gevonden",
+            "distance_zoom_settings": "Afstand / Zoom Instellingen",
+            "min_distance": "Min Afstand",
+            "max_distance": "Max Afstand",
+            "trailer_max_offset": "Trailer Max Offset",
+            "default_distance": "Standaard Afstand",
+            "trailer_default_dist": "Trailer Standaard Afst.",
+            "zoom_speed": "Zoomsnelheid",
+            "distance_laziness": "Afstand Traagheid",
+            "distance_zoom_settings_not_found": "Afstand / Zoom Instellingen: gegevens niet gevonden",
+            "elevation_pitch_settings": "Hoogte / Stampen Instellingen",
+            "azimuth_laziness": "Azimut Traagheid",
+            "min_elevation": "Min Hoogte",
+            "max_elevation": "Max Hoogte",
+            "default_elevation": "Standaard Hoogte",
+            "trailer_default_elev": "Trailer Standaard Hoogte.",
+            "height_limit": "Hoogtelimiet",
+            "elevation_pitch_settings_not_found": "Hoogte / Stampen Instellingen: gegevens niet gevonden",
+            "pivot_offset": "Draaipunt Offset (Rotatiecentrum)",
+            "pivot_x": "Draaipunt X",
+            "pivot_y": "Draaipunt Y",
+            "pivot_z": "Draaipunt Z",
+            "pivot_offset_not_found": "Draaipunt Offset: gegevens niet gevonden",
+            "dynamic_offset": "Dynamische Offset (snelheidsgebaseerd)",
+            "max_dynamic_offset": "Max Dynamische Offset",
+            "dyn_offset_speed_min": "Dyn. Offset Snelheid Min (km/u)",
+            "dyn_offset_speed_max": "Dyn. Offset Snelheid Max (km/u)",
+            "dyn_offset_laziness": "Dyn. Offset Traagheid",
+            "dynamic_offset_not_found": "Dynamische Offset: gegevens niet gevonden",
+            "base_fov_behind": "Basis FOV##Behind",
+            "reset_to_defaults_behind": "Herstel naar Standaard##Behind",
+            "not_available": "Achteruitrijcamera-object niet beschikbaar."
+        },
+        "top_camera": {
+            "height_zoom": "Hoogte / Zoom",
+            "minimum_height": "Minimale Hoogte",
+            "maximum_height": "Maximale Hoogte",
+            "height_zoom_not_found": "Hoogte / Zoom: gegevens niet gevonden",
+            "movement": "Beweging",
+            "movement_speed": "Bewegingssnelheid",
+            "movement_not_found": "Beweging: gegevens niet gevonden",
+            "dynamic_offset": "Dynamische Offset",
+            "forward_offset": "Voorwaartse Offset",
+            "backward_offset": "Achterwaartse Offset",
+            "dynamic_offset_not_found": "Dynamische Offset: gegevens niet gevonden",
+            "base_fov_top": "Basis FOV##Top",
+            "reset_to_defaults_top": "Herstel naar Standaard##Top",
+            "not_available": "Bovenaanzichtcamera-object niet beschikbaar."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "Basis FOV##Cabin",
+            "reset_to_defaults_cabin": "Herstel naar Standaard##Cabin",
+            "not_available": "Cabinecamera-object niet beschikbaar."
+        },
+        "window_camera": {
+            "head_offset": "Hoofd Offset",
+            "head_x_window": "Hoofd X##Window",
+            "head_y_window": "Hoofd Y##Window",
+            "head_z_window": "Hoofd Z##Window",
+            "head_offset_not_found": "Hoofd Offset: gegevens niet gevonden",
+            "live_rotation": "Live Rotatie",
+            "live_yaw_window": "Live Gieren (L/R)##Window",
+            "live_pitch_window": "Live Stampen (O/N)##Window",
+            "live_rotation_not_found": "Live Rotatie: gegevens niet gevonden",
+            "mouse_rotation_limits_defaults": "Muis Rotatielimieten & Standaarden",
+            "left_limit_window": "Linkerlimiet##Window",
+            "right_limit_window": "Rechterlimiet##Window",
+            "up_limit_window": "Bovenlimiet##Window",
+            "down_limit_window": "Onderlimiet##Window",
+            "rotation_limits_not_found_window": "Rotatielimieten: gegevens niet gevonden",
+            "default_lr_window": "Standaard L/R##Window",
+            "default_ud_window": "Standaard O/N##Window",
+            "rotation_defaults_not_found_window": "Standaard Rotatie: gegevens niet gevonden",
+            "base_fov_window": "Basis FOV##Window",
+            "reset_to_defaults_window": "Herstel naar Standaard##Window",
+            "not_available": "Raamcamera-object niet beschikbaar."
+        },
+        "bumper_camera": {
+            "offset": "Offset",
+            "offset_x_bumper": "Offset X##Bumper",
+            "offset_y_bumper": "Offset Y##Bumper",
+            "offset_z_bumper": "Offset Z##Bumper",
+            "offset_not_found": "Offset: gegevens niet gevonden",
+            "base_fov_bumper": "Basis FOV##Bumper",
+            "reset_to_defaults_bumper": "Herstel naar Standaard##Bumper",
+            "not_available": "Bumpercamera-object niet beschikbaar."
+        },
+        "wheel_camera": {
+            "offset": "Offset",
+            "offset_x_wheel": "Offset X##Wheel",
+            "offset_y_wheel": "Offset Y##Wheel",
+            "offset_z_wheel": "Offset Z##Wheel",
+            "offset_not_found": "Offset: gegevens niet gevonden",
+            "base_fov_wheel": "Basis FOV##Wheel",
+            "reset_to_defaults_wheel": "Herstel naar Standaard##Wheel",
+            "not_available": "Wielcamera-object niet beschikbaar."
+        },
+        "tv_camera": {
+            "distance": "Afstand",
+            "max_distance_tv": "Max Afstand##TV",
+            "distance_not_found": "Afstand: gegevens niet gevonden",
+            "prefab_uplift": "Prefab Verhoging",
+            "prefab_uplift_x_tv": "Prefab Verhoging X##TV",
+            "prefab_uplift_y_tv": "Prefab Verhoging Y##TV",
+            "prefab_uplift_z_tv": "Prefab Verhoging Z##TV",
+            "prefab_uplift_not_found": "Prefab Verhoging: gegevens niet gevonden",
+            "road_uplift": "Weg Verhoging",
+            "road_uplift_x_tv": "Weg Verhoging X##TV",
+            "road_uplift_y_tv": "Weg Verhoging Y##TV",
+            "road_uplift_z_tv": "Weg Verhoging Z##TV",
+            "road_uplift_not_found": "Weg Verhoging: gegevens niet gevonden",
+            "base_fov_tv": "Basis FOV##TV",
+            "reset_to_defaults_tv": "Herstel naar Standaard##TV",
+            "not_available": "TV-camera-object niet beschikbaar."
+        },
+        "free_camera": {
+            "position": "Positie",
+            "position_x_freecam": "Positie X",
+            "position_y_freecam": "Positie Y",
+            "position_z_freecam": "Positie Z",
+            "position_not_found": "Positie: gegevens niet gevonden",
+            "orientation": "Oriëntatie",
+            "mouse_horizontal_freecam": "Muis Horizontaal",
+            "mouse_vertical_freecam": "Muis Verticaal",
+            "roll_freecam": "Rollen",
+            "orientation_not_found": "Oriëntatie: gegevens niet gevonden",
+            "quaternion": "Quaternion",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "Quaternion: gegevens niet gevonden",
+            "base_fov_freecam": "Basis FOV##FreeCam",
+            "movement_speed": "Bewegingssnelheid",
+            "speed_freecam": "Snelheid",
+            "movement_speed_not_found": "Bewegingssnelheid: gegevens niet gevonden",
+            "reset_to_defaults_freecam": "Herstel naar Standaard##FreeCam",
+            "not_available": "Vrije camera-object niet beschikbaar."
+        },
+        "debug": {
+            "current_mode": "Huidige Modus: %s (%d)",
+            "current_mode_na": "Huidige Modus: [N.v.t.]",
+            "enable_debug_camera": "Schakel Debug Camera In",
+            "enable_debug_camera_not_found": "Schakel Debug Camera In: gegevens niet gevonden",
+            "clean_ui": "Schone UI (Geen contouren)",
+            "clean_ui_not_found": "Schone UI: gegevens niet gevonden",
+            "show_debug_hud": "Toon Debug HUD",
+            "show_debug_hud_not_found": "Toon Debug HUD: gegevens niet gevonden",
+            "enable_debug_camera_to_select_mode": "Schakel de debug camera in om een modus te selecteren.",
+            "simple_debug": "Eenvoudig",
+            "basic_debug_camera_mode": "Basis debug cameramodus.",
+            "video_debug": "Video",
+            "hud_position_debug": "HUD Positie:",
+            "top_left_debug": "Linksboven",
+            "bottom_left_debug": "Linksonder",
+            "top_right_debug": "Rechtsboven",
+            "bottom_right_debug": "Rechtsonder",
+            "current_debug": "(Huidig: %s)",
+            "current_na_debug": "(Huidig: N.v.t.)",
+            "traffic_debug": "Verkeer",
+            "camera_focuses_traffic": "Camera focust op verkeersvoertuigen.",
+            "cinematic_debug": "Filmisch",
+            "cinematic_camera_mode": "Filmische cameramodus.",
+            "animated_debug": "Geanimeerd",
+            "create_play_animations": "Maak en speel camera-animaties af.",
+            "activate_game_animated_mode": "Activeer Geanimeerde Modus van het Spel",
+            "custom_animation_controls": "Aangepaste Animatiecontroles",
+            "playing_status": "Afspelen",
+            "pause_button": "Pauzeren",
+            "paused_status": "Gepauzeerd",
+            "stopped_status": "Gestopt",
+            "play_button": "Afspelen",
+            "stop_button": "Stoppen",
+            "status_label": "Status: %s",
+            "reverse_playback": "Achteruit Afspelen",
+            "timeline_label": "Tijdlijn:",
+            "state_camera_debug": "Statuscamera",
+            "create_state_camera": "Maak statuscamera.",
+            "save_keyframe": "Sleutelframe Opslaan",
+            "reload_from_file": "Herladen vanuit Bestand",
+            "clear_all_memory": "Alles Wissen (Geheugen)",
+            "animation_controls": "Animatiecontroles",
+            "add_edit_state": "Status Toevoegen/Bewerken",
+            "position_xyz": "Positie (X,Y,Z)",
+            "mystery_float": "Mysterieuze Float",
+            "quaternion_xyzw": "Quaternion (X,Y,Z,W)",
+            "fov_label": "FOV",
+            "add_state_memory": "Status Toevoegen (Geheugen)",
+            "update_state_memory": "Status Bijwerken (Geheugen)",
+            "delete_state_memory": "Status Verwijderen (Geheugen)",
+            "previous_state": "Vorige Status",
+            "next_state": "Volgende Status",
+            "active_state_label": "Actieve Status [%d]:",
+            "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  Mysterie: %.4f",
+            "quat_label": "  Quat: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  FOV: %.2f",
+            "active_state_none": "Actieve Status: [Geen]",
+            "saved_states_label": "Opgeslagen Statussen: %d",
+            "states_combo_label": "Statussen",
+            "state_item_label": "Status %d",
+            "no_states_saved": "Geen Statussen Opgeslagen",
+            "oversize_debug": "Buitengewoon",
+            "camera_oversized_trailers": "Camera voor buitengewone opleggers.",
+            "vehicle_list": "Voertuigenlijst"
+        }
+    },
+    "description": {
+        "detailed": "Een krachtig en flexibel framework voor het maken en beheren van plugins voor SCS-spellen. Biedt een kernset van diensten voor loggen, configuratie, UI-beheer en meer."
+    },
+    "patrons_popup": {
+        "title": "Steun het Project",
+        "intro_text": "De steun van onze community is de brandstof voor dit project. Als je ons werk nuttig vindt, overweeg dan om een patron te worden. Jouw bijdrage stelt ons in staat om de ontwikkeling voort te zetten en nieuwe, spannende plugins voor iedereen te creëren!",
+        "link_intro": "Je kunt ons steunen op onze officiële pagina:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Klik om de Patreon-pagina in je browser te openen",
+        "hof_title": "Hall of Fame",
+        "hof_empty": "Onze Hall of Fame is nog leeg... Wees de eerste die hier verschijnt en onze reis een vliegende start geeft!",
+        "hof_teaser": "Steun ons om in onze",
+        "close_button": "Sluiten",
+        "tiers": {
+            "magnate": "--- Logistieke Magnaten ---",
+            "manager": "--- Vlootbeheerders ---",
+            "master": "--- Wegmeesters ---"
+        }
+    },
+    "manual_popup": {
+        "title": "FAQ",
+        "q1_question": "Hoe installeer en activeer ik een plugin?",
+        "q1_answer": "Kopieer je SPF-compatibele plugin naar de map ```{}``` Zorg ervoor dat de `.dll` van de plugin in een map staat die overeenkomt met zijn naam,\nbijvoorbeeld `...\\MyPlugin\\MyPlugin.dll`\nHet framework zal deze plugin automatisch vinden en laden. Je hoeft hem alleen nog maar in te schakelen in het tabblad `Plugin Beheerder`.",
+        "q2_question": "Hoe maak ik mijn eigen plugin?",
+        "q2_answer": "Om een plugin te ontwikkelen, moet je het header-bestandspakket `SPF_-_API.h` downloaden van de sectie \"Releases\" op onze [GitHub]({}) pagina en het in je project opnemen.",
+        "q3_question": "Hoe voeg ik een nieuwe vertaling toe?",
+        "q3_answer": "Om het `framework` te vertalen, zoek je de bestanden in ```{}``` * kopieer een bestaande vertaling, bijvoorbeeld `en.json`\n * hernoem het naar je vertalingstaal, bijvoorbeeld `de.json`\n * vertaal de strings.\n\nDe vertalingsbestanden voor een `plugin` bevinden zich in zijn eigen lokalisatiemap, bijvoorbeeld: ```{}```",
+        "q4_question": "Wat als ik nieuwe functionaliteit nodig heb?",
+        "q4_answer": "Als je een ontwikkelaar bent, kun je de vereiste functionaliteit zelf implementeren met onze `SPF_-_API.h`.\n Anders kun je een suggestie doen op [GitHub]({}) of op onze [Patreon]({}) pagina.",
+        "q5_question": "Waar worden de instellingen opgeslagen?",
+        "q5_answer": "Framework-instellingen bevinden zich in ```{}```. Plugin-instellingen staan in hun eigen configuratiemappen, bijvoorbeeld: ```{}```. **Het wordt aanbevolen om instellingen alleen via de in-game interface te wijzigen.**",
+        "q6_question": "Het framework of een plugin crasht het spel. Wat te doen?",
+        "q6_answer": " * Controleer de logbestanden in de map `\\spfAssets\\logs`.\n * Probeer plugins een voor een uit te schakelen om de bron van het probleem te vinden.\n * Als het probleem bij het framework ligt, maak dan een `issue` aan op onze [GitHub]({}), beschrijf het probleem in detail en voeg het logbestand bij."
+    },
+    "about_popup": {
+        "title": "Over Ons / Contact",
+        "about_us_title": "Over Ons",
+        "about_us_text": "Wij zijn een team van enthousiastelingen {}, toegewijd aan het verbeteren van de game-ervaring van trucksimulators. Ons {} is een tool gemaakt door de community, voor de community.",
+        "framework_title": "Over Het Framework",
+        "contacts_title": "Onze Contacten",
+        "email_text": "Voor zakelijke vragen of direct contact, bereik ons via [e-mail]({}).",
+        "discord_text": "Word lid van onze [Discord]({}) community om in contact te komen met andere spelers en ontwikkelaars.",
+        "youtube_text": "Abonneer je op ons [YouTube]({}) kanaal, waar we updates, tutorials en interessante content over ETS2 en ATS-spellen plaatsen.",
+        "github_text": "Volg de ontwikkeling, meld bugs of draag bij op onze [GitHub]({}).",
+        "patreon_text": "Steun ons werk en krijg exclusieve voordelen door onze patron te worden op [Patreon]({}).",
+        "scs_forum_text": "Bespreek het framework en stel vragen op de officiële [SCS Software forumpagina]({}).",
+        "steam_profile_text": "Voeg ons toe als vrienden en volg onze activiteit op [Steam]({})."
+    },
+    "legal_popup": {
+        "title": "Legale Informatie",
+        "license_title": "Licentie",
+        "license_text": "Het SPF Framework wordt gedistribueerd onder de voorwaarden van de Apache 2.0 Licentie. Je kunt de volledige licentietekst bekijken op onze [GitHub]({}).",
+        "disclaimer_title": "Vrijwaring van Aansprakelijkheid",
+        "disclaimer_text": "De SPF Framework software wordt geleverd 'as is', zonder enige expliciete of impliciete garanties. De ontwikkelaars zijn niet aansprakelijk voor enige schade aan spelbestanden, saves, configuratiebestanden, of enige andere schade die kan voortvloeien uit het gebruik van dit framework.\n\nHet framework fungeert als een platformbeheerder voor plugins die door externe auteurs zijn ontwikkeld. Wij maken deze plugins niet, beheren hun inhoud niet en hebben er geen toegang toe. Door plugins van derden te installeren en te gebruiken, aanvaard je alle risico's. **We raden ten zeerste aan om regelmatig een back-up te maken van je saves en configuratiebestanden.**",
+        "fair_play_title": "Fair Play Beleid",
+        "fair_play_text": "We keuren elk gebruik van de tools die ons framework biedt om een oneerlijk voordeel te behalen ten opzichte van andere spelers ten strengste af. Het doel van het SPF Framework is uitsluitend om je singleplayer-game-ervaring te verbeteren en uit te breiden.",
+        "contact_title": "Contact",
+        "contact_text": "Als je vragen, suggesties of klachten hebt, neem dan contact met ons op via [e-mail]({})."
+    },
+    "shutdown_popup": {
+        "title": "Afsluitbevestiging",
+        "content": "Weet je zeker dat je het framework wilt afsluiten?\n\n **Dit zal alle plugins ontladen en het framework deactiveren tot de volgende herstart van het spel.**\n\n Als je plugins moet inschakelen zonder het spel opnieuw te starten, gebruik dan de spelconsole en voer het commando ```sdk reload``` in",
+        "confirm_button": "Ja, afsluiten",
+        "confirm_disabled_tooltip": "Activeer de 'Game Console' hook in het Hooks-venster om deze functie te gebruiken.",
+        "cancel_button": "Annuleren"
+    },
+    "ui": {
+        "actions": {
+            "dock": "Vastmaken",
+            "undock": "Losmaken"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "Schakel Hoofdvenster",
+            "description": "Schakelt de zichtbaarheid van het hoofd-frameworkvenster."
+        },
+        "ui.close_focused": {
+            "title": "Sluit/Cyclus Venster",
+            "description": "Sluit popups, dockt zwevende vensters, of sluit de hoofd-UI."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "Overschrijf Muisbesturing",
+            "description": "Wanneer de UI zichtbaar is, houd deze toets ingedrukt om de muisbesturing tijdelijk terug te geven aan het spel."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "Kort",
+            "long": "Lang"
+        },
+        "consumption_policy": {
+            "never": "Nooit",
+            "on_ui_focus": "Bij UI Focus",
+            "always": "Altijd"
+        }
+    }
+}

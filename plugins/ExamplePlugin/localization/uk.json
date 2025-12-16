@@ -1,0 +1,33 @@
+{
+    "language": {
+        "en": "Англійська",
+        "uk": "Українська"
+    },
+    "plugin.description": "Плагін-шаблон для демонстрації SPF API.",
+    "messages.welcome": "Ласкаво просимо до ExamplePlugin! Поточна мова - українська.",
+    "MainWindow.title": "Головне вікно ExamplePlugin",
+    "setting": {
+        "some_number": {
+            "title": "Деяке число",
+            "description": "Це приклад цілочисельного налаштування для плагіна."
+        }
+    },
+    "keybind": {
+        "main_window_toggle": {
+            "title": "Перемкнути головне вікно",
+            "description": "Перемикає видимість головного вікна ExamplePlugin."
+        },
+        "camera_cycle": {
+            "title": "Цикл камери",
+            "description": "Перемикає наступні доступні види камери."
+        }
+    },
+    "ui": {
+        "window": {
+            "main_window": {
+                "title": "Головне вікно",
+                "description": "Це головне вікно для ExamplePlugin."
+            }
+        }
+    }
+}

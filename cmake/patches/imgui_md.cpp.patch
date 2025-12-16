@@ -1,0 +1,21 @@
+--- a/imgui_md.cpp
++++ b/imgui_md.cpp
+@@ -791,7 +791,7 @@
+ 	//Use m_href to identify images
+ 	
+ 	//Example - Imgui font texture
+-	nfo.texture_id = ImGui::GetIO().Fonts->TexID;
++	nfo.texture_id = ImGui::GetIO().Fonts->TexRef.GetTexID();
+ 	nfo.size = { 100,50 };
+ 	nfo.uv0 = { 0,0 };
+ 	nfo.uv1 = { 1,1 };
+@@ -450,7 +450,8 @@
+ 			ImVec4 c;
+ 			if (ImGui::IsItemHovered()) {
+ 
+-				ImGui::SetTooltip("%s", m_href.c_str());
++				ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
++				ImGui::SetTooltip("%s", m_href.c_str());
+ 
+ 				c = s.Colors[ImGuiCol_ButtonHovered];
+ 				if (ImGui::IsMouseReleased(0)) {

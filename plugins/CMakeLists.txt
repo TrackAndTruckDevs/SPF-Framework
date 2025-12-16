@@ -1,0 +1,2 @@
+add_subdirectory(MyPlugin)
+add_subdirectory(ExamplePlugin)

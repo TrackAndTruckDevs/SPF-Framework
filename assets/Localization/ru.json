@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "Английский",
+        "uk": "Украинский",
+        "de": "Немецкий",
+        "fr": "Французский",
+        "es": "Испанский",
+        "pl": "Польский",
+        "ru": "Русский",
+        "pt_br": "Португальский (Бразилия)",
+        "it": "Итальянский",
+        "nl": "Голландский",
+        "tr": "Турецкий",
+        "cs": "Чешский",
+        "zh": "Китайский (упрощенный)",
+        "ja": "Японский",
+        "ko": "Корейский"
+    },
+    "main_window": {
+        "title": "Главное окно - SPF Framework",
+        "patrons_button_tooltip": "Мои Патроны",
+        "update_button_tooltip": "Проверить наличие обновлений",
+        "version_label": "Ваша версия ",
+        "update_checking": "Проверка обновлений...",
+        "menu": {
+            "manual": "Руководство / FAQ",
+            "about": "О нас / Контакты",
+            "legal": "Правовая информация",
+            "reload": "Перезагрузить фреймворк",
+            "reload_disabled_tooltip": "Включите хук 'Game Console' в окне Hooks, чтобы использовать эту функцию.",
+            "shutdown": "Выключить фреймворк",
+            "open_plugins_folder": "Открыть папку с плагинами"
+        },
+        "game_status": {
+            "running_game_label": "Запущенная игра:",
+            "current_version_label": "Версия игры:"
+        },
+        "performance": {
+            "graphics_api_label": "Графический API:",
+            "fps_avg_label": "Средний FPS:",
+            "fps_roll_minmax_label": "Мин/Макс FPS (Roll):",
+            "fps_gbl_minmax_label": "Мин/Макс FPS (Gbl):",
+            "tooltip_fps_avg": "Средний FPS за последние 60 кадров.",
+            "tooltip_fps_roll_minmax": "Несглаженный минимальный и максимальный FPS за последние 600 кадров.",
+            "tooltip_fps_gbl_minmax": "Сглаженный (только если FPS удерживался в течение 15 кадров) FPS за всю игровую сессию."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "Плагины загружены/включены:",
+            "hooks_loaded_activated_label": "Хуки загружены/включены:"
+        }
+    },
+    "update_popup": {
+        "title": "Статус обновления",
+        "no_update": "У вас установлена последняя версия фреймворка.",
+        "update_available": "Доступна для загрузки новая версия {}.",
+        "switch_to_release": "Бета-тестирование завершено! Пожалуйста, загрузите последнюю стабильную версию.",
+        "download_link": "Нажмите здесь, чтобы скачать",
+        "download_tooltip": "Скачать фреймворк версии {}",
+        "developers_note_intro": "Актуальные C API библиотеки можно скачать с",
+        "developers_note_link": "нашего GitHub",
+        "github_tooltip": "Перейти на проект в GitHub",
+        "close_button": "Закрыть"
+    },
+    "common": {
+        "for_developers": "Для разработчиков:",
+        "for_users": "Для пользователей:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "Проверка обновлений не удалась. Пожалуйста, проверьте ваше интернет-соединение.",
+            "server_unavailable": "Сервер обновлений временно недоступен. Пожалуйста, повторите попытку позже.",
+            "generic": "Произошла непредвиденная ошибка при проверке обновлений.",
+            "invalid_response": "Сервер обновлений вернул неверный ответ.",
+            "patrons_fetch_failed": "Не удалось загрузить список патронов. Пожалуйста, повторите попытку позже."
+        }
+    },
+    "plugins_window": {
+        "title": "Менеджер плагинов",
+        "table": {
+            "status": "Статус",
+            "name": "Название плагина",
+            "actions": "Действия"
+        },
+        "buttons": {
+            "enable": "Включить",
+            "disable": "Выключить"
+        },
+        "tooltips": {
+            "info": "Информация о плагине",
+            "description": "Описание",
+            "settings": "Настройки"
+        },
+        "info_popup": {
+            "author": "Автор:",
+            "version": "Версия:"
+        },
+        "status": {
+            "incompatible": " (Требуется версия игры:)"
+        }
+    },
+    "settings_window": {
+        "title": "Настройки",
+        "system_titles": {
+            "logging": "Логирование",
+            "localization": "Локализация",
+            "ui": "Пользовательский интерфейс",
+            "settings": "Общие настройки"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "Уровень логирования",
+                    "description": "Устанавливает минимальный уровень сообщений для логирования."
+                },
+                "sinks": {
+                    "title": "Приемники логов",
+                    "file": {
+                        "title": "Файловый приемник",
+                        "description": "Включить или выключить логирование в файл."
+                    },
+                    "ui": {
+                        "title": "UI приемник",
+                        "description": "Включить или выключить отображение логов в окне интерфейса."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "Язык",
+                    "description": "Устанавливает язык интерфейса для этого компонента."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "Окна",
+                    "main_window": {
+                        "title": "Главное окно"
+                    },
+                    "plugins_window": {
+                        "title": "Менеджер плагинов"
+                    },
+                    "settings_window": {
+                        "title": "Настройки"
+                    },
+                    "logger_window": {
+                        "title": "Логгер"
+                    },
+                    "telemetry_window": {
+                        "title": "Телеметрия"
+                    },
+                    "hooks_window": {
+                        "title": "Хуки"
+                    },
+                    "game_console_window": {
+                        "title": "Игровая консоль"
+                    },
+                    "camera_window": {
+                        "title": "Камера"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "Видимость",
+                        "description": "Переключает видимость окна."
+                    },
+                    "is_interactive": {
+                        "title": "Интерактивность",
+                        "description": "Переключает возможность взаимодействия с окном."
+                    },
+                    "pos_x": {
+                        "title": "Позиция X",
+                        "description": "Координата X положения окна."
+                    },
+                    "pos_y": {
+                        "title": "Позиция Y",
+                        "description": "Координата Y положения окна."
+                    },
+                    "size_w": {
+                        "title": "Ширина",
+                        "description": "Ширина окна."
+                    },
+                    "size_h": {
+                        "title": "Высота",
+                        "description": "Высота окна."
+                    },
+                    "is_collapsed": {
+                        "title": "Свернуто",
+                        "description": "Переключает свернутое состояние окна."
+                    },
+                    "is_docked": {
+                        "title": "Закреплено",
+                        "description": "Переключает закрепленное состояние окна."
+                    },
+                    "dock_priority": {
+                        "title": "Приоритет закрепления",
+                        "description": "Приоритет окна при закреплении."
+                    },
+                    "allow_undocking": {
+                        "title": "Разрешить открепление",
+                        "description": "Переключает возможность открепления окна."
+                    },
+                    "auto_scroll": {
+                        "title": "Автопрокрутка",
+                        "description": "Переключает автоматическую прокрутку к низу окна."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "Состояния плагинов",
+                    "description": "Управляет состоянием (включено/выключено) плагинов."
+                },
+                "hook_states": {
+                    "title": "Состояния хуков",
+                    "description": "Управляет состоянием (включено/выключено) хуков."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "Настройки клавиш",
+            "tooltip_open": "Открыть настройки клавиш",
+            "tooltip_close": "Закрыть настройки клавиш",
+            "table": {
+                "action": "Действие",
+                "key": "Клавиша",
+                "add_button_tooltip": "Добавить привязку клавиши",
+                "key_button_tooltip": "Нажмите, чтобы изменить или удалить привязку клавиши",
+                "details_button_tooltip": "Настроить поведение привязки клавиши"
+            },
+            "unassigned_text": "Не назначено"
+        },
+        "component_selector": {
+            "tooltip": "Выберите плагин для настройки"
+        },
+        "key_capture_popup": {
+            "title": "Захват клавиши",
+            "press_key_text": "Нажмите любую клавишу для привязки к действию:",
+            "delete_button": "Удалить",
+            "cancel_button": "Отмена",
+            "conflict_title": "Обнаружен конфликт!",
+            "conflict_text": "Клавиша '%s' уже привязана к:",
+            "reassign_question": "Вы хотите переназначить ее?",
+            "yes_button": "Да",
+            "no_button": "Нет"
+        },
+        "binding_details_popup": {
+            "title": "Детали привязки",
+            "press_type_label": "Тип нажатия:",
+            "behavior_label": "Поведение:",
+            "behavior_toggle": "Переключение",
+            "behavior_hold": "Удержание",
+            "consume_label": "Политика поглощения:",
+            "threshold_label": "Порог нажатия (мс):",
+            "close_button": "Закрыть"
+        }
+    },
+    "logger_window": {
+        "title": "Логгер",
+        "button_clear": "Очистить",
+        "checkbox_autoscroll": "Автопрокрутка"
+    },
+    "telemetry_window": {
+        "title": "Телеметрия",
+        "tabs": {
+            "game": "Игра",
+            "job": "Заказ",
+            "navigation": "Навигация",
+            "truck": "Грузовик",
+            "positioning": "Позиционирование",
+            "trailers": "Прицепы",
+            "controls_events": "Управление и события"
+        },
+        "headers": {
+            "game_state": "Состояние игры",
+            "constants": "Константы",
+            "live_data": "Данные в реальном времени",
+            "physics": "Физика",
+            "wheels": "Колеса",
+            "damage": "Повреждения",
+            "truck_positioning": "Позиционирование грузовика",
+            "controls": "Управление",
+            "events": "События"
+        },
+        "labels": {
+            "game_time": "Игровое время: %u",
+            "next_rest_stop": "Следующая остановка для отдыха: %d мин",
+            "next_rest_stop_real": "Следующая остановка для отдыха (реальное время): ~%.1f мин",
+            "next_rest_stop_time": "Время следующей остановки для отдыха: %s, %02d:%02d",
+            "paused": "Пауза: %s",
+            "game_id": "ID игры: %u",
+            "local_scale": "Локальный масштаб: %.2f",
+            "multiplayer_time_offset": "Смещение времени в мультиплеере: %d",
+            "scs_game_version": "Версия игры от SCS: %u.%u",
+            "telemetry_plugin_version": "Версия плагина телеметрии: %u.%u",
+            "telemetry_game_version": "Версия телеметрии игры: %u.%u",
+            "game_name": "Название игры: %s",
+            "substances": "Поверхности",
+            "substances_not_received": "Список еще не получен.",
+            "simulation_time": "Время симуляции: %llu",
+            "render_time": "Время рендеринга: %llu",
+            "paused_simulation_time": "Время симуляции на паузе: %llu",
+            "no_active_job": "Нет активного заказа.",
+            "contract": "Контракт",
+            "market": "Рынок: %s",
+            "income": "Доход: %llu",
+            "planned_distance": "Планируемое расстояние: %u км",
+            "cargo": "Груз",
+            "cargo_info": "Груз: %s (%s)",
+            "mass": "Масса: %.0f кг (%u ед. x %.0f кг)",
+            "damage": "Повреждение: %.2f%%",
+            "loaded": "Загружен: %s",
+            "special_job": "Специальный заказ: %s",
+            "route": "Маршрут",
+            "source": "Откуда: %s (%s), %s (%s)",
+            "destination": "Куда: %s (%s), %s (%s)",
+            "time": "Время",
+            "delivery_deadline": "Срок доставки (игровое время): %u мин",
+            "remaining_game_time": "Осталось (игровое время): %.0f мин",
+            "speed_limit": "Ограничение скорости: %.0f км/ч",
+            "next_waypoint_dist": "Расстояние до следующей точки: %.1f м",
+            "next_waypoint_time_game": "Время до следующей точки (игровое): %.0f с",
+            "next_waypoint_time_real": "Время до следующей точки (реальное): ~%.0f с",
+            "id": "ID: %s",
+            "brand": "Марка: %s (%s)",
+            "name": "Название: %s",
+            "license_plate": "Номерной знак: %s (%s)",
+            "engine_gearbox": "Двигатель и коробка передач",
+            "rpm_limit": "Лимит оборотов: %.0f",
+            "gears": "Передачи: %d вперёд, %d назад",
+            "retarder_steps": "Ступени ретардера: %d",
+            "selector_count": "Количество селекторов: %zu",
+            "differential_ratio": "Передаточное число дифференциала: %.2f",
+            "shifter_type": "Тип переключателя передач: %s",
+            "hshifter_layout": "Схема H-шифтера",
+            "hshifter_table": {
+                "slot": "Слот",
+                "gear": "Передача",
+                "handle_pos": "Положение рукоятки",
+                "selectors": "Селекторы"
+            },
+            "gear_ratios": "Передаточные числа",
+            "forward": "Вперёд",
+            "reverse": "Назад",
+            "gear_x": "Передача %2zu: %.2f",
+            "gear_rx": "Передача R%zu: %.2f",
+            "capacities": "Емкости",
+            "fuel_capacity": "Емкость топливного бака: %.1f л",
+            "adblue_capacity": "Емкость бака AdBlue: %.1f л",
+            "warning_factors": "Предупреждающие факторы",
+            "fuel_warning": "Предупреждение о топливе: %.0f%%",
+            "adblue_warning": "Предупреждение о AdBlue: %.0f%%",
+            "air_pressure_warning": "Предупреждение о давлении воздуха: %.1f psi",
+            "air_pressure_emergency": "Аварийное давление воздуха: %.1f psi",
+            "oil_pressure_warning": "Предупреждение о давлении масла: %.1f psi",
+            "water_temp_warning": "Предупреждение о температуре воды: %.0f C",
+            "battery_voltage_warning": "Предупреждение о напряжении аккумулятора: %.1f V",
+            "dashboard_info": "Информация с приборной панели",
+            "speed": "Скорость: %.2f км/ч",
+            "engine_rpm": "Обороты двигателя: %.0f",
+            "gear": "Передача: %d (отображаемая: %d)",
+            "odometer": "Одометр: %.1f км",
+            "cruise_control": "Круиз-контроль: %s (%.0f км/ч)",
+            "fuel": "Топливо: %.1f л (средний расход: %.2f л/км, запас хода: %.0f км)",
+            "adblue": "AdBlue: %.1f л (средний расход: %.3f л/км)",
+            "oil": "Масло: %.1f psi, %.1f C",
+            "water_temp": "Температура воды: %.1f C",
+            "battery_voltage": "Напряжение аккумулятора: %.1f V",
+            "dashboard_warnings": "Предупреждения на приборной панели",
+            "fuel_warn_state": "Топливо: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "Давление воздуха: %s",
+            "oil_pressure_warn_state": "Давление масла: %s",
+            "water_temp_warn_state": "Температура воды: %s",
+            "battery_voltage_warn_state": "Напряжение аккумулятора: %s",
+            "system_states": "Состояния систем",
+            "electric_enabled": "Электросистема включена: %s",
+            "engine_enabled": "Двигатель включен: %s",
+            "differential_lock": "Блокировка дифференциала: %s",
+            "wipers": "Стеклоочистители: %s",
+            "truck_lift_axle": "Подъемная ось грузовика: %s (индикатор: %s)",
+            "trailer_lift_axle": "Подъемная ось прицепа: %s (индикатор: %s)",
+            "lights": "Освещение",
+            "blinkers": "Поворотники: Левый[%s,%s] Правый[%s,%s] Аварийка[%s]",
+            "light_states": "Габариты: %s, Ближний свет: %s, Дальний свет: %s",
+            "aux_lights": "Доп. передние: %s, Доп. на крыше: %s, Маячок: %s",
+            "brake_reverse_lights": "Тормоз: %s, Задний ход: %s",
+            "dashboard_backlight": "Подсветка приборной панели: %.2f",
+            "brakes": "Тормоза",
+            "air_pressure": "Давление воздуха: %.1f psi",
+            "parking_brake": "Стояночный тормоз: %s",
+            "motor_brake": "Моторный тормоз: %s",
+            "retarder_level": "Уровень ретардера: %d",
+            "brake_temp": "Температура тормозов: %.1f C",
+            "hshifter": "H-шифтер",
+            "slot": "Слот: %u",
+            "selectors": "Селекторы: %s",
+            "linear_velocity": "Линейная скорость",
+            "angular_velocity": "Угловая скорость",
+            "linear_accel": "Линейное ускорение",
+            "angular_accel": "Угловое ускорение",
+            "cabin_ang_vel": "Угл. скорость кабины",
+            "cabin_ang_accel": "Угл. ускорение кабины",
+            "wheel_x": "Колесо {}",
+            "substance": "Поверхность: %s (%u)",
+            "substance_unknown": "Поверхность: Неизвестно (%u)",
+            "on_ground": "На земле: %s",
+            "susp_deflection": "Прогиб подвески: %.3f",
+            "wheel_velocity": "Скорость: %.2f",
+            "steering": "Поворот: %.2f",
+            "rotation": "Вращение: %.2f",
+            "lift": "Подъем: %.2f (смещение: %.3f)",
+            "steerable": "Управляемое: %s",
+            "powered": "Ведущее: %s",
+            "liftable": "Подъемное: %s",
+            "simulated": "Симулируемое: %s",
+            "radius": "Радиус: %.2f",
+            "position": "Положение",
+            "engine_damage": "Двигатель: %.1f%%",
+            "transmission_damage": "Трансмиссия: %.1f%%",
+            "cabin_damage": "Кабина: %.1f%%",
+            "chassis_damage": "Шасси: %.1f%%",
+            "wheels_damage": "Колеса (среднее): %.1f%%",
+            "world_space": "Мировое пространство",
+            "world_placement": "Размещение в мире",
+            "component_offsets": "Смещения компонентов",
+            "cabin_offset": "Смещение кабины",
+            "head_offset": "Смещение головы",
+            "component_base_pos": "Базовые позиции компонентов",
+            "cabin_pos": "Позиция кабины",
+            "head_pos": "Позиция головы",
+            "hook_pos": "Позиция сцепки",
+            "trailer_x": "Прицеп {} ({})",
+            "trailer_na": "Н/Д",
+            "connected": "Подключен: %s",
+            "general": "Общее",
+            "trailer_brand": "Марка: %s (ID: %s)",
+            "trailer_license_plate": "Номерной знак: %s (Страна: %s, ID: %s)",
+            "body_type": "Тип кузова: %s",
+            "chain_type": "Тип цепи: %s",
+            "cargo_accessory_id": "ID аксессуара груза: %s",
+            "physics_pos": "Физика и позиция",
+            "trailer_hook_pos": "Позиция сцепки",
+            "trailer_world_pos": "Мировая позиция: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "Кузов: %.2f%%",
+            "trailer_damage_chassis": "Шасси: %.2f%%",
+            "trailer_damage_wheels": "Колеса: %.2f%%",
+            "trailer_damage_cargo": "Груз: %.2f%%",
+            "wheels_count": "Колеса (количество: {})",
+            "wheel_susp_deflection": "Прогиб подвески: %.3f",
+            "wheel_angular_velocity": "Угловая скорость: %.2f",
+            "wheel_lift": "Подъем: %.2f",
+            "wheel_lift_offset": "Смещение подъема: %.2f",
+            "user_input": "--- Ввод пользователя ---",
+            "effective_input": "--- Эффективный ввод ---",
+            "input_steering": "Руль: %.2f",
+            "input_throttle": "Газ: %.2f",
+            "input_brake": "Тормоз: %.2f",
+            "input_clutch": "Сцепление: %.2f",
+            "special_events": "--- Специальные события (флаги) ---",
+            "on_job": "В рейсе: %s",
+            "job_cancelled": "Заказ отменен: %s",
+            "job_delivered": "Заказ доставлен: %s",
+            "fined": "Оштрафован: %s",
+            "tollgate": "Платная дорога: %s",
+            "ferry": "Паром: %s",
+            "train": "Поезд: %s",
+            "last_gameplay_event": "--- Последнее игровое событие ---",
+            "no_event_yet": "Событий еще не было.",
+            "event_job_delivered": "Заказ доставлен: Доход %lld, Опыт %d, Повреждение %.1f%%",
+            "event_job_delivered_details": "  Расстояние: %.1f км, Время: %u мин",
+            "event_job_delivered_flags": "  Автопарковка: %s, Автозагрузка: %s",
+            "event_job_cancelled": "Заказ отменен: Штраф %lld",
+            "event_fined": "Оштрафован: %lld за '%s'",
+            "event_tollgate": "Платная дорога: Оплачено %lld",
+            "event_ferry": "Паром: Оплачено %lld",
+            "event_ferry_route": "  Откуда: %s (ID: %s)",
+            "event_ferry_route_to": "  Куда:   %s (ID: %s)",
+            "event_train": "Поезд: Оплачено %lld",
+            "event_train_route": "  Откуда: %s (ID: %s)",
+            "event_train_route_to": "  Куда:   %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d д, %d ч, %d м)",
+            "hours_minutes": "(%d ч, %d м)",
+            "real_time_minutes": "~%.1f мин",
+            "real_time_hours_minutes": "(%d ч, %d м)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f км/ч",
+            "meters": "%.1f м",
+            "game_time_seconds": "%.0f с",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f с",
+            "m_s": "(%d м, %d с)",
+            "gears_fwd_rev": "%d вперёд, %d назад",
+            "liters": "%.1f л",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f км/ч",
+            "cruise_control_speed": "%.0f км/ч",
+            "fuel_consumption": "%.2f л/км",
+            "fuel_range": "%.0f км",
+            "adblue_consumption": "%.3f л/км",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "Левый[%s,%s] Правый[%s,%s] Аварийка[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "Поз: (%.2f, %.2f, %.2f)",
+            "placement_ori": "Ори: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "Понедельник",
+            "tuesday": "Вторник",
+            "wednesday": "Среда",
+            "thursday": "Четверг",
+            "friday": "Пятница",
+            "saturday": "Суббота",
+            "sunday": "Воскресенье",
+            "unknown": "Неизвестно"
+        },
+        "generic": {
+            "yes": "Да",
+            "no": "Нет",
+            "on": "ВКЛ",
+            "off": "ВЫКЛ",
+            "warn": "ПРЕДУПР.",
+            "emergency": "АВАРИЯ",
+            "ok": "OK",
+            "engaged": "ВКЛЮЧЕНО",
+            "lifted": "ПОДНЯТО",
+            "down": "ОПУЩЕНО",
+            "dimmed": "Приглушенный",
+            "full": "Полный"
+        }
+    },
+    "hooks_window": {
+        "title": "Хуки",
+        "no_hooks_text": "Нет доступных хуков.",
+        "enabled_checkbox": "Включено",
+        "required_by_plugin_text": "(Требуется плагином)",
+        "tooltip": {
+            "internal_name": "Чтобы использовать этот хук в вашем плагине, укажите следующее имя в политике `requiredHooks`:"
+        }
+    },
+    "game_console_window": {
+        "title": "Игровая консоль",
+        "info_text": "Тестовое поле для ввода команд в игровую консоль. Работает, даже если g_console и g_developer отключены в файле config.cfg (т.е. установлены в '0').",
+        "enable_hook_text": "Включите хук GameConsole в окне '%s'.",
+        "send_button": "Отправить"
+    },
+    "camera_window": {
+        "title": "Камера",
+        "current_camera": "Текущая камера: %s (%d)",
+        "camera_world_coordinates": "Мировые координаты камеры: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "Мировые координаты камеры: НЕ НАЙДЕНО",
+        "select_camera": "Выбрать камеру:",
+        "interior": "Интерьер",
+        "behind": "Сзади",
+        "top": "Сверху",
+        "cabin": "Кабина",
+        "window": "Окно",
+        "bumper": "Бампер",
+        "wheel": "Колесо",
+        "tv": "ТВ",
+        "developer_free_camera": "Свободная камера разработчика (ID 0)",
+        "tabs": {
+            "interior_camera": "Камера в салоне",
+            "behind_camera": "Камера сзади",
+            "top_camera": "Камера сверху",
+            "cabin_camera": "Камера кабины",
+            "window_camera": "Камера из окна",
+            "bumper_camera": "Камера с бампера",
+            "wheel_camera": "Камера с колеса",
+            "tv_camera": "ТВ камера",
+            "free_camera": "Свободная камера",
+            "debug": "Отладка"
+        },
+        "interior_camera": {
+            "fov_zoom": "Угол обзора / Зум",
+            "base_fov": "Базовый угол обзора",
+            "base_fov_not_found": "Базовый угол обзора: данные не найдены",
+            "final_h_fov": "Итоговый H-FOV: %.1f",
+            "final_v_fov": "Итоговый V-FOV: %.1f",
+            "final_fov_not_found": "Итоговый FOV: данные не найдены",
+            "seat_position": "Положение сиденья",
+            "seat_lr": "Сиденье Л/П (X)",
+            "seat_ud": "Сиденье В/Н (Y)",
+            "seat_fb": "Сиденье В/З (Z)",
+            "seat_position_not_found": "Положение сиденья: данные не найдены",
+            "head_rotation": "Вращение головы",
+            "yaw_lr": "Рыскание (Л/П)",
+            "pitch_ud": "Тангаж (В/Н)",
+            "head_rotation_not_found": "Вращение головы: данные не найдены",
+            "mouse_rotation_limits": "Ограничения вращения мыши",
+            "left_limit": "Ограничение влево",
+            "right_limit": "Ограничение вправо",
+            "up_limit": "Ограничение вверх",
+            "down_limit": "Ограничение вниз",
+            "rotation_limits_not_found": "Ограничения вращения: данные не найдены",
+            "rotation_defaults": "Вращение по умолчанию",
+            "default_lr": "По умолч. Л/П##Interior",
+            "default_ud": "По умолч. В/Н##Interior",
+            "rotation_defaults_not_found": "Вращение по умолчанию: данные не найдены",
+            "reset_to_defaults": "Сбросить по умолчанию",
+            "not_available": "Объект камеры в салоне недоступен."
+        },
+        "behind_camera": {
+            "live_state": "Текущее состояние",
+            "live_pitch": "Текущий тангаж",
+            "live_yaw": "Текущее рыскание",
+            "live_zoom": "Текущий зум",
+            "live_state_not_found": "Текущее состояние: данные не найдены",
+            "distance_zoom_settings": "Настройки расстояния / зума",
+            "min_distance": "Мин. расстояние",
+            "max_distance": "Макс. расстояние",
+            "trailer_max_offset": "Макс. смещение прицепа",
+            "default_distance": "Расстояние по умолч.",
+            "trailer_default_dist": "Расст. прицепа по умолч.",
+            "zoom_speed": "Скорость зума",
+            "distance_laziness": "Инерция расстояния",
+            "distance_zoom_settings_not_found": "Настройки расстояния / зума: данные не найдены",
+            "elevation_pitch_settings": "Настройки высоты / тангажа",
+            "azimuth_laziness": "Инерция азимута",
+            "min_elevation": "Мин. высота",
+            "max_elevation": "Макс. высота",
+            "default_elevation": "Высота по умолч.",
+            "trailer_default_elev": "Высота прицепа по умолч.",
+            "height_limit": "Ограничение высоты",
+            "elevation_pitch_settings_not_found": "Настройки высоты / тангажа: данные не найдены",
+            "pivot_offset": "Смещение оси вращения (центр вращения)",
+            "pivot_x": "Ось X",
+            "pivot_y": "Ось Y",
+            "pivot_z": "Ось Z",
+            "pivot_offset_not_found": "Смещение оси: данные не найдены",
+            "dynamic_offset": "Динамическое смещение (в зависимости от скорости)",
+            "max_dynamic_offset": "Макс. дин. смещение",
+            "dyn_offset_speed_min": "Мин. скорость дин. смещения (км/ч)",
+            "dyn_offset_speed_max": "Макс. скорость дин. смещения (км/ч)",
+            "dyn_offset_laziness": "Инерция дин. смещения",
+            "dynamic_offset_not_found": "Динамическое смещение: данные не найдены",
+            "base_fov_behind": "Базовый FOV##Behind",
+            "reset_to_defaults_behind": "Сбросить по умолчанию##Behind",
+            "not_available": "Объект камеры сзади недоступен."
+        },
+        "top_camera": {
+            "height_zoom": "Высота / Зум",
+            "minimum_height": "Минимальная высота",
+            "maximum_height": "Максимальная высота",
+            "height_zoom_not_found": "Высота / Зум: данные не найдены",
+            "movement": "Перемещение",
+            "movement_speed": "Скорость перемещения",
+            "movement_not_found": "Перемещение: данные не найдены",
+            "dynamic_offset": "Динамическое смещение",
+            "forward_offset": "Смещение вперёд",
+            "backward_offset": "Смещение назад",
+            "dynamic_offset_not_found": "Динамическое смещение: данные не найдены",
+            "base_fov_top": "Базовый FOV##Top",
+            "reset_to_defaults_top": "Сбросить по умолчанию##Top",
+            "not_available": "Объект камеры сверху недоступен."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "Базовый FOV##Cabin",
+            "reset_to_defaults_cabin": "Сбросить по умолчанию##Cabin",
+            "not_available": "Объект камеры кабины недоступен."
+        },
+        "window_camera": {
+            "head_offset": "Смещение головы",
+            "head_x_window": "Голова X##Window",
+            "head_y_window": "Голова Y##Window",
+            "head_z_window": "Голова Z##Window",
+            "head_offset_not_found": "Смещение головы: данные не найдены",
+            "live_rotation": "Текущее вращение",
+            "live_yaw_window": "Текущее рыскание (Л/П)##Window",
+            "live_pitch_window": "Текущий тангаж (В/Н)##Window",
+            "live_rotation_not_found": "Текущее вращение: данные не найдены",
+            "mouse_rotation_limits_defaults": "Ограничения и значения по умолчанию вращения мыши",
+            "left_limit_window": "Ограничение влево##Window",
+            "right_limit_window": "Ограничение вправо##Window",
+            "up_limit_window": "Ограничение вверх##Window",
+            "down_limit_window": "Ограничение вниз##Window",
+            "rotation_limits_not_found_window": "Ограничения вращения: данные не найдены",
+            "default_lr_window": "По умолч. Л/П##Window",
+            "default_ud_window": "По умолч. В/Н##Window",
+            "rotation_defaults_not_found_window": "Вращение по умолчанию: данные не найдены",
+            "base_fov_window": "Базовый FOV##Window",
+            "reset_to_defaults_window": "Сбросить по умолчанию##Window",
+            "not_available": "Объект камеры из окна недоступен."
+        },
+        "bumper_camera": {
+            "offset": "Смещение",
+            "offset_x_bumper": "Смещение X##Bumper",
+            "offset_y_bumper": "Смещение Y##Bumper",
+            "offset_z_bumper": "Смещение Z##Bumper",
+            "offset_not_found": "Смещение: данные не найдены",
+            "base_fov_bumper": "Базовый FOV##Bumper",
+            "reset_to_defaults_bumper": "Сбросить по умолчанию##Bumper",
+            "not_available": "Объект камеры с бампера недоступен."
+        },
+        "wheel_camera": {
+            "offset": "Смещение",
+            "offset_x_wheel": "Смещение X##Wheel",
+            "offset_y_wheel": "Смещение Y##Wheel",
+            "offset_z_wheel": "Смещение Z##Wheel",
+            "offset_not_found": "Смещение: данные не найдены",
+            "base_fov_wheel": "Базовый FOV##Wheel",
+            "reset_to_defaults_wheel": "Сбросить по умолчанию##Wheel",
+            "not_available": "Объект камеры с колеса недоступен."
+        },
+        "tv_camera": {
+            "distance": "Расстояние",
+            "max_distance_tv": "Макс. расстояние##TV",
+            "distance_not_found": "Расстояние: данные не найдены",
+            "prefab_uplift": "Подъем префаба",
+            "prefab_uplift_x_tv": "Подъем префаба X##TV",
+            "prefab_uplift_y_tv": "Подъем префаба Y##TV",
+            "prefab_uplift_z_tv": "Подъем префаба Z##TV",
+            "prefab_uplift_not_found": "Подъем префаба: данные не найдены",
+            "road_uplift": "Подъем дороги",
+            "road_uplift_x_tv": "Подъем дороги X##TV",
+            "road_uplift_y_tv": "Подъем дороги Y##TV",
+            "road_uplift_z_tv": "Подъем дороги Z##TV",
+            "road_uplift_not_found": "Подъем дороги: данные не найдены",
+            "base_fov_tv": "Базовый FOV##TV",
+            "reset_to_defaults_tv": "Сбросить по умолчанию##TV",
+            "not_available": "Объект ТВ камеры недоступен."
+        },
+        "free_camera": {
+            "position": "Позиция",
+            "position_x_freecam": "Позиция X",
+            "position_y_freecam": "Позиция Y",
+            "position_z_freecam": "Позиция Z",
+            "position_not_found": "Позиция: данные не найдены",
+            "orientation": "Ориентация",
+            "mouse_horizontal_freecam": "Горизонтальная мышь",
+            "mouse_vertical_freecam": "Вертикальная мышь",
+            "roll_freecam": "Крен",
+            "orientation_not_found": "Ориентация: данные не найдены",
+            "quaternion": "Кватернион",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "Кватернион: данные не найдены",
+            "base_fov_freecam": "Базовый FOV##FreeCam",
+            "movement_speed": "Скорость перемещения",
+            "speed_freecam": "Скорость",
+            "movement_speed_not_found": "Скорость перемещения: данные не найдены",
+            "reset_to_defaults_freecam": "Сбросить по умолчанию##FreeCam",
+            "not_available": "Объект свободной камеры недоступен."
+        },
+        "debug": {
+            "current_mode": "Текущий режим: %s (%d)",
+            "current_mode_na": "Текущий режим: [Н/Д]",
+            "enable_debug_camera": "Включить отладочную камеру",
+            "enable_debug_camera_not_found": "Включить отладочную камеру: данные не найдены",
+            "clean_ui": "Чистый UI (без контуров)",
+            "clean_ui_not_found": "Чистый UI: данные не найдены",
+            "show_debug_hud": "Показать отладочный HUD",
+            "show_debug_hud_not_found": "Показать отладочный HUD: данные не найдены",
+            "enable_debug_camera_to_select_mode": "Включите отладочную камеру, чтобы выбрать режим.",
+            "simple_debug": "Простой",
+            "basic_debug_camera_mode": "Базовый режим отладочной камеры.",
+            "video_debug": "Видео",
+            "hud_position_debug": "Позиция HUD:",
+            "top_left_debug": "Верх-лево",
+            "bottom_left_debug": "Низ-лево",
+            "top_right_debug": "Верх-право",
+            "bottom_right_debug": "Низ-право",
+            "current_debug": "(Текущий: %s)",
+            "current_na_debug": "(Текущий: Н/Д)",
+            "traffic_debug": "Трафик",
+            "camera_focuses_traffic": "Камера фокусируется на транспортных средствах трафика.",
+            "cinematic_debug": "Кинематографический",
+            "cinematic_camera_mode": "Кинематографический режим камеры.",
+            "animated_debug": "Анимированный",
+            "create_play_animations": "Создание и воспроизведение анимаций камеры.",
+            "activate_game_animated_mode": "Активировать анимированный режим игры",
+            "custom_animation_controls": "Пользовательские элементы управления анимацией",
+            "playing_status": "Воспроизведение",
+            "pause_button": "Пауза",
+            "paused_status": "Пауза",
+            "stopped_status": "Остановлено",
+            "play_button": "Воспр.",
+            "stop_button": "Стоп",
+            "status_label": "Статус: %s",
+            "reverse_playback": "Обратное воспроизведение",
+            "timeline_label": "Временная шкала:",
+            "state_camera_debug": "Камера состояния",
+            "create_state_camera": "Создать камеру состояния.",
+            "save_keyframe": "Сохранить ключевой кадр",
+            "reload_from_file": "Перезагрузить из файла",
+            "clear_all_memory": "Очистить все (память)",
+            "animation_controls": "Управление анимацией",
+            "add_edit_state": "Добавить/редактировать состояние",
+            "position_xyz": "Позиция (X,Y,Z)",
+            "mystery_float": "Загадочное число",
+            "quaternion_xyzw": "Кватернион (X,Y,Z,W)",
+            "fov_label": "FOV",
+            "add_state_memory": "Добавить состояние (память)",
+            "update_state_memory": "Обновить состояние (память)",
+            "delete_state_memory": "Удалить состояние (память)",
+            "previous_state": "Предыдущее состояние",
+            "next_state": "Следующее состояние",
+            "active_state_label": "Активное состояние [%d]:",
+            "pos_label": "  Поз: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  Загадка: %.4f",
+            "quat_label": "  Кват: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  FOV: %.2f",
+            "active_state_none": "Активное состояние: [Нет]",
+            "saved_states_label": "Сохраненные состояния: %d",
+            "states_combo_label": "Состояния",
+            "state_item_label": "Состояние %d",
+            "no_states_saved": "Нет сохраненных состояний",
+            "oversize_debug": "Негабарит",
+            "camera_oversized_trailers": "Камера для негабаритных прицепов.",
+            "vehicle_list": "Список транспортных средств"
+        }
+    },
+    "description": {
+        "detailed": "Мощный и гибкий фреймворк для создания и управления плагинами для игр от SCS. Предоставляет основной набор сервисов для логирования, конфигурации, управления UI и многого другого."
+    },
+    "patrons_popup": {
+        "title": "Поддержать проект",
+        "intro_text": "Поддержка нашего сообщества — это топливо для этого проекта. Если вы находите нашу работу полезной, рассмотрите возможность стать патроном. Ваш вклад позволяет нам продолжать разработку и создавать новые, захватывающие плагины для всех!",
+        "link_intro": "Вы можете поддержать нас на нашей официальной странице:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Нажмите, чтобы открыть страницу Patreon в вашем браузере",
+        "hof_title": "Зал славы",
+        "hof_empty": "Наш Зал славы пока пуст... Будьте первым, кто появится здесь и даст старт нашему путешествию!",
+        "hof_teaser": "Поддержите нас, чтобы попасть в наш",
+        "close_button": "Закрыть",
+        "tiers": {
+            "magnate": "--- Логистические магнаты ---",
+            "manager": "--- Менеджеры автопарка ---",
+            "master": "--- Мастера дорог ---"
+        }
+    },
+    "manual_popup": {
+        "title": "FAQ",
+        "q1_question": "Как установить и активировать плагин?",
+        "q1_answer": "Скопируйте ваш SPF-совместимый плагин в директорию ```{}``` Убедитесь, что `.dll` плагина находится внутри директории, соответствующей его названию,\nнапример `...\\MyPlugin\\MyPlugin.dll`\nФреймворк автоматически найдет этот плагин и загрузит его. Вам останется только включить его во вкладке `Менеджер плагинов`.",
+        "q2_question": "Как создать собственный плагин?",
+        "q2_answer": "Для разработки плагина вам необходимо скачать пакет заголовочных файлов `SPF_-_API.h` из раздела \"Releases\" на нашей странице [GitHub]({}) и подключить его в свой проект.",
+        "q3_question": "Как добавить новый перевод?",
+        "q3_answer": "Для перевода `фреймворка`, найдите файлы в ```{}``` * скопируйте существующий перевод, например `en.json`\n * переименуйте его на ваш язык перевода, например `de.json`\n * переведите строки.\n\nФайлы перевода для `плагина` находятся в его собственной папке локализации, например: ```{}```",
+        "q4_question": "Что делать, если мне нужна новая функциональность?",
+        "q4_answer": "Если вы разработчик, вы можете реализовать необходимую функциональность самостоятельно, используя наш `SPF_-_API.h`.\n В противном случае, вы можете создать предложение на [GitHub]({}) или на нашей странице [Patreon]({}).",
+        "q5_question": "Где хранятся настройки?",
+        "q5_answer": "Настройки фреймворка находятся в ```{}```. Настройки плагинов — в их собственных папках конфигурации, например: ```{}```. **Рекомендуется изменять настройки только через внутриигровой интерфейс.**",
+        "q6_question": "Фреймворк или плагин вызывают сбой игры. Что делать?",
+        "q6_answer": " * Проверьте файлы логов в папке `\\spfAssets\\logs`.\n * Попробуйте отключать плагины по одному, чтобы найти источник проблемы.\n * Если проблема во фреймворке, пожалуйста, создайте `issue` на нашем [GitHub]({}), подробно описав проблему и прикрепив файл лога."
+    },
+    "about_popup": {
+        "title": "О нас / Контакты",
+        "about_us_title": "О нас",
+        "about_us_text": "Мы — команда энтузиастов {}, посвятивших себя улучшению игрового опыта в симуляторах грузовиков. Наш {} — это инструмент, созданный сообществом для сообщества.",
+        "framework_title": "О фреймворке",
+        "contacts_title": "Наши контакты",
+        "email_text": "Для деловых запросов или прямого контакта, пишите нам на [электронную почту]({}).",
+        "discord_text": "Присоединяйтесь к нашему [Discord]({}) сообществу, чтобы общаться с другими игроками и разработчиками.",
+        "youtube_text": "Подписывайтесь на наш [YouTube]({}) канал, где мы публикуем обновления, руководства и интересный контент об играх ETS2 и ATS.",
+        "github_text": "Следите за разработкой, сообщайте об ошибках или вносите свой вклад на нашем [GitHub]({}).",
+        "patreon_text": "Поддержите нашу работу и получайте эксклюзивные преимущества, став нашим патроном на [Patreon]({}).",
+        "scs_forum_text": "Обсуждайте фреймворк и задавайте вопросы на официальной [странице форума SCS Software]({}).",
+        "steam_profile_text": "Добавляйте нас в друзья и следите за нашей активностью в [Steam]({})."
+    },
+    "legal_popup": {
+        "title": "Правовая информация",
+        "license_title": "Лицензия",
+        "license_text": "Фреймворк SPF распространяется на условиях лицензии Apache 2.0. Вы можете ознакомиться с полным текстом лицензии на нашем [GitHub]({}).",
+        "disclaimer_title": "Отказ от ответственности",
+        "disclaimer_text": "Программное обеспечение SPF Framework предоставляется 'как есть', без каких-либо явных или подразумеваемых гарантий. Разработчики не несут ответственности за любой ущерб игровым файлам, сохранениям, файлам конфигурации или любой другой ущерб, который может возникнуть в результате использования этого фреймворка.\n\nФреймворк действует как менеджер платформы для плагинов, разработанных сторонними авторами. Мы не создаем эти плагины, не контролируем их содержимое и не имеем к ним доступа. Устанавливая и используя сторонние плагины, вы принимаете на себя все риски. **Мы настоятельно рекомендуем регулярно создавать резервные копии ваших сохранений и файлов конфигурации.**",
+        "fair_play_title": "Политика честной игры",
+        "fair_play_text": "Мы категорически осуждаем любое использование инструментов, предоставляемых нашим фреймворком, для получения нечестного преимущества перед другими игроками. Цель SPF Framework — исключительно улучшение и расширение вашего одиночного игрового опыта.",
+        "contact_title": "Контакты",
+        "contact_text": "Если у вас есть какие-либо вопросы, предложения или жалобы, пожалуйста, свяжитесь с нами по [электронной почте]({})."
+    },
+    "shutdown_popup": {
+        "title": "Подтверждение выключения",
+        "content": "Вы уверены, что хотите выключить фреймворк?\n\n **Это выгрузит все плагины и деактивирует фреймворк до следующего перезапуска игры.**\n\n Если вам нужно включить плагины без перезапуска игры, используйте игровую консоль и введите команду ```sdk reload```",
+        "confirm_button": "Да, выключить",
+        "confirm_disabled_tooltip": "Включите хук 'Game Console' в окне Hooks, чтобы использовать эту функцию.",
+        "cancel_button": "Отмена"
+    },
+    "ui": {
+        "actions": {
+            "dock": "Закрепить",
+            "undock": "Открепить"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "Переключить главное окно",
+            "description": "Переключает видимость главного окна фреймворка."
+        },
+        "ui.close_focused": {
+            "title": "Закрыть/Цикл окна",
+            "description": "Закрывает всплывающие окна, закрепляет плавающие окна или закрывает основной UI."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "Переопределить управление мышью",
+            "description": "Когда UI виден, удерживайте эту клавишу, чтобы временно вернуть управление мышью игре."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "Короткое",
+            "long": "Длинное"
+        },
+        "consumption_policy": {
+            "never": "Никогда",
+            "on_ui_focus": "При фокусе UI",
+            "always": "Всегда"
+        }
+    }
+}

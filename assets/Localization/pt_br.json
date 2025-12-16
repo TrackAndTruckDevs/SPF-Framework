@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "Inglês",
+        "uk": "Ucraniano",
+        "de": "Alemão",
+        "fr": "Francês",
+        "es": "Espanhol",
+        "pl": "Polonês",
+        "ru": "Russo",
+        "pt_br": "Português (Brasil)",
+        "it": "Italiano",
+        "nl": "Holandês",
+        "tr": "Turco",
+        "cs": "Tcheco",
+        "zh": "Chinês (simplificado)",
+        "ja": "Japonês",
+        "ko": "Coreano"
+    },    
+    "main_window": {
+        "title": "Janela Principal - SPF Framework",
+        "patrons_button_tooltip": "Meus Patrocinadores",
+        "update_button_tooltip": "Verificar atualizações",
+        "version_label": "Sua versão ",
+        "update_checking": "Verificando atualizações...",
+        "menu": {
+            "manual": "Manual / FAQ",
+            "about": "Sobre Nós / Contatos",
+            "legal": "Informações Legais",
+            "reload": "Recarregar Framework",
+            "reload_disabled_tooltip": "Habilite o hook 'Game Console' na janela de Hooks para usar este recurso.",
+            "shutdown": "Desligar Framework",
+            "open_plugins_folder": "Abrir Pasta de Plugins"
+        },
+        "game_status": {
+            "running_game_label": "Jogo em Execução:",
+            "current_version_label": "Versão do Jogo:"
+        },
+        "performance": {
+            "graphics_api_label": "API Gráfica:",
+            "fps_avg_label": "FPS Médio:",
+            "fps_roll_minmax_label": "FPS Roll Min/Max:",
+            "fps_gbl_minmax_label": "FPS Gbl Min/Max:",
+            "tooltip_fps_avg": "FPS médio nos últimos 60 frames.",
+            "tooltip_fps_roll_minmax": "FPS mínimo e máximo não suavizado nos últimos 600 frames.",
+            "tooltip_fps_gbl_minmax": "FPS suavizado (apenas se o FPS foi mantido por 15 frames) durante toda a sessão de jogo."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "Plugins Carregados/Habilitados:",
+            "hooks_loaded_activated_label": "Hooks Carregados/Habilitados:"
+        }
+    },
+    "update_popup": {
+        "title": "Status da Atualização",
+        "no_update": "Você tem a versão mais recente do framework.",
+        "update_available": "Uma nova versão {} está disponível para download.",
+        "switch_to_release": "O teste beta está completo! Por favor, baixe a última versão estável.",
+        "download_link": "Clique aqui para baixar",
+        "download_tooltip": "Baixar a versão {} do framework",
+        "developers_note_intro": "As bibliotecas C API atuais podem ser baixadas em",
+        "developers_note_link": "nosso GitHub",
+        "github_tooltip": "Ir para o projeto no GitHub",
+        "close_button": "Fechar"
+    },
+    "common": {
+        "for_developers": "Para desenvolvedores:",
+        "for_users": "Para usuários:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "A verificação de atualização falhou. Por favor, verifique sua conexão com a internet.",
+            "server_unavailable": "O servidor de atualização está temporariamente indisponível. Por favor, tente novamente mais tarde.",
+            "generic": "Ocorreu um erro inesperado ao verificar as atualizações.",
+            "invalid_response": "O servidor de atualização retornou uma resposta inválida.",
+            "patrons_fetch_failed": "Falha ao carregar a lista de patrocinadores. Por favor, tente novamente mais tarde."
+        }
+    },
+    "plugins_window": {
+        "title": "Gerenciador de Plugins",
+        "table": {
+            "status": "Status",
+            "name": "Nome do Plugin",
+            "actions": "Ações"
+        },
+        "buttons": {
+            "enable": "Habilitar",
+            "disable": "Desabilitar"
+        },
+        "tooltips": {
+            "info": "Informações do Plugin",
+            "description": "Descrição",
+            "settings": "Configurações"
+        },
+        "info_popup": {
+            "author": "Autor:",
+            "version": "Versão:"
+        },
+        "status": {
+            "incompatible": " (Requer a versão do jogo:)"
+        }
+    },
+    "settings_window": {
+        "title": "Configurações",
+        "system_titles": {
+            "logging": "Log",
+            "localization": "Localização",
+            "ui": "Interface do Usuário",
+            "settings": "Configurações Gerais"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "Nível de Log",
+                    "description": "Define o nível mínimo de mensagens a serem registradas."
+                },
+                "sinks": {
+                    "title": "Saídas de Log",
+                    "file": {
+                        "title": "Saída para Arquivo",
+                        "description": "Habilita ou desabilita o registro em um arquivo."
+                    },
+                    "ui": {
+                        "title": "Saída para UI",
+                        "description": "Habilita ou desabilita a exibição de logs na janela da UI."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "Idioma",
+                    "description": "Define o idioma da interface para este componente."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "Janelas",
+                    "main_window": {
+                        "title": "Janela Principal"
+                    },
+                    "plugins_window": {
+                        "title": "Gerenciador de Plugins"
+                    },
+                    "settings_window": {
+                        "title": "Configurações"
+                    },
+                    "logger_window": {
+                        "title": "Logger"
+                    },
+                    "telemetry_window": {
+                        "title": "Telemetria"
+                    },
+                    "hooks_window": {
+                        "title": "Hooks"
+                    },
+                    "game_console_window": {
+                        "title": "Console do Jogo"
+                    },
+                    "camera_window": {
+                        "title": "Câmera"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "Está Visível",
+                        "description": "Alterna a visibilidade da janela."
+                    },
+                    "is_interactive": {
+                        "title": "É Interativo",
+                        "description": "Alterna se a janela pode ser interagida."
+                    },
+                    "pos_x": {
+                        "title": "Posição X",
+                        "description": "A coordenada X da posição da janela."
+                    },
+                    "pos_y": {
+                        "title": "Posição Y",
+                        "description": "A coordenada Y da posição da janela."
+                    },
+                    "size_w": {
+                        "title": "Largura",
+                        "description": "A largura da janela."
+                    },
+                    "size_h": {
+                        "title": "Altura",
+                        "description": "A altura da janela."
+                    },
+                    "is_collapsed": {
+                        "title": "Está Recolhida",
+                        "description": "Alterna o estado recolhido da janela."
+                    },
+                    "is_docked": {
+                        "title": "Está Ancorada",
+                        "description": "Alterna o estado ancorado da janela."
+                    },
+                    "dock_priority": {
+                        "title": "Prioridade de Ancoragem",
+                        "description": "A prioridade da janela ao ancorar."
+                    },
+                    "allow_undocking": {
+                        "title": "Permitir Desancorar",
+                        "description": "Alterna se a janela pode ser desancorada."
+                    },
+                    "auto_scroll": {
+                        "title": "Rolagem Automática",
+                        "description": "Alterna a rolagem automática para o final da janela."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "Estados dos Plugins",
+                    "description": "Gerencia o estado habilitado/desabilitado dos plugins."
+                },
+                "hook_states": {
+                    "title": "Estados dos Hooks",
+                    "description": "Gerencia o estado habilitado/desabilitado dos hooks."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "Configurações de Teclas",
+            "tooltip_open": "Abrir configurações de teclas",
+            "tooltip_close": "Fechar configurações de teclas",
+            "table": {
+                "action": "Ação",
+                "key": "Tecla",
+                "add_button_tooltip": "Adicionar uma tecla de atalho",
+                "key_button_tooltip": "Clique para alterar ou excluir a tecla de atalho",
+                "details_button_tooltip": "Configurar comportamento da tecla de atalho"
+            },
+            "unassigned_text": "Não atribuído"
+        },
+        "component_selector": {
+            "tooltip": "Selecione o plugin para configurar"
+        },
+        "key_capture_popup": {
+            "title": "Capturar Tecla",
+            "press_key_text": "Pressione qualquer tecla para vincular à ação:",
+            "delete_button": "Excluir",
+            "cancel_button": "Cancelar",
+            "conflict_title": "Conflito Detectado!",
+            "conflict_text": "A tecla '%s' já está vinculada a:",
+            "reassign_question": "Você deseja reatribuí-la?",
+            "yes_button": "Sim",
+            "no_button": "Não"
+        },
+        "binding_details_popup": {
+            "title": "Detalhes da Vinculação",
+            "press_type_label": "Tipo de Pressionamento:",
+            "behavior_label": "Comportamento:",
+            "behavior_toggle": "Alternar",
+            "behavior_hold": "Manter",
+            "consume_label": "Política de Consumo:",
+            "threshold_label": "Limite de Pressionamento (ms):",
+            "close_button": "Fechar"
+        }
+    },
+    "logger_window": {
+        "title": "Logger",
+        "button_clear": "Limpar",
+        "checkbox_autoscroll": "Rolagem automática"
+    },
+    "telemetry_window": {
+        "title": "Telemetria",
+        "tabs": {
+            "game": "Jogo",
+            "job": "Trabalho",
+            "navigation": "Navegação",
+            "truck": "Caminhão",
+            "positioning": "Posicionamento",
+            "trailers": "Reboques",
+            "controls_events": "Controles e Eventos"
+        },
+        "headers": {
+            "game_state": "Estado do Jogo",
+            "constants": "Constantes",
+            "live_data": "Dados ao Vivo",
+            "physics": "Física",
+            "wheels": "Rodas",
+            "damage": "Dano",
+            "truck_positioning": "Posicionamento do Caminhão",
+            "controls": "Controles",
+            "events": "Eventos"
+        },
+        "labels": {
+            "game_time": "Tempo de Jogo: %u",
+            "next_rest_stop": "Próxima Parada de Descanso: %d min",
+            "next_rest_stop_real": "Próxima Parada de Descanso (Tempo Real): ~%.1f min",
+            "next_rest_stop_time": "Horário da Próxima Parada de Descanso: %s, %02d:%02d",
+            "paused": "Pausado: %s",
+            "game_id": "ID do Jogo: %u",
+            "local_scale": "Escala Local: %.2f",
+            "multiplayer_time_offset": "Deslocamento de Tempo Multiplayer: %d",
+            "scs_game_version": "Versão do Jogo SCS: %u.%u",
+            "telemetry_plugin_version": "Versão do Plugin de Telemetria: %u.%u",
+            "telemetry_game_version": "Versão da Telemetria do Jogo: %u.%u",
+            "game_name": "Nome do Jogo: %s",
+            "substances": "Substâncias",
+            "substances_not_received": "Lista ainda não recebida.",
+            "simulation_time": "Tempo de Simulação: %llu",
+            "render_time": "Tempo de Renderização: %llu",
+            "paused_simulation_time": "Tempo de Simulação Pausado: %llu",
+            "no_active_job": "Nenhum trabalho ativo.",
+            "contract": "Contrato",
+            "market": "Mercado: %s",
+            "income": "Renda: %llu",
+            "planned_distance": "Distância Planejada: %u km",
+            "cargo": "Carga",
+            "cargo_info": "Carga: %s (%s)",
+            "mass": "Massa: %.0f kg (%u unidades x %.0f kg)",
+            "damage": "Dano: %.2f%%",
+            "loaded": "Carregado: %s",
+            "special_job": "Trabalho Especial: %s",
+            "route": "Rota",
+            "source": "Origem: %s (%s), %s (%s)",
+            "destination": "Destino: %s (%s), %s (%s)",
+            "time": "Tempo",
+            "delivery_deadline": "Prazo de Entrega (Tempo de Jogo): %u min",
+            "remaining_game_time": "Tempo Restante (Jogo): %.0f min",
+            "speed_limit": "Limite de Velocidade: %.0f km/h",
+            "next_waypoint_dist": "Distância do Próximo Waypoint: %.1f m",
+            "next_waypoint_time_game": "Tempo para o Próximo Waypoint (Jogo): %.0f s",
+            "next_waypoint_time_real": "Tempo para o Próximo Waypoint (Real): ~%.0f s",
+            "id": "ID: %s",
+            "brand": "Marca: %s (%s)",
+            "name": "Nome: %s",
+            "license_plate": "Placa: %s (%s)",
+            "engine_gearbox": "Motor e Caixa de Câmbio",
+            "rpm_limit": "Limite de RPM: %.0f",
+            "gears": "Marchas: %d Frente, %d Ré",
+            "retarder_steps": "Passos do Retarder: %d",
+            "selector_count": "Contagem de Seletores: %zu",
+            "differential_ratio": "Relação do Diferencial: %.2f",
+            "shifter_type": "Tipo de Câmbio: %s",
+            "hshifter_layout": "Layout do Câmbio H",
+            "hshifter_table": {
+                "slot": "Posição",
+                "gear": "Marcha",
+                "handle_pos": "Posição da Alavanca",
+                "selectors": "Seletores"
+            },
+            "gear_ratios": "Relações de Marcha",
+            "forward": "Frente",
+            "reverse": "Ré",
+            "gear_x": "Marcha %2zu: %.2f",
+            "gear_rx": "Marcha Ré %zu: %.2f",
+            "capacities": "Capacidades",
+            "fuel_capacity": "Capacidade de Combustível: %.1f L",
+            "adblue_capacity": "Capacidade de AdBlue: %.1f L",
+            "warning_factors": "Fatores de Aviso",
+            "fuel_warning": "Aviso de Combustível: %.0f%%",
+            "adblue_warning": "Aviso de AdBlue: %.0f%%",
+            "air_pressure_warning": "Aviso de Pressão do Ar: %.1f psi",
+            "air_pressure_emergency": "Emergência de Pressão do Ar: %.1f psi",
+            "oil_pressure_warning": "Aviso de Pressão do Óleo: %.1f psi",
+            "water_temp_warning": "Aviso de Temperatura da Água: %.0f C",
+            "battery_voltage_warning": "Aviso de Voltagem da Bateria: %.1f V",
+            "dashboard_info": "Informações do Painel",
+            "speed": "Velocidade: %.2f km/h",
+            "engine_rpm": "RPM do Motor: %.0f",
+            "gear": "Marcha: %d (Exibida: %d)",
+            "odometer": "Odômetro: %.1f km",
+            "cruise_control": "Piloto Automático: %s (%.0f km/h)",
+            "fuel": "Combustível: %.1f L (Médio: %.2f L/km, Alcance: %.0f km)",
+            "adblue": "AdBlue: %.1f L (Médio: %.3f L/km)",
+            "oil": "Óleo: %.1f psi, %.1f C",
+            "water_temp": "Temperatura da Água: %.1f C",
+            "battery_voltage": "Voltagem da Bateria: %.1f V",
+            "dashboard_warnings": "Avisos do Painel",
+            "fuel_warn_state": "Combustível: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "Pressão do Ar: %s",
+            "oil_pressure_warn_state": "Pressão do Óleo: %s",
+            "water_temp_warn_state": "Temp. da Água: %s",
+            "battery_voltage_warn_state": "Voltagem da Bateria: %s",
+            "system_states": "Estados do Sistema",
+            "electric_enabled": "Elétrico Habilitado: %s",
+            "engine_enabled": "Motor Habilitado: %s",
+            "differential_lock": "Bloqueio do Diferencial: %s",
+            "wipers": "Limpadores: %s",
+            "truck_lift_axle": "Eixo Elevável do Caminhão: %s (Indicador: %s)",
+            "trailer_lift_axle": "Eixo Elevável do Reboque: %s (Indicador: %s)",
+            "lights": "Luzes",
+            "blinkers": "Piscas: Esq[%s,%s] Dir[%s,%s] Alerta[%s]",
+            "light_states": "Estacionamento: %s, Farol Baixo: %s, Farol Alto: %s",
+            "aux_lights": "Luzes Auxiliares Frontais: %s, Teto: %s, Giroflex: %s",
+            "brake_reverse_lights": "Freio: %s, Ré: %s",
+            "dashboard_backlight": "Luz de Fundo do Painel: %.2f",
+            "brakes": "Freios",
+            "air_pressure": "Pressão do Ar: %.1f psi",
+            "parking_brake": "Freio de Estacionamento: %s",
+            "motor_brake": "Freio Motor: %s",
+            "retarder_level": "Nível do Retarder: %d",
+            "brake_temp": "Temperatura do Freio: %.1f C",
+            "hshifter": "Câmbio H",
+            "slot": "Posição: %u",
+            "selectors": "Seletores: %s",
+            "linear_velocity": "Velocidade Linear",
+            "angular_velocity": "Velocidade Angular",
+            "linear_accel": "Aceleração Linear",
+            "angular_accel": "Aceleração Angular",
+            "cabin_ang_vel": "Vel. Ang. da Cabine",
+            "cabin_ang_accel": "Acel. Ang. da Cabine",
+            "wheel_x": "Roda {}",
+            "substance": "Substância: %s (%u)",
+            "substance_unknown": "Substância: Desconhecida (%u)",
+            "on_ground": "No Chão: %s",
+            "susp_deflection": "Deflexão da Suspensão: %.3f",
+            "wheel_velocity": "Velocidade: %.2f",
+            "steering": "Direção: %.2f",
+            "rotation": "Rotação: %.2f",
+            "lift": "Elevação: %.2f (Deslocamento: %.3f)",
+            "steerable": "Direcionável: %s",
+            "powered": "Tracionada: %s",
+            "liftable": "Elevável: %s",
+            "simulated": "Simulada: %s",
+            "radius": "Raio: %.2f",
+            "position": "Posição",
+            "engine_damage": "Motor: %.1f%%",
+            "transmission_damage": "Transmissão: %.1f%%",
+            "cabin_damage": "Cabine: %.1f%%",
+            "chassis_damage": "Chassi: %.1f%%",
+            "wheels_damage": "Rodas (Média): %.1f%%",
+            "world_space": "Espaço Global",
+            "world_placement": "Posicionamento no Mundo",
+            "component_offsets": "Deslocamentos de Componentes",
+            "cabin_offset": "Deslocamento da Cabine",
+            "head_offset": "Deslocamento da Cabeça",
+            "component_base_pos": "Posições Base dos Componentes",
+            "cabin_pos": "Posição da Cabine",
+            "head_pos": "Posição da Cabeça",
+            "hook_pos": "Posição do Engate",
+            "trailer_x": "Reboque {} ({})",
+            "trailer_na": "N/A",
+            "connected": "Conectado: %s",
+            "general": "Geral",
+            "trailer_brand": "Marca: %s (ID: %s)",
+            "trailer_license_plate": "Placa: %s (País: %s, ID: %s)",
+            "body_type": "Tipo de Carroceria: %s",
+            "chain_type": "Tipo de Corrente: %s",
+            "cargo_accessory_id": "ID do Acessório de Carga: %s",
+            "physics_pos": "Física e Posição",
+            "trailer_hook_pos": "Posição do Engate",
+            "trailer_world_pos": "Posição no Mundo: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "Carroceria: %.2f%%",
+            "trailer_damage_chassis": "Chassi: %.2f%%",
+            "trailer_damage_wheels": "Rodas: %.2f%%",
+            "trailer_damage_cargo": "Carga: %.2f%%",
+            "wheels_count": "Rodas (Contagem: {})",
+            "wheel_susp_deflection": "Deflexão da Susp.: %.3f",
+            "wheel_angular_velocity": "Velocidade Angular: %.2f",
+            "wheel_lift": "Elevação: %.2f",
+            "wheel_lift_offset": "Deslocamento da Elevação: %.2f",
+            "user_input": "--- Entrada do Usuário ---",
+            "effective_input": "--- Entrada Efetiva ---",
+            "input_steering": "Direção: %.2f",
+            "input_throttle": "Acelerador: %.2f",
+            "input_brake": "Freio: %.2f",
+            "input_clutch": "Embreagem: %.2f",
+            "special_events": "--- Eventos Especiais (Sinalizadores) ---",
+            "on_job": "Em Trabalho: %s",
+            "job_cancelled": "Trabalho Cancelado: %s",
+            "job_delivered": "Trabalho Entregue: %s",
+            "fined": "Multado: %s",
+            "tollgate": "Pedágio: %s",
+            "ferry": "Balsa: %s",
+            "train": "Trem: %s",
+            "last_gameplay_event": "--- Último Evento de Jogo ---",
+            "no_event_yet": "Nenhum evento ainda.",
+            "event_job_delivered": "Trabalho Entregue: Receita %lld, XP %d, Dano %.1f%%",
+            "event_job_delivered_details": "  Distância: %.1f km, Tempo: %u min",
+            "event_job_delivered_flags": "  Estacionamento Automático: %s, Carregamento Automático: %s",
+            "event_job_cancelled": "Trabalho Cancelado: Penalidade %lld",
+            "event_fined": "Multado: %lld por '%s'",
+            "event_tollgate": "Pedágio: Pagou %lld",
+            "event_ferry": "Balsa: Pagou %lld",
+            "event_ferry_route": "  De: %s (ID: %s)",
+            "event_ferry_route_to": "  Para: %s (ID: %s)",
+            "event_train": "Trem: Pagou %lld",
+            "event_train_route": "  De: %s (ID: %s)",
+            "event_train_route_to": "  Para: %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d d, %d h, %d m)",
+            "hours_minutes": "(%d h, %d m)",
+            "real_time_minutes": "~%.1f min",
+            "real_time_hours_minutes": "(%d h, %d m)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f km/h",
+            "meters": "%.1f m",
+            "game_time_seconds": "%.0f s",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f s",
+            "m_s": "(%d m, %d s)",
+            "gears_fwd_rev": "%d Frente, %d Ré",
+            "liters": "%.1f L",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f km/h",
+            "cruise_control_speed": "%.0f km/h",
+            "fuel_consumption": "%.2f L/km",
+            "fuel_range": "%.0f km",
+            "adblue_consumption": "%.3f L/km",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "Esq[%s,%s] Dir[%s,%s] Alerta[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "Pos: (%.2f, %.2f, %.2f)",
+            "placement_ori": "Ori: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "Segunda-feira",
+            "tuesday": "Terça-feira",
+            "wednesday": "Quarta-feira",
+            "thursday": "Quinta-feira",
+            "friday": "Sexta-feira",
+            "saturday": "Sábado",
+            "sunday": "Domingo",
+            "unknown": "Desconhecido"
+        },
+        "generic": {
+            "yes": "Sim",
+            "no": "Não",
+            "on": "LIGADO",
+            "off": "DESLIGADO",
+            "warn": "AVISO",
+            "emergency": "EMERGÊNCIA",
+            "ok": "OK",
+            "engaged": "ENGATADO",
+            "lifted": "ELEVADO",
+            "down": "ABAIXADO",
+            "dimmed": "Atenuado",
+            "full": "Completo"
+        }
+    },
+    "hooks_window": {
+        "title": "Hooks",
+        "no_hooks_text": "Nenhum hook disponível.",
+        "enabled_checkbox": "Habilitado",
+        "required_by_plugin_text": "(Requerido por um plugin)",
+        "tooltip": {
+            "internal_name": "Para usar este hook no seu plugin, especifique o seguinte nome na política `requiredHooks`:"
+        }
+    },
+    "game_console_window": {
+        "title": "Console do Jogo",
+        "info_text": "Campo de teste para inserir comandos no console do jogo. Funciona mesmo se g_console e g_developer estiverem desabilitados no arquivo config.cfg (ou seja, definidos como '0').",
+        "enable_hook_text": "Habilite o hook GameConsole na janela '%s'.",
+        "send_button": "Enviar"
+    },
+    "camera_window": {
+        "title": "Câmera",
+        "current_camera": "Câmera Atual: %s (%d)",
+        "camera_world_coordinates": "Coordenadas Mundiais da Câmera: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "Coordenadas Mundiais da Câmera: NÃO ENCONTRADO",
+        "select_camera": "Selecionar Câmera:",
+        "interior": "Interior",
+        "behind": "Traseira",
+        "top": "Superior",
+        "cabin": "Cabine",
+        "window": "Janela",
+        "bumper": "Para-choque",
+        "wheel": "Roda",
+        "tv": "TV",
+        "developer_free_camera": "Câmera Livre do Desenvolvedor (ID 0)",
+        "tabs": {
+            "interior_camera": "Câmera Interior",
+            "behind_camera": "Câmera Traseira",
+            "top_camera": "Câmera Superior",
+            "cabin_camera": "Câmera da Cabine",
+            "window_camera": "Câmera da Janela",
+            "bumper_camera": "Câmera do Para-choque",
+            "wheel_camera": "Câmera da Roda",
+            "tv_camera": "Câmera de TV",
+            "free_camera": "Câmera Livre",
+            "debug": "Depuração"
+        },
+        "interior_camera": {
+            "fov_zoom": "FOV / Zoom",
+            "base_fov": "FOV Base",
+            "base_fov_not_found": "FOV Base: dados não encontrados",
+            "final_h_fov": "H-FOV Final: %.1f",
+            "final_v_fov": "V-FOV Final: %.1f",
+            "final_fov_not_found": "FOV Final: dados não encontrados",
+            "seat_position": "Posição do Assento",
+            "seat_lr": "Assento E/D (X)",
+            "seat_ud": "Assento C/B (Y)",
+            "seat_fb": "Assento F/T (Z)",
+            "seat_position_not_found": "Posição do Assento: dados não encontrados",
+            "head_rotation": "Rotação da Cabeça",
+            "yaw_lr": "Yaw (E/D)",
+            "pitch_ud": "Pitch (C/B)",
+            "head_rotation_not_found": "Rotação da Cabeça: dados não encontrados",
+            "mouse_rotation_limits": "Limites de Rotação do Mouse",
+            "left_limit": "Limite Esquerdo",
+            "right_limit": "Limite Direito",
+            "up_limit": "Limite Superior",
+            "down_limit": "Limite Inferior",
+            "rotation_limits_not_found": "Limites de Rotação: dados não encontrados",
+            "rotation_defaults": "Padrões de Rotação",
+            "default_lr": "Padrão E/D##Interior",
+            "default_ud": "Padrão C/B##Interior",
+            "rotation_defaults_not_found": "Padrões de Rotação: dados não encontrados",
+            "reset_to_defaults": "Restaurar Padrões",
+            "not_available": "Objeto da câmera interior não disponível."
+        },
+        "behind_camera": {
+            "live_state": "Estado ao Vivo",
+            "live_pitch": "Pitch ao Vivo",
+            "live_yaw": "Yaw ao Vivo",
+            "live_zoom": "Zoom ao Vivo",
+            "live_state_not_found": "Estado ao Vivo: dados não encontrados",
+            "distance_zoom_settings": "Configurações de Distância / Zoom",
+            "min_distance": "Distância Mínima",
+            "max_distance": "Distância Máxima",
+            "trailer_max_offset": "Deslocamento Máximo do Reboque",
+            "default_distance": "Distância Padrão",
+            "trailer_default_dist": "Dist. Padrão do Reboque",
+            "zoom_speed": "Velocidade do Zoom",
+            "distance_laziness": "Lentidão da Distância",
+            "distance_zoom_settings_not_found": "Configurações de Distância / Zoom: dados não encontrados",
+            "elevation_pitch_settings": "Configurações de Elevação / Pitch",
+            "azimuth_laziness": "Lentidão do Azimute",
+            "min_elevation": "Elevação Mínima",
+            "max_elevation": "Elevação Máxima",
+            "default_elevation": "Elevação Padrão",
+            "trailer_default_elev": "Elev. Padrão do Reboque",
+            "height_limit": "Limite de Altura",
+            "elevation_pitch_settings_not_found": "Configurações de Elevação / Pitch: dados não encontrados",
+            "pivot_offset": "Deslocamento do Pivô (Centro de Rotação)",
+            "pivot_x": "Pivô X",
+            "pivot_y": "Pivô Y",
+            "pivot_z": "Pivô Z",
+            "pivot_offset_not_found": "Deslocamento do Pivô: dados não encontrados",
+            "dynamic_offset": "Deslocamento Dinâmico (baseado na velocidade)",
+            "max_dynamic_offset": "Deslocamento Dinâmico Máximo",
+            "dyn_offset_speed_min": "Vel. Mín. Desl. Din. (km/h)",
+            "dyn_offset_speed_max": "Vel. Máx. Desl. Din. (km/h)",
+            "dyn_offset_laziness": "Lentidão do Desl. Din.",
+            "dynamic_offset_not_found": "Deslocamento Dinâmico: dados não encontrados",
+            "base_fov_behind": "FOV Base##Behind",
+            "reset_to_defaults_behind": "Restaurar Padrões##Behind",
+            "not_available": "Objeto da câmera traseira não disponível."
+        },
+        "top_camera": {
+            "height_zoom": "Altura / Zoom",
+            "minimum_height": "Altura Mínima",
+            "maximum_height": "Altura Máxima",
+            "height_zoom_not_found": "Altura / Zoom: dados não encontrados",
+            "movement": "Movimento",
+            "movement_speed": "Velocidade de Movimento",
+            "movement_not_found": "Movimento: dados não encontrados",
+            "dynamic_offset": "Deslocamento Dinâmico",
+            "forward_offset": "Deslocamento Frontal",
+            "backward_offset": "Deslocamento Traseiro",
+            "dynamic_offset_not_found": "Deslocamento Dinâmico: dados não encontrados",
+            "base_fov_top": "FOV Base##Top",
+            "reset_to_defaults_top": "Restaurar Padrões##Top",
+            "not_available": "Objeto da câmera superior não disponível."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "FOV Base##Cabin",
+            "reset_to_defaults_cabin": "Restaurar Padrões##Cabin",
+            "not_available": "Objeto da câmera da cabine não disponível."
+        },
+        "window_camera": {
+            "head_offset": "Deslocamento da Cabeça",
+            "head_x_window": "Cabeça X##Window",
+            "head_y_window": "Cabeça Y##Window",
+            "head_z_window": "Cabeça Z##Window",
+            "head_offset_not_found": "Deslocamento da Cabeça: dados não encontrados",
+            "live_rotation": "Rotação ao Vivo",
+            "live_yaw_window": "Yaw ao Vivo (E/D)##Window",
+            "live_pitch_window": "Pitch ao Vivo (C/B)##Window",
+            "live_rotation_not_found": "Rotação ao Vivo: dados não encontrados",
+            "mouse_rotation_limits_defaults": "Limites e Padrões de Rotação do Mouse",
+            "left_limit_window": "Limite Esquerdo##Window",
+            "right_limit_window": "Limite Direito##Window",
+            "up_limit_window": "Limite Superior##Window",
+            "down_limit_window": "Limite Inferior##Window",
+            "rotation_limits_not_found_window": "Limites de Rotação: dados não encontrados",
+            "default_lr_window": "Padrão E/D##Window",
+            "default_ud_window": "Padrão C/B##Window",
+            "rotation_defaults_not_found_window": "Padrões de Rotação: dados não encontrados",
+            "base_fov_window": "FOV Base##Window",
+            "reset_to_defaults_window": "Restaurar Padrões##Window",
+            "not_available": "Objeto da câmera da janela não disponível."
+        },
+        "bumper_camera": {
+            "offset": "Deslocamento",
+            "offset_x_bumper": "Deslocamento X##Bumper",
+            "offset_y_bumper": "Deslocamento Y##Bumper",
+            "offset_z_bumper": "Deslocamento Z##Bumper",
+            "offset_not_found": "Deslocamento: dados não encontrados",
+            "base_fov_bumper": "FOV Base##Bumper",
+            "reset_to_defaults_bumper": "Restaurar Padrões##Bumper",
+            "not_available": "Objeto da câmera do para-choque não disponível."
+        },
+        "wheel_camera": {
+            "offset": "Deslocamento",
+            "offset_x_wheel": "Deslocamento X##Wheel",
+            "offset_y_wheel": "Deslocamento Y##Wheel",
+            "offset_z_wheel": "Deslocamento Z##Wheel",
+            "offset_not_found": "Deslocamento: dados não encontrados",
+            "base_fov_wheel": "FOV Base##Wheel",
+            "reset_to_defaults_wheel": "Restaurar Padrões##Wheel",
+            "not_available": "Objeto da câmera da roda não disponível."
+        },
+        "tv_camera": {
+            "distance": "Distância",
+            "max_distance_tv": "Distância Máx.##TV",
+            "distance_not_found": "Distância: dados não encontrados",
+            "prefab_uplift": "Elevação Prefab",
+            "prefab_uplift_x_tv": "Elevação Prefab X##TV",
+            "prefab_uplift_y_tv": "Elevação Prefab Y##TV",
+            "prefab_uplift_z_tv": "Elevação Prefab Z##TV",
+            "prefab_uplift_not_found": "Elevação Prefab: dados não encontrados",
+            "road_uplift": "Elevação da Estrada",
+            "road_uplift_x_tv": "Elevação da Estrada X##TV",
+            "road_uplift_y_tv": "Elevação da Estrada Y##TV",
+            "road_uplift_z_tv": "Elevação da Estrada Z##TV",
+            "road_uplift_not_found": "Elevação da Estrada: dados não encontrados",
+            "base_fov_tv": "FOV Base##TV",
+            "reset_to_defaults_tv": "Restaurar Padrões##TV",
+            "not_available": "Objeto da câmera de TV não disponível."
+        },
+        "free_camera": {
+            "position": "Posição",
+            "position_x_freecam": "Posição X",
+            "position_y_freecam": "Posição Y",
+            "position_z_freecam": "Posição Z",
+            "position_not_found": "Posição: dados não encontrados",
+            "orientation": "Orientação",
+            "mouse_horizontal_freecam": "Mouse Horizontal",
+            "mouse_vertical_freecam": "Mouse Vertical",
+            "roll_freecam": "Girar",
+            "orientation_not_found": "Orientação: dados não encontrados",
+            "quaternion": "Quatérnio",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "Quatérnio: dados não encontrados",
+            "base_fov_freecam": "FOV Base##FreeCam",
+            "movement_speed": "Velocidade de Movimento",
+            "speed_freecam": "Velocidade",
+            "movement_speed_not_found": "Velocidade de Movimento: dados não encontrados",
+            "reset_to_defaults_freecam": "Restaurar Padrões##FreeCam",
+            "not_available": "Objeto da câmera livre não disponível."
+        },
+        "debug": {
+            "current_mode": "Modo Atual: %s (%d)",
+            "current_mode_na": "Modo Atual: [N/A]",
+            "enable_debug_camera": "Habilitar Câmera de Depuração",
+            "enable_debug_camera_not_found": "Habilitar Câmera de Depuração: dados não encontrados",
+            "clean_ui": "UI Limpa (Sem Contornos)",
+            "clean_ui_not_found": "UI Limpa: dados não encontrados",
+            "show_debug_hud": "Mostrar HUD de Depuração",
+            "show_debug_hud_not_found": "Mostrar HUD de Depuração: dados não encontrados",
+            "enable_debug_camera_to_select_mode": "Habilite a câmera de depuração para selecionar um modo.",
+            "simple_debug": "Simples",
+            "basic_debug_camera_mode": "Modo de câmera de depuração básico.",
+            "video_debug": "Vídeo",
+            "hud_position_debug": "Posição do HUD:",
+            "top_left_debug": "Superior Esquerdo",
+            "bottom_left_debug": "Inferior Esquerdo",
+            "top_right_debug": "Superior Direito",
+            "bottom_right_debug": "Inferior Direito",
+            "current_debug": "(Atual: %s)",
+            "current_na_debug": "(Atual: N/A)",
+            "traffic_debug": "Tráfego",
+            "camera_focuses_traffic": "A câmera foca nos veículos do tráfego.",
+            "cinematic_debug": "Cinemático",
+            "cinematic_camera_mode": "Modo de câmera cinemático.",
+            "animated_debug": "Animado",
+            "create_play_animations": "Crie e reproduza animações de câmera.",
+            "activate_game_animated_mode": "Ativar Modo Animado do Jogo",
+            "custom_animation_controls": "Controles de Animação Personalizados",
+            "playing_status": "Reproduzindo",
+            "pause_button": "Pausar",
+            "paused_status": "Pausado",
+            "stopped_status": "Parado",
+            "play_button": "Reproduzir",
+            "stop_button": "Parar",
+            "status_label": "Status: %s",
+            "reverse_playback": "Reprodução Reversa",
+            "timeline_label": "Linha do Tempo:",
+            "state_camera_debug": "Câmera de estado",
+            "create_state_camera": "Criar câmera de estado.",
+            "save_keyframe": "Salvar Keyframe",
+            "reload_from_file": "Recarregar do Arquivo",
+            "clear_all_memory": "Limpar Tudo (Memória)",
+            "animation_controls": "Controles de Animação",
+            "add_edit_state": "Adicionar/Editar Estado",
+            "position_xyz": "Posição (X,Y,Z)",
+            "mystery_float": "Flutuante Misterioso",
+            "quaternion_xyzw": "Quatérnio (X,Y,Z,W)",
+            "fov_label": "FOV",
+            "add_state_memory": "Adicionar Estado (Memória)",
+            "update_state_memory": "Atualizar Estado (Memória)",
+            "delete_state_memory": "Excluir Estado (Memória)",
+            "previous_state": "Estado Anterior",
+            "next_state": "Próximo Estado",
+            "active_state_label": "Estado Ativo [%d]:",
+            "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  Mistério: %.4f",
+            "quat_label": "  Quat: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  FOV: %.2f",
+            "active_state_none": "Estado Ativo: [Nenhum]",
+            "saved_states_label": "Estados Salvos: %d",
+            "states_combo_label": "Estados",
+            "state_item_label": "Estado %d",
+            "no_states_saved": "Nenhum Estado Salvo",
+            "oversize_debug": "Superdimensionado",
+            "camera_oversized_trailers": "Câmera para reboques superdimensionados.",
+            "vehicle_list": "Lista de Veículos"
+        }
+    },
+    "description": {
+        "detailed": "Um framework poderoso e flexível para criar e gerenciar plugins para jogos da SCS. Fornece um conjunto principal de serviços para log, configuração, gerenciamento de UI e muito mais."
+    },
+    "patrons_popup": {
+      "title": "Apoie o Projeto",
+      "intro_text": "O apoio da nossa comunidade é o combustível para este projeto. Se você acha nosso trabalho útil, considere se tornar um patrocinador. Sua contribuição nos permite continuar o desenvolvimento e criar novos e empolgantes plugins para todos!",
+      "link_intro": "Você pode nos apoiar em nossa página oficial:",
+      "link_text": "patreon.com/TrackAndTruckDevs",
+      "link_tooltip": "Clique para abrir a página do Patreon no seu navegador",
+      "hof_title": "Hall da Fama",
+      "hof_empty": "Nosso Hall da Fama ainda está vazio... Seja o primeiro a aparecer aqui e dar o pontapé inicial em nossa jornada!",
+      "hof_teaser": "Apoie-nos para entrar em nosso",
+      "close_button": "Fechar",
+      "tiers": {
+        "magnate": "--- Magnatas da Logística ---",
+        "manager": "--- Gerentes de Frota ---",
+        "master": "--- Mestres da Estrada ---"
+      }
+    },
+    "manual_popup": {
+        "title": "FAQ",
+        "q1_question": "Como instalar e ativar um plugin?",
+        "q1_answer": "Copie seu plugin compatível com SPF para o diretório ```{}``` Certifique-se de que o `.dll` do plugin esteja dentro de um diretório que corresponda ao seu nome,\npor exemplo `...\\MyPlugin\\MyPlugin.dll`\nO framework encontrará automaticamente este plugin e o carregará. Você só precisa habilitá-lo na aba `Gerenciador de Plugins`.",
+        "q2_question": "Como criar seu próprio plugin?",
+        "q2_answer": "Para desenvolver um plugin, você precisa baixar o pacote de arquivos de cabeçalho `SPF_-_API.h` da seção \"Releases\" em nossa página do [GitHub]({}) e incluí-lo em seu projeto.",
+        "q3_question": "Como adicionar uma nova tradução?",
+        "q3_answer": "Para traduzir o `framework`, encontre os arquivos em ```{}``` * copie uma tradução existente, por exemplo `en.json`\n * renomeie para o idioma de sua tradução, por exemplo `de.json`\n * traduza as strings.\n\nOs arquivos de tradução para um `plugin` estão localizados em sua própria pasta de localização, por exemplo: ```{}```",
+        "q4_question": "E se eu precisar de uma nova funcionalidade?",
+        "q4_answer": "Se você é um desenvolvedor, pode implementar a funcionalidade necessária por conta própria usando nosso `SPF_-_API.h`.\n Caso contrário, você pode criar uma sugestão no [GitHub]({}) ou em nossa página do [Patreon]({}).",
+        "q5_question": "Onde as configurações são armazenadas?",
+        "q5_answer": "As configurações do framework estão localizadas em ```{}```. As configurações do plugin estão em suas próprias pastas de configuração, por exemplo: ```{}```. **Recomenda-se alterar as configurações apenas através da interface do jogo.**",
+        "q6_question": "O framework ou um plugin está travando o jogo. O que fazer?",
+        "q6_answer": " * Verifique os arquivos de log na pasta `\\spfAssets\\logs`.\n * Tente desabilitar os plugins um por um para encontrar a origem do problema.\n * Se o problema for com o framework, por favor, crie um `issue` em nosso [GitHub]({}), descrevendo o problema em detalhes e anexando o arquivo de log."
+    },
+    "about_popup": {
+        "title": "Sobre Nós / Contatos",
+        "about_us_title": "Sobre Nós",
+        "about_us_text": "Somos uma equipe de entusiastas {}, dedicados a aprimorar a experiência de jogo de simuladores de caminhão. Nosso {} é uma ferramenta criada pela comunidade, para a comunidade.",
+        "framework_title": "Sobre O Framework",
+        "contacts_title": "Nossos Contatos",
+        "email_text": "Para consultas comerciais ou contato direto, entre em contato conosco via [email]({}).",
+        "discord_text": "Junte-se à nossa comunidade no [Discord]({}) para se conectar com outros jogadores e desenvolvedores.",
+        "youtube_text": "Inscreva-se em nosso canal do [YouTube]({}), onde postamos atualizações, tutoriais e conteúdo interessante sobre os jogos ETS2 e ATS.",
+        "github_text": "Acompanhe o desenvolvimento, relate bugs ou contribua em nosso [GitHub]({}).",
+        "patreon_text": "Apoie nosso trabalho e obtenha benefícios exclusivos se tornando nosso patrono no [Patreon]({}).",
+        "scs_forum_text": "Discuta o framework e faça perguntas na [página oficial do fórum da SCS Software]({}).",
+        "steam_profile_text": "Adicione-nos como amigos e siga nossa atividade no [Steam]({})."
+    },
+    "legal_popup": {
+        "title": "Informações Legais",
+        "license_title": "Licença",
+        "license_text": "O SPF Framework é distribuído sob os termos da Licença Apache 2.0. Você pode ver o texto completo da licença em nosso [GitHub]({}).",
+        "disclaimer_title": "Isenção de Responsabilidade",
+        "disclaimer_text": "O software SPF Framework é fornecido 'como está', sem quaisquer garantias expressas ou implícitas. Os desenvolvedores não são responsáveis por qualquer dano aos arquivos do jogo, salvamentos, arquivos de configuração ou quaisquer outros danos que possam surgir do uso deste framework.\n\nO framework atua como um gerenciador de plataforma para plugins desenvolvidos por autores de terceiros. Não criamos esses plugins, não controlamos seu conteúdo nem temos acesso a eles. Ao instalar e usar plugins de terceiros, você assume todos os riscos. **Recomendamos fortemente fazer backup regularmente de seus salvamentos e arquivos de configuração.**",
+        "fair_play_title": "Política de Jogo Limpo",
+        "fair_play_text": "Condenamos estritamente qualquer uso das ferramentas fornecidas por nosso framework para obter uma vantagem injusta sobre outros jogadores. O objetivo do SPF Framework é unicamente aprimorar e expandir sua experiência de jogo para um jogador.",
+        "contact_title": "Contatos",
+        "contact_text": "Se você tiver alguma dúvida, sugestão ou reclamação, entre em contato conosco via [email]({})."
+    },
+    "shutdown_popup": {
+        "title": "Confirmação de Desligamento",
+        "content": "Tem certeza de que deseja desligar o framework?\n\n **Isso descarregará todos os plugins e desativará o framework até o próximo reinício do jogo.**\n\n Se precisar habilitar plugins sem reiniciar o jogo, use o console do jogo e insira o comando ```sdk reload```",
+        "confirm_button": "Sim, desligar",
+        "confirm_disabled_tooltip": "Habilite o hook 'Game Console' na janela de Hooks para usar este recurso.",
+        "cancel_button": "Cancelar"
+    },
+    "ui": {
+        "actions": {
+            "dock": "Anexar",
+            "undock": "Desanexar"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "Alternar Janela Principal",
+            "description": "Alterna a visibilidade da janela principal do framework."
+        },
+        "ui.close_focused": {
+            "title": "Fechar/Alternar Janela",
+            "description": "Fecha pop-ups, ancora janelas flutuantes ou fecha a UI principal."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "Substituir Controle do Mouse",
+            "description": "Quando a UI estiver visível, segure esta tecla para devolver temporariamente o controle do mouse ao jogo."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "Curto",
+            "long": "Longo"
+        },
+        "consumption_policy": {
+            "never": "Nunca",
+            "on_ui_focus": "No Foco da UI",
+            "always": "Sempre"
+        }
+    }
+}

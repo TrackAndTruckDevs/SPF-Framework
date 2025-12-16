@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "İngilizce",
+        "uk": "Ukraynaca",
+        "de": "Almanca",
+        "fr": "Fransızca",
+        "es": "İspanyolca",
+        "pl": "Lehçe",
+        "ru": "Rusça",
+        "pt_br": "Brezilya Portekizcesi",
+        "it": "İtalyanca",
+        "nl": "Hollandaca",
+        "tr": "Türkçe",
+        "cs": "Çekçe",
+        "zh": "Çince (Basitleştirilmiş)",
+        "ja": "Japonca",
+        "ko": "Korece"
+    },
+    "main_window": {
+        "title": "Ana Pencere - SPF Framework",
+        "patrons_button_tooltip": "Destekçilerim",
+        "update_button_tooltip": "Güncellemeleri kontrol et",
+        "version_label": "Sizin sürümünüz ",
+        "update_checking": "Güncellemeler kontrol ediliyor...",
+        "menu": {
+            "manual": "Kılavuz / SSS",
+            "about": "Hakkımızda / İletişim",
+            "legal": "Yasal Bilgiler",
+            "reload": "Çatıyı Yeniden Yükle",
+            "reload_disabled_tooltip": "Bu özelliği kullanmak için Kancalar penceresinde 'Oyun Konsolu' kancasını etkinleştirin.",
+            "shutdown": "Çatıyı Kapat",
+            "open_plugins_folder": "Eklentiler Klasörünü Aç"
+        },
+        "game_status": {
+            "running_game_label": "Çalışan Oyun:",
+            "current_version_label": "Oyun Sürümü:"
+        },
+        "performance": {
+            "graphics_api_label": "Grafik API:",
+            "fps_avg_label": "Ortalama FPS:",
+            "fps_roll_minmax_label": "FPS Yuvarlama Min/Max:",
+            "fps_gbl_minmax_label": "FPS Genel Min/Max:",
+            "tooltip_fps_avg": "Son 60 karedeki ortalama FPS.",
+            "tooltip_fps_roll_minmax": "Son 600 karedeki düzeltilmemiş minimum ve maksimum FPS.",
+            "tooltip_fps_gbl_minmax": "Tüm oyun oturumu boyunca düzeltilmiş (yalnızca FPS 15 kare boyunca tutulduysa) FPS."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "Yüklenen/Etkinleştirilen Eklentiler:",
+            "hooks_loaded_activated_label": "Yüklenen/Etkinleştirilen Kancalar:"
+        }
+    },
+    "update_popup": {
+        "title": "Güncelleme Durumu",
+        "no_update": "Çatının en son sürümüne sahipsiniz.",
+        "update_available": "Yeni bir sürüm {} indirilebilir.",
+        "switch_to_release": "Beta testi tamamlandı! Lütfen en son kararlı sürümü indirin.",
+        "download_link": "İndirmek için buraya tıklayın",
+        "download_tooltip": "Çatı sürümü {} indir",
+        "developers_note_intro": "Mevcut C API kütüphaneleri şuradan indirilebilir:",
+        "developers_note_link": "GitHub'ımız",
+        "github_tooltip": "GitHub projesine git",
+        "close_button": "Kapat"
+    },
+    "common": {
+        "for_developers": "Geliştiriciler için:",
+        "for_users": "Kullanıcılar için:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "Güncelleme kontrolü başarısız oldu. Lütfen internet bağlantınızı kontrol edin.",
+            "server_unavailable": "Güncelleme sunucusu geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+            "generic": "Güncelleme kontrolü sırasında beklenmeyen bir hata oluştu.",
+            "invalid_response": "Güncelleme sunucusu geçersiz bir yanıt döndürdü.",
+            "patrons_fetch_failed": "Destekçi listesi yüklenemedi. Lütfen daha sonra tekrar deneyin."
+        }
+    },
+    "plugins_window": {
+        "title": "Eklenti Yöneticisi",
+        "table": {
+            "status": "Durum",
+            "name": "Eklenti Adı",
+            "actions": "Eylemler"
+        },
+        "buttons": {
+            "enable": "Etkinleştir",
+            "disable": "Devre Dışı Bırak"
+        },
+        "tooltips": {
+            "info": "Eklenti Bilgisi",
+            "description": "Açıklama",
+            "settings": "Ayarlar"
+        },
+        "info_popup": {
+            "author": "Yazar:",
+            "version": "Sürüm:"
+        },
+        "status": {
+            "incompatible": " (Oyun sürümü gerektirir:)"
+        }
+    },
+    "settings_window": {
+        "title": "Ayarlar",
+        "system_titles": {
+            "logging": "Günlük Kaydı",
+            "localization": "Yerelleştirme",
+            "ui": "Kullanıcı Arayüzü",
+            "settings": "Genel Ayarlar"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "Günlük Seviyesi",
+                    "description": "Günlüğe kaydedilecek minimum mesaj seviyesini ayarlar."
+                },
+                "sinks": {
+                    "title": "Günlük Havuzları",
+                    "file": {
+                        "title": "Dosya Havuzu",
+                        "description": "Dosyaya günlük kaydını etkinleştirir veya devre dışı bırakır."
+                    },
+                    "ui": {
+                        "title": "UI Havuzu",
+                        "description": "UI penceresinde günlüklerin gösterilmesini etkinleştirir veya devre dışı bırakır."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "Dil",
+                    "description": "Bu bileşen için arayüz dilini ayarlar."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "Pencereler",
+                    "main_window": {
+                        "title": "Ana Pencere"
+                    },
+                    "plugins_window": {
+                        "title": "Eklenti Yöneticisi"
+                    },
+                    "settings_window": {
+                        "title": "Ayarlar"
+                    },
+                    "logger_window": {
+                        "title": "Günlükleyici"
+                    },
+                    "telemetry_window": {
+                        "title": "Telemetri"
+                    },
+                    "hooks_window": {
+                        "title": "Kancalar"
+                    },
+                    "game_console_window": {
+                        "title": "Oyun Konsolu"
+                    },
+                    "camera_window": {
+                        "title": "Kamera"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "Görünür",
+                        "description": "Pencerenin görünürlüğünü değiştirir."
+                    },
+                    "is_interactive": {
+                        "title": "Etkileşimli",
+                        "description": "Pencerenin etkileşimli olup olmadığını değiştirir."
+                    },
+                    "pos_x": {
+                        "title": "Konum X",
+                        "description": "Pencerenin konumunun X koordinatı."
+                    },
+                    "pos_y": {
+                        "title": "Konum Y",
+                        "description": "Pencerenin konumunun Y koordinatı."
+                    },
+                    "size_w": {
+                        "title": "Genişlik",
+                        "description": "Pencerenin genişliği."
+                    },
+                    "size_h": {
+                        "title": "Yükseklik",
+                        "description": "Pencerenin yüksekliği."
+                    },
+                    "is_collapsed": {
+                        "title": "Daraltılmış",
+                        "description": "Pencerenin daraltılmış durumunu değiştirir."
+                    },
+                    "is_docked": {
+                        "title": "Kenetlenmiş",
+                        "description": "Pencerenin kenetlenmiş durumunu değiştirir."
+                    },
+                    "dock_priority": {
+                        "title": "Kenetlenme Önceliği",
+                        "description": "Kenetlenirken pencerenin önceliği."
+                    },
+                    "allow_undocking": {
+                        "title": "Kenetlenmeyi İptal Etmeye İzin Ver",
+                        "description": "Pencerenin kenetlenmesinin iptal edilip edilemeyeceğini değiştirir."
+                    },
+                    "auto_scroll": {
+                        "title": "Otomatik Kaydırma",
+                        "description": "Pencerenin en altına otomatik kaydırmayı değiştirir."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "Eklenti Durumları",
+                    "description": "Eklentilerin etkin/devre dışı durumunu yönetir."
+                },
+                "hook_states": {
+                    "title": "Kanca Durumları",
+                    "description": "Kancaların etkin/devre dışı durumunu yönetir."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "Tuş Bağlantıları Ayarları",
+            "tooltip_open": "Tuş bağlantıları ayarlarını aç",
+            "tooltip_close": "Tuş bağlantıları ayarlarını kapat",
+            "table": {
+                "action": "Eylem",
+                "key": "Tuş",
+                "add_button_tooltip": "Tuş bağlantısı ekle",
+                "key_button_tooltip": "Tuş bağlantısını değiştirmek veya silmek için tıklayın",
+                "details_button_tooltip": "Tuş bağlantısı davranışını yapılandır"
+            },
+            "unassigned_text": "Atanmamış"
+        },
+        "component_selector": {
+            "tooltip": "Yapılandırmak için eklenti seçin"
+        },
+        "key_capture_popup": {
+            "title": "Tuşu Yakala",
+            "press_key_text": "Eyleme bağlamak için herhangi bir tuşa basın:",
+            "delete_button": "Sil",
+            "cancel_button": "İptal",
+            "conflict_title": "Çakışma Tespit Edildi!",
+            "conflict_text": "'%s' tuşu zaten şuna bağlı:",
+            "reassign_question": "Yeniden atamak ister misiniz?",
+            "yes_button": "Evet",
+            "no_button": "Hayır"
+        },
+        "binding_details_popup": {
+            "title": "Bağlama Detayları",
+            "press_type_label": "Basma Türü:",
+            "behavior_label": "Davranış:",
+            "behavior_toggle": "Değiştir",
+            "behavior_hold": "Basılı Tut",
+            "consume_label": "Tüketim Politikası:",
+            "threshold_label": "Basma Eşiği (ms):",
+            "close_button": "Kapat"
+        }
+    },
+    "logger_window": {
+        "title": "Günlükleyici",
+        "button_clear": "Temizle",
+        "checkbox_autoscroll": "Otomatik kaydırma"
+    },
+    "telemetry_window": {
+        "title": "Telemetri",
+        "tabs": {
+            "game": "Oyun",
+            "job": "İş",
+            "navigation": "Navigasyon",
+            "truck": "Kamyon",
+            "positioning": "Konumlandırma",
+            "trailers": "Dorse",
+            "controls_events": "Kontroller ve Olaylar"
+        },
+        "headers": {
+            "game_state": "Oyun Durumu",
+            "constants": "Sabitler",
+            "live_data": "Canlı Veri",
+            "physics": "Fizik",
+            "wheels": "Tekerlekler",
+            "damage": "Hasar",
+            "truck_positioning": "Kamyon Konumlandırması",
+            "controls": "Kontroller",
+            "events": "Olaylar"
+        },
+        "labels": {
+            "game_time": "Oyun Süresi: %u",
+            "next_rest_stop": "Sonraki Dinlenme Durağı: %d dakika",
+            "next_rest_stop_real": "Sonraki Dinlenme Durağı Gerçek Zaman: ~%.1f dakika",
+            "next_rest_stop_time": "Sonraki Dinlenme Durağı Zamanı: %s, %02d:%02d",
+            "paused": "Duraklatıldı: %s",
+            "game_id": "Oyun Kimliği: %u",
+            "local_scale": "Yerel Ölçek: %.2f",
+            "multiplayer_time_offset": "Çok Oyunculu Zaman Ofseti: %d",
+            "scs_game_version": "SCS Oyun Sürümü: %u.%u",
+            "telemetry_plugin_version": "Telemetri Eklenti Sürümü: %u.%u",
+            "telemetry_game_version": "Oyun Telemetri Sürümü: %u.%u",
+            "game_name": "Oyun Adı: %s",
+            "substances": "Maddeler",
+            "substances_not_received": "Liste henüz alınmadı.",
+            "simulation_time": "Simülasyon Süresi: %llu",
+            "render_time": "Oluşturma Süresi: %llu",
+            "paused_simulation_time": "Duraklatılmış Simülasyon Süresi: %llu",
+            "no_active_job": "Aktif iş yok.",
+            "contract": "Sözleşme",
+            "market": "Pazar: %s",
+            "income": "Gelir: %llu",
+            "planned_distance": "Planlanan Mesafe: %u km",
+            "cargo": "Kargo",
+            "cargo_info": "Kargo: %s (%s)",
+            "mass": "Kütle: %.0f kg (%u birim x %.0f kg)",
+            "damage": "Hasar: %.2f%%",
+            "loaded": "Yüklendi: %s",
+            "special_job": "Özel İş: %s",
+            "route": "Rota",
+            "source": "Kaynak: %s (%s), %s (%s)",
+            "destination": "Hedef: %s (%s), %s (%s)",
+            "time": "Zaman",
+            "delivery_deadline": "Teslimat Son Tarihi (Oyun Süresi): %u dakika",
+            "remaining_game_time": "Kalan (Oyun Süresi): %.0f dakika",
+            "speed_limit": "Hız Sınırı: %.0f km/s",
+            "next_waypoint_dist": "Sonraki Ara Nokta Mesafesi: %.1f m",
+            "next_waypoint_time_game": "Sonraki Ara Nokta Zamanı (Oyun): %.0f s",
+            "next_waypoint_time_real": "Sonraki Ara Nokta Zamanı (Gerçek): ~%.0f s",
+            "id": "Kimlik: %s",
+            "brand": "Marka: %s (%s)",
+            "name": "Adı: %s",
+            "license_plate": "Plaka: %s (%s)",
+            "engine_gearbox": "Motor ve Şanzıman",
+            "rpm_limit": "RPM Limiti: %.0f",
+            "gears": "Vitesler: %d İleri, %d Geri",
+            "retarder_steps": "Geciktirici Adımları: %d",
+            "selector_count": "Seçici Sayısı: %zu",
+            "differential_ratio": "Diferansiyel Oranı: %.2f",
+            "shifter_type": "Vites Türü: %s",
+            "hshifter_layout": "H-Vites Düzeni",
+            "hshifter_table": {
+                "slot": "Yuva",
+                "gear": "Vites",
+                "handle_pos": "Kol Konumu",
+                "selectors": "Seçiciler"
+            },
+            "gear_ratios": "Vites Oranları",
+            "forward": "İleri",
+            "reverse": "Geri",
+            "gear_x": "Vites %2zu: %.2f",
+            "gear_rx": "Vites R%zu: %.2f",
+            "capacities": "Kapasiteler",
+            "fuel_capacity": "Yakıt Kapasitesi: %.1f L",
+            "adblue_capacity": "AdBlue Kapasitesi: %.1f L",
+            "warning_factors": "Uyarı Faktörleri",
+            "fuel_warning": "Yakıt Uyarısı: %.0f%%",
+            "adblue_warning": "AdBlue Uyarısı: %.0f%%",
+            "air_pressure_warning": "Hava Basıncı Uyarısı: %.1f psi",
+            "air_pressure_emergency": "Hava Basıncı Acil Durumu: %.1f psi",
+            "oil_pressure_warning": "Yağ Basıncı Uyarısı: %.1f psi",
+            "water_temp_warning": "Su Sıcaklığı Uyarısı: %.0f C",
+            "battery_voltage_warning": "Akü Voltaj Uyarısı: %.1f V",
+            "dashboard_info": "Gösterge Paneli Bilgisi",
+            "speed": "Hız: %.2f km/s",
+            "engine_rpm": "Motor RPM: %.0f",
+            "gear": "Vites: %d (Görüntülenen: %d)",
+            "odometer": "Kilometre Sayacı: %.1f km",
+            "cruise_control": "Hız Sabitleyici: %s (%.0f km/s)",
+            "fuel": "Yakıt: %.1f L (Ort: %.2f L/km, Menzil: %.0f km)",
+            "adblue": "AdBlue: %.1f L (Ort: %.3f L/km)",
+            "oil": "Yağ: %.1f psi, %.1f C",
+            "water_temp": "Su Sıcaklığı: %.1f C",
+            "battery_voltage": "Akü Voltajı: %.1f V",
+            "dashboard_warnings": "Gösterge Paneli Uyarıları",
+            "fuel_warn_state": "Yakıt: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "Hava Basıncı: %s",
+            "oil_pressure_warn_state": "Yağ Basıncı: %s",
+            "water_temp_warn_state": "Su Sıcaklığı: %s",
+            "battery_voltage_warn_state": "Akü Voltajı: %s",
+            "system_states": "Sistem Durumları",
+            "electric_enabled": "Elektrik Etkin: %s",
+            "engine_enabled": "Motor Etkin: %s",
+            "differential_lock": "Diferansiyel Kilidi: %s",
+            "wipers": "Silecekler: %s",
+            "truck_lift_axle": "Kamyon Kaldırma Aksı: %s (Gösterge: %s)",
+            "trailer_lift_axle": "Dorse Kaldırma Aksı: %s (Gösterge: %s)",
+            "lights": "Işıklar",
+            "blinkers": "Sinyaller: Sol[%s,%s] Sağ[%s,%s] Tehlike[%s]",
+            "light_states": "Park: %s, Kısa Far: %s, Uzun Far: %s",
+            "aux_lights": "Yardımcı Ön: %s, Yardımcı Tavan: %s, Flaşör: %s",
+            "brake_reverse_lights": "Fren: %s, Geri: %s",
+            "dashboard_backlight": "Gösterge Paneli Arka Işığı: %.2f",
+            "brakes": "Frenler",
+            "air_pressure": "Hava Basıncı: %.1f psi",
+            "parking_brake": "Park Freni: %s",
+            "motor_brake": "Motor Freni: %s",
+            "retarder_level": "Geciktirici Seviyesi: %d",
+            "brake_temp": "Fren Sıcaklığı: %.1f C",
+            "hshifter": "H-Vites",
+            "slot": "Yuva: %u",
+            "selectors": "Seçiciler: %s",
+            "linear_velocity": "Doğrusal Hız",
+            "angular_velocity": "Açısal Hız",
+            "linear_accel": "Doğrusal İvme",
+            "angular_accel": "Açısal İvme",
+            "cabin_ang_vel": "Kabin Açısal Hızı",
+            "cabin_ang_accel": "Kabin Açısal İvmesi",
+            "wheel_x": "Tekerlek {}",
+            "substance": "Madde: %s (%u)",
+            "substance_unknown": "Madde: Bilinmiyor (%u)",
+            "on_ground": "Yerde: %s",
+            "susp_deflection": "Süspansiyon Sapması: %.3f",
+            "wheel_velocity": "Hız: %.2f",
+            "steering": "Direksiyon: %.2f",
+            "rotation": "Dönüş: %.2f",
+            "lift": "Kaldırma: %.2f (Ofset: %.3f)",
+            "steerable": "Yönlendirilebilir: %s",
+            "powered": "Güçlendirilmiş: %s",
+            "liftable": "Kaldırılabilir: %s",
+            "simulated": "Simüle Edilmiş: %s",
+            "radius": "Yarıçap: %.2f",
+            "position": "Konum",
+            "engine_damage": "Motor: %.1f%%",
+            "transmission_damage": "Şanzıman: %.1f%%",
+            "cabin_damage": "Kabin: %.1f%%",
+            "chassis_damage": "Şasi: %.1f%%",
+            "wheels_damage": "Tekerlekler (Ort): %.1f%%",
+            "world_space": "Dünya Uzayı",
+            "world_placement": "Dünya Yerleşimi",
+            "component_offsets": "Bileşen Ofsetleri",
+            "cabin_offset": "Kabin Ofseti",
+            "head_offset": "Baş Ofseti",
+            "component_base_pos": "Bileşen Temel Konumları",
+            "cabin_pos": "Kabin Konumu",
+            "head_pos": "Baş Konumu",
+            "hook_pos": "Kanca Konumu",
+            "trailer_x": "Dorse {} ({})",
+            "trailer_na": "Yok",
+            "connected": "Bağlandı: %s",
+            "general": "Genel",
+            "trailer_brand": "Marka: %s (Kimlik: %s)",
+            "trailer_license_plate": "Plaka: %s (Ülke: %s, Kimlik: %s)",
+            "body_type": "Gövde Tipi: %s",
+            "chain_type": "Zincir Tipi: %s",
+            "cargo_accessory_id": "Kargo Aksesuar Kimliği: %s",
+            "physics_pos": "Fizik ve Konum",
+            "trailer_hook_pos": "Kanca Konumu",
+            "trailer_world_pos": "Dünya Konumu: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "Gövde: %.2f%%",
+            "trailer_damage_chassis": "Şasi: %.2f%%",
+            "trailer_damage_wheels": "Tekerlekler: %.2f%%",
+            "trailer_damage_cargo": "Kargo: %.2f%%",
+            "wheels_count": "Tekerlekler (Sayı: {})",
+            "wheel_susp_deflection": "Süspansiyon Sapması: %.3f",
+            "wheel_angular_velocity": "Açısal Hız: %.2f",
+            "wheel_lift": "Kaldırma: %.2f",
+            "wheel_lift_offset": "Kaldırma Ofseti: %.2f",
+            "user_input": "--- Kullanıcı Girişi ---",
+            "effective_input": "--- Etkili Giriş ---",
+            "input_steering": "Direksiyon: %.2f",
+            "input_throttle": "Gaz: %.2f",
+            "input_brake": "Fren: %.2f",
+            "input_clutch": "Debriyaj: %.2f",
+            "special_events": "--- Özel Olaylar (Bayraklar) ---",
+            "on_job": "İş Üzerinde: %s",
+            "job_cancelled": "İş İptal Edildi: %s",
+            "job_delivered": "İş Teslim Edildi: %s",
+            "fined": "Ceza Kesildi: %s",
+            "tollgate": "Gişe: %s",
+            "ferry": "Feribot: %s",
+            "train": "Tren: %s",
+            "last_gameplay_event": "--- Son Oynanış Olayı ---",
+            "no_event_yet": "Henüz olay yok.",
+            "event_job_delivered": "İş Teslim Edildi: Gelir %lld, TP %d, Hasar %.1f%%",
+            "event_job_delivered_details": "  Mesafe: %.1f km, Zaman: %u dakika",
+            "event_job_delivered_flags": "  Otomatik Park Etme: %s, Otomatik Yükleme: %s",
+            "event_job_cancelled": "İş İptal Edildi: Ceza %lld",
+            "event_fined": "Ceza Kesildi: '%s' için %lld",
+            "event_tollgate": "Gişe: %lld Ödendi",
+            "event_ferry": "Feribot: %lld Ödendi",
+            "event_ferry_route": "  Nereden: %s (Kimlik: %s)",
+            "event_ferry_route_to": "  Nereye:   %s (Kimlik: %s)",
+            "event_train": "Tren: %lld Ödendi",
+            "event_train_route": "  Nereden: %s (Kimlik: %s)",
+            "event_train_route_to": "  Nereye:   %s (Kimlik: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d g, %d s, %d d)",
+            "hours_minutes": "(%d s, %d d)",
+            "real_time_minutes": "~%.1f dakika",
+            "real_time_hours_minutes": "(%d s, %d d)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f km/s",
+            "meters": "%.1f m",
+            "game_time_seconds": "%.0f s",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f s",
+            "m_s": "(%d d, %d s)",
+            "gears_fwd_rev": "%d İleri, %d Geri",
+            "liters": "%.1f L",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f km/s",
+            "cruise_control_speed": "%.0f km/s",
+            "fuel_consumption": "%.2f L/km",
+            "fuel_range": "%.0f km",
+            "adblue_consumption": "%.3f L/km",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "Sol[%s,%s] Sağ[%s,%s] Tehlike[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "Konum: (%.2f, %.2f, %.2f)",
+            "placement_ori": "Yön: (Y: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "Pazartesi",
+            "tuesday": "Salı",
+            "wednesday": "Çarşamba",
+            "thursday": "Perşembe",
+            "friday": "Cuma",
+            "saturday": "Cumartesi",
+            "sunday": "Pazar",
+            "unknown": "Bilinmiyor"
+        },
+        "generic": {
+            "yes": "Evet",
+            "no": "Hayır",
+            "on": "AÇIK",
+            "off": "KAPALI",
+            "warn": "UYARI",
+            "emergency": "ACİL",
+            "ok": "TAMAM",
+            "engaged": "DEVREDE",
+            "lifted": "KALDIRILDI",
+            "down": "AŞAĞI",
+            "dimmed": "Kısık",
+            "full": "Dolu"
+        }
+    },
+    "hooks_window": {
+        "title": "Kancalar",
+        "no_hooks_text": "Kanca yok.",
+        "enabled_checkbox": "Etkin",
+        "required_by_plugin_text": "(Bir eklenti tarafından gerekli)",
+        "tooltip": {
+            "internal_name": "Bu kancayı eklentinizde kullanmak için `requiredHooks` politikasında aşağıdaki adı belirtin:"
+        }
+    },
+    "game_console_window": {
+        "title": "Oyun Konsolu",
+        "info_text": "Oyun konsoluna komut girmek için test alanı. config.cfg dosyasında g_console ve g_developer devre dışı bırakılsa bile ('0' olarak ayarlanmış olsa bile) çalışır.",
+        "enable_hook_text": "'%s' penceresinde GameConsole kancasını etkinleştirin.",
+        "send_button": "Gönder"
+    },
+    "camera_window": {
+        "title": "Kamera",
+        "current_camera": "Mevcut Kamera: %s (%d)",
+        "camera_world_coordinates": "Kamera Dünya Koordinatları: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "Kamera Dünya Koordinatları: BULUNAMADI",
+        "select_camera": "Kamera Seç:",
+        "interior": "İç",
+        "behind": "Arka",
+        "top": "Üst",
+        "cabin": "Kabin",
+        "window": "Pencere",
+        "bumper": "Tampon",
+        "wheel": "Tekerlek",
+        "tv": "TV",
+        "developer_free_camera": "Geliştirici Serbest Kamerası (ID 0)",
+        "tabs": {
+            "interior_camera": "İç Kamera",
+            "behind_camera": "Arka Kamera",
+            "top_camera": "Üst Kamera",
+            "cabin_camera": "Kabin Kamerası",
+            "window_camera": "Pencere Kamerası",
+            "bumper_camera": "Tampon Kamerası",
+            "wheel_camera": "Tekerlek Kamerası",
+            "tv_camera": "TV Kamerası",
+            "free_camera": "Serbest Kamera",
+            "debug": "Hata Ayıklama"
+        },
+        "interior_camera": {
+            "fov_zoom": "FOV / Yakınlaştırma",
+            "base_fov": "Temel FOV",
+            "base_fov_not_found": "Temel FOV: veri bulunamadı",
+            "final_h_fov": "Son H-FOV: %.1f",
+            "final_v_fov": "Son V-FOV: %.1f",
+            "final_fov_not_found": "Son FOV: veri bulunamadı",
+            "seat_position": "Koltuk Konumu",
+            "seat_lr": "Koltuk S/S (X)",
+            "seat_ud": "Koltuk Y/A (Y)",
+            "seat_fb": "Koltuk Ö/A (Z)",
+            "seat_position_not_found": "Koltuk Konumu: veri bulunamadı",
+            "head_rotation": "Baş Dönüşü",
+            "yaw_lr": "Yalpalanma (S/S)",
+            "pitch_ud": "Yükseklik (Y/A)",
+            "head_rotation_not_found": "Baş Dönüşü: veri bulunamadı",
+            "mouse_rotation_limits": "Fare Dönüş Limitleri",
+            "left_limit": "Sol Limit",
+            "right_limit": "Sağ Limit",
+            "up_limit": "Yukarı Limit",
+            "down_limit": "Aşağı Limit",
+            "rotation_limits_not_found": "Dönüş Limitleri: veri bulunamadı",
+            "rotation_defaults": "Varsayılan Dönüşler",
+            "default_lr": "Varsayılan S/S##İç",
+            "default_ud": "Varsayılan Y/A##İç",
+            "rotation_defaults_not_found": "Varsayılan Dönüşler: veri bulunamadı",
+            "reset_to_defaults": "Varsayılanlara Sıfırla",
+            "not_available": "İç kamera nesnesi kullanılamıyor."
+        },
+        "behind_camera": {
+            "live_state": "Canlı Durum",
+            "live_pitch": "Canlı Yükseklik",
+            "live_yaw": "Canlı Yalpalanma",
+            "live_zoom": "Canlı Yakınlaştırma",
+            "live_state_not_found": "Canlı Durum: veri bulunamadı",
+            "distance_zoom_settings": "Mesafe / Yakınlaştırma Ayarları",
+            "min_distance": "Minimum Mesafe",
+            "max_distance": "Maksimum Mesafe",
+            "trailer_max_offset": "Dorse Maksimum Ofset",
+            "default_distance": "Varsayılan Mesafe",
+            "trailer_default_dist": "Dorse Varsayılan Mesafe",
+            "zoom_speed": "Yakınlaştırma Hızı",
+            "distance_laziness": "Mesafe Tembelliği",
+            "distance_zoom_settings_not_found": "Mesafe / Yakınlaştırma Ayarları: veri bulunamadı",
+            "elevation_pitch_settings": "Yükseklik / Eğim Ayarları",
+            "azimuth_laziness": "Azimut Tembelliği",
+            "min_elevation": "Minimum Yükseklik",
+            "max_elevation": "Maksimum Yükseklik",
+            "default_elevation": "Varsayılan Yükseklik",
+            "trailer_default_elev": "Dorse Varsayılan Yükseklik",
+            "height_limit": "Yükseklik Limiti",
+            "elevation_pitch_settings_not_found": "Yükseklik / Eğim Ayarları: veri bulunamadı",
+            "pivot_offset": "Pivot Ofseti (Dönüş Merkezi)",
+            "pivot_x": "Pivot X",
+            "pivot_y": "Pivot Y",
+            "pivot_z": "Pivot Z",
+            "pivot_offset_not_found": "Pivot Ofseti: veri bulunamadı",
+            "dynamic_offset": "Dinamik Ofset (Hız Tabanlı)",
+            "max_dynamic_offset": "Maksimum Dinamik Ofset",
+            "dyn_offset_speed_min": "Dinamik Ofset Minimum Hız (km/s)",
+            "dyn_offset_speed_max": "Dinamik Ofset Maksimum Hız (km/s)",
+            "dyn_offset_laziness": "Dinamik Ofset Tembelliği",
+            "dynamic_offset_not_found": "Dinamik Ofset: veri bulunamadı",
+            "base_fov_behind": "Temel FOV##Arka",
+            "reset_to_defaults_behind": "Varsayılanlara Sıfırla##Arka",
+            "not_available": "Arka kamera nesnesi kullanılamıyor."
+        },
+        "top_camera": {
+            "height_zoom": "Yükseklik / Yakınlaştırma",
+            "minimum_height": "Minimum Yükseklik",
+            "maximum_height": "Maksimum Yükseklik",
+            "height_zoom_not_found": "Yükseklik / Yakınlaştırma: veri bulunamadı",
+            "movement": "Hareket",
+            "movement_speed": "Hareket Hızı",
+            "movement_not_found": "Hareket: veri bulunamadı",
+            "dynamic_offset": "Dinamik Ofset",
+            "forward_offset": "İleri Ofset",
+            "backward_offset": "Geri Ofset",
+            "dynamic_offset_not_found": "Dinamik Ofset: veri bulunamadı",
+            "base_fov_top": "Temel FOV##Üst",
+            "reset_to_defaults_top": "Varsayılanlara Sıfırla##Üst",
+            "not_available": "Üst kamera nesnesi kullanılamıyor."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "Temel FOV##Kabin",
+            "reset_to_defaults_cabin": "Varsayılanlara Sıfırla##Kabin",
+            "not_available": "Kabin kamera nesnesi kullanılamıyor."
+        },
+        "window_camera": {
+            "head_offset": "Baş Ofseti",
+            "head_x_window": "Baş X##Pencere",
+            "head_y_window": "Baş Y##Pencere",
+            "head_z_window": "Baş Z##Pencere",
+            "head_offset_not_found": "Baş Ofseti: veri bulunamadı",
+            "live_rotation": "Canlı Dönüş",
+            "live_yaw_window": "Canlı Yalpalanma (S/S)##Pencere",
+            "live_pitch_window": "Canlı Yükseklik (Y/A)##Pencere",
+            "live_rotation_not_found": "Canlı Dönüş: veri bulunamadı",
+            "mouse_rotation_limits_defaults": "Fare Dönüş Limitleri ve Varsayılanları",
+            "left_limit_window": "Sol Limit##Pencere",
+            "right_limit_window": "Sağ Limit##Pencere",
+            "up_limit_window": "Yukarı Limit##Pencere",
+            "down_limit_window": "Aşağı Limit##Pencere",
+            "rotation_limits_not_found_window": "Dönüş Limitleri: veri bulunamadı",
+            "default_lr_window": "Varsayılan S/S##Pencere",
+            "default_ud_window": "Varsayılan Y/A##Pencere",
+            "rotation_defaults_not_found_window": "Varsayılan Dönüşler: veri bulunamadı",
+            "base_fov_window": "Temel FOV##Pencere",
+            "reset_to_defaults_window": "Varsayılanlara Sıfırla##Pencere",
+            "not_available": "Pencere kamera nesnesi kullanılamıyor."
+        },
+        "bumper_camera": {
+            "offset": "Ofset",
+            "offset_x_bumper": "Ofset X##Tampon",
+            "offset_y_bumper": "Ofset Y##Tampon",
+            "offset_z_bumper": "Ofset Z##Tampon",
+            "offset_not_found": "Ofset: veri bulunamadı",
+            "base_fov_bumper": "Temel FOV##Tampon",
+            "reset_to_defaults_bumper": "Varsayılanlara Sıfırla##Tampon",
+            "not_available": "Tampon kamera nesnesi kullanılamıyor."
+        },
+        "wheel_camera": {
+            "offset": "Ofset",
+            "offset_x_wheel": "Ofset X##Tekerlek",
+            "offset_y_wheel": "Ofset Y##Tekerlek",
+            "offset_z_wheel": "Ofset Z##Tekerlek",
+            "offset_not_found": "Ofset: veri bulunamadı",
+            "base_fov_wheel": "Temel FOV##Tekerlek",
+            "reset_to_defaults_wheel": "Varsayılanlara Sıfırla##Tekerlek",
+            "not_available": "Tekerlek kamera nesnesi kullanılamıyor."
+        },
+        "tv_camera": {
+            "distance": "Mesafe",
+            "max_distance_tv": "Maksimum Mesafe##TV",
+            "distance_not_found": "Mesafe: veri bulunamadı",
+            "prefab_uplift": "Prefabrik Yükselme",
+            "prefab_uplift_x_tv": "Prefabrik Yükselme X##TV",
+            "prefab_uplift_y_tv": "Prefabrik Yükselme Y##TV",
+            "prefab_uplift_z_tv": "Prefabrik Yükselme Z##TV",
+            "prefab_uplift_not_found": "Prefabrik Yükselme: veri bulunamadı",
+            "road_uplift": "Yol Yükselmesi",
+            "road_uplift_x_tv": "Yol Yükselmesi X##TV",
+            "road_uplift_y_tv": "Yol Yükselmesi Y##TV",
+            "road_uplift_z_tv": "Yol Yükselmesi Z##TV",
+            "road_uplift_not_found": "Yol Yükselmesi: veri bulunamadı",
+            "base_fov_tv": "Temel FOV##TV",
+            "reset_to_defaults_tv": "Varsayılanlara Sıfırla##TV",
+            "not_available": "TV kamera nesnesi kullanılamıyor."
+        },
+        "free_camera": {
+            "position": "Konum",
+            "position_x_freecam": "Konum X",
+            "position_y_freecam": "Konum Y",
+            "position_z_freecam": "Konum Z",
+            "position_not_found": "Konum: veri bulunamadı",
+            "orientation": "Yönelim",
+            "mouse_horizontal_freecam": "Fare Yatay",
+            "mouse_vertical_freecam": "Fare Dikey",
+            "roll_freecam": "Yuvarlanma",
+            "orientation_not_found": "Yönelim: veri bulunamadı",
+            "quaternion": "Kuaterniyon",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "Kuaterniyon: veri bulunamadı",
+            "base_fov_freecam": "Temel FOV##Serbest Kamera",
+            "movement_speed": "Hareket Hızı",
+            "speed_freecam": "Hız",
+            "movement_speed_not_found": "Hareket Hızı: veri bulunamadı",
+            "reset_to_defaults_freecam": "Varsayılanlara Sıfırla##Serbest Kamera",
+            "not_available": "Serbest kamera nesnesi kullanılamıyor."
+        },
+        "debug": {
+            "current_mode": "Mevcut Mod: %s (%d)",
+            "current_mode_na": "Mevcut Mod: [Yok]",
+            "enable_debug_camera": "Hata Ayıklama Kamerasını Etkinleştir",
+            "enable_debug_camera_not_found": "Hata Ayıklama Kamerasını Etkinleştir: veri bulunamadı",
+            "clean_ui": "Temiz UI (Anahat Yok)",
+            "clean_ui_not_found": "Temiz UI: veri bulunamadı",
+            "show_debug_hud": "Hata Ayıklama HUD'unu Göster",
+            "show_debug_hud_not_found": "Hata Ayıklama HUD'unu Göster: veri bulunamadı",
+            "enable_debug_camera_to_select_mode": "Bir mod seçmek için hata ayıklama kamerasını etkinleştirin.",
+            "simple_debug": "Basit",
+            "basic_debug_camera_mode": "Temel hata ayıklama kamera modu.",
+            "video_debug": "Video",
+            "hud_position_debug": "HUD Konumu:",
+            "top_left_debug": "Sol Üst",
+            "bottom_left_debug": "Sol Alt",
+            "top_right_debug": "Sağ Üst",
+            "bottom_right_debug": "Sağ Alt",
+            "current_debug": "(Mevcut: %s)",
+            "current_na_debug": "(Mevcut: Yok)",
+            "traffic_debug": "Trafik",
+            "camera_focuses_traffic": "Kamera trafik araçlarına odaklanır.",
+            "cinematic_debug": "Sinematik",
+            "cinematic_camera_mode": "Sinematik kamera modu.",
+            "animated_debug": "Animasyonlu",
+            "create_play_animations": "Kamera animasyonları oluşturun ve oynatın.",
+            "activate_game_animated_mode": "Oyunun Animasyonlu Modunu Etkinleştir",
+            "custom_animation_controls": "Özel Animasyon Kontrolleri",
+            "playing_status": "Oynatılıyor",
+            "pause_button": "Duraklat",
+            "paused_status": "Duraklatıldı",
+            "stopped_status": "Durduruldu",
+            "play_button": "Oynat",
+            "stop_button": "Durdur",
+            "status_label": "Durum: %s",
+            "reverse_playback": "Ters Oynatma",
+            "timeline_label": "Zaman Çizelgesi:",
+            "state_camera_debug": "Durum kamerası",
+            "create_state_camera": "Durum kamerası oluşturun.",
+            "save_keyframe": "Anahtar Kareyi Kaydet",
+            "reload_from_file": "Dosyadan Yeniden Yükle",
+            "clear_all_memory": "Tümünü Temizle (Bellek)",
+            "animation_controls": "Animasyon Kontrolleri",
+            "add_edit_state": "Durum Ekle/Düzenle",
+            "position_xyz": "Konum (X,Y,Z)",
+            "mystery_float": "Gizemli Kayan Nokta",
+            "quaternion_xyzw": "Kuaterniyon (X,Y,Z,W)",
+            "fov_label": "FOV",
+            "add_state_memory": "Durum Ekle (Bellek)",
+            "update_state_memory": "Durumu Güncelle (Bellek)",
+            "delete_state_memory": "Durumu Sil (Bellek)",
+            "previous_state": "Önceki Durum",
+            "next_state": "Sonraki Durum",
+            "active_state_label": "Aktif Durum [%d]:",
+            "pos_label": "  Konum: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  Gizem: %.4f",
+            "quat_label": "  Kuater: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  FOV: %.2f",
+            "active_state_none": "Aktif Durum: [Yok]",
+            "saved_states_label": "Kaydedilen Durumlar: %d",
+            "states_combo_label": "Durumlar",
+            "state_item_label": "Durum %d",
+            "no_states_saved": "Kaydedilen Durum Yok",
+            "oversize_debug": "Büyük Boyut",
+            "camera_oversized_trailers": "Büyük boyutlu dorseler için kamera.",
+            "vehicle_list": "Araç Listesi"
+        }
+    },
+    "description": {
+        "detailed": "SCS oyunları için eklentiler oluşturmak ve yönetmek için güçlü ve esnek bir çatıdır. Günlük kaydı, yapılandırma, UI yönetimi ve daha fazlası için temel hizmetler sağlar."
+    },
+    "patrons_popup": {
+      "title": "Projeyi Destekle",
+      "intro_text": "Topluluğumuzun desteği bu projenin yakıtıdır. Çalışmalarımızı faydalı buluyorsanız, lütfen destekçi olmayı düşünün. Katkınız, geliştirmeye devam etmemizi ve herkes için yeni, heyecan verici eklentiler oluşturmamızı sağlar!",
+      "link_intro": "Bizi resmi sayfamızda destekleyebilirsiniz:",
+      "link_text": "patreon.com/TrackAndTruckDevs",
+      "link_tooltip": "Patreon sayfasını tarayıcınızda açmak için tıklayın",
+      "hof_title": "Şöhretler Salonu",
+      "hof_empty": "Şöhretler Salonumuz hala boş... Buraya ilk giren siz olun ve yolculuğumuzu başlatın!",
+      "hof_teaser": "Şöhretler Salonumuza girmek için bizi destekleyin",
+      "close_button": "Kapat",
+      "tiers": {
+        "magnate": "--- Lojistik Magnatları ---",
+        "manager": "--- Filo Yöneticileri ---",
+        "master": "--- Yol Ustaları ---"
+      }
+    },
+    "manual_popup": {
+        "title": "SSS",
+        "q1_question": "Eklenti nasıl kurulur ve etkinleştirilir?",
+        "q1_answer": "SPF uyumlu eklentinizi ```{}``` dizinine kopyalayın. Eklentinin `.dll` dosyasının adıyla eşleşen bir dizin içinde olduğundan emin olun,\nörneğin `...\\MyPlugin\\MyPlugin.dll`\nÇatı, bu eklentiyi otomatik olarak bulacak ve yükleyecektir. Sadece `Eklenti Yöneticisi` sekmesinde etkinleştirmeniz yeterlidir.",
+        "q2_question": "Kendi eklentinizi nasıl oluşturursunuz?",
+        "q2_answer": "Bir eklenti geliştirmek için, `SPF_-_API.h` başlık dosyası paketini [GitHub]({}) sayfamızdaki \"Releases\" bölümünden indirmeniz ve projenize dahil etmeniz gerekir.",
+        "q3_question": "Yeni bir çeviri nasıl eklenir?",
+        "q3_answer": "`Çatıyı` çevirmek için, ```{}``` içindeki dosyaları bulun * mevcut bir çeviriyi (örneğin `en.json`) kopyalayın\n * çeviri dilinize (örneğin `de.json`) yeniden adlandırın\n * dizeleri çevirin.\n\nBir `eklentinin` çeviri dosyaları kendi yerelleştirme klasöründe bulunur, örneğin: ```{}```",
+        "q4_question": "Yeni bir işlevselliğe ihtiyacım olursa ne olur?",
+        "q4_answer": "Eğer bir geliştiriciyseniz, gerekli işlevselliği kendi başınıza `SPF_-_API.h` dosyamızı kullanarak uygulayabilirsiniz.\nAksi takdirde, [GitHub]({}) veya [Patreon]({}) sayfamızda bir öneri oluşturabilirsiniz.",
+        "q5_question": "Ayarlar nerede saklanır?",
+        "q5_answer": "Çatı ayarları ```{}``` konumunda bulunur. Eklenti ayarları kendi yapılandırma klasörlerinde bulunur, örneğin: ```{}```. **Ayarları yalnızca oyun içi arayüz aracılığıyla değiştirmeniz önerilir.**",
+        "q6_question": "Çatı veya bir eklenti oyunu çökertiyor. Ne yapmalıyım?",
+        "q6_answer": " * `\\spfAssets\\logs` klasöründeki günlük dosyalarını kontrol edin.\n * Sorunun kaynağını bulmak için eklentileri tek tek devre dışı bırakmayı deneyin.\n * Sorun çatıdaysa, lütfen [GitHub]({}) sayfamızda sorunu ayrıntılı olarak açıklayan ve günlük dosyasını ekleyen bir `issue` oluşturun."
+    },
+    "about_popup": {
+        "title": "Hakkımızda / İletişim",
+        "about_us_title": "Hakkımızda",
+        "about_us_text": "Kamyon simülatörü oyun deneyimini geliştirmeye adanmış {} tutkunlarından oluşan bir ekibiz. {}'mız, topluluk tarafından topluluk için oluşturulmuş bir araçtır.",
+        "framework_title": "Çatı Hakkında",
+        "contacts_title": "İletişim Bilgileri",
+        "email_text": "İş sorguları veya doğrudan iletişim için [e-posta]({}) aracılığıyla bize ulaşın.",
+        "discord_text": "Diğer oyuncular ve geliştiricilerle bağlantı kurmak için [Discord]({}) topluluğumuza katılın.",
+        "youtube_text": "ETS2 ve ATS oyunları hakkında güncellemeler, eğitimler ve ilginç içerikler yayınladığımız [YouTube]({}) kanalımıza abone olun.",
+        "github_text": "[GitHub]({}) sayfamızda geliştirmeyi takip edin, hataları bildirin veya katkıda bulunun.",
+        "patreon_text": "[Patreon]({}) sayfamızda destekçimiz olarak çalışmalarımızı destekleyin ve özel avantajlardan yararlanın.",
+        "scs_forum_text": "Resmi [SCS Software forum sayfası]({}) üzerinde çatı hakkında tartışın ve sorular sorun.",
+        "steam_profile_text": "[Steam]({}) üzerinde arkadaş olarak ekleyin ve etkinliklerimizi takip edin."
+    },
+    "legal_popup": {
+        "title": "Yasal Bilgiler",
+        "license_title": "Lisans",
+        "license_text": "SPF Çatısı, Apache 2.0 Lisansı koşulları altında dağıtılır. Tam lisans metnini [GitHub]({}) sayfamızda görüntüleyebilirsiniz.",
+        "disclaimer_title": "Sorumluluk Reddi",
+        "disclaimer_text": "SPF Çatısı yazılımı, açık veya zımni hiçbir garanti olmaksızın 'olduğu gibi' sağlanır. Geliştiriciler, oyun dosyalarına, kayıtlara, yapılandırma dosyalarına veya bu çatının kullanımından kaynaklanabilecek diğer herhangi bir zarardan sorumlu değildir.\\n\\nÇatı, üçüncü taraf yazarlar tarafından geliştirilen eklentiler için bir platform yöneticisi görevi görür. Bu eklentileri biz oluşturmayız, içeriklerini kontrol etmeyiz veya bunlara erişimimiz yoktur. Üçüncü taraf eklentileri kurarak ve kullanarak tüm riskleri üstlenirsiniz. **Kayıtlarınızı ve yapılandırma dosyalarınızı düzenli olarak yedeklemenizi şiddetle tavsiye ederiz.**",
+        "fair_play_title": "Adil Oyun Politikası",
+        "fair_play_text": "Çatımız tarafından sağlanan araçların, diğer oyunculara karşı haksız avantaj elde etmek amacıyla kullanılmasını şiddetle kınıyoruz. SPF Çatısı'nın amacı yalnızca tek oyunculu oyun deneyiminizi geliştirmek ve genişletmektir.",
+        "contact_title": "İletişim",
+        "contact_text": "Herhangi bir sorunuz, öneriniz veya şikayetiniz varsa, lütfen [e-posta]({}) aracılığıyla bizimle iletişime geçin."
+    },
+    "shutdown_popup": {
+        "title": "Kapatma Onayı",
+        "content": "Çatıyı kapatmak istediğinizden emin misiniz?\\n\\n **Bu, tüm eklentileri kaldıracak ve bir sonraki oyun yeniden başlatmasına kadar çatıyı devre dışı bırakacaktır.**\\n\\n Oyunu yeniden başlatmadan eklentileri etkinleştirmeniz gerekiyorsa, oyun konsolunu kullanın ve ```sdk reload``` komutunu girin.",
+        "confirm_button": "Evet, kapat",
+        "confirm_disabled_tooltip": "Bu özelliği kullanmak için Kancalar penceresinde 'Oyun Konsolu' kancasını etkinleştirin.",
+        "cancel_button": "İptal"
+    },
+    "ui": {
+        "actions": {
+            "dock": "Ekle",
+            "undock": "Ayır"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "Ana Pencereyi Aç/Kapat",
+            "description": "Ana çatı penceresinin görünürlüğünü değiştirir."
+        },
+        "ui.close_focused": {
+            "title": "Odaklanmışı Kapat/Döngü",
+            "description": "Açılır pencereleri kapatır, kayan pencereleri kenetler veya ana UI'yi kapatır."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "Fare Kontrolünü Geçersiz Kıl",
+            "description": "UI görünür olduğunda, fare kontrolünü geçici olarak oyuna geri vermek için bu tuşu basılı tutun."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "Kısa",
+            "long": "Uzun"
+        },
+        "consumption_policy": {
+            "never": "Asla",
+            "on_ui_focus": "UI Odaklandığında",
+            "always": "Her Zaman"
+        }
+    }
+}

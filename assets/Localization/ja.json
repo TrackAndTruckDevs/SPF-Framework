@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "英語",
+        "uk": "ウクライナ語",
+        "de": "ドイツ語",
+        "fr": "フランス語",
+        "es": "スペイン語",
+        "pl": "ポーランド語",
+        "ru": "ロシア語",
+        "pt_br": "ポルトガル語（ブラジル）",
+        "it": "イタリア語",
+        "nl": "オランダ語",
+        "tr": "トルコ語",
+        "cs": "チェコ語",
+        "zh": "中国語（簡体字）",
+        "ja": "日本語",
+        "ko": "韓国語"
+    },
+    "main_window": {
+        "title": "メインウィンドウ - SPF Framework",
+        "patrons_button_tooltip": "私のパトロン",
+        "update_button_tooltip": "アップデートを確認",
+        "version_label": "あなたのバージョン ",
+        "update_checking": "アップデートを確認中...",
+        "menu": {
+            "manual": "マニュアル / FAQ",
+            "about": "私たちについて / 連絡先",
+            "legal": "法的情報",
+            "reload": "フレームワークを再読み込み",
+            "reload_disabled_tooltip": "この機能を使用するには、「フック」ウィンドウで「ゲームコンソール」フックを有効にしてください。",
+            "shutdown": "フレームワークをシャットダウン",
+            "open_plugins_folder": "プラグインフォルダを開く"
+        },
+        "game_status": {
+            "running_game_label": "実行中のゲーム：",
+            "current_version_label": "ゲームバージョン："
+        },
+        "performance": {
+            "graphics_api_label": "グラフィックAPI：",
+            "fps_avg_label": "平均FPS：",
+            "fps_roll_minmax_label": "FPSロール最小/最大：",
+            "fps_gbl_minmax_label": "FPSグローバル最小/最大：",
+            "tooltip_fps_avg": "過去60フレームの平均FPS。",
+            "tooltip_fps_roll_minmax": "過去600フレームの非平滑化された最小および最大FPS。",
+            "tooltip_fps_gbl_minmax": "ゲームセッション全体の平滑化されたFPS（15フレーム保持された場合のみ）。"
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "ロード済み/有効なプラグイン：",
+            "hooks_loaded_activated_label": "ロード済み/有効なフック："
+        }
+    },
+    "update_popup": {
+        "title": "アップデート状況",
+        "no_update": "フレームワークは最新バージョンです。",
+        "update_available": "新しいバージョン {} がダウンロード可能です。",
+        "switch_to_release": "ベータテストが完了しました！最新の安定版をダウンロードしてください。",
+        "download_link": "ダウンロードはこちら",
+        "download_tooltip": "フレームワークバージョン {} をダウンロード",
+        "developers_note_intro": "現在の C API ライブラリは以下からダウンロードできます。",
+        "developers_note_link": "GitHub",
+        "github_tooltip": "GitHub プロジェクトに移動",
+        "close_button": "閉じる"
+    },
+    "common": {
+        "for_developers": "開発者向け：",
+        "for_users": "ユーザー向け："
+    },
+    "api": {
+        "error": {
+            "no_internet": "アップデートチェックに失敗しました。インターネット接続を確認してください。",
+            "server_unavailable": "アップデートサーバーは一時的に利用できません。後でもう一度お試しください。",
+            "generic": "アップデートチェック中に予期せぬエラーが発生しました。",
+            "invalid_response": "アップデートサーバーから無効な応答が返されました。",
+            "patrons_fetch_failed": "パトロンのリストを読み込めませんでした。後でもう一度お試しください。"
+        }
+    },
+    "plugins_window": {
+        "title": "プラグインマネージャー",
+        "table": {
+            "status": "ステータス",
+            "name": "プラグイン名",
+            "actions": "アクション"
+        },
+        "buttons": {
+            "enable": "有効にする",
+            "disable": "無効にする"
+        },
+        "tooltips": {
+            "info": "プラグイン情報",
+            "description": "説明",
+            "settings": "設定"
+        },
+        "info_popup": {
+            "author": "作者：",
+            "version": "バージョン："
+        },
+        "status": {
+            "incompatible": " (ゲームバージョンが必要：)"
+        }
+    },
+    "settings_window": {
+        "title": "設定",
+        "system_titles": {
+            "logging": "ロギング",
+            "localization": "ローカライズ",
+            "ui": "ユーザーインターフェース",
+            "settings": "一般設定"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "ログレベル",
+                    "description": "ログに記録されるメッセージの最小レベルを設定します。"
+                },
+                "sinks": {
+                    "title": "ログシンク",
+                    "file": {
+                        "title": "ファイルシンク",
+                        "description": "ファイルへのロギングを有効または無効にします。"
+                    },
+                    "ui": {
+                        "title": "UIシンク",
+                        "description": "UIウィンドウへのログ表示を有効または無効にします。"
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "言語",
+                    "description": "このコンポーネントのインターフェース言語を設定します。"
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "ウィンドウ",
+                    "main_window": {
+                        "title": "メインウィンドウ"
+                    },
+                    "plugins_window": {
+                        "title": "プラグインマネージャー"
+                    },
+                    "settings_window": {
+                        "title": "設定"
+                    },
+                    "logger_window": {
+                        "title": "ロガー"
+                    },
+                    "telemetry_window": {
+                        "title": "テレメトリー"
+                    },
+                    "hooks_window": {
+                        "title": "フック"
+                    },
+                    "game_console_window": {
+                        "title": "ゲームコンソール"
+                    },
+                    "camera_window": {
+                        "title": "カメラ"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "表示",
+                        "description": "ウィンドウの表示を切り替えます。"
+                    },
+                    "is_interactive": {
+                        "title": "インタラクティブ",
+                        "description": "ウィンドウを操作できるかどうかを切り替えます。"
+                    },
+                    "pos_x": {
+                        "title": "位置 X",
+                        "description": "ウィンドウの位置の X 座標。"
+                    },
+                    "pos_y": {
+                        "title": "位置 Y",
+                        "description": "ウィンドウの位置の Y 座標。"
+                    },
+                    "size_w": {
+                        "title": "幅",
+                        "description": "ウィンドウの幅。"
+                    },
+                    "size_h": {
+                        "title": "高さ",
+                        "description": "ウィンドウの高さ。"
+                    },
+                    "is_collapsed": {
+                        "title": "折りたたみ",
+                        "description": "ウィンドウの折りたたみ状態を切り替えます。"
+                    },
+                    "is_docked": {
+                        "title": "ドッキング",
+                        "description": "ウィンドウのドッキング状態を切り替えます。"
+                    },
+                    "dock_priority": {
+                        "title": "ドッキング優先度",
+                        "description": "ドッキング時のウィンドウの優先度。"
+                    },
+                    "allow_undocking": {
+                        "title": "ドッキング解除を許可",
+                        "description": "ウィンドウのドッキング解除を許可するかどうかを切り替えます。"
+                    },
+                    "auto_scroll": {
+                        "title": "自動スクロール",
+                        "description": "ウィンドウの下部への自動スクロールを切り替えます。"
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "プラグインの状態",
+                    "description": "プラグインの有効/無効の状態を管理します。"
+                },
+                "hook_states": {
+                    "title": "フックの状態",
+                    "description": "フックの有効/無効の状態を管理します。"
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "キーバインド設定",
+            "tooltip_open": "キーバインド設定を開く",
+            "tooltip_close": "キーバインド設定を閉じる",
+            "table": {
+                "action": "アクション",
+                "key": "キー",
+                "add_button_tooltip": "キーバインドを追加",
+                "key_button_tooltip": "クリックしてキーバインドを変更または削除",
+                "details_button_tooltip": "キーバインドの動作を設定"
+            },
+            "unassigned_text": "未割り当て"
+        },
+        "component_selector": {
+            "tooltip": "設定するプラグインを選択"
+        },
+        "key_capture_popup": {
+            "title": "キーをキャプチャ",
+            "press_key_text": "アクションにバインドする任意のキーを押してください：",
+            "delete_button": "削除",
+            "cancel_button": "キャンセル",
+            "conflict_title": "競合を検出！",
+            "conflict_text": "キー '%s' は既に以下にバインドされています：",
+            "reassign_question": "再割り当てしますか？",
+            "yes_button": "はい",
+            "no_button": "いいえ"
+        },
+        "binding_details_popup": {
+            "title": "バインドの詳細",
+            "press_type_label": "押下タイプ：",
+            "behavior_label": "動作：",
+            "behavior_toggle": "切り替え",
+            "behavior_hold": "長押し",
+            "consume_label": "消費ポリシー：",
+            "threshold_label": "押下しきい値 (ms)：",
+            "close_button": "閉じる"
+        }
+    },
+    "logger_window": {
+        "title": "ロガー",
+        "button_clear": "クリア",
+        "checkbox_autoscroll": "自動スクロール"
+    },
+    "telemetry_window": {
+        "title": "テレメトリー",
+        "tabs": {
+            "game": "ゲーム",
+            "job": "ジョブ",
+            "navigation": "ナビゲーション",
+            "truck": "トラック",
+            "positioning": "位置決め",
+            "trailers": "トレーラー",
+            "controls_events": "コントロールとイベント"
+        },
+        "headers": {
+            "game_state": "ゲームの状態",
+            "constants": "定数",
+            "live_data": "ライブデータ",
+            "physics": "物理",
+            "wheels": "車輪",
+            "damage": "ダメージ",
+            "truck_positioning": "トラックの位置決め",
+            "controls": "コントロール",
+            "events": "イベント"
+        },
+        "labels": {
+            "game_time": "ゲーム時間: %u",
+            "next_rest_stop": "次の休憩所: %d 分",
+            "next_rest_stop_real": "次の休憩所 (実時間): ~%.1f 分",
+            "next_rest_stop_time": "次の休憩所時刻: %s, %02d:%02d",
+            "paused": "一時停止: %s",
+            "game_id": "ゲームID: %u",
+            "local_scale": "ローカルスケール: %.2f",
+            "multiplayer_time_offset": "マルチプレイヤー時間オフセット: %d",
+            "scs_game_version": "SCSゲームバージョン: %u.%u",
+            "telemetry_plugin_version": "テレメトリープラグインバージョン: %u.%u",
+            "telemetry_game_version": "ゲームテレメトリーバージョン: %u.%u",
+            "game_name": "ゲーム名: %s",
+            "substances": "物質",
+            "substances_not_received": "リストはまだ受信されていません。",
+            "simulation_time": "シミュレーション時間: %llu",
+            "render_time": "レンダー時間: %llu",
+            "paused_simulation_time": "一時停止中のシミュレーション時間: %llu",
+            "no_active_job": "アクティブなジョブはありません。",
+            "contract": "契約",
+            "market": "市場: %s",
+            "income": "収入: %llu",
+            "planned_distance": "計画距離: %u km",
+            "cargo": "貨物",
+            "cargo_info": "貨物: %s (%s)",
+            "mass": "質量: %.0f kg (%u 単位 x %.0f kg)",
+            "damage": "ダメージ: %.2f%%",
+            "loaded": "積載済み: %s",
+            "special_job": "特殊ジョブ: %s",
+            "route": "ルート",
+            "source": "出発地: %s (%s), %s (%s)",
+            "destination": "目的地: %s (%s), %s (%s)",
+            "time": "時間",
+            "delivery_deadline": "配達期限 (ゲーム時間): %u 分",
+            "remaining_game_time": "残り (ゲーム時間): %.0f 分",
+            "speed_limit": "制限速度: %.0f km/h",
+            "next_waypoint_dist": "次のウェイポイントまでの距離: %.1f m",
+            "next_waypoint_time_game": "次のウェイポイントまでの時間 (ゲーム): %.0f 秒",
+            "next_waypoint_time_real": "次のウェイポイントまでの時間 (実時間): ~%.0f 秒",
+            "id": "ID: %s",
+            "brand": "ブランド: %s (%s)",
+            "name": "名前: %s",
+            "license_plate": "ナンバープレート: %s (%s)",
+            "engine_gearbox": "エンジンとギアボックス",
+            "rpm_limit": "RPM制限: %.0f",
+            "gears": "ギア: %d 前進, %d 後退",
+            "retarder_steps": "リターダーステップ: %d",
+            "selector_count": "セレクターカウント: %zu",
+            "differential_ratio": "差動比: %.2f",
+            "shifter_type": "シフタータイプ: %s",
+            "hshifter_layout": "Hシフターレイアウト",
+            "hshifter_table": {
+                "slot": "スロット",
+                "gear": "ギア",
+                "handle_pos": "ハンドル位置",
+                "selectors": "セレクター"
+            },
+            "gear_ratios": "ギア比",
+            "forward": "前進",
+            "reverse": "後退",
+            "gear_x": "ギア %2zu: %.2f",
+            "gear_rx": "ギア R%zu: %.2f",
+            "capacities": "容量",
+            "fuel_capacity": "燃料容量: %.1f L",
+            "adblue_capacity": "AdBlue容量: %.1f L",
+            "warning_factors": "警告要因",
+            "fuel_warning": "燃料警告: %.0f%%",
+            "adblue_warning": "AdBlue警告: %.0f%%",
+            "air_pressure_warning": "空気圧警告: %.1f psi",
+            "air_pressure_emergency": "空気圧緊急: %.1f psi",
+            "oil_pressure_warning": "油圧警告: %.1f psi",
+            "water_temp_warning": "水温警告: %.0f C",
+            "battery_voltage_warning": "バッテリー電圧警告: %.1f V",
+            "dashboard_info": "ダッシュボード情報",
+            "speed": "速度: %.2f km/h",
+            "engine_rpm": "エンジンRPM: %.0f",
+            "gear": "ギア: %d (表示: %d)",
+            "odometer": "走行距離計: %.1f km",
+            "cruise_control": "クルーズコントロール: %s (%.0f km/h)",
+            "fuel": "燃料: %.1f L (平均: %.2f L/km, 航続距離: %.0f km)",
+            "adblue": "AdBlue: %.1f L (平均: %.3f L/km)",
+            "oil": "オイル: %.1f psi, %.1f C",
+            "water_temp": "水温: %.1f C",
+            "battery_voltage": "バッテリー電圧: %.1f V",
+            "dashboard_warnings": "ダッシュボード警告",
+            "fuel_warn_state": "燃料: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "空気圧: %s",
+            "oil_pressure_warn_state": "油圧: %s",
+            "water_temp_warn_state": "水温: %s",
+            "battery_voltage_warn_state": "バッテリー電圧: %s",
+            "system_states": "システムの状態",
+            "electric_enabled": "電気有効: %s",
+            "engine_enabled": "エンジン有効: %s",
+            "differential_lock": "ディファレンシャルロック: %s",
+            "wipers": "ワイパー: %s",
+            "truck_lift_axle": "トラックリフトアクスル: %s (インジケーター: %s)",
+            "trailer_lift_axle": "トレーラーリフトアクスル: %s (インジケーター: %s)",
+            "lights": "ライト",
+            "blinkers": "ウインカー: 左[%s,%s] 右[%s,%s] ハザード[%s]",
+            "light_states": "パーキング: %s, ロービーム: %s, ハイビーム: %s",
+            "aux_lights": "補助フロント: %s, 補助ルーフ: %s, ビーコン: %s",
+            "brake_reverse_lights": "ブレーキ: %s, リバース: %s",
+            "dashboard_backlight": "ダッシュボードバックライト: %.2f",
+            "brakes": "ブレーキ",
+            "air_pressure": "空気圧: %.1f psi",
+            "parking_brake": "パーキングブレーキ: %s",
+            "motor_brake": "モーターブレーキ: %s",
+            "retarder_level": "リターダーレベル: %d",
+            "brake_temp": "ブレーキ温度: %.1f C",
+            "hshifter": "Hシフター",
+            "slot": "スロット: %u",
+            "selectors": "セレクター: %s",
+            "linear_velocity": "線速度",
+            "angular_velocity": "角速度",
+            "linear_accel": "線形加速度",
+            "angular_accel": "角加速度",
+            "cabin_ang_vel": "キャビン角速度",
+            "cabin_ang_accel": "キャビン角加速度",
+            "wheel_x": "車輪 {}",
+            "substance": "物質: %s (%u)",
+            "substance_unknown": "物質: 不明 (%u)",
+            "on_ground": "接地: %s",
+            "susp_deflection": "サスペンションのたわみ: %.3f",
+            "wheel_velocity": "速度: %.2f",
+            "steering": "ステアリング: %.2f",
+            "rotation": "回転: %.2f",
+            "lift": "リフト: %.2f (オフセット: %.3f)",
+            "steerable": "操舵可能: %s",
+            "powered": "動力付き: %s",
+            "liftable": "リフト可能: %s",
+            "simulated": "シミュレート済み: %s",
+            "radius": "半径: %.2f",
+            "position": "位置",
+            "engine_damage": "エンジン: %.1f%%",
+            "transmission_damage": "トランスミッション: %.1f%%",
+            "cabin_damage": "キャビン: %.1f%%",
+            "chassis_damage": "シャーシ: %.1f%%",
+            "wheels_damage": "車輪 (平均): %.1f%%",
+            "world_space": "ワールド空間",
+            "world_placement": "ワールド配置",
+            "component_offsets": "コンポーネントオフセット",
+            "cabin_offset": "キャビンオフセット",
+            "head_offset": "ヘッドオフセット",
+            "component_base_pos": "コンポーネントの基本位置",
+            "cabin_pos": "キャビン位置",
+            "head_pos": "ヘッド位置",
+            "hook_pos": "フック位置",
+            "trailer_x": "トレーラー {} ({})",
+            "trailer_na": "N/A",
+            "connected": "接続済み: %s",
+            "general": "一般",
+            "trailer_brand": "ブランド: %s (ID: %s)",
+            "trailer_license_plate": "ナンバープレート: %s (国: %s, ID: %s)",
+            "body_type": "ボディタイプ: %s",
+            "chain_type": "チェーンタイプ: %s",
+            "cargo_accessory_id": "貨物アクセサリーID: %s",
+            "physics_pos": "物理と位置",
+            "trailer_hook_pos": "フック位置",
+            "trailer_world_pos": "ワールド位置: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "ボディ: %.2f%%",
+            "trailer_damage_chassis": "シャーシ: %.2f%%",
+            "trailer_damage_wheels": "車輪: %.2f%%",
+            "trailer_damage_cargo": "貨物: %.2f%%",
+            "wheels_count": "車輪 (数: {})",
+            "wheel_susp_deflection": "サスペンションのたわみ: %.3f",
+            "wheel_angular_velocity": "角速度: %.2f",
+            "wheel_lift": "リフト: %.2f",
+            "wheel_lift_offset": "リフトオフセット: %.2f",
+            "user_input": "--- ユーザー入力 ---",
+            "effective_input": "--- 有効な入力 ---",
+            "input_steering": "ステアリング: %.2f",
+            "input_throttle": "スロットル: %.2f",
+            "input_brake": "ブレーキ: %.2f",
+            "input_clutch": "クラッチ: %.2f",
+            "special_events": "--- 特別イベント (フラグ) ---",
+            "on_job": "ジョブ中: %s",
+            "job_cancelled": "ジョブキャンセル済み: %s",
+            "job_delivered": "ジョブ配達済み: %s",
+            "fined": "罰金: %s",
+            "tollgate": "料金所: %s",
+            "ferry": "フェリー: %s",
+            "train": "列車: %s",
+            "last_gameplay_event": "--- 最後のゲームプレイイベント ---",
+            "no_event_yet": "まだイベントはありません。",
+            "event_job_delivered": "ジョブ配達済み: 収入 %lld, 経験値 %d, ダメージ %.1f%%",
+            "event_job_delivered_details": "  距離: %.1f km, 時間: %u 分",
+            "event_job_delivered_flags": "  自動駐車: %s, 自動積載: %s",
+            "event_job_cancelled": "ジョブキャンセル済み: 罰金 %lld",
+            "event_fined": "罰金: %lld (理由: '%s')",
+            "event_tollgate": "料金所: 支払い済み %lld",
+            "event_ferry": "フェリー: 支払い済み %lld",
+            "event_ferry_route": "  出発地: %s (ID: %s)",
+            "event_ferry_route_to": "  目的地:   %s (ID: %s)",
+            "event_train": "列車: 支払い済み %lld",
+            "event_train_route": "  出発地: %s (ID: %s)",
+            "event_train_route_to": "  目的地:   %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d 日, %d 時間, %d 分)",
+            "hours_minutes": "(%d 時間, %d 分)",
+            "real_time_minutes": "~%.1f 分",
+            "real_time_hours_minutes": "(%d 時間, %d 分)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0f km/h",
+            "meters": "%.1f m",
+            "game_time_seconds": "%.0f 秒",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f 秒",
+            "m_s": "(%d 分, %d 秒)",
+            "gears_fwd_rev": "%d 前進, %d 後退",
+            "liters": "%.1f L",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1f psi",
+            "temp_celsius": "%.0f C",
+            "voltage_v": "%.1f V",
+            "speed_km_h": "%.2f km/h",
+            "cruise_control_speed": "%.0f km/h",
+            "fuel_consumption": "%.2f L/km",
+            "fuel_range": "%.0f km",
+            "adblue_consumption": "%.3f L/km",
+            "oil_pressure_temp": "%.1f psi, %.1f C",
+            "temp_celsius_f": "%.1f C",
+            "voltage_v_f": "%.1f V",
+            "blinker_state": "左[%s,%s] 右[%s,%s] ハザード[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "位置: (%.2f, %.2f, %.2f)",
+            "placement_ori": "方向: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "月曜日",
+            "tuesday": "火曜日",
+            "wednesday": "水曜日",
+            "thursday": "木曜日",
+            "friday": "金曜日",
+            "saturday": "土曜日",
+            "sunday": "日曜日",
+            "unknown": "不明"
+        },
+        "generic": {
+            "yes": "はい",
+            "no": "いいえ",
+            "on": "オン",
+            "off": "オフ",
+            "warn": "警告",
+            "emergency": "緊急",
+            "ok": "OK",
+            "engaged": "エンゲージ中",
+            "lifted": "上昇中",
+            "down": "下降中",
+            "dimmed": "減光済み",
+            "full": "フル"
+        }
+    },
+    "hooks_window": {
+        "title": "フック",
+        "no_hooks_text": "利用可能なフックはありません。",
+        "enabled_checkbox": "有効",
+        "required_by_plugin_text": "(プラグインで必要)",
+        "tooltip": {
+            "internal_name": "このフックをプラグインで使用するには、`requiredHooks` ポリシーに次の名前を指定してください："
+        }
+    },
+    "game_console_window": {
+        "title": "ゲームコンソール",
+        "info_text": "ゲームコンソールにコマンドを入力するためのテストフィールド。config.cfgファイルでg_consoleとg_developerが無効（つまり「0」に設定）になっている場合でも機能します。",
+        "enable_hook_text": "「%s」ウィンドウでGameConsoleフックを有効にします。",
+        "send_button": "送信"
+    },
+    "camera_window": {
+        "title": "カメラ",
+        "current_camera": "現在のカメラ: %s (%d)",
+        "camera_world_coordinates": "カメラワールド座標: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "カメラワールド座標: 見つかりません",
+        "select_camera": "カメラを選択:",
+        "interior": "内部",
+        "behind": "後方",
+        "top": "上方",
+        "cabin": "キャビン",
+        "window": "窓",
+        "bumper": "バンパー",
+        "wheel": "車輪",
+        "tv": "テレビ",
+        "developer_free_camera": "開発者自由カメラ (ID 0)",
+        "tabs": {
+            "interior_camera": "内部カメラ",
+            "behind_camera": "後方カメラ",
+            "top_camera": "上方カメラ",
+            "cabin_camera": "キャビンカメラ",
+            "window_camera": "窓カメラ",
+            "bumper_camera": "バンパーカメラ",
+            "wheel_camera": "車輪カメラ",
+            "tv_camera": "テレビカメラ",
+            "free_camera": "自由カメラ",
+            "debug": "デバッグ"
+        },
+        "interior_camera": {
+            "fov_zoom": "視野角 / ズーム",
+            "base_fov": "基本視野角",
+            "base_fov_not_found": "基本視野角: データが見つかりません",
+            "final_h_fov": "最終水平視野角: %.1f",
+            "final_v_fov": "最終垂直視野角: %.1f",
+            "final_fov_not_found": "最終視野角: データが見つかりません",
+            "seat_position": "座席位置",
+            "seat_lr": "座席左右 (X)",
+            "seat_ud": "座席上下 (Y)",
+            "seat_fb": "座席前後 (Z)",
+            "seat_position_not_found": "座席位置: データが見つかりません",
+            "head_rotation": "頭の回転",
+            "yaw_lr": "ヨー (左右)",
+            "pitch_ud": "ピッチ (上下)",
+            "head_rotation_not_found": "頭の回転: データが見つかりません",
+            "mouse_rotation_limits": "マウス回転制限",
+            "left_limit": "左制限",
+            "right_limit": "右制限",
+            "up_limit": "上制限",
+            "down_limit": "下制限",
+            "rotation_limits_not_found": "回転制限: データが見つかりません",
+            "rotation_defaults": "デフォルト回転",
+            "default_lr": "デフォルト左右##内部",
+            "default_ud": "デフォルト上下##内部",
+            "rotation_defaults_not_found": "デフォルト回転: データが見つかりません",
+            "reset_to_defaults": "デフォルトにリセット",
+            "not_available": "内部カメラオブジェクトは利用できません。"
+        },
+        "behind_camera": {
+            "live_state": "ライブ状態",
+            "live_pitch": "ライブピッチ",
+            "live_yaw": "ライブヨー",
+            "live_zoom": "ライブズーム",
+            "live_state_not_found": "ライブ状態: データが見つかりません",
+            "distance_zoom_settings": "距離 / ズーム設定",
+            "min_distance": "最小距離",
+            "max_distance": "最大距離",
+            "trailer_max_offset": "トレーラー最大オフセット",
+            "default_distance": "デフォルト距離",
+            "trailer_default_dist": "トレーラーデフォルト距離",
+            "zoom_speed": "ズーム速度",
+            "distance_laziness": "距離の不感帯",
+            "distance_zoom_settings_not_found": "距離 / ズーム設定: データが見つかりません",
+            "elevation_pitch_settings": "標高 / ピッチ設定",
+            "azimuth_laziness": "方位の不感帯",
+            "min_elevation": "最小標高",
+            "max_elevation": "最大標高",
+            "default_elevation": "デフォルト標高",
+            "trailer_default_elev": "トレーラーデフォルト標高",
+            "height_limit": "高さ制限",
+            "elevation_pitch_settings_not_found": "標高 / ピッチ設定: データが見つかりません",
+            "pivot_offset": "ピボットオフセット (回転中心)",
+            "pivot_x": "ピボット X",
+            "pivot_y": "ピボット Y",
+            "pivot_z": "ピボット Z",
+            "pivot_offset_not_found": "ピボットオフセット: データが見つかりません",
+            "dynamic_offset": "動的オフセット (速度ベース)",
+            "max_dynamic_offset": "最大動的オフセット",
+            "dyn_offset_speed_min": "動的オフセット最小速度 (km/h)",
+            "dyn_offset_speed_max": "動的オフセット最大速度 (km/h)",
+            "dyn_offset_laziness": "動的オフセットの不感帯",
+            "dynamic_offset_not_found": "動的オフセット: データが見つかりません",
+            "base_fov_behind": "基本視野角##後方",
+            "reset_to_defaults_behind": "デフォルトにリセット##後方",
+            "not_available": "後方カメラオブジェクトは利用できません。"
+        },
+        "top_camera": {
+            "height_zoom": "高さ / ズーム",
+            "minimum_height": "最小高さ",
+            "maximum_height": "最大高さ",
+            "height_zoom_not_found": "高さ / ズーム: データが見つかりません",
+            "movement": "移動",
+            "movement_speed": "移動速度",
+            "movement_not_found": "移動: データが見つかりません",
+            "dynamic_offset": "動的オフセット",
+            "forward_offset": "前方オフセット",
+            "backward_offset": "後方オフセット",
+            "dynamic_offset_not_found": "動的オフセット: データが見つかりません",
+            "base_fov_top": "基本視野角##上方",
+            "reset_to_defaults_top": "デフォルトにリセット##上方",
+            "not_available": "上方カメラオブジェクトは利用できません。"
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "基本視野角##キャビン",
+            "reset_to_defaults_cabin": "デフォルトにリセット##キャビン",
+            "not_available": "キャビンカメラオブジェクトは利用できません。"
+        },
+        "window_camera": {
+            "head_offset": "ヘッドオフセット",
+            "head_x_window": "ヘッド X##窓",
+            "head_y_window": "ヘッド Y##窓",
+            "head_z_window": "ヘッド Z##窓",
+            "head_offset_not_found": "ヘッドオフセット: データが見つかりません",
+            "live_rotation": "ライブ回転",
+            "live_yaw_window": "ライブヨー (左右)##窓",
+            "live_pitch_window": "ライブピッチ (上下)##窓",
+            "live_rotation_not_found": "ライブ回転: データが見つかりません",
+            "mouse_rotation_limits_defaults": "マウス回転制限とデフォルト",
+            "left_limit_window": "左制限##窓",
+            "right_limit_window": "右制限##窓",
+            "up_limit_window": "上制限##窓",
+            "down_limit_window": "下制限##窓",
+            "rotation_limits_not_found_window": "回転制限: データが見つかりません",
+            "default_lr_window": "デフォルト左右##窓",
+            "default_ud_window": "デフォルト上下##窓",
+            "rotation_defaults_not_found_window": "デフォルト回転: データが見つかりません",
+            "base_fov_window": "基本視野角##窓",
+            "reset_to_defaults_window": "デフォルトにリセット##窓",
+            "not_available": "窓カメラオブジェクトは利用できません。"
+        },
+        "bumper_camera": {
+            "offset": "オフセット",
+            "offset_x_bumper": "オフセット X##バンパー",
+            "offset_y_bumper": "オフセット Y##バンパー",
+            "offset_z_bumper": "オフセット Z##バンパー",
+            "offset_not_found": "オフセット: データが見つかりません",
+            "base_fov_bumper": "基本視野角##バンパー",
+            "reset_to_defaults_bumper": "デフォルトにリセット##バンパー",
+            "not_available": "バンパーカメラオブジェクトは利用できません。"
+        },
+        "wheel_camera": {
+            "offset": "オフセット",
+            "offset_x_wheel": "オフセット X##車輪",
+            "offset_y_wheel": "オフセット Y##車輪",
+            "offset_z_wheel": "オフセット Z##車輪",
+            "offset_not_found": "オフセット: データが見つかりません",
+            "base_fov_wheel": "基本視野角##車輪",
+            "reset_to_defaults_wheel": "デフォルトにリセット##車輪",
+            "not_available": "車輪カメラオブジェクトは利用できません。"
+        },
+        "tv_camera": {
+            "distance": "距離",
+            "max_distance_tv": "最大距離##テレビ",
+            "distance_not_found": "距離: データが見つかりません",
+            "prefab_uplift": "プレハブ隆起",
+            "prefab_uplift_x_tv": "プレハブ隆起 X##テレビ",
+            "prefab_uplift_y_tv": "プレハブ隆起 Y##テレビ",
+            "prefab_uplift_z_tv": "プレハブ隆起 Z##テレビ",
+            "prefab_uplift_not_found": "プレハブ隆起: データが見つかりません",
+            "road_uplift": "道路隆起",
+            "road_uplift_x_tv": "道路隆起 X##テレビ",
+            "road_uplift_y_tv": "道路隆起 Y##テレビ",
+            "road_uplift_z_tv": "道路隆起 Z##テレビ",
+            "road_uplift_not_found": "道路隆起: データが見つかりません",
+            "base_fov_tv": "基本視野角##テレビ",
+            "reset_to_defaults_tv": "デフォルトにリセット##テレビ",
+            "not_available": "テレビカメラオブジェクトは利用できません。"
+        },
+        "free_camera": {
+            "position": "位置",
+            "position_x_freecam": "位置 X",
+            "position_y_freecam": "位置 Y",
+            "position_z_freecam": "位置 Z",
+            "position_not_found": "位置: データが見つかりません",
+            "orientation": "方向",
+            "mouse_horizontal_freecam": "マウス水平",
+            "mouse_vertical_freecam": "マウス垂直",
+            "roll_freecam": "ロール",
+            "orientation_not_found": "方向: データが見つかりません",
+            "quaternion": "クォータニオン",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "クォータニオン: データが見つかりません",
+            "base_fov_freecam": "基本視野角##自由カメラ",
+            "movement_speed": "移動速度",
+            "speed_freecam": "速度",
+            "movement_speed_not_found": "移動速度: データが見つかりません",
+            "reset_to_defaults_freecam": "デフォルトにリセット##自由カメラ",
+            "not_available": "自由カメラオブジェクトは利用できません。"
+        },
+        "debug": {
+            "current_mode": "現在のモード: %s (%d)",
+            "current_mode_na": "現在のモード: [N/A]",
+            "enable_debug_camera": "デバッグカメラを有効にする",
+            "enable_debug_camera_not_found": "デバッグカメラを有効にする: データが見つかりません",
+            "clean_ui": "クリーン UI (アウトラインなし)",
+            "clean_ui_not_found": "クリーン UI: データが見つかりません",
+            "show_debug_hud": "デバッグHUDを表示",
+            "show_debug_hud_not_found": "デバッグHUDを表示: データが見つかりません",
+            "enable_debug_camera_to_select_mode": "デバッグカメラを有効にしてモードを選択してください。",
+            "simple_debug": "シンプル",
+            "basic_debug_camera_mode": "基本デバッグカメラモード。",
+            "video_debug": "ビデオ",
+            "hud_position_debug": "HUD位置:",
+            "top_left_debug": "左上",
+            "bottom_left_debug": "左下",
+            "top_right_debug": "右上",
+            "bottom_right_debug": "右下",
+            "current_debug": "(現在: %s)",
+            "current_na_debug": "(現在: N/A)",
+            "traffic_debug": "交通",
+            "camera_focuses_traffic": "カメラは交通車両に焦点を合わせます。",
+            "cinematic_debug": "シネマティック",
+            "cinematic_camera_mode": "シネマティックカメラモード。",
+            "animated_debug": "アニメーション",
+            "create_play_animations": "カメラアニメーションを作成して再生します。",
+            "activate_game_animated_mode": "ゲームのアニメーションモードをアクティブにする",
+            "custom_animation_controls": "カスタムアニメーションコントロール",
+            "playing_status": "再生中",
+            "pause_button": "一時停止",
+            "paused_status": "一時停止中",
+            "stopped_status": "停止済み",
+            "play_button": "再生",
+            "stop_button": "停止",
+            "status_label": "ステータス: %s",
+            "reverse_playback": "逆再生",
+            "timeline_label": "タイムライン:",
+            "state_camera_debug": "ステートカメラ",
+            "create_state_camera": "ステートカメラを作成します。",
+            "save_keyframe": "キーフレームを保存",
+            "reload_from_file": "ファイルから再読み込み",
+            "clear_all_memory": "すべてクリア (メモリ)",
+            "animation_controls": "アニメーションコントロール",
+            "add_edit_state": "ステートの追加/編集",
+            "position_xyz": "位置 (X,Y,Z)",
+            "mystery_float": "ミステリーフロート",
+            "quaternion_xyzw": "クォータニオン (X,Y,Z,W)",
+            "fov_label": "視野角",
+            "add_state_memory": "ステートを追加 (メモリ)",
+            "update_state_memory": "ステートを更新 (メモリ)",
+            "delete_state_memory": "ステートを削除 (メモリ)",
+            "previous_state": "前のステート",
+            "next_state": "次のステート",
+            "active_state_label": "アクティブなステート [%d]:",
+            "pos_label": "  位置: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  ミステリー: %.4f",
+            "quat_label": "  クォート: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  視野角: %.2f",
+            "active_state_none": "アクティブなステート: [なし]",
+            "saved_states_label": "保存済みステート: %d",
+            "states_combo_label": "ステート",
+            "state_item_label": "ステート %d",
+            "no_states_saved": "保存済みステートなし",
+            "oversize_debug": "オーバーサイズ",
+            "camera_oversized_trailers": "オーバーサイズトレーラー用カメラ。",
+            "vehicle_list": "車両リスト"
+        }
+    },
+    "description": {
+        "detailed": "SCSゲームのプラグインを作成および管理するための強力で柔軟なフレームワーク。ロギング、設定、UI管理などのコアサービスを提供します。"
+    },
+    "patrons_popup": {
+      "title": "プロジェクトをサポート",
+      "intro_text": "コミュニティのサポートがこのプロジェクトの原動力です。私たちの活動が役立つと感じたら、パトロンになることを検討してください。皆様の貢献は、開発を継続し、すべての人に新しい刺激的なプラグインを作成することを可能にします！",
+      "link_intro": "公式ページで私たちをサポートできます：",
+      "link_text": "patreon.com/TrackAndTruckDevs",
+      "link_tooltip": "クリックするとブラウザでPatreonページが開きます",
+      "hof_title": "殿堂入り",
+      "hof_empty": "私たちの殿堂はまだ空です... ここに最初に登場し、私たちの旅を始めてください！",
+      "hof_teaser": "私たちをサポートして、私たちの",
+      "close_button": "閉じる",
+      "tiers": {
+        "magnate": "--- ロジスティクス界の大物 ---",
+        "manager": "--- フリートマネージャー ---",
+        "master": "--- ロードマスター ---"
+      }
+    },
+    "manual_popup": {
+        "title": "よくある質問",
+        "q1_question": "プラグインのインストールとアクティベート方法",
+        "q1_answer": "SPF互換プラグインをディレクトリ ```{}``` にコピーします。プラグインの `.dll` がその名前に一致するディレクトリ内にあることを確認してください。\n例えば `...\\MyPlugin\\MyPlugin.dll`\nフレームワークは自動的にこのプラグインを見つけてロードします。`プラグインマネージャー`タブで有効にするだけです。",
+        "q2_question": "独自のプラグインを作成する方法",
+        "q2_answer": "プラグインを開発するには、`SPF_-_API.h` ヘッダーファイルパッケージを当社の [GitHub]({}) ページの「Releases」セクションからダウンロードし、プロジェクトに含める必要があります。",
+        "q3_question": "新しい翻訳を追加する方法",
+        "q3_answer": "`フレームワーク`を翻訳するには、```{}``` 内のファイルを検索し、既存の翻訳（例：`en.json`）をコピーして、翻訳言語（例：`de.json`）にリネームし、文字列を翻訳します。\n\n`プラグイン`の翻訳ファイルは、独自のローカライズフォルダ（例：```{}```）にあります。",
+        "q4_question": "新しい機能が必要な場合は？",
+        "q4_answer": "開発者の方は、当社の `SPF_-_API.h` を使用して必要な機能を自分で実装できます。\nそうでない場合は、[GitHub]({}) または当社の [Patreon]({}) ページで提案を作成できます。",
+        "q5_question": "設定はどこに保存されますか？",
+        "q5_answer": "フレームワークの設定は ```{}``` にあります。プラグインの設定は独自の構成フォルダー（例： ```{}```）にあります。**設定はゲーム内インターフェースからのみ変更することをお勧めします。**",
+        "q6_question": "フレームワークまたはプラグインがゲームをクラッシュさせます。どうすればよいですか？",
+        "q6_answer": " * `\\spfAssets\\logs` フォルダのログファイルを確認してください。\n * 問題の原因を見つけるために、プラグインを1つずつ無効にしてみてください。\n * フレームワークに問題がある場合は、問題の詳細を記述し、ログファイルを添付して、当社の [GitHub]({}) で `issue` を作成してください。"
+    },
+    "about_popup": {
+        "title": "私たちについて / 連絡先",
+        "about_us_title": "私たちについて",
+        "about_us_text": "私たちはトラックシミュレーターのゲーム体験を向上させることに専念している愛好家チーム {} です。私たちの {} は、コミュニティによってコミュニティのために作成されたツールです。",
+        "framework_title": "フレームワークについて",
+        "contacts_title": "連絡先",
+        "email_text": "ビジネスに関するお問い合わせや直接連絡は、[Eメール]({}) でお願いします。",
+        "discord_text": "[Discord]({}) コミュニティに参加して、他のプレイヤーや開発者と交流しましょう。",
+        "youtube_text": "ETS2とATSゲームに関する最新情報、チュートリアル、興味深いコンテンツを投稿している私たちの [YouTube]({}) チャンネルを購読してください。",
+        "github_text": "[GitHub]({}) で開発をフォローしたり、バグを報告したり、貢献したりしてください。",
+        "patreon_text": "[Patreon]({}) でパトロンになって、私たちの活動をサポートし、限定特典を手に入れましょう。",
+        "scs_forum_text": "公式 [SCS Softwareフォーラムページ]({}) でフレームワークについて議論したり、質問したりしてください。",
+        "steam_profile_text": "[Steam]({}) で私たちを友達に追加し、活動をフォローしてください。"
+    },
+    "legal_popup": {
+        "title": "法的情報",
+        "license_title": "ライセンス",
+        "license_text": "SPFフレームワークはApache 2.0ライセンスの条件に基づいて配布されています。完全なライセンス条項は私たちの [GitHub]({}) で確認できます。",
+        "disclaimer_title": "免責事項",
+        "disclaimer_text": "SPFフレームワークソフトウェアは「現状有姿」で提供され、明示的または黙示的を問わず、いかなる保証もありません。開発者は、本フレームワークの使用によって発生する可能性のあるゲームファイル、セーブデータ、設定ファイル、またはその他のいかなる損害についても責任を負いません。\n\nフレームワークは、サードパーティの作者によって開発されたプラグインのプラットフォームマネージャーとして機能します。私たちはこれらのプラグインを作成したり、そのコンテンツを管理したり、アクセスしたりすることはありません。サードパーティのプラグインをインストールして使用することにより、すべてのリスクを負うことになります。**セーブデータと設定ファイルを定期的にバックアップすることを強くお勧めします。**",
+        "fair_play_title": "フェアプレイポリシー",
+        "fair_play_text": "私たちは、他のプレイヤーに対して不公平な優位性を得るために当社のフレームワークが提供するツールを使用するいかなる行為も厳しく非難します。SPFフレームワークの目的は、シングルプレイヤーのゲーム体験を向上させ、拡張することのみです。",
+        "contact_title": "連絡先",
+        "contact_text": "ご質問、ご提案、または苦情がある場合は、[Eメール]({}) でお問い合わせください。"
+    },
+    "shutdown_popup": {
+        "title": "シャットダウンの確認",
+        "content": "フレームワークをシャットダウンしてもよろしいですか？\n\n **これにより、すべてのプラグインがアンロードされ、次回のゲーム再起動までフレームワークが無効になります。**\n\n ゲームを再起動せずにプラグインを有効にする必要がある場合は、ゲームコンソールを使用して ```sdk reload``` コマンドを入力してください。",
+        "confirm_button": "はい、シャットダウン",
+        "confirm_disabled_tooltip": "この機能を使用するには、「フック」ウィンドウで「ゲームコンソール」フックを有効にしてください。",
+        "cancel_button": "キャンセル"
+    },
+    "ui": {
+        "actions": {
+            "dock": "アタッチ",
+            "undock": "デタッチ"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "メインウィンドウを切り替え",
+            "description": "メインフレームワークウィンドウの表示を切り替えます。"
+        },
+        "ui.close_focused": {
+            "title": "ウィンドウを閉じる/循環",
+            "description": "ポップアップを閉じたり、フローティングウィンドウをドッキングしたり、メインUIを閉じたりします。"
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "マウスコントロールをオーバーライド",
+            "description": "UIが表示されている間、このキーを長押しすると、一時的にマウスコントロールをゲームに戻します。"
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "短押し",
+            "long": "長押し"
+        },
+        "consumption_policy": {
+            "never": "しない",
+            "on_ui_focus": "UIフォーカス時",
+            "always": "常に"
+        }
+    }
+}

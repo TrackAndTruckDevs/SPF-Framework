@@ -1,0 +1,33 @@
+{
+    "language": {
+        "en": "English",
+        "uk": "Ukrainian"
+    },
+    "plugin.description": "A template plugin to demonstrate the SPF API.",
+    "messages.welcome": "Welcome to ExamplePlugin! The current language is English.",
+    "MainWindow.title": "ExamplePlugin Main Window",
+    "setting": {
+        "some_number": {
+            "title": "Some Number",
+            "description": "This is an example integer setting for the plugin."
+        }
+    },
+    "keybind": {
+        "main_window_toggle": {
+            "title": "Toggle Main Window",
+            "description": "Toggles the visibility of the ExamplePlugin main window."
+        },
+        "camera_cycle": {
+            "title": "Cycle Camera",
+            "description": "Cycles through the next available camera views."
+        }
+    },
+    "ui": {
+        "window": {
+            "main_window": {
+                "title": "Main Window",
+                "description": "This is the main window for the ExamplePlugin."
+            }
+        }
+    }
+}

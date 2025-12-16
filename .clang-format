@@ -1,0 +1,10 @@
+BasedOnStyle: Google
+Language: Cpp
+IndentWidth: 2
+UseTab: Never
+ColumnLimit: 180
+AllowShortFunctionsOnASingleLine: All
+AlignTrailingComments: true
+Cpp11BracedListStyle: true
+SortIncludes: Never
+BinPackArguments: false

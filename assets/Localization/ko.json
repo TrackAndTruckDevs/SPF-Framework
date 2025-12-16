@@ -1,0 +1,923 @@
+{
+    "language": {
+        "en": "영어",
+        "uk": "우크라이나어",
+        "de": "독일어",
+        "fr": "프랑스어",
+        "es": "스페인어",
+        "pl": "폴란드어",
+        "ru": "러시아어",
+        "pt_br": "브라질 포르투갈어",
+        "it": "이탈리아어",
+        "nl": "네덜란드어",
+        "tr": "튀르키예어",
+        "cs": "체코어",
+        "zh": "중국어(간체)",
+        "ja": "일본어",
+        "ko": "한국어"
+    },
+    "main_window": {
+        "title": "메인 창 - SPF Framework",
+        "patrons_button_tooltip": "내 후원자",
+        "update_button_tooltip": "업데이트 확인",
+        "version_label": "현재 버전 ",
+        "update_checking": "업데이트 확인 중...",
+        "menu": {
+            "manual": "매뉴얼 / FAQ",
+            "about": "소개 / 연락처",
+            "legal": "법적 정보",
+            "reload": "프레임워크 다시 로드",
+            "reload_disabled_tooltip": "이 기능을 사용하려면 후크 창에서 '게임 콘솔' 후크를 활성화하십시오.",
+            "shutdown": "프레임워크 종료",
+            "open_plugins_folder": "플러그인 폴더 열기"
+        },
+        "game_status": {
+            "running_game_label": "실행 중인 게임:",
+            "current_version_label": "게임 버전:"
+        },
+        "performance": {
+            "graphics_api_label": "그래픽 API:",
+            "fps_avg_label": "평균 FPS:",
+            "fps_roll_minmax_label": "FPS 롤링 최소/최대:",
+            "fps_gbl_minmax_label": "FPS 글로벌 최소/최대:",
+            "tooltip_fps_avg": "지난 60 프레임 동안의 평균 FPS.",
+            "tooltip_fps_roll_minmax": "지난 600 프레임 동안의 평활화되지 않은 최소 및 최대 FPS.",
+            "tooltip_fps_gbl_minmax": "전체 게임 세션 동안의 평활화된(15 프레임 동안 FPS가 유지된 경우에만) FPS."
+        },
+        "summary": {
+            "plugins_loaded_activated_label": "로드된/활성화된 플러그인:",
+            "hooks_loaded_activated_label": "로드된/활성화된 후크:"
+        }
+    },
+    "update_popup": {
+        "title": "업데이트 상태",
+        "no_update": "최신 버전의 프레임워크를 사용하고 있습니다.",
+        "update_available": "새 버전 {}을(를) 다운로드할 수 있습니다.",
+        "switch_to_release": "베타 테스트가 완료되었습니다! 최신 안정 버전을 다운로드하십시오.",
+        "download_link": "다운로드하려면 여기를 클릭하십시오.",
+        "download_tooltip": "프레임워크 버전 {} 다운로드",
+        "developers_note_intro": "현재 C API 라이브러리는 다음에서 다운로드할 수 있습니다.",
+        "developers_note_link": "GitHub",
+        "github_tooltip": "GitHub 프로젝트로 이동",
+        "close_button": "닫기"
+    },
+    "common": {
+        "for_developers": "개발자용:",
+        "for_users": "사용자용:"
+    },
+    "api": {
+        "error": {
+            "no_internet": "업데이트 확인에 실패했습니다. 인터넷 연결을 확인하십시오.",
+            "server_unavailable": "업데이트 서버를 일시적으로 사용할 수 없습니다. 나중에 다시 시도하십시오.",
+            "generic": "업데이트를 확인하는 동안 예기치 않은 오류가 발생했습니다.",
+            "invalid_response": "업데이트 서버에서 잘못된 응답을 반환했습니다.",
+            "patrons_fetch_failed": "후원자 목록을 로드하지 못했습니다. 나중에 다시 시도하십시오."
+        }
+    },
+    "plugins_window": {
+        "title": "플러그인 관리자",
+        "table": {
+            "status": "상태",
+            "name": "플러그인 이름",
+            "actions": "작업"
+        },
+        "buttons": {
+            "enable": "활성화",
+            "disable": "비활성화"
+        },
+        "tooltips": {
+            "info": "플러그인 정보",
+            "description": "설명",
+            "settings": "설정"
+        },
+        "info_popup": {
+            "author": "제작자:",
+            "version": "버전:"
+        },
+        "status": {
+            "incompatible": " (게임 버전 필요:)"
+        }
+    },
+    "settings_window": {
+        "title": "설정",
+        "system_titles": {
+            "logging": "로깅",
+            "localization": "현지화",
+            "ui": "사용자 인터페이스",
+            "settings": "일반 설정"
+        },
+        "setting_names": {
+            "logging": {
+                "level": {
+                    "title": "로그 수준",
+                    "description": "기록할 메시지의 최소 수준을 설정합니다."
+                },
+                "sinks": {
+                    "title": "로그 싱크",
+                    "file": {
+                        "title": "파일 싱크",
+                        "description": "파일에 로깅을 활성화하거나 비활성화합니다."
+                    },
+                    "ui": {
+                        "title": "UI 싱크",
+                        "description": "UI 창에 로그 표시를 활성화하거나 비활성화합니다."
+                    }
+                }
+            },
+            "localization": {
+                "language": {
+                    "title": "언어",
+                    "description": "이 구성 요소의 인터페이스 언어를 설정합니다."
+                }
+            },
+            "ui": {
+                "windows": {
+                    "title": "창",
+                    "main_window": {
+                        "title": "메인 창"
+                    },
+                    "plugins_window": {
+                        "title": "플러그인 관리자"
+                    },
+                    "settings_window": {
+                        "title": "설정"
+                    },
+                    "logger_window": {
+                        "title": "로거"
+                    },
+                    "telemetry_window": {
+                        "title": "텔레메트리"
+                    },
+                    "hooks_window": {
+                        "title": "후크"
+                    },
+                    "game_console_window": {
+                        "title": "게임 콘솔"
+                    },
+                    "camera_window": {
+                        "title": "카메라"
+                    }
+                },
+                "properties": {
+                    "is_visible": {
+                        "title": "표시",
+                        "description": "창의 표시 여부를 전환합니다."
+                    },
+                    "is_interactive": {
+                        "title": "상호 작용 가능",
+                        "description": "창과 상호 작용할 수 있는지 여부를 전환합니다."
+                    },
+                    "pos_x": {
+                        "title": "위치 X",
+                        "description": "창 위치의 X 좌표입니다."
+                    },
+                    "pos_y": {
+                        "title": "위치 Y",
+                        "description": "창 위치의 Y 좌표입니다."
+                    },
+                    "size_w": {
+                        "title": "너비",
+                        "description": "창의 너비입니다."
+                    },
+                    "size_h": {
+                        "title": "높이",
+                        "description": "창의 높이입니다."
+                    },
+                    "is_collapsed": {
+                        "title": "접힘",
+                        "description": "창의 접힌 상태를 전환합니다."
+                    },
+                    "is_docked": {
+                        "title": "고정됨",
+                        "description": "창의 고정된 상태를 전환합니다."
+                    },
+                    "dock_priority": {
+                        "title": "고정 우선순위",
+                        "description": "고정 시 창의 우선순위입니다."
+                    },
+                    "allow_undocking": {
+                        "title": "고정 해제 허용",
+                        "description": "창의 고정 해제 가능 여부를 전환합니다."
+                    },
+                    "auto_scroll": {
+                        "title": "자동 스크롤",
+                        "description": "창 하단으로 자동 스크롤을 전환합니다."
+                    }
+                }
+            },
+            "settings": {
+                "plugin_states": {
+                    "title": "플러그인 상태",
+                    "description": "플러그인의 활성화/비활성화 상태를 관리합니다."
+                },
+                "hook_states": {
+                    "title": "후크 상태",
+                    "description": "후크의 활성화/비활성화 상태를 관리합니다."
+                }
+            }
+        },
+        "keybinds_drawer": {
+            "title": "키 바인딩 설정",
+            "tooltip_open": "키 바인딩 설정 열기",
+            "tooltip_close": "키 바인딩 설정 닫기",
+            "table": {
+                "action": "작업",
+                "key": "키",
+                "add_button_tooltip": "키 바인딩 추가",
+                "key_button_tooltip": "키 바인딩을 변경하거나 삭제하려면 클릭하십시오.",
+                "details_button_tooltip": "키 바인딩 동작 구성"
+            },
+            "unassigned_text": "할당되지 않음"
+        },
+        "component_selector": {
+            "tooltip": "구성할 플러그인 선택"
+        },
+        "key_capture_popup": {
+            "title": "키 캡처",
+            "press_key_text": "작업에 바인딩할 아무 키나 누르십시오:",
+            "delete_button": "삭제",
+            "cancel_button": "취소",
+            "conflict_title": "충돌 감지!",
+            "conflict_text": "키 '%s'은(는) 이미 다음에 바인딩되어 있습니다:",
+            "reassign_question": "다시 할당하시겠습니까?",
+            "yes_button": "예",
+            "no_button": "아니요"
+        },
+        "binding_details_popup": {
+            "title": "바인딩 세부 정보",
+            "press_type_label": "누름 유형:",
+            "behavior_label": "동작:",
+            "behavior_toggle": "전환",
+            "behavior_hold": "길게 누르기",
+            "consume_label": "소비 정책:",
+            "threshold_label": "누름 임계값(ms):",
+            "close_button": "닫기"
+        }
+    },
+    "logger_window": {
+        "title": "로거",
+        "button_clear": "지우기",
+        "checkbox_autoscroll": "자동 스크롤"
+    },
+    "telemetry_window": {
+        "title": "텔레메트리",
+        "tabs": {
+            "game": "게임",
+            "job": "작업",
+            "navigation": "내비게이션",
+            "truck": "트럭",
+            "positioning": "위치 지정",
+            "trailers": "트레일러",
+            "controls_events": "컨트롤 및 이벤트"
+        },
+        "headers": {
+            "game_state": "게임 상태",
+            "constants": "상수",
+            "live_data": "실시간 데이터",
+            "physics": "물리",
+            "wheels": "바퀴",
+            "damage": "손상",
+            "truck_positioning": "트럭 위치 지정",
+            "controls": "컨트롤",
+            "events": "이벤트"
+        },
+        "labels": {
+            "game_time": "게임 시간: %u",
+            "next_rest_stop": "다음 휴게소: %d분",
+            "next_rest_stop_real": "다음 휴게소 실제 시간: ~%.1f분",
+            "next_rest_stop_time": "다음 휴게소 시간: %s, %02d:%02d",
+            "paused": "일시 중지: %s",
+            "game_id": "게임 ID: %u",
+            "local_scale": "로컬 스케일: %.2f",
+            "multiplayer_time_offset": "멀티플레이어 시간 오프셋: %d",
+            "scs_game_version": "SCS 게임 버전: %u.%u",
+            "telemetry_plugin_version": "텔레메트리 플러그인 버전: %u.%u",
+            "telemetry_game_version": "게임 텔레메트리 버전: %u.%u",
+            "game_name": "게임 이름: %s",
+            "substances": "물질",
+            "substances_not_received": "목록이 아직 수신되지 않았습니다.",
+            "simulation_time": "시뮬레이션 시간: %llu",
+            "render_time": "렌더링 시간: %llu",
+            "paused_simulation_time": "일시 중지된 시뮬레이션 시간: %llu",
+            "no_active_job": "활성 작업 없음.",
+            "contract": "계약",
+            "market": "시장: %s",
+            "income": "수입: %llu",
+            "planned_distance": "계획된 거리: %ukm",
+            "cargo": "화물",
+            "cargo_info": "화물: %s (%s)",
+            "mass": "질량: %.0fkg (%u개 x %.0fkg)",
+            "damage": "손상: %.2f%%",
+            "loaded": "로드됨: %s",
+            "special_job": "특별 작업: %s",
+            "route": "경로",
+            "source": "출발지: %s (%s), %s (%s)",
+            "destination": "목적지: %s (%s), %s (%s)",
+            "time": "시간",
+            "delivery_deadline": "배송 마감일(게임 시간): %u분",
+            "remaining_game_time": "남은 시간(게임 시간): %.0f분",
+            "speed_limit": "속도 제한: %.0fkm/h",
+            "next_waypoint_dist": "다음 경유지까지의 거리: %.1fm",
+            "next_waypoint_time_game": "다음 경유지까지의 시간(게임): %.0f초",
+            "next_waypoint_time_real": "다음 경유지까지의 시간(실제): ~%.0f초",
+            "id": "ID: %s",
+            "brand": "브랜드: %s (%s)",
+            "name": "이름: %s",
+            "license_plate": "번호판: %s (%s)",
+            "engine_gearbox": "엔진 및 기어박스",
+            "rpm_limit": "RPM 한계: %.0f",
+            "gears": "기어: %d 전진, %d 후진",
+            "retarder_steps": "리타더 단계: %d",
+            "selector_count": "선택기 수: %zu",
+            "differential_ratio": "차동비: %.2f",
+            "shifter_type": "시프터 유형: %s",
+            "hshifter_layout": "H-시프터 레이아웃",
+            "hshifter_table": {
+                "slot": "슬롯",
+                "gear": "기어",
+                "handle_pos": "핸들 위치",
+                "selectors": "선택기"
+            },
+            "gear_ratios": "기어비",
+            "forward": "전진",
+            "reverse": "후진",
+            "gear_x": "기어 %2zu: %.2f",
+            "gear_rx": "기어 R%zu: %.2f",
+            "capacities": "용량",
+            "fuel_capacity": "연료 용량: %.1fL",
+            "adblue_capacity": "AdBlue 용량: %.1fL",
+            "warning_factors": "경고 요인",
+            "fuel_warning": "연료 경고: %.0f%%",
+            "adblue_warning": "AdBlue 경고: %.0f%%",
+            "air_pressure_warning": "공기압 경고: %.1fpsi",
+            "air_pressure_emergency": "공기압 비상: %.1fpsi",
+            "oil_pressure_warning": "오일 압력 경고: %.1fpsi",
+            "water_temp_warning": "수온 경고: %.0fC",
+            "battery_voltage_warning": "배터리 전압 경고: %.1fV",
+            "dashboard_info": "대시보드 정보",
+            "speed": "속도: %.2fkm/h",
+            "engine_rpm": "엔진 RPM: %.0f",
+            "gear": "기어: %d (표시: %d)",
+            "odometer": "주행 거리계: %.1fkm",
+            "cruise_control": "크루즈 컨트롤: %s (%.0fkm/h)",
+            "fuel": "연료: %.1fL (평균: %.2fL/km, 주행 가능 거리: %.0fkm)",
+            "adblue": "AdBlue: %.1fL (평균: %.3fL/km)",
+            "oil": "오일: %.1fpsi, %.1fC",
+            "water_temp": "수온: %.1fC",
+            "battery_voltage": "배터리 전압: %.1fV",
+            "dashboard_warnings": "대시보드 경고",
+            "fuel_warn_state": "연료: %s",
+            "adblue_warn_state": "AdBlue: %s",
+            "air_pressure_warn_state": "공기압: %s",
+            "oil_pressure_warn_state": "오일 압력: %s",
+            "water_temp_warn_state": "수온: %s",
+            "battery_voltage_warn_state": "배터리 전압: %s",
+            "system_states": "시스템 상태",
+            "electric_enabled": "전기 활성화: %s",
+            "engine_enabled": "엔진 활성화: %s",
+            "differential_lock": "차동 잠금 장치: %s",
+            "wipers": "와이퍼: %s",
+            "truck_lift_axle": "트럭 리프트 액슬: %s (표시기: %s)",
+            "trailer_lift_axle": "트레일러 리프트 액슬: %s (표시기: %s)",
+            "lights": "조명",
+            "blinkers": "깜박이: 왼쪽[%s,%s] 오른쪽[%s,%s] 비상[%s]",
+            "light_states": "주차: %s, 하향등: %s, 상향등: %s",
+            "aux_lights": "보조 전방: %s, 보조 지붕: %s, 비콘: %s",
+            "brake_reverse_lights": "브레이크: %s, 후진: %s",
+            "dashboard_backlight": "대시보드 백라이트: %.2f",
+            "brakes": "브레이크",
+            "air_pressure": "공기압: %.1fpsi",
+            "parking_brake": "주차 브레이크: %s",
+            "motor_brake": "모터 브레이크: %s",
+            "retarder_level": "리타더 레벨: %d",
+            "brake_temp": "브레이크 온도: %.1fC",
+            "hshifter": "H-시프터",
+            "slot": "슬롯: %u",
+            "selectors": "선택기: %s",
+            "linear_velocity": "선형 속도",
+            "angular_velocity": "각속도",
+            "linear_accel": "선형 가속",
+            "angular_accel": "각가속",
+            "cabin_ang_vel": "캐빈 각속도",
+            "cabin_ang_accel": "캐빈 각가속",
+            "wheel_x": "바퀴 {}",
+            "substance": "물질: %s (%u)",
+            "substance_unknown": "물질: 알 수 없음 (%u)",
+            "on_ground": "지면에 있음: %s",
+            "susp_deflection": "서스펜션 편향: %.3f",
+            "wheel_velocity": "속도: %.2f",
+            "steering": "조향: %.2f",
+            "rotation": "회전: %.2f",
+            "lift": "리프트: %.2f (오프셋: %.3f)",
+            "steerable": "조향 가능: %s",
+            "powered": "동력: %s",
+            "liftable": "리프트 가능: %s",
+            "simulated": "시뮬레이션됨: %s",
+            "radius": "반경: %.2f",
+            "position": "위치",
+            "engine_damage": "엔진: %.1f%%",
+            "transmission_damage": "변속기: %.1f%%",
+            "cabin_damage": "캐빈: %.1f%%",
+            "chassis_damage": "섀시: %.1f%%",
+            "wheels_damage": "바퀴(평균): %.1f%%",
+            "world_space": "월드 공간",
+            "world_placement": "월드 배치",
+            "component_offsets": "구성 요소 오프셋",
+            "cabin_offset": "캐빈 오프셋",
+            "head_offset": "헤드 오프셋",
+            "component_base_pos": "구성 요소 기본 위치",
+            "cabin_pos": "캐빈 위치",
+            "head_pos": "헤드 위치",
+            "hook_pos": "후크 위치",
+            "trailer_x": "트레일러 {} ({})",
+            "trailer_na": "해당 없음",
+            "connected": "연결됨: %s",
+            "general": "일반",
+            "trailer_brand": "브랜드: %s (ID: %s)",
+            "trailer_license_plate": "번호판: %s (국가: %s, ID: %s)",
+            "body_type": "차체 유형: %s",
+            "chain_type": "체인 유형: %s",
+            "cargo_accessory_id": "화물 액세서리 ID: %s",
+            "physics_pos": "물리 및 위치",
+            "trailer_hook_pos": "후크 위치",
+            "trailer_world_pos": "월드 위치: (%.2f, %.2f, %.2f)",
+            "trailer_damage_body": "차체: %.2f%%",
+            "trailer_damage_chassis": "섀시: %.2f%%",
+            "trailer_damage_wheels": "바퀴: %.2f%%",
+            "trailer_damage_cargo": "화물: %.2f%%",
+            "wheels_count": "바퀴(개수: {})",
+            "wheel_susp_deflection": "서스펜션 편향: %.3f",
+            "wheel_angular_velocity": "각속도: %.2f",
+            "wheel_lift": "리프트: %.2f",
+            "wheel_lift_offset": "리프트 오프셋: %.2f",
+            "user_input": "--- 사용자 입력 ---",
+            "effective_input": "--- 유효 입력 ---",
+            "input_steering": "조향: %.2f",
+            "input_throttle": "스로틀: %.2f",
+            "input_brake": "브레이크: %.2f",
+            "input_clutch": "클러치: %.2f",
+            "special_events": "--- 특별 이벤트(플래그) ---",
+            "on_job": "작업 중: %s",
+            "job_cancelled": "작업 취소됨: %s",
+            "job_delivered": "작업 배송됨: %s",
+            "fined": "벌금 부과됨: %s",
+            "tollgate": "톨게이트: %s",
+            "ferry": "페리: %s",
+            "train": "기차: %s",
+            "last_gameplay_event": "--- 마지막 게임 플레이 이벤트 ---",
+            "no_event_yet": "아직 이벤트 없음.",
+            "event_job_delivered": "작업 배송됨: 수익 %lld, 경험치 %d, 손상 %.1f%%",
+            "event_job_delivered_details": "  거리: %.1fkm, 시간: %u분",
+            "event_job_delivered_flags": "  자동 주차: %s, 자동 적재: %s",
+            "event_job_cancelled": "작업 취소됨: 벌금 %lld",
+            "event_fined": "벌금 부과됨: '%s'에 대해 %lld",
+            "event_tollgate": "톨게이트: %lld 지불",
+            "event_ferry": "페리: %lld 지불",
+            "event_ferry_route": "  출발지: %s (ID: %s)",
+            "event_ferry_route_to": "  목적지: %s (ID: %s)",
+            "event_train": "기차: %lld 지불",
+            "event_train_route": "  출발지: %s (ID: %s)",
+            "event_train_route_to": "  목적지: %s (ID: %s)"
+        },
+        "formats": {
+            "day_hour_minute": "(%s, %02u:%02u)",
+            "days_hours_minutes": "(%d일, %d시간, %d분)",
+            "hours_minutes": "(%d시간, %d분)",
+            "real_time_minutes": "~%.1f분",
+            "real_time_hours_minutes": "(%d시간, %d분)",
+            "next_rest_stop_time": "%s, %02d:%02d",
+            "km_h": "%.0fkm/h",
+            "meters": "%.1fm",
+            "game_time_seconds": "%.0f초",
+            "h_m_s": "(%02d:%02d:%02d)",
+            "real_time_seconds": "~%.0f초",
+            "m_s": "(%d분, %d초)",
+            "gears_fwd_rev": "%d 전진, %d 후진",
+            "liters": "%.1fL",
+            "percent": "%.0f%%",
+            "pressure_psi": "%.1fpsi",
+            "temp_celsius": "%.0fC",
+            "voltage_v": "%.1fV",
+            "speed_km_h": "%.2fkm/h",
+            "cruise_control_speed": "%.0fkm/h",
+            "fuel_consumption": "%.2fL/km",
+            "fuel_range": "%.0fkm",
+            "adblue_consumption": "%.3fL/km",
+            "oil_pressure_temp": "%.1fpsi, %.1fC",
+            "temp_celsius_f": "%.1fC",
+            "voltage_v_f": "%.1fV",
+            "blinker_state": "왼쪽[%s,%s] 오른쪽[%s,%s] 비상[%s]",
+            "dashboard_backlight": "%.2f",
+            "damage_percent": "%.1f%%",
+            "vector": "(%.2f, %.2f, %.2f)",
+            "placement_pos": "위치: (%.2f, %.2f, %.2f)",
+            "placement_ori": "방향: (H: %.2f, P: %.2f, R: %.2f)",
+            "trailer_world_pos": "(%.2f, %.2f, %.2f)",
+            "damage_percent_2f": "%.2f%%"
+        },
+        "days_of_week": {
+            "monday": "월요일",
+            "tuesday": "화요일",
+            "wednesday": "수요일",
+            "thursday": "목요일",
+            "friday": "금요일",
+            "saturday": "토요일",
+            "sunday": "일요일",
+            "unknown": "알 수 없음"
+        },
+        "generic": {
+            "yes": "예",
+            "no": "아니요",
+            "on": "켜짐",
+            "off": "꺼짐",
+            "warn": "경고",
+            "emergency": "비상",
+            "ok": "확인",
+            "engaged": "결합됨",
+            "lifted": "올림",
+            "down": "내림",
+            "dimmed": "어두워짐",
+            "full": "가득 참"
+        }
+    },
+    "hooks_window": {
+        "title": "후크",
+        "no_hooks_text": "사용 가능한 후크가 없습니다.",
+        "enabled_checkbox": "활성화됨",
+        "required_by_plugin_text": "(플러그인에 의해 필요함)",
+        "tooltip": {
+            "internal_name": "플러그인에서 이 후크를 사용하려면 'requiredHooks' 정책에 다음 이름을 지정하십시오."
+        }
+    },
+    "game_console_window": {
+        "title": "게임 콘솔",
+        "info_text": "게임 콘솔에 명령을 입력하기 위한 테스트 필드입니다. config.cfg 파일에서 g_console 및 g_developer가 비활성화되어 있어도('0'으로 설정) 작동합니다.",
+        "enable_hook_text": "'%s' 창에서 GameConsole 후크를 활성화하십시오.",
+        "send_button": "보내기"
+    },
+    "camera_window": {
+        "title": "카메라",
+        "current_camera": "현재 카메라: %s (%d)",
+        "camera_world_coordinates": "카메라 월드 좌표: X=%.2f, Y=%.2f, Z=%.2f",
+        "camera_world_coordinates_not_found": "카메라 월드 좌표: 찾을 수 없음",
+        "select_camera": "카메라 선택:",
+        "interior": "실내",
+        "behind": "후방",
+        "top": "상단",
+        "cabin": "캐빈",
+        "window": "창문",
+        "bumper": "범퍼",
+        "wheel": "바퀴",
+        "tv": "TV",
+        "developer_free_camera": "개발자 자유 카메라 (ID 0)",
+        "tabs": {
+            "interior_camera": "실내 카메라",
+            "behind_camera": "후방 카메라",
+            "top_camera": "상단 카메라",
+            "cabin_camera": "캐빈 카메라",
+            "window_camera": "창문 카메라",
+            "bumper_camera": "범퍼 카메라",
+            "wheel_camera": "바퀴 카메라",
+            "tv_camera": "TV 카메라",
+            "free_camera": "자유 카메라",
+            "debug": "디버그"
+        },
+        "interior_camera": {
+            "fov_zoom": "시야각 / 줌",
+            "base_fov": "기본 시야각",
+            "base_fov_not_found": "기본 시야각: 데이터를 찾을 수 없음",
+            "final_h_fov": "최종 수평 시야각: %.1f",
+            "final_v_fov": "최종 수직 시야각: %.1f",
+            "final_fov_not_found": "최종 시야각: 데이터를 찾을 수 없음",
+            "seat_position": "좌석 위치",
+            "seat_lr": "좌석 좌/우 (X)",
+            "seat_ud": "좌석 상/하 (Y)",
+            "seat_fb": "좌석 전/후 (Z)",
+            "seat_position_not_found": "좌석 위치: 데이터를 찾을 수 없음",
+            "head_rotation": "머리 회전",
+            "yaw_lr": "요 (좌/우)",
+            "pitch_ud": "피치 (상/하)",
+            "head_rotation_not_found": "머리 회전: 데이터를 찾을 수 없음",
+            "mouse_rotation_limits": "마우스 회전 제한",
+            "left_limit": "왼쪽 제한",
+            "right_limit": "오른쪽 제한",
+            "up_limit": "위쪽 제한",
+            "down_limit": "아래쪽 제한",
+            "rotation_limits_not_found": "회전 제한: 데이터를 찾을 수 없음",
+            "rotation_defaults": "기본 회전",
+            "default_lr": "기본 좌/우##실내",
+            "default_ud": "기본 상/하##실내",
+            "rotation_defaults_not_found": "기본 회전: 데이터를 찾을 수 없음",
+            "reset_to_defaults": "기본값으로 재설정",
+            "not_available": "실내 카메라 개체를 사용할 수 없습니다."
+        },
+        "behind_camera": {
+            "live_state": "실시간 상태",
+            "live_pitch": "실시간 피치",
+            "live_yaw": "실시간 요",
+            "live_zoom": "실시간 줌",
+            "live_state_not_found": "실시간 상태: 데이터를 찾을 수 없음",
+            "distance_zoom_settings": "거리 / 줌 설정",
+            "min_distance": "최소 거리",
+            "max_distance": "최대 거리",
+            "trailer_max_offset": "트레일러 최대 오프셋",
+            "default_distance": "기본 거리",
+            "trailer_default_dist": "트레일러 기본 거리",
+            "zoom_speed": "줌 속도",
+            "distance_laziness": "거리 지연",
+            "distance_zoom_settings_not_found": "거리 / 줌 설정: 데이터를 찾을 수 없음",
+            "elevation_pitch_settings": "고도 / 피치 설정",
+            "azimuth_laziness": "방위각 지연",
+            "min_elevation": "최소 고도",
+            "max_elevation": "최대 고도",
+            "default_elevation": "기본 고도",
+            "trailer_default_elev": "트레일러 기본 고도",
+            "height_limit": "높이 제한",
+            "elevation_pitch_settings_not_found": "고도 / 피치 설정: 데이터를 찾을 수 없음",
+            "pivot_offset": "피벗 오프셋 (회전 중심)",
+            "pivot_x": "피벗 X",
+            "pivot_y": "피벗 Y",
+            "pivot_z": "피벗 Z",
+            "pivot_offset_not_found": "피벗 오프셋: 데이터를 찾을 수 없음",
+            "dynamic_offset": "동적 오프셋 (속도 기반)",
+            "max_dynamic_offset": "최대 동적 오프셋",
+            "dyn_offset_speed_min": "동적 오프셋 최소 속도 (km/h)",
+            "dyn_offset_speed_max": "동적 오프셋 최대 속도 (km/h)",
+            "dyn_offset_laziness": "동적 오프셋 지연",
+            "dynamic_offset_not_found": "동적 오프셋: 데이터를 찾을 수 없음",
+            "base_fov_behind": "기본 시야각##후방",
+            "reset_to_defaults_behind": "기본값으로 재설정##후방",
+            "not_available": "후방 카메라 개체를 사용할 수 없습니다."
+        },
+        "top_camera": {
+            "height_zoom": "높이 / 줌",
+            "minimum_height": "최소 높이",
+            "maximum_height": "최대 높이",
+            "height_zoom_not_found": "높이 / 줌: 데이터를 찾을 수 없음",
+            "movement": "이동",
+            "movement_speed": "이동 속도",
+            "movement_not_found": "이동: 데이터를 찾을 수 없음",
+            "dynamic_offset": "동적 오프셋",
+            "forward_offset": "전방 오프셋",
+            "backward_offset": "후방 오프셋",
+            "dynamic_offset_not_found": "동적 오프셋: 데이터를 찾을 수 없음",
+            "base_fov_top": "기본 시야각##상단",
+            "reset_to_defaults_top": "기본값으로 재설정##상단",
+            "not_available": "상단 카메라 개체를 사용할 수 없습니다."
+        },
+        "cabin_camera": {
+            "base_fov_cabin": "기본 시야각##캐빈",
+            "reset_to_defaults_cabin": "기본값으로 재설정##캐빈",
+            "not_available": "캐빈 카메라 개체를 사용할 수 없습니다."
+        },
+        "window_camera": {
+            "head_offset": "헤드 오프셋",
+            "head_x_window": "헤드 X##창문",
+            "head_y_window": "헤드 Y##창문",
+            "head_z_window": "헤드 Z##창문",
+            "head_offset_not_found": "헤드 오프셋: 데이터를 찾을 수 없음",
+            "live_rotation": "실시간 회전",
+            "live_yaw_window": "실시간 요 (좌/우)##창문",
+            "live_pitch_window": "실시간 피치 (상/하)##창문",
+            "live_rotation_not_found": "실시간 회전: 데이터를 찾을 수 없음",
+            "mouse_rotation_limits_defaults": "마우스 회전 제한 및 기본값",
+            "left_limit_window": "왼쪽 제한##창문",
+            "right_limit_window": "오른쪽 제한##창문",
+            "up_limit_window": "위쪽 제한##창문",
+            "down_limit_window": "아래쪽 제한##창문",
+            "rotation_limits_not_found_window": "회전 제한: 데이터를 찾을 수 없음",
+            "default_lr_window": "기본 좌/우##창문",
+            "default_ud_window": "기본 상/하##창문",
+            "rotation_defaults_not_found_window": "기본 회전: 데이터를 찾을 수 없음",
+            "base_fov_window": "기본 시야각##창문",
+            "reset_to_defaults_window": "기본값으로 재설정##창문",
+            "not_available": "창문 카메라 개체를 사용할 수 없습니다."
+        },
+        "bumper_camera": {
+            "offset": "오프셋",
+            "offset_x_bumper": "오프셋 X##범퍼",
+            "offset_y_bumper": "오프셋 Y##범퍼",
+            "offset_z_bumper": "오프셋 Z##범퍼",
+            "offset_not_found": "오프셋: 데이터를 찾을 수 없음",
+            "base_fov_bumper": "기본 시야각##범퍼",
+            "reset_to_defaults_bumper": "기본값으로 재설정##범퍼",
+            "not_available": "범퍼 카메라 개체를 사용할 수 없습니다."
+        },
+        "wheel_camera": {
+            "offset": "오프셋",
+            "offset_x_wheel": "오프셋 X##바퀴",
+            "offset_y_wheel": "오프셋 Y##바퀴",
+            "offset_z_wheel": "오프셋 Z##바퀴",
+            "offset_not_found": "오프셋: 데이터를 찾을 수 없음",
+            "base_fov_wheel": "기본 시야각##바퀴",
+            "reset_to_defaults_wheel": "기본값으로 재설정##바퀴",
+            "not_available": "바퀴 카메라 개체를 사용할 수 없습니다."
+        },
+        "tv_camera": {
+            "distance": "거리",
+            "max_distance_tv": "최대 거리##TV",
+            "distance_not_found": "거리: 데이터를 찾을 수 없음",
+            "prefab_uplift": "프리팹 융기",
+            "prefab_uplift_x_tv": "프리팹 융기 X##TV",
+            "prefab_uplift_y_tv": "프리팹 융기 Y##TV",
+            "prefab_uplift_z_tv": "프리팹 융기 Z##TV",
+            "prefab_uplift_not_found": "프리팹 융기: 데이터를 찾을 수 없음",
+            "road_uplift": "도로 융기",
+            "road_uplift_x_tv": "도로 융기 X##TV",
+            "road_uplift_y_tv": "도로 융기 Y##TV",
+            "road_uplift_z_tv": "도로 융기 Z##TV",
+            "road_uplift_not_found": "도로 융기: 데이터를 찾을 수 없음",
+            "base_fov_tv": "기본 시야각##TV",
+            "reset_to_defaults_tv": "기본값으로 재설정##TV",
+            "not_available": "TV 카메라 개체를 사용할 수 없습니다."
+        },
+        "free_camera": {
+            "position": "위치",
+            "position_x_freecam": "위치 X",
+            "position_y_freecam": "위치 Y",
+            "position_z_freecam": "위치 Z",
+            "position_not_found": "위치: 데이터를 찾을 수 없음",
+            "orientation": "방향",
+            "mouse_horizontal_freecam": "마우스 수평",
+            "mouse_vertical_freecam": "마우스 수직",
+            "roll_freecam": "롤",
+            "orientation_not_found": "방향: 데이터를 찾을 수 없음",
+            "quaternion": "쿼터니언",
+            "quaternion_x_freecam": "X: %.4f",
+            "quaternion_y_freecam": "Y: %.4f",
+            "quaternion_z_freecam": "Z: %.4f",
+            "quaternion_w_freecam": "W: %.4f",
+            "quaternion_not_found": "쿼터니언: 데이터를 찾을 수 없음",
+            "base_fov_freecam": "기본 시야각##자유 카메라",
+            "movement_speed": "이동 속도",
+            "speed_freecam": "속도",
+            "movement_speed_not_found": "이동 속도: 데이터를 찾을 수 없음",
+            "reset_to_defaults_freecam": "기본값으로 재설정##자유 카메라",
+            "not_available": "자유 카메라 개체를 사용할 수 없습니다."
+        },
+        "debug": {
+            "current_mode": "현재 모드: %s (%d)",
+            "current_mode_na": "현재 모드: [해당 없음]",
+            "enable_debug_camera": "디버그 카메라 활성화",
+            "enable_debug_camera_not_found": "디버그 카메라 활성화: 데이터를 찾을 수 없음",
+            "clean_ui": "UI 정리 (윤곽선 없음)",
+            "clean_ui_not_found": "UI 정리: 데이터를 찾을 수 없음",
+            "show_debug_hud": "디버그 HUD 표시",
+            "show_debug_hud_not_found": "디버그 HUD 표시: 데이터를 찾을 수 없음",
+            "enable_debug_camera_to_select_mode": "모드를 선택하려면 디버그 카메라를 활성화하십시오.",
+            "simple_debug": "단순",
+            "basic_debug_camera_mode": "기본 디버그 카메라 모드.",
+            "video_debug": "비디오",
+            "hud_position_debug": "HUD 위치:",
+            "top_left_debug": "왼쪽 위",
+            "bottom_left_debug": "왼쪽 아래",
+            "top_right_debug": "오른쪽 위",
+            "bottom_right_debug": "오른쪽 아래",
+            "current_debug": "(현재: %s)",
+            "current_na_debug": "(현재: 해당 없음)",
+            "traffic_debug": "교통",
+            "camera_focuses_traffic": "카메라가 교통 차량에 초점을 맞춥니다.",
+            "cinematic_debug": "시네마틱",
+            "cinematic_camera_mode": "시네마틱 카메라 모드.",
+            "animated_debug": "애니메이션",
+            "create_play_animations": "카메라 애니메이션을 만들고 재생합니다.",
+            "activate_game_animated_mode": "게임 애니메이션 모드 활성화",
+            "custom_animation_controls": "사용자 지정 애니메이션 컨트롤",
+            "playing_status": "재생 중",
+            "pause_button": "일시 중지",
+            "paused_status": "일시 중지됨",
+            "stopped_status": "중지됨",
+            "play_button": "재생",
+            "stop_button": "중지",
+            "status_label": "상태: %s",
+            "reverse_playback": "역재생",
+            "timeline_label": "타임라인:",
+            "state_camera_debug": "상태 카메라",
+            "create_state_camera": "상태 카메라를 만듭니다.",
+            "save_keyframe": "키프레임 저장",
+            "reload_from_file": "파일에서 다시 로드",
+            "clear_all_memory": "모두 지우기 (메모리)",
+            "animation_controls": "애니메이션 컨트롤",
+            "add_edit_state": "상태 추가/편집",
+            "position_xyz": "위치 (X,Y,Z)",
+            "mystery_float": "미스터리 플로트",
+            "quaternion_xyzw": "쿼터니언 (X,Y,Z,W)",
+            "fov_label": "시야각",
+            "add_state_memory": "상태 추가 (메모리)",
+            "update_state_memory": "상태 업데이트 (메모리)",
+            "delete_state_memory": "상태 삭제 (메모리)",
+            "previous_state": "이전 상태",
+            "next_state": "다음 상태",
+            "active_state_label": "활성 상태 [%d]:",
+            "pos_label": "  위치: (%.2f, %.2f, %.2f)",
+            "mystery_label": "  미스터리: %.4f",
+            "quat_label": "  쿼트: (%.3f, %.3f, %.3f, %.3f)",
+            "fov_value_label": "  시야각: %.2f",
+            "active_state_none": "활성 상태: [없음]",
+            "saved_states_label": "저장된 상태: %d",
+            "states_combo_label": "상태",
+            "state_item_label": "상태 %d",
+            "no_states_saved": "저장된 상태 없음",
+            "oversize_debug": "초대형",
+            "camera_oversized_trailers": "초대형 트레일러용 카메라.",
+            "vehicle_list": "차량 목록"
+        }
+    },
+    "description": {
+        "detailed": "SCS 게임용 플러그인을 만들고 관리하기 위한 강력하고 유연한 프레임워크입니다. 로깅, 구성, UI 관리 등을 위한 핵심 서비스 집합을 제공합니다."
+    },
+    "patrons_popup": {
+      "title": "프로젝트 지원",
+      "intro_text": "우리 커뮤니티의 지원은 이 프로젝트의 원동력입니다. 우리 작업이 유용하다고 생각하시면 후원자가 되는 것을 고려해 보십시오. 귀하의 기여는 우리가 개발을 계속하고 모두를 위한 새롭고 흥미로운 플러그인을 만드는 것을 가능하게 합니다!",
+      "link_intro": "공식 페이지에서 우리를 지원할 수 있습니다:",
+      "link_text": "patreon.com/TrackAndTruckDevs",
+      "link_tooltip": "브라우저에서 Patreon 페이지를 열려면 클릭하십시오.",
+      "hof_title": "명예의 전당",
+      "hof_empty": "우리 명예의 전당은 아직 비어 있습니다... 여기에 처음으로 등장하여 우리의 여정을 시작하십시오!",
+      "hof_teaser": "우리 명예의 전당에 오르려면 우리를 지원하십시오.",
+      "close_button": "닫기",
+      "tiers": {
+        "magnate": "--- 물류 거물 ---",
+        "manager": "--- 차량 관리자 ---",
+        "master": "--- 도로의 달인 ---"
+      }
+    },
+    "manual_popup": {
+        "title": "FAQ",
+        "q1_question": "플러그인을 설치하고 활성화하는 방법은 무엇입니까?",
+        "q1_answer": "SPF 호환 플러그인을 ```{}``` 디렉토리에 복사하십시오. 플러그인의 `.dll`이 이름과 일치하는 디렉토리 내에 있는지 확인하십시오.\n예: `...\\MyPlugin\\MyPlugin.dll`\n프레임워크가 이 플러그인을 자동으로 찾아 로드합니다. '플러그인 관리자' 탭에서 활성화하기만 하면 됩니다.",
+        "q2_question": "자신만의 플러그인을 만드는 방법은 무엇입니까?",
+        "q2_answer": "플러그인을 개발하려면 [GitHub]({}) 페이지의 'Releases' 섹션에서 `SPF_-_API.h` 헤더 파일 패키지를 다운로드하여 프로젝트에 포함해야 합니다.",
+        "q3_question": "새 번역을 추가하는 방법은 무엇입니까?",
+        "q3_answer": "`프레임워크`를 번역하려면 ```{}```에서 파일을 찾으십시오. * 기존 번역(예: `en.json`)을 복사하십시오.\n * 번역 언어(예: `de.json`)로 이름을 바꾸십시오.\n * 문자열을 번역하십시오.\n\n`플러그인`의 번역 파일은 자체 현지화 폴더(예: ```{}```)에 있습니다.",
+        "q4_question": "새로운 기능이 필요한 경우 어떻게 해야 합니까?",
+        "q4_answer": "개발자인 경우 `SPF_-_API.h`를 사용하여 필요한 기능을 직접 구현할 수 있습니다.\n 그렇지 않은 경우 [GitHub]({}) 또는 [Patreon]({}) 페이지에서 제안을 할 수 있습니다.",
+        "q5_question": "설정은 어디에 저장됩니까?",
+        "q5_answer": "프레임워크 설정은 ```{}```에 있습니다. 플러그인 설정은 자체 구성 폴더(예: ```{}```)에 있습니다. **게임 내 인터페이스를 통해서만 설정을 변경하는 것이 좋습니다.**",
+        "q6_question": "프레임워크 또는 플러그인이 게임을 중단시킵니다. 어떻게 해야 합니까?",
+        "q6_answer": " * `\\spfAssets\\logs` 폴더의 로그 파일을 확인하십시오.\n * 문제의 원인을 찾기 위해 플러그인을 하나씩 비활성화해 보십시오.\n * 문제가 프레임워크에 있는 경우, 문제를 자세히 설명하고 로그 파일을 첨부하여 [GitHub]({})에 `문제`를 만드십시오."
+    },
+    "about_popup": {
+        "title": "소개 / 연락처",
+        "about_us_title": "소개",
+        "about_us_text": "우리는 트럭 시뮬레이터 게임 경험을 향상시키는 데 전념하는 열광적인 팀 {}입니다. 우리의 {}는 커뮤니티가 커뮤니티를 위해 만든 도구입니다.",
+        "framework_title": "프레임워크 정보",
+        "contacts_title": "연락처",
+        "email_text": "비즈니스 문의나 직접적인 연락은 [이메일]({})을 통해 문의하십시오.",
+        "discord_text": "[Discord]({}) 커뮤니티에 가입하여 다른 플레이어 및 개발자와 소통하십시오.",
+        "youtube_text": "ETS2 및 ATS 게임에 대한 업데이트, 튜토리얼 및 흥미로운 콘텐츠를 게시하는 [YouTube]({}) 채널을 구독하십시오.",
+        "github_text": "[GitHub]({})에서 개발을 팔로우하고 버그를 보고하거나 기여하십시오.",
+        "patreon_text": "[Patreon]({})에서 후원자가 되어 우리 작업을 지원하고 독점적인 혜택을 받으십시오.",
+        "scs_forum_text": "공식 [SCS Software 포럼 페이지]({})에서 프레임워크에 대해 토론하고 질문하십시오.",
+        "steam_profile_text": "[Steam]({})에서 친구로 추가하고 활동을 팔로우하십시오."
+    },
+    "legal_popup": {
+        "title": "법적 정보",
+        "license_title": "라이선스",
+        "license_text": "SPF 프레임워크는 Apache 2.0 라이선스 조건에 따라 배포됩니다. 전체 라이선스 텍스트는 [GitHub]({})에서 볼 수 있습니다.",
+        "disclaimer_title": "책임 부인",
+        "disclaimer_text": "SPF 프레임워크 소프트웨어는 어떠한 명시적 또는 묵시적 보증 없이 '있는 그대로' 제공됩니다. 개발자는 이 프레임워크의 사용으로 인해 발생할 수 있는 게임 파일, 저장, 구성 파일 또는 기타 손상에 대해 책임을 지지 않습니다.\n\n프레임워크는 타사 작성자가 개발한 플러그인의 플랫폼 관리자 역할을 합니다. 우리는 이러한 플러그인을 만들거나 해당 콘텐츠를 제어하거나 액세스할 수 없습니다. 타사 플러그인을 설치하고 사용함으로써 모든 위험을 감수하게 됩니다. **저장 및 구성 파일을 정기적으로 백업하는 것이 좋습니다.**",
+        "fair_play_title": "공정 플레이 정책",
+        "fair_play_text": "우리는 다른 플레이어에 비해 불공정한 이점을 얻기 위해 프레임워크에서 제공하는 도구를 사용하는 모든 행위를 엄격히 비난합니다. SPF 프레임워크의 목적은 단일 플레이어 게임 경험을 향상하고 확장하는 것뿐입니다.",
+        "contact_title": "연락처",
+        "contact_text": "질문, 제안 또는 불만 사항이 있는 경우 [이메일]({})을 통해 문의하십시오."
+    },
+    "shutdown_popup": {
+        "title": "종료 확인",
+        "content": "프레임워크를 종료하시겠습니까?\n\n **이렇게 하면 모든 플러그인이 언로드되고 다음 게임 재시작까지 프레임워크가 비활성화됩니다.**\n\n 게임을 다시 시작하지 않고 플러그인을 활성화해야 하는 경우 게임 콘솔을 사용하고 ```sdk reload``` 명령을 입력하십시오.",
+        "confirm_button": "예, 종료합니다.",
+        "confirm_disabled_tooltip": "이 기능을 사용하려면 후크 창에서 '게임 콘솔' 후크를 활성화하십시오.",
+        "cancel_button": "취소"
+    },
+    "ui": {
+        "actions": {
+            "dock": "연결",
+            "undock": "분리"
+        }
+    },
+    "keybind_actions": {
+        "ui.main_window.toggle": {
+            "title": "메인 창 전환",
+            "description": "메인 프레임워크 창의 표시 여부를 전환합니다."
+        },
+        "ui.close_focused": {
+            "title": "창 닫기/순환",
+            "description": "팝업을 닫거나, 부동 창을 고정하거나, 메인 UI를 닫습니다."
+        },
+        "input.toggle_mouse_overridden": {
+            "title": "마우스 제어 재정의",
+            "description": "UI가 표시될 때 이 키를 길게 눌러 일시적으로 마우스 제어를 게임에 반환합니다."
+        }
+    },
+    "enums": {
+        "press_type": {
+            "short": "짧게 누르기",
+            "long": "길게 누르기"
+        },
+        "consumption_policy": {
+            "never": "안 함",
+            "on_ui_focus": "UI 포커스 시",
+            "always": "항상"
+        }
+    }
+}
