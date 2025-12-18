@@ -263,6 +263,104 @@ typedef struct SPF_CustomSettingMetadata_C {
      * @brief A localization key or literal text for the setting's detailed description (tooltip).
      */
     char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
+
+    // ---------------------------------------------------------------------------------------------
+    // Optional UI Rendering Hints
+    // ---------------------------------------------------------------------------------------------
+    // The following fields are optional and allow you to control how a setting is displayed in the UI.
+    // If 'widget' is left empty, the framework will choose a default widget based on the setting's data type.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * @brief (Optional) The type of UI widget to use for this setting.
+     *
+     * If this is empty or not specified, a default widget will be chosen based on the data type
+     * (e.g., a checkbox for booleans, a simple input for numbers/strings).
+     *
+     * Valid Widget Types:
+     * - "input":      Default text/number input. (ImGui::InputText, InputInt, InputFloat)
+     * - "slider":     A slider for numbers. (ImGui::SliderFloat, SliderInt)
+     * - "drag":       A draggable field for numbers. (ImGui::DragFloat, DragInt)
+     * - "combo":      A dropdown/combobox for selecting one option.
+     * - "radio":      A group of radio buttons for selecting one option.
+     * - "color3":     A color picker for an RGB color. The setting value should be a JSON array of 3 floats (e.g., [1.0, 0.5, 0.2]).
+     * - "color4":     A color picker for an RGBA color. The setting value should be a JSON array of 4 floats (e.g., [1.0, 0.5, 0.2, 1.0]).
+     * - "multiline":  A multi-line text input field.
+     */
+    char widget[64];
+
+    /**
+     * @brief (Optional) A union of parameters specific to the chosen widget type.
+     *
+     * Based on the value of `widget`, you should fill in the corresponding struct within this union.
+     * For example, if `widget` is "slider", you must initialize the `slider` struct.
+     * It is crucial to only initialize the member that matches the widget type.
+     */
+    union {
+        /**
+         * @brief Parameters for "slider" widget.
+         */
+        struct {
+            float min_val;      ///< The minimum value of the slider.
+            float max_val;      ///< The maximum value of the slider.
+            char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
+        } slider;
+
+        /**
+         * @brief Parameters for "drag" widget.
+         */
+        struct {
+            float speed;        ///< The speed/increment when dragging the value.
+            float min_val;      ///< The minimum value.
+            float max_val;      ///< The maximum value.
+            char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
+        } drag;
+
+        /**
+         * @brief Parameters for "combo" and "radio" widgets.
+         */
+        struct {
+            /**
+             * @brief A JSON string representing the available options.
+             *
+             * The JSON must be an array of objects, where each object has a "value" and a "labelKey".
+             * - "value": The actual string or number to be stored in the settings when this option is chosen.
+             * - "labelKey": A localization key or literal text for the option's display name.
+             *
+             * @b Example:
+             * @code
+             * R"json([
+             *   { "value": "option_a", "labelKey": "options.a.title" },
+             *   { "value": "option_b", "labelKey": "Use This Text Directly" },
+             *   { "value": 10, "labelKey": "options.c.title" }
+             * ])json"
+             * @endcode
+             */
+            char options_json[1024];
+        } choice;
+
+        /**
+         * @brief Parameters for "color3" and "color4" widgets.
+         */
+        struct {
+            /**
+             * @brief (Advanced) A bitmask of ImGuiColorEditFlags to customize the color picker's behavior.
+             * See imgui.h for available flags (e.g., ImGuiColorEditFlags_NoInputs, ImGuiColorEditFlags_AlphaBar).
+             * Set to 0 for default behavior.
+             */
+            int flags;
+        } color;
+
+        /**
+         * @brief Parameters for "multiline" widget.
+         */
+        struct {
+            /**
+             * @brief The height of the text box, specified in number of text lines.
+             */
+            int height_in_lines;
+        } multiline;
+    } widget_params;
 } SPF_CustomSettingMetadata_C;
 
 /**

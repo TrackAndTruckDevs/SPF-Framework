@@ -60,11 +60,8 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         // `author`: (Optional) Your name or your organization's name.
         strncpy_s(info.author, "Your Name", sizeof(info.author));
 
-        // `email`: (Optional) A contact email.
-        strncpy_s(info.email, "your.email@example.com", sizeof(info.email));
-
         //---Optional Social and Project Links ---
-        strncpy_s(info.email, "MyEmail", sizeof(info.email));
+        strncpy_s(info.email, "mailto:your.email@example.com", sizeof(info.email));
         strncpy_s(info.discordUrl, "discordUrl", sizeof(info.discordUrl));
         strncpy_s(info.steamProfileUrl, "steamProfileUrl", sizeof(info.steamProfileUrl));
         strncpy_s(info.githubUrl, "githubUrl", sizeof(info.githubUrl));
@@ -113,7 +110,15 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // This is a JSON string literal that defines the default values for your plugin's custom settings.
     // If `allowUserConfig` is true, the framework will create a `settings.json` file for the plugin,
     // and the JSON object you provide here will be inserted under a top-level key named "settings".
-    out_manifest.settingsJson = R"json({ "some_number": 42 })json";
+    out_manifest.settingsJson = R"json({
+        "a_simple_number": 42,
+        "a_slider_number": 50.5,
+        "a_drag_number": 10,
+        "a_dropdown_choice": "option_b",
+        "a_radio_choice": 2,
+        "a_color": [0.2, 0.8, 0.4],
+        "a_text_note": "This is some default text.\nIt can span multiple lines."
+    })json";
 
     // --- 2.4. Default Settings for Framework Systems ---
     // Here you can provide default configurations for various framework systems for your plugin.
@@ -187,17 +192,122 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         window.autoScroll = false;    // If the window should auto-scroll to the bottom on new content.
     }
 
-    // --- 2.5. Metadata for Localization ---
+    // --- 2.5. Metadata for Localization and UI Hints ---
     // This section is optional. It allows you to provide translatable names and descriptions
-    // for your settings, keybinds, and UI elements.
-    
-    // --- Custom Settings Metadata ---
-    out_manifest.customSettingsMetadataCount = 1;
+    // for your settings, keybinds, and UI elements. You can also specify custom UI widgets.
+    out_manifest.customSettingsMetadataCount = 7;
+
+    // Example 1: A simple integer input (default behavior).
+    // This setting uses the default ImGui::InputInt widget because no specific 'widget' type is provided.
     {
         auto& meta = out_manifest.customSettingsMetadata[0];
-        strncpy_s(meta.keyPath, "some_number", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.some_number.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.some_number.description", sizeof(meta.descriptionKey));
+        strncpy_s(meta.keyPath, "a_simple_number", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.simple_number.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.simple_number.description", sizeof(meta.descriptionKey));
+        meta.widget[0] = '\0'; // No specific widget type, framework will default based on data type.
+    }
+
+    // Example 2: A float slider with custom range and format.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[1];
+        strncpy_s(meta.keyPath, "a_slider_number", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.slider_number.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.slider_number.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be a "slider".
+        strncpy_s(meta.widget, "slider", sizeof(meta.widget));
+        
+        // Fill in the corresponding union parameters for a slider.
+        // These parameters define the range and display format of the slider.
+        meta.widget_params.slider.min_val = 0.0f;
+        meta.widget_params.slider.max_val = 100.0f;
+        strncpy_s(meta.widget_params.slider.format, "%.1f %%", sizeof(meta.widget_params.slider.format));
+    }
+
+    // Example 3: An integer with a draggable input (drag widget).
+    {
+        auto& meta = out_manifest.customSettingsMetadata[2]; // Index 2 for the third setting
+        strncpy_s(meta.keyPath, "a_drag_number", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.drag_number.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.drag_number.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be a "drag" control.
+        strncpy_s(meta.widget, "drag", sizeof(meta.widget));
+        
+        // Fill in the corresponding union parameters for a drag widget.
+        // These parameters define the speed of change and the value range.
+        meta.widget_params.drag.speed = 0.5f; // How much value changes per pixel when dragging
+        meta.widget_params.drag.min_val = -100.0f;
+        meta.widget_params.drag.max_val = 100.0f;
+        strncpy_s(meta.widget_params.drag.format, "%d units", sizeof(meta.widget_params.drag.format)); // Custom format string
+    }
+
+    // Example 4: A dropdown (combo box) for selecting a string option.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[3]; // Index 3 for the fourth setting
+        strncpy_s(meta.keyPath, "a_dropdown_choice", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.dropdown.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.dropdown.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be a "combo" box.
+        strncpy_s(meta.widget, "combo", sizeof(meta.widget));
+        
+        // Provide the options as a JSON string. Each option has a 'value' and a 'labelKey'.
+        // The 'value' can be a string or a number. The 'labelKey' is for localization or literal text.
+        const char* options = R"json([
+            { "value": "option_a", "labelKey": "options.a.title" },
+            { "value": "option_b", "labelKey": "options.b.title" },
+            { "value": "option_c", "labelKey": "This is a literal label" }
+        ])json";
+        strncpy_s(meta.widget_params.choice.options_json, options, sizeof(meta.widget_params.choice.options_json));
+    }
+
+    // Example 5: Radio buttons for selecting a numeric option.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[4]; // Index 4 for the fifth setting
+        strncpy_s(meta.keyPath, "a_radio_choice", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.radio.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.radio.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be "radio" buttons.
+        strncpy_s(meta.widget, "radio", sizeof(meta.widget));
+        
+        // Radio buttons use the same choice parameters (`options_json`) as combo boxes.
+        // Note that the 'value' can be numeric.
+        const char* options = R"json([
+            { "value": 1, "labelKey": "options.radio_one" },
+            { "value": 2, "labelKey": "options.radio_two" },
+            { "value": 3, "labelKey": "options.radio_three" }
+        ])json";
+        strncpy_s(meta.widget_params.choice.options_json, options, sizeof(meta.widget_params.choice.options_json));
+    }
+
+    // Example 6: An RGB Color Picker.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[5]; // Index 5 for the sixth setting
+        strncpy_s(meta.keyPath, "a_color", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.color.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.color.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be a "color3" picker (RGB).
+        // The setting's value in settingsJson should be an array of 3 floats, e.g., [R, G, B].
+        strncpy_s(meta.widget, "color3", sizeof(meta.widget));
+        
+        // Fill in parameters for a color picker. 'flags' allow for advanced customization.
+        // Set to 0 for default color picker behavior.
+        meta.widget_params.color.flags = 0;
+    }
+
+    // Example 7: A multiline text input field.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[6]; // Index 6 for the seventh setting
+        strncpy_s(meta.keyPath, "a_text_note", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.note.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.note.description", sizeof(meta.descriptionKey));
+
+        // Specify the widget type to be a "multiline" text input.
+        strncpy_s(meta.widget, "multiline", sizeof(meta.widget));
+        meta.widget_params.multiline.height_in_lines = 4; // Set the text box height to be 4 lines tall.
     }
 
     // --- Keybinds Metadata ---
@@ -257,11 +367,11 @@ void OnLoad(const SPF_Load_API* load_api) {
         // Read initial values from the config file. The `GetContext` call gets a handle
         // specific to our plugin, ensuring we don't conflict with other plugins' settings.
         auto config = g_ctx.loadAPI->config->GetContext(PLUGIN_NAME);
-        g_ctx.someNumber = g_ctx.loadAPI->config->GetInt32(config, "settings.some_number", 42);
+        g_ctx.someNumber = g_ctx.loadAPI->config->GetInt32(config, "settings.a_simple_number", 42);
 
         // Log the initial value. Use a local buffer for safe cross-DLL string formatting.
         char log_buffer[256];
-        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Initial value for 'some_number' is %d.", g_ctx.someNumber);
+        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Initial value for 'a_simple_number' is %d.", g_ctx.someNumber);
         g_ctx.loadAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
     }
 }
@@ -352,7 +462,7 @@ void OnUnload() {
 
 /**
  * @brief Called by the framework when a setting relevant to this plugin is changed.
- * @param keyPath The full path of the setting that changed (e.g., "settings.some_number").
+ * @param keyPath The full path of the setting that changed (e.g., "settings.a_simple_number").
  * @param value_handle A handle to the new JSON value of the setting.
  * @param json_reader A pointer to the JSON Reader API, used to extract the data from `value_handle`.
  * @details This function allows the plugin to react dynamically to configuration changes made by
@@ -360,13 +470,13 @@ void OnUnload() {
  */
 void OnSettingChanged(const char* keyPath, const SPF_JsonValue_Handle* value_handle, const SPF_JsonReader_API* json_reader) {
     // Check if the changed setting is the one we care about.
-    if (strcmp(keyPath, "settings.some_number") == 0) {
+    if (strcmp(keyPath, "settings.a_simple_number") == 0) {
         // Update the cached value in our global context.
         g_ctx.someNumber = json_reader->GetInt32(value_handle, g_ctx.someNumber);
 
         // Log the change for debugging purposes.
         char log_buffer[256];
-        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "'some_number' was changed externally. New value: %d", g_ctx.someNumber);
+        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "'a_simple_number' was changed externally. New value: %d", g_ctx.someNumber);
         g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     }
 }
@@ -487,8 +597,8 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->Text("This slider modifies a value in settings.json.");
             if (ui->SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
                 // If the slider is moved, update the configuration file.
-                g_ctx.loadAPI->config->SetInt32(g_ctx.loadAPI->config->GetContext(PLUGIN_NAME), "settings.some_number", g_ctx.someNumber);
-                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'some_number' via UI.");
+                g_ctx.loadAPI->config->SetInt32(g_ctx.loadAPI->config->GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
+                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
             }
             ui->Separator();
 

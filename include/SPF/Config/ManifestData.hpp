@@ -127,6 +127,19 @@ struct CustomSettingMetadata {
     std::string keyPath; ///< @brief Full JSON path to the setting.
     std::optional<std::string> titleKey; ///< @brief Localization key for the setting's title.
     std::optional<std::string> descriptionKey; ///< @brief Localization key for the setting's description.
+
+    // ---------------------------------------------------------------------------------------------
+    // Optional UI Rendering Hints (parsed from SPF_CustomSettingMetadata_C)
+    // These fields allow controlling how a setting is displayed in the UI.
+    // If 'widget' is empty, a default widget will be chosen based on the setting's data type.
+    // ---------------------------------------------------------------------------------------------
+    std::optional<std::string> widget; ///< @brief The type of UI widget to use (e.g., "slider", "drag", "color3").
+    /**
+     * @brief Parameters specific to the chosen widget type.
+     * This JSON object will contain key-value pairs like "min": 0.0, "max": 100.0, "format": "%.2f",
+     * or "options": [...] for combo/radio widgets.
+     */
+    nlohmann::json widget_params;
 };
 
 /**

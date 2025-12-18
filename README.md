@@ -106,7 +106,7 @@ From the [GitHub Releases](https://github.com/TrackAndTruckDevs/SPF-Framework/re
 Unzip the template project and rename its folder and source files (e.g., from `MyPlugin.cpp` to `YourPlugin.cpp`). Next, **edit** the `CMakeLists.txt` file to change the project name inside it (e.g., from `project(MyPlugin)` to `project(YourPlugin)`). The provided configuration is already set up to build your plugin into a DLL file. You can now open the project in your favorite editor and start implementing your ideas.
 
 **Part 2: Running and Testing Your Plugin in the Game**
-To test your plugin in-game, you need the main SPF-Framework runtime (`spf-framework.dll`). You can obtain it in one of two ways: download a pre-built package from the [Download SFP Framework](https://sharemods.com/vi2a9qynwu5a/SPF-Framework_v1.0.3.zip.html), or build it yourself (see the **Method 3: Build from Source** section).
+To test your plugin in-game, you need the main SPF-Framework runtime (`spf-framework.dll`). You can obtain it in one of two ways: download a pre-built package from the [Download SFP Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases), or build it yourself (see the **Method 3: Build from Source** section).
 
 Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory.
 
@@ -167,7 +167,7 @@ After this setup, you can include the API headers directly in your C++ code. The
 This approach provides automated dependency management and ensures you can only include the public C-API headers, preventing accidental dependencies on the framework's internal C++ code.
 
 **Part 2: Running and Testing Your Plugin in the Game**
-To test your plugin in-game, you need the main SPF-Framework runtime (`spf-framework.dll`). You can obtain it in one of two ways: download a pre-built package from the [Download SFP Framework](https://sharemods.com/vi2a9qynwu5a/SPF-Framework_v1.0.3.zip.html), or build it yourself (see the **Method 3: Build from Source** section).
+To test your plugin in-game, you need the main SPF-Framework runtime (`spf-framework.dll`). You can obtain it in one of two ways: download a pre-built package from the [Download SFP Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases), or build it yourself (see the **Method 3: Build from Source** section).
 
 Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory.
 
@@ -244,7 +244,7 @@ This section guides you on how to install and use the SPF-Framework and SPF-comp
 
 ### Installing the SPF-Framework
 
-To install the SPF-Framework, first obtain the latest framework release package (e.g., `SPF-Framework_v1.0.3.zip`) [Download SFP-Framework](https://sharemods.com/vi2a9qynwu5a/SPF-Framework_v1.0.3.zip.html). Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory. For details, read the `readme.txt` which you will find in the downloaded archive.
+To install the SPF-Framework, first obtain the latest framework release package (e.g., `SPF-Framework_v1.0.3.zip`) [Download SFP-Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases). Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory. For details, read the `readme.txt` which you will find in the downloaded archive.
 
 ### Activating the Framework in Game
 

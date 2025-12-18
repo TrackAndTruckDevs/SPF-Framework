@@ -7,7 +7,7 @@
     "messages.welcome": "Welcome to ExamplePlugin! The current language is English.",
     "MainWindow.title": "ExamplePlugin Main Window",
     "setting": {
-        "some_number": {
+        "a_simple_number": {
             "title": "Some Number",
             "description": "This is an example integer setting for the plugin."
         }

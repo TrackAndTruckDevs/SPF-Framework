@@ -110,23 +110,52 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
         cppManifest.ui.windows[windowName] = windowData;
     }
 
-    // --- Custom Settings Metadata ---
-    for (unsigned int i = 0; i < cManifest.customSettingsMetadataCount && i < 128; ++i) {
-        const auto& cMeta = cManifest.customSettingsMetadata[i];
-        if (cMeta.keyPath[0] == '\0') continue;
-
-        SPF::Config::CustomSettingMetadata cppMeta;
-        cppMeta.keyPath = cMeta.keyPath;
-        if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-        if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-        cppManifest.customSettingsMetadata.push_back(cppMeta);
-    }
-
-    // --- Keybind Action Metadata ---
-    for (unsigned int i = 0; i < cManifest.keybindsMetadataCount && i < 128; ++i) {
-        const auto& cMeta = cManifest.keybindsMetadata[i];
-        if (cMeta.groupName[0] == '\0' || cMeta.actionName[0] == '\0') continue;
-
+            // --- Custom Settings Metadata ---
+        for (unsigned int i = 0; i < cManifest.customSettingsMetadataCount && i < 128; ++i) {
+            const auto& cMeta = cManifest.customSettingsMetadata[i];
+            if (cMeta.keyPath[0] == '\0') continue;
+    
+            SPF::Config::CustomSettingMetadata cppMeta;
+            cppMeta.keyPath = cMeta.keyPath;
+            if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
+            if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
+    
+            // NEW: Widget and widget_params
+            if (cMeta.widget[0] != '\0') {
+                cppMeta.widget = cMeta.widget;
+                std::string widgetType = cMeta.widget;
+    
+                if (widgetType == "slider") {
+                    if (cMeta.widget_params.slider.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.slider.min_val;
+                    if (cMeta.widget_params.slider.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.slider.max_val;
+                    if (cMeta.widget_params.slider.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.slider.format;
+                } else if (widgetType == "drag") {
+                    if (cMeta.widget_params.drag.speed != 0.0f) cppMeta.widget_params["speed"] = cMeta.widget_params.drag.speed;
+                    if (cMeta.widget_params.drag.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.drag.min_val;
+                    if (cMeta.widget_params.drag.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.drag.max_val;
+                    if (cMeta.widget_params.drag.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.drag.format;
+                } else if (widgetType == "combo" || widgetType == "radio") {
+                    if (cMeta.widget_params.choice.options_json[0] != '\0') {
+                        try {
+                            cppMeta.widget_params["options"] = nlohmann::json::parse(cMeta.widget_params.choice.options_json);
+                        } catch (const nlohmann::json::parse_error& e) {
+                            logger->Error("ConvertCManifestToCppManifest: Failed to parse options_json for custom setting '{}' in plugin '{}'. Error: {}. Returning empty options.", cMeta.keyPath, pluginName, e.what());
+                            // Leave cppMeta.widget_params["options"] as empty or handle as appropriate
+                        }
+                    }
+                } else if (widgetType == "color3" || widgetType == "color4") {
+                    if (cMeta.widget_params.color.flags != 0) cppMeta.widget_params["flags"] = cMeta.widget_params.color.flags;
+                } else if (widgetType == "multiline") {
+                    if (cMeta.widget_params.multiline.height_in_lines != 0) cppMeta.widget_params["height_in_lines"] = cMeta.widget_params.multiline.height_in_lines;
+                }
+            }
+            cppManifest.customSettingsMetadata.push_back(cppMeta);
+        }
+    
+        // --- Keybind Action Metadata ---
+        for (unsigned int i = 0; i < cManifest.keybindsMetadataCount && i < 128; ++i) {
+            const auto& cMeta = cManifest.keybindsMetadata[i];
+            if (cMeta.groupName[0] == '\0' || cMeta.actionName[0] == '\0') continue;
         SPF::Config::KeybindActionMetadata cppMeta;
         cppMeta.groupName = cMeta.groupName;
         cppMeta.actionName = cMeta.actionName;

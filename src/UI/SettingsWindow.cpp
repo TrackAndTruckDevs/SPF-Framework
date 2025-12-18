@@ -83,25 +83,20 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
   const nlohmann::json* valueNode = &node;
   std::string displayName = key; // Default to raw key
 
+  // Get metadata for display name and description
+  const nlohmann::json* metaNode = nullptr;
   if (node.is_object() && node.contains("_value")) {
       valueNode = &node["_value"];
       if (node.contains("_meta") && node["_meta"].is_object()) {
-          const auto& meta = node["_meta"];
-          if (meta.contains("titleKey") && meta["titleKey"].is_string()) {
-              const auto& titleKey = meta["titleKey"].get<std::string>();
-              if (!titleKey.empty()) {
-                  if (systemName == "logging" || systemName == "localization" || systemName == "ui") {
-                      displayName = loc.GetWithFallback(m_currentComponent, titleKey);
-                  } else {
-                      displayName = loc.Get(m_currentComponent, titleKey);
-                  }
-              }
-          }
+          metaNode = &node["_meta"];
       }
   } else if (node.is_object() && node.contains("_meta")) { // It's an object that is just metadata, no _value
-      const auto& meta = node["_meta"];
-      if (meta.contains("titleKey") && meta["titleKey"].is_string()) {
-          const auto& titleKey = meta["titleKey"].get<std::string>();
+      metaNode = &node["_meta"];
+  }
+
+  if (metaNode) {
+      if (metaNode->contains("titleKey") && (*metaNode)["titleKey"].is_string()) {
+          const auto& titleKey = (*metaNode)["titleKey"].get<std::string>();
           if (!titleKey.empty()) {
               if (systemName == "logging" || systemName == "localization" || systemName == "ui") {
                   displayName = loc.GetWithFallback(m_currentComponent, titleKey);
@@ -116,8 +111,8 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
 
   // Helper lambda to display a tooltip for the last drawn item.
   auto ShowTooltip = [&]() {
-    if (ImGui::IsItemHovered() && node.is_object() && node.contains("_meta") && node["_meta"].is_object() && node["_meta"].contains("descriptionKey") && node["_meta"]["descriptionKey"].is_string()) {
-        const auto& descKey = node["_meta"]["descriptionKey"].get<std::string>();
+    if (ImGui::IsItemHovered() && metaNode && metaNode->contains("descriptionKey") && (*metaNode)["descriptionKey"].is_string()) {
+        const auto& descKey = (*metaNode)["descriptionKey"].get<std::string>();
         if (!descKey.empty()) {
             if (systemName == "logging" || systemName == "localization" || systemName == "ui") {
                 ImGui::SetTooltip("%s", loc.GetWithFallback(m_currentComponent, descKey).c_str());
@@ -128,92 +123,248 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
     }
   };
 
-  if (valueNode->is_boolean()) {
-    bool value = valueNode->get<bool>();
-    if (ImGui::Checkbox(label.c_str(), &value)) {
-      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
-    }
-    ShowTooltip();
-  } else if (valueNode->is_string()) {
-    // Special handling for language and log level
-    if (systemName == "localization" && key == "language") {
-      const auto& availableLangs = loc.GetAvailableLanguagesFor(m_currentComponent);
-      std::string currentLang = valueNode->get<std::string>();
-      std::string currentLangDisplay = loc.Get(m_currentComponent, "language." + currentLang);
-      if (currentLangDisplay == "language." + currentLang) {
-          currentLangDisplay = currentLang;
-      }
+  bool renderedWithCustomWidget = false;
+  if (metaNode && metaNode->contains("ui") && (*metaNode)["ui"].is_object()) {
+      const auto& ui_meta = (*metaNode)["ui"];
+      if (ui_meta.contains("widget") && ui_meta["widget"].is_string()) {
+          std::string widget_type = ui_meta["widget"].get<std::string>();
+          const auto& params = ui_meta.value("params", nlohmann::json::object()); // Get params or empty object
 
-      if (ImGui::BeginCombo(label.c_str(), currentLangDisplay.c_str())) {
-        for (const auto& langCode : availableLangs) {
-          bool is_selected = (currentLang == langCode);
-          std::string langDisplay = loc.Get(m_currentComponent, "language." + langCode);
-          if (langDisplay == "language." + langCode) {
-              langDisplay = langCode;
+          if (widget_type == "slider") {
+              if (valueNode->is_number_integer()) {
+                  int value = valueNode->get<int>();
+                  int min_val = params.value("min", 0);
+                  int max_val = params.value("max", 100);
+                  std::string format = params.value("format", "%d");
+                  if (ImGui::SliderInt(("##" + key).c_str(), &value, min_val, max_val, format.c_str())) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              } else if (valueNode->is_number_float()) {
+                  float value = valueNode->get<float>();
+                  float min_val = params.value("min", 0.0f);
+                  float max_val = params.value("max", 100.0f);
+                  std::string format = params.value("format", "%.3f");
+                  if (ImGui::SliderFloat(("##" + key).c_str(), &value, min_val, max_val, format.c_str())) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              }
+          } else if (widget_type == "drag") {
+              if (valueNode->is_number_integer()) {
+                  int value = valueNode->get<int>();
+                  float speed = params.value("speed", 1.0f);
+                  int min_val = params.value("min", 0);
+                  int max_val = params.value("max", 100);
+                  std::string format = params.value("format", "%d");
+                  if (ImGui::DragInt(("##" + key).c_str(), &value, speed, min_val, max_val, format.c_str())) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              } else if (valueNode->is_number_float()) {
+                  float value = valueNode->get<float>();
+                  float speed = params.value("speed", 0.1f);
+                  float min_val = params.value("min", 0.0f);
+                  float max_val = params.value("max", 100.0f);
+                  std::string format = params.value("format", "%.3f");
+                  if (ImGui::DragFloat(("##" + key).c_str(), &value, speed, min_val, max_val, format.c_str())) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              }
+          } else if (widget_type == "combo" || widget_type == "radio") {
+              if (params.contains("options") && params["options"].is_array()) {
+                  std::vector<std::string> option_labels;
+                  std::vector<nlohmann::json> option_values;
+                  int current_selection = -1; // For combo
+
+                  for (const auto& option : params["options"]) {
+                      if (option.is_object() && option.contains("value") && option.contains("labelKey")) {
+                          option_values.push_back(option["value"]);
+                          std::string label_key = option["labelKey"].get<std::string>();
+                          std::string display_label = loc.GetWithFallback(m_currentComponent, label_key);
+                          if (display_label == label_key) { // Fallback to literal if key not found
+                              display_label = label_key;
+                          }
+                          option_labels.push_back(display_label);
+
+                          // Check if this option matches current value
+                          if (valueNode->type() == option["value"].type() && *valueNode == option["value"]) {
+                              current_selection = option_labels.size() - 1;
+                          }
+                      }
+                  }
+                  if (!option_labels.empty()) {
+                      if (widget_type == "combo") {
+                          std::string preview_value = (current_selection != -1) ? option_labels[current_selection] : "";
+                          if (ImGui::BeginCombo(("##" + key).c_str(), preview_value.c_str())) {
+                              for (int i = 0; i < option_labels.size(); ++i) {
+                                  bool is_selected = (i == current_selection);
+                                  if (ImGui::Selectable(option_labels[i].c_str(), is_selected)) {
+                                      if (i != current_selection) {
+                                          m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, option_values[i]});
+                                      }
+                                  }
+                                  if (is_selected) ImGui::SetItemDefaultFocus();
+                              }
+                              ImGui::EndCombo();
+                          }
+                          ShowTooltip();
+                          renderedWithCustomWidget = true;
+                      } else if (widget_type == "radio") {
+                          ImGui::TextUnformatted(label.c_str());
+                          ShowTooltip();
+                          ImGui::Indent();
+                          for (int i = 0; i < option_labels.size(); ++i) {
+                              bool is_selected = (i == current_selection);
+                              if (ImGui::RadioButton(option_labels[i].c_str(), is_selected)) {
+                                  if (i != current_selection) {
+                                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, option_values[i]});
+                                  }
+                              }
+                          }
+                          ImGui::Unindent();
+                          renderedWithCustomWidget = true;
+                      }
+                  }
+              }
+                    } else if (widget_type == "color3") {
+                        if (valueNode->is_array() && valueNode->size() == 3) {
+                            ImVec4 color = ImVec4(valueNode->at(0).get<float>(), valueNode->at(1).get<float>(), valueNode->at(2).get<float>(), 1.0f);
+                            int flags = params.value("flags", 0);
+                            if (ImGui::ColorEdit3(("##" + key).c_str(), (float*)&color, flags)) {
+                                nlohmann::json newColor = {color.x, color.y, color.z};
+                                m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, newColor});
+                            }
+                            ShowTooltip();
+                            renderedWithCustomWidget = true;
+                        } else {
+                            LoggerFactory::GetInstance().GetLogger("SettingsWindow")->Error("Invalid value for 'color3' widget (key: '{}'). Expected array of 3 floats. Falling back to default.", fullSystemPath);
+                        }
+                    } else if (widget_type == "color4") {
+                        if (valueNode->is_array() && valueNode->size() == 4) {
+                            ImVec4 color = ImVec4(valueNode->at(0).get<float>(), valueNode->at(1).get<float>(), valueNode->at(2).get<float>(), valueNode->at(3).get<float>());
+                            int flags = params.value("flags", 0);
+                            if (ImGui::ColorEdit4(("##" + key).c_str(), (float*)&color, flags)) {
+                                nlohmann::json newColor = {color.x, color.y, color.z, color.w};
+                                m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, newColor});
+                            }
+                            ShowTooltip();
+                            renderedWithCustomWidget = true;
+                        } else {
+                            LoggerFactory::GetInstance().GetLogger("SettingsWindow")->Error("Invalid value for 'color4' widget (key: '{}'). Expected array of 4 floats. Falling back to default.", fullSystemPath);
+                        }
+                    } else if (widget_type == "multiline" && valueNode->is_string()) {
+                  std::string value = valueNode->get<std::string>();
+                  char buf[2048]; // Use a larger buffer for multiline text
+                  strncpy_s(buf, value.c_str(), sizeof(buf));
+                  buf[sizeof(buf) - 1] = 0;
+                  int height_in_lines = params.value("height_in_lines", 5);
+                  if (ImGui::InputTextMultiline(("##" + key).c_str(), buf, sizeof(buf), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * height_in_lines))) {
+                    m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, std::string(buf)});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+          } else if (widget_type == "input") {
+              // Explicitly specified "input" widget, fall through to default rendering.
+              // This branch is just for clarity, as it would otherwise hit the !renderedWithCustomWidget block.
+              // No 'renderedWithCustomWidget = true;' here, let the fallback handle it.
           }
-          if (ImGui::Selectable(langDisplay.c_str(), is_selected)) {
-            if (currentLang != langCode) {
-              m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, langCode});
-            }
-          }
-          if (is_selected) ImGui::SetItemDefaultFocus();
+      }
+  }
+
+  if (!renderedWithCustomWidget) {
+      if (valueNode->is_boolean()) {
+        bool value = valueNode->get<bool>();
+        if (ImGui::Checkbox(("##" + key).c_str(), &value)) {
+          m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
         }
-        ImGui::EndCombo();
-      }
-      ShowTooltip();
-    } else if (systemName == "logging" && key == "level") {
-      std::string currentLevelStr = valueNode->get<std::string>();
-      if (ImGui::BeginCombo(label.c_str(), currentLevelStr.c_str())) {
-        for (const auto& levelName : m_logLevels) {
-          bool is_selected = (currentLevelStr == levelName);
-          if (ImGui::Selectable(levelName.c_str(), is_selected)) {
-            if (currentLevelStr != levelName) {
-              m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, levelName});
-            }
+        ShowTooltip();
+      } else if (valueNode->is_string()) {
+        // Special handling for language and log level
+        if (systemName == "localization" && key == "language") {
+          const auto& availableLangs = loc.GetAvailableLanguagesFor(m_currentComponent);
+          std::string currentLang = valueNode->get<std::string>();
+          std::string currentLangDisplay = loc.Get(m_currentComponent, "language." + currentLang);
+          if (currentLangDisplay == "language." + currentLang) {
+              currentLangDisplay = currentLang;
           }
-          if (is_selected) ImGui::SetItemDefaultFocus();
+
+          if (ImGui::BeginCombo(("##" + key).c_str(), currentLangDisplay.c_str())) {
+            for (const auto& langCode : availableLangs) {
+              bool is_selected = (currentLang == langCode);
+              std::string langDisplay = loc.Get(m_currentComponent, "language." + langCode);
+              if (langDisplay == "language." + langCode) {
+                  langDisplay = langCode;
+              }
+              if (ImGui::Selectable(langDisplay.c_str(), is_selected)) {
+                if (currentLang != langCode) {
+                  m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, langCode});
+                }
+              }
+              if (is_selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+          }
+          ShowTooltip();
+        } else if (systemName == "logging" && key == "level") {
+          std::string currentLevelStr = valueNode->get<std::string>();
+          if (ImGui::BeginCombo(("##" + key).c_str(), currentLevelStr.c_str())) {
+            for (const auto& levelName : m_logLevels) {
+              bool is_selected = (currentLevelStr == levelName);
+              if (ImGui::Selectable(levelName.c_str(), is_selected)) {
+                if (currentLevelStr != levelName) {
+                  m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, levelName});
+                }
+              }
+              if (is_selected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+          }
+          ShowTooltip();
+        } else {
+          std::string value = valueNode->get<std::string>();
+          char buf[256];
+          strncpy_s(buf, value.c_str(), sizeof(buf));
+          buf[sizeof(buf) - 1] = 0;
+          if (ImGui::InputText(("##" + key).c_str(), buf, sizeof(buf))) {
+            m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, std::string(buf)});
+          }
+          ShowTooltip();
         }
-        ImGui::EndCombo();
+      } else if (valueNode->is_number_integer()) {
+        int value = valueNode->get<int>();
+        if (ImGui::InputInt(("##" + key).c_str(), &value)) {
+          m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+        }
+        ShowTooltip();
+      } else if (valueNode->is_number_float()) {
+        float value = valueNode->get<float>();
+        if (ImGui::InputFloat(("##" + key).c_str(), &value)) {
+          m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+        }
+        ShowTooltip();
+      } else if (node.is_object() && !node.contains("_value")) { // It's a nested settings group
+        bool node_open = ImGui::TreeNode(label.c_str());
+        ShowTooltip(); // Show tooltip for the TreeNode label itself
+        if (node_open) {
+          for (auto it = node.begin(); it != node.end(); ++it) {
+            if (it.key() == "_meta") continue;
+            RenderSettingsNode(it.key(), it.value(), systemName, fullPath);
+          }
+          ImGui::TreePop();
+        }
+      } else if (valueNode->is_array()) {
+        ImGui::Text("%s: [Array]", key.c_str());
+        ShowTooltip();
+      } else if (valueNode->is_null()) {
+        ImGui::Text("%s: [Null]", key.c_str());
+        ShowTooltip();
       }
-      ShowTooltip();
-    } else {
-      std::string value = valueNode->get<std::string>();
-      char buf[256];
-      strncpy_s(buf, value.c_str(), sizeof(buf));
-      buf[sizeof(buf) - 1] = 0;
-      if (ImGui::InputText(label.c_str(), buf, sizeof(buf))) {
-        m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, std::string(buf)});
-      }
-      ShowTooltip();
-    }
-  } else if (valueNode->is_number_integer()) {
-    int value = valueNode->get<int>();
-    if (ImGui::InputInt(label.c_str(), &value)) {
-      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
-    }
-    ShowTooltip();
-  } else if (valueNode->is_number_float()) {
-    float value = valueNode->get<float>();
-    if (ImGui::InputFloat(label.c_str(), &value)) {
-      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
-    }
-    ShowTooltip();
-  } else if (node.is_object() && !node.contains("_value")) { // It's a nested settings group
-    bool node_open = ImGui::TreeNode(label.c_str());
-    ShowTooltip(); // Show tooltip for the TreeNode label itself
-    if (node_open) {
-      for (auto it = node.begin(); it != node.end(); ++it) {
-        if (it.key() == "_meta") continue;
-        RenderSettingsNode(it.key(), it.value(), systemName, fullPath);
-      }
-      ImGui::TreePop();
-    }
-  } else if (valueNode->is_array()) {
-    ImGui::Text("%s: [Array]", key.c_str());
-    ShowTooltip();
-  } else if (valueNode->is_null()) {
-    ImGui::Text("%s: [Null]", key.c_str());
-    ShowTooltip();
   }
 }
 

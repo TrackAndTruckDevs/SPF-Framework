@@ -7,7 +7,7 @@
     "messages.welcome": "Ласкаво просимо до ExamplePlugin! Поточна мова - українська.",
     "MainWindow.title": "Головне вікно ExamplePlugin",
     "setting": {
-        "some_number": {
+        "a_simple_number": {
             "title": "Деяке число",
             "description": "Це приклад цілочисельного налаштування для плагіна."
         }

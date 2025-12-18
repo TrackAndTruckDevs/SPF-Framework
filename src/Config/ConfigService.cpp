@@ -61,13 +61,28 @@ nlohmann::json SerializeSettings(const ManifestData& manifest, const ManifestDat
             nlohmann::json& node = j[ptr];
             if (node.is_object() && node.contains("_value")) {
                 InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            } else if (node.is_primitive() || node.is_string()) {
+            } else if (node.is_primitive() || node.is_string() || node.is_array()) { // Added is_array() here
                 auto value = node;
                 node = nlohmann::json::object();
                 node["_value"] = value;
                 InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
             } else if (node.is_object()) {
                 InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
+            }
+
+            // NEW: Inject UI rendering hints
+            if (meta.widget.has_value() || !meta.widget_params.empty()) {
+                if (!node.contains("_meta")) {
+                     node["_meta"] = nlohmann::json::object();
+                }
+                node["_meta"]["ui"] = nlohmann::json::object();
+                auto& ui_meta = node["_meta"]["ui"];
+                if (meta.widget.has_value()) {
+                    ui_meta["widget"] = meta.widget.value();
+                }
+                if (!meta.widget_params.empty()) {
+                    ui_meta["params"] = meta.widget_params;
+                }
             }
         } catch (const std::exception& e) {
             LoggerFactory::GetInstance().GetLogger("ConfigService")->Error("Error injecting custom setting metadata for key '{}': {}", meta.keyPath, e.what());
