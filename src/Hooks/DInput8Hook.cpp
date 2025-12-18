@@ -166,7 +166,6 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
           pid = HIWORD(dipdw.dwData);
         }
 
-        // Реєстрація пристрою в InputManager
         inputManager.UpdateDeviceType((UINT_PTR)self, instance.tszProductName, vid, pid);
 
         // Get the device type based on its device ID

@@ -100,7 +100,7 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   } else {
     logger->Info("Found 'InitializeTopCamera' function at: {:#x}", pfnInitialize);
 
-    // --- OFFSET: X-Offset Forward (Зсув: X-зміщення вперед) ---
+    // --- OFFSET: X-Offset Forward ---
     // Correct offset for this property is 0x470.
     /*
      * EXPECTED ASSEMBLY:
@@ -119,7 +119,7 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       logger->Warn("-> FAILED: Could not find signature for Top Camera X-Offset Forward.");
     }
     
-    // --- OFFSET: X-Offset Backward (Зсув: X-зміщення назад) ---
+    // --- OFFSET: X-Offset Backward ---
     // Correct offset for this property is 0x474.
     /*
      * EXPECTED ASSEMBLY:
@@ -138,7 +138,7 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       logger->Warn("-> FAILED: Could not find signature for Top Camera X-Offset Backward.");
     }
 
-    // --- OFFSET: Maximum Height (Зсув: Максимальна висота) ---
+    // --- OFFSET: Maximum Height ---
     // Correct offset for this property is 0x47C.
     /*
      * EXPECTED ASSEMBLY:
@@ -156,7 +156,7 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       logger->Warn("-> FAILED: Could not find signature for Top Camera Maximum Height offset.");
     }
     
-    // --- OFFSET: Speed (Зсув: Швидкість) ---
+    // --- OFFSET: Speed ---
     // Correct offset for this property is 0x480.
     /*
      * EXPECTED ASSEMBLY:

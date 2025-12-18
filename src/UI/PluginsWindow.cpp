@@ -79,11 +79,11 @@ void PluginsWindow::RenderContent() {
       ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - iconWidth) / 2.0f);
 
       if (isLoaded) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 0.2f, 1.0f));  // Зелений
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 0.2f, 1.0f));
         ImGui::TextUnformatted(statusIcon);
         ImGui::PopStyleColor();
       } else {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));  // Червоний
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
         ImGui::TextUnformatted(statusIcon);
         ImGui::PopStyleColor();
       }

@@ -54,7 +54,7 @@ void GameConsole::Remove() {
 void GameConsole::Execute(const std::string& command) {
   if (m_ExecuteGameCommand) {
     const char* pCommand = command.c_str();
-    m_ExecuteGameCommand(&pCommand, 0xffffffff);  //-1 прості команди; 1 - команди типу game; 2 -  скріншотів баг-репортів (screenshot bug_...)
+    m_ExecuteGameCommand(&pCommand, 0xffffffff); 
   } else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
     logger->Warn("Attempted to execute command while service is not active: {}", command);

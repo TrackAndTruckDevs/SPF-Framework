@@ -498,7 +498,6 @@ void UIManager::RenderAll() {
 void UIManager::InitializeImGui() {
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  //ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard; не працює, видалити
   ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;
