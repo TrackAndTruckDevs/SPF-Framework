@@ -22,7 +22,28 @@ Using the Config API follows a simple pattern:
 1.  **Declare in Manifest:** In your plugin's `GetManifestData` function, enable the configuration system by setting `configPolicy.allowUserConfig = true;`. You can also provide a default JSON structure for your settings.
 2.  **Get Context:** In your `OnLoad` or `Init` function, call `GetContext()` with your plugin's name to get a configuration handle. This handle is your gateway to all other config functions.
 3.  **Get/Set Values:** Use the getter (`GetInt`, `GetString`, etc.) and setter (`SetInt`, `SetString`, etc.) functions to read and write values. It is good practice to always provide a default value when reading.
-4.  **React to Changes (Optional):** Implement the `OnSettingChanged` callback in your plugin's exports. The framework will call this function whenever a setting is changed (either by your code or by the user in the UI), allowing you to react in real-time.
+4.  **React to Changes (Optional):** Implement the `OnSettingChanged` callback in your plugin's exports. The framework will call this function whenever a setting is changed, providing your plugin's `SPF_Config_Handle*` and the `keyPath` of the modified setting. You can then use the regular `Get...` functions from this API to retrieve the new value.
+
+    **Example `OnSettingChanged` implementation:**
+    ```c
+    void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
+        if (strcmp(keyPath, "settings.some_bool") == 0) {
+            // A specific boolean setting changed, get its new value.
+            bool newValue = s_configAPI->GetBool(config_handle, keyPath, false);
+            // ... react to the change ...
+        }
+    }
+    ```
+
+## Simple vs. Advanced Usage
+
+The Config API is designed with two levels of complexity:
+
+*   **Simple Usage (Recommended for most cases):** Use the standard `GetInt`, `GetString`, `GetBool`, etc. functions. These are easy to use and cover 95% of use cases for reading and writing simple configuration values.
+
+*   **Advanced Usage (For complex data):** If your configuration contains nested JSON objects or arrays, the simple getters are not sufficient. In this scenario, you should use the "Advanced" workflow:
+    1.  Use `GetJsonValueHandle()` to retrieve an opaque handle to your complex JSON object.
+    2.  Use the functions provided by the [`SPF_JsonReader_API`](SPF_JsonReader_API.md) to navigate and parse the data within that handle.
 
 ## Getting the API Context
 
@@ -91,6 +112,31 @@ Retrieves a string value.
 char user_name[64];
 s_configAPI->GetString(s_myPluginConfig, "settings.user.name", "Player", user_name, sizeof(user_name));
 ```
+
+---
+**`SPF_JsonValue_Handle* GetJsonValueHandle(SPF_Config_Handle* handle, const char* key)`**
+(Advanced) Retrieves a handle to a raw JSON value for a given key.
+
+This function is for advanced use cases where a setting is a complex object or array. The returned handle is designed to be used with the [`SPF_JsonReader_API`](SPF_JsonReader_API.md) to parse the complex data structure.
+
+*   **key:** The dot-separated path to the value (e.g., `"settings.my_complex_object"`).
+*   **Returns:** An opaque handle to the JSON value, or `NULL` if not found. The lifetime of this handle is managed by the framework.
+
+**Example:**
+```c
+// In OnActivated, after getting the core_api...
+const SPF_JsonReader_API* json_reader = core_api->json_reader;
+SPF_Config_Handle* config_handle = s_configAPI->GetContext("MyPlugin");
+
+const SPF_JsonValue_Handle* obj_handle = s_configAPI->GetJsonValueHandle(config_handle, "settings.my_complex_object");
+
+if (obj_handle && json_reader->HasMember(obj_handle, "enabled")) {
+    const SPF_JsonValue_Handle* enabled_handle = json_reader->GetMember(obj_handle, "enabled");
+    bool is_enabled = json_reader->GetBool(enabled_handle, false);
+    // ...
+}
+```
+
 
 ---
 ### Value Setters

@@ -21,7 +21,6 @@
 #include <stdbool.h>
 
 // Include dependent C-API definitions
-#include "SPF_JsonReader_API.h"
 #include "SPF_Hooks_API.h"
 
 #ifdef __cplusplus
@@ -29,92 +28,134 @@ extern "C" {
 #endif
 
 // =================================================================================================
-// 1. PLUGIN LIFECYCLE & API AVAILABILITY
+// 0. FORWARD DECLARATIONS
 // =================================================================================================
+// All framework structures are forward-declared here. This allows pointers to these
+// types to be used throughout the API headers (e.g., in function signatures and
+// struct definitions) without needing to include their full definitions, which
+// prevents circular dependency issues and resolves compilation order problems.
 
-/*
- * @section Plugin Lifecycle & API Availability
- * The framework initializes the plugin in stages. The API is passed to each
- * lifecycle function, but its services become available progressively. Attempting
- * to use a service before it is available is a compile-time error.
- *
- * Initialization Sequence:
- * 1. OnLoad()
- * 2. OnActivated()
- * 3. OnRegisterUI()
- *
- * ---
- *
- * 1. void (*OnLoad)(const SPF_Load_API* load_api);
- *    - **When:** Immediately after the DLL is loaded.
- *    - **API State:** Only CORE services are available in the `load_api` struct:
- *      - `logger`, `config`, `localization`, `formatting`
- *    - **Purpose:** Essential setup using core services. The plugin should store
- *      any required handles (e.g., from `logger->GetHandle()`) for later use.
- *
- * 2. void (*OnActivated)(const SPF_Core_API* core_api);
- *    - **When:** After the framework has processed the manifest and activated the plugin.
- *    - **API State:** ALL services in the `core_api` struct are now available.
- *    - **Purpose:** Main initialization. The plugin MUST store the `core_api` pointer.
- *      Registering callbacks for keybinds, hooks, and other interactive services
- *      MUST be done here.
- *
- * 3. void (*OnRegisterUI)(...);
- *    - **When:** When the UI system is ready.
- *    - **API State:** All services are available via the previously stored `core_api` pointer.
- *    - **Purpose:** UI-specific setup.
- */
-
-// =================================================================================================
-// 2. STRUCTURES PROVIDED BY THE PLUGIN TO THE CORE
-// =================================================================================================
-
-// Forward-declare the main core API struct
+// --- Main API Structs (Passed to plugin lifecycle functions) ---
 typedef struct SPF_Core_API SPF_Core_API;
 typedef struct SPF_Load_API SPF_Load_API;
+typedef struct SPF_UI_API SPF_UI_API;
+
+// --- Opaque Handles (Pointers to internal framework objects) ---
+// The plugin interacts with these handles without knowing their internal structure,
+// ensuring ABI stability and separation of concerns.
+typedef struct SPF_Logger_Handle SPF_Logger_Handle;
+typedef struct SPF_Localization_Handle SPF_Localization_Handle;
+typedef struct SPF_Config_Handle SPF_Config_Handle;
+typedef struct SPF_KeyBinds_Handle SPF_KeyBinds_Handle;
+typedef struct SPF_Telemetry_Handle SPF_Telemetry_Handle;
+
+// --- Sub-System API Structs (Accessed via SPF_Load_API or SPF_Core_API) ---
+typedef struct SPF_Logger_API SPF_Logger_API;
+typedef struct SPF_Localization_API SPF_Localization_API;
+typedef struct SPF_Config_API SPF_Config_API;
+typedef struct SPF_KeyBinds_API SPF_KeyBinds_API;
+typedef struct SPF_Telemetry_API SPF_Telemetry_API;
+typedef struct SPF_Input_API SPF_Input_API;
+typedef struct SPF_Camera_API SPF_Camera_API;
+typedef struct SPF_GameConsole_API SPF_GameConsole_API;
+typedef struct SPF_Formatting_API SPF_Formatting_API;
+typedef struct SPF_GameLog_API SPF_GameLog_API;
+typedef struct SPF_JsonReader_API SPF_JsonReader_API;
+
+
+// =================================================================================================
+// 1. PLUGIN EXPORTS (FUNCTIONS PROVIDED BY THE PLUGIN TO THE CORE)
+// =================================================================================================
+
+/**
+ * @page PluginLifecycle Plugin Lifecycle & API Availability
+ * @brief Explains the stages of plugin initialization and API access.
+ *
+ * The framework initializes plugins in stages. The API is passed to each
+ * lifecycle function, but its services become available progressively.
+ * Attempting to use a service before it is available will result in a runtime error.
+ *
+ * @section InitializationSequence Initialization Sequence:
+ * 1.  @ref OnLoad()
+ * 2.  @ref OnActivated()
+ * 3.  @ref OnRegisterUI()
+ *
+ * @subsection OnLoadDetails 1. OnLoad()
+ * -   **When:** Immediately after the plugin DLL is loaded.
+ * -   **API State:** Only CORE services are available in the `load_api` struct:
+ *     -   `logger`, `config`, `localization`, `formatting`
+ * -   **Purpose:** Essential setup using core services. The plugin should store
+ *     any required handles (e.g., from `logger->GetHandle()`) for later use.
+ *
+ * @subsection OnActivatedDetails 2. OnActivated()
+ * -   **When:** After the framework has processed the manifest and activated the plugin.
+ * -   **API State:** ALL services in the `core_api` struct are now available.
+ * -   **Purpose:** Main initialization. The plugin MUST store the `core_api` pointer.
+ *     Registering callbacks for keybinds, hooks, and other interactive services
+ *     MUST be done here.
+ *
+ * @subsection OnRegisterUIDetails 3. OnRegisterUI()
+ * -   **When:** When the UI system is ready.
+ * -   **API State:** All services are available via the previously stored `core_api` pointer.
+ * -   **Purpose:** UI-specific setup.
+ */
+
+
 
 /**
  * @struct SPF_Plugin_Exports
- * @brief Contains function pointers to the plugin's lifecycle entry points.
+ * @brief Contains function pointers to the plugin's core lifecycle entry points and callbacks.
  *
- * The plugin must fill this structure to tell the core which functions to call
- * at different stages of its operation.
+ * @details A plugin MUST implement the mandatory functions (`OnLoad`, `OnUnload`, `OnActivated`)
+ *          and MAY implement the optional ones (`OnUpdate`, `OnRegisterUI`, `OnSettingChanged`,
+ *          `OnGameWorldReady`). The plugin fills this structure, and the framework uses these
+ *          pointers to communicate with the plugin at various stages of its operation.
  */
 typedef struct {
   /**
-   * @brief Called once when the plugin is loaded.
+   * @brief (Mandatory) Called once when the plugin DLL is loaded into memory.
    *
-   * This is the first function called after the library is successfully loaded.
-   * Use it for essential setup using only the core services provided.
+   * @details This is the first function called by the framework after the plugin library
+   *          is successfully loaded. Use it for essential, early-stage setup that does not
+   *          depend on the game being fully active.
    *
-   * @param load_api A pointer to the "Load-time" API structure, which contains
-   *                 only the guaranteed-available core services.
+   * @param load_api A pointer to the `SPF_Load_API` structure, which provides access
+   *                 to essential core services (Logger, Config, Localization, Formatting)
+   *                 that are guaranteed to be available at this early stage.
    */
   void (*OnLoad)(const SPF_Load_API* load_api);
 
   /**
-   * @brief Called once just before the plugin is unloaded.
+   * @brief (Mandatory) Called once just before the plugin is unloaded from memory.
    *
-   * Use this function to free all acquired resources, save data, and perform
-   * a clean shutdown.
+   * @details This is the last function called by the framework before the plugin DLL is
+   *          unloaded. Use it to free all acquired resources, save any pending data,
+   *          and perform a clean shutdown. All API pointers (core_api, load_api)
+   *          should be considered invalid after this function returns.
    */
   void (*OnUnload)();
 
   /**
-   * @brief (Optional) Called on every frame of the game loop.
+   * @brief (Optional) Called every frame while the plugin is active.
    *
-   * Use for logic that needs to run continuously (e.g., updating data, animations).
-   * If the plugin does not require per-frame updates, leave this pointer as NULL.
+   * @details This function is tied to the game's rendering loop. Avoid performing
+   *          heavy or blocking operations here, as it will directly impact game performance.
+   *          It is suitable for polling data, updating animations, or other logic that needs
+   *          to run continuously. If the plugin does not require per-frame updates,
+   *          this pointer should be set to `NULL`.
    */
   void (*OnUpdate)();
 
   /**
-   * @brief (Optional) Called once to register UI components.
+   * @brief (Optional) Called once to register UI components and windows.
    *
-   * If the plugin adds its own windows to the settings menu, it should
-   * implement this function. It is called after the framework's UI is initialized.
+   * @details This function is called by the framework when the UI system is ready.
+   *          If the plugin adds its own custom windows to the settings menu or
+   *          any other UI elements, it should implement this function to register
+   *          them with the provided UI API.
    *
-   * @param ui_api A pointer to the UI API.
+   * @param ui_api A pointer to the `SPF_UI_API`, which provides functions for
+   *                 registering draw callbacks and interacting with the UI system.
    */
   void (*OnRegisterUI)(struct SPF_UI_API* ui_api);
 
@@ -126,58 +167,44 @@ typedef struct {
    * itself (e.g., `logging`, `keybinds`, `ui`). The call will only occur
    * for custom configuration blocks defined by the plugin in its manifest.
    *
-   * @param keyPath The full path to the setting that changed (e.g., "my_settings.some_bool").
-   * @param value_handle An opaque handle to the new JSON value.
-   * @param json_reader An API provided by the framework to safely read data
-   *                    from the `value_handle`.
+   * @param config_handle The configuration context handle for the plugin, the same
+   *                      handle returned by `SPF_Config_API.GetContext()`.
+   * @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
    */
-  void (*OnSettingChanged)(const char* keyPath, const SPF_JsonValue_Handle* value_handle, const SPF_JsonReader_API* json_reader);
+  void (*OnSettingChanged)(SPF_Config_Handle* config_handle, const char* keyPath);
 
   /**
-   * @brief (Optional) Called after the plugin is fully loaded and activated.
+   * @brief (Mandatory) Called after the plugin is fully loaded and activated.
    *
-   * Use this function for main initialization tasks. The plugin MUST store the
-   * `core_api` pointer passed here for later use. Registering keybinds, hooks,
-   * and other interactive services should be done in this function.
+   * @details This function is called by the framework after `OnLoad` has completed
+   *          for all plugins and the framework has fully processed the plugin's manifest.
+   *          At this point, the game is running, and ALL framework services are available
+   *          via the `core_api`. The plugin MUST store the `core_api` pointer passed here
+   *          for later use. Registering callbacks for keybinds, hooks, telemetry, and
+   *          other interactive services SHOULD be done in this function.
    *
-   * @param core_api A pointer to the full core API structure.
+   * @param core_api A pointer to the full `SPF_Core_API` structure, which provides
+   *                 access to all framework subsystems.
    */
   void (*OnActivated)(const SPF_Core_API* core_api);
 
   /**
-   * @brief (Optional) Called once after the game world has been loaded.
+   * @brief (Optional) Called once after the game world has been fully loaded.
    *
-   * This function is the ideal place to initialize logic that depends on
-   * in-game objects being available (e.g., camera hooks, reading vehicle data).
+   * @details This function is called by the framework after the game world is
+   *          fully loaded and all in-game objects are available. It is the ideal
+   *          place to initialize logic that depends on these in-game objects
+   *          (e.g., installing game-specific hooks, reading vehicle data, etc.).
    */
   void (*OnGameWorldReady)();
 
 } SPF_Plugin_Exports;
 
 // =================================================================================================
-// 3. STRUCTURES PROVIDED BY THE CORE TO THE PLUGIN
+// 2. API STRUCTURES (PROVIDED BY THE CORE TO THE PLUGIN)
 // =================================================================================================
 
-// --- Opaque Handles ---
-// The plugin interacts with these without knowing their internal structure.
-typedef struct SPF_Logger_Handle SPF_Logger_Handle;
-typedef struct SPF_Localization_Handle SPF_Localization_Handle;
-typedef struct SPF_Config_Handle SPF_Config_Handle;
-typedef struct SPF_KeyBinds_Handle SPF_KeyBinds_Handle;
-typedef struct SPF_Telemetry_Handle SPF_Telemetry_Handle;
 
-// --- Forward-declarations of API structs ---
-typedef struct SPF_Logger_API SPF_Logger_API;
-typedef struct SPF_Localization_API SPF_Localization_API;
-typedef struct SPF_Config_API SPF_Config_API;
-typedef struct SPF_KeyBinds_API SPF_KeyBinds_API;
-typedef struct SPF_UI_API SPF_UI_API;
-typedef struct SPF_Telemetry_API SPF_Telemetry_API;
-typedef struct SPF_Input_API SPF_Input_API;
-typedef struct SPF_Camera_API SPF_Camera_API;
-typedef struct SPF_GameConsole_API SPF_GameConsole_API;
-typedef struct SPF_Formatting_API SPF_Formatting_API;
-typedef struct SPF_GameLog_API SPF_GameLog_API;
 
 /**
  * @struct SPF_Load_API
@@ -282,6 +309,20 @@ struct SPF_Core_API {
    * @brief Game Log API. Allows subscribing to game log events.
    */
   SPF_GameLog_API* gamelog;
+
+  /**
+   * @brief (Advanced) JSON Reader API. Provides functions to safely parse raw JSON
+   *          data structures received from the framework.
+   * @details This API is essential for working with complex JSON values, such as
+   *          objects or arrays, that cannot be directly retrieved using the simple
+   *          getters in the `SPF_Config_API`. It should be used in conjunction with
+   *          `SPF_Config_API.GetJsonValueHandle` to parse configuration values, or
+   *          for any future event payloads provided in JSON format.
+   *          The plugin retrieves a handle to the JSON value (e.g., `SPF_JsonValue_Handle*`)
+   *          and then uses the functions within this API (e.g., `GetType`, `GetString`)
+   *          to navigate and extract information from that JSON structure.
+   */
+  SPF_JsonReader_API* json_reader;
 };
 
 // =================================================================================================

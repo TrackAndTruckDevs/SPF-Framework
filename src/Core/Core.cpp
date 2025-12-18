@@ -835,8 +835,7 @@ void Core::OnSettingWasChanged(const Events::UI::OnSettingWasChanged& e) {
   // --- DISPATCH TO PLUGINS IF NOT HANDLED ---
   if (!wasHandledByFramework) {
     std::string fullKeyPath = e.systemName + "." + e.keyPath;
-    PluginManager::GetInstance().NotifyPluginOfSettingChange(e.componentName, fullKeyPath, &e.newValue);
-  }
+          PluginManager::GetInstance().NotifyPluginOfSettingChange(e.componentName, fullKeyPath);  }
 }
 
 void Core::OnRequestInputCapture(const Events::UI::RequestInputCapture& e) { m_inputManager->StartInputCapture(e.actionFullName, e.originalBinding); }

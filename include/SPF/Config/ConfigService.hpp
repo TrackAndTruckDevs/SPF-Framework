@@ -47,6 +47,7 @@ class ConfigService : public IConfigService {
   void DeleteBinding(const std::string& actionFullName, const nlohmann::json& bindingToDelete) override;
   void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::json& originalBinding, const std::string& propertyName, const nlohmann::json& newValue) override;
   nlohmann::json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::json& defaultValue) const override;
+  const nlohmann::json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
   std::string GetOrCreateFrameworkInstanceId() override;
   void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) override;
   /**

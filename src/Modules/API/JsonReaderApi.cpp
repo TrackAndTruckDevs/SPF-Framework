@@ -73,6 +73,40 @@ int JsonReaderApi::Json_GetString(const SPF_JsonValue_Handle* handle, char* out_
   }
 }
 
+bool JsonReaderApi::Json_HasMember(const SPF_JsonValue_Handle* handle, const char* memberName) {
+    if (!handle || !memberName) return false;
+    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    if (!json_value->is_object()) return false;
+    return json_value->contains(memberName);
+}
+
+SPF_JsonValue_Handle* JsonReaderApi::Json_GetMember(const SPF_JsonValue_Handle* handle, const char* memberName) {
+    if (!handle || !memberName) return nullptr;
+    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    if (!json_value->is_object() || !json_value->contains(memberName)) return nullptr;
+    
+    const nlohmann::json& member = json_value->at(memberName);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(&member));
+}
+
+int JsonReaderApi::Json_GetArraySize(const SPF_JsonValue_Handle* handle) {
+    if (!handle) return 0;
+    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    if (!json_value->is_array()) return 0;
+    return static_cast<int>(json_value->size());
+}
+
+SPF_JsonValue_Handle* JsonReaderApi::Json_GetArrayItem(const SPF_JsonValue_Handle* handle, int index) {
+    if (!handle) return nullptr;
+    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    if (!json_value->is_array() || index < 0 || static_cast<size_t>(index) >= json_value->size()) {
+        return nullptr;
+    }
+
+    const nlohmann::json& item = json_value->at(index);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(&item));
+}
+
 void JsonReaderApi::FillJsonReaderApi(SPF_JsonReader_API* api) {
     if (!api) return;
 
@@ -83,6 +117,10 @@ void JsonReaderApi::FillJsonReaderApi(SPF_JsonReader_API* api) {
     api->GetUint = &JsonReaderApi::Json_GetUint;
     api->GetFloat = &JsonReaderApi::Json_GetFloat;
     api->GetString = &JsonReaderApi::Json_GetString;
+    api->HasMember = &JsonReaderApi::Json_HasMember;
+    api->GetMember = &JsonReaderApi::Json_GetMember;
+    api->GetArraySize = &JsonReaderApi::Json_GetArraySize;
+    api->GetArrayItem = &JsonReaderApi::Json_GetArrayItem;
 }
 
 } // namespace Modules::API

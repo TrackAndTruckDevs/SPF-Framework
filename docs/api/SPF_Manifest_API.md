@@ -62,7 +62,9 @@ Defines the plugin's requirements and configuration rules.
 
 ---
 **`settingsJson` (`const char*`)**
-A JSON string literal containing default values for your plugin's custom settings. See the `SPF_Config_API` documentation for more on how this is used.
+A JSON string literal containing default values for your plugin's custom settings. This can include simple values (numbers, strings) as well as complex nested objects and arrays.
+
+For details on how to access these values at runtime, see the [`SPF_Config_API`](SPF_Config_API.md) documentation, which explains both simple and advanced data retrieval.
 
 ---
 **`keybinds` (`SPF_KeybindsData_C`)**
@@ -71,6 +73,20 @@ Defines all the "actions" your plugin provides and their default key combination
 ---
 **`ui` (`SPF_UIData_C`)**
 Defines the default state for any UI windows your plugin creates, including their name, default visibility, position, and size.
+
+---
+**`customSettingsMetadata` (`SPF_CustomSettingMetadata_C` array)**
+Provide metadata for your custom settings.
+*   `keyPath`: The dot-separated path to your custom setting (e.g., `"my_feature.some_value"`).
+*   `titleKey`: A localization key or literal text for the setting's display name.
+*   `descriptionKey`: A localization key or literal text for the setting's detailed description.
+*   `widget`: (Optional) A string indicating the UI widget type to use for this setting (e.g., `"slider"`, `"combo"`, `"color3"`, `"multiline"`). If left empty, the framework will choose a default based on the setting's data type.
+*   `widget_params`: (Optional) A union of structures providing parameters specific to the chosen `widget` type.
+    *   `slider`: For `"slider"` widget. Fields include `min_val`, `max_val`, `format`.
+    *   `drag`: For `"drag"` widget. Fields include `speed`, `min_val`, `max_val`, `format`.
+    *   `choice`: For `"combo"` and `"radio"` widgets. Field is `options_json` (a JSON string of `value`/`labelKey` pairs).
+    *   `color`: For `"color3"` and `"color4"` widgets. Field is `flags` (ImGuiColorEditFlags bitmask).
+    *   `multiline`: For `"multiline"` widget. Field is `height_in_lines`.
 
 ### The Metadata System
 

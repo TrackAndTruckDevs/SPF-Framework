@@ -125,6 +125,16 @@ struct IConfigService {
    */
   virtual nlohmann::json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::json& defaultValue) const = 0;
 
+  /**
+   * @brief Gets a stable pointer to a single value from a component's configuration.
+   * This is for advanced C-API usage where a handle to the raw JSON is needed.
+   * @param componentName The ID of the component (e.g., "framework", "TestPlugin").
+   * @param keyPath A dot-separated path to the value (e.g., "ui.windows.main_window.is_visible").
+   * @return A constant pointer to the found JSON value, or nullptr if not found.
+   *         The lifetime of the pointed-to object is managed by the service.
+   */
+  virtual const nlohmann::json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const = 0;
+
   // --- Data Modification & Reset ---
 
   /**

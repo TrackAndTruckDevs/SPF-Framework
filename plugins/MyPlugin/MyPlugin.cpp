@@ -416,7 +416,15 @@ void OnUnload() {
 
 /*
 // --- OnSettingChanged Callback ---
-// Requires: SPF_Config_API.h, SPF_JsonReader_API.h
+// Requires: SPF_Config_API.h
+void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
+    // A setting has changed. Check the keyPath and use the config_handle
+    // with the Config API to get the new value.
+    // Example:
+    // if (strcmp(keyPath, "settings.some_bool") == 0) {
+    //     bool newValue = g_ctx.loadAPI->config->GetBool(config_handle, keyPath, false);
+    //     // ... react to the new value ...
+    // }
 }
 */
 
@@ -508,7 +516,7 @@ SPF_PLUGIN_EXPORT bool SPF_GetPlugin(SPF_Plugin_Exports* exports) {
         // Uncomment and assign your implementation if you use them.
         // exports->OnGameWorldReady = OnGameWorldReady; // Assign your OnGameWorldReady function for game-world-dependent logic.
         // exports->OnRegisterUI = OnRegisterUI;         // Assign your OnRegisterUI function if you have UI windows.
-        // exports->OnSettingChanged = OnSettingChanged; // Assign your OnSettingChanged function if you have custom settings.
+        // exports->OnSettingChanged = OnSettingChanged; // Assign your OnSettingChanged function if you implement it.
         return true;
     }
     return false;

@@ -117,7 +117,8 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         "a_dropdown_choice": "option_b",
         "a_radio_choice": 2,
         "a_color": [0.2, 0.8, 0.4],
-        "a_text_note": "This is some default text.\nIt can span multiple lines."
+        "a_text_note": "This is some default text.\nIt can span multiple lines.",
+        "a_complex_object": { "mode": "alpha", "enabled": true, "targets": ["a", "b", "c"] }
     })json";
 
     // --- 2.4. Default Settings for Framework Systems ---
@@ -195,7 +196,7 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // --- 2.5. Metadata for Localization and UI Hints ---
     // This section is optional. It allows you to provide translatable names and descriptions
     // for your settings, keybinds, and UI elements. You can also specify custom UI widgets.
-    out_manifest.customSettingsMetadataCount = 7;
+    out_manifest.customSettingsMetadataCount = 8;
 
     // Example 1: A simple integer input (default behavior).
     // This setting uses the default ImGui::InputInt widget because no specific 'widget' type is provided.
@@ -310,6 +311,15 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         meta.widget_params.multiline.height_in_lines = 4; // Set the text box height to be 4 lines tall.
     }
 
+    // Example 8: A complex object (no widget, for programmatic access).
+    {
+        auto& meta = out_manifest.customSettingsMetadata[7];
+        strncpy_s(meta.keyPath, "a_complex_object", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.complex_object.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.complex_object.description", sizeof(meta.descriptionKey));
+        meta.widget[0] = '\0'; // No widget, this setting is for internal logic.
+    }
+
     // --- Keybinds Metadata ---
     out_manifest.keybindsMetadataCount = 2;
     {
@@ -406,6 +416,9 @@ void OnActivated(const SPF_Core_API* core_api) {
     // Initialize more complex features that need the core API.
     InitializeVirtualDevice();
     InstallGameStringFormattingHook();
+
+    // Parse the complex object on activation to demonstrate GetJsonValueHandle and JsonReaderApi.
+    ParseComplexObject();
 }
 
 /**
@@ -468,16 +481,20 @@ void OnUnload() {
  * @details This function allows the plugin to react dynamically to configuration changes made by
  *          the user through the UI.
  */
-void OnSettingChanged(const char* keyPath, const SPF_JsonValue_Handle* value_handle, const SPF_JsonReader_API* json_reader) {
-    // Check if the changed setting is the one we care about.
+void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
+    // Check which setting has changed and react accordingly.
     if (strcmp(keyPath, "settings.a_simple_number") == 0) {
-        // Update the cached value in our global context.
-        g_ctx.someNumber = json_reader->GetInt32(value_handle, g_ctx.someNumber);
+        // Update the cached value in our global context using the ConfigApi.
+        g_ctx.someNumber = g_ctx.loadAPI->config->GetInt32(config_handle, "settings.a_simple_number", 42);
 
         // Log the change for debugging purposes.
         char log_buffer[256];
         g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "'a_simple_number' was changed externally. New value: %d", g_ctx.someNumber);
         g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+    } else if (strcmp(keyPath, "settings.a_complex_object") == 0) {
+        // The complex object setting has changed. Re-parse it.
+        // This demonstrates the use of GetJsonValueHandle and JsonReaderApi.
+        ParseComplexObject();
     }
 }
 
@@ -788,6 +805,74 @@ void InitializeVirtualDevice() {
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_ERROR, "Failed to register virtual device.");
     }
 }
+
+/**
+ * @brief Parses the `a_complex_object` setting to demonstrate `GetJsonValueHandle` and `JsonReaderApi`.
+ * @details This function retrieves a complex JSON object from the config using `ConfigApi::GetJsonValueHandle`
+ *          and then uses the `JsonReaderApi` to extract nested values. It showcases how to handle
+ *          advanced configuration structures within a plugin.
+ */
+void ParseComplexObject() {
+    // Ensure all required APIs are available. The JsonReader is retrieved from the Core API.
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->config || !g_ctx.coreAPI->json_reader) {
+        return;
+    }
+
+    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto config = g_ctx.coreAPI->config;
+    auto config_handle = config->GetContext(PLUGIN_NAME);
+    const auto* json_reader = g_ctx.coreAPI->json_reader;
+
+    char log_buffer[512]; // Increased buffer size for potentially long strings
+
+    // 1. Get the handle to the complex JSON object from the Config API.
+    const SPF_JsonValue_Handle* object_handle = config->GetJsonValueHandle(config_handle, "settings.a_complex_object");
+
+    if (object_handle) {
+        g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Parsing complex object 'settings.a_complex_object':");
+        g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
+
+        // 2. Use the JsonReader API to check for and get the 'mode' member.
+        if (json_reader->HasMember(object_handle, "mode")) {
+            const SPF_JsonValue_Handle* mode_handle = json_reader->GetMember(object_handle, "mode");
+            if (mode_handle && json_reader->GetType(mode_handle) == SPF_JSON_TYPE_STRING) {
+                char mode_str[64];
+                json_reader->GetString(mode_handle, mode_str, sizeof(mode_str));
+                g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Mode: %s", mode_str);
+                g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
+            }
+        }
+
+        // 3. Get the 'enabled' member.
+        const SPF_JsonValue_Handle* enabled_handle = json_reader->GetMember(object_handle, "enabled");
+        if (enabled_handle && json_reader->GetType(enabled_handle) == SPF_JSON_TYPE_BOOLEAN) {
+            bool enabled_val = json_reader->GetBool(enabled_handle, false);
+            g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Enabled: %s", enabled_val ? "true" : "false");
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
+        }
+
+        // 4. Get the 'targets' array and iterate through it.
+        const SPF_JsonValue_Handle* targets_handle = json_reader->GetMember(object_handle, "targets");
+        if (targets_handle && json_reader->GetType(targets_handle) == SPF_JSON_TYPE_ARRAY) {
+            int array_size = json_reader->GetArraySize(targets_handle);
+            g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Found 'targets' array with %d elements:", array_size);
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
+
+            for (int i = 0; i < array_size; ++i) {
+                const SPF_JsonValue_Handle* item_handle = json_reader->GetArrayItem(targets_handle, i);
+                if (item_handle && json_reader->GetType(item_handle) == SPF_JSON_TYPE_STRING) {
+                    char item_str[64];
+                    json_reader->GetString(item_handle, item_str, sizeof(item_str));
+                    g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "    - Target[%d]: %s", i, item_str);
+                    g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
+                }
+            }
+        }
+    } else {
+        g_ctx.coreAPI->logger->Log(logger, SPF_LOG_WARN, "Failed to get handle for 'settings.a_complex_object'.");
+    }
+}
+
 
 /**
  * @brief Finds a game function via signature scanning and installs the game string formatting hook.

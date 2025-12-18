@@ -1417,6 +1417,52 @@ nlohmann::json ConfigService::GetValue(const std::string& componentName, const s
   }
 }
 
+const nlohmann::json* ConfigService::GetValuePtr(const std::string& componentName, const std::string& keyPath) const {
+  size_t firstDot = keyPath.find('.');
+  if (firstDot == std::string::npos) {
+    return nullptr;
+  }
+
+  std::string systemName = keyPath.substr(0, firstDot);
+  std::string restOfPath = keyPath.substr(firstDot + 1);
+
+  auto strategyIt = m_systemStrategies.find(systemName);
+  if (strategyIt == m_systemStrategies.end()) {
+    return nullptr;
+  }
+
+  const nlohmann::json* configRoot = nullptr;
+  if (strategyIt->second == MergeStrategy::Isolate) {
+    auto isolatedSystemIt = m_isolatedConfigs.find(systemName);
+    if (isolatedSystemIt != m_isolatedConfigs.end()) {
+      auto componentIt = isolatedSystemIt->second.find(componentName);
+      if (componentIt != isolatedSystemIt->second.end()) {
+        configRoot = &componentIt->second;
+      }
+    }
+  } else {
+    auto mergedSystemIt = m_mergedConfigs.find(systemName);
+    if (mergedSystemIt != m_mergedConfigs.end()) {
+      configRoot = &mergedSystemIt->second;
+    }
+  }
+
+  if (!configRoot) {
+    return nullptr;
+  }
+
+  try {
+    std::string pointerPath = "/" + std::regex_replace(restOfPath, std::regex("\\."), "/");
+    nlohmann::json::json_pointer ptr(pointerPath);
+    return &configRoot->at(ptr);
+  } catch (const nlohmann::json::out_of_range&) {
+    return nullptr;
+  } catch (const nlohmann::json::parse_error&) {
+    return nullptr;
+  }
+}
+
+
 void ConfigService::CheckDirtyKeybinds(InitializationReport& report) {
   const auto* keybindsConfig = GetMergedConfig("keybinds");
   if (!keybindsConfig) return;

@@ -124,6 +124,39 @@ typedef struct SPF_JsonReader_API {
      */
     int (*GetString)(const SPF_JsonValue_Handle* handle, char* out_buffer, int buffer_size);
 
+    /**
+     * @brief Checks if the JSON object represented by the handle has a specific member.
+     * @param handle A handle to a JSON value. Must be of type `SPF_JSON_TYPE_OBJECT`.
+     * @param memberName The name of the member to check for.
+     * @return `true` if the handle is a valid object and contains the member, `false` otherwise.
+     */
+    bool (*HasMember)(const SPF_JsonValue_Handle* handle, const char* memberName);
+
+    /**
+     * @brief Retrieves a handle to a member of a JSON object.
+     * @param handle A handle to a JSON value. Must be of type `SPF_JSON_TYPE_OBJECT`.
+     * @param memberName The name of the member to retrieve.
+     * @return A new handle to the member's value if found, otherwise `NULL`.
+     *         The lifetime of this handle is managed by the framework.
+     */
+    SPF_JsonValue_Handle* (*GetMember)(const SPF_JsonValue_Handle* handle, const char* memberName);
+
+    /**
+     * @brief Gets the number of elements in a JSON array.
+     * @param handle A handle to a JSON value. Must be of type `SPF_JSON_TYPE_ARRAY`.
+     * @return The number of elements in the array, or 0 if the handle is not a valid array.
+     */
+    int (*GetArraySize)(const SPF_JsonValue_Handle* handle);
+
+    /**
+     * @brief Retrieves a handle to an element at a specific index in a JSON array.
+     * @param handle A handle to a JSON value. Must be of type `SPF_JSON_TYPE_ARRAY`.
+     * @param index The zero-based index of the element to retrieve.
+     * @return A new handle to the array element's value if the index is valid, otherwise `NULL`.
+     *         The lifetime of this handle is managed by the framework.
+     */
+    SPF_JsonValue_Handle* (*GetArrayItem)(const SPF_JsonValue_Handle* handle, int index);
+
 } SPF_JsonReader_API;
 
 #ifdef __cplusplus

@@ -4,20 +4,18 @@ The SPF JSON Reader API is a specialized, **read-only** interface for safely ins
 
 **You should not need to request this API.** Instead, a pointer to it is provided directly as an argument in callbacks where it is needed.
 
-## Primary Use Case: `OnSettingChanged`
+## Primary Use Case: Parsing Complex Configuration
 
-The most common use case for this API is within the `OnSettingChanged` plugin callback. When a user (or your code via the `SPF_Config_API`) changes a setting, the framework invokes this callback, providing you with:
-*   The key of the setting that changed.
-*   A handle to the new JSON value (`SPF_JsonValue_Handle`).
-*   A pointer to this `SPF_JsonReader_API`.
+The primary use case for this API is to parse complex JSON objects or arrays retrieved from your plugin's configuration.
 
-This allows your plugin to react to the change in real-time by safely reading the new value.
+While the [`SPF_Config_API`](SPF_Config_API.md) is excellent for simple values (numbers, booleans, strings), it cannot directly return a nested object. This is where the `SPF_JsonReader_API` comes in.
 
 ## Workflow
 
-1.  In a callback like `OnSettingChanged`, receive the `SPF_JsonValue_Handle` and the `SPF_JsonReader_API`.
-2.  Use the `reader->GetType(value_handle)` function to determine the data type of the new value.
-3.  Based on the returned `SPF_JsonType`, call the appropriate getter function (e.g., `reader->GetBool(...)`) to read the value.
+The typical workflow for reading a complex setting is:
+1.  In your `OnActivated` function, get and store the `core_api` pointer. The `SPF_JsonReader_API` is available via `core_api->json_reader`.
+2.  Use the `SPF_Config_API`'s `GetJsonValueHandle()` function to get a handle to your complex setting.
+3.  Use the functions in this `SPF_JsonReader_API` (like `GetMember`, `GetArraySize`, etc.) to navigate and extract data from the handle.
 
 ## Data Types
 
@@ -63,34 +61,86 @@ Reads the value as a double-precision float.
 **`int GetString(const SPF_JsonValue_Handle* handle, char* out_buffer, int buffer_size)`**
 Reads the value as a string. Returns the number of characters written (or that would have been written), similar to `snprintf`.
 
+---
+### Object & Array Navigation
+
+These functions are used to navigate inside a JSON object or array handle.
+
+---
+**`bool HasMember(const SPF_JsonValue_Handle* handle, const char* memberName)`**
+Checks if the JSON object represented by the handle has a specific member.
+*   **handle:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_OBJECT`.
+*   **memberName:** The name of the member to check for.
+*   **Returns:** `true` if the handle is a valid object and contains the member, `false` otherwise.
+
+---
+**`SPF_JsonValue_Handle* GetMember(const SPF_JsonValue_Handle* handle, const char* memberName)`**
+Retrieves a handle to a member of a JSON object.
+*   **handle:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_OBJECT`.
+*   **memberName:** The name of the member to retrieve.
+*   **Returns:** A new handle to the member's value if found, otherwise `NULL`.
+
+---
+**`int GetArraySize(const SPF_JsonValue_Handle* handle)`**
+Gets the number of elements in a JSON array.
+*   **handle:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_ARRAY`.
+*   **Returns:** The number of elements, or `0` if the handle is not a valid array.
+
+---
+**`SPF_JsonValue_Handle* GetArrayItem(const SPF_JsonValue_Handle* handle, int index)`**
+Retrieves a handle to an element at a specific index in a JSON array.
+*   **handle:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_ARRAY`.
+*   **index:** The zero-based index of the element to retrieve.
+*   **Returns:** A new handle to the element's value if the index is valid, otherwise `NULL`.
+
 ## Complete Example
 
-Here is a complete implementation of an `OnSettingChanged` callback that uses the JSON Reader API.
+Here is a complete example of a function that reads a complex object from the configuration and parses it using this API.
 
+**Assumed `settings.json`:**
+```json
+"settings": {
+    "a_complex_object": { 
+        "mode": "alpha", 
+        "enabled": true, 
+        "targets": ["a", "b", "c"] 
+    }
+}
+```
+
+**Example C++ Code:**
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
+#include "SPF/SPF_API/SPF_Config_API.h"
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
-#include <string.h> // For strcmp
 
-// This function is exported by the plugin's SPF_Plugin_Exports struct
-SPF_PLUGIN_ENTRY void MyPlugin_OnSettingChanged(
-    const char* keyPath, 
-    const SPF_JsonValue_Handle* newValue, 
-    const SPF_JsonReader_API* reader) 
-{
-    if (strcmp(keyPath, "settings.enable_feature_x") == 0) {
-        // The setting for our feature has changed.
-        
-        // 1. Check the type
-        if (reader->GetType(newValue) == SPF_JSON_TYPE_BOOLEAN) {
-            // 2. Get the value
-            bool is_enabled = reader->GetBool(newValue, false);
+void ParseMyComplexObject(const SPF_Core_API* core_api) {
+    if (!core_api || !core_api->config || !core_api->json_reader) return;
 
-            // 3. React to the change
-            if (is_enabled) {
-                // Enable our feature...
-            } else {
-                // Disable our feature...
+    const SPF_Config_API* config = core_api->config;
+    const SPF_JsonReader_API* reader = core_api->json_reader;
+    
+    SPF_Config_Handle* config_handle = config->GetContext("MyPlugin");
+
+    // 1. Get a handle to the complex object.
+    const SPF_JsonValue_Handle* obj_handle = config->GetJsonValueHandle(config_handle, "settings.a_complex_object");
+
+    if (obj_handle && reader->GetType(obj_handle) == SPF_JSON_TYPE_OBJECT) {
+        // 2. Get the "mode" string member.
+        const SPF_JsonValue_Handle* mode_handle = reader->GetMember(obj_handle, "mode");
+        if (mode_handle && reader->GetType(mode_handle) == SPF_JSON_TYPE_STRING) {
+            char mode_str[64];
+            reader->GetString(mode_handle, mode_str, sizeof(mode_str));
+            // Now mode_str contains "alpha"
+        }
+
+        // 3. Get the "targets" array member.
+        const SPF_JsonValue_Handle* arr_handle = reader->GetMember(obj_handle, "targets");
+        if (arr_handle && reader->GetType(arr_handle) == SPF_JSON_TYPE_ARRAY) {
+            int size = reader->GetArraySize(arr_handle); // Returns 3
+            for (int i = 0; i < size; ++i) {
+                const SPF_JsonValue_Handle* item_handle = reader->GetArrayItem(arr_handle, i);
+                // ... process each item ...
             }
         }
     }

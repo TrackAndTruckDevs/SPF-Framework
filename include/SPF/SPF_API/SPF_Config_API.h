@@ -9,6 +9,7 @@ extern "C" {
 
 // Forward-declare the handle type to make it an opaque pointer for the C API
 typedef struct SPF_Config_Handle SPF_Config_Handle;
+typedef struct SPF_JsonValue_Handle SPF_JsonValue_Handle;
 
 /**
  * @struct SPF_Config_API
@@ -121,6 +122,30 @@ typedef struct SPF_Config_API {
      * @return The boolean value from the config, or `defaultValue` if not found.
      */
     bool (*GetBool)(SPF_Config_Handle* handle, const char* key, bool defaultValue);
+
+    /**
+     * @brief (Advanced) Retrieves a handle to a raw JSON value for a given key.
+     *
+     * @details This function is intended for advanced use cases where a configuration
+     *          value is not a simple type (like an int or bool), but a complex JSON
+     *          object or array. The standard GetInt/GetString functions cannot retrieve
+     *          such structures. This function provides a way to get a "handle" to the
+     *          raw JSON value.
+     *
+     * @section Intended Workflow
+     * This function is designed to be used with the `SPF_JsonReader_API`. The typical
+     * workflow is:
+     * 1. Retrieve this handle for a complex setting key (e.g., "settings.my_object").
+     * 2. Obtain a pointer to the `SPF_JsonReader_API`.
+     * 3. Use the functions in `SPF_JsonReader_API` (like `GetType`, `GetString`, etc.)
+     *    to parse the data within the handle.
+     *
+     * @param handle The configuration context handle obtained from `GetContext`.
+     * @param key The dot-separated key for the value (e.g., "settings.my_complex_object").
+     * @return An opaque handle to the JSON value, or `NULL` if the key is not found.
+     *         The lifetime of this handle is managed by the framework; do not free it.
+     */
+    SPF_JsonValue_Handle* (*GetJsonValueHandle)(SPF_Config_Handle* handle, const char* key);
 
     // --- Value Setters ---
 

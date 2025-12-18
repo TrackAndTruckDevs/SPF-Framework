@@ -139,6 +139,16 @@ bool ConfigApi::Cfg_GetBool(SPF_Config_Handle* handle, const char* key, bool def
     return valueNode->get<bool>();
 }
 
+SPF_JsonValue_Handle* ConfigApi::Cfg_GetJsonValueHandle(SPF_Config_Handle* handle, const char* key) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+    if (!cfgHandle || !key) return nullptr;
+    auto& pm = PluginManager::GetInstance();
+    if (!pm.GetConfigService()) return nullptr;
+
+    const nlohmann::json* valueNode = pm.GetConfigService()->GetValuePtr(cfgHandle->pluginName, key);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(valueNode));
+}
+
 void ConfigApi::Cfg_SetBool(SPF_Config_Handle* handle, const char* key, bool value) {
     auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
     if (!cfgHandle || !key) return;
@@ -161,6 +171,7 @@ void ConfigApi::FillConfigApi(SPF_Config_API* api) {
     api->GetFloat = &ConfigApi::Cfg_GetFloat;
     api->SetFloat = &ConfigApi::Cfg_SetFloat;
     api->GetBool = &ConfigApi::Cfg_GetBool;
+    api->GetJsonValueHandle = &ConfigApi::Cfg_GetJsonValueHandle;
     api->SetBool = &ConfigApi::Cfg_SetBool;
 }
 

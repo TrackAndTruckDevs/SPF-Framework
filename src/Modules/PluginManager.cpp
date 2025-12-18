@@ -424,12 +424,14 @@ void PluginManager::OnGameWorldReady() {
   }
 }
 
-void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath, const void* newValue) {
+void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath) {
   auto it = m_plugins.find(pluginName);
   if (it != m_plugins.end()) {
     auto& plugin = it->second;
     if (plugin->exports.OnSettingChanged) {
-      plugin->exports.OnSettingChanged(keyPath.c_str(), reinterpret_cast<const SPF_JsonValue_Handle*>(newValue), &m_jsonReaderAPI);
+      // Get the config handle for the plugin to pass to the new callback signature.
+      SPF_Config_Handle* configHandle = m_configAPI.GetContext(pluginName.c_str());
+      plugin->exports.OnSettingChanged(configHandle, keyPath.c_str());
     }
   }
 }
@@ -511,6 +513,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.console = &m_gameConsoleAPI;
   m_coreAPI.formatting = &m_formattingAPI;
   m_coreAPI.gamelog = &m_gameLogAPI;
+  m_coreAPI.json_reader = &m_jsonReaderAPI;
 }
 }  // namespace Modules
 SPF_NS_END  // namespace Modules

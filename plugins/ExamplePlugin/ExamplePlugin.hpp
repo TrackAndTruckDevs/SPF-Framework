@@ -248,12 +248,13 @@ void OnUnload();
 // then calls them in response to specific events.
 
 /**
- * @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
+ * @brief Called when a setting is changed externally (e.g., via the main settings UI).
+ * @details This callback now provides the plugin's configuration handle, allowing
+ *          the use of the familiar `SPF_Config_API` to retrieve the new value.
+ * @param config_handle The configuration context handle for the plugin.
  * @param keyPath The dot-separated path of the setting that changed (e.g., "settings.some_number").
- * @param value_handle A handle to the new JSON value.
- * @param json_reader A pointer to the JSON reader API for safely extracting the value from the handle.
  */
-void OnSettingChanged(const char* keyPath, const SPF_JsonValue_Handle* value_handle, const SPF_JsonReader_API* json_reader);
+void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath);
 
 /**
  * @brief Called for each new line added to the in-game log.
@@ -316,6 +317,11 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
  * @details This demonstrates the workflow for the Virtual Input API: create, add inputs, then register.
  */
 void InitializeVirtualDevice();
+
+/**
+ * @brief Parses the `a_complex_object` setting to demonstrate `GetJsonValueHandle` and `JsonReaderApi`.
+ */
+void ParseComplexObject();
 
 /**
  * @brief Finds the target function in memory and installs the game string formatting hook.

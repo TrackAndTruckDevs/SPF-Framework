@@ -19,6 +19,10 @@ class JsonReaderApi {
   static uint64_t Json_GetUint(const SPF_JsonValue_Handle* handle, uint64_t default_value);
   static double Json_GetFloat(const SPF_JsonValue_Handle* handle, double default_value);
   static int Json_GetString(const SPF_JsonValue_Handle* handle, char* out_buffer, int buffer_size);
+  static bool Json_HasMember(const SPF_JsonValue_Handle* handle, const char* memberName);
+  static SPF_JsonValue_Handle* Json_GetMember(const SPF_JsonValue_Handle* handle, const char* memberName);
+  static int Json_GetArraySize(const SPF_JsonValue_Handle* handle);
+  static SPF_JsonValue_Handle* Json_GetArrayItem(const SPF_JsonValue_Handle* handle, int index);
 };
 }  // namespace Modules::API
 SPF_NS_END

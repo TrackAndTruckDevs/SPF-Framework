@@ -71,8 +71,7 @@ class PluginManager {
   void UnloadAllPlugins();
   void UpdateAllPlugins();
 
-  void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath, const void* newValue);
-
+      void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath);
   SPF_UI_API* GetUIApi() { return &m_uiAPI; }
   SPF::UI::UIManager* GetUIManager() { return m_uiManager; }
   HandleManager* GetHandleManager() { return m_handleManager; }

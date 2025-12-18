@@ -80,9 +80,13 @@ The framework initializes your plugin in stages, calling the functions you provi
 *   **Purpose:** If your plugin adds custom UI windows (as defined in your manifest), this is where you register their rendering functions with the UI system.
 
 ---
-**6. `OnSettingChanged(...)`** (Optional)
+**6. `OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath)`** (Optional)
 *   **When:** Called whenever a custom setting defined in your plugin's manifest is changed by the user or code.
-*   **Purpose:** Allows you to react to configuration changes in real-time. See the `SPF_JsonReader_API` documentation for details.
+*   **Purpose:** Allows you to react to configuration changes in real-time.
+*   **Parameters:**
+    *   `config_handle`: The configuration handle for your plugin.
+    *   `keyPath`: The dot-separated key of the setting that changed.
+*   **Workflow:** Use the provided `config_handle` and `keyPath` with the `SPF_Config_API` functions to get the new value. See the `SPF_Config_API` documentation for details.
 
 ---
 **7. `OnUnload()`**
@@ -111,5 +115,6 @@ Passed to `OnActivated`, this contains all available framework services. Your pl
 *   `camera`
 *   `console`
 *   `gamelog`
+*   `json_reader`: (Advanced) The JSON Reader API, for parsing complex JSON data structures.
 
 This staged approach ensures that services are only used after they have been properly initialized by the framework.
