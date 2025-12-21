@@ -80,6 +80,7 @@ Provide metadata for your custom settings.
 *   `keyPath`: The dot-separated path to your custom setting (e.g., `"my_feature.some_value"`).
 *   `titleKey`: A localization key or literal text for the setting's display name.
 *   `descriptionKey`: A localization key or literal text for the setting's detailed description.
+*   `hide_in_ui`: (Optional) A boolean. If set to `true`, this setting will be completely hidden from the Settings UI. This is useful for storing internal plugin state in `settings.json` that the user should not see. Defaults to `false` (visible).
 *   `widget`: (Optional) A string indicating the UI widget type to use for this setting (e.g., `"slider"`, `"combo"`, `"color3"`, `"multiline"`). If left empty, the framework will choose a default based on the setting's data type.
 *   `widget_params`: (Optional) A union of structures providing parameters specific to the chosen `widget` type.
     *   `slider`: For `"slider"` widget. Fields include `min_val`, `max_val`, `format`.

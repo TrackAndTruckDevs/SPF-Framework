@@ -71,17 +71,24 @@ nlohmann::json SerializeSettings(const ManifestData& manifest, const ManifestDat
             }
 
             // NEW: Inject UI rendering hints
-            if (meta.widget.has_value() || !meta.widget_params.empty()) {
+            if (meta.widget.has_value() || !meta.widget_params.empty() || meta.hide_in_ui) {
                 if (!node.contains("_meta")) {
                      node["_meta"] = nlohmann::json::object();
                 }
-                node["_meta"]["ui"] = nlohmann::json::object();
-                auto& ui_meta = node["_meta"]["ui"];
-                if (meta.widget.has_value()) {
-                    ui_meta["widget"] = meta.widget.value();
+
+                if (meta.hide_in_ui) {
+                    node["_meta"]["hide_in_ui"] = true;
                 }
-                if (!meta.widget_params.empty()) {
-                    ui_meta["params"] = meta.widget_params;
+
+                if(meta.widget.has_value() || !meta.widget_params.empty()){
+                    node["_meta"]["ui"] = nlohmann::json::object();
+                    auto& ui_meta = node["_meta"]["ui"];
+                    if (meta.widget.has_value()) {
+                        ui_meta["widget"] = meta.widget.value();
+                    }
+                    if (!meta.widget_params.empty()) {
+                        ui_meta["params"] = meta.widget_params;
+                    }
                 }
             }
         } catch (const std::exception& e) {

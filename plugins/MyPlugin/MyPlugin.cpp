@@ -231,12 +231,19 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         strncpy_s(meta.keyPath, "some_number", sizeof(meta.keyPath));
         strncpy_s(meta.titleKey, "My Awesome Number", sizeof(meta.titleKey)); // Can be a localization key or literal text
         strncpy_s(meta.descriptionKey, "This is the description for the awesome number.", sizeof(meta.descriptionKey)); // Can be a localization key or literal text
+        meta.hide_in_ui = false; // This is the default, so this line is not strictly necessary
 
         //Optional: Specify a UI widget (e.g., "slider") and its parameters.
         strncpy_s(meta.widget, "slider", sizeof(meta.widget));
         meta.widget_params.slider.min_val = 0;
         meta.widget_params.slider.max_val = 100;
         strncpy_s(meta.widget_params.slider.format, "%d", sizeof(meta.widget_params.slider.format));
+
+        //--- Example of a hidden setting ---
+        auto& hidden_meta = out_manifest.customSettingsMetadata[1];
+        strncpy_s(hidden_meta.keyPath, "internal_coordinates", sizeof(hidden_meta.keyPath));
+        // No title or description needed, as it won't be shown
+        hidden_meta.hide_in_ui = true; // This will hide the setting from the UI
     }*/
 
     // --- Keybinds Metadata ---

@@ -119,6 +119,7 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
             cppMeta.keyPath = cMeta.keyPath;
             if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
             if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
+            cppMeta.hide_in_ui = cMeta.hide_in_ui;
     
             // NEW: Widget and widget_params
             if (cMeta.widget[0] != '\0') {

@@ -318,6 +318,7 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         strncpy_s(meta.titleKey, "setting.complex_object.title", sizeof(meta.titleKey));
         strncpy_s(meta.descriptionKey, "setting.complex_object.description", sizeof(meta.descriptionKey));
         meta.widget[0] = '\0'; // No widget, this setting is for internal logic.
+        meta.hide_in_ui = true; //hide the display for the user
     }
 
     // --- Keybinds Metadata ---

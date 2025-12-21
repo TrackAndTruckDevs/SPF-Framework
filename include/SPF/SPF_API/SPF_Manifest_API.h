@@ -264,6 +264,14 @@ typedef struct SPF_CustomSettingMetadata_C {
      */
     char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
 
+    /**
+     * @brief (Optional) If set to `true`, this setting will not be displayed in the settings UI.
+     * @details This is useful for storing internal plugin state that should persist in `settings.json`
+     *          but should not be exposed to the user. Defaults to `false` (visible) if not specified,
+     *          as C-structs are typically zero-initialized.
+     */
+    bool hide_in_ui;
+
     // ---------------------------------------------------------------------------------------------
     // Optional UI Rendering Hints
     // ---------------------------------------------------------------------------------------------

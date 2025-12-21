@@ -359,8 +359,14 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
           ImGui::TreePop();
         }
       } else if (valueNode->is_array()) {
-        ImGui::Text("%s: [Array]", key.c_str());
+        bool node_open = ImGui::TreeNode(label.c_str());
         ShowTooltip();
+        if (node_open) {
+          for (size_t i = 0; i < valueNode->size(); ++i) {
+            RenderSettingsNode(std::to_string(i), (*valueNode)[i], systemName, fullPath);
+          }
+          ImGui::TreePop();
+        }
       } else if (valueNode->is_null()) {
         ImGui::Text("%s: [Null]", key.c_str());
         ShowTooltip();
@@ -743,6 +749,14 @@ void SettingsWindow::RenderContent() {
                   ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
                   for (auto& [key, value] : systemSettings.items()) {
+                    // Check for the hide_in_ui flag
+                    if (value.is_object() && value.contains("_meta")) {
+                        const auto& meta = value["_meta"];
+                        if (meta.contains("hide_in_ui") && meta["hide_in_ui"].is_boolean() && meta["hide_in_ui"].get<bool>()) {
+                            continue; // Skip rendering this setting
+                        }
+                    }
+                    
                     ImGui::TableNextRow();
 
                     // --- Column 1: Localized Setting Name ---

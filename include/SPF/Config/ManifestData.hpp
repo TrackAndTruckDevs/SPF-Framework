@@ -127,6 +127,7 @@ struct CustomSettingMetadata {
     std::string keyPath; ///< @brief Full JSON path to the setting.
     std::optional<std::string> titleKey; ///< @brief Localization key for the setting's title.
     std::optional<std::string> descriptionKey; ///< @brief Localization key for the setting's description.
+    bool hide_in_ui = false; ///< @brief If true, this setting will not be displayed in the UI. Defaults to false (visible).
 
     // ---------------------------------------------------------------------------------------------
     // Optional UI Rendering Hints (parsed from SPF_CustomSettingMetadata_C)
