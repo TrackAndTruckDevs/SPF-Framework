@@ -76,6 +76,9 @@
    ✔ HTTP & API Communication (cpr):
     All external web requests, such as for update checks and statistics, are handled by the modern **C++ Requests (cpr)** library, which provides a simple and powerful interface for HTTP communication.
 
+   ✔ Markdown Rendering (imgui_md & md4c):
+    To provide rich text formatting in UI elements, SPF uses the `imgui_md` library, which is a lightweight Markdown renderer for Dear ImGui. This, in turn, relies on the `md4c` (Markdown for C) parser for fast and compliant Markdown processing.
+
 
 
 ## ❤️ Support the Project
@@ -342,11 +345,15 @@ This project is licensed under the Apache License, Version 2.0. See the [LICENSE
 
 ## 🙏 Acknowledgements
 
-This project would not be possible without the incredible work of the open-source community. We extend our heartfelt thanks to the creators and maintainers of the following essential libraries:
+This project would not be possible without the incredible work of the open-source community. We extend our heartfelt thanks to the creators and maintainers of the following essential libraries, which are at the core of the SPF-Framework:
 
-* **Dear ImGui** for the flexible and powerful UI system.
-* **MinHook** for the robust and reliable hooking engine.
-* **{fmt}** for modern and efficient string formatting.
-* **nlohmann/json** for easy and powerful JSON manipulation.
-* **SCS SDK** for providing the official telemetry interface.
-* **hry-core:** For providing the architectural inspiration.
+*   **[Dear ImGui](https://github.com/ocornut/imgui)**: For the flexible and powerful immediate-mode UI system.
+*   **[MinHook](https://github.com/TsudaKageyu/minhook)**: For the robust and reliable hooking engine.
+*   **[{fmt}](https://github.com/fmtlib/fmt)**: For modern, safe, and efficient string formatting.
+*   **[nlohmann/json](https://github.com/nlohmann/json)**: For easy and powerful JSON manipulation.
+*   **[cpr (C++ Requests)](https://github.com/libcpr/cpr)**: For handling all external web requests with a clean, modern interface.
+*   **[md4c](https://github.com/mity/md4c)** & **[imgui_md](https://github.com/mekhontsev/imgui_md)**: For providing fast and lightweight Markdown rendering within the UI.
+*   **[zlib](https://github.com/madler/zlib)**: For data compression, used as a dependency by other core components.
+*   **[SCS SDK](https://github.com/SCSSoftware/ts-sdk-plugins)**: For providing the official telemetry interface that makes this all possible.
+
+We are also deeply grateful to the **[hry-core](https://github.com/Hary309/hry-core)** project, which served as a significant architectural inspiration for this framework.
