@@ -419,8 +419,47 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     // Parse the complex object on activation to demonstrate GetJsonValueHandle and JsonReaderApi.
     ParseComplexObject();
-}
 
+    // --- Telemetry Event Example ---
+    // Get a handle for the telemetry API and register our callbacks.
+    if (g_ctx.coreAPI && g_ctx.coreAPI->telemetry) {
+        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
+        if (g_ctx.telemetryHandle) {
+            auto tel = g_ctx.coreAPI->telemetry;
+            g_ctx.gameStateCallback = tel->RegisterForGameState(g_ctx.telemetryHandle, OnGameStateUpdate, &g_ctx);
+            g_ctx.timestampsCallback = tel->RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestampsUpdate, &g_ctx);
+            g_ctx.commonDataCallback = tel->RegisterForCommonData(g_ctx.telemetryHandle, OnCommonDataUpdate, &g_ctx);
+            g_ctx.truckConstantsCallback = tel->RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstantsUpdate, &g_ctx);
+            g_ctx.trailerConstantsCallback = tel->RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstantsUpdate, &g_ctx);
+            g_ctx.truckDataCallback = tel->RegisterForTruckData(g_ctx.telemetryHandle, OnTruckDataUpdate, &g_ctx);
+            g_ctx.trailersCallback = tel->RegisterForTrailers(g_ctx.telemetryHandle, OnTrailersUpdate, &g_ctx);
+            g_ctx.jobConstantsCallback = tel->RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstantsUpdate, &g_ctx);
+            g_ctx.jobDataCallback = tel->RegisterForJobData(g_ctx.telemetryHandle, OnJobDataUpdate, &g_ctx);
+            g_ctx.navigationDataCallback = tel->RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationDataUpdate, &g_ctx);
+            g_ctx.controlsCallback = tel->RegisterForControls(g_ctx.telemetryHandle, OnControlsUpdate, &g_ctx);
+            g_ctx.specialEventsCallback = tel->RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEventsUpdate, &g_ctx);
+            g_ctx.gameplayEventsCallback = tel->RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvent, &g_ctx);
+            g_ctx.gearboxConstantsCallback = tel->RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstantsUpdate, &g_ctx);
+
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered all telemetry callbacks.");
+        }
+    }
+}
+/**
+ * @brief (Optional) Called once when the game world has been fully loaded.
+ * @details This is the ideal place to initialize features that require the game to be
+ *          "in-game", such as camera hooks, interacting with vehicle data, etc.
+ *          It provides a reliable signal that it's safe to access game world objects.
+ */
+void OnGameWorldReady() {
+    if (g_ctx.coreAPI && g_ctx.coreAPI->logger) {
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO,
+                                  "OnGameWorldReady called! Game world is loaded and ready.");
+        
+        // Example: Now would be a good time to find camera offsets or install
+        // hooks that depend on game objects being in memory.
+    }
+}
 /**
  * @brief Called every frame while the plugin is active.
  * @details This function is the main "tick" or "update" loop for the plugin. It's called
@@ -431,18 +470,150 @@ void OnActivated(const SPF_Core_API* core_api) {
  */
 void OnUpdate() {
     // Example of throttled logging: This message will only be logged at most once every
-    // 2000 milliseconds (2 seconds), even though OnUpdate is called every frame.
-    if (g_ctx.loadAPI && g_ctx.loadAPI->logger) {
-        char buffer[256];
-        g_ctx.loadAPI->formatting->Format(buffer, sizeof(buffer), "OnUpdate is running... (throttled message)");
-        g_ctx.loadAPI->logger->LogThrottled(
-            g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME),
-            SPF_LOG_INFO,
-            "ExamplePlugin.onupdate.log", // A unique ID for this throttled message
-            2000,                         // The throttle interval in milliseconds
-            buffer
-        );
+    // 3000 milliseconds (2 seconds), even though OnUpdate is called every frame.
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->logger || !g_ctx.coreAPI->formatting) {
+        return;
     }
+
+    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto format = g_ctx.coreAPI->formatting;
+
+    char full_log_buffer[16384];
+    full_log_buffer[0] = '\0';
+
+    char temp_line_buffer[1024];
+
+    auto strcat_safe = [&](const char* src) {
+        strcat_s(full_log_buffer, sizeof(full_log_buffer), src);
+    };
+
+    strcat_safe("--- BEGIN EXHAUSTIVE EVENT CACHE LOG (Throttled) ---\n");
+
+    // --- GameState ---
+    {
+        const auto& data = g_ctx.eventDataCache.gameState;
+        strcat_safe("[GameState]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game ID: %s (%s)\n", data.game_id, data.game_name); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Version: %u.%u\n", data.scs_game_version_major, data.scs_game_version_minor); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Telemetry Version: %u.%u\n", data.telemetry_game_version_major, data.telemetry_game_version_minor); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Paused: %s, Scale: %.2f, MP Time Offset: %d\n", data.paused ? "Yes" : "No", data.scale, data.multiplayer_time_offset); strcat_safe(temp_line_buffer);
+    }
+
+    // --- Timestamps ---
+    {
+        const auto& data = g_ctx.eventDataCache.timestamps;
+        strcat_safe("[Timestamps]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Sim: %llu, Render: %llu, Paused Sim: %llu\n", data.simulation, data.render, data.paused_simulation); strcat_safe(temp_line_buffer);
+    }
+
+    // --- CommonData ---
+    {
+        const auto& data = g_ctx.eventDataCache.commonData;
+        strcat_safe("[CommonData]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Time: %u, Next Rest: %d min\n", data.game_time, data.next_rest_stop); strcat_safe(temp_line_buffer);
+    }
+
+    // --- TruckConstants ---
+    {
+        const auto& data = g_ctx.eventDataCache.truckConstants;
+        strcat_safe("[TruckConstants]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Truck: %s %s (%s, %s)\n", data.brand, data.name, data.brand_id, data.id); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  License: %s (%s, %s)\n", data.license_plate, data.license_plate_country, data.license_plate_country_id); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Drivetrain: %u Fwd, %u Rev, RPM Limit: %.0f, Diff Ratio: %.2f\n", data.forward_gear_count, data.reverse_gear_count, data.rpm_limit, data.differential_ratio); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Capacities: Fuel: %.1f L, AdBlue: %.1f L\n", data.fuel_capacity, data.adblue_capacity); strcat_safe(temp_line_buffer);
+        for (uint32_t i = 0; i < data.wheel_count; ++i) {
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Wheel %u: Radius=%.3f, Steerable=%d, Powered=%d, Liftable=%d\n", i, data.wheels[i].radius, data.wheels[i].steerable, data.wheels[i].powered, data.wheels[i].liftable); strcat_safe(temp_line_buffer);
+        }
+    }
+
+    // --- TruckData ---
+    {
+        const auto& data = g_ctx.eventDataCache.truckData;
+        strcat_safe("[TruckData]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  World Pos: (%.2f, %.2f, %.2f)\n", data.world_placement.position.x, data.world_placement.position.y, data.world_placement.position.z); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Speed: %.1f kph, RPM: %.0f\n", data.speed * 3.6f, data.engine_rpm); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Gear: %d (Displayed: %d), Cruise Control: %.1f kph\n", data.gear, data.displayed_gear, data.cruise_control_speed * 3.6f); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Brakes: Parking=%d, Motor=%d, Retarder=%u, Temp: %.1f C\n", data.parking_brake, data.motor_brake, data.retarder_level, data.brake_temperature); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Pressures: Air=%.1f psi, Oil=%.1f psi\n", data.air_pressure, data.oil_pressure); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Temps: Water=%.1f C, Oil=%.1f C\n", data.water_temperature, data.oil_temperature); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Fluids: Fuel=%.1f L, AdBlue=%.1f L\n", data.fuel_amount, data.adblue_amount); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Lights: L=%d R=%d, Park=%d, Low=%d, High=%d, Beacon=%d\n", data.lblinker, data.rblinker, data.light_parking, data.light_low_beam, data.light_high_beam, data.light_beacon); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Wear: Eng=%.3f, Trans=%.3f, Cab=%.3f, Chas=%.3f, Wheels=%.3f\n", data.wear_engine, data.wear_transmission, data.wear_cabin, data.wear_chassis, data.wear_wheels); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Odometer: %.1f km\n", data.odometer); strcat_safe(temp_line_buffer);
+    }
+
+    // --- Trailers ---
+    {
+        const auto& data = g_ctx.eventDataCache.trailers;
+        strcat_safe("[Trailers]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Count: %zu\n", data.size()); strcat_safe(temp_line_buffer);
+        for (size_t i = 0; i < data.size(); ++i) {
+            const auto& trailer = data[i];
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Trailer %zu: %s (%s) Conn: %d\n", i, trailer.constants.name, trailer.constants.id, trailer.data.connected); strcat_safe(temp_line_buffer);
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "      Damage: Cargo=%.3f, Chassis=%.3f, Wheels=%.3f\n", trailer.data.cargo_damage, trailer.data.wear_chassis, trailer.data.wear_wheels); strcat_safe(temp_line_buffer);
+            for (uint32_t j = 0; j < trailer.constants.wheel_count; ++j) {
+                const auto& wheel_data = trailer.data.wheels[j];
+                const auto& wheel_const = trailer.constants.wheels[j];
+                format->Format(temp_line_buffer, sizeof(temp_line_buffer), "      Trailer Wheel %u: R=%.3f, Defl=%.3f, Ground=%d, Vel=%.2f\n", j, wheel_const.radius, wheel_data.suspension_deflection, wheel_data.on_ground, wheel_data.angular_velocity); strcat_safe(temp_line_buffer);
+            }
+        }
+    }
+
+    // --- Job ---
+    {
+        const auto& job_const = g_ctx.eventDataCache.jobConstants;
+        const auto& job_data = g_ctx.eventDataCache.jobData;
+        strcat_safe("[Job]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  On Job: %s\n", job_data.on_job ? "Yes" : "No"); strcat_safe(temp_line_buffer);
+        if (job_data.on_job) {
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Cargo: %s (%s), Mass: %.0f kg\n", job_const.cargo_name, job_const.cargo_id, job_const.cargo_mass); strcat_safe(temp_line_buffer);
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Route: %s -> %s\n", job_const.source_city, job_const.destination_city); strcat_safe(temp_line_buffer);
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Company: %s -> %s\n", job_const.source_company, job_const.destination_company); strcat_safe(temp_line_buffer);
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Income: %llu, Market: %s\n", job_const.income, job_const.job_market); strcat_safe(temp_line_buffer);
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Time Left: %u min, Cargo Dmg: %.3f\n", job_data.remaining_delivery_minutes, job_data.cargo_damage); strcat_safe(temp_line_buffer);
+        }
+    }
+
+    // --- Navigation ---
+    {
+        const auto& data = g_ctx.eventDataCache.navigationData;
+        strcat_safe("[Navigation]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Distance: %.0f m, Time: %.0f s (%.1f real s), Speed Limit: %.0f kph\n", data.navigation_distance, data.navigation_time, data.navigation_time_real_seconds, data.navigation_speed_limit * 3.6f); strcat_safe(temp_line_buffer);
+    }
+
+    // --- Controls ---
+    {
+        const auto& data = g_ctx.eventDataCache.controls;
+        strcat_safe("[Controls]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  User: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.userInput.throttle, data.userInput.brake, data.userInput.steering, data.userInput.clutch); strcat_safe(temp_line_buffer);
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Effective: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.effectiveInput.throttle, data.effectiveInput.brake, data.effectiveInput.steering, data.effectiveInput.clutch); strcat_safe(temp_line_buffer);
+    }
+
+    // --- GameplayEvents ---
+    {
+        const auto& event_id = g_ctx.eventDataCache.lastGameplayEventId;
+        const auto& data = g_ctx.eventDataCache.gameplayEvents;
+        strcat_safe("[GameplayEvents]\n");
+        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Last Event ID: %s\n", event_id); strcat_safe(temp_line_buffer);
+        if (strcmp(event_id, "player.fined") == 0) {
+            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Fine Details: Amount=%lld, Offence=%s\n", data.player_fined.fine_amount, data.player_fined.fine_offence); strcat_safe(temp_line_buffer);
+        } else if (strcmp(event_id, "job.delivered") == 0) {
+             format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Delivered: Revenue=%lld, XP=%d, Dist=%.1f km\n", data.job_delivered.revenue, data.job_delivered.earned_xp, data.job_delivered.distance_km); strcat_safe(temp_line_buffer);
+        } else if (strcmp(event_id, "job.cancelled") == 0) {
+             format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Cancelled: Penalty=%lld\n", data.job_cancelled.penalty); strcat_safe(temp_line_buffer);
+        }
+    }
+
+    strcat_safe("--- END EXHAUSTIVE EVENT CACHE LOG ---\n");
+
+
+    g_ctx.coreAPI->logger->LogThrottled(
+        logger,
+        SPF_LOG_INFO,
+        "ExamplePlugin.full_event_cache.log",
+        3000,
+        full_log_buffer
+    );
 }
 
 /**
@@ -460,6 +631,22 @@ void OnUnload() {
     // It's good practice to null out all cached pointers on unload. This helps prevent
     // accidental use-after-free if another part of the code attempts to access them
     // after the plugin has been told to shut down.
+    g_ctx.telemetryHandle = nullptr;
+    g_ctx.gameStateCallback = nullptr;
+    g_ctx.timestampsCallback = nullptr;
+    g_ctx.commonDataCallback = nullptr;
+    g_ctx.truckConstantsCallback = nullptr;
+    g_ctx.trailerConstantsCallback = nullptr;
+    g_ctx.truckDataCallback = nullptr;
+    g_ctx.trailersCallback = nullptr;
+    g_ctx.jobConstantsCallback = nullptr;
+    g_ctx.jobDataCallback = nullptr;
+    g_ctx.navigationDataCallback = nullptr;
+    g_ctx.controlsCallback = nullptr;
+    g_ctx.specialEventsCallback = nullptr;
+    g_ctx.gameplayEventsCallback = nullptr;
+    g_ctx.gearboxConstantsCallback = nullptr;
+
     g_ctx.mainWindowHandle = nullptr;
     g_ctx.virtualDevice = nullptr;
     g_ctx.uiAPI = nullptr;
@@ -560,6 +747,230 @@ void OnCameraKeybind() {
     }
 }
 
+// --- Telemetry Event Callbacks ---
+
+/**
+ * @brief Callback function for the GameState event.
+ * @details This function is invoked by the framework whenever the game's state (e.g., paused status,
+ * time scale) is updated. It receives the updated `SPF_GameState` data and a `user_data` pointer.
+ * The `user_data` is used to access the plugin's global context (`g_ctx`), allowing the function
+ * to store the latest game state data in `g_ctx.eventDataCache` for display in the UI.
+ * @param data A pointer to the `SPF_GameState` structure containing the updated game state information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnGameStateUpdate(const SPF_GameState* data, void* user_data) {
+    if (!data || !user_data) return; // Always check for null pointers to prevent crashes.
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data); // Cast user_data back to our context type.
+    ctx->eventDataCache.gameState = *data; // Store the latest data in our cache.
+}
+
+/**
+ * @brief Callback function for the Timestamps event.
+ * @details This function is invoked by the framework whenever the game's timestamps data is updated.
+ * It receives the updated `SPF_Timestamps` data and a `user_data` pointer.
+ * The `user_data` is used to access the plugin's global context (`g_ctx`), allowing the function
+ * to store the latest timestamp data in `g_ctx.eventDataCache` for display in the UI.
+ * @param data A pointer to the `SPF_Timestamps` structure containing the updated timestamp information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnTimestampsUpdate(const SPF_Timestamps* data, void* user_data) {
+    if (!data || !user_data) return; // Always check for null pointers to prevent crashes.
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data); // Cast user_data back to our context type.
+    ctx->eventDataCache.timestamps = *data; // Store the latest data in our cache.
+}
+
+/**
+ * @brief Callback function for the CommonData event.
+ * @details This function is invoked by the framework whenever common game data (e.g., game time,
+ * next rest stop) is updated. It receives the updated `SPF_CommonData` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest common data in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_CommonData` structure containing the updated common game information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnCommonDataUpdate(const SPF_CommonData* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.commonData = *data;
+}
+
+/**
+ * @brief Callback function for the TruckConstants event.
+ * @details This function is invoked by the framework when the truck's static configuration
+ * (e.g., brand, model, wheel count) changes. It receives the updated `SPF_TruckConstants`
+ * and a `user_data` pointer. The `user_data` allows access to `g_ctx` to store the latest
+ * truck constants in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_TruckConstants` structure containing the updated truck
+ *             configuration information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnTruckConstantsUpdate(const SPF_TruckConstants* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.truckConstants = *data;
+}
+
+/**
+ * @brief Callback function for the TrailerConstants event.
+ * @details This function is invoked by the framework when the static configuration of a trailer
+ * (e.g., brand, model, wheel count) changes. It receives the updated `SPF_TrailerConstants`
+ * and a `user_data` pointer. The `user_data` allows access to `g_ctx` to store the latest
+ * trailer constants in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_TrailerConstants` structure containing the updated trailer
+ *             configuration information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnTrailerConstantsUpdate(const SPF_TrailerConstants* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.trailerConstants = *data;
+}
+
+/**
+ * @brief Callback function for the TruckData event.
+ * @details This function is invoked by the framework frequently with updated dynamic truck data
+ * (e.g., speed, RPM, fuel). It receives the updated `SPF_TruckData` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest truck data in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_TruckData` structure containing the updated dynamic truck information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnTruckDataUpdate(const SPF_TruckData* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.truckData = *data;
+}
+
+/**
+ * @brief Callback function for the Trailers event.
+ * @details This function is invoked by the framework when the list of attached trailers
+ * or their dynamic data changes. It receives a pointer to an array of `SPF_Trailer`
+ * structures and the count of trailers, along with a `user_data` pointer. The `user_data`
+ * allows access to `g_ctx` to store the latest trailer data in `g_ctx.eventDataCache.trailers`.
+ * The vector is cleared and re-populated to reflect the current state.
+ * @param data A pointer to the array of `SPF_Trailer` structures containing the updated trailer data.
+ * @param count The number of trailers in the `data` array.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnTrailersUpdate(const SPF_Trailer* data, uint32_t count, void* user_data) {
+    if (!user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+
+    ctx->eventDataCache.trailers.clear(); // Clear previous data.
+    if (data && count > 0) {
+        // Copy each trailer from the C-style array into the C++ vector.
+        for (uint32_t i = 0; i < count; ++i) {
+            ctx->eventDataCache.trailers.push_back(data[i]);
+        }
+    }
+}
+
+/**
+ * @brief Callback function for the JobConstants event.
+ * @details This function is invoked by the framework when the current job's static configuration
+ * (e.g., cargo, destination, income) changes. It receives the updated `SPF_JobConstants`
+ * and a `user_data` pointer. The `user_data` allows access to `g_ctx` to store the latest
+ * job constants in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_JobConstants` structure containing the updated job
+ *             configuration information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnJobConstantsUpdate(const SPF_JobConstants* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.jobConstants = *data;
+}
+
+/**
+ * @brief Callback function for the JobData event.
+ * @details This function is invoked by the framework when dynamic job data (e.g., cargo damage,
+ * remaining delivery time) is updated. It receives the updated `SPF_JobData` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest job data in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_JobData` structure containing the updated dynamic job information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnJobDataUpdate(const SPF_JobData* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.jobData = *data;
+}
+
+/**
+ * @brief Callback function for the NavigationData event.
+ * @details This function is invoked by the framework when navigation data (e.g., remaining distance,
+ * time to arrival, speed limit) is updated. It receives the updated `SPF_NavigationData` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest navigation data in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_NavigationData` structure containing the updated navigation information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnNavigationDataUpdate(const SPF_NavigationData* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.navigationData = *data;
+}
+
+/**
+ * @brief Callback function for the Controls event.
+ * @details This function is invoked by the framework when player control inputs (e.g., steering,
+ * throttle, brake) are updated. It receives the updated `SPF_Controls` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest controls data in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_Controls` structure containing the updated control input information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnControlsUpdate(const SPF_Controls* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.controls = *data;
+}
+
+/**
+ * @brief Callback function for the SpecialEvents event.
+ * @details This function is invoked by the framework when single-frame events like fines,
+ * tollgates, or job completion occur. It receives the updated `SPF_SpecialEvents` and a `user_data` pointer.
+ * The `user_data` allows access to `g_ctx` to store the latest event flags in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_SpecialEvents` structure containing the updated event flags.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnSpecialEventsUpdate(const SPF_SpecialEvents* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.specialEvents = *data;
+}
+
+/**
+ * @brief Callback function for the GameplayEvents event.
+ * @details This function is invoked by the framework when a specific gameplay event occurs (e.g.,
+ * a fine is issued, a job is delivered). It receives a string ID for the event, a data payload
+ * with event-specific details, and a `user_data` pointer. The function stores both the event ID
+ * and the data payload in the `g_ctx.eventDataCache`.
+ * @param event_id A string identifying the type of gameplay event (e.g., "player.fined").
+ * @param data A pointer to the `SPF_GameplayEvents` structure containing the data for the event.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnGameplayEvent(const char* event_id, const SPF_GameplayEvents* data, void* user_data) {
+    if (!event_id || !data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+
+    // Copy the event data payload.
+    ctx->eventDataCache.gameplayEvents = *data;
+    // Copy the event ID string safely into our cache.
+    strncpy_s(ctx->eventDataCache.lastGameplayEventId, event_id, sizeof(ctx->eventDataCache.lastGameplayEventId));
+}
+
+/**
+ * @brief Callback function for the GearboxConstants event.
+ * @details This function is invoked by the framework when the truck's gearbox configuration
+ * (e.g., shifter type, slot layout) changes. It receives the updated `SPF_GearboxConstants`
+ * and a `user_data` pointer. The `user_data` allows access to `g_ctx` to store the latest
+ * gearbox constants in `g_ctx.eventDataCache`.
+ * @param data A pointer to the `SPF_GearboxConstants` structure containing the updated
+ *             gearbox configuration information.
+ * @param user_data A pointer to the plugin's global `PluginContext` (g_ctx), allowing state updates.
+ */
+void OnGearboxConstantsUpdate(const SPF_GearboxConstants* data, void* user_data) {
+    if (!data || !user_data) return;
+    auto* ctx = reinterpret_cast<PluginContext*>(user_data);
+    ctx->eventDataCache.gearboxConstants = *data;
+}
+
 // =================================================================================================
 // 5. UI Implementation
 // =================================================================================================
@@ -641,6 +1052,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         // Render the content of other tabs by calling their respective functions.
         if (ui->BeginTabItem("Camera")) { RenderCameraTab(ui, user_data); ui->EndTabItem(); }
         if (ui->BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->EndTabItem(); }
+        if (ui->BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->EndTabItem(); }
         if (ui->BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->EndTabItem(); }
         ui->EndTabBar();
     }
@@ -694,6 +1106,15 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
  * @brief Renders the content for the "Telemetry" tab in the main window.
  */
 void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
+    // --- Telemetry Polling vs. Event-Driven ---
+    // This tab demonstrates direct polling of telemetry data using Get...() functions.
+    // While this works, for high-frequency data updates (like per-frame rendering),
+    // it is generally more efficient to use the event-driven callback mechanism
+    // (as shown in OnActivated where callbacks are registered for OnTruckDataUpdate, etc., which update g_ctx.eventDataCache).
+    // The event-driven approach means your plugin only reacts when data actually changes,
+    // rather than constantly asking for it.
+    // Use Get...() for infrequent snapshots or specific UI displays, but prefer callbacks
+    // for continuous, performance-critical data handling.
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->telemetry || !ui) {
         ui->Text("Telemetry API is not available.");
         return;
@@ -730,6 +1151,41 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
         ui->Text(buffer);
     } else {
         ui->Text("Not currently on a job.");
+    }
+}
+
+void RenderEventsTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.coreAPI || !ui) {
+        ui->Text("Core API not available.");
+        return;
+    }
+    ui->Text("This tab displays the last data received from event callbacks.");
+    ui->Separator();
+
+    char buffer[512];
+
+    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Last Gameplay Event: %s", g_ctx.eventDataCache.lastGameplayEventId);
+    ui->Text(buffer);
+    ui->Separator();
+
+    ui->Text("Game State:");
+    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Paused: %s", g_ctx.eventDataCache.gameState.paused ? "Yes" : "No");
+    ui->Text(buffer);
+    ui->Separator();
+
+    ui->Text("Truck Data:");
+    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Speed: %.0f kph", g_ctx.eventDataCache.truckData.speed * 3.6f);
+    ui->Text(buffer);
+    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Engine RPM: %.0f", g_ctx.eventDataCache.truckData.engine_rpm);
+    ui->Text(buffer);
+    ui->Separator();
+
+    ui->Text("Trailer Info:");
+    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Attached Trailers: %zu", g_ctx.eventDataCache.trailers.size());
+    ui->Text(buffer);
+    if (!g_ctx.eventDataCache.trailers.empty()) {
+        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Trailer 1 Brand: %s", g_ctx.eventDataCache.trailers[0].constants.brand);
+        ui->Text(buffer);
     }
 }
 
@@ -989,21 +1445,5 @@ SPF_PLUGIN_EXPORT bool SPF_GetPlugin(SPF_Plugin_Exports* exports) {
 }
 
 } // extern "C"
-
-/**
- * @brief (Optional) Called once when the game world has been fully loaded.
- * @details This is the ideal place to initialize features that require the game to be
- *          "in-game", such as camera hooks, interacting with vehicle data, etc.
- *          It provides a reliable signal that it's safe to access game world objects.
- */
-void OnGameWorldReady() {
-    if (g_ctx.coreAPI && g_ctx.coreAPI->logger) {
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO,
-                                  "OnGameWorldReady called! Game world is loaded and ready.");
-        
-        // Example: Now would be a good time to find camera offsets or install
-        // hooks that depend on game objects being in memory.
-    }
-}
 
 } // namespace ExamplePlugin

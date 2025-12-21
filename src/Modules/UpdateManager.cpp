@@ -77,6 +77,11 @@ namespace Modules {
             // Dispatch event for UI
             m_eventManager.System.OnPatronsFetchCompleted.Call({result});
         }
+        
+        // Check for usage tracking future completion
+        if (m_trackUsageFuture && m_trackUsageFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            m_trackUsageFuture.reset(); // Fire-and-forget, just clear the future
+        }
     }
 
     void UpdateManager::RequestUpdateCheck() {
@@ -197,7 +202,12 @@ namespace Modules {
             return;
         }
 
-        m_apiService.TrackUsageAsync(updateBaseUrl, instanceId, currentVersion);
+        // Prevent starting a new request if one is already in progress
+        if (m_trackUsageFuture.has_value()) {
+            return;
+        }
+
+        m_trackUsageFuture = m_apiService.TrackUsageAsync(updateBaseUrl, instanceId, currentVersion);
     }
 
 } // namespace Modules

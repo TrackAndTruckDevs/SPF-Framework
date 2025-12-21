@@ -5,6 +5,7 @@
 
 #include "SPF/Namespace.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Utils/Signal.hpp"
 #include "SPF/Telemetry/SCS/Gearbox.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 #include <chrono>
@@ -63,6 +64,22 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   const SCS::GearboxConstants& GetGearboxConstants() const override;
   const std::string& GetLastGameplayEventId() const override;
   float GetDeltaTime() const override;
+
+  // --- Signal Accessors (ITelemetryService Implementation) ---
+  Utils::Signal<void(const SPF::Telemetry::SCS::GameState&)>& GetGameStateSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::Timestamps&)>& GetTimestampsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::CommonData&)>& GetCommonDataSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::TruckConstants&)>& GetTruckConstantsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::TrailerConstants&)>& GetTrailerConstantsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::TruckData&)>& GetTruckDataSignal() override;
+  Utils::Signal<void(const std::vector<SPF::Telemetry::SCS::Trailer>&)>& GetTrailersSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::JobConstants&)>& GetJobConstantsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::JobData&)>& GetJobDataSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::NavigationData&)>& GetNavigationDataSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::Controls&)>& GetControlsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::SpecialEvents&)>& GetSpecialEventsSignal() override;
+  Utils::Signal<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)>& GetGameplayEventsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::GearboxConstants&)>& GetGearboxConstantsSignal() override;
 
   // --- Static Callbacks for SCS SDK ---
   static void StaticConfigurationCallback(scs_event_t event, const void* event_info, scs_context_t context);

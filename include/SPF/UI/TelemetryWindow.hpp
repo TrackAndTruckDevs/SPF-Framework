@@ -1,6 +1,15 @@
 #pragma once
 
 #include "SPF/UI/BaseWindow.hpp"
+#include "SPF/Telemetry/SCS/Common.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Controls.hpp"
+#include "SPF/Telemetry/SCS/Events.hpp"
+#include "SPF/Telemetry/SCS/Gearbox.hpp"
+#include "SPF/Utils/Signal.hpp"
 #include <string>
 #include <vector>
 
@@ -9,6 +18,8 @@ SPF_NS_BEGIN
 namespace Modules {
 class ITelemetryService;
 }
+
+
 
 namespace UI {
 class TelemetryWindow : public BaseWindow {
@@ -20,8 +31,55 @@ class TelemetryWindow : public BaseWindow {
   void RenderContent() override;
 
  private:
+  // Event Handlers (Slots)
+  void OnGameStateUpdate(const Telemetry::SCS::GameState& data);
+  void OnTimestampsUpdate(const Telemetry::SCS::Timestamps& data);
+  void OnCommonDataUpdate(const Telemetry::SCS::CommonData& data);
+  void OnTruckConstantsUpdate(const Telemetry::SCS::TruckConstants& data);
+  void OnTruckDataUpdate(const Telemetry::SCS::TruckData& data);
+  void OnTrailersUpdate(const std::vector<Telemetry::SCS::Trailer>& data);
+  void OnJobConstantsUpdate(const Telemetry::SCS::JobConstants& data);
+  void OnJobDataUpdate(const Telemetry::SCS::JobData& data);
+  void OnNavigationDataUpdate(const Telemetry::SCS::NavigationData& data);
+  void OnControlsUpdate(const Telemetry::SCS::Controls& data);
+  void OnSpecialEventsUpdate(const Telemetry::SCS::SpecialEvents& data);
+  void OnGameplayEventUpdate(const char* event_id, const Telemetry::SCS::GameplayEvents& data);
+  void OnGearboxConstantsUpdate(const Telemetry::SCS::GearboxConstants& data);
+
+ private:
   Modules::ITelemetryService& m_telemetryService;
 
+  // Signal Sinks
+  Utils::Sink<void(const Telemetry::SCS::GameState&)> m_gameStateSink;
+  Utils::Sink<void(const Telemetry::SCS::Timestamps&)> m_timestampsSink;
+  Utils::Sink<void(const Telemetry::SCS::CommonData&)> m_commonDataSink;
+  Utils::Sink<void(const Telemetry::SCS::TruckConstants&)> m_truckConstantsSink;
+  Utils::Sink<void(const Telemetry::SCS::TruckData&)> m_truckDataSink;
+  Utils::Sink<void(const std::vector<Telemetry::SCS::Trailer>&)> m_trailersSink;
+  Utils::Sink<void(const Telemetry::SCS::JobConstants&)> m_jobConstantsSink;
+  Utils::Sink<void(const Telemetry::SCS::JobData&)> m_jobDataSink;
+  Utils::Sink<void(const Telemetry::SCS::NavigationData&)> m_navigationDataSink;
+  Utils::Sink<void(const Telemetry::SCS::Controls&)> m_controlsSink;
+  Utils::Sink<void(const Telemetry::SCS::SpecialEvents&)> m_specialEventsSink;
+  Utils::Sink<void(const char*, const Telemetry::SCS::GameplayEvents&)> m_gameplayEventsSink;
+  Utils::Sink<void(const Telemetry::SCS::GearboxConstants&)> m_gearboxConstantsSink;
+
+  // Data Cache
+  Telemetry::SCS::GameState m_gameState;
+  Telemetry::SCS::Timestamps m_timestamps;
+  Telemetry::SCS::CommonData m_commonData;
+  Telemetry::SCS::TruckConstants m_truckConstants;
+  Telemetry::SCS::TruckData m_truckData;
+  std::vector<Telemetry::SCS::Trailer> m_trailers;
+  Telemetry::SCS::JobConstants m_jobConstants;
+  Telemetry::SCS::JobData m_jobData;
+  Telemetry::SCS::NavigationData m_navigationData;
+  Telemetry::SCS::Controls m_controls;
+  Telemetry::SCS::SpecialEvents m_specialEvents;
+  Telemetry::SCS::GameplayEvents m_gameplayEvents;
+  Telemetry::SCS::GearboxConstants m_gearboxConstants;
+  std::string m_lastGameplayEventId;
+  
   // Localization keys
   std::string m_locTabGame;
   std::string m_locTabJob;

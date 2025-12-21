@@ -55,15 +55,6 @@
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Config/IConfigService.hpp"
 
-#include <SPF/Telemetry/SCS/Common.hpp>
-#include <SPF/Telemetry/SCS/Truck.hpp>
-#include <SPF/Telemetry/SCS/Trailer.hpp>
-#include <SPF/Telemetry/SCS/Job.hpp>
-#include <SPF/Telemetry/SCS/Navigation.hpp>
-#include <SPF/Telemetry/SCS/Controls.hpp>
-#include <SPF/Telemetry/SCS/Events.hpp>
-#include <SPF/Telemetry/SCS/Gearbox.hpp>
-
 #include <algorithm>
 #include <cstring>
 #include <cctype>
@@ -91,6 +82,7 @@ using namespace SPF::Utils;
 using namespace SPF::Data::GameData;
 using namespace SPF::Modules::API;
 using namespace SPF::Hooks;
+using namespace SPF::Telemetry::SCS;
 
 // --- Static Member Variable Definitions ---
 std::vector<std::string> PluginManager::s_available_languages_cache;
@@ -423,6 +415,8 @@ void PluginManager::OnGameWorldReady() {
     }
   }
 }
+
+
 
 void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath) {
   auto it = m_plugins.find(pluginName);

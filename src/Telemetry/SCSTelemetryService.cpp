@@ -12,6 +12,7 @@
 #include "SPF/Telemetry/ControlsProcessor.hpp"
 #include "SPF/Telemetry/GearboxProcessor.hpp"
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/TelemetryEvents.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 
 SPF_NS_BEGIN
@@ -287,23 +288,40 @@ void SCSTelemetryService::HandleConfiguration(const scs_telemetry_configuration_
     m_truckProcessor->HandleConfiguration(info);
     UpdateTruckWheelChannels(m_truckProcessor->GetConstants().wheel_count);
     UpdateHShifterSelectorChannels(m_truckProcessor->GetConstants().selector_count);
+
+    // Notify about the truck configuration update.
+    m_eventManager.System.Telemetry.OnTruckConstantsChanged.Call(m_truckProcessor->GetConstants());
   } else if (strncmp(info->id, "trailer.", 8) == 0) {
     m_trailerProcessor->HandleConfiguration(info);
     unsigned int trailer_index;
     if (sscanf_s(info->id, "trailer.%u", &trailer_index) == 1 && trailer_index < m_trailerProcessor->GetData().size()) {
       UpdateTrailerWheelChannels(trailer_index, m_trailerProcessor->GetData()[trailer_index].constants.wheel_count);
+
+      // Notify about the trailer configuration update.
+      m_eventManager.System.Telemetry.OnTrailerConstantsChanged.Call(m_trailerProcessor->GetData()[trailer_index].constants);
     }
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_trailer) == 0) {
     m_trailerProcessor->HandleConfiguration(info);
     if (!m_trailerProcessor->GetData().empty()) {
       UpdateTrailerWheelChannels(0, m_trailerProcessor->GetData()[0].constants.wheel_count);
+
+      // Notify about the trailer configuration update (for the first trailer).
+      m_eventManager.System.Telemetry.OnTrailerConstantsChanged.Call(m_trailerProcessor->GetData()[0].constants);
     }
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_job) == 0) {
     m_jobProcessor->HandleConfiguration(info);
+
+    // Notify about the job configuration update.
+    m_eventManager.System.Telemetry.OnJobConstantsChanged.Call(m_jobProcessor->GetJobConstants());
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_substances) == 0) {
     m_gameDataProcessor->HandleConfiguration(info);
+
+  m_eventManager.System.Telemetry.OnCommonDataUpdated.Call(m_gameDataProcessor->GetCommonData());
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_controls) == 0 || strcmp(info->id, SCS_TELEMETRY_CONFIG_hshifter) == 0) {
     m_gearboxProcessor->HandleConfiguration(info);
+
+    // Notify about the gearbox/controls configuration update.
+    m_eventManager.System.Telemetry.OnGearboxConstantsChanged.Call(m_gearboxProcessor->GetConstants());
   }
 }
 
@@ -367,6 +385,17 @@ void SCSTelemetryService::HandleFrameStart(const scs_telemetry_frame_start_t* in
     navData.navigation_time_real_seconds = 0.0f;
   }
 
+  // --- Fire Data Update Events ---
+  // Now that all channel data for the frame has been processed, notify listeners
+  // with the complete, updated data structures.
+  m_eventManager.System.Telemetry.OnTimestampsUpdated.Call(m_gameDataProcessor->GetTimestamps());
+  m_eventManager.System.Telemetry.OnTruckDataUpdated.Call(m_truckProcessor->GetData());
+  m_eventManager.System.Telemetry.OnTrailersUpdated.Call(m_trailerProcessor->GetData());
+  m_eventManager.System.Telemetry.OnJobDataUpdated.Call(m_jobProcessor->GetJobData());
+  m_eventManager.System.Telemetry.OnNavigationDataUpdated.Call(m_jobProcessor->GetNavigationData());
+  m_eventManager.System.Telemetry.OnControlsUpdated.Call(m_controlsProcessor->GetData());
+  m_eventManager.System.Telemetry.OnCommonDataUpdated.Call(m_gameDataProcessor->GetCommonData());
+
   // Notify the system that a telemetry frame has started
   m_eventManager.System.OnTelemetryFrameStart.Call();
 
@@ -378,19 +407,35 @@ void SCSTelemetryService::StaticPausedCallback(scs_event_t, const void*, scs_con
   if (context) static_cast<SCSTelemetryService*>(context)->HandlePaused();
 }
 
-void SCSTelemetryService::HandlePaused() { m_gameDataProcessor->HandlePaused(); }
+void SCSTelemetryService::HandlePaused() {
+  m_gameDataProcessor->HandlePaused();
+  m_eventManager.System.Telemetry.OnGameStateUpdated.Call(m_gameDataProcessor->GetGameState());
+}
 
 void SCSTelemetryService::StaticStartedCallback(scs_event_t, const void*, scs_context_t context) {
   if (context) static_cast<SCSTelemetryService*>(context)->HandleStarted();
 }
 
-void SCSTelemetryService::HandleStarted() { m_gameDataProcessor->HandleStarted(); }
+void SCSTelemetryService::HandleStarted() {
+  m_gameDataProcessor->HandleStarted();
+  m_eventManager.System.Telemetry.OnGameStateUpdated.Call(m_gameDataProcessor->GetGameState());
+}
 
 void SCSTelemetryService::StaticGameplayEventCallback(scs_event_t, const void* event_info, scs_context_t context) {
   if (context) static_cast<SCSTelemetryService*>(context)->HandleGameplayEvent(static_cast<const scs_telemetry_gameplay_event_t*>(event_info));
 }
 
-void SCSTelemetryService::HandleGameplayEvent(const scs_telemetry_gameplay_event_t* info) { m_eventsProcessor->HandleGameplayEvent(info); }
+void SCSTelemetryService::HandleGameplayEvent(const scs_telemetry_gameplay_event_t* info) {
+  // Let the processor handle the raw event first to update its internal state.
+  m_eventsProcessor->HandleGameplayEvent(info);
+
+  // Now, fire the framework-level event with the processed data.
+  const char* event_id = m_eventsProcessor->GetLastGameplayEventId().c_str();
+  const auto& event_data = m_eventsProcessor->GetGameplayEvents();
+
+  m_eventManager.System.Telemetry.OnGameplayEventsUpdated.Call(event_id, event_data);
+  m_eventManager.System.Telemetry.OnSpecialEventsUpdated.Call(m_eventsProcessor->GetSpecialEvents());
+}
 
 // --- ITelemetryService Implementation ---
 
@@ -411,6 +456,63 @@ const SCS::GearboxConstants& SCSTelemetryService::GetGearboxConstants() const { 
 const std::string& SCSTelemetryService::GetLastGameplayEventId() const { return m_eventsProcessor->GetLastGameplayEventId(); }
 
 float SCSTelemetryService::GetDeltaTime() const { return m_deltaTime; }
+
+// --- Signal Accessors (ITelemetryService Implementation) ---
+Utils::Signal<void(const SCS::GameState&)>& SCSTelemetryService::GetGameStateSignal() {
+    return m_eventManager.System.Telemetry.OnGameStateUpdated;
+}
+
+Utils::Signal<void(const SCS::Timestamps&)>& SCSTelemetryService::GetTimestampsSignal() {
+    return m_eventManager.System.Telemetry.OnTimestampsUpdated;
+}
+
+Utils::Signal<void(const SCS::CommonData&)>& SCSTelemetryService::GetCommonDataSignal() {
+    return m_eventManager.System.Telemetry.OnCommonDataUpdated;
+}
+
+Utils::Signal<void(const SCS::TruckConstants&)>& SCSTelemetryService::GetTruckConstantsSignal() {
+    return m_eventManager.System.Telemetry.OnTruckConstantsChanged;
+}
+
+Utils::Signal<void(const SCS::TrailerConstants&)>& SCSTelemetryService::GetTrailerConstantsSignal() {
+    return m_eventManager.System.Telemetry.OnTrailerConstantsChanged;
+}
+
+Utils::Signal<void(const SCS::TruckData&)>& SCSTelemetryService::GetTruckDataSignal() {
+    return m_eventManager.System.Telemetry.OnTruckDataUpdated;
+}
+
+Utils::Signal<void(const std::vector<SCS::Trailer>&)>& SCSTelemetryService::GetTrailersSignal() {
+    return m_eventManager.System.Telemetry.OnTrailersUpdated;
+}
+
+Utils::Signal<void(const SCS::JobConstants&)>& SCSTelemetryService::GetJobConstantsSignal() {
+    return m_eventManager.System.Telemetry.OnJobConstantsChanged;
+}
+
+Utils::Signal<void(const SCS::JobData&)>& SCSTelemetryService::GetJobDataSignal() {
+    return m_eventManager.System.Telemetry.OnJobDataUpdated;
+}
+
+Utils::Signal<void(const SCS::NavigationData&)>& SCSTelemetryService::GetNavigationDataSignal() {
+    return m_eventManager.System.Telemetry.OnNavigationDataUpdated;
+}
+
+Utils::Signal<void(const SCS::Controls&)>& SCSTelemetryService::GetControlsSignal() {
+    return m_eventManager.System.Telemetry.OnControlsUpdated;
+}
+
+Utils::Signal<void(const SCS::SpecialEvents&)>& SCSTelemetryService::GetSpecialEventsSignal() {
+    return m_eventManager.System.Telemetry.OnSpecialEventsUpdated;
+}
+
+Utils::Signal<void(const char*, const SCS::GameplayEvents&)>& SCSTelemetryService::GetGameplayEventsSignal() {
+    return m_eventManager.System.Telemetry.OnGameplayEventsUpdated;
+}
+
+Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearboxConstantsSignal() {
+    return m_eventManager.System.Telemetry.OnGearboxConstantsChanged;
+}
 
 }  // namespace Telemetry
 SPF_NS_END

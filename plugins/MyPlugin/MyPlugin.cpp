@@ -330,7 +330,35 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     /*
     // Telemetry API
-    // Requires: SPF_Telemetry_API.h
+    // Requires: SPF_Telemetry_API.h, SPF_TelemetryData.h (uncomment in MyPlugin.hpp)
+    // 1. Check if the telemetry API is available.
+    if (g_ctx.coreAPI && g_ctx.coreAPI->telemetry) {
+        // 2. Get the telemetry context handle for this plugin. This is the main handle
+        //    that manages all telemetry subscriptions for this plugin.
+        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
+
+        // 3. Register callbacks for the telemetry data you need.
+        //    The returned handles are managed by the framework and will be automatically
+        //    cleaned up when the plugin unloads. Storing them in g_ctx is optional but good practice.
+        //    The final parameter (e.g., &g_ctx) is user data passed to the callback.
+        if (g_ctx.telemetryHandle) {
+            const auto tel = g_ctx.coreAPI->telemetry; // Shortcut for Telemetry API
+            g_ctx.gameStateSubscription = tel->RegisterForGameState(g_ctx.telemetryHandle, OnGameState, &g_ctx);
+            g_ctx.timestampsSubscription = tel->RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestamps, &g_ctx);
+            g_ctx.commonDataSubscription = tel->RegisterForCommonData(g_ctx.telemetryHandle, OnCommonData, &g_ctx);
+            g_ctx.truckConstantsSubscription = tel->RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstants, &g_ctx);
+            g_ctx.trailerConstantsSubscription = tel->RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstants, &g_ctx);
+            g_ctx.truckDataSubscription = tel->RegisterForTruckData(g_ctx.telemetryHandle, OnTruckData, &g_ctx);
+            g_ctx.trailersSubscription = tel->RegisterForTrailers(g_ctx.telemetryHandle, OnTrailers, &g_ctx);
+            g_ctx.jobConstantsSubscription = tel->RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstants, &g_ctx);
+            g_ctx.jobDataSubscription = tel->RegisterForJobData(g_ctx.telemetryHandle, OnJobData, &g_ctx);
+            g_ctx.navigationDataSubscription = tel->RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationData, &g_ctx);
+            g_ctx.controlsSubscription = tel->RegisterForControls(g_ctx.telemetryHandle, OnControls, &g_ctx);
+            g_ctx.specialEventsSubscription = tel->RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEvents, &g_ctx);
+            g_ctx.gameplayEventsSubscription = tel->RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvents, &g_ctx);
+            g_ctx.gearboxConstantsSubscription = tel->RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstants, &g_ctx);
+        }
+    }
     */
 
     /*
@@ -405,6 +433,22 @@ void OnUnload() {
     // g_ctx.virtualDeviceHandle = nullptr;
     // g_ctx.cameraAPI = nullptr;
     // g_ctx.gameLogCallbackHandle = nullptr;
+    //
+    // // Telemetry Subscriptions (Nullify if used)
+    // g_ctx.gameStateSubscription = nullptr;
+    // g_ctx.timestampsSubscription = nullptr;
+    // g_ctx.commonDataSubscription = nullptr;
+    // g_ctx.truckConstantsSubscription = nullptr;
+    // g_ctx.trailerConstantsSubscription = nullptr;
+    // g_ctx.truckDataSubscription = nullptr;
+    // g_ctx.trailersSubscription = nullptr;
+    // g_ctx.jobConstantsSubscription = nullptr;
+    // g_ctx.jobDataSubscription = nullptr;
+    // g_ctx.navigationDataSubscription = nullptr;
+    // g_ctx.controlsSubscription = nullptr;
+    // g_ctx.specialEventsSubscription = nullptr;
+    // g_ctx.gameplayEventsSubscription = nullptr;
+    // g_ctx.gearboxConstantsSubscription = nullptr;
 }
 
 // =================================================================================================
@@ -477,6 +521,145 @@ void OnGameWorldReady() {
 /*
 // --- Game Hook Implementation ---
 // Requires: SPF_Hooks_API.h
+*/
+
+// =================================================================================================
+// 5.1. Optional Telemetry Callback Implementations (Commented Out)
+// =================================================================================================
+// Implement these functions if your plugin subscribes to telemetry data.
+// Remember to also uncomment their prototypes in MyPlugin.hpp and register them in OnActivated.
+// Requires: SPF_Telemetry_API.h, SPF_TelemetryData.h (for data structures, uncomment in MyPlugin.hpp)
+
+/*
+void OnGameState(const SPF_GameState* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest game state data
+    // // ctx->telemetryDataCache.gameState = *data;
+}
+*/
+
+/*
+void OnTimestamps(const SPF_Timestamps* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest timestamp data
+    // // ctx->telemetryDataCache.timestamps = *data;
+}
+*/
+
+/*
+void OnCommonData(const SPF_CommonData* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest common data
+    // // ctx->telemetryDataCache.commonData = *data;
+}
+*/
+
+/*
+void OnTruckConstants(const SPF_TruckConstants* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest truck constants
+    // // ctx->telemetryDataCache.truckConstants = *data;
+}
+*/
+
+/*
+void OnTrailerConstants(const SPF_TrailerConstants* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest trailer constants
+    // // ctx->telemetryDataCache.trailerConstants = *data;
+}
+*/
+
+/*
+void OnTruckData(const SPF_TruckData* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest truck data
+    // // ctx->telemetryDataCache.truckData = *data;
+}
+*/
+
+/*
+void OnTrailers(const SPF_Trailer* trailers, uint32_t count, void* user_data) {
+    // if (!user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest trailers data
+    // // ctx->telemetryDataCache.trailers.clear();
+    // // if (trailers && count > 0) {
+    // //     for (uint32_t i = 0; i < count; ++i) {
+    // //         ctx->telemetryDataCache.trailers.push_back(trailers[i]);
+    // //     }
+    // // }
+}
+*/
+
+/*
+void OnJobConstants(const SPF_JobConstants* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest job constants
+    // // ctx->telemetryDataCache.jobConstants = *data;
+}
+*/
+
+/*
+void OnJobData(const SPF_JobData* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest job data
+    // // ctx->telemetryDataCache.jobData = *data;
+}
+*/
+
+/*
+void OnNavigationData(const SPF_NavigationData* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest navigation data
+    // // ctx->telemetryDataCache.navigationData = *data;
+}
+*/
+
+/*
+void OnControls(const SPF_Controls* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest controls data
+    // // ctx->telemetryDataCache.controls = *data;
+}
+*/
+
+/*
+void OnSpecialEvents(const SPF_SpecialEvents* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest special events data
+    // // ctx->telemetryDataCache.specialEvents = *data;
+}
+*/
+
+/*
+void OnGameplayEvents(const char* event_id, const SPF_GameplayEvents* data, void* user_data) {
+    // if (!event_id || !data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest gameplay event data
+    // // ctx->telemetryDataCache.gameplayEvents = *data;
+    // // strncpy_s(ctx->telemetryDataCache.lastGameplayEventId, event_id, sizeof(ctx->telemetryDataCache.lastGameplayEventId));
+}
+*/
+
+/*
+void OnGearboxConstants(const SPF_GearboxConstants* data, void* user_data) {
+    // if (!data || !user_data) return;
+    // MyPlugin::PluginContext* ctx = reinterpret_cast<MyPlugin::PluginContext*>(user_data);
+    // // Example: Cache the latest gearbox constants
+    // // ctx->telemetryDataCache.gearboxConstants = *data;
+}
 */
 
 // =================================================================================================

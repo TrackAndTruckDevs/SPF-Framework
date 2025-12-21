@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "SPF/Events/TelemetryEvents.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/UIEvents.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
@@ -98,6 +99,7 @@ class EventManager {
     // --- Telemetry Events ---
     Utils::Signal<void()> OnTelemetryFrameStart;
     Utils::Signal<void()> OnGameWorldReady;
+    Events::Telemetry::TelemetryEventSignals Telemetry; // New member for all telemetry signals
   };
 
  public:

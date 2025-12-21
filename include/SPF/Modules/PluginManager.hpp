@@ -18,6 +18,14 @@
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/Namespace.hpp"
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Telemetry/SCS/Common.hpp"
+#include "SPF/Telemetry/SCS/Events.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Controls.hpp"
+#include "SPF/Telemetry/SCS/Gearbox.hpp"
 
 #include <Windows.h>  // For HMODULE
 #include <memory>
@@ -25,6 +33,7 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <mutex>
 
 
 SPF_NS_BEGIN
@@ -45,6 +54,9 @@ class UIManager;
 }
 
 namespace Modules {
+
+
+
 class PluginManager {
  public:
   static PluginManager& GetInstance();
@@ -72,6 +84,9 @@ class PluginManager {
   void UpdateAllPlugins();
 
       void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath);
+
+
+
   SPF_UI_API* GetUIApi() { return &m_uiAPI; }
   SPF::UI::UIManager* GetUIManager() { return m_uiManager; }
   HandleManager* GetHandleManager() { return m_handleManager; }
@@ -106,6 +121,8 @@ class PluginManager {
 
   void OnGameWorldReady();
 
+
+
   // --- Member Variables ---
   Events::EventManager* m_eventManager = nullptr;
   HandleManager* m_handleManager = nullptr;
@@ -122,7 +139,11 @@ class PluginManager {
 
   std::unique_ptr<Utils::Sink<void()>> m_onGameWorldReadySink;
 
+
+
   std::vector<std::unique_ptr<Hooks::IHook>> m_pluginHooks;
+
+
 
   SPF_Load_API m_loadAPI{};
   SPF_Core_API m_coreAPI{};

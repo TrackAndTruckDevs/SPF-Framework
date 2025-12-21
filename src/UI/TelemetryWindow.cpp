@@ -22,7 +22,36 @@ using namespace SPF::Telemetry;
 using namespace SPF::Modules;
 
 TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::string& windowId, ITelemetryService& telemetryService)
-    : BaseWindow(componentName, windowId), m_telemetryService(telemetryService) {
+    : BaseWindow(componentName, windowId),
+      m_telemetryService(telemetryService),
+      m_gameStateSink(m_telemetryService.GetGameStateSignal()),
+      m_timestampsSink(m_telemetryService.GetTimestampsSignal()),
+      m_commonDataSink(m_telemetryService.GetCommonDataSignal()),
+      m_truckConstantsSink(m_telemetryService.GetTruckConstantsSignal()),
+      m_truckDataSink(m_telemetryService.GetTruckDataSignal()),
+      m_trailersSink(m_telemetryService.GetTrailersSignal()),
+      m_jobConstantsSink(m_telemetryService.GetJobConstantsSignal()),
+      m_jobDataSink(m_telemetryService.GetJobDataSignal()),
+      m_navigationDataSink(m_telemetryService.GetNavigationDataSignal()),
+      m_controlsSink(m_telemetryService.GetControlsSignal()),
+      m_specialEventsSink(m_telemetryService.GetSpecialEventsSignal()),
+      m_gameplayEventsSink(m_telemetryService.GetGameplayEventsSignal()),
+      m_gearboxConstantsSink(m_telemetryService.GetGearboxConstantsSignal()) {
+  // Connect signals to their respective slots
+  m_gameStateSink.Connect<&TelemetryWindow::OnGameStateUpdate>(this);
+  m_timestampsSink.Connect<&TelemetryWindow::OnTimestampsUpdate>(this);
+  m_commonDataSink.Connect<&TelemetryWindow::OnCommonDataUpdate>(this);
+  m_truckConstantsSink.Connect<&TelemetryWindow::OnTruckConstantsUpdate>(this);
+  m_truckDataSink.Connect<&TelemetryWindow::OnTruckDataUpdate>(this);
+  m_trailersSink.Connect<&TelemetryWindow::OnTrailersUpdate>(this);
+  m_jobConstantsSink.Connect<&TelemetryWindow::OnJobConstantsUpdate>(this);
+  m_jobDataSink.Connect<&TelemetryWindow::OnJobDataUpdate>(this);
+  m_navigationDataSink.Connect<&TelemetryWindow::OnNavigationDataUpdate>(this);
+  m_controlsSink.Connect<&TelemetryWindow::OnControlsUpdate>(this);
+  m_specialEventsSink.Connect<&TelemetryWindow::OnSpecialEventsUpdate>(this);
+  m_gameplayEventsSink.Connect<&TelemetryWindow::OnGameplayEventUpdate>(this);
+  m_gearboxConstantsSink.Connect<&TelemetryWindow::OnGearboxConstantsUpdate>(this);
+  
   m_titleLocalizationKey = "telemetry_window.title";
 
   m_locTabGame = "telemetry_window.tabs.game";
@@ -318,20 +347,21 @@ void DisplayDPlacement(const char* label, const scs_value_dplacement_t& p, const
 void TelemetryWindow::RenderContent() {
   auto& loc = LocalizationManager::GetInstance();
 
-  // Get all data objects from the service
-  const auto& gameState = m_telemetryService.GetGameState();
-  const auto& timestamps = m_telemetryService.GetTimestamps();
-  const auto& commonData = m_telemetryService.GetCommonData();
-  const auto& truckConstants = m_telemetryService.GetTruckConstants();
-  const auto& truckData = m_telemetryService.GetTruckData();
-  const auto& trailers = m_telemetryService.GetTrailers();
-  const auto& jobConstants = m_telemetryService.GetJobConstants();
-  const auto& jobData = m_telemetryService.GetJobData();
-  const auto& navigationData = m_telemetryService.GetNavigationData();
-  const auto& controls = m_telemetryService.GetControls();
-  const auto& specialEvents = m_telemetryService.GetSpecialEvents();
-  const auto& gameplayEvents = m_telemetryService.GetGameplayEvents();
-  const auto& gearboxConstants = m_telemetryService.GetGearboxConstants();
+  // Use the cached data which is updated by the signal handlers
+  const auto& gameState = m_gameState;
+  const auto& timestamps = m_timestamps;
+  const auto& commonData = m_commonData;
+  const auto& truckConstants = m_truckConstants;
+  const auto& truckData = m_truckData;
+  const auto& trailers = m_trailers;
+  const auto& jobConstants = m_jobConstants;
+  const auto& jobData = m_jobData;
+  const auto& navigationData = m_navigationData;
+  const auto& controls = m_controls;
+  const auto& specialEvents = m_specialEvents;
+  const auto& gameplayEvents = m_gameplayEvents;
+  const auto& gearboxConstants = m_gearboxConstants;
+  const auto& lastEventId = m_lastGameplayEventId;
 
   if (ImGui::BeginTabBar("TelemetryTabs")) {
     if (ImGui::BeginTabItem(loc.Get(m_locTabGame).c_str())) {
@@ -846,7 +876,7 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(loc.Get(m_locLabelTrain).c_str(), specialEvents.train ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
         ImGui::Separator();
         ImGui::TextUnformatted(loc.Get(m_locLabelLastGameplayEvent).c_str());
-        const std::string& lastEventId = m_telemetryService.GetLastGameplayEventId();
+        const std::string& lastEventId = m_lastGameplayEventId;
         if (lastEventId.empty()) {
           ImGui::TextUnformatted(loc.Get(m_locLabelNoEventYet).c_str());
         } else if (lastEventId == SCS_TELEMETRY_GAMEPLAY_EVENT_job_delivered) {
@@ -883,6 +913,23 @@ void TelemetryWindow::RenderContent() {
     ImGui::EndTabBar();
   }
 }
+
+void TelemetryWindow::OnGameStateUpdate(const Telemetry::SCS::GameState& data) { m_gameState = data; }
+void TelemetryWindow::OnTimestampsUpdate(const Telemetry::SCS::Timestamps& data) { m_timestamps = data; }
+void TelemetryWindow::OnCommonDataUpdate(const Telemetry::SCS::CommonData& data) { m_commonData = data; }
+void TelemetryWindow::OnTruckConstantsUpdate(const Telemetry::SCS::TruckConstants& data) { m_truckConstants = data; }
+void TelemetryWindow::OnTruckDataUpdate(const Telemetry::SCS::TruckData& data) { m_truckData = data; }
+void TelemetryWindow::OnTrailersUpdate(const std::vector<Telemetry::SCS::Trailer>& data) { m_trailers = data; }
+void TelemetryWindow::OnJobConstantsUpdate(const Telemetry::SCS::JobConstants& data) { m_jobConstants = data; }
+void TelemetryWindow::OnJobDataUpdate(const Telemetry::SCS::JobData& data) { m_jobData = data; }
+void TelemetryWindow::OnNavigationDataUpdate(const Telemetry::SCS::NavigationData& data) { m_navigationData = data; }
+void TelemetryWindow::OnControlsUpdate(const Telemetry::SCS::Controls& data) { m_controls = data; }
+void TelemetryWindow::OnSpecialEventsUpdate(const Telemetry::SCS::SpecialEvents& data) { m_specialEvents = data; }
+void TelemetryWindow::OnGameplayEventUpdate(const char* event_id, const Telemetry::SCS::GameplayEvents& data) {
+  m_gameplayEvents = data;
+  m_lastGameplayEventId = event_id;
+}
+void TelemetryWindow::OnGearboxConstantsUpdate(const Telemetry::SCS::GearboxConstants& data) { m_gearboxConstants = data; }
 
 }  // namespace UI
 SPF_NS_END

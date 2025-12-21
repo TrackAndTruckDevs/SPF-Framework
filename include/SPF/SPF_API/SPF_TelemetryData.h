@@ -99,6 +99,14 @@ struct SPF_DPlacement {
 // --- Main Data Structures ---
 
 typedef struct {
+    /**
+     * @brief Internal ID of the game currently running.
+     *
+     * Possible values as defined by the SCS SDK:
+     * - "ets2" (Euro Truck Simulator 2)
+     * - "ats" (American Truck Simulator)
+     * - "unknown" (When game is not identified)
+     */
     char game_id[SPF_TELEMETRY_ID_MAX_SIZE];
     char game_name[SPF_TELEMETRY_STRING_MAX_SIZE];
     uint32_t scs_game_version_major;
@@ -448,7 +456,18 @@ typedef struct {
     uint32_t planned_distance_km;   ///< The planned distance for the job. @unit km
     bool is_cargo_loaded;           ///< Is the cargo currently loaded?
     bool is_special_job;            ///< Is this a special job (e.g., World of Trucks)?
-    char job_market[SPF_TELEMETRY_ID_MAX_SIZE]; ///< The market the job was taken from (e.g., "cargo_market").
+
+    /**
+     * @brief The market the job was taken from.
+     *
+     * Possible values as defined by the SCS SDK are:
+     * - "cargo_market"
+     * - "quick_job"
+     * - "freight_market"
+     * - "external_contracts"
+     * - "external_market"
+     */
+    char job_market[SPF_TELEMETRY_ID_MAX_SIZE];
 
     // --- Cargo Details ---
     char cargo_id[SPF_TELEMETRY_ID_MAX_SIZE];     ///< Internal ID of the cargo type.
@@ -529,11 +548,32 @@ typedef struct {
 
 /**
  * @struct SPF_GameplayEvent_PlayerFined
- * @brief Data associated with a 'fined' event.
+ * @brief Data associated with a 'player.fined' event.
  */
 typedef struct {
-    int64_t fine_amount; ///< The amount of the fine.
-    char fine_offence[SPF_TELEMETRY_ID_MAX_SIZE]; ///< The internal ID for the offence (e.g., "crash", "speeding").
+    /** @brief The amount of the fine, in the game's native currency. */
+    int64_t fine_amount;
+
+    /**
+     * @brief A string identifier for the offence.
+     *
+     * Possible values as defined by the SCS SDK are:
+     * - "crash"
+     * - "avoid_sleeping"
+     * - "wrong_way"
+     * - "speeding_camera"
+     * - "no_lights"
+     * - "red_signal"
+     * - "speeding"
+     * - "avoid_weighing"
+     * - "illegal_trailer"
+     * - "avoid_inspection"
+     * - "illegal_border_crossing"
+     * - "hard_shoulder_violation"
+     * - "damaged_vehicle_usage"
+     * - "generic"
+     */
+    char fine_offence[SPF_TELEMETRY_ID_MAX_SIZE];
 } SPF_GameplayEvent_PlayerFined;
 
 /**
@@ -587,7 +627,16 @@ typedef struct {
  * @brief Contains static information about the truck's H-shifter gearbox layout.
  */
 typedef struct {
-    char shifter_type[SPF_TELEMETRY_ID_MAX_SIZE]; ///< The type of shifter (e.g., "hshifter").
+    /**
+     * @brief The type of shifter installed in the truck.
+     *
+     * Possible values as defined by the SCS SDK:
+     * - "arcade"
+     * - "automatic"
+     * - "manual"
+     * - "hshifter"
+     */
+    char shifter_type[SPF_TELEMETRY_ID_MAX_SIZE];
 
     /**
      * @brief Maps a physical H-shifter slot index to a game gear.

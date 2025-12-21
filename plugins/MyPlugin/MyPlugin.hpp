@@ -96,6 +96,25 @@ struct PluginContext {
   // SPF_Camera_API* cameraAPI = nullptr;               // Requires: SPF_Camera_API.h
   // SPF_GameLog_Callback_Handle gameLogCallbackHandle = nullptr; // Requires: SPF_GameLog_API.h
 
+  // --- Telemetry Callback Handles (Optional - Uncomment if needed) ---
+  // These handles manage the lifetime of telemetry subscriptions. Storing them explicitly
+  // is good practice, though their lifetime is automatically tied to 'telemetryHandle'.
+  // Requires: SPF_Telemetry_API.h
+  // SPF_Telemetry_Callback_Handle* gameStateSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* timestampsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* commonDataSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* truckConstantsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* trailerConstantsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* truckDataSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* trailersSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* jobConstantsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* jobDataSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* navigationDataSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* controlsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* specialEventsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* gameplayEventsSubscription = nullptr;
+  // SPF_Telemetry_Callback_Handle* gearboxConstantsSubscription = nullptr;
+
   // --- Plugin State Variables (Optional - Uncomment/Add if needed) ---
   // Add any plugin-specific state variables here.
 
@@ -222,5 +241,26 @@ void OnUnload();
 
 // void InitializeVirtualDevice(); // Example for SPF_VirtInput_API
 // void InstallGameHook();         // Example for SPF_Hooks_API
+
+// =================================================================================================
+// 4.3. Function Prototypes - Telemetry Callbacks (Optional - Commented Out)
+// =================================================================================================
+// Uncomment and implement these callbacks if your plugin subscribes to telemetry data.
+// Requires: SPF_Telemetry_API.h
+
+// void OnGameState(const SPF_GameState* data, void* user_data);
+// void OnTimestamps(const SPF_Timestamps* data, void* user_data);
+// void OnCommonData(const SPF_CommonData* data, void* user_data);
+// void OnTruckConstants(const SPF_TruckConstants* data, void* user_data);
+// void OnTrailerConstants(const SPF_TrailerConstants* data, void* user_data);
+// void OnTruckData(const SPF_TruckData* data, void* user_data);
+// void OnTrailers(const SPF_Trailer* trailers, uint32_t count, void* user_data);
+// void OnJobConstants(const SPF_JobConstants* data, void* user_data);
+// void OnJobData(const SPF_JobData* data, void* user_data);
+// void OnNavigationData(const SPF_NavigationData* data, void* user_data);
+// void OnControls(const SPF_Controls* data, void* user_data);
+// void OnSpecialEvents(const SPF_SpecialEvents* data, void* user_data);
+// void OnGameplayEvents(const char* event_id, const SPF_GameplayEvents* data, void* user_data);
+// void OnGearboxConstants(const SPF_GearboxConstants* data, void* user_data);
 
 }  // namespace MyPlugin

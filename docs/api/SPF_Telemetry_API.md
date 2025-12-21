@@ -9,24 +9,61 @@ The API separates data into two main categories to optimize performance:
 *   **Constants**: Static data that describes the configuration of the truck, trailer, or job. This data rarely changes during gameplay (e.g., truck brand, fuel capacity, gear ratios). You typically only need to fetch this data once, for example, in your `OnActivated` function.
 *   **Data**: Dynamic data that changes frequently, often every frame (e.g., speed, RPM, wheel rotation, world position). This is the data you would typically poll for in your `OnUpdate` function or a separate, high-frequency thread.
 
-## Getting the API
+## API Usage Workflow: Polling vs. Event-Driven
 
-The Telemetry API is provided as part of the main `SPF_Core_API` struct. You should get the context handle once and reuse it for all subsequent calls.
+The Telemetry API offers two distinct methods for accessing data, each suited for different use cases. Both approaches require obtaining a context handle once.
+
+### Getting the Context Handle
+
+First, retrieve your plugin's telemetry context handle. This handle is crucial as it manages your subscriptions and data requests.
 
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_Telemetry_API.h"
 
-const SPF_Core_API* s_coreAPI = NULL;
+// Assume s_coreAPI is already assigned in your plugin's OnLoad function
+const SPF_Core_API* s_coreAPI = NULL; 
 SPF_Telemetry_Handle* s_telemetryHandle = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
+// In your OnActivated function (or similar plugin lifecycle entry point):
+void MyPlugin_OnActivated() {
     if (s_coreAPI && s_coreAPI->telemetry) {
         s_telemetryHandle = s_coreAPI->telemetry->GetContext("MyPlugin");
     }
 }
 ```
+
+### 1. Polling (Using `Get...()` Functions)
+
+**Method:** Directly call `Get...()` functions (e.g., `GetTruckData`, `GetJobConstants`) to retrieve a snapshot of the current telemetry data.
+
+**Use Cases:**
+*   **Infrequent Data Retrieval:** When you only need to check a value occasionally, for example, when a user opens a UI window or presses a specific key.
+*   **UI Display (Low Frequency):** For displaying data that doesn't need to be updated every single frame, such as a summary panel that refreshes every few seconds.
+*   **One-off Checks:** To get the initial state of a telemetry value.
+
+**Advantages:** Simple to implement, easy to understand.
+**Disadvantages:** Can be inefficient if used for high-frequency updates, as the plugin actively requests data even if it hasn't changed.
+
+### 2. Event-Driven (Using `RegisterFor...()` Functions)
+
+**Method:** Subscribe to specific telemetry events. The framework will call your registered callback function *only when the relevant data changes*. This method uses a RAII (Resource Acquisition Is Initialization) approach for managing subscriptions.
+
+**Use Cases:**
+*   **High-Frequency Data Monitoring:** Ideal for data that changes every frame or very frequently (e.g., speed, RPM, controls).
+*   **Performance-Critical Logic:** When your plugin needs to react immediately and efficiently to changes without constantly polling.
+*   **Reduced CPU Usage:** Your plugin code is only executed when necessary.
+
+**Advantages:** Highly efficient, reactive, and automatically manages the subscription lifecycle.
+**Disadvantages:** Requires defining callback functions and handling an event-driven flow.
+
+### Workflow for Event-Driven Subscriptions:
+
+1.  **Define Callback:** Create a C-style callback function matching the signature for the event you need (e.g., `SPF_Telemetry_TruckData_Callback`).
+2.  **Register Callback:** Call the corresponding `RegisterFor...()` function (e.g., `RegisterForTruckData`), passing your context handle, the callback function, and any user data. This function will return a `SPF_Telemetry_Callback_Handle*`.
+3.  **Automatic Lifetime Management:** The returned `SPF_Telemetry_Callback_Handle*` represents the subscription. You are **no longer required to manually unregister it**. The framework automatically manages the lifetime of this subscription. When your plugin's main `SPF_Telemetry_Handle` (obtained via `GetContext`) is destroyed during plugin shutdown, all associated callback subscriptions are automatically and safely unregistered.
+
+
 
 ## Function Reference
 
@@ -47,6 +84,27 @@ The API consists of a series of getter functions that populate C structs (define
 | `GetSpecialEvents`| `SPF_SpecialEvents*` | Flags for one-time gameplay events. |
 | `GetGameplayEvents`| `SPF_GameplayEvents*`| Detailed data for the most recent event. |
 | `GetGearboxConstants`|`SPF_GearboxConstants*`| H-shifter layout information. |
+
+## Event-Driven Registration Reference
+
+This section lists the functions used to subscribe to telemetry data updates. These functions follow a RAII pattern, returning a handle that automatically manages the subscription's lifetime.
+
+| Function | Callback Signature | Description |
+|---|---|---|
+| `RegisterForGameState` | `SPF_Telemetry_GameState_Callback` | Registers for general game state changes. |
+| `RegisterForTimestamps` | `SPF_Telemetry_Timestamps_Callback` | Registers for game time and timestamp updates. |
+| `RegisterForCommonData` | `SPF_Telemetry_CommonData_Callback` | Registers for common, frequently-updated data. |
+| `RegisterForTruckConstants`| `SPF_Telemetry_TruckConstants_Callback`| Registers for static truck configuration changes. |
+| `RegisterForTruckData` | `SPF_Telemetry_TruckData_Callback` | Registers for live, dynamic truck data updates. |
+| `RegisterForTrailerConstants`| `SPF_Telemetry_TrailerConstants_Callback`| Registers for static trailer configuration changes. |
+| `RegisterForTrailers` | `SPF_Telemetry_Trailers_Callback` | Registers for live data updates for active trailers. The callback receives a filtered list. |
+| `RegisterForJobConstants` | `SPF_Telemetry_JobConstants_Callback`| Registers for static job information changes. |
+| `RegisterForJobData` | `SPF_Telemetry_JobData_Callback` | Registers for dynamic job data updates. |
+| `RegisterForNavigationData`| `SPF_Telemetry_NavigationData_Callback`| Registers for in-game GPS data updates. |
+| `RegisterForControls` | `SPF_Telemetry_Controls_Callback` | Registers for player control input updates. |
+| `RegisterForSpecialEvents`| `SPF_Telemetry_SpecialEvents_Callback`| Registers for one-time gameplay event flags. |
+| `RegisterForGameplayEvents`| `SPF_Telemetry_GameplayEvents_Callback`| Registers for detailed data for the most recent event. |
+| `RegisterForGearboxConstants`|`SPF_Telemetry_GearboxConstants_Callback`| Registers for H-shifter layout information changes. |
 
 ## Data Structure Reference
 

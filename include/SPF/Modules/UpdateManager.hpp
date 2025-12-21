@@ -79,6 +79,7 @@ class UpdateManager : public Config::IConfigurable {  //  Inherit from IConfigur
   // Futures to hold the results of async API calls
   std::optional<std::future<System::ApiResult<System::UpdateInfo>>> m_updateInfoFuture;
   std::optional<std::future<System::ApiResult<std::vector<System::Patron>>>> m_patronsFuture;
+  std::optional<std::future<void>> m_trackUsageFuture;
 
   std::optional<System::UpdateInfo> m_lastUpdateInfo;
   std::optional<std::vector<System::Patron>> m_lastPatrons;

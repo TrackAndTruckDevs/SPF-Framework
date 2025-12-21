@@ -33,6 +33,7 @@
 // 2. Standard Library Includes
 // =================================================================================================
 #include <cstdint>  // For fixed-width integer types like int32_t, which are useful for consistent data sizes.
+#include <vector>   // For std::vector, used in the event data cache.
 
 // It's a strong best practice to wrap all your plugin's code in a unique namespace.
 // This prevents naming conflicts with the framework or other plugins that might be loaded.
@@ -126,6 +127,61 @@ struct PluginContext {
    * part of the plugin's state to be accessible in the update/render loops.
    */
   SPF_VirtualDevice_Handle* virtualDevice = nullptr;
+
+  // --- Telemetry State ---
+
+  /**
+   * @brief A cache to hold the most recent data received from event-driven callbacks.
+   * @details This allows the UI to display the last known value without needing to
+   *          poll the API every frame. The callbacks update this data, and the UI
+   *          just reads from it.
+   */
+  struct EventDataCache {
+    SPF_GameState gameState;
+    SPF_Timestamps timestamps;
+    SPF_CommonData commonData;
+    SPF_TruckConstants truckConstants;
+    SPF_TrailerConstants trailerConstants;
+    SPF_TruckData truckData;
+    std::vector<SPF_Trailer> trailers;
+    SPF_JobConstants jobConstants;
+    SPF_JobData jobData;
+    SPF_NavigationData navigationData;
+    SPF_Controls controls;
+    SPF_SpecialEvents specialEvents;
+    SPF_GameplayEvents gameplayEvents;
+    SPF_GearboxConstants gearboxConstants;
+    char lastGameplayEventId[256] = "N/A";
+  } eventDataCache;
+
+  /**
+   * @brief Handle to our Telemetry API context.
+   * @details This handle is created in `OnActivated` and acts as the parent for all
+   *          telemetry subscriptions. When this handle is destroyed on plugin unload,
+   *          all its child subscription handles are automatically destroyed and unregistered.
+   */
+  SPF_Telemetry_Handle* telemetryHandle = nullptr;
+
+  /**
+   * @brief Handles for our telemetry event subscriptions.
+   * @details These handles are returned by the `RegisterFor...` functions. Storing them
+   *          is good practice to make the subscriptions explicit, though not strictly
+   *          required as their lifetime is automatically managed by `telemetryHandle`.
+   */
+  SPF_Telemetry_Callback_Handle* gameStateCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* timestampsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* commonDataCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* truckConstantsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* trailerConstantsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* truckDataCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* trailersCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* jobConstantsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* jobDataCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* navigationDataCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* controlsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* specialEventsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* gameplayEventsCallback = nullptr;
+  SPF_Telemetry_Callback_Handle* gearboxConstantsCallback = nullptr;
 
   // --- Plugin State ---
   // Variables that represent the internal, mutable state of the plugin at runtime.
@@ -265,6 +321,22 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath);
  */
 void OnGameLogMessage(const char* log_line, void* user_data);
 
+// --- Telemetry Event Callbacks ---
+void OnGameStateUpdate(const SPF_GameState* data, void* user_data);
+void OnTimestampsUpdate(const SPF_Timestamps* data, void* user_data);
+void OnCommonDataUpdate(const SPF_CommonData* data, void* user_data);
+void OnTruckConstantsUpdate(const SPF_TruckConstants* data, void* user_data);
+void OnTrailerConstantsUpdate(const SPF_TrailerConstants* data, void* user_data);
+void OnTruckDataUpdate(const SPF_TruckData* data, void* user_data);
+void OnTrailersUpdate(const SPF_Trailer* data, uint32_t count, void* user_data);
+void OnJobConstantsUpdate(const SPF_JobConstants* data, void* user_data);
+void OnJobDataUpdate(const SPF_JobData* data, void* user_data);
+void OnNavigationDataUpdate(const SPF_NavigationData* data, void* user_data);
+void OnControlsUpdate(const SPF_Controls* data, void* user_data);
+void OnSpecialEventsUpdate(const SPF_SpecialEvents* data, void* user_data);
+void OnGameplayEvent(const char* event_id, const SPF_GameplayEvents* data, void* user_data);
+void OnGearboxConstantsUpdate(const SPF_GearboxConstants* data, void* user_data);
+
 /**
  * @brief Callback executed when the 'ExamplePlugin.MainWindow.toggle' keybind is triggered by the user.
  */
@@ -303,6 +375,11 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Telemetry" tab.
  */
 void RenderTelemetryTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Events" tab, displaying data from callbacks.
+ */
+void RenderEventsTab(SPF_UI_API* ui, void* user_data);
 
 /**
  * @brief Renders the content of the "Virtual Input" tab.
