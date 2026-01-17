@@ -285,6 +285,13 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
     insertedPlugin->exports.OnActivated(&m_coreAPI);
   }
 
+  // If the game world is already loaded when this plugin is loaded,
+  // we need to manually trigger its OnGameWorldReady event.
+  if (m_isGameWorldReady && insertedPlugin->exports.OnGameWorldReady) {
+    logger->Info("Game world is already ready, calling OnGameWorldReady() for dynamically loaded plugin '{}'...", insertedPlugin->name);
+    insertedPlugin->exports.OnGameWorldReady();
+  }
+
   // If late init has already run, register UI for this single plugin immediately
   if (m_isLateInitDone) {
     logger->Info("Registering UI for dynamically loaded plugin '{}'...", pluginName);
@@ -406,6 +413,8 @@ void PluginManager::UpdateAllPlugins() {
 void PluginManager::OnGameWorldReady() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
   if (!logger) return;
+
+  m_isGameWorldReady = true;
 
   logger->Info("--- Firing OnGameWorldReady for all loaded plugins ---");
   for (const auto& [name, plugin] : m_plugins) {

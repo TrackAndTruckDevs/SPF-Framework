@@ -132,6 +132,7 @@ class PluginManager {
   ITelemetryService* m_telemetryService = nullptr;
   IInputService* m_inputService = nullptr;
   bool m_isLateInitDone = false;
+  bool m_isGameWorldReady = false;
 
   std::map<std::string, DiscoveredPlugin> m_discoveredPlugins;
   std::map<std::string, std::unique_ptr<LoadedPlugin>> m_plugins;

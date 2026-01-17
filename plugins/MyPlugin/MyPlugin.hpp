@@ -186,15 +186,13 @@ void OnUnload();
 // void OnGameWorldReady();
 
 /**
- * @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
- * @details Uncomment this if your plugin defines custom settings in its manifest and needs to react
- *          to changes made by the user or other parts of the framework.
- *          Requires: SPF_Config_API.h, SPF_JsonReader_API.h (for parameters)
- * @param keyPath The dot-separated path of the setting that changed (e.g., "settings.some_number").
- * @param value_handle A handle to the new JSON value.
- * @param json_reader A pointer to the JSON reader API for safely extracting the value from the handle.
+* @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
+* @details Uncomment this if your plugin defines custom settings in its manifest and needs to react
+*          to changes made by the user or other parts of the framework.
+* @param config_handle The configuration context handle for this plugin.
+* @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
  */
-// void OnSettingChanged(const char* keyPath, const SPF_JsonValue_Handle* value_handle, const SPF_JsonReader_API* json_reader);
+// void OnSettingChanged(SPF_Config_Handle *config_handle, const char *keyPath);
 
 /**
  * @brief Called once to allow the plugin to register its UI rendering callbacks.
