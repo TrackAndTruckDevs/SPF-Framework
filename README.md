@@ -296,7 +296,11 @@ For detailed documentation on each specific API (Camera, UI, Telemetry, etc.), p
 
 This section features community-developed plugins that are built on the SPF-Framework.
 
-*(This list is currently empty. More plugins will be added here soon as the ecosystem grows!)*
+* [SPF_CabinWalk](https://github.com/TrackAndTruckDevs/SPF_CabinWalk.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that allows you to unchain the camera from the driver's seat and freely walk around your truck's cabin***
+
+* [SPF_FrontalBlindspotViewer](https://github.com/TrackAndTruckDevs/SPF_FrontalBlindspotViewer.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that provides a smooth, animated camera movement to let you easily see traffic lights when they are obstructed by your truck's A-pillar.***
+
+* [SPF_RedLightCameraPlugin](https://github.com/TrackAndTruckDevs/SPF_RedLightCameraPlugin.git) - ***his plugin automatically takes a screenshot from a unique, customized camera angle every time you get a ticket in ATS and ETS2 for running a red light.***
 
 ---
 **Are you a developer who has created a plugin using SPF?** We would love to feature your work here. To have your plugin added to this list, please open an issue or a pull request on our GitHub repository and provide a link to your project.
