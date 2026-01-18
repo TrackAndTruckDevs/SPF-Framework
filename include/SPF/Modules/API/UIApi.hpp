@@ -76,6 +76,20 @@ class UIApi {
   static bool UI_DragFloat(const char* label, float* v, float v_speed, float v_min, float v_max);
   static bool UI_DragInt(const char* label, int* v, float v_speed, int v_min, int v_max);
 
+  // --- NEW: Text Styling Trampolines (v1.0 - SPF-377) ---
+  static SPF_TextStyle_Handle UI_Style_Create();
+  static void UI_Style_Destroy(SPF_TextStyle_Handle handle);
+  static void UI_Style_SetFont(SPF_TextStyle_Handle handle, SPF_Font font);
+  static void UI_Style_SetColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+  static void UI_Style_SetAlign(SPF_TextStyle_Handle handle, SPF_TextAlign align);
+  static void UI_Style_SetWrap(SPF_TextStyle_Handle handle, bool wrap);
+  static void UI_Style_SetPadding(SPF_TextStyle_Handle handle, float pad_x, float pad_y);
+  static void UI_Style_SetSeparator(SPF_TextStyle_Handle handle, bool is_separator);
+  static void UI_Style_SetUnderline(SPF_TextStyle_Handle handle, bool is_underline);
+  static void UI_Style_SetStrikethrough(SPF_TextStyle_Handle handle, bool is_strikethrough);
+  static void UI_TextStyled(SPF_TextStyle_Handle handle, const char* fmt, ...);
+  static void UI_RenderMarkdown(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);

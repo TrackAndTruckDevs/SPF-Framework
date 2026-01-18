@@ -1055,6 +1055,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         if (ui->BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->EndTabItem(); }
         if (ui->BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->EndTabItem(); }
         if (ui->BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->EndTabItem(); }
+        if (ui->BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->EndTabItem(); }
         ui->EndTabBar();
     }
 }
@@ -1221,6 +1222,71 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
         // When the slider value changes, update the virtual axis value.
         g_ctx.coreAPI->input->SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
     }
+}
+
+void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
+    if (!ui->Style_Create) {
+        ui->Text("Styling API not available in this version of the framework.");
+        return;
+    }
+
+    ui->TextWrapped("This tab demonstrates the features of the new Text Styling and Markdown API.");
+    ui->Separator();
+
+    // 1. Create style handles
+    SPF_TextStyle_Handle h1_style = ui->Style_Create();
+    SPF_TextStyle_Handle centered_text_style = ui->Style_Create();
+    SPF_TextStyle_Handle separator_style = ui->Style_Create();
+    SPF_TextStyle_Handle markdown_base_style = ui->Style_Create();
+
+    // 2. Configure the styles
+    ui->Style_SetFont(h1_style, SPF_FONT_H1);
+    ui->Style_SetColor(h1_style, 1.0f, 0.84f, 0.0f, 1.0f); // Gold color
+    ui->Style_SetAlign(h1_style, SPF_TEXT_ALIGN_CENTER);
+
+    ui->Style_SetAlign(centered_text_style, SPF_TEXT_ALIGN_CENTER);
+    ui->Style_SetWrap(centered_text_style, true);
+    ui->Style_SetPadding(centered_text_style, 0.f, 10.f);
+
+    ui->Style_SetSeparator(separator_style, true);
+    ui->Style_SetColor(separator_style, 0.6f, 0.6f, 0.6f, 1.0f); // Gray
+
+    // 3. Use the styles to render UI
+    ui->TextStyled(h1_style, "Welcome to the Styling API!");
+
+    ui->TextStyled(centered_text_style, "This text is centered and will wrap if it becomes too long to fit in the available space. This demonstrates alignment, wrapping, and vertical padding.");
+
+    ui->Spacing();
+
+    ui->TextStyled(separator_style, "Markdown Demo");
+
+    const char* markdown =
+        "# This is an H1 Header\n"
+        "## This is H2\n"
+        "### And H3\n\n"
+        "You can use **bold text**, *italic text*, or ***both***.\n\n"
+        "This is a paragraph with a link to [Google](https://www.google.com).\n\n"
+        "Here is a code block:\n"
+        "```\n"
+        "// C-style comment\n"
+        "int x = 42;\n"
+        "printf(\"Hello, %d!\", x);\n"
+        "```\n"
+        "And `inline code` works too.\n\n"
+        "* Unordered list item 1\n"
+        "* Unordered list item 2\n"
+        "    * Nested item\n\n"
+        "> This is a blockquote. It adds a visual indentation and a left border.";
+    
+    // The base style for markdown can have padding, but the renderer will handle fonts/colors.
+    ui->Style_SetPadding(markdown_base_style, 10.0f, 5.0f);
+    ui->RenderMarkdown(markdown, markdown_base_style);
+    
+    // 4. Clean up the style handles
+    ui->Style_Destroy(h1_style);
+    ui->Style_Destroy(centered_text_style);
+    ui->Style_Destroy(separator_style);
+    ui->Style_Destroy(markdown_base_style);
 }
 
 // =================================================================================================

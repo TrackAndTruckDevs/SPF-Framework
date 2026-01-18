@@ -5,8 +5,16 @@
 #include "SPF/UI/PluginProxyWindow.hpp"   // For PluginProxyWindow
 #include "SPF/UI/BaseWindow.hpp"          // For BaseWindow
 #include "SPF/Handles/WindowHandle.hpp"   // For WindowHandle
+#include "SPF/UI/UITypographyHelper.hpp"
+#include <cstdarg>
 
 #include "imgui.h"
+
+// Define the concrete type for the opaque handle. This must be in the global namespace
+// to match the forward declaration in the C-style header SPF_UI_API.h.
+struct SPF_TextStyle_Handle_t {
+    SPF::UI::TextStyle style;
+};
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -175,6 +183,90 @@ bool UIApi::UI_ColorEdit4(const char* label, float col[4]) { return label && col
 bool UIApi::UI_DragFloat(const char* label, float* v, float v_speed, float v_min, float v_max) { return label && v ? ImGui::DragFloat(label, v, v_speed, v_min, v_max) : false; }
 bool UIApi::UI_DragInt(const char* label, int* v, float v_speed, int v_min, int v_max) { return label && v ? ImGui::DragInt(label, v, v_speed, v_min, v_max) : false; }
 
+// --- NEW: Text Styling API Implementation (v1.0 - SPF-377) ---
+
+SPF_TextStyle_Handle UIApi::UI_Style_Create() {
+    return new SPF_TextStyle_Handle_t();
+}
+
+void UIApi::UI_Style_Destroy(SPF_TextStyle_Handle handle) {
+    delete handle;
+}
+
+void UIApi::UI_Style_SetFont(SPF_TextStyle_Handle handle, SPF_Font font) {
+    if (!handle) return;
+    const char* fontKey = "regular"; // Default
+    switch (font) {
+        case SPF_FONT_REGULAR:       fontKey = "regular"; break;
+        case SPF_FONT_BOLD:          fontKey = "bold"; break;
+        case SPF_FONT_ITALIC:        fontKey = "italic"; break;
+        case SPF_FONT_BOLD_ITALIC:   fontKey = "bold_italic"; break;
+        case SPF_FONT_MEDIUM:        fontKey = "medium"; break;
+        case SPF_FONT_MEDIUM_ITALIC: fontKey = "medium_italic"; break;
+        case SPF_FONT_MONOSPACE:     fontKey = "monospace"; break;
+        case SPF_FONT_H1:            fontKey = "h1"; break;
+        case SPF_FONT_H2:            fontKey = "h2"; break;
+        case SPF_FONT_H3:            fontKey = "h3"; break;
+    }
+    handle->style.Font(fontKey);
+}
+
+void UIApi::UI_Style_SetColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a) {
+    if (handle) handle->style.Color(ImVec4(r, g, b, a));
+}
+
+void UIApi::UI_Style_SetAlign(SPF_TextStyle_Handle handle, SPF_TextAlign align) {
+    if (!handle) return;
+    // The C++ enum has the same values as the C enum.
+    handle->style.Align(static_cast<SPF::UI::TextAlign>(align));
+}
+
+void UIApi::UI_Style_SetWrap(SPF_TextStyle_Handle handle, bool wrap) {
+    if (handle) handle->style.Wrapped(wrap);
+}
+
+void UIApi::UI_Style_SetPadding(SPF_TextStyle_Handle handle, float pad_x, float pad_y) {
+    if (handle) handle->style.Padding({pad_x, pad_y});
+}
+
+void UIApi::UI_Style_SetSeparator(SPF_TextStyle_Handle handle, bool is_separator) {
+    if (handle) handle->style.Separator(is_separator);
+}
+
+void UIApi::UI_Style_SetUnderline(SPF_TextStyle_Handle handle, bool is_underline) {
+    if (handle) handle->style.Underline(is_underline);
+}
+
+void UIApi::UI_Style_SetStrikethrough(SPF_TextStyle_Handle handle, bool is_strikethrough) {
+    if (handle) handle->style.Strikethrough(is_strikethrough);
+}
+
+void UIApi::UI_TextStyled(SPF_TextStyle_Handle handle, const char* fmt, ...) {
+    if (!fmt) return;
+    
+    va_list args;
+    va_start(args, fmt);
+
+    if (handle) {
+        SPF::UI::Typography::TextV(handle->style, fmt, args);
+    } else {
+        // Fallback to default if no style handle is provided.
+        SPF::UI::Typography::TextV(SPF::UI::TextStyle::Regular(), fmt, args);
+    }
+    
+    va_end(args);
+}
+
+void UIApi::UI_RenderMarkdown(const char* markdown_text, SPF_TextStyle_Handle base_style_handle) {
+    if (!markdown_text) return;
+    
+    if (base_style_handle) {
+        SPF::UI::Typography::RenderMarkdownText(markdown_text, base_style_handle->style);
+    } else {
+        SPF::UI::Typography::RenderMarkdownText(markdown_text, SPF::UI::TextStyle::Regular());
+    }
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -249,6 +341,20 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->ColorEdit4 = &UIApi::UI_ColorEdit4;
   ui_api->DragFloat = &UIApi::UI_DragFloat;
   ui_api->DragInt = &UIApi::UI_DragInt;
+
+  // --- Text Styling API (v1.0 - SPF-377) ---
+  ui_api->Style_Create = &UIApi::UI_Style_Create;
+  ui_api->Style_Destroy = &UIApi::UI_Style_Destroy;
+  ui_api->Style_SetFont = &UIApi::UI_Style_SetFont;
+  ui_api->Style_SetColor = &UIApi::UI_Style_SetColor;
+  ui_api->Style_SetAlign = &UIApi::UI_Style_SetAlign;
+  ui_api->Style_SetWrap = &UIApi::UI_Style_SetWrap;
+  ui_api->Style_SetPadding = &UIApi::UI_Style_SetPadding;
+  ui_api->Style_SetSeparator = &UIApi::UI_Style_SetSeparator;
+  ui_api->Style_SetUnderline = &UIApi::UI_Style_SetUnderline;
+  ui_api->Style_SetStrikethrough = &UIApi::UI_Style_SetStrikethrough;
+  ui_api->TextStyled = &UIApi::UI_TextStyled;
+  ui_api->RenderMarkdown = &UIApi::UI_RenderMarkdown;
 }
 }  // namespace Modules::API
 SPF_NS_END

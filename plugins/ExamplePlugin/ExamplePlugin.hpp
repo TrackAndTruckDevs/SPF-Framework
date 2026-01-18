@@ -367,6 +367,11 @@ void OnRegisterUI(SPF_UI_API* ui_api);
 void RenderMainWindow(SPF_UI_API* ui, void* user_data);
 
 /**
+ * @brief Renders the content of the "Styling API" tab, demonstrating the new text styling features.
+ */
+void RenderStylingTab(SPF_UI_API* ui, void* user_data);
+
+/**
  * @brief Renders the content of the "Camera" tab within the main window.
  */
 void RenderCameraTab(SPF_UI_API* ui, void* user_data);

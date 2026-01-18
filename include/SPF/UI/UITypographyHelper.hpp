@@ -132,11 +132,13 @@ namespace UI {
         static void Text(const TextStyle& style, const char* fmt, ...);
         static void RenderMarkdownText(const std::string& markdownText, const TextStyle& style = {});
 
+        static void TextV(const TextStyle& style, const char* fmt, va_list args);
+
         // --- Core Size Calculation Method ---
         static ImVec2 CalcTextSize(const char* text, const TextStyle& style = {});
 
     private:
-        static void TextV(const TextStyle& style, const char* fmt, va_list args); // New private core method
+        
     };
 
 } // namespace UI

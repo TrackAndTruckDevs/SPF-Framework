@@ -8,6 +8,36 @@
 // Forward-declare handle type
 typedef struct SPF_Window_Handle SPF_Window_Handle;
 
+// Forward-declare SPF_TextStyle_Handle
+typedef struct SPF_TextStyle_Handle_t* SPF_TextStyle_Handle;
+
+/**
+ * @enum SPF_Font
+ * @brief Available font styles for SPF UI elements.
+ */
+typedef enum {
+    SPF_FONT_REGULAR,
+    SPF_FONT_BOLD,
+    SPF_FONT_ITALIC,
+    SPF_FONT_BOLD_ITALIC,
+    SPF_FONT_MEDIUM,
+    SPF_FONT_MEDIUM_ITALIC,
+    SPF_FONT_MONOSPACE,
+    SPF_FONT_H1,
+    SPF_FONT_H2,
+    SPF_FONT_H3
+} SPF_Font;
+
+/**
+ * @enum SPF_TextAlign
+ * @brief Text alignment options for SPF UI elements.
+ */
+typedef enum {
+    SPF_TEXT_ALIGN_LEFT,
+    SPF_TEXT_ALIGN_CENTER,
+    SPF_TEXT_ALIGN_RIGHT
+} SPF_TextAlign;
+
 /**
  * @enum SPF_Window_Flags
  * @brief Flags to control the behavior of a window registered by a plugin.
@@ -211,5 +241,118 @@ typedef struct SPF_UI_API {
 
     void (*GetViewportSize)(float* out_width, float* out_height); //game window size
     void (*AddRectFilled)(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
+
+
+    // --- Text Styling API (v1.0 - SPF-377) ---
+    // The following set of functions allows for the creation and manipulation of text style objects.
+    // These objects can then be passed to rendering functions like `TextStyled` and `RenderMarkdown`
+    // to control typography, color, layout, and more.
+    //
+    // Workflow:
+    // 1. Create a style object with `Style_Create()`.
+    // 2. Configure it using the `Style_Set...()` functions.
+    // 3. Pass the handle to a rendering function like `TextStyled()`.
+    // 4. Destroy the style object with `Style_Destroy()` when it's no longer needed to release memory.
+
+    /**
+     * @brief Creates a new, empty text style handle.
+     * @details This handle represents a collection of style properties. It must be destroyed
+     *          with `Style_Destroy` to prevent memory leaks.
+     * @return A new `SPF_TextStyle_Handle`.
+     */
+    SPF_TextStyle_Handle (*Style_Create)();
+
+    /**
+     * @brief Destroys a text style handle and releases its memory.
+     * @param handle The style handle to destroy.
+     */
+    void (*Style_Destroy)(SPF_TextStyle_Handle handle);
+
+    /**
+     * @brief Sets the font for the text style.
+     * @param handle The style handle to modify.
+     * @param font The desired font from the `SPF_Font` enum.
+     */
+    void (*Style_SetFont)(SPF_TextStyle_Handle handle, SPF_Font font);
+
+    /**
+     * @brief Sets the color of the text.
+     * @param handle The style handle to modify.
+     * @param r, g, b, a The color components (0.0f to 1.0f).
+     */
+    void (*Style_SetColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+
+    /**
+     * @brief Sets the horizontal alignment of the text.
+     * @details Centering and right-alignment are relative to the available content region width.
+     * @param handle The style handle to modify.
+     * @param align The desired alignment from the `SPF_TextAlign` enum.
+     */
+    void (*Style_SetAlign)(SPF_TextStyle_Handle handle, SPF_TextAlign align);
+
+    /**
+     * @brief Enables or disables automatic text wrapping.
+     * @param handle The style handle to modify.
+     * @param wrap Set to true to enable wrapping, false to disable.
+     */
+    void (*Style_SetWrap)(SPF_TextStyle_Handle handle, bool wrap);
+
+    /**
+     * @brief Sets padding around the text block.
+     * @param handle The style handle to modify.
+     * @param pad_x Horizontal padding.
+     * @param pad_y Vertical padding.
+     */
+    void (*Style_SetPadding)(SPF_TextStyle_Handle handle, float pad_x, float pad_y);
+
+    /**
+     * @brief Turns the text into a separator with a label.
+     * @details When true, the text will be rendered as a horizontal line with the text embedded in it.
+     * @param handle The style handle to modify.
+     * @param is_separator Set to true to render as a separator.
+     */
+    void (*Style_SetSeparator)(SPF_TextStyle_Handle handle, bool is_separator);
+
+    /**
+     * @brief Enables or disables an underline decoration.
+     * @param handle The style handle to modify.
+     * @param is_underline Set to true to draw an underline.
+     */
+    void (*Style_SetUnderline)(SPF_TextStyle_Handle handle, bool is_underline);
+
+    /**
+     * @brief Enables or disables a strikethrough decoration.
+     * @param handle The style handle to modify.
+     * @param is_strikethrough Set to true to draw a strikethrough line.
+     */
+    void (*Style_SetStrikethrough)(SPF_TextStyle_Handle handle, bool is_strikethrough);
+
+    // --- Styled Rendering (v1.0 - SPF-377) ---
+
+    /**
+     * @brief Renders text with a specific style, supporting printf-style formatting.
+     * @details This function is the styled equivalent of the basic 'Text' function. It allows
+     *          for applying a complex style object (created via Style_Create) to a piece of
+     *          text. The format string 'fmt' and subsequent arguments work exactly like the
+     *          standard C printf function.
+     * @param handle A handle to a style object created with `Style_Create`. If NULL, default
+     *               styling will be used.
+     * @param fmt A printf-style format string.
+     * @param ... Optional subsequent arguments for the format string.
+     */
+    void (*TextStyled)(SPF_TextStyle_Handle handle, const char* fmt, ...);
+
+    /**
+     * @brief Renders a block of text formatted with Markdown.
+     * @details Supports basic Markdown syntax like headers (#, ##), bold (**),
+     *          italic (*), code blocks (```), and links.
+     * @param markdown_text The string containing the Markdown to render.
+     * @param base_style_handle An optional style handle to apply base properties like
+     *                          padding or a default color to the entire block. The renderer
+     *                          will still override fonts and colors for specific Markdown
+     *                          elements (e.g., H1 will use the 'h1' font). If NULL,
+     *                          a default style is used.
+     */
+    void (*RenderMarkdown)(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
 
 } SPF_UI_API;
