@@ -13,10 +13,15 @@ typedef struct SPF_Window_Handle SPF_Window_Handle;
  * @brief Flags to control the behavior of a window registered by a plugin.
  */
 typedef enum {
-    SPF_WINDOW_FLAG_NONE      = 0,
-    SPF_WINDOW_FLAG_NO_RESIZE = 1 << 0, // Disable user resizing.
-    SPF_WINDOW_FLAG_NO_MOVE   = 1 << 1, // Disable user moving the window.
-    SPF_WINDOW_FLAG_NO_TITLE  = 1 << 2, // Disable the title bar.
+    SPF_WINDOW_FLAG_NONE = 0,
+    SPF_WINDOW_FLAG_NO_TITLE = 1 << 0,  // Disable the title bar.
+    SPF_WINDOW_FLAG_NO_RESIZE = 1 << 1, // Disable user resizing.
+    SPF_WINDOW_FLAG_NO_MOVE = 1 << 2,   // Disable user moving the window.
+    SPF_WINDOW_FLAG_NO_SCROLLBAR = 1 << 3,   // Disable scrollbar (scrolling with mouse wheel is still possible).
+    SPF_WINDOW_FLAG_NO_COLLAPSE = 1 << 4,    // Disable the collapse button.
+    SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE = 1 << 5, // Auto-resize window to fit contents every frame.
+    SPF_WINDOW_FLAG_MENU_BAR = 1 << 6,           // The window has a menu bar.
+    SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR = 1 << 7, // Allow horizontal scrollbar.
 } SPF_Window_Flags;
 
 /**
@@ -69,6 +74,21 @@ typedef struct SPF_UI_API {
      * @param user_data An optional pointer to user data that will be passed to the callback.
      */
     void (*RegisterDrawCallback)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data);
+
+    /**
+     * @brief Registers a draw callback for a window with additional control flags.
+     *
+     * @details This function is an alternative way to register a window. It extends
+     *          `RegisterDrawCallback` by allowing you to provide `SPF_Window_Flags`
+     *          to control the window's behavior (e.g., disable resizing, add a menu bar).
+     *
+     * @param pluginName The name of the plugin owning this window.
+     * @param windowId The unique identifier for the window.
+     * @param drawCallback A function pointer for rendering the window's content.
+     * @param user_data An optional pointer to user data.
+     * @param flags A bitmask of `SPF_Window_Flags` to control window properties.
+     */
+    void (*RegisterDrawCallbackWithFlags)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data, SPF_Window_Flags flags);
 
     /**
      * @brief Gets a handle to a window for programmatic control.
@@ -189,7 +209,7 @@ typedef struct SPF_UI_API {
 
     // --- Custom Drawing ---
 
-    void (*GetViewportSize)(float* out_width, float* out_height);
+    void (*GetViewportSize)(float* out_width, float* out_height); //game window size
     void (*AddRectFilled)(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
 
 } SPF_UI_API;

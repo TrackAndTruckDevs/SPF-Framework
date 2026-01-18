@@ -16,6 +16,11 @@ using namespace SPF::Handles;
 // --- UI Window Management Trampolines ---
 
 void UIApi::UI_RegisterDrawCallback(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data) {
+  // Call the new extended function with default flags for backward compatibility
+  UI_RegisterDrawCallbackWithFlags(pluginName, windowId, drawCallback, user_data, SPF_WINDOW_FLAG_NONE);
+}
+
+void UIApi::UI_RegisterDrawCallbackWithFlags(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data, SPF_Window_Flags flags) {
   auto& self = PluginManager::GetInstance();
   auto* uiManager = self.GetUIManager();
   if (!uiManager || !pluginName || !windowId || !drawCallback) return;
@@ -23,6 +28,7 @@ void UIApi::UI_RegisterDrawCallback(const char* pluginName, const char* windowId
   IWindow* window = uiManager->GetWindow(pluginName, windowId);
   if (auto* proxyWindow = dynamic_cast<PluginProxyWindow*>(window)) {
     proxyWindow->SetDrawCallback(drawCallback, user_data);
+    proxyWindow->SetWindowFlags(flags);
   }
 }
 
@@ -174,6 +180,7 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
 
   // Window Management
   ui_api->RegisterDrawCallback = &UIApi::UI_RegisterDrawCallback;
+  ui_api->RegisterDrawCallbackWithFlags = &UIApi::UI_RegisterDrawCallbackWithFlags;
   ui_api->GetWindowHandle = &UIApi::UI_GetWindowHandle;
   ui_api->SetVisibility = &UIApi::UI_SetVisibility;
   ui_api->IsVisible = &UIApi::UI_IsVisible;

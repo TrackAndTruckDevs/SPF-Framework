@@ -80,6 +80,7 @@ class UIApi {
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);
   static void UI_RegisterDrawCallback(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data);
+  static void UI_RegisterDrawCallbackWithFlags(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data, SPF_Window_Flags flags);
   static SPF_Window_Handle* UI_GetWindowHandle(const char* pluginName, const char* windowId);
 };
 }  // namespace Modules::API
