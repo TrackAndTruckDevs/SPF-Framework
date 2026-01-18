@@ -182,7 +182,7 @@ bool UIApi::UI_ColorEdit4(const char* label, float col[4]) { return label && col
 bool UIApi::UI_DragFloat(const char* label, float* v, float v_speed, float v_min, float v_max) { return label && v ? ImGui::DragFloat(label, v, v_speed, v_min, v_max) : false; }
 bool UIApi::UI_DragInt(const char* label, int* v, float v_speed, int v_min, int v_max) { return label && v ? ImGui::DragInt(label, v, v_speed, v_min, v_max) : false; }
 
-// --- NEW: Text Styling API Implementation (v1.0 - SPF-377) ---
+// --- Text Styling API Implementation ---
 
 SPF_TextStyle_Handle UIApi::UI_Style_Create() {
     return new SPF_TextStyle_Handle_t();
@@ -263,6 +263,98 @@ void UIApi::UI_RenderMarkdown(const char* markdown_text, SPF_TextStyle_Handle ba
         SPF::UI::Typography::RenderMarkdownText(markdown_text, base_style_handle->style);
     } else {
         SPF::UI::Typography::RenderMarkdownText(markdown_text, SPF::UI::TextStyle::Regular());
+    }
+}
+
+// --- Custom Widget API Implementation ---
+
+uint32_t UIApi::UI_ColorConvertFloat4ToU32(float r, float g, float b, float a) {
+    return ImGui::ColorConvertFloat4ToU32({r, g, b, a});
+}
+
+SPF_DrawList_Handle UIApi::UI_GetWindowDrawList() {
+    return reinterpret_cast<SPF_DrawList_Handle>(ImGui::GetWindowDrawList());
+}
+
+void UIApi::UI_DrawList_AddLine(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddLine({p1_x, p1_y}, {p2_x, p2_y}, col, thickness);
+}
+
+void UIApi::UI_DrawList_AddRectFilled(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddRectFilled({p_min_x, p_min_y}, {p_max_x, p_max_y}, col, rounding);
+}
+
+void UIApi::UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddCircleFilled({center_x, center_y}, radius, col, num_segments);
+}
+
+void UIApi::UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text) {
+    if (dl && text) reinterpret_cast<ImDrawList*>(dl)->AddText({pos_x, pos_y}, col, text);
+}
+
+void UIApi::UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddRect({p_min_x, p_min_y}, {p_max_x, p_max_y}, col, rounding, 0, thickness);
+}
+
+void UIApi::UI_DrawList_AddQuadFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddQuadFilled({p1_x, p1_y}, {p2_x, p2_y}, {p3_x, p3_y}, {p4_x, p4_y}, col);
+}
+
+void UIApi::UI_DrawList_AddTriangleFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddTriangleFilled({p1_x, p1_y}, {p2_x, p2_y}, {p3_x, p3_y}, col);
+}
+
+void UIApi::UI_DrawList_AddBezierCubic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness, int num_segments) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddBezierCubic({p1_x, p1_y}, {p2_x, p2_y}, {p3_x, p3_y}, {p4_x, p4_y}, col, thickness, num_segments);
+}
+
+void UIApi::UI_DrawList_AddPolyline(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, bool closed, float thickness) {
+    if (!dl || !points_x || !points_y || num_points <= 1) return;
+
+    // ImGui takes an array of ImVec2, so we need to construct it from our separate x/y arrays.
+    // Using a temporary std::vector is a safe way to handle the allocation.
+    std::vector<ImVec2> points;
+    points.reserve(num_points);
+    for (int i = 0; i < num_points; ++i) {
+        points.emplace_back(points_x[i], points_y[i]);
+    }
+
+    reinterpret_cast<ImDrawList*>(dl)->AddPolyline(points.data(), num_points, col, closed, thickness);
+}
+
+void UIApi::UI_DrawList_PathClear(SPF_DrawList_Handle dl) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PathClear();
+}
+
+void UIApi::UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PathLineTo({pos_x, pos_y});
+}
+
+void UIApi::UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, bool closed, float thickness) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PathStroke(col, closed, thickness);
+}
+
+void UIApi::UI_DrawList_PathFillConvex(SPF_DrawList_Handle dl, uint32_t col) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PathFillConvex(col);
+}
+
+void UIApi::UI_GetMousePos(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 mouse_pos = ImGui::GetMousePos();
+        *out_x = mouse_pos.x;
+        *out_y = mouse_pos.y;
+    }
+}
+
+bool UIApi::UI_IsMouseDragging(int mouse_button_index) {
+    return ImGui::IsMouseDragging(mouse_button_index);
+}
+
+void UIApi::UI_GetMouseDragDelta(int mouse_button_index, float* out_dx, float* out_dy) {
+    if (out_dx && out_dy) {
+        const ImVec2 drag_delta = ImGui::GetMouseDragDelta(mouse_button_index);
+        *out_dx = drag_delta.x;
+        *out_dy = drag_delta.y;
     }
 }
 
@@ -354,6 +446,26 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->Style_SetStrikethrough = &UIApi::UI_Style_SetStrikethrough;
   ui_api->TextStyled = &UIApi::UI_TextStyled;
   ui_api->RenderMarkdown = &UIApi::UI_RenderMarkdown;
+
+  // --- Custom Widget API (v1.1 - SPF-412) ---
+  ui_api->ColorConvertFloat4ToU32 = &UIApi::UI_ColorConvertFloat4ToU32;
+  ui_api->GetWindowDrawList = &UIApi::UI_GetWindowDrawList;
+  ui_api->DrawList_AddLine = &UIApi::UI_DrawList_AddLine;
+  ui_api->DrawList_AddRectFilled = &UIApi::UI_DrawList_AddRectFilled;
+  ui_api->DrawList_AddCircleFilled = &UIApi::UI_DrawList_AddCircleFilled;
+  ui_api->DrawList_AddText = &UIApi::UI_DrawList_AddText;
+  ui_api->DrawList_AddRect = &UIApi::UI_DrawList_AddRect;
+  ui_api->DrawList_AddQuadFilled = &UIApi::UI_DrawList_AddQuadFilled;
+  ui_api->DrawList_AddTriangleFilled = &UIApi::UI_DrawList_AddTriangleFilled;
+  ui_api->DrawList_AddBezierCubic = &UIApi::UI_DrawList_AddBezierCubic;
+  ui_api->DrawList_AddPolyline = &UIApi::UI_DrawList_AddPolyline;
+  ui_api->DrawList_PathClear = &UIApi::UI_DrawList_PathClear;
+  ui_api->DrawList_PathLineTo = &UIApi::UI_DrawList_PathLineTo;
+  ui_api->DrawList_PathStroke = &UIApi::UI_DrawList_PathStroke;
+  ui_api->DrawList_PathFillConvex = &UIApi::UI_DrawList_PathFillConvex;
+  ui_api->GetMousePos = &UIApi::UI_GetMousePos;
+  ui_api->IsMouseDragging = &UIApi::UI_IsMouseDragging;
+  ui_api->GetMouseDragDelta = &UIApi::UI_GetMouseDragDelta;
 }
 }  // namespace Modules::API
 SPF_NS_END

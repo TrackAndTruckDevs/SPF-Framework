@@ -76,7 +76,7 @@ class UIApi {
   static bool UI_DragFloat(const char* label, float* v, float v_speed, float v_min, float v_max);
   static bool UI_DragInt(const char* label, int* v, float v_speed, int v_min, int v_max);
 
-  // --- NEW: Text Styling Trampolines (v1.0 - SPF-377) ---
+  // Text Styling Trampolines ---
   static SPF_TextStyle_Handle UI_Style_Create();
   static void UI_Style_Destroy(SPF_TextStyle_Handle handle);
   static void UI_Style_SetFont(SPF_TextStyle_Handle handle, SPF_Font font);
@@ -89,6 +89,26 @@ class UIApi {
   static void UI_Style_SetStrikethrough(SPF_TextStyle_Handle handle, bool is_strikethrough);
   static void UI_TextStyled(SPF_TextStyle_Handle handle, const char* fmt, ...);
   static void UI_RenderMarkdown(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
+
+  // --- Custom Widget API Trampolines ---
+  static uint32_t UI_ColorConvertFloat4ToU32(float r, float g, float b, float a);
+  static SPF_DrawList_Handle UI_GetWindowDrawList();
+  static void UI_DrawList_AddLine(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
+  static void UI_DrawList_AddRectFilled(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding);
+  static void UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+  static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
+  static void UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness);
+  static void UI_DrawList_AddQuadFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
+  static void UI_DrawList_AddTriangleFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col);
+  static void UI_DrawList_AddBezierCubic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness, int num_segments);
+  static void UI_DrawList_AddPolyline(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, bool closed, float thickness);
+  static void UI_DrawList_PathClear(SPF_DrawList_Handle dl);
+  static void UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y);
+  static void UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, bool closed, float thickness);
+  static void UI_DrawList_PathFillConvex(SPF_DrawList_Handle dl, uint32_t col);
+  static void UI_GetMousePos(float* out_x, float* out_y);
+  static bool UI_IsMouseDragging(int mouse_button_index);
+  static void UI_GetMouseDragDelta(int mouse_button_index, float* out_dx, float* out_dy);
 
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);

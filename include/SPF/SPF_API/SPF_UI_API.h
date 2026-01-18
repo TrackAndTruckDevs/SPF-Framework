@@ -11,6 +11,9 @@ typedef struct SPF_Window_Handle SPF_Window_Handle;
 // Forward-declare SPF_TextStyle_Handle
 typedef struct SPF_TextStyle_Handle_t* SPF_TextStyle_Handle;
 
+// Forward-declare SPF_DrawList_Handle for custom drawing
+typedef struct SPF_DrawList_Handle_t* SPF_DrawList_Handle;
+
 /**
  * @enum SPF_Font
  * @brief Available font styles for SPF UI elements.
@@ -354,5 +357,181 @@ typedef struct SPF_UI_API {
      *                          a default style is used.
      */
     void (*RenderMarkdown)(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
+
+
+    // --- Custom Widget API ---
+    // The following functions provide low-level access to the drawing and interaction primitives
+    // needed to create fully custom widgets beyond the standard set.
+    //
+    // Workflow for a custom widget:
+    // 1. Create a canvas for your widget, typically with `InvisibleButton()`.
+    // 2. Query mouse state relative to the widget using functions like `IsItemHovered()`, `GetMousePos()`, etc.
+    // 3. Get the window's draw list using `GetWindowDrawList()`.
+    // 4. Use the `DrawList_...()` functions to draw your custom shapes, text, and visuals.
+
+    /**
+     * @brief Converts an RGBA color from four floats (0.0-1.0) to a packed 32-bit integer color.
+     * @details This is the format required by all `DrawList` functions.
+     * @return A 32-bit unsigned integer representing the color (e.g., 0xAABBGGRR).
+     */
+    uint32_t (*ColorConvertFloat4ToU32)(float r, float g, float b, float a);
+
+    /**
+     * @brief Gets a handle to the draw list for the current window.
+     * @details The draw list is the primary tool for custom drawing. It contains all the commands
+     *          to draw shapes, text, and images. This handle is valid for the current frame only.
+     * @return A handle to the draw list.
+     */
+    SPF_DrawList_Handle (*GetWindowDrawList)();
+
+    // --- DrawList Drawing Functions ---
+
+    /**
+     * @brief Adds a line to the draw list.
+     * @param dl The draw list handle.
+     * @param p1_x, p1_y The starting point of the line.
+     * @param p2_x, p2_y The ending point of the line.
+     * @param col The color of the line as a packed 32-bit integer.
+     * @param thickness The thickness of the line in pixels.
+     */
+    void (*DrawList_AddLine)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
+
+    /**
+     * @brief Adds a filled rectangle to the draw list.
+     * @param dl The draw list handle.
+     * @param p_min_x, p_min_y The top-left corner of the rectangle.
+     * @param p_max_x, p_max_y The bottom-right corner of the rectangle.
+     * @param col The fill color as a packed 32-bit integer.
+     * @param rounding The radius of the corners. 0 for a sharp rectangle.
+     */
+    void (*DrawList_AddRectFilled)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding);
+
+    /**
+     * @brief Adds a filled circle to the draw list.
+     * @param dl The draw list handle.
+     * @param center_x, center_y The center of the circle.
+     * @param radius The radius of the circle.
+     * @param col The fill color as a packed 32-bit integer.
+     * @param num_segments The number of segments to use to approximate the circle. More segments = smoother circle.
+     */
+    void (*DrawList_AddCircleFilled)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+
+    /**
+     * @brief Adds text to the draw list at a specific screen position.
+     * @details Unlike `Text()`, this is a low-level draw command and does not interact with layout.
+     * @param dl The draw list handle.
+     * @param pos_x, pos_y The top-left screen coordinate to start drawing the text.
+     * @param col The color of the text as a packed 32-bit integer.
+     * @param text The text to draw.
+     */
+    void (*DrawList_AddText)(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
+
+    /**
+     * @brief Adds a rectangle (outline) to the draw list.
+     * @param dl The draw list handle.
+     * @param p_min_x, p_min_y The top-left corner of the rectangle.
+     * @param p_max_x, p_max_y The bottom-right corner of the rectangle.
+     * @param col The color of the outline.
+     * @param rounding The radius of the corners. 0 for a sharp rectangle.
+     * @param thickness The thickness of the outline.
+     */
+    void (*DrawList_AddRect)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness);
+    
+    /**
+     * @brief Adds a filled quadrilateral to the draw list.
+     * @param dl The draw list handle.
+     * @param p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y The four corner points of the quad.
+     * @param col The fill color.
+     */
+    void (*DrawList_AddQuadFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
+
+    /**
+     * @brief Adds a filled triangle to the draw list.
+     * @param dl The draw list handle.
+     * @param p1_x, p1_y, p2_x, p2_y, p3_x, p3_y The three corner points of the triangle.
+     * @param col The fill color.
+     */
+    void (*DrawList_AddTriangleFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col);
+    
+    /**
+     * @brief Adds a cubic Bezier curve to the draw list.
+     * @param dl The draw list handle.
+     * @param p1_x, p1_y The starting point of the curve.
+     * @param p2_x, p2_y The first control point.
+     * @param p3_x, p3_y The second control point.
+     * @param p4_x, p4_y The ending point of the curve.
+     * @param col The color of the curve.
+     * @param thickness The thickness of the curve.
+     * @param num_segments The number of line segments to use to approximate the curve.
+     */
+    void (*DrawList_AddBezierCubic)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness, int num_segments);
+
+    // --- DrawList Path/Polyline Functions ---
+
+    /**
+     * @brief Draws a polyline (a sequence of connected lines) from a set of points.
+     * @details This is useful for drawing graphs or simple non-closing shapes.
+     * @param dl The draw list handle.
+     * @param points_x An array of floats for the x-coordinates of the points.
+     * @param points_y An array of floats for the y-coordinates of the points.
+     * @param num_points The number of points in the arrays.
+     * @param col The color of the line.
+     * @param closed If true, a line will be drawn from the last point to the first.
+     * @param thickness The thickness of the lines.
+     */
+    void (*DrawList_AddPolyline)(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, bool closed, float thickness);
+
+    /**
+     * @brief Clears the current path in the draw list. A path is a sequence of points that can be stroked or filled.
+     */
+    void (*DrawList_PathClear)(SPF_DrawList_Handle dl);
+
+    /**
+     * @brief Adds a line from the current path position to a new position.
+     * @param dl The draw list handle.
+     * @param pos_x, pos_y The new position to draw a line to.
+     */
+    void (*DrawList_PathLineTo)(SPF_DrawList_Handle dl, float pos_x, float pos_y);
+
+    /**
+     * @brief Draws an outline of the current path.
+     * @param dl The draw list handle.
+     * @param col The color of the outline.
+     * @param closed If true, a line will be drawn from the last point to the first before stroking.
+     * @param thickness The thickness of the outline.
+     */
+    void (*DrawList_PathStroke)(SPF_DrawList_Handle dl, uint32_t col, bool closed, float thickness);
+
+    /**
+     * @brief Fills the interior of the current path (if it's a convex polygon).
+     * @param dl The draw list handle.
+     * @param col The fill color.
+     */
+    void (*DrawList_PathFillConvex)(SPF_DrawList_Handle dl, uint32_t col);
+    
+
+    // --- Advanced Interaction API (v1.1 - SPF-412) ---
+
+    /**
+     * @brief Gets the current position of the mouse cursor in screen coordinates.
+     * @param[out] out_x Pointer to a float to store the x-coordinate.
+     * @param[out] out_y Pointer to a float to store the y-coordinate.
+     */
+    void (*GetMousePos)(float* out_x, float* out_y);
+
+    /**
+     * @brief Checks if the user is currently dragging the mouse with a specific button held down.
+     * @param mouse_button_index The index of the mouse button (0=Left, 1=Right, 2=Middle).
+     * @return True if the user is dragging with the specified button, false otherwise.
+     */
+    bool (*IsMouseDragging)(int mouse_button_index);
+
+    /**
+     * @brief Gets the total displacement of the mouse since a drag operation started.
+     * @param mouse_button_index The index of the mouse button being dragged.
+     * @param[out] out_dx Pointer to a float to store the horizontal displacement.
+     * @param[out] out_dy Pointer to a float to store the vertical displacement.
+     */
+    void (*GetMouseDragDelta)(int mouse_button_index, float* out_dx, float* out_dy);
 
 } SPF_UI_API;
