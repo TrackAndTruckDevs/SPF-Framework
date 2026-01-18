@@ -534,4 +534,38 @@ typedef struct SPF_UI_API {
      */
     void (*GetMouseDragDelta)(int mouse_button_index, float* out_dx, float* out_dy);
 
+    /**
+     * @brief Checks if a mouse button is currently held down.
+     * @param mouse_button_index The index of the mouse button (0=Left, 1=Right, 2=Middle).
+     * @return True if the button is held down.
+     */
+    bool (*IsMouseDown)(int mouse_button_index);
+
+    /**
+     * @brief Checks if a mouse button was clicked (pressed and released) in the current frame.
+     * @param mouse_button_index The index of the mouse button.
+     * @return True if the button was clicked this frame.
+     */
+    bool (*IsMouseClicked)(int mouse_button_index);
+
+    /**
+     * @brief Checks if a mouse button was released in the current frame.
+     * @param mouse_button_index The index of the mouse button.
+     * @return True if the button was released this frame.
+     */
+    bool (*IsMouseReleased)(int mouse_button_index);
+
+    /**
+     * @brief Checks if a mouse button was double-clicked.
+     * @param mouse_button_index The index of the mouse button.
+     * @return True if the button was double-clicked.
+     */
+    bool (*IsMouseDoubleClicked)(int mouse_button_index);
+
+    /**
+     * @brief Gets the vertical scroll amount of the mouse wheel for the current frame.
+     * @return A positive value for scrolling up, a negative value for scrolling down, and 0 if no scroll.
+     */
+    float (*GetMouseWheel)();
+
 } SPF_UI_API;

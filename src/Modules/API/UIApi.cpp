@@ -358,6 +358,26 @@ void UIApi::UI_GetMouseDragDelta(int mouse_button_index, float* out_dx, float* o
     }
 }
 
+bool UIApi::UI_IsMouseDown(int mouse_button_index) {
+    return ImGui::IsMouseDown(mouse_button_index);
+}
+
+bool UIApi::UI_IsMouseClicked(int mouse_button_index) {
+    return ImGui::IsMouseClicked(mouse_button_index);
+}
+
+bool UIApi::UI_IsMouseReleased(int mouse_button_index) {
+    return ImGui::IsMouseReleased(mouse_button_index);
+}
+
+bool UIApi::UI_IsMouseDoubleClicked(int mouse_button_index) {
+    return ImGui::IsMouseDoubleClicked(mouse_button_index);
+}
+
+float UIApi::UI_GetMouseWheel() {
+    return ImGui::GetIO().MouseWheel;
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -466,6 +486,11 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->GetMousePos = &UIApi::UI_GetMousePos;
   ui_api->IsMouseDragging = &UIApi::UI_IsMouseDragging;
   ui_api->GetMouseDragDelta = &UIApi::UI_GetMouseDragDelta;
+  ui_api->IsMouseDown = &UIApi::UI_IsMouseDown;
+  ui_api->IsMouseClicked = &UIApi::UI_IsMouseClicked;
+  ui_api->IsMouseReleased = &UIApi::UI_IsMouseReleased;
+  ui_api->IsMouseDoubleClicked = &UIApi::UI_IsMouseDoubleClicked;
+  ui_api->GetMouseWheel = &UIApi::UI_GetMouseWheel;
 }
 }  // namespace Modules::API
 SPF_NS_END

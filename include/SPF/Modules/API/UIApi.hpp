@@ -109,6 +109,11 @@ class UIApi {
   static void UI_GetMousePos(float* out_x, float* out_y);
   static bool UI_IsMouseDragging(int mouse_button_index);
   static void UI_GetMouseDragDelta(int mouse_button_index, float* out_dx, float* out_dy);
+  static bool UI_IsMouseDown(int mouse_button_index);
+  static bool UI_IsMouseClicked(int mouse_button_index);
+  static bool UI_IsMouseReleased(int mouse_button_index);
+  static bool UI_IsMouseDoubleClicked(int mouse_button_index);
+  static float UI_GetMouseWheel();
 
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
