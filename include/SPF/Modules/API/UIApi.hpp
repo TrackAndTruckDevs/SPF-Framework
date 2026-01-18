@@ -125,6 +125,22 @@ class UIApi {
   static void UI_GetItemRectMax(float* out_x, float* out_y);
   static void UI_GetItemRectSize(float* out_x, float* out_y);
 
+  // --- NEW: Miscellaneous Utilities API Trampolines (v1.3 - SPF-418) ---
+  static const char* UI_GetClipboardText();
+  static void UI_SetClipboardText(const char* text);
+  static SPF_Font_Handle* UI_GetFont(const char* font_key);
+  static void UI_PushFont(SPF_Font_Handle* font_handle);
+  static void UI_PopFont();
+  static SPF_Style_Handle* UI_GetStyle();
+  static void UI_Style_GetWindowPadding(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+  static void UI_Style_GetItemSpacing(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+  static void UI_Style_GetFramePadding(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+  static void UI_PushID_Str(const char* str_id);
+  static void UI_PushID_Int(int int_id);
+  static void UI_PushID_Ptr(void* ptr_id);
+  static void UI_PopID();
+  static uint32_t UI_GetID_Str(const char* str_id);
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);

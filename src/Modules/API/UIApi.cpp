@@ -440,6 +440,81 @@ void UIApi::UI_GetItemRectSize(float* out_x, float* out_y) {
     }
 }
 
+// --- Miscellaneous Utilities API Implementation ---
+
+const char* UIApi::UI_GetClipboardText() {
+    return ImGui::GetClipboardText();
+}
+
+void UIApi::UI_SetClipboardText(const char* text) {
+    ImGui::SetClipboardText(text);
+}
+
+SPF_Font_Handle* UIApi::UI_GetFont(const char* font_key) {
+    if (!font_key) return nullptr;
+    auto& self = PluginManager::GetInstance();
+    auto* uiManager = self.GetUIManager();
+    if (!uiManager) return nullptr;
+    return reinterpret_cast<SPF_Font_Handle*>(uiManager->GetFont(font_key));
+}
+
+void UIApi::UI_PushFont(SPF_Font_Handle* font_handle) {
+    if (font_handle) ImGui::PushFont(reinterpret_cast<ImFont*>(font_handle));
+}
+
+void UIApi::UI_PopFont() {
+    ImGui::PopFont();
+}
+
+// --- Global Style Access API Implementation ---
+
+SPF_Style_Handle* UIApi::UI_GetStyle() {
+    return reinterpret_cast<SPF_Style_Handle*>(&ImGui::GetStyle());
+}
+
+void UIApi::UI_Style_GetWindowPadding(SPF_Style_Handle* style_handle, float* out_x, float* out_y) {
+    if (style_handle && out_x && out_y) {
+        *out_x = reinterpret_cast<ImGuiStyle*>(style_handle)->WindowPadding.x;
+        *out_y = reinterpret_cast<ImGuiStyle*>(style_handle)->WindowPadding.y;
+    }
+}
+
+void UIApi::UI_Style_GetItemSpacing(SPF_Style_Handle* style_handle, float* out_x, float* out_y) {
+    if (style_handle && out_x && out_y) {
+        *out_x = reinterpret_cast<ImGuiStyle*>(style_handle)->ItemSpacing.x;
+        *out_y = reinterpret_cast<ImGuiStyle*>(style_handle)->ItemSpacing.y;
+    }
+}
+
+void UIApi::UI_Style_GetFramePadding(SPF_Style_Handle* style_handle, float* out_x, float* out_y) {
+    if (style_handle && out_x && out_y) {
+        *out_x = reinterpret_cast<ImGuiStyle*>(style_handle)->FramePadding.x;
+        *out_y = reinterpret_cast<ImGuiStyle*>(style_handle)->FramePadding.y;
+    }
+}
+
+// --- ID Management API Implementation ---
+
+void UIApi::UI_PushID_Str(const char* str_id) {
+    ImGui::PushID(str_id);
+}
+
+void UIApi::UI_PushID_Int(int int_id) {
+    ImGui::PushID(int_id);
+}
+
+void UIApi::UI_PushID_Ptr(void* ptr_id) {
+    ImGui::PushID(ptr_id);
+}
+
+void UIApi::UI_PopID() {
+    ImGui::PopID();
+}
+
+uint32_t UIApi::UI_GetID_Str(const char* str_id) {
+    return ImGui::GetID(str_id);
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -563,6 +638,22 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->GetItemRectMin = &UIApi::UI_GetItemRectMin;
   ui_api->GetItemRectMax = &UIApi::UI_GetItemRectMax;
   ui_api->GetItemRectSize = &UIApi::UI_GetItemRectSize;
+
+  // --- Miscellaneous Utilities API ---
+  ui_api->GetClipboardText = &UIApi::UI_GetClipboardText;
+  ui_api->SetClipboardText = &UIApi::UI_SetClipboardText;
+  ui_api->GetFont = &UIApi::UI_GetFont;
+  ui_api->PushFont = &UIApi::UI_PushFont;
+  ui_api->PopFont = &UIApi::UI_PopFont;
+  ui_api->GetStyle = &UIApi::UI_GetStyle;
+  ui_api->Style_GetWindowPadding = &UIApi::UI_Style_GetWindowPadding;
+  ui_api->Style_GetItemSpacing = &UIApi::UI_Style_GetItemSpacing;
+  ui_api->Style_GetFramePadding = &UIApi::UI_Style_GetFramePadding;
+  ui_api->PushID_Str = &UIApi::UI_PushID_Str;
+  ui_api->PushID_Int = &UIApi::UI_PushID_Int;
+  ui_api->PushID_Ptr = &UIApi::UI_PushID_Ptr;
+  ui_api->PopID = &UIApi::UI_PopID;
+  ui_api->GetID_Str = &UIApi::UI_GetID_Str;
 }
 }  // namespace Modules::API
 SPF_NS_END

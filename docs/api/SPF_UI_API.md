@@ -156,6 +156,85 @@ Retrieves a handle to one of your windows, which can be used to control it progr
 **`void SetVisibility(SPF_Window_Handle* handle, bool isVisible)`** and **`bool IsVisible(SPF_Window_Handle* handle)`**
 Gets or sets the visibility of a window using its handle.
 
+# Custom Drawing & Interaction API
+To create fully custom interactive widgets, you need access to low-level drawing primitives and detailed input state. This section of the API provides that functionality.
+
+The typical workflow is:
+1. Create a "canvas" for your widget using `InvisibleButton()`. This gives you a bounding box and basic interaction state (`IsItemHovered`, `IsItemActive`).
+2. Get the window's `DrawList` using `GetWindowDrawList()`.
+3. Query detailed mouse state using functions like `GetMousePos` and `IsMouseDragging`.
+4. Use the `DrawList_...` functions to draw your custom shapes and text onto the canvas.
+
+## API Reference
+
+---
+**`SPF_DrawList_Handle GetWindowDrawList()`**
+Gets a handle to the draw list for the current window. The draw list is the primary tool for custom drawing and is valid only for the current frame.
+
+---
+**`uint32_t ColorConvertFloat4ToU32(float r, float g, float b, float a)`**
+A helper function to convert an RGBA color from four floats (0.0-1.0) to a packed 32-bit integer color (`0xAABBGGRR`) required by all `DrawList` functions.
+
+### Drawing Primitives
+*   `DrawList_AddLine(...)`: Adds a line between two points.
+*   `DrawList_AddRect(...)`: Adds a rectangle outline.
+*   `DrawList_AddRectFilled(...)`: Adds a filled rectangle.
+*   `DrawList_AddQuadFilled(...)`: Adds a filled quadrilateral.
+*   `DrawList_AddTriangleFilled(...)`: Adds a filled triangle.
+*   `DrawList_AddCircleFilled(...)`: Adds a filled circle.
+*   `DrawList_AddBezierCubic(...)`: Adds a smooth cubic Bezier curve.
+*   `DrawList_AddText(...)`: Draws text at a specific screen position, ignoring layout.
+
+### Path & Polyline Functions
+These functions allow you to build complex shapes.
+*   `DrawList_AddPolyline(...)`: Draws a sequence of connected lines from an array of points.
+*   `DrawList_PathClear()`: Clears the internal path buffer.
+*   `DrawList_PathLineTo(...)`: Adds a new point to the path.
+*   `DrawList_PathStroke(...)`: Draws an outline of the constructed path.
+*   `DrawList_PathFillConvex(...)`: Fills the constructed path (must be a convex shape).
+
+### Advanced Interaction
+*   `GetMousePos(...)`: Gets the absolute screen coordinates of the mouse cursor.
+*   `GetMouseDragDelta(...)`: Gets how far the mouse has been dragged since the button was clicked.
+*   `IsMouseDown(...)`: Checks if a mouse button is currently held down.
+*   `IsMouseClicked(...)`: Checks if a mouse button was pressed and released this frame.
+*   `IsMouseReleased(...)`: Checks if a mouse button was released this frame.
+*   `IsMouseDoubleClicked(...)`: Checks for a double-click.
+*   `GetMouseWheel()`: Gets the mouse wheel's vertical scroll value for this frame.
+
+# Layout & Positioning API
+These functions provide information about the current window and layout state, allowing for precise placement of custom elements.
+
+*   `GetContentRegionAvail(...)`: Returns the remaining available space in the current window.
+*   `GetWindowPos(...)` / `GetWindowSize(...)`: Return the position and size of the current window.
+*   `GetCursorScreenPos()`: Returns the absolute screen position where the next widget will be drawn.
+*   `SetCursorScreenPos(...)`: Manually sets the absolute screen position for the next widget.
+*   `GetItemRectMin(...)` / `GetItemRectMax(...)` / `GetItemRectSize(...)`: Return the bounding box (top-left corner, bottom-right corner) and size of the previously drawn widget.
+
+# Miscellaneous Utilities
+
+### ID Management
+Essential for creating complex widgets or widgets in loops to avoid ID conflicts.
+*   `PushID_Str(const char* id)` / `PushID_Int(int id)` / `PushID_Ptr(void* id)`: Pushes a unique identifier onto the ID stack. Must be paired with a `PopID()`.
+*   `PopID()`: Pops the last ID from the stack.
+*   `GetID_Str(const char* id)`: Calculates a unique ID from a string in the current ID context without pushing to the stack.
+
+### Clipboard Management
+*   `GetClipboardText()`: Returns the contents of the system clipboard as a string.
+*   `SetClipboardText(const char* text)`: Sets the system clipboard to the given string.
+
+### Font Management
+*   `GetFont(const char* font_key)`: Retrieves an opaque handle to a font loaded by the framework (e.g., "bold", "h1").
+*   `PushFont(SPF_Font_Handle* font_handle)`: Pushes a font onto the stack, making it active for all subsequent drawing. Must be paired with a `PopFont()`.
+*   `PopFont()`: Restores the previous font from the stack.
+
+### Global Style Access
+Allows plugins to make their custom widgets consistent with the look and feel of the rest of the UI.
+*   `GetStyle()`: Returns a handle to the global style object.
+*   `Style_GetWindowPadding(...)`: Gets the `WindowPadding` (a 2D vector) from a style handle.
+*   `Style_GetItemSpacing(...)`: Gets the `ItemSpacing` from a style handle.
+*   `Style_GetFramePadding(...)`: Gets the `FramePadding` from a style handle.
+
 ## Widget Reference
 
 The `SPF_UI_API` struct contains a large number of function pointers for creating widgets. These functions are direct C-style mappings of their counterparts in the Dear ImGui library. Below are some of the most common categories.
