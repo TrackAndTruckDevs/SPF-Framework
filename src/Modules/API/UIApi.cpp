@@ -10,8 +10,7 @@
 
 #include "imgui.h"
 
-// Define the concrete type for the opaque handle. This must be in the global namespace
-// to match the forward declaration in the C-style header SPF_UI_API.h.
+// Define the concrete type for the opaque handle.
 struct SPF_TextStyle_Handle_t {
     SPF::UI::TextStyle style;
 };
