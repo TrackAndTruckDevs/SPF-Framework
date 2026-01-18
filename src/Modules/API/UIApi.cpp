@@ -515,6 +515,32 @@ uint32_t UIApi::UI_GetID_Str(const char* str_id) {
     return ImGui::GetID(str_id);
 }
 
+// --- Drag and Drop API Implementation ---
+
+bool UIApi::UI_BeginDragDropSource() {
+    return ImGui::BeginDragDropSource(ImGuiDragDropFlags_None);
+}
+
+bool UIApi::UI_SetDragDropPayload(const char* type, const void* data, size_t size) {
+    return ImGui::SetDragDropPayload(type, data, size);
+}
+
+void UIApi::UI_EndDragDropSource() {
+    ImGui::EndDragDropSource();
+}
+
+bool UIApi::UI_BeginDragDropTarget() {
+    return ImGui::BeginDragDropTarget();
+}
+
+const SPF_Payload_Handle* UIApi::UI_AcceptDragDropPayload(const char* type) {
+    return reinterpret_cast<const SPF_Payload_Handle*>(ImGui::AcceptDragDropPayload(type));
+}
+
+void UIApi::UI_EndDragDropTarget() {
+    ImGui::EndDragDropTarget();
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -654,6 +680,14 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->PushID_Ptr = &UIApi::UI_PushID_Ptr;
   ui_api->PopID = &UIApi::UI_PopID;
   ui_api->GetID_Str = &UIApi::UI_GetID_Str;
+
+  // --- Drag and Drop API ---
+  ui_api->BeginDragDropSource = &UIApi::UI_BeginDragDropSource;
+  ui_api->SetDragDropPayload = &UIApi::UI_SetDragDropPayload;
+  ui_api->EndDragDropSource = &UIApi::UI_EndDragDropSource;
+  ui_api->BeginDragDropTarget = &UIApi::UI_BeginDragDropTarget;
+  ui_api->AcceptDragDropPayload = &UIApi::UI_AcceptDragDropPayload;
+  ui_api->EndDragDropTarget = &UIApi::UI_EndDragDropTarget;
 }
 }  // namespace Modules::API
 SPF_NS_END

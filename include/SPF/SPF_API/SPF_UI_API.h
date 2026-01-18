@@ -20,6 +20,9 @@ typedef struct ImFont* SPF_Font_Handle;
 // Forward-declare SPF_Style_Handle for accessing global style variables
 typedef struct ImGuiStyle* SPF_Style_Handle;
 
+// Forward-declare SPF_Payload_Handle for Drag and Drop operations
+typedef struct ImGuiPayload* SPF_Payload_Handle;
+
 /**
  * @enum SPF_StyleVar
  * @brief C-style enum mirroring ImGui's ImGuiStyleVar_ enum for style variables.
@@ -1224,5 +1227,56 @@ typedef struct SPF_UI_API {
      * @return The calculated 32-bit ID.
      */
     uint32_t (*GetID_Str)(const char* str_id);
+
+
+    // --- Drag and Drop API ---
+
+    /**
+     * @brief Begins a drag and drop source.
+     * @details Call this after an item to make it a draggable source.
+     *          If it returns true, you must call `SetDragDropPayload` and then `EndDragDropSource`.
+     * @return True if the user is dragging this item, false otherwise.
+     */
+    bool (*BeginDragDropSource)();
+
+    /**
+     * @brief Sets the data payload for the current drag and drop operation.
+     * @details This function is called within a `BeginDragDropSource`/`EndDragDropSource` block.
+     * @param type A string identifier for the type of payload (e.g., "LIST_ITEM").
+     * @param data A pointer to the data to be transferred.
+     * @param size The size of the data in bytes.
+     * @return True if the payload was set successfully.
+     */
+    bool (*SetDragDropPayload)(const char* type, const void* data, size_t size);
+
+    /**
+     * @brief Ends a drag and drop source.
+     * @details Must be called after `BeginDragDropSource`.
+     */
+    void (*EndDragDropSource)();
+
+    /**
+     * @brief Begins a drag and drop target.
+     * @details Call this after an item to make it a drop target. If it returns true,
+     *          you can call `AcceptDragDropPayload` and must then call `EndDragDropTarget`.
+     * @return True if a draggable item is hovering over this target.
+     */
+    bool (*BeginDragDropTarget)();
+
+    /**
+     * @brief Accepts a drag and drop payload.
+     * @details This function is called within a `BeginDragDropTarget`/`EndDragDropTarget` block.
+     *          It checks if the payload type matches and, if so, returns the payload.
+     * @param type The string identifier for the type of payload to accept.
+     * @return A handle to the payload if the type matches and the drop occurred, otherwise NULL.
+     *         The handle is only valid for the current frame.
+     */
+    const SPF_Payload_Handle* (*AcceptDragDropPayload)(const char* type);
+
+    /**
+     * @brief Ends a drag and drop target.
+     * @details Must be called after `BeginDragDropTarget`.
+     */
+    void (*EndDragDropTarget)();
 
 } SPF_UI_API;

@@ -141,6 +141,14 @@ class UIApi {
   static void UI_PopID();
   static uint32_t UI_GetID_Str(const char* str_id);
 
+  // --- NEW: Drag and Drop API Trampolines ---
+  static bool UI_BeginDragDropSource();
+  static bool UI_SetDragDropPayload(const char* type, const void* data, size_t size);
+  static void UI_EndDragDropSource();
+  static bool UI_BeginDragDropTarget();
+  static const SPF_Payload_Handle* UI_AcceptDragDropPayload(const char* type);
+  static void UI_EndDragDropTarget();
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);
