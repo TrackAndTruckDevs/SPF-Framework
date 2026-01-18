@@ -115,6 +115,16 @@ class UIApi {
   static bool UI_IsMouseDoubleClicked(int mouse_button_index);
   static float UI_GetMouseWheel();
 
+  // --- Layout & Positioning API Trampolines ---
+  static void UI_GetContentRegionAvail(float* out_x, float* out_y);
+  static void UI_GetWindowPos(float* out_x, float* out_y);
+  static void UI_GetWindowSize(float* out_x, float* out_y);
+  static void UI_GetCursorScreenPos(float* out_x, float* out_y);
+  static void UI_SetCursorScreenPos(float x, float y);
+  static void UI_GetItemRectMin(float* out_x, float* out_y);
+  static void UI_GetItemRectMax(float* out_x, float* out_y);
+  static void UI_GetItemRectSize(float* out_x, float* out_y);
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);

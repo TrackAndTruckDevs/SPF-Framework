@@ -568,4 +568,62 @@ typedef struct SPF_UI_API {
      */
     float (*GetMouseWheel)();
 
+    
+    // --- Layout & Positioning API ---
+    // The following functions provide information about the current window, layout state,
+    // and positioning of items.
+
+    /**
+     * @brief Gets the available content region within the current window.
+     * @details This is useful for sizing custom widgets to fill available space.
+     *          It's equivalent to ImGui::GetContentRegionAvail().
+     * @param[out] out_x Pointer to a float to store the available width.
+     * @param[out] out_y Pointer to a float to store the available height.
+     */
+    void (*GetContentRegionAvail)(float* out_x, float* out_y);
+
+    /**
+     * @brief Gets the position of the current window.
+     * @param[out] out_x Pointer to a float to store the window's x-coordinate.
+     * @param[out] out_y Pointer to a float to store the window's y-coordinate.
+     */
+    void (*GetWindowPos)(float* out_x, float* out_y);
+
+    /**
+     * @brief Gets the size of the current window's content region.
+     * @param[out] out_x Pointer to a float to store the window's width.
+     * @param[out] out_y Pointer to a float to store the window's height.
+     */
+    void (*GetWindowSize)(float* out_x, float* out_y);
+
+    /**
+     * @brief Gets the screen-space position of the layout cursor.
+     * @details This is where the next widget will be drawn.
+     * @param[out] out_x Pointer to a float to store the cursor's x-coordinate.
+     * @param[out] out_y Pointer to a float to store the cursor's y-coordinate.
+     */
+    void (*GetCursorScreenPos)(float* out_x, float* out_y);
+
+    /**
+     * @brief Sets the screen-space position of the layout cursor.
+     * @param x The new x-coordinate for the cursor.
+     * @param y The new y-coordinate for the cursor.
+     */
+    void (*SetCursorScreenPos)(float x, float y);
+
+    /**
+     * @brief Gets the bounding box of the last drawn item.
+     * @param[out] min_x, min_y Pointer to store the top-left corner of the item.
+     * @param[out] max_x, max_y Pointer to store the bottom-right corner of the item.
+     */
+    void (*GetItemRectMin)(float* out_x, float* out_y);
+    void (*GetItemRectMax)(float* out_x, float* out_y);
+
+    /**
+     * @brief Gets the size of the last drawn item.
+     * @param[out] out_x Pointer to a float to store the item's width.
+     * @param[out] out_y Pointer to a float to store the item's height.
+     */
+    void (*GetItemRectSize)(float* out_x, float* out_y);
+
 } SPF_UI_API;

@@ -378,6 +378,68 @@ float UIApi::UI_GetMouseWheel() {
     return ImGui::GetIO().MouseWheel;
 }
 
+// --- Layout & Positioning API Implementation ---
+
+void UIApi::UI_GetContentRegionAvail(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 content_region = ImGui::GetContentRegionAvail();
+        *out_x = content_region.x;
+        *out_y = content_region.y;
+    }
+}
+
+void UIApi::UI_GetWindowPos(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 pos = ImGui::GetWindowPos();
+        *out_x = pos.x;
+        *out_y = pos.y;
+    }
+}
+
+void UIApi::UI_GetWindowSize(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 size = ImGui::GetWindowSize();
+        *out_x = size.x;
+        *out_y = size.y;
+    }
+}
+
+void UIApi::UI_GetCursorScreenPos(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 pos = ImGui::GetCursorScreenPos();
+        *out_x = pos.x;
+        *out_y = pos.y;
+    }
+}
+
+void UIApi::UI_SetCursorScreenPos(float x, float y) {
+    ImGui::SetCursorScreenPos({x, y});
+}
+
+void UIApi::UI_GetItemRectMin(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 min = ImGui::GetItemRectMin();
+        *out_x = min.x;
+        *out_y = min.y;
+    }
+}
+
+void UIApi::UI_GetItemRectMax(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 max = ImGui::GetItemRectMax();
+        *out_x = max.x;
+        *out_y = max.y;
+    }
+}
+
+void UIApi::UI_GetItemRectSize(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        const ImVec2 size = ImGui::GetItemRectSize();
+        *out_x = size.x;
+        *out_y = size.y;
+    }
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -491,6 +553,16 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->IsMouseReleased = &UIApi::UI_IsMouseReleased;
   ui_api->IsMouseDoubleClicked = &UIApi::UI_IsMouseDoubleClicked;
   ui_api->GetMouseWheel = &UIApi::UI_GetMouseWheel;
+
+  // --- Layout & Positioning API ---
+  ui_api->GetContentRegionAvail = &UIApi::UI_GetContentRegionAvail;
+  ui_api->GetWindowPos = &UIApi::UI_GetWindowPos;
+  ui_api->GetWindowSize = &UIApi::UI_GetWindowSize;
+  ui_api->GetCursorScreenPos = &UIApi::UI_GetCursorScreenPos;
+  ui_api->SetCursorScreenPos = &UIApi::UI_SetCursorScreenPos;
+  ui_api->GetItemRectMin = &UIApi::UI_GetItemRectMin;
+  ui_api->GetItemRectMax = &UIApi::UI_GetItemRectMax;
+  ui_api->GetItemRectSize = &UIApi::UI_GetItemRectSize;
 }
 }  // namespace Modules::API
 SPF_NS_END
