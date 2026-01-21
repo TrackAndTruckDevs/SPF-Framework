@@ -19,6 +19,7 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
     // --- Info Data ---
     if (cManifest.info.name[0] != '\0') cppManifest.info.name = cManifest.info.name;
     if (cManifest.info.version[0] != '\0') cppManifest.info.version = cManifest.info.version;
+    if (cManifest.info.min_framework_version[0] != '\0') cppManifest.info.minFrameworkVersion = cManifest.info.min_framework_version;
     if (cManifest.info.author[0] != '\0') cppManifest.info.author = cManifest.info.author;
     if (cManifest.info.descriptionKey[0] != '\0') cppManifest.info.descriptionKey = cManifest.info.descriptionKey;
     if (cManifest.info.descriptionLiteral[0] != '\0') cppManifest.info.descriptionLiteral = cManifest.info.descriptionLiteral;

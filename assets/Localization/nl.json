@@ -95,7 +95,7 @@
             "version": "Versie:"
         },
         "status": {
-            "incompatible": " (Vereist spelversie:)"
+            "incompatible": "Vereist SPF Framework:"
         }
     },
     "settings_window": {

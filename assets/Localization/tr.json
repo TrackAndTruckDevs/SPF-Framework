@@ -95,7 +95,7 @@
             "version": "Sürüm:"
         },
         "status": {
-            "incompatible": " (Oyun sürümü gerektirir:)"
+            "incompatible": "Oyun sürümü SPF Framework:"
         }
     },
     "settings_window": {

@@ -95,7 +95,7 @@
             "version": "バージョン："
         },
         "status": {
-            "incompatible": " (ゲームバージョンが必要：)"
+            "incompatible": "必要なSPFフレームワークのバージョン"
         }
     },
     "settings_window": {

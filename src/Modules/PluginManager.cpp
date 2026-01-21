@@ -3,10 +3,10 @@
 
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Vec3.hpp"
-#include "SPF/Hooks/HookManager.hpp"        // For registering hooks
-#include "SPF/Hooks/PluginHook.hpp"         // For creating proxy objects
+#include "SPF/Hooks/HookManager.hpp"  // For registering hooks
+#include "SPF/Hooks/PluginHook.hpp"   // For creating proxy objects
 #include "SPF/GameConsole/GameConsole.hpp"  // For ExecuteCommand trampoline
-#include "SPF/Hooks/CameraHooks.hpp"        // For Camera API trampolines
+#include "SPF/Hooks/CameraHooks.hpp"  // For Camera API trampolines
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"  // For Camera API trampolines
 #include "SPF/GameCamera/GameCameraInterior.hpp"
@@ -127,16 +127,21 @@ void PluginManager::LoadAllDiscoveredPluginManifests() {
             SPF_Manifest_API manifestApi{};
             if (getManifestApiFunc(&manifestApi)) {
                 if (manifestApi.GetManifestData) {
-                    auto cManifest = std::make_unique<SPF_ManifestData_C>();
-                    manifestApi.GetManifestData(*cManifest.get());
+                    try {
+                        auto cManifest = std::make_unique<SPF_ManifestData_C>();
+                        manifestApi.GetManifestData(*cManifest.get());
 
-                    // Convert C manifest to C++ manifest
-                    SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::ConvertCManifestToCppManifest(*cManifest, pluginName);
+                        // Convert C manifest to C++ manifest
+                        SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::ConvertCManifestToCppManifest(*cManifest, pluginName);
 
-                    // Register the C++ manifest
-                    m_configService->RegisterPluginManifest(pluginName, cppManifest);
-                    logger->Info("    -> Successfully registered manifest for plugin '{}' from new C-API.", pluginName);
-
+                        // Register the C++ manifest
+                        m_configService->RegisterPluginManifest(pluginName, cppManifest);
+                        logger->Info("    -> Successfully registered manifest for plugin '{}' from new C-API.", pluginName);
+                    } catch (const std::exception& e) {
+                        logger->Error("    -> An exception occurred while calling GetManifestData for '{}'. This plugin might be incompatible. Error: {}", pluginName, e.what());
+                    } catch (...) {
+                        logger->Error("    -> An unknown exception occurred while calling GetManifestData for '{}'. This plugin is likely incompatible and its manifest will be skipped.", pluginName);
+                    }
                 } else {
                     logger->Error("    -> Manifest API struct for plugin '{}' does not contain a valid GetManifestData function pointer.", pluginName);
                 }
@@ -258,8 +263,18 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
   plugin->dllPath = dllPath;
   plugin->name = pluginName;
 
-  if (!getPluginFunc(&plugin->exports)) {
-    logger->Error("  -> SPF_GetPlugin function returned false.");
+  try {
+    if (!getPluginFunc(&plugin->exports)) {
+      logger->Error("  -> SPF_GetPlugin function returned false.");
+      FreeLibrary(handle);
+      return;
+    }
+  } catch (const std::exception& e) {
+    logger->Error("  -> An exception occurred while calling SPF_GetPlugin for '{}'. This plugin might be incompatible. Error: {}", pluginName, e.what());
+    FreeLibrary(handle);
+    return;
+  } catch (...) {
+    logger->Error("  -> An unknown exception occurred while calling SPF_GetPlugin for '{}'. This plugin is likely incompatible with this framework version and will not be loaded.", pluginName);
     FreeLibrary(handle);
     return;
   }

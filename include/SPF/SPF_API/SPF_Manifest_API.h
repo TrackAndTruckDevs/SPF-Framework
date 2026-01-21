@@ -46,6 +46,9 @@ typedef struct SPF_InfoData_C {
     char name[SPF_MANIFEST_MAX_STRING_LENGTH];
     // (Optional) The plugin's version (e.g., "1.0.0").
     char version[SPF_MANIFEST_MAX_STRING_LENGTH];
+    // (Optional, but recommended) The minimum version of the SPF Framework required for this plugin to function correctly (e.g., "1.0.6").
+    // If the user's framework version is lower than this, the plugin will be disabled. This prevents crashes due to API changes.
+    char min_framework_version[SPF_MANIFEST_MAX_STRING_LENGTH];
     // (Optional) The name of the author or organization.
     char author[SPF_MANIFEST_MAX_STRING_LENGTH];
     // (Optional) A key for a localized description string from your translation files.

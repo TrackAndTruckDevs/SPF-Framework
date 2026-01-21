@@ -43,6 +43,7 @@ struct ComponentInfo {
     bool hasSettings = false;  ///< @brief True if this plugin has any settings visible in the UI.
     bool hasDescription = false; ///< @brief True if a description (key or literal) is available.
     bool hasInfo = false;      ///< @brief True if basic info (name, author, version) is available.
+    std::optional<std::string> incompatibilityReason; ///< @brief If set, contains the required framework version if the plugin is incompatible.
 };
 }  // namespace Config
 

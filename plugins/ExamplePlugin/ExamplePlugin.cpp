@@ -57,6 +57,12 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         // Example: "1.0.0", "2.1.0-beta", etc.
         strncpy_s(info.version, "0.1.0-alpha", sizeof(info.version));
 
+        // Recommended to fill in
+        // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.6").
+        // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
+        // This prevents crashes due to API changes.
+        strncpy_s(info.min_framework_version, "1.0.6", sizeof(info.min_framework_version));
+
         // `author`: (Optional) Your name or your organization's name.
         strncpy_s(info.author, "Your Name", sizeof(info.author));
 

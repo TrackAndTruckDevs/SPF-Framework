@@ -95,7 +95,7 @@
             "version": "Versão:"
         },
         "status": {
-            "incompatible": " (Requer a versão do jogo:)"
+            "incompatible": "Requer a versão SPF Framework:"
         }
     },
     "settings_window": {

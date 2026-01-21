@@ -17,6 +17,7 @@ namespace Config {
 struct InfoData {
     std::optional<std::string> name;         ///< @brief Display name.
     std::optional<std::string> version;      ///< @brief Version string (e.g., "1.0.0").
+    std::optional<std::string> minFrameworkVersion; ///< @brief Minimum required framework version.
     std::optional<std::string> author;       ///< @brief Author's name.
     std::optional<std::string> descriptionKey; ///< @brief Localization key for description.
     std::optional<std::string> descriptionLiteral; ///< @brief Literal description if no localization key is provided.

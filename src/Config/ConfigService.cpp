@@ -507,6 +507,22 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
       info.required_hooks = manifest.configPolicy.requiredHooks;
 
       info.hasSettings = info.allowUserConfig && !info.configurableSystems.empty();
+
+      // Version compatibility check
+      if (manifest.info.minFrameworkVersion.has_value() && !manifest.info.minFrameworkVersion->empty()) {
+        const auto& requiredVersionStr = manifest.info.minFrameworkVersion.value();
+        const auto& frameworkVersionStr = GetFrameworkManifestData().info.version.value_or("0.0.0");
+        
+        auto requiredVersionOpt = System::Version::FromString(requiredVersionStr);
+        auto frameworkVersionOpt = System::Version::FromString(frameworkVersionStr);
+
+        if (requiredVersionOpt.has_value() && frameworkVersionOpt.has_value()) {
+          if (frameworkVersionOpt.value() < requiredVersionOpt.value()) {
+            info.incompatibilityReason = requiredVersionStr;
+            logger->Warn("Plugin '{}' is incompatible. Requires framework version >= {}. Current framework version is {}.", componentName, requiredVersionStr, frameworkVersionStr);
+          }
+        }
+      }
     }
 
     if (!info.isFramework) {
@@ -517,6 +533,15 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
         info.isEnabled = false;
         pluginStates[componentName] = {{"enabled", false}};
         configWasModified = true;
+      }
+      // Override isEnabled if incompatible
+      if (info.incompatibilityReason.has_value()) {
+        if(info.isEnabled){
+          // If the user had it enabled, we force it off and mark config for saving.
+          info.isEnabled = false;
+          pluginStates[componentName]["enabled"] = false;
+          configWasModified = true;
+        }
       }
     } else {
       info.isEnabled = true;  // Framework is always enabled

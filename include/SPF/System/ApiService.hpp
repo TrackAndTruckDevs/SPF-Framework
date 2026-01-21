@@ -18,6 +18,7 @@ namespace System {
             int patch = 0;
     
             bool operator>(const Version& other) const;
+            bool operator<(const Version& other) const;
             bool operator==(const Version& other) const;
             static std::optional<Version> FromString(const std::string& versionStr);
         };

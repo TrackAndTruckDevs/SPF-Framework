@@ -95,7 +95,7 @@
             "version": "版本："
         },
         "status": {
-            "incompatible": " (需要游戏版本：)"
+            "incompatible": "所需的 SPF 框架版本"
         }
     },
     "settings_window": {

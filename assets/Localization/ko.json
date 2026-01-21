@@ -95,7 +95,7 @@
             "version": "버전:"
         },
         "status": {
-            "incompatible": " (게임 버전 필요:)"
+            "incompatible": "필수 SPF 프레임워크 버전:"
         }
     },
     "settings_window": {

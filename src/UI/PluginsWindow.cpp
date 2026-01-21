@@ -50,14 +50,7 @@ void PluginsWindow::RenderContent() {
       ImGui::TableNextRow();
 
       bool isLoaded = pluginManager.IsPluginLoaded(componentId);
-
-      // TODO: This is a placeholder for future game version compatibility check.
-      // This logic will be replaced when the framework gains the ability to
-      // query the current game version and compare it with the version
-      // specified in the plugin's manifest.
-      // The check should look something like this:
-      // bool isCompatible = pluginManager.IsPluginCompatible(componentId);
-      const bool isCompatible = true;  // Set to 'false' to demonstrate UI for incompatible plugin.
+      const bool isCompatible = !componentInfo.incompatibilityReason.has_value();
 
       // Make disabled plugins semi-transparent
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, isLoaded ? 1.0f : 0.6f);
@@ -102,10 +95,7 @@ void PluginsWindow::RenderContent() {
       ImGui::TextUnformatted(displayName.c_str());
       if (!isCompatible) {
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-        // TODO: Here is a version with componentInfo, for now we are using a stub.
-        ImGui::Text(loc.Get(m_locStatusIncompatible).c_str(), "1.2.3");
-        ImGui::PopStyleColor();
+        Typography::Text(TextStyle::Bold().Color(Colors::RED), "%s %s", loc.Get(m_locStatusIncompatible).c_str(), componentInfo.incompatibilityReason.value_or(""));
       }
 
       // --- Actions Column ---
