@@ -289,7 +289,8 @@ typedef struct SPF_CustomSettingMetadata_C {
      * (e.g., a checkbox for booleans, a simple input for numbers/strings).
      *
      * Valid Widget Types:
-     * - "input":      Default text/number input. (ImGui::InputText, InputInt, InputFloat)
+     * - "input":      Default text/number input. For numeric types, `step` can be provided via `widget_params.input`.
+     * - "input_double": A text/number input for double precision numbers. (ImGui::InputDouble)
      * - "slider":     A slider for numbers. (ImGui::SliderFloat, SliderInt)
      * - "drag":       A draggable field for numbers. (ImGui::DragFloat, DragInt)
      * - "combo":      A dropdown/combobox for selecting one option.
@@ -297,6 +298,8 @@ typedef struct SPF_CustomSettingMetadata_C {
      * - "color3":     A color picker for an RGB color. The setting value should be a JSON array of 3 floats (e.g., [1.0, 0.5, 0.2]).
      * - "color4":     A color picker for an RGBA color. The setting value should be a JSON array of 4 floats (e.g., [1.0, 0.5, 0.2, 1.0]).
      * - "multiline":  A multi-line text input field.
+     * - "input_with_hint": A text input with a placeholder hint.
+     * - "vslider": A vertical slider for numbers.
      */
     char widget[64];
 
@@ -315,6 +318,7 @@ typedef struct SPF_CustomSettingMetadata_C {
             float min_val;      ///< The minimum value of the slider.
             float max_val;      ///< The maximum value of the slider.
             char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
+            bool is_logarithmic; ///< If true, the slider will use logarithmic scaling.
         } slider;
 
         /**
@@ -326,6 +330,21 @@ typedef struct SPF_CustomSettingMetadata_C {
             float max_val;      ///< The maximum value.
             char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
         } drag;
+
+        /**
+         * @brief Parameters for the default "input" widget when used with numeric types.
+         */
+        struct {
+            double step;        ///< The step increment/decrement for the +/- buttons.
+        } input;
+
+        /**
+         * @brief Parameters for "input_double" widget.
+         */
+        struct {
+            double step;        ///< The step increment/decrement for the +/- buttons.
+            char format[32];    ///< The display format (e.g., "%.6f").
+        } input_double;
 
         /**
          * @brief Parameters for "combo" and "radio" widgets.
@@ -371,6 +390,28 @@ typedef struct SPF_CustomSettingMetadata_C {
              */
             int height_in_lines;
         } multiline;
+
+        /**
+         * @brief Parameters for "input_with_hint" widget.
+         */
+        struct {
+            /**
+             * @brief The placeholder text to display when the input is empty.
+             */
+            char hint[256];
+        } input_with_hint;
+
+        /**
+         * @brief Parameters for "vslider" widget.
+         */
+        struct {
+            float min_val;      ///< The minimum value of the slider.
+            float max_val;      ///< The maximum value of the slider.
+            float width;        ///< The width of the slider widget.
+            float height;       ///< The height of the slider widget.
+            char format[32];    ///< The display format (e.g., "%.2f", "%d C").
+            bool is_logarithmic; ///< If true, the slider will use logarithmic scaling.
+        } vslider;
     } widget_params;
 } SPF_CustomSettingMetadata_C;
 

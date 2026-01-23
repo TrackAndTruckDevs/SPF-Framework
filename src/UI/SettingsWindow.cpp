@@ -202,21 +202,31 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
 
           if (widget_type == "slider") {
               if (valueNode->is_number_integer()) {
+                  const auto& params = ui_meta.value("params", nlohmann::json::object());
+                  ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
+                  if (params.value("is_logarithmic", false)) {
+                      slider_flags |= ImGuiSliderFlags_Logarithmic;
+                  }
                   int value = valueNode->get<int>();
                   int min_val = params.value("min", 0);
                   int max_val = params.value("max", 100);
                   std::string format = params.value("format", "%d");
-                  if (ImGui::SliderInt(("##" + key).c_str(), &value, min_val, max_val, format.c_str())) {
+                  if (ImGui::SliderInt(("##" + key).c_str(), &value, min_val, max_val, format.c_str(), slider_flags)) {
                       m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
                   }
                   ShowTooltip();
                   renderedWithCustomWidget = true;
               } else if (valueNode->is_number_float()) {
+                  const auto& params = ui_meta.value("params", nlohmann::json::object());
+                  ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
+                  if (params.value("is_logarithmic", false)) {
+                      slider_flags |= ImGuiSliderFlags_Logarithmic;
+                  }
                   float value = valueNode->get<float>();
                   float min_val = params.value("min", 0.0f);
                   float max_val = params.value("max", 100.0f);
                   std::string format = params.value("format", "%.3f");
-                  if (ImGui::SliderFloat(("##" + key).c_str(), &value, min_val, max_val, format.c_str())) {
+                  if (ImGui::SliderFloat(("##" + key).c_str(), &value, min_val, max_val, format.c_str(), slider_flags)) {
                       m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
                   }
                   ShowTooltip();
@@ -302,6 +312,38 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                       }
                   }
               }
+          } else if (widget_type == "vslider") {
+              const auto& params = ui_meta.value("params", nlohmann::json::object());
+              ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
+              if (params.value("is_logarithmic", false)) {
+                  slider_flags |= ImGuiSliderFlags_Logarithmic;
+              }
+
+              if (valueNode->is_number_integer()) {
+                  int value = valueNode->get<int>();
+                  int min_val = params.value("min", 0);
+                  int max_val = params.value("max", 100);
+                  float width = params.value("width", 18.0f);
+                  float height = params.value("height", 60.0f);
+                  std::string format = params.value("format", "%d");
+                  if (ImGui::VSliderInt(("##" + key).c_str(), ImVec2(width, height), &value, min_val, max_val, format.c_str(), slider_flags)) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              } else if (valueNode->is_number_float()) {
+                  float value = valueNode->get<float>();
+                  float min_val = params.value("min", 0.0f);
+                  float max_val = params.value("max", 1.0f);
+                  float width = params.value("width", 18.0f);
+                  float height = params.value("height", 60.0f);
+                  std::string format = params.value("format", "%.3f");
+                  if (ImGui::VSliderFloat(("##" + key).c_str(), ImVec2(width, height), &value, min_val, max_val, format.c_str(), slider_flags)) {
+                      m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
+                  }
+                  ShowTooltip();
+                  renderedWithCustomWidget = true;
+              }
                     } else if (widget_type == "color3") {
                         if (valueNode->is_array() && valueNode->size() == 3) {
                             ImVec4 color = ImVec4(valueNode->at(0).get<float>(), valueNode->at(1).get<float>(), valueNode->at(2).get<float>(), 1.0f);
@@ -339,6 +381,18 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                   }
                   ShowTooltip();
                   renderedWithCustomWidget = true;
+          } else if (widget_type == "input_with_hint" && valueNode->is_string()) {
+              std::string value = valueNode->get<std::string>();
+              std::string hint = params.value("hint", "");
+              char buf[256];
+              strncpy_s(buf, value.c_str(), sizeof(buf));
+              buf[sizeof(buf) - 1] = 0;
+
+              if (ImGui::InputTextWithHint(("##" + key).c_str(), hint.c_str(), buf, sizeof(buf))) {
+                  m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, std::string(buf)});
+              }
+              ShowTooltip();
+              renderedWithCustomWidget = true;
           } else if (widget_type == "input") {
               // Explicitly specified "input" widget, fall through to default rendering.
               // This branch is just for clarity, as it would otherwise hit the !renderedWithCustomWidget block.
@@ -348,6 +402,11 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
   }
 
   if (!renderedWithCustomWidget) {
+      // For default-rendered widgets, we still check if there are any applicable 'params'
+      const nlohmann::json params = (metaNode && metaNode->contains("ui") && (*metaNode)["ui"].is_object() && (*metaNode)["ui"].contains("params"))
+                                        ? (*metaNode)["ui"]["params"]
+                                        : nlohmann::json::object();
+
       if (valueNode->is_boolean()) {
         bool value = valueNode->get<bool>();
         if (ImGui::Checkbox(("##" + key).c_str(), &value)) {
@@ -408,13 +467,15 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
         }
       } else if (valueNode->is_number_integer()) {
         int value = valueNode->get<int>();
-        if (ImGui::InputInt(("##" + key).c_str(), &value)) {
+        int step = params.value("step", 1);
+        if (ImGui::InputInt(("##" + key).c_str(), &value, step)) {
           m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
         }
         ShowTooltip();
       } else if (valueNode->is_number_float()) {
-        float value = valueNode->get<float>();
-        if (ImGui::InputFloat(("##" + key).c_str(), &value)) {
+        double value = valueNode->get<double>();
+        double step = params.value("step", 0.01);
+        if (ImGui::InputDouble(("##" + key).c_str(), &value, step)) {
           m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
         }
         ShowTooltip();

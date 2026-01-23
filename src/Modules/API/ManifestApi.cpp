@@ -131,11 +131,17 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
                     if (cMeta.widget_params.slider.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.slider.min_val;
                     if (cMeta.widget_params.slider.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.slider.max_val;
                     if (cMeta.widget_params.slider.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.slider.format;
+                    if (cMeta.widget_params.slider.is_logarithmic) cppMeta.widget_params["is_logarithmic"] = true;
                 } else if (widgetType == "drag") {
                     if (cMeta.widget_params.drag.speed != 0.0f) cppMeta.widget_params["speed"] = cMeta.widget_params.drag.speed;
                     if (cMeta.widget_params.drag.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.drag.min_val;
                     if (cMeta.widget_params.drag.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.drag.max_val;
                     if (cMeta.widget_params.drag.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.drag.format;
+                } else if (widgetType == "input_double") {
+                    if (cMeta.widget_params.input_double.step != 0.0) cppMeta.widget_params["step"] = cMeta.widget_params.input_double.step;
+                    if (cMeta.widget_params.input_double.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.input_double.format;
+                } else if (widgetType == "input") {
+                    if (cMeta.widget_params.input.step != 0.0) cppMeta.widget_params["step"] = cMeta.widget_params.input.step;
                 } else if (widgetType == "combo" || widgetType == "radio") {
                     if (cMeta.widget_params.choice.options_json[0] != '\0') {
                         try {
@@ -149,7 +155,16 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
                     if (cMeta.widget_params.color.flags != 0) cppMeta.widget_params["flags"] = cMeta.widget_params.color.flags;
                 } else if (widgetType == "multiline") {
                     if (cMeta.widget_params.multiline.height_in_lines != 0) cppMeta.widget_params["height_in_lines"] = cMeta.widget_params.multiline.height_in_lines;
-                }
+                } else if (widgetType == "input_with_hint") {
+                    if (cMeta.widget_params.input_with_hint.hint[0] != '\0') cppMeta.widget_params["hint"] = cMeta.widget_params.input_with_hint.hint;
+                                } else if (widgetType == "vslider") {
+                                    if (cMeta.widget_params.vslider.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.vslider.min_val;
+                                    if (cMeta.widget_params.vslider.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.vslider.max_val;
+                                    if (cMeta.widget_params.vslider.width != 0.0f) cppMeta.widget_params["width"] = cMeta.widget_params.vslider.width;
+                                    if (cMeta.widget_params.vslider.height != 0.0f) cppMeta.widget_params["height"] = cMeta.widget_params.vslider.height;
+                                    if (cMeta.widget_params.vslider.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.vslider.format;
+                                    if (cMeta.widget_params.vslider.is_logarithmic) cppMeta.widget_params["is_logarithmic"] = true;
+                                }
             }
             cppManifest.customSettingsMetadata.push_back(cppMeta);
         }

@@ -49,8 +49,10 @@ Contains essential metadata about your plugin.
 
 *   `name`: A unique programmatic name for your plugin (e.g., `"MyPlugin"`).
 *   `version`: The plugin's version string (e.g., `"1.2.0"`).
+*   `min_framework_version`: (Optional) The minimum required framework version (e.g., `"1.0.6"`).
 *   `author`: Your name or your organization's name.
 *   `descriptionKey` / `descriptionLiteral`: A description for the UI.
+*   (Optional) Social & Project Links: `email`, `discordUrl`, `steamProfileUrl`, `githubUrl`, `youtubeUrl`, `scsForumUrl`, `patreonUrl`, `websiteUrl`.
 
 ---
 **`configPolicy` (`SPF_ConfigPolicyData_C`)**
@@ -81,13 +83,18 @@ Provide metadata for your custom settings.
 *   `titleKey`: A localization key or literal text for the setting's display name.
 *   `descriptionKey`: A localization key or literal text for the setting's detailed description.
 *   `hide_in_ui`: (Optional) A boolean. If set to `true`, this setting will be completely hidden from the Settings UI. This is useful for storing internal plugin state in `settings.json` that the user should not see. Defaults to `false` (visible).
-*   `widget`: (Optional) A string indicating the UI widget type to use for this setting (e.g., `"slider"`, `"combo"`, `"color3"`, `"multiline"`). If left empty, the framework will choose a default based on the setting's data type.
+*   `widget`: (Optional) A string indicating the UI widget type to use for this setting. If left empty, the framework will choose a default based on the setting's data type.
+    *   **Valid Types**: `"input"`, `"input_double"`, `"slider"`, `"drag"`, `"combo"`, `"radio"`, `"color3"`, `"color4"`, `"multiline"`, `"input_with_hint"`, `"vslider"`.
 *   `widget_params`: (Optional) A union of structures providing parameters specific to the chosen `widget` type.
-    *   `slider`: For `"slider"` widget. Fields include `min_val`, `max_val`, `format`.
+    *   `input`: For the default `"input"` widget with numeric types. Fields include `step` (for +/- buttons).
+    *   `input_double`: For `"input_double"` widget. Fields include `step` and `format`.
+    *   `slider`: For `"slider"` widget. Fields include `min_val`, `max_val`, `format`, and `is_logarithmic`.
+    *   `vslider`: For `"vslider"` widget. Fields include `min_val`, `max_val`, `width`, `height`, `format`, and `is_logarithmic`.
     *   `drag`: For `"drag"` widget. Fields include `speed`, `min_val`, `max_val`, `format`.
     *   `choice`: For `"combo"` and `"radio"` widgets. Field is `options_json` (a JSON string of `value`/`labelKey` pairs).
     *   `color`: For `"color3"` and `"color4"` widgets. Field is `flags` (ImGuiColorEditFlags bitmask).
     *   `multiline`: For `"multiline"` widget. Field is `height_in_lines`.
+    *   `input_with_hint`: For `"input_with_hint"` widget. Field is `hint` (placeholder text).
 
 ### The Metadata System
 

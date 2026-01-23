@@ -124,7 +124,12 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         "a_radio_choice": 2,
         "a_color": [0.2, 0.8, 0.4],
         "a_text_note": "This is some default text.\nIt can span multiple lines.",
-        "a_complex_object": { "mode": "alpha", "enabled": true, "targets": ["a", "b", "c"] }
+        "a_complex_object": { "mode": "alpha", "enabled": true, "targets": ["a", "b", "c"] },
+        "a_float_input": 123.45,
+        "a_double_input": 12345.6789,
+        "a_vslider_float": 0.5,
+        "a_hinted_input": "",
+        "a_log_slider": 10.0
     })json";
 
     // --- 2.4. Default Settings for Framework Systems ---
@@ -202,7 +207,7 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // --- 2.5. Metadata for Localization and UI Hints ---
     // This section is optional. It allows you to provide translatable names and descriptions
     // for your settings, keybinds, and UI elements. You can also specify custom UI widgets.
-    out_manifest.customSettingsMetadataCount = 8;
+    out_manifest.customSettingsMetadataCount = 13;
 
     // Example 1: A simple integer input (default behavior).
     // This setting uses the default ImGui::InputInt widget because no specific 'widget' type is provided.
@@ -325,6 +330,62 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         strncpy_s(meta.descriptionKey, "setting.complex_object.description", sizeof(meta.descriptionKey));
         meta.widget[0] = '\0'; // No widget, this setting is for internal logic.
         meta.hide_in_ui = true; //hide the display for the user
+    }
+
+    // Example 9: A simple float input (default behavior, now with +/- buttons).
+    {
+        auto& meta = out_manifest.customSettingsMetadata[8];
+        strncpy_s(meta.keyPath, "a_float_input", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.float_input.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.float_input.description", sizeof(meta.descriptionKey));
+        meta.widget[0] = '\0'; // Default 'input' widget for floats
+    }
+
+    // Example 10: A double input with custom step.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[9];
+        strncpy_s(meta.keyPath, "a_double_input", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.double_input.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.double_input.description", sizeof(meta.descriptionKey));
+        strncpy_s(meta.widget, "input_double", sizeof(meta.widget));
+        meta.widget_params.input_double.step = 0.005; // Custom step for double
+        strncpy_s(meta.widget_params.input_double.format, "%.4f", sizeof(meta.widget_params.input_double.format));
+    }
+
+    // Example 11: A vertical float slider.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[10];
+        strncpy_s(meta.keyPath, "a_vslider_float", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.vslider_float.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.vslider_float.description", sizeof(meta.descriptionKey));
+        strncpy_s(meta.widget, "vslider", sizeof(meta.widget));
+        meta.widget_params.vslider.min_val = -1.0f;
+        meta.widget_params.vslider.max_val = 1.0f;
+        meta.widget_params.vslider.width = 30.0f;
+        meta.widget_params.vslider.height = 100.0f;
+        strncpy_s(meta.widget_params.vslider.format, "%.2f", sizeof(meta.widget_params.vslider.format));
+    }
+
+    // Example 12: An input field with a hint.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[11];
+        strncpy_s(meta.keyPath, "a_hinted_input", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.hinted_input.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.hinted_input.description", sizeof(meta.descriptionKey));
+        strncpy_s(meta.widget, "input_with_hint", sizeof(meta.widget));
+        strncpy_s(meta.widget_params.input_with_hint.hint, "Enter your username", sizeof(meta.widget_params.input_with_hint.hint));
+    }
+
+    // Example 13: A logarithmic slider.
+    {
+        auto& meta = out_manifest.customSettingsMetadata[12];
+        strncpy_s(meta.keyPath, "a_log_slider", sizeof(meta.keyPath));
+        strncpy_s(meta.titleKey, "setting.log_slider.title", sizeof(meta.titleKey));
+        strncpy_s(meta.descriptionKey, "setting.log_slider.description", sizeof(meta.descriptionKey));
+        strncpy_s(meta.widget, "slider", sizeof(meta.widget));
+        meta.widget_params.slider.min_val = 0.1f;
+        meta.widget_params.slider.max_val = 1000.0f;
+        meta.widget_params.slider.is_logarithmic = true;
     }
 
     // --- Keybinds Metadata ---
