@@ -131,8 +131,20 @@ std::string SettingsWindow::GetTranslatedActionName(const std::string& fullActio
   return fullActionName;
 }
 
-void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath) {
+void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName,
+
+                                      const std::string& currentPath, int depth) {
+
+  if (depth > 0) {
+
+    ImGui::Dummy(ImVec2(depth * 5.0f, 0.0f));
+
+    ImGui::SameLine();
+
+  }
+
   std::string fullPath = currentPath.empty() ? key : currentPath + "." + key;
+
   std::string fullSystemPath = systemName + "." + fullPath;
 
   auto& loc = LocalizationManager::GetInstance();
@@ -410,10 +422,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
         bool node_open = ImGui::TreeNode(label.c_str());
         ShowTooltip(); // Show tooltip for the TreeNode label itself
         if (node_open) {
-          for (auto it = node.begin(); it != node.end(); ++it) {
-            if (it.key() == "_meta") continue;
-            RenderSettingsNode(it.key(), it.value(), systemName, fullPath);
-          }
+          DrawSettingsRows(node, systemName, fullPath);
           ImGui::TreePop();
         }
       } else if (valueNode->is_array()) {
@@ -421,7 +430,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
         ShowTooltip();
         if (node_open) {
           for (size_t i = 0; i < valueNode->size(); ++i) {
-            RenderSettingsNode(std::to_string(i), (*valueNode)[i], systemName, fullPath);
+            RenderSettingsNode(std::to_string(i), (*valueNode)[i], systemName, fullPath, depth + 1);
           }
           ImGui::TreePop();
         }
@@ -659,6 +668,58 @@ void SettingsWindow::RenderKeybindsSettings() {
     }
 }
 
+void SettingsWindow::DrawSettingsRows(const nlohmann::json& settingsNode, const std::string& systemName, const std::string& parentPath) {
+  auto& loc = LocalizationManager::GetInstance();
+
+  for (auto it = settingsNode.begin(); it != settingsNode.end(); ++it) {
+    const std::string& key = it.key();
+    const nlohmann::json& value = it.value();
+
+    if (key == "_meta") continue;
+
+    if (value.is_object() && value.contains("_meta") && value["_meta"].value("hide_in_ui", false)) {
+      continue;
+    }
+
+    std::string currentPath = parentPath.empty() ? key : parentPath + "." + key;
+    size_t depth = parentPath.empty() ? 0 : std::count(parentPath.begin(), parentPath.end(), '.') + 1;
+
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+
+    std::string settingDisplayName = key;
+    if (value.is_object() && value.contains("_meta") && value["_meta"].contains("titleKey") &&
+        value["_meta"]["titleKey"].is_string()) {
+      const auto& titleKey = value["_meta"]["titleKey"].get<std::string>();
+      if (!titleKey.empty()) {
+        settingDisplayName = (systemName == "logging" || systemName == "localization" || systemName == "ui")
+                                 ? loc.GetWithFallback(m_currentComponent, titleKey)
+                                 : loc.Get(m_currentComponent, titleKey);
+      }
+    }
+    ImGui::TextUnformatted(settingDisplayName.c_str());
+
+    if (value.is_object() && value.contains("_meta") && value["_meta"].is_object() &&
+        value["_meta"].contains("descriptionKey") && value["_meta"]["descriptionKey"].is_string()) {
+      if (ImGui::IsItemHovered()) {
+        const auto& descriptionKey = value["_meta"]["descriptionKey"].get<std::string>();
+        if (!descriptionKey.empty()) {
+          ImGui::SetTooltip(
+              "%s", (systemName == "logging" || systemName == "localization" || systemName == "ui")
+                        ? loc.GetWithFallback(m_currentComponent, descriptionKey).c_str()
+                        : loc.Get(m_currentComponent, descriptionKey).c_str());
+        }
+      }
+    }
+
+    // --- Column 2: Setting Control ---
+    ImGui::TableSetColumnIndex(1);
+    ImGui::PushID(key.c_str());
+    RenderSettingsNode(key, value, systemName, parentPath, depth);
+    ImGui::PopID();
+  }
+}
+
 void SettingsWindow::RenderContent() {
   auto& loc = LocalizationManager::GetInstance();
   // --- Component Selector Dropdown (Part of the main window's static layout) ---
@@ -806,55 +867,8 @@ void SettingsWindow::RenderContent() {
                   ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch);
                   ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
-                  for (auto& [key, value] : systemSettings.items()) {
-                    // Check for the hide_in_ui flag
-                    if (value.is_object() && value.contains("_meta")) {
-                        const auto& meta = value["_meta"];
-                        if (meta.contains("hide_in_ui") && meta["hide_in_ui"].is_boolean() && meta["hide_in_ui"].get<bool>()) {
-                            continue; // Skip rendering this setting
-                        }
-                    }
-                    
-                    ImGui::TableNextRow();
-
-                    // --- Column 1: Localized Setting Name ---
-                    ImGui::TableSetColumnIndex(0);
-                    std::string settingDisplayName = key; // Default to raw key
-                    if (value.is_object() && value.contains("_meta")) {
-                        const auto& meta = value["_meta"];
-                        if (meta.contains("titleKey") && meta["titleKey"].is_string()) {
-                            const auto& titleKey = meta["titleKey"].get<std::string>();
-                            if (!titleKey.empty()) {
-                                if (systemName == "logging" || systemName == "localization" || systemName == "ui") {
-                                    settingDisplayName = loc.GetWithFallback(m_currentComponent, titleKey);
-                                } else {
-                                    settingDisplayName = loc.Get(m_currentComponent, titleKey);
-                                }
-                            }
-                        }
-                    }
-                    ImGui::TextUnformatted(settingDisplayName.c_str());
-                    // Add tooltip for the setting name itself
-                    if (value.is_object() && value.contains("_meta") && value["_meta"].is_object() && value["_meta"].contains("descriptionKey") && value["_meta"]["descriptionKey"].is_string()) {
-                        if (ImGui::IsItemHovered()) {
-                            const auto& descriptionKey = value["_meta"]["descriptionKey"].get<std::string>();
-                            if (!descriptionKey.empty()) {
-                                if (systemName == "logging" || systemName == "localization" || systemName == "ui") {
-                                    ImGui::SetTooltip("%s", loc.GetWithFallback(m_currentComponent, descriptionKey).c_str());
-                                } else {
-                                    ImGui::SetTooltip("%s", loc.Get(m_currentComponent, descriptionKey).c_str());
-                                }
-                            }
-                        }
-                    }
-
-                    // --- Column 2: Setting Control ---
-                    ImGui::TableSetColumnIndex(1);
-                    ImGui::PushID(key.c_str());
-                    // Pass the whole node to RenderSettingsNode, it will handle the rest
-                    RenderSettingsNode(key, value, systemName, "");
-                    ImGui::PopID();
-                  }
+                  DrawSettingsRows(systemSettings, systemName, "");
+                  
                   ImGui::EndTable();
                 }
               }

@@ -44,8 +44,9 @@ class SettingsWindow : public BaseWindow {
  private:
   void OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e);
   void PopulateConfigurableComponents();
-  void RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath);
+  void RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath, int depth);
   void RenderKeybindsSettings();
+  void DrawSettingsRows(const nlohmann::json& settingsNode, const std::string& systemName, const std::string& parentPath);
   std::string GetTranslatedActionName(const std::string& fullActionName) const;
 
   Config::IConfigService& m_configService;
