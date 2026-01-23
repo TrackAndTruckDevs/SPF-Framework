@@ -223,14 +223,21 @@
             "table": {
                 "action": "Действие",
                 "key": "Клавиша",
-                "add_button_tooltip": "Добавить привязку клавиши",
-                "key_button_tooltip": "Нажмите, чтобы изменить или удалить привязку клавиши",
-                "details_button_tooltip": "Настроить поведение привязки клавиши"
+                "add_button_tooltip": "Добавить привязку",
+                "key_button_tooltip": "Нажмите, чтобы изменить или удалить привязку",
+                "details_button_tooltip": "Настроить поведение привязки",
+                "not_available": "Конфигурация привязок клавиш недоступна."
             },
             "unassigned_text": "Не назначено"
         },
         "component_selector": {
             "tooltip": "Выберите плагин для настройки"
+        },
+        "main_area": {
+            "no_configurable_components": "Нет доступных для настройки компонентов.",
+            "component_info_error": "Ошибка: Не удалось найти информацию для компонента '**{}**'.",
+            "no_configurable_systems": "У этого компонента нет настраиваемых систем.",
+            "null_value_format": "**{}**: [Нулевое значение]"
         },
         "key_capture_popup": {
             "title": "Захват клавиши",
@@ -238,10 +245,12 @@
             "delete_button": "Удалить",
             "cancel_button": "Отмена",
             "conflict_title": "Обнаружен конфликт!",
-            "conflict_text": "Клавиша '%s' уже привязана к:",
-            "reassign_question": "Вы хотите переназначить ее?",
-            "yes_button": "Да",
-            "no_button": "Нет"
+            "conflict_text_detailed": "Клавиша '**{}**' уже привязана к следующему действию:",
+            "reassign_short_press_button": "Переназначить короткое нажатие",
+            "reassign_long_press_button": "Переназначить длинное нажатие",
+            "add_short_press_button": "Добавить как короткое нажатие",
+            "add_long_press_button": "Добавить как длинное нажатие",
+            "action_list_format": "Плагин: **{}** - Действие: '**{}**' (Тип нажатия: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Детали привязки",
@@ -252,6 +261,12 @@
             "consume_label": "Политика поглощения:",
             "threshold_label": "Порог нажатия (мс):",
             "close_button": "Закрыть"
+        },
+        "conflict": {
+            "press_type_message": "Тип нажатия '**{}**' уже используется действием:",
+            "swap_question": "Вы хотите поменять их местами?",
+            "yes_swap_button": "Да, поменять",
+            "cancel_button": "Отмена"
         }
     },
     "logger_window": {

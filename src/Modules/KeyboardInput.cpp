@@ -9,13 +9,6 @@ using namespace SPF::System;
 KeyboardInput::KeyboardInput(const nlohmann::json& config) {
   std::string keyName = config.value("key", "Unknown");
   m_key = VirtualKeyMapping::GetInstance().GetKey(keyName);
-
-  std::string pressTypeStr = config.value("press_type", "short");
-  if (pressTypeStr == "long") {
-    m_pressType = Input::PressType::Long;
-  } else {
-    m_pressType = Input::PressType::Short;
-  }
 }
 
 bool KeyboardInput::IsTriggeredBy(const Input::KeyboardEvent& event) const {
@@ -27,8 +20,7 @@ bool KeyboardInput::IsTriggeredBy(System::Keyboard key) const { return key == m_
 
 nlohmann::json KeyboardInput::ToJson() const {
   return {{"type", "keyboard"},
-          {"key", std::string(VirtualKeyMapping::GetInstance().GetKeyName(m_key))},
-          {"press_type", (m_pressType == Input::PressType::Long ? "long" : "short")}};
+          {"key", std::string(VirtualKeyMapping::GetInstance().GetKeyName(m_key))}};
 }
 
 std::string KeyboardInput::GetDisplayName() const { return VirtualKeyMapping::GetInstance().GetKeyDisplayName(m_key); }
@@ -43,7 +35,7 @@ bool KeyboardInput::IsSameAs(const IBindableInput& other) const {
   }
 
   const auto& otherKeyboardInput = static_cast<const KeyboardInput&>(other);
-  return this->m_key == otherKeyboardInput.m_key && this->m_pressType == otherKeyboardInput.m_pressType;
+  return this->m_key == otherKeyboardInput.m_key;
 }
 
 }  // namespace Modules

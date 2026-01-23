@@ -225,12 +225,19 @@
                 "key": "Klawisz",
                 "add_button_tooltip": "Dodaj skrót klawiszowy",
                 "key_button_tooltip": "Kliknij, aby zmienić lub usunąć skrót klawiszowy",
-                "details_button_tooltip": "Konfiguruj zachowanie skrótu klawiszowego"
+                "details_button_tooltip": "Konfiguruj zachowanie skrótu klawiszowego",
+                "not_available": "Konfiguracja skrótów klawiszowych jest niedostępna."
             },
             "unassigned_text": "Nieprzypisany"
         },
         "component_selector": {
             "tooltip": "Wybierz wtyczkę do skonfigurowania"
+        },
+        "main_area": {
+            "no_configurable_components": "Brak dostępnych komponentów do konfiguracji.",
+            "component_info_error": "Błąd: Nie można znaleźć informacji o komponencie '**{}**'.",
+            "no_configurable_systems": "Ten komponent nie ma systemów do konfiguracji.",
+            "null_value_format": "**{}**: [Wartość zerowa]"
         },
         "key_capture_popup": {
             "title": "Przechwyć klawisz",
@@ -238,10 +245,12 @@
             "delete_button": "Usuń",
             "cancel_button": "Anuluj",
             "conflict_title": "Wykryto konflikt!",
-            "conflict_text": "Klawisz '%s' jest już przypisany do:",
-            "reassign_question": "Czy chcesz go przypisać ponownie?",
-            "yes_button": "Tak",
-            "no_button": "Nie"
+            "conflict_text_detailed": "Klawisz '**{}**' jest już przypisany do następującej akcji:",
+            "reassign_short_press_button": "Przypisz ponownie krótkie naciśnięcie",
+            "reassign_long_press_button": "Przypisz ponownie długie naciśnięcie",
+            "add_short_press_button": "Dodaj jako krótkie naciśnięcie",
+            "add_long_press_button": "Dodaj jako długie naciśnięcie",
+            "action_list_format": "Wtyczka: **{}** - Akcja: '**{}**' (Typ naciśnięcia: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Szczegóły przypisania",
@@ -252,6 +261,12 @@
             "consume_label": "Zasada konsumpcji:",
             "threshold_label": "Próg naciśnięcia (ms):",
             "close_button": "Zamknij"
+        },
+        "conflict": {
+            "press_type_message": "Typ naciśnięcia '**{}**' jest już używany przez akcję:",
+            "swap_question": "Czy chcesz je zamienić?",
+            "yes_swap_button": "Tak, zamień",
+            "cancel_button": "Anuluj"
         }
     },
     "logger_window": {

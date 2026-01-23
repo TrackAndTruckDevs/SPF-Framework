@@ -6,8 +6,6 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/System/VirtualKeyMapping.hpp"
 #include "SPF/Utils/Signal.hpp"
-#include "SPF/UI/UITypographyHelper.hpp"
-#include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/Icons.hpp"
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Config/EnumMappings.hpp"
@@ -59,26 +57,13 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
   m_bindingDetailsBehaviorHoldKey = "settings_window.binding_details_popup.behavior_hold";
   m_bindingDetailsConsumeLabelKey = "settings_window.binding_details_popup.consume_label";
   m_bindingDetailsThresholdLabelKey = "settings_window.binding_details_popup.threshold_label";
-      m_bindingDetailsCloseButtonKey = "settings_window.binding_details_popup.close_button";
-    
-      m_conflictPressTypeMessage = "settings_window.conflict.press_type_message";
-      m_conflictSwapQuestion = "settings_window.conflict.swap_question";
-      m_conflictYesSwapButton = "settings_window.conflict.yes_swap_button";
-        m_conflictCancelButton = "settings_window.conflict.cancel_button";
-      
-        m_enumPressTypeShortKey = "enums.press_type.short";
-        m_enumPressTypeLongKey = "enums.press_type.long";
-        
-        m_keybindsUnassignedTextKey = "settings_window.keybinds_drawer.unassigned_text";    
+  m_bindingDetailsCloseButtonKey = "settings_window.binding_details_popup.close_button";
 
-        m_noConfigurableComponentsKey = "settings_window.main_area.no_configurable_components";
-        m_componentInfoErrorKey = "settings_window.main_area.component_info_error";
-        m_noConfigurableSystemsKey = "settings_window.main_area.no_configurable_systems";
-        m_keybindsNotAvailableKey = "settings_window.keybinds_drawer.not_available";
-        m_nullValueFormatKey = "settings_window.main_area.null_value_format";
+  m_keybindsUnassignedTextKey = "settings_window.keybinds_drawer.unassigned_text";
 
-      m_onFocusComponentSink->Connect<&SettingsWindow::OnFocusComponent>(this);
-    }
+  m_onFocusComponentSink->Connect<&SettingsWindow::OnFocusComponent>(this);
+}
+
 const char* SettingsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
 
 void SettingsWindow::OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e) {
@@ -89,46 +74,6 @@ void SettingsWindow::OnFocusComponent(const Events::UI::FocusComponentInSettings
 
 void SettingsWindow::PopulateConfigurableComponents() {
   // This function is now obsolete and replaced by dynamic logic in RenderContent.
-}
-
-std::string SettingsWindow::GetTranslatedActionName(const std::string& fullActionName) const {
-  // 1. Parse the fullActionName into group and actionName
-  size_t lastDot = fullActionName.rfind('.');
-  if (lastDot == std::string::npos) {
-    return fullActionName;  // Cannot parse, return raw name
-  }
-  std::string group = fullActionName.substr(0, lastDot);
-  std::string actionName = fullActionName.substr(lastDot + 1);
-
-  // 2. Find the actionObject in m_keybindsConfig
-  auto& loc = LocalizationManager::GetInstance();
-  if (m_configService.GetMergedConfig("keybinds") && m_configService.GetMergedConfig("keybinds")->contains(group)) {
-    const auto& groupObject = (*m_configService.GetMergedConfig("keybinds"))[group];
-    if (groupObject.contains(actionName)) {
-      const auto& actionObject = groupObject[actionName];
-
-      // 3. Check for _meta and titleKey
-      if (actionObject.is_object() && actionObject.contains("_meta")) {
-        const auto& meta = actionObject["_meta"];
-        if (meta.contains("titleKey") && meta["titleKey"].is_string()) {
-          const auto& titleKey = meta["titleKey"].get<std::string>();
-          if (!titleKey.empty()) {
-            // 4. Get translated string
-            size_t firstDot = group.find('.');
-            std::string owner = (firstDot != std::string::npos) ? group.substr(0, firstDot) : group;
-            std::string translated = loc.Get(owner, titleKey);
-            // Check if translation succeeded. If not, loc.Get returns the key.
-            if (translated != titleKey) {
-              return translated;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // 5. Fallback
-  return fullActionName;
 }
 
 void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath) {
@@ -426,20 +371,19 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
           ImGui::TreePop();
         }
       } else if (valueNode->is_null()) {
-      std::string markdownText = loc.GetFormatted("framework", m_nullValueFormatKey, key);
-      Typography::RenderMarkdownText(markdownText, TextStyle::Italic().Color(UI::Colors::GRAY));
+        ImGui::Text("%s: [Null]", key.c_str());
         ShowTooltip();
       }
   }
 }
 
 void SettingsWindow::RenderKeybindsSettings() {
-    auto& loc = LocalizationManager::GetInstance();
     if (!m_configService.GetMergedConfig("keybinds")) {
-        Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_keybindsNotAvailableKey).c_str());
+        ImGui::Text("Keybindings configuration is not available.");
         return;
     }
 
+    auto& loc = LocalizationManager::GetInstance();
     ImGuiTableFlags container_flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_NoPadInnerX;
     
     if (ImGui::BeginTable("keybinds_main_container", 1, container_flags)) {
@@ -456,7 +400,10 @@ void SettingsWindow::RenderKeybindsSettings() {
             for (int column = 0; column < 2; column++) {
                 ImGui::TableSetColumnIndex(column);
                 const char* columnName = ImGui::TableGetColumnName(column);
-                Typography::Text(TextStyle::Bold().Align(TextAlign::Center), columnName);
+                float textWidth = ImGui::CalcTextSize(columnName).x;
+                float columnWidth = ImGui::GetColumnWidth();
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (columnWidth - textWidth) * 0.5f);
+                ImGui::TextUnformatted(columnName);
             }
             ImGui::EndTable();
         }
@@ -545,7 +492,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + yOffset);
                         }
 
-                        Typography::Text(actionDisplayName.c_str());
+                        ImGui::TextUnformatted(actionDisplayName.c_str());
 
                         // --- Tooltip for the action name ---
                         if (ImGui::IsItemHovered()) {
@@ -768,17 +715,16 @@ void SettingsWindow::RenderContent() {
     // This child window can have its own scrollbar if the settings content is large.
     ImGui::BeginChild("MainSettingsContent", ImVec2(0, mainSettingsHeight));
     if (m_configurableComponents.empty()) {
-      Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_noConfigurableComponentsKey).c_str());
+      ImGui::Text("No configurable components available.");
     } else {
       const auto& infoIt = m_configService.GetAllComponentInfo().find(m_currentComponent);
       if (infoIt == m_configService.GetAllComponentInfo().end()) {
-        std::string markdownText = loc.GetFormatted("framework", m_componentInfoErrorKey, m_currentComponent);
-        Typography::RenderMarkdownText(markdownText, TextStyle::H3().Color(UI::Colors::RED).Align(TextAlign::Center));
+        ImGui::Text("Error: Could not find info for component '%s'", m_currentComponent.c_str());
       } else {
         const auto& systemsToRender = infoIt->second.configurableSystems;
         const auto& componentSettingsIt = m_configService.GetAggregatedUserSettings().find(m_currentComponent);
         if (componentSettingsIt == m_configService.GetAggregatedUserSettings().end() || systemsToRender.empty()) {
-          Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_noConfigurableSystemsKey).c_str());
+          ImGui::Text("This component has no configurable systems.");
         } else {
           const auto& componentSettingsData = componentSettingsIt->second;
           auto& loc = LocalizationManager::GetInstance();
@@ -932,15 +878,52 @@ void SettingsWindow::RenderContent() {
 
   ImGui::SetNextWindowSize(ImVec2(450, 0), ImGuiCond_Appearing);
   if (ImGui::BeginPopupModal(loc.Get(m_keyCapturePopupTitleKey).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    auto getTranslatedActionName = [&](const std::string& fullActionName) -> std::string {
+      // 1. Parse the fullActionName into group and actionName
+      size_t lastDot = fullActionName.rfind('.');
+      if (lastDot == std::string::npos) {
+        return fullActionName;  // Cannot parse, return raw name
+      }
+      std::string group = fullActionName.substr(0, lastDot);
+      std::string actionName = fullActionName.substr(lastDot + 1);
+
+      // 2. Find the actionObject in m_keybindsConfig
+      if (m_configService.GetMergedConfig("keybinds") && m_configService.GetMergedConfig("keybinds")->contains(group)) {
+        const auto& groupObject = (*m_configService.GetMergedConfig("keybinds"))[group];
+        if (groupObject.contains(actionName)) {
+          const auto& actionObject = groupObject[actionName];
+
+          // 3. Check for _meta and titleKey
+          if (actionObject.is_object() && actionObject.contains("_meta")) {
+            const auto& meta = actionObject["_meta"];
+            if (meta.contains("titleKey") && meta["titleKey"].is_string()) {
+              const auto& titleKey = meta["titleKey"].get<std::string>();
+              if (!titleKey.empty()) {
+                // 4. Get translated string
+                size_t firstDot = group.find('.');
+                std::string owner = (firstDot != std::string::npos) ? group.substr(0, firstDot) : group;
+                std::string translated = loc.Get(owner, titleKey);
+                // Check if translation succeeded. If not, loc.Get returns the key.
+                if (translated != titleKey) {
+                  return translated;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 5. Fallback
+      return fullActionName;
+    };
+
     // Check for conflict first
     if (m_conflictInfo.has_value()) {
       auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SettingsWindow");
       std::string inputDisplayName = m_conflictInfo->capturedInput->GetDisplayName();
 
-      Typography::Text(TextStyle::H3().Separator().Color(UI::Colors::RED), "%s", loc.Get(m_keyCaptureConflictTitleKey).c_str());
-      // The localization string for m_keyCaptureConflictTextDetailedKey should contain markdown, e.g., "This key is already bound to **%s**."
-      std::string conflictDetails = loc.GetFormatted("framework", m_keyCaptureConflictTextDetailedKey, inputDisplayName);
-      Typography::RenderMarkdownText(conflictDetails, TextStyle::Regular().Wrapped().Padding({0.0f, 10.0f}));
+      ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s", loc.Get(m_keyCaptureConflictTitleKey).c_str());
+      ImGui::Text(loc.Get(m_keyCaptureConflictTextDetailedKey).c_str(), inputDisplayName.c_str());
       
       ImGui::Separator();
 
@@ -948,38 +931,12 @@ void SettingsWindow::RenderContent() {
       auto analysis = Modules::KeyBindsManager::GetInstance().AnalyzeConflictsForInput(*m_conflictInfo->capturedInput);
 
       // --- List all conflicts ---
-      // Helper to render conflict details, now including the plugin name
-      auto renderConflictInfo = [&](const auto& conflict, const std::string& pressTypeKey) {
-          if (!conflict) return;
-
-          const std::string& fullActionName = conflict->first;
-
-          // 1. Get Owner/Plugin Name
-          size_t lastDot = fullActionName.rfind('.');
-          if (lastDot == std::string::npos) return; // Should not happen
-          std::string group = fullActionName.substr(0, lastDot);
-          size_t firstDot = group.find('.');
-          std::string ownerName = (firstDot != std::string::npos) ? group.substr(0, firstDot) : group;
-
-          std::string ownerDisplayName = ownerName;
-          auto it_owner = m_configService.GetAllComponentInfo().find(ownerName);
-          if (it_owner != m_configService.GetAllComponentInfo().end() && it_owner->second.name.has_value()) {
-              ownerDisplayName = it_owner->second.name.value();
-          }
-
-          // 2. Get Translated Action Name
-          std::string actionName = this->GetTranslatedActionName(fullActionName);
-
-          // 3. Get Press Type
-          std::string pressType = loc.Get(pressTypeKey);
-
-          // 4. Format and Render
-          std::string markdownText = loc.GetFormatted("framework", m_keyCaptureActionListFormatKey, ownerDisplayName, actionName, pressType);
-          Typography::RenderMarkdownText(markdownText, TextStyle::Regular().Wrapped().Padding({0.0f, 10.0f}));
-      };
-
-      renderConflictInfo(analysis.shortPressConflict, m_enumPressTypeShortKey);
-      renderConflictInfo(analysis.longPressConflict, m_enumPressTypeLongKey);
+      if (analysis.shortPressConflict) {
+        ImGui::Text(loc.Get(m_keyCaptureActionListFormatKey).c_str(), getTranslatedActionName(analysis.shortPressConflict->first).c_str(), loc.Get("enums.press_type.short").c_str());
+      }
+      if (analysis.longPressConflict) {
+        ImGui::Text(loc.Get(m_keyCaptureActionListFormatKey).c_str(), getTranslatedActionName(analysis.longPressConflict->first).c_str(), loc.Get("enums.press_type.long").c_str());
+      }
       ImGui::Separator();
 
       // --- Helper lambda to add a binding ---
@@ -1087,8 +1044,8 @@ void SettingsWindow::RenderContent() {
       ImGui::CloseCurrentPopup();
     } else {
       // If no key has been captured yet, display the popup's content
-      Typography::Text(TextStyle::Regular().Wrapped(), loc.Get(m_keyCapturePressKeyTextKey).c_str());
-      Typography::Text(TextStyle::H3().Color(UI::Colors::YELLOW).Align(TextAlign::Center), this->GetTranslatedActionName(m_actionBeingEdited.value()).c_str());
+      ImGui::TextUnformatted(loc.Get(m_keyCapturePressKeyTextKey).c_str());
+      ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", getTranslatedActionName(m_actionBeingEdited.value()).c_str());
       ImGui::Separator();
 
       // Show Delete button only when editing an existing, non-empty binding
@@ -1162,9 +1119,10 @@ void SettingsWindow::RenderContent() {
           auto conflict = kbm.FindConflictForBinding(*input, newPressType, actionFullName);
 
           if (conflict) {
-            // Conflict found! Store details to show the inline confirmation UI.
+            // Conflict found! Store details and set the flag to open the confirmation popup.
             m_pressTypeSwapConflict = conflict;
             m_pressTypeSwapNewValue = selectedPressTypeStr;
+            m_wantsToOpenSwapPopup = true;
           } else {
             // No conflict, apply the change directly.
             bindingJson["press_type"] = selectedPressTypeStr;
@@ -1175,85 +1133,7 @@ void SettingsWindow::RenderContent() {
       }
       ImGui::PopID();
 
-      // --- Inline Conflict Resolution UI ---
-      ImGui::Spacing();
-      if (m_pressTypeSwapConflict.has_value()) {
-        // Safeguard check, just in case
-        if (!m_pressTypeSwapNewValue.has_value() || !m_editingBindingAction.has_value()) {
-          // Should not happen, reset state
-          m_pressTypeSwapConflict.reset();
-          m_pressTypeSwapNewValue.reset();
-        } else {
-          ImGui::Separator();
-          const auto& conflictingActionName = m_pressTypeSwapConflict->first;
-          const auto& newPressType = m_pressTypeSwapNewValue.value();
-          const auto& originalPressType = m_originalBindingCopy.value("press_type", "short");
-
-          // Use project's loc.GetFormatted for formatted localized strings
-          std::string pressType = loc.Get("enums.press_type." + newPressType);
-          std::string markdownText = loc.GetFormatted(m_currentComponent, m_conflictPressTypeMessage, pressType);
-          Typography::RenderMarkdownText(markdownText, TextStyle::Bold().Color(UI::Colors::YELLOW).Align(TextAlign::Center));
-          
-          // Display Conflicting Plugin and Action Name
-          size_t lastDot = conflictingActionName.rfind('.');
-          std::string group = (lastDot != std::string::npos) ? conflictingActionName.substr(0, lastDot) : "";
-          size_t firstDot = group.find('.');
-          std::string ownerName = (firstDot != std::string::npos) ? group.substr(0, firstDot) : group;
-          std::string ownerDisplayName = ownerName;
-          auto it_owner = m_configService.GetAllComponentInfo().find(ownerName);
-          if (it_owner != m_configService.GetAllComponentInfo().end() && it_owner->second.name.has_value()) {
-              ownerDisplayName = it_owner->second.name.value();
-          }
-          std::string actionDisplayName = GetTranslatedActionName(conflictingActionName);
-          std::string displayText = fmt::format("{} - {}", ownerDisplayName, actionDisplayName);
-          Typography::Text(TextStyle::Bold().Color(UI::Colors::GRAY).Align(TextAlign::Center), displayText.c_str());
-
-          Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center), loc.Get(m_conflictSwapQuestion).c_str());
-          
-          // Centered Buttons
-          const char* yesText = loc.Get(m_conflictYesSwapButton).c_str();
-          const char* cancelText = loc.Get(m_conflictCancelButton).c_str();
-          float buttonWidth1 = ImGui::CalcTextSize(yesText).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-          float buttonWidth2 = ImGui::CalcTextSize(cancelText).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-          float totalButtonsWidth = buttonWidth1 + buttonWidth2 + ImGui::GetStyle().ItemSpacing.x;
-          float availableWidth = ImGui::GetContentRegionAvail().x;
-          ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availableWidth - totalButtonsWidth) * 0.5f);
-
-          if (ImGui::Button(yesText)) {
-            const auto& conflictingBindingJson = m_pressTypeSwapConflict->second;
-            const auto& actionBeingEdited = m_editingBindingAction.value();
-
-            // 1. Update the conflicting action to use the old press type
-            m_eventManager.System.OnRequestBindingPropertyUpdate.Call(
-                {conflictingActionName, conflictingBindingJson, "press_type", originalPressType});
-
-            // 2. Update the action being edited to use the new press type
-            m_eventManager.System.OnRequestBindingPropertyUpdate.Call(
-                {actionBeingEdited, m_originalBindingCopy, "press_type", newPressType});
-
-            // 3. Update local state to reflect the change and allow chaining
-            bindingJson["press_type"] = newPressType;
-            m_originalBindingCopy["press_type"] = newPressType;
-
-            // 4. Reset state to hide this UI
-            m_pressTypeSwapConflict.reset();
-            m_pressTypeSwapNewValue.reset();
-          }
-          ImGui::SameLine();
-          if (ImGui::Button(cancelText)) {
-            // Just reset state to hide this UI. The radio button will revert visually
-            // because `selectedPressTypeStr` is a local temporary variable and bindingJson is not updated.
-            m_pressTypeSwapConflict.reset();
-            m_pressTypeSwapNewValue.reset();
-          }
-          ImGui::Separator();
-        }
-      }
-
       // --- Behavior Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();
       ImGui::TextUnformatted(loc.Get(m_bindingDetailsBehaviorLabelKey).c_str());
       ImGui::SameLine();
       ImGui::PushID("details_behavior");
@@ -1272,9 +1152,6 @@ void SettingsWindow::RenderContent() {
       ImGui::PopID();
 
       // --- Consume Policy Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();      
       ImGui::TextUnformatted(loc.Get(m_bindingDetailsConsumeLabelKey).c_str());
       ImGui::SameLine();
       ImGui::PushID("details_consume");
@@ -1303,9 +1180,6 @@ void SettingsWindow::RenderContent() {
       ImGui::PopID();
 
       // --- Press Threshold Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();      
       ImGui::TextUnformatted(loc.Get(m_bindingDetailsThresholdLabelKey).c_str());
       ImGui::SameLine();
       ImGui::PushID("details_press_threshold");
@@ -1365,6 +1239,58 @@ void SettingsWindow::RenderContent() {
       if (ImGui::Button(loc.Get(m_bindingDetailsCloseButtonKey).c_str())) {
         m_editingBindingDetails.reset();
         m_editingBindingAction.reset();
+        ImGui::CloseCurrentPopup();
+      }
+    }
+    ImGui::EndPopup();
+  }
+
+  // If a swap is pending from the radio button selection, open the popup now.
+  if (m_wantsToOpenSwapPopup) {
+    ImGui::OpenPopup("Swap Press Type?");
+    m_wantsToOpenSwapPopup = false;  // Reset the flag immediately
+  }
+
+  // --- Swap Press Type Confirmation Popup ---
+  if (ImGui::BeginPopupModal("Swap Press Type?", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (!m_pressTypeSwapConflict.has_value() || !m_pressTypeSwapNewValue.has_value() || !m_editingBindingDetails.has_value() ||
+        !m_editingBindingAction.has_value()) {
+      // Should not happen, but safeguard.
+      ImGui::CloseCurrentPopup();
+    } else {
+      const auto& conflictingActionName = m_pressTypeSwapConflict->first;
+      const auto& newPressType = m_pressTypeSwapNewValue.value();
+      const auto& originalPressType = m_originalBindingCopy.value("press_type", "short");
+
+      ImGui::Text("The '%s' press type is already used by the action:", loc.Get("enums.press_type." + newPressType).c_str());
+      ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", conflictingActionName.c_str());
+      ImGui::Text("Do you want to swap them?");
+      ImGui::Separator();
+
+      if (ImGui::Button("Yes, Swap")) {
+        const auto& conflictingBindingJson = m_pressTypeSwapConflict->second;
+        const auto& actionBeingEdited = m_editingBindingAction.value();
+
+        // 1. Update the conflicting action to use the old press type
+        m_eventManager.System.OnRequestBindingPropertyUpdate.Call(
+            {conflictingActionName, conflictingBindingJson, "press_type", originalPressType});
+
+        // 2. Update the action being edited to use the new press type
+        m_eventManager.System.OnRequestBindingPropertyUpdate.Call(
+            {actionBeingEdited, m_originalBindingCopy, "press_type", newPressType});
+
+        // 3. Update local state to reflect the change and allow chaining
+        m_editingBindingDetails.value()["press_type"] = newPressType;
+        m_originalBindingCopy["press_type"] = newPressType;
+
+        m_pressTypeSwapConflict.reset();
+        m_pressTypeSwapNewValue.reset();
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("Cancel")) {
+        m_pressTypeSwapConflict.reset();
+        m_pressTypeSwapNewValue.reset();
         ImGui::CloseCurrentPopup();
       }
     }

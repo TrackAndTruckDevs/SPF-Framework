@@ -225,12 +225,19 @@
                 "key": "키",
                 "add_button_tooltip": "키 바인딩 추가",
                 "key_button_tooltip": "키 바인딩을 변경하거나 삭제하려면 클릭하십시오.",
-                "details_button_tooltip": "키 바인딩 동작 구성"
+                "details_button_tooltip": "키 바인딩 동작 구성",
+                "not_available": "키 바인딩 구성을 사용할 수 없습니다."
             },
             "unassigned_text": "할당되지 않음"
         },
         "component_selector": {
             "tooltip": "구성할 플러그인 선택"
+        },
+        "main_area": {
+            "no_configurable_components": "구성 가능한 구성 요소가 없습니다.",
+            "component_info_error": "오류: 구성 요소 '**{}**'에 대한 정보를 찾을 수 없습니다.",
+            "no_configurable_systems": "이 구성 요소에는 구성 가능한 시스템이 없습니다.",
+            "null_value_format": "**{}**: [널 값]"
         },
         "key_capture_popup": {
             "title": "키 캡처",
@@ -238,10 +245,12 @@
             "delete_button": "삭제",
             "cancel_button": "취소",
             "conflict_title": "충돌 감지!",
-            "conflict_text": "키 '%s'은(는) 이미 다음에 바인딩되어 있습니다:",
-            "reassign_question": "다시 할당하시겠습니까?",
-            "yes_button": "예",
-            "no_button": "아니요"
+            "conflict_text_detailed": "키 '**{}**'은(는) 이미 다음 작업에 바인딩되어 있습니다:",
+            "reassign_short_press_button": "짧게 누르기 재할당",
+            "reassign_long_press_button": "길게 누르기 재할당",
+            "add_short_press_button": "짧게 누르기로 추가",
+            "add_long_press_button": "길게 누르기로 추가",
+            "action_list_format": "플러그인: **{}** - 작업: '**{}**' (누름 유형: '**{}**')"
         },
         "binding_details_popup": {
             "title": "바인딩 세부 정보",
@@ -252,6 +261,12 @@
             "consume_label": "소비 정책:",
             "threshold_label": "누름 임계값(ms):",
             "close_button": "닫기"
+        },
+        "conflict": {
+            "press_type_message": "누름 유형 '**{}**'은(는) 이미 해당 작업에서 사용 중입니다:",
+            "swap_question": "바꾸시겠습니까?",
+            "yes_swap_button": "예, 바꾸기",
+            "cancel_button": "취소"
         }
     },
     "logger_window": {

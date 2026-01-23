@@ -217,41 +217,56 @@
             }
         },
         "keybinds_drawer": {
-            "title": "Ajustes de atajos de teclado",
-            "tooltip_open": "Abrir ajustes de atajos de teclado",
-            "tooltip_close": "Cerrar ajustes de atajos de teclado",
+            "title": "Configuración de Teclas",
+            "tooltip_open": "Abrir configuración de teclas",
+            "tooltip_close": "Cerrar configuración de teclas",
             "table": {
                 "action": "Acción",
                 "key": "Tecla",
-                "add_button_tooltip": "Añadir un atajo de teclado",
-                "key_button_tooltip": "Haz clic para cambiar o eliminar el atajo de teclado",
-                "details_button_tooltip": "Configurar el comportamiento del atajo de teclado"
+                "add_button_tooltip": "Añadir combinación de teclas",
+                "key_button_tooltip": "Haga clic para cambiar o eliminar la combinación de teclas",
+                "details_button_tooltip": "Configurar comportamiento de la combinación de teclas",
+                "not_available": "La configuración de las combinaciones de teclas no está disponible."
             },
             "unassigned_text": "Sin asignar"
         },
         "component_selector": {
             "tooltip": "Seleccionar plugin para configurar"
         },
+        "main_area": {
+            "no_configurable_components": "No hay componentes configurables disponibles.",
+            "component_info_error": "Error: No se pudo encontrar información para el componente '**{}**'.",
+            "no_configurable_systems": "Este componente no tiene sistemas configurables.",
+            "null_value_format": "**{}**: [Valor Nulo]"
+        },
         "key_capture_popup": {
-            "title": "Capturar tecla",
-            "press_key_text": "Presiona cualquier tecla para vincular a la acción:",
+            "title": "Capturar Tecla",
+            "press_key_text": "Presione cualquier tecla para asignar a la acción:",
             "delete_button": "Eliminar",
             "cancel_button": "Cancelar",
-            "conflict_title": "¡Conflicto detectado!",
-            "conflict_text": "La tecla '%s' ya está vinculada a:",
-            "reassign_question": "¿Quieres reasignarla?",
-            "yes_button": "Sí",
-            "no_button": "No"
+            "conflict_title": "¡Conflicto Detectado!",
+            "conflict_text_detailed": "La tecla '**{}**' ya está asignada a la siguiente acción:",
+            "reassign_short_press_button": "Reasignar Pulsación Corta",
+            "reassign_long_press_button": "Reasignar Pulsación Larga",
+            "add_short_press_button": "Añadir como Pulsación Corta",
+            "add_long_press_button": "Añadir como Pulsación Larga",
+            "action_list_format": "Plugin: **{}** - Acción: '**{}**' (Tipo de pulsación: '**{}**')"
         },
         "binding_details_popup": {
-            "title": "Detalles de la vinculación",
-            "press_type_label": "Tipo de presión:",
+            "title": "Detalles de la Vinculación",
+            "press_type_label": "Tipo de Pulsación:",
             "behavior_label": "Comportamiento:",
             "behavior_toggle": "Alternar",
             "behavior_hold": "Mantener",
-            "consume_label": "Política de consumo:",
-            "threshold_label": "Umbral de presión (ms):",
+            "consume_label": "Política de Consumo:",
+            "threshold_label": "Umbral de Pulsación (ms):",
             "close_button": "Cerrar"
+        },
+        "conflict": {
+            "press_type_message": "El tipo de pulsación '**{}**' ya está en uso por la acción:",
+            "swap_question": "¿Quieres intercambiarlos?",
+            "yes_swap_button": "Sí, Intercambiar",
+            "cancel_button": "Cancelar"
         }
     },
     "logger_window": {

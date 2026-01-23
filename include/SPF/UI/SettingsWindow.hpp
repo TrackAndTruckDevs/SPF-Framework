@@ -46,6 +46,7 @@ class SettingsWindow : public BaseWindow {
   void PopulateConfigurableComponents();
   void RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath);
   void RenderKeybindsSettings();
+  std::string GetTranslatedActionName(const std::string& fullActionName) const;
 
   Config::IConfigService& m_configService;
   std::vector<std::string> m_logLevels;
@@ -63,6 +64,11 @@ class SettingsWindow : public BaseWindow {
   std::optional<Input::InputCaptured> m_bufferedInputInfo;
   std::optional<Input::InputCaptureConflict> m_conflictInfo;
 
+  // For press-type swap conflict resolution in the details popup
+  std::optional<std::pair<std::string, nlohmann::json>> m_pressTypeSwapConflict;
+  std::optional<std::string> m_pressTypeSwapNewValue;
+  bool m_shouldOpenBindingDetailsPopup = false;
+
   std::vector<std::string> m_configurableComponents;
   std::string m_currentComponent = "framework";
 
@@ -77,10 +83,12 @@ class SettingsWindow : public BaseWindow {
   std::string m_keyCaptureDeleteButtonKey;
   std::string m_keyCaptureCancelButtonKey;
   std::string m_keyCaptureConflictTitleKey;
-  std::string m_keyCaptureConflictTextKey;
-  std::string m_keyCaptureConflictReassignQuestionKey;
-  std::string m_keyCaptureConflictYesButtonKey;
-  std::string m_keyCaptureConflictNoButtonKey;
+  std::string m_keyCaptureConflictTextDetailedKey;
+  std::string m_keyCaptureReassignShortPressButtonKey;
+  std::string m_keyCaptureReassignLongPressButtonKey;
+  std::string m_keyCaptureAddShortPressButtonKey;
+  std::string m_keyCaptureAddLongPressButtonKey;
+  std::string m_keyCaptureActionListFormatKey;
 
   // Binding details popup
   std::string m_bindingDetailsPopupTitleKey;
@@ -92,7 +100,23 @@ class SettingsWindow : public BaseWindow {
   std::string m_bindingDetailsThresholdLabelKey;
   std::string m_bindingDetailsCloseButtonKey;
 
+  // Cached localization strings for inline conflict resolution
+  std::string m_conflictPressTypeMessage;
+  std::string m_conflictSwapQuestion;
+  std::string m_conflictYesSwapButton;
+  std::string m_conflictCancelButton;
+
+  // Cached localization strings for enums
+  std::string m_enumPressTypeShortKey;
+  std::string m_enumPressTypeLongKey;
+
   std::string m_keybindsUnassignedTextKey;
+
+  std::string m_noConfigurableComponentsKey;
+  std::string m_componentInfoErrorKey;
+  std::string m_noConfigurableSystemsKey;
+  std::string m_keybindsNotAvailableKey;
+  std::string m_nullValueFormatKey;
 
   float m_keybindsDrawerHeight = 0.0f;
   float m_keybindsDrawerMinHeight = 35.0f;

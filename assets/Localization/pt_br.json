@@ -223,14 +223,21 @@
             "table": {
                 "action": "Ação",
                 "key": "Tecla",
-                "add_button_tooltip": "Adicionar uma tecla de atalho",
-                "key_button_tooltip": "Clique para alterar ou excluir a tecla de atalho",
-                "details_button_tooltip": "Configurar comportamento da tecla de atalho"
+                "add_button_tooltip": "Adicionar atalho",
+                "key_button_tooltip": "Clique para alterar ou excluir o atalho",
+                "details_button_tooltip": "Configurar comportamento do atalho",
+                "not_available": "A configuração de teclas não está disponível."
             },
             "unassigned_text": "Não atribuído"
         },
         "component_selector": {
             "tooltip": "Selecione o plugin para configurar"
+        },
+        "main_area": {
+            "no_configurable_components": "Nenhum componente configurável disponível.",
+            "component_info_error": "Erro: Não foi possível encontrar informações para o componente '**{}**'.",
+            "no_configurable_systems": "Este componente não possui sistemas configuráveis.",
+            "null_value_format": "**{}**: [Valor Nulo]"
         },
         "key_capture_popup": {
             "title": "Capturar Tecla",
@@ -238,20 +245,28 @@
             "delete_button": "Excluir",
             "cancel_button": "Cancelar",
             "conflict_title": "Conflito Detectado!",
-            "conflict_text": "A tecla '%s' já está vinculada a:",
-            "reassign_question": "Você deseja reatribuí-la?",
-            "yes_button": "Sim",
-            "no_button": "Não"
+            "conflict_text_detailed": "A tecla '**{}**' já está vinculada à seguinte ação:",
+            "reassign_short_press_button": "Reatribuir Pressão Curta",
+            "reassign_long_press_button": "Reatribuir Pressão Longa",
+            "add_short_press_button": "Adicionar como Pressão Curta",
+            "add_long_press_button": "Adicionar como Pressão Longa",
+            "action_list_format": "Plugin: **{}** - Ação: '**{}**' (Tipo de pressão: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Detalhes da Vinculação",
-            "press_type_label": "Tipo de Pressionamento:",
+            "press_type_label": "Tipo de Pressão:",
             "behavior_label": "Comportamento:",
             "behavior_toggle": "Alternar",
             "behavior_hold": "Manter",
             "consume_label": "Política de Consumo:",
-            "threshold_label": "Limite de Pressionamento (ms):",
+            "threshold_label": "Limite de Pressão (ms):",
             "close_button": "Fechar"
+        },
+        "conflict": {
+            "press_type_message": "O tipo de pressão '**{}**' já está em uso pela ação:",
+            "swap_question": "Você quer trocá-los?",
+            "yes_swap_button": "Sim, Trocar",
+            "cancel_button": "Cancelar"
         }
     },
     "logger_window": {

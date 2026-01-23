@@ -22,7 +22,6 @@ class GamepadInput : public IBindableInput {
 
  private:
   System::GamepadButton m_button;
-  Input::PressType m_pressType;
 };
 
 }  // namespace Modules

@@ -749,13 +749,18 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
         for (const auto& key_value : *keys_to_assign) {
           bool conflict = false;
           try {
-              auto new_input = Modules::InputFactory::CreateFromJson(key_value);
-              if (new_input) {
-                  for (const auto& used_binding : usedKeyValues) {
-                      auto existing_input = Modules::InputFactory::CreateFromJson(used_binding);
-                      if (existing_input && new_input->IsSameAs(*existing_input)) {
-                          conflict = true;
-                          break;
+              auto new_input_obj = Modules::InputFactory::CreateFromJson(key_value);
+              if (new_input_obj) {
+                  std::string new_press_type = key_value.value("press_type", "short");
+
+                  for (const auto& used_binding_json : usedKeyValues) {
+                      auto existing_input_obj = Modules::InputFactory::CreateFromJson(used_binding_json);
+                      if (existing_input_obj && new_input_obj->IsSameAs(*existing_input_obj)) {
+                          std::string existing_press_type = used_binding_json.value("press_type", "short");
+                          if (new_press_type == existing_press_type) {
+                              conflict = true; 
+                              break;
+                          }
                       }
                   }
               }
@@ -1278,21 +1283,15 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
         if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
             auto& bindingsArray = actionObject["bindings"];
 
-            std::unique_ptr<Modules::IBindableInput> inputToFind;
-            try { inputToFind = Modules::InputFactory::CreateFromJson(originalBinding); } catch(...) {}
-
-            if (inputToFind) {
+            if (originalBinding.is_object()) {
                 for (auto& binding : bindingsArray) {
-                    try {
-                        auto storedInput = Modules::InputFactory::CreateFromJson(binding);
-                        if (storedInput && storedInput->IsSameAs(*inputToFind)) {
-                            binding[propertyName] = newValue;
-                            m_dirtyComponents.insert(componentName);
-                            m_eventManager.System.OnKeybindsModified.Call({});
-                            if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' for binding in action '{}'.", propertyName, actionFullName);
-                            return;
-                        }
-                    } catch(...) {}
+                    if (binding == originalBinding) { // Exact JSON comparison
+                        binding[propertyName] = newValue;
+                        m_dirtyComponents.insert(componentName);
+                        m_eventManager.System.OnKeybindsModified.Call({});
+                        if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' for binding in action '{}'.", propertyName, actionFullName);
+                        return;
+                    }
                 }
             }
         }

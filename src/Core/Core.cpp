@@ -845,16 +845,17 @@ void Core::OnInputCaptured(const Input::InputCaptured& e) {
   logger->Debug("Core received InputCaptured event for input: {}", e.capturedInput->GetDisplayName());
 
   // Check for conflict using KeyBindsManager
-  std::optional<std::string> conflictingAction = m_keyBindsManager->GetActionBoundToInput(*e.capturedInput);
+  auto conflicts = m_keyBindsManager->GetBindingsForInput(*e.capturedInput);
 
-  if (conflictingAction.has_value()) {
+  if (!conflicts.empty()) {
     // Conflict detected, fire InputCaptureConflict event
-    logger->Info("Input conflict detected: Input {} is already bound to action {}.", e.capturedInput->GetDisplayName(), conflictingAction.value());
+    logger->Info("Input conflict detected: Input {} is already bound to {} action(s).", e.capturedInput->GetDisplayName(), conflicts.size());
 
     // Re-create the input object to pass ownership to the new event, as the original event is const.
     auto newCapturedInput = Modules::InputFactory::CreateFromJson(e.capturedInput->ToJson());
-
-    m_eventManager->System.OnInputCaptureConflict.Call({e.actionFullName, std::move(newCapturedInput), conflictingAction.value(), e.originalBinding});
+    
+    InputCaptureConflict conflict_data{e.actionFullName, std::move(newCapturedInput), std::move(conflicts), e.originalBinding};
+    m_eventManager->System.OnInputCaptureConflict.Call(conflict_data);
   } else {
     // No conflict, forward the original InputCaptured event
     logger->Info("Input {} captured for action {}. No conflict detected.", e.capturedInput->GetDisplayName(), e.actionFullName);

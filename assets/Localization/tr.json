@@ -217,41 +217,56 @@
             }
         },
         "keybinds_drawer": {
-            "title": "Tuş Bağlantıları Ayarları",
-            "tooltip_open": "Tuş bağlantıları ayarlarını aç",
-            "tooltip_close": "Tuş bağlantıları ayarlarını kapat",
+            "title": "Tuş Atama Ayarları",
+            "tooltip_open": "Tuş atama ayarlarını aç",
+            "tooltip_close": "Tuş atama ayarlarını kapat",
             "table": {
                 "action": "Eylem",
                 "key": "Tuş",
-                "add_button_tooltip": "Tuş bağlantısı ekle",
-                "key_button_tooltip": "Tuş bağlantısını değiştirmek veya silmek için tıklayın",
-                "details_button_tooltip": "Tuş bağlantısı davranışını yapılandır"
+                "add_button_tooltip": "Tuş ataması ekle",
+                "key_button_tooltip": "Tuş atamasını değiştirmek veya silmek için tıkla",
+                "details_button_tooltip": "Tuş atama davranışını yapılandır",
+                "not_available": "Tuş atama yapılandırması mevcut değil."
             },
             "unassigned_text": "Atanmamış"
         },
         "component_selector": {
             "tooltip": "Yapılandırmak için eklenti seçin"
         },
+        "main_area": {
+            "no_configurable_components": "Yapılandırılabilir bileşen bulunmuyor.",
+            "component_info_error": "Hata: '**{}**' bileşeni için bilgi bulunamadı.",
+            "no_configurable_systems": "Bu bileşenin yapılandırılabilir sistemi yok.",
+            "null_value_format": "**{}**: [Boş Değer]"
+        },
         "key_capture_popup": {
             "title": "Tuşu Yakala",
-            "press_key_text": "Eyleme bağlamak için herhangi bir tuşa basın:",
+            "press_key_text": "Eyleme atamak için bir tuşa basın:",
             "delete_button": "Sil",
             "cancel_button": "İptal",
             "conflict_title": "Çakışma Tespit Edildi!",
-            "conflict_text": "'%s' tuşu zaten şuna bağlı:",
-            "reassign_question": "Yeniden atamak ister misiniz?",
-            "yes_button": "Evet",
-            "no_button": "Hayır"
+            "conflict_text_detailed": "Bu tuş '**{}**' zaten şu eyleme atanmış:",
+            "reassign_short_press_button": "Kısa Basımı Yeniden Ata",
+            "reassign_long_press_button": "Uzun Basımı Yeniden Ata",
+            "add_short_press_button": "Kısa Basım Olarak Ekle",
+            "add_long_press_button": "Uzun Basım Olarak Ekle",
+            "action_list_format": "Eklenti: **{}** - Eylem: '**{}**' (Basım türü: '**{}**')"
         },
         "binding_details_popup": {
-            "title": "Bağlama Detayları",
-            "press_type_label": "Basma Türü:",
+            "title": "Atama Detayları",
+            "press_type_label": "Basım Türü:",
             "behavior_label": "Davranış:",
-            "behavior_toggle": "Değiştir",
+            "behavior_toggle": "Aç/Kapa",
             "behavior_hold": "Basılı Tut",
             "consume_label": "Tüketim Politikası:",
-            "threshold_label": "Basma Eşiği (ms):",
+            "threshold_label": "Basım Eşiği (ms):",
             "close_button": "Kapat"
+        },
+        "conflict": {
+            "press_type_message": "Bu basım türü '**{}**' zaten şu eylem tarafından kullanılıyor:",
+            "swap_question": "Değiştirmek ister misiniz?",
+            "yes_swap_button": "Evet, Değiştir",
+            "cancel_button": "İptal"
         }
     },
     "logger_window": {

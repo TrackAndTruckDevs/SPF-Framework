@@ -22,7 +22,6 @@ class KeyboardInput : public IBindableInput {
 
  private:
   System::Keyboard m_key;
-  Input::PressType m_pressType;
 };
 
 }  // namespace Modules

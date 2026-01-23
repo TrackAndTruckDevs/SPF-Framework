@@ -217,31 +217,40 @@
             }
         },
         "keybinds_drawer": {
-            "title": "Impostazioni Tasti di Scelta Rapida",
-            "tooltip_open": "Apri impostazioni tasti di scelta rapida",
-            "tooltip_close": "Chiudi impostazioni tasti di scelta rapida",
+            "title": "Impostazioni Tasti",
+            "tooltip_open": "Apri impostazioni tasti",
+            "tooltip_close": "Chiudi impostazioni tasti",
             "table": {
                 "action": "Azione",
                 "key": "Tasto",
-                "add_button_tooltip": "Aggiungi un tasto di scelta rapida",
-                "key_button_tooltip": "Clicca per cambiare o eliminare il tasto di scelta rapida",
-                "details_button_tooltip": "Configura comportamento tasto di scelta rapida"
+                "add_button_tooltip": "Aggiungi tasto",
+                "key_button_tooltip": "Clicca per cambiare o eliminare il tasto",
+                "details_button_tooltip": "Configura comportamento del tasto",
+                "not_available": "La configurazione dei tasti non è disponibile."
             },
             "unassigned_text": "Non assegnato"
         },
         "component_selector": {
             "tooltip": "Seleziona plugin da configurare"
         },
+        "main_area": {
+            "no_configurable_components": "Nessun componente configurabile disponibile.",
+            "component_info_error": "Errore: Impossibile trovare informazioni per il componente '**{}**'.",
+            "no_configurable_systems": "Questo componente non ha sistemi configurabili.",
+            "null_value_format": "**{}**: [Valore Nullo]"
+        },
         "key_capture_popup": {
             "title": "Cattura Tasto",
-            "press_key_text": "Premi un tasto qualsiasi per associarlo all'azione:",
+            "press_key_text": "Premi un tasto per associarlo all'azione:",
             "delete_button": "Elimina",
             "cancel_button": "Annulla",
             "conflict_title": "Conflitto Rilevato!",
-            "conflict_text": "Il tasto '%s' è già associato a:",
-            "reassign_question": "Vuoi riassegnarlo?",
-            "yes_button": "Sì",
-            "no_button": "No"
+            "conflict_text_detailed": "Il tasto '**{}**' è già associato alla seguente azione:",
+            "reassign_short_press_button": "Riassegna Pressione Breve",
+            "reassign_long_press_button": "Riassegna Pressione Lunga",
+            "add_short_press_button": "Aggiungi come Pressione Breve",
+            "add_long_press_button": "Aggiungi come Pressione Lunga",
+            "action_list_format": "Plugin: **{}** - Azione: '**{}**' (Tipo di pressione: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Dettagli Associazione",
@@ -252,6 +261,12 @@
             "consume_label": "Politica di Consumo:",
             "threshold_label": "Soglia di Pressione (ms):",
             "close_button": "Chiudi"
+        },
+        "conflict": {
+            "press_type_message": "Il tipo di pressione '**{}**' è già in uso dall'azione:",
+            "swap_question": "Vuoi scambiarli?",
+            "yes_swap_button": "Sì, Scambia",
+            "cancel_button": "Annulla"
         }
     },
     "logger_window": {

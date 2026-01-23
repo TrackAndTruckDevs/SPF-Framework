@@ -158,6 +158,28 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
         start_pos += replacement.length(); // Move past the replacement
     }
 
+    if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
+        // This is an approximation that assumes the markdown text doesn't have
+        // complex multi-line elements. It calculates the size of the raw text
+        // and centers it. This works well for short, single-line markdown strings.
+        ImVec2 textSize = ImVec2(0,0);
+        {
+            ScopedStyle scopedStyle(style);
+            textSize = ImGui::CalcTextSize(processedText.c_str());
+        }
+
+        const float availableWidth = ImGui::GetContentRegionAvail().x;
+        float offsetX = 0.0f;
+        if (style.align == TextAlign::Center) {
+            offsetX = (availableWidth - textSize.x) * 0.5f;
+        } else { // Right
+            offsetX = availableWidth - textSize.x;
+        }
+
+        if (offsetX > 0.0f) {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+        }
+    }
 
     // Apply padding for the entire markdown block
     if (style.padding.x != 0.0f || style.padding.y != 0.0f) {

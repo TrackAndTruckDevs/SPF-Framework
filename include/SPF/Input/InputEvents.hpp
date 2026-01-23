@@ -81,7 +81,7 @@ struct InputCaptureCancelled {
 struct InputCaptureConflict {
   std::string actionFullName;                              // The action we are trying to rebind
   std::shared_ptr<Modules::IBindableInput> capturedInput;  // The input that was activated
-  std::string conflictingAction;                           // The action that already uses this input
+  std::vector<std::pair<std::string, nlohmann::json>> conflictingBindings;  // Vector of {actionName, bindingJson}
   nlohmann::json originalBinding;                          // The original binding object we are editing
 };
 

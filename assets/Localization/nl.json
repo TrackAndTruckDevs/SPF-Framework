@@ -218,19 +218,26 @@
         },
         "keybinds_drawer": {
             "title": "Sneltoets Instellingen",
-            "tooltip_open": "Open sneltoets instellingen",
-            "tooltip_close": "Sluit sneltoets instellingen",
+            "tooltip_open": "Open sneltoetsinstellingen",
+            "tooltip_close": "Sluit sneltoetsinstellingen",
             "table": {
                 "action": "Actie",
                 "key": "Toets",
-                "add_button_tooltip": "Voeg een sneltoets toe",
+                "add_button_tooltip": "Sneltoets toevoegen",
                 "key_button_tooltip": "Klik om de sneltoets te wijzigen of te verwijderen",
-                "details_button_tooltip": "Configureer sneltoets gedrag"
+                "details_button_tooltip": "Gedrag van sneltoets configureren",
+                "not_available": "Configuratie van sneltoetsen is niet beschikbaar."
             },
             "unassigned_text": "Niet toegewezen"
         },
         "component_selector": {
             "tooltip": "Selecteer plugin om te configureren"
+        },
+        "main_area": {
+            "no_configurable_components": "Geen configureerbare componenten beschikbaar.",
+            "component_info_error": "Fout: Kan geen informatie vinden voor component '**{}**'.",
+            "no_configurable_systems": "Dit component heeft geen configureerbare systemen.",
+            "null_value_format": "**{}**: [Null-waarde]"
         },
         "key_capture_popup": {
             "title": "Toets Vangen",
@@ -238,10 +245,12 @@
             "delete_button": "Verwijderen",
             "cancel_button": "Annuleren",
             "conflict_title": "Conflict Gedetecteerd!",
-            "conflict_text": "Toets '%s' is al gebonden aan:",
-            "reassign_question": "Wil je het opnieuw toewijzen?",
-            "yes_button": "Ja",
-            "no_button": "Nee"
+            "conflict_text_detailed": "De toets '**{}**' is al gebonden aan de volgende actie:",
+            "reassign_short_press_button": "Korte Druk Opnieuw Toewijzen",
+            "reassign_long_press_button": "Lange Druk Opnieuw Toewijzen",
+            "add_short_press_button": "Toevoegen als Korte Druk",
+            "add_long_press_button": "Toevoegen als Lange Druk",
+            "action_list_format": "Plugin: **{}** - Actie: '**{}**' (Druktype: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Bindingsdetails",
@@ -252,6 +261,12 @@
             "consume_label": "Verbruiksbeleid:",
             "threshold_label": "Drukgrens (ms):",
             "close_button": "Sluiten"
+        },
+        "conflict": {
+            "press_type_message": "Het druktype '**{}**' wordt al gebruikt door de actie:",
+            "swap_question": "Wil je ze omwisselen?",
+            "yes_swap_button": "Ja, Wisselen",
+            "cancel_button": "Annuleren"
         }
     },
     "logger_window": {

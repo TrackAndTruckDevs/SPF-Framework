@@ -217,41 +217,56 @@
             }
         },
         "keybinds_drawer": {
-            "title": "Tastaturbelegungen",
-            "tooltip_open": "Tastaturbelegungen öffnen",
-            "tooltip_close": "Tastaturbelegungen schließen",
+            "title": "Tastenkombinationen",
+            "tooltip_open": "Tastenkombinationen öffnen",
+            "tooltip_close": "Tastenkombinationen schließen",
             "table": {
                 "action": "Aktion",
                 "key": "Taste",
-                "add_button_tooltip": "Eine Tastaturbelegung hinzufügen",
-                "key_button_tooltip": "Klicken, um die Tastaturbelegung zu ändern oder zu löschen",
-                "details_button_tooltip": "Verhalten der Tastaturbelegung konfigurieren"
+                "add_button_tooltip": "Tastenkombination hinzufügen",
+                "key_button_tooltip": "Klicken, um die Tastenkombination zu ändern oder zu löschen",
+                "details_button_tooltip": "Verhalten der Tastenkombination konfigurieren",
+                "not_available": "Konfiguration der Tastenkombinationen nicht verfügbar."
             },
             "unassigned_text": "Nicht zugewiesen"
         },
         "component_selector": {
-            "tooltip": "Plugin zum Konfigurieren auswählen"
+            "tooltip": "Plugin zur Konfiguration auswählen"
+        },
+        "main_area": {
+            "no_configurable_components": "Keine konfigurierbaren Komponenten verfügbar.",
+            "component_info_error": "Fehler: Informationen für Komponente '**{}**' konnten nicht gefunden werden.",
+            "no_configurable_systems": "Diese Komponente hat keine konfigurierbaren Systeme.",
+            "null_value_format": "**{}**: [Nullwert]"
         },
         "key_capture_popup": {
             "title": "Taste erfassen",
-            "press_key_text": "Drücken Sie eine beliebige Taste, um sie an die Aktion zu binden:",
+            "press_key_text": "Drücken Sie eine beliebige Taste, um sie einer Aktion zuzuweisen:",
             "delete_button": "Löschen",
             "cancel_button": "Abbrechen",
             "conflict_title": "Konflikt erkannt!",
-            "conflict_text": "Die Taste '%s' ist bereits belegt mit:",
-            "reassign_question": "Möchten Sie sie neu zuweisen?",
-            "yes_button": "Ja",
-            "no_button": "Nein"
+            "conflict_text_detailed": "Die Taste '**{}**' ist bereits der folgenden Aktion zugewiesen:",
+            "reassign_short_press_button": "Kurzen Tastendruck neu zuweisen",
+            "reassign_long_press_button": "Langen Tastendruck neu zuweisen",
+            "add_short_press_button": "Als kurzen Tastendruck hinzufügen",
+            "add_long_press_button": "Als langen Tastendruck hinzufügen",
+            "action_list_format": "Plugin: **{}** - Aktion: '**{}**' (Druckart: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Bindungsdetails",
-            "press_type_label": "Drucktyp:",
+            "press_type_label": "Druckart:",
             "behavior_label": "Verhalten:",
             "behavior_toggle": "Umschalten",
             "behavior_hold": "Halten",
             "consume_label": "Verbrauchsrichtlinie:",
-            "threshold_label": "Druckschwelle (ms):",
+            "threshold_label": "Druckschwellenwert (ms):",
             "close_button": "Schließen"
+        },
+        "conflict": {
+            "press_type_message": "Die Druckart '**{}**' wird bereits von der Aktion verwendet:",
+            "swap_question": "Möchten Sie sie tauschen?",
+            "yes_swap_button": "Ja, tauschen",
+            "cancel_button": "Abbrechen"
         }
     },
     "logger_window": {

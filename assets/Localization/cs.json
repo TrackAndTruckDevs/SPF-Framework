@@ -225,33 +225,48 @@
                 "key": "Klávesa",
                 "add_button_tooltip": "Přidat klávesovou zkratku",
                 "key_button_tooltip": "Kliknutím změníte nebo odstraníte klávesovou zkratku",
-                "details_button_tooltip": "Konfigurovat chování klávesové zkratky"
+                "details_button_tooltip": "Konfigurovat chování klávesové zkratky",
+                "not_available": "Konfigurace klávesových zkratek není k dispozici."
             },
             "unassigned_text": "Nepřiřazeno"
         },
         "component_selector": {
             "tooltip": "Vyberte plugin pro konfiguraci"
         },
+        "main_area": {
+            "no_configurable_components": "Nejsou k dispozici žádné konfigurovatelné komponenty.",
+            "component_info_error": "Chyba: Nepodařilo se najít informace o komponentě '**{}**'.",
+            "no_configurable_systems": "Tato komponenta nemá žádné konfigurovatelné systémy.",
+            "null_value_format": "**{}**: [Nulová hodnota]"
+        },
         "key_capture_popup": {
-            "title": "Zachytit klávesu",
+            "title": "Zachyťte klávesu",
             "press_key_text": "Stiskněte libovolnou klávesu pro přiřazení k akci:",
             "delete_button": "Odstranit",
             "cancel_button": "Zrušit",
-            "conflict_title": "Detekován konflikt!",
-            "conflict_text": "Klávesa '%s' je již přiřazena k:",
-            "reassign_question": "Chcete ji znovu přiřadit?",
-            "yes_button": "Ano",
-            "no_button": "Ne"
+            "conflict_title": "Zjištěn konflikt!",
+            "conflict_text_detailed": "Klávesa '**{}**' je již přiřazena k následující akci:",
+            "reassign_short_press_button": "Přeřadit krátký stisk",
+            "reassign_long_press_button": "Přeřadit dlouhý stisk",
+            "add_short_press_button": "Přidat jako krátký stisk",
+            "add_long_press_button": "Přidat jako dlouhý stisk",
+            "action_list_format": "Plugin: **{}** - Akce: '**{}**' (Typ stisku: '**{}**')"
         },
         "binding_details_popup": {
-            "title": "Podrobnosti vazby",
+            "title": "Podrobnosti o vazbě",
             "press_type_label": "Typ stisku:",
             "behavior_label": "Chování:",
             "behavior_toggle": "Přepnout",
             "behavior_hold": "Držet",
-            "consume_label": "Zásada spotřeby:",
-            "threshold_label": "Prah stisku (ms):",
+            "consume_label": "Zásady spotřeby:",
+            "threshold_label": "Prahová hodnota stisku (ms):",
             "close_button": "Zavřít"
+        },
+        "conflict": {
+            "press_type_message": "Typ stisku '**{}**' je již používán akcí:",
+            "swap_question": "Chcete je prohodit?",
+            "yes_swap_button": "Ano, prohodit",
+            "cancel_button": "Zrušit"
         }
     },
     "logger_window": {

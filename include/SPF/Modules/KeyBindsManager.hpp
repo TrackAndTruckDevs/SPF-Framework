@@ -1,6 +1,7 @@
 #pragma once
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Input/IInputConsumer.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/EnumMappings.hpp"
@@ -30,9 +31,6 @@ struct MouseButtonEvent;
 namespace Events {
 class EventManager;
 }
-namespace Modules {
-class IBindableInput;
-}
 
 namespace Modules {
 using ActionCallback = std::function<void()>;
@@ -48,6 +46,7 @@ struct Binding {
   Input::PressType PressType = Input::PressType::Short;      // Specifies if this binding is for a short or long press
   ActivationBehavior Behavior = ActivationBehavior::Toggle;  // Specifies how the action is triggered over time
   std::optional<std::chrono::milliseconds> PressThreshold;
+  nlohmann::json originalBindingJson; // Store the original JSON for better conflict reporting
 };
 
 struct Action {
@@ -75,11 +74,38 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   void UnregisterOwner(const std::string& owner);
 
   /**
-   * @brief Checks if a given input is already bound to any active action.
-   * @param input The input to check.
-   * @return The name of the conflicting action if found, otherwise std::nullopt.
+   * @brief Describes the conflicts for short and long press types for a given physical input.
    */
-  std::optional<std::string> GetActionBoundToInput(const IBindableInput& input) const;
+  struct PressTypeConflictAnalysis {
+    bool isShortPressAvailable = true;
+    bool isLongPressAvailable = true;
+    std::optional<std::pair<std::string, nlohmann::json>> shortPressConflict;
+    std::optional<std::pair<std::string, nlohmann::json>> longPressConflict;
+  };
+
+  /**
+   * @brief Finds all actions that are bound to a given physical input.
+   * @param input The input to check.
+   * @return A vector of pairs, where each pair contains the name of a conflicting action and its full binding JSON object.
+   */
+  std::vector<std::pair<std::string, nlohmann::json>> GetBindingsForInput(const IBindableInput& input) const;
+
+  /**
+   * @brief Analyzes a given physical input and determines the availability of short and long press slots.
+   * @param input The input to check.
+   * @return A PressTypeConflictAnalysis struct detailing which press types are taken and by which actions.
+   */
+  PressTypeConflictAnalysis AnalyzeConflictsForInput(const IBindableInput& input) const;
+
+  /**
+   * @brief Finds the first action that conflicts with a given input and press type.
+   * @param input The physical input to check.
+   * @param pressType The press type to check for.
+   * @param actionToExclude The full name of the action to exclude from the search (usually the one being edited).
+   * @return An optional pair containing the name and binding JSON of the conflicting action, if found.
+   */
+  std::optional<std::pair<std::string, nlohmann::json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
+                                                                             const std::string& actionToExclude) const;
 
   const Binding* GetBindingForInput(System::Keyboard key, Input::PressType pressType) const;
   const Binding* GetBindingForInput(System::GamepadButton button, Input::PressType pressType) const;

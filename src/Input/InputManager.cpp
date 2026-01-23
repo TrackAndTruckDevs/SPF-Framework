@@ -116,14 +116,15 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing && event.pressed) {
     auto capturedInput = std::make_shared<Modules::KeyboardInput>(nlohmann::json{{"type", "keyboard"}, {"key", VirtualKeyMapping::GetInstance().GetKeyName(event.key)}});
+    auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
-    auto conflictingAction = Modules::KeyBindsManager::GetInstance().GetActionBoundToInput(*capturedInput);
-
-    if (conflictingAction.has_value()) {
-      m_eventManager.System.OnInputCaptureConflict.Call({m_capturingActionFullName, std::move(capturedInput), conflictingAction.value(), m_capturingOriginalBinding});
+    if (!conflicts.empty()) {
+      InputCaptureConflict conflict_data{m_capturingActionFullName, capturedInput, std::move(conflicts), m_capturingOriginalBinding};
+      m_eventManager.System.OnInputCaptureConflict.Call(conflict_data);
     } else {
       logger->Info("Captured key for action: {}", m_capturingActionFullName);
-      m_eventManager.System.OnInputCaptured.Call({std::move(capturedInput), m_capturingActionFullName, m_capturingOriginalBinding});
+      InputCaptured captured_data{capturedInput, m_capturingActionFullName, m_capturingOriginalBinding};
+      m_eventManager.System.OnInputCaptured.Call(captured_data);
 
       // Blacklist this key for the rest of the frame
       m_capturedKeyThisFrame = event.key;
@@ -557,14 +558,15 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing && event.pressed && !IsAxis(event.button)) {
     auto capturedInput = std::make_shared<Modules::GamepadInput>(nlohmann::json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+    auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
-    auto conflictingAction = Modules::KeyBindsManager::GetInstance().GetActionBoundToInput(*capturedInput);
-
-    if (conflictingAction.has_value()) {
-      m_eventManager.System.OnInputCaptureConflict.Call({m_capturingActionFullName, std::move(capturedInput), conflictingAction.value(), m_capturingOriginalBinding});
+    if (!conflicts.empty()) {
+      InputCaptureConflict conflict_data{m_capturingActionFullName, capturedInput, std::move(conflicts), m_capturingOriginalBinding};
+      m_eventManager.System.OnInputCaptureConflict.Call(conflict_data);
     } else {
       logger->Info("Captured gamepad button for action: {}", m_capturingActionFullName);
-      m_eventManager.System.OnInputCaptured.Call({std::move(capturedInput), m_capturingActionFullName, m_capturingOriginalBinding});
+      InputCaptured captured_data{capturedInput, m_capturingActionFullName, m_capturingOriginalBinding};
+      m_eventManager.System.OnInputCaptured.Call(captured_data);
 
       // Blacklist this button for the rest of the frame
       m_capturedButtonThisFrame = event.button;
@@ -658,13 +660,15 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
         return true;  // Consume invalid inputs (like a programmatic error) but don't capture.
       }
 
-      auto conflictingAction = Modules::KeyBindsManager::GetInstance().GetActionBoundToInput(*capturedInput);
+      auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
-      if (conflictingAction.has_value()) {
-        m_eventManager.System.OnInputCaptureConflict.Call({m_capturingActionFullName, std::move(capturedInput), conflictingAction.value(), m_capturingOriginalBinding});
+      if (!conflicts.empty()) {
+        InputCaptureConflict conflict_data{m_capturingActionFullName, capturedInput, std::move(conflicts), m_capturingOriginalBinding};
+        m_eventManager.System.OnInputCaptureConflict.Call(conflict_data);
       } else {
         logger->Info("Captured mouse button for action: {}", m_capturingActionFullName);
-        m_eventManager.System.OnInputCaptured.Call({std::move(capturedInput), m_capturingActionFullName, m_capturingOriginalBinding});
+        InputCaptured captured_data{capturedInput, m_capturingActionFullName, m_capturingOriginalBinding};
+        m_eventManager.System.OnInputCaptured.Call(captured_data);
         m_capturedMouseButtonThisFrame = button;
       }
     }
@@ -729,13 +733,15 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event) {
         return true;  // Consume invalid inputs but don't capture.
       }
 
-      auto conflictingAction = Modules::KeyBindsManager::GetInstance().GetActionBoundToInput(*capturedInput);
+      auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
-      if (conflictingAction.has_value()) {
-        m_eventManager.System.OnInputCaptureConflict.Call({m_capturingActionFullName, std::move(capturedInput), conflictingAction.value(), m_capturingOriginalBinding});
+      if (!conflicts.empty()) {
+        InputCaptureConflict conflict_data{m_capturingActionFullName, capturedInput, std::move(conflicts), m_capturingOriginalBinding};
+        m_eventManager.System.OnInputCaptureConflict.Call(conflict_data);
       } else {
         logger->Info("Captured joystick button for action: {}", m_capturingActionFullName);
-        m_eventManager.System.OnInputCaptured.Call({std::move(capturedInput), m_capturingActionFullName, m_capturingOriginalBinding});
+        InputCaptured captured_data{capturedInput, m_capturingActionFullName, m_capturingOriginalBinding};
+        m_eventManager.System.OnInputCaptured.Call(captured_data);
         m_capturedJoystickButtonThisFrame = buttonIndex;
       }
     }

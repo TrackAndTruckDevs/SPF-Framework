@@ -225,23 +225,32 @@
                 "key": "按键",
                 "add_button_tooltip": "添加按键绑定",
                 "key_button_tooltip": "点击更改或删除按键绑定",
-                "details_button_tooltip": "配置按键绑定行为"
+                "details_button_tooltip": "配置按键绑定行为",
+                "not_available": "按键绑定配置不可用。"
             },
             "unassigned_text": "未分配"
         },
         "component_selector": {
             "tooltip": "选择要配置的插件"
         },
+        "main_area": {
+            "no_configurable_components": "没有可配置的组件。",
+            "component_info_error": "错误：找不到组件'**{}**'的信息。",
+            "no_configurable_systems": "此组件没有可配置的系统。",
+            "null_value_format": "**{}**: [空值]"
+        },
         "key_capture_popup": {
             "title": "捕获按键",
-            "press_key_text": "按任意键绑定到操作：",
+            "press_key_text": "按任意键以绑定到操作：",
             "delete_button": "删除",
             "cancel_button": "取消",
             "conflict_title": "检测到冲突！",
-            "conflict_text": "按键 '%s' 已绑定到：",
-            "reassign_question": "您要重新分配吗？",
-            "yes_button": "是",
-            "no_button": "否"
+            "conflict_text_detailed": "按键'**{}**'已绑定到以下操作：",
+            "reassign_short_press_button": "重新分配短按",
+            "reassign_long_press_button": "重新分配长按",
+            "add_short_press_button": "添加为短按",
+            "add_long_press_button": "添加为长按",
+            "action_list_format": "插件：**{}** - 操作：'**{}**' (按压类型：'**{}**')"
         },
         "binding_details_popup": {
             "title": "绑定详情",
@@ -250,8 +259,14 @@
             "behavior_toggle": "切换",
             "behavior_hold": "按住",
             "consume_label": "消耗策略：",
-            "threshold_label": "按压阈值 (ms)：",
+            "threshold_label": "按压阈值 (毫秒)：",
             "close_button": "关闭"
+        },
+        "conflict": {
+            "press_type_message": "按压类型'**{}**'已被该操作使用：",
+            "swap_question": "您想交换它们吗？",
+            "yes_swap_button": "是，交换",
+            "cancel_button": "取消"
         }
     },
     "logger_window": {

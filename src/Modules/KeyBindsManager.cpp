@@ -144,7 +144,7 @@ Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::json* key
                                                                     fmt::format("{}[{}]", fullActionKey, i)});
         } else {
           auto props = ParseBindingProperties(inputConfig);
-          action.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold});
+          action.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold, inputConfig});
         }
       }
 
@@ -201,7 +201,7 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::json* keyBindsConfig) {
         logger->Error("Inputs for action '{}' must be an array, skipping update for this action.", fullActionKey);
         continue;
       }
-      
+
       // Create a new Action object to replace the old one.
       Action newAction;
       // IMPORTANT: Preserve the callback from the existing action.
@@ -214,7 +214,7 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::json* keyBindsConfig) {
           logger->Error("Invalid input configuration for action '{}': {}", fullActionKey, inputConfig.dump());
         } else {
           auto props = ParseBindingProperties(inputConfig);
-          newAction.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold});
+          newAction.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold, inputConfig});
         }
       }
 
@@ -244,15 +244,16 @@ void KeyBindsManager::UnregisterOwner(const std::string& owner) {
   });
 }
 
-std::optional<std::string> KeyBindsManager::GetActionBoundToInput(const IBindableInput& input) const {
+std::vector<std::pair<std::string, nlohmann::json>> KeyBindsManager::GetBindingsForInput(const IBindableInput& input) const {
+  std::vector<std::pair<std::string, nlohmann::json>> conflicts;
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
       if (binding.Input && binding.Input->IsSameAs(input)) {
-        return actionName;
+        conflicts.emplace_back(actionName, binding.originalBindingJson);
       }
     }
   }
-  return std::nullopt;
+  return conflicts;
 }
 
 const Binding* KeyBindsManager::GetBindingForInput(System::Keyboard key, Input::PressType pressType) const {
@@ -280,27 +281,27 @@ const Binding* KeyBindsManager::GetBindingForInput(System::GamepadButton button,
 }
 
 const Binding* KeyBindsManager::GetBindingForInput(System::MouseButton button, Input::PressType pressType) const {
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            Input::MouseButtonEvent event{(int)button, (pressType == Input::PressType::Long), pressType};
-            if (binding.PressType == pressType && binding.Input && binding.Input->IsTriggeredBy(event)) {
-                return &binding;
-            }
-        }
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      Input::MouseButtonEvent event{(int)button, (pressType == Input::PressType::Long), pressType};
+      if (binding.PressType == pressType && binding.Input && binding.Input->IsTriggeredBy(event)) {
+        return &binding;
+      }
     }
-    return nullptr;
+  }
+  return nullptr;
 }
 
 const Binding* KeyBindsManager::GetBindingForInput(int buttonIndex, Input::PressType pressType) const {
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            Input::JoystickEvent event{buttonIndex, (pressType == Input::PressType::Long), pressType};
-            if (binding.PressType == pressType && binding.Input && binding.Input->IsTriggeredBy(event)) {
-                return &binding;
-            }
-        }
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      Input::JoystickEvent event{buttonIndex, (pressType == Input::PressType::Long), pressType};
+      if (binding.PressType == pressType && binding.Input && binding.Input->IsTriggeredBy(event)) {
+        return &binding;
+      }
     }
-    return nullptr;
+  }
+  return nullptr;
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent& event, Input::PressType pressType) const {
@@ -338,31 +339,31 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& 
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEvent& event) const {
-    ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-                if (binding.Policy > strictestPolicy) {
-                    strictestPolicy = binding.Policy;
-                }
-            }
+  ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (binding.Input && binding.Input->IsTriggeredBy(event)) {
+        if (binding.Policy > strictestPolicy) {
+          strictestPolicy = binding.Policy;
         }
+      }
     }
-    return strictestPolicy;
+  }
+  return strictestPolicy;
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::JoystickEvent& event) const {
-    ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-                if (binding.Policy > strictestPolicy) {
-                    strictestPolicy = binding.Policy;
-                }
-            }
+  ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (binding.Input && binding.Input->IsTriggeredBy(event)) {
+        if (binding.Policy > strictestPolicy) {
+          strictestPolicy = binding.Policy;
         }
+      }
     }
-    return strictestPolicy;
+  }
+  return strictestPolicy;
 }
 
 std::chrono::milliseconds KeyBindsManager::GetLongPressThreshold() const {
@@ -396,9 +397,7 @@ bool KeyBindsManager::OnGamepadButtonPress(const GamepadEvent& event) {
   return false;
 }
 
-bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) {
-  return false;
-}
+bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) { return false; }
 
 void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) {
   // auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
@@ -449,33 +448,33 @@ void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType press
 }
 
 void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType pressType) {
-    for (const auto& [actionKey, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            Input::MouseButtonEvent event{(int)button, (pressType == Input::PressType::Long), pressType};
-            bool isTriggered = binding.Input && binding.Input->IsTriggeredBy(event);
-            if (binding.PressType == pressType && isTriggered) {
-                if (action.Callback) {
-                    action.Callback();
-                    return; 
-                }
-            }
+  for (const auto& [actionKey, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      Input::MouseButtonEvent event{(int)button, (pressType == Input::PressType::Long), pressType};
+      bool isTriggered = binding.Input && binding.Input->IsTriggeredBy(event);
+      if (binding.PressType == pressType && isTriggered) {
+        if (action.Callback) {
+          action.Callback();
+          return;
         }
+      }
     }
+  }
 }
 
 void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType) {
-    for (const auto& [actionKey, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            Input::JoystickEvent event{buttonIndex, (pressType == Input::PressType::Long), pressType};
-            bool isTriggered = binding.Input && binding.Input->IsTriggeredBy(event);
-            if (binding.PressType == pressType && isTriggered) {
-                if (action.Callback) {
-                    action.Callback();
-                    return; 
-                }
-            }
+  for (const auto& [actionKey, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      Input::JoystickEvent event{buttonIndex, (pressType == Input::PressType::Long), pressType};
+      bool isTriggered = binding.Input && binding.Input->IsTriggeredBy(event);
+      if (binding.PressType == pressType && isTriggered) {
+        if (action.Callback) {
+          action.Callback();
+          return;
         }
+      }
     }
+  }
 }
 
 bool KeyBindsManager::OnGamepadAxisMove(const GamepadEvent& event) {
@@ -533,6 +532,47 @@ bool KeyBindsManager::OnSettingChanged(const std::string& systemName, const std:
   // We just return true here to confirm ownership of the system and prevent
   // the event from being incorrectly forwarded to a plugin.
   return systemName == "keybinds";
+}
+
+KeyBindsManager::PressTypeConflictAnalysis KeyBindsManager::AnalyzeConflictsForInput(const IBindableInput& input) const {
+  PressTypeConflictAnalysis analysis;
+
+  auto allPhysicalConflicts = GetBindingsForInput(input);
+
+  for (const auto& conflict : allPhysicalConflicts) {
+    const auto& bindingJson = conflict.second;
+    std::string pressType = bindingJson.value("press_type", "short");
+
+    if (pressType == "short") {
+      analysis.isShortPressAvailable = false;
+      analysis.shortPressConflict = conflict;
+    } else if (pressType == "long") {
+      analysis.isLongPressAvailable = false;
+      analysis.longPressConflict = conflict;
+    }
+  }
+
+  return analysis;
+}
+
+std::optional<std::pair<std::string, nlohmann::json>> KeyBindsManager::FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
+                                                                                              const std::string& actionToExclude) const {
+  for (const auto& [actionName, action] : m_actions) {
+    // Skip the action that is currently being edited.
+    if (actionName == actionToExclude) {
+      continue;
+    }
+
+    for (const auto& binding : action.Inputs) {
+      if (binding.PressType == pressType && binding.Input && binding.Input->IsSameAs(input)) {
+        // Found a conflict
+        return std::make_pair(actionName, binding.originalBindingJson);
+      }
+    }
+  }
+
+  // No conflict found
+  return std::nullopt;
 }
 
 }  // namespace Modules

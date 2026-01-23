@@ -225,23 +225,32 @@
                 "key": "キー",
                 "add_button_tooltip": "キーバインドを追加",
                 "key_button_tooltip": "クリックしてキーバインドを変更または削除",
-                "details_button_tooltip": "キーバインドの動作を設定"
+                "details_button_tooltip": "キーバインドの動作を設定",
+                "not_available": "キーバインド設定は利用できません。"
             },
             "unassigned_text": "未割り当て"
         },
         "component_selector": {
             "tooltip": "設定するプラグインを選択"
         },
+        "main_area": {
+            "no_configurable_components": "設定可能なコンポーネントはありません。",
+            "component_info_error": "エラー：コンポーネント「**{}**」の情報が見つかりませんでした。",
+            "no_configurable_systems": "このコンポーネントには設定可能なシステムはありません。",
+            "null_value_format": "**{}**: [ヌル値]"
+        },
         "key_capture_popup": {
             "title": "キーをキャプチャ",
             "press_key_text": "アクションにバインドする任意のキーを押してください：",
             "delete_button": "削除",
             "cancel_button": "キャンセル",
-            "conflict_title": "競合を検出！",
-            "conflict_text": "キー '%s' は既に以下にバインドされています：",
-            "reassign_question": "再割り当てしますか？",
-            "yes_button": "はい",
-            "no_button": "いいえ"
+            "conflict_title": "競合が検出されました！",
+            "conflict_text_detailed": "キー「**{}**」はすでに以下のアクションにバインドされています：",
+            "reassign_short_press_button": "短押しを再割り当て",
+            "reassign_long_press_button": "長押しを再割り当て",
+            "add_short_press_button": "短押しとして追加",
+            "add_long_press_button": "長押しとして追加",
+            "action_list_format": "プラグイン：**{}** - アクション：'**{}**' (押下タイプ：'**{}**')"
         },
         "binding_details_popup": {
             "title": "バインドの詳細",
@@ -252,6 +261,12 @@
             "consume_label": "消費ポリシー：",
             "threshold_label": "押下しきい値 (ms)：",
             "close_button": "閉じる"
+        },
+        "conflict": {
+            "press_type_message": "押下タイプ「**{}**」はすでにアクションで使用されています：",
+            "swap_question": "交換しますか？",
+            "yes_swap_button": "はい、交換します",
+            "cancel_button": "キャンセル"
         }
     },
     "logger_window": {

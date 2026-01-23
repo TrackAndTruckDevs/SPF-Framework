@@ -225,12 +225,19 @@
                 "key": "Клавіша",
                 "add_button_tooltip": "Добавити клавішу",
                 "key_button_tooltip": "Натисніть щоб змінити клавішу або видалити її",
-                "details_button_tooltip": "Налаштувати поведінку клавіші"
+                "details_button_tooltip": "Налаштувати поведінку клавіші",
+                "not_available": "Конфігурація прив'язок клавіш недоступна."
             },
             "unassigned_text": "Не призначено"
         },
         "component_selector": {
             "tooltip": "Вибір плагіна для налаштувань"
+        },
+        "main_area": {
+            "no_configurable_components": "Немає доступних компонентів для налаштування.",
+            "component_info_error": "Помилка: Не вдалося знайти інформацію для компонента '**{}**'.",
+            "no_configurable_systems": "Цей компонент не має систем для налаштування.",
+            "null_value_format": "**{}**: [Нульове значення]"
         },
         "key_capture_popup": {
             "title": "Призначення клавіші",
@@ -238,10 +245,12 @@
             "delete_button": "Видалити",
             "cancel_button": "Скасувати",
             "conflict_title": "Конфлікт клавіш!",
-            "conflict_text": "Клавіша '%s' вже прив'язана до дії:",
-            "reassign_question": "Ви хочете перепризначити її?",
-            "yes_button": "Так",
-            "no_button": "Ні"
+            "conflict_text_detailed": "Клавіша '**{}**' вже пов'язана з наступною дією:",
+            "reassign_short_press_button": "Перепризначити Коротке натискання",
+            "reassign_long_press_button": "Перепризначити Довге натискання",
+            "add_short_press_button": "Додати як Коротке натискання",
+            "add_long_press_button": "Додати як Довге натискання",
+            "action_list_format": "Плагін: **{}** - Дія: '**{}**' (Тип натискання: '**{}**')"
         },
         "binding_details_popup": {
             "title": "Деталі Прив'язки",
@@ -252,6 +261,12 @@
             "consume_label": "Політика Перехоплення:",
             "threshold_label": "Поріг Натискання (мс):",
             "close_button": "Закрити"
+        },
+        "conflict": {
+            "press_type_message": "Тип натискання '**{}**' вже використовується дією:",
+            "swap_question": "Бажаєте їх поміняти місцями?",
+            "yes_swap_button": "Так, поміняти",
+            "cancel_button": "Скасувати"
         }
     },
     "logger_window": {
