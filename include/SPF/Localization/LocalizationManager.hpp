@@ -25,7 +25,11 @@ class LocalizationManager : public Config::IConfigurable {
  public:
   static LocalizationManager& GetInstance();
 
-  Core::InitializationReport Initialize(const std::map<std::string, nlohmann::json>* allConfigs);
+   /* @param allConfigs A map of component names to their localization configurations.
+   * @return An InitializationReport detailing the results of the operation.
+   */
+  Core::InitializationReport Initialize(const std::map<std::string, nlohmann::ordered_json>* allConfigs);
+
 
   bool SetComponentLanguage(const std::string& componentName, const std::string& langCode);
   const std::vector<std::string>& GetAvailableLanguagesFor(const std::string& componentName);
@@ -34,7 +38,7 @@ class LocalizationManager : public Config::IConfigurable {
   const std::string& GetWithFallback(const std::string& primaryComponentName, const std::string& key);
 
   // --- IConfigurable Implementation ---
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override;
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
   template <typename... Args>
   std::string GetFormatted(const std::string& componentName, const std::string& key, Args&&... args) {

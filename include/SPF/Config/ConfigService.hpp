@@ -38,16 +38,16 @@ class ConfigService : public IConfigService {
   void SaveAllDirty() override;
 
   const std::map<std::string, ComponentInfo>& GetAllComponentInfo() const override;
-  const std::map<std::string, nlohmann::json>& GetAggregatedUserSettings() const override;
-  const nlohmann::json* GetMergedConfig(const std::string& systemName) const override;
-  const std::map<std::string, nlohmann::json>* GetAllComponentSettings(const std::string& systemName) const override;
-  void SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::json& value) override;
-  void UpdateBinding(const std::string& actionFullName, const nlohmann::json& originalBinding, const nlohmann::json& newBinding,
-                     const std::optional<std::pair<std::string, nlohmann::json>>& bindingToClear) override;
-  void DeleteBinding(const std::string& actionFullName, const nlohmann::json& bindingToDelete) override;
-  void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::json& originalBinding, const std::string& propertyName, const nlohmann::json& newValue) override;
-  nlohmann::json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::json& defaultValue) const override;
-  const nlohmann::json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
+  const std::map<std::string, nlohmann::ordered_json>& GetAggregatedUserSettings() const override;
+  const nlohmann::ordered_json* GetMergedConfig(const std::string& systemName) const override;
+  const std::map<std::string, nlohmann::ordered_json>* GetAllComponentSettings(const std::string& systemName) const override;
+  void SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::ordered_json& value) override;
+  void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
+                     const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) override;
+  void DeleteBinding(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete) override;
+  void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) override;
+  nlohmann::ordered_json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const override;
+  const nlohmann::ordered_json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
   std::string GetOrCreateFrameworkInstanceId() override;
   void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) override;
   /**
@@ -84,7 +84,7 @@ class ConfigService : public IConfigService {
    * @brief Builds the aggregated user settings map for the UI.
    */
   void BuildAggregatedUserSettings();
-  bool _DeleteBindingInternal(const std::string& actionFullName, const nlohmann::json& bindingToDelete);
+  bool _DeleteBindingInternal(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete);
 
   // --- Data Members ---
   Events::EventManager& m_eventManager;
@@ -96,14 +96,14 @@ class ConfigService : public IConfigService {
   std::map<std::string, MergeStrategy> m_systemStrategies;
 
   // Stores the final configuration for merged systems. Key: systemName.
-  std::map<std::string, nlohmann::json> m_mergedConfigs;
+  std::map<std::string, nlohmann::ordered_json> m_mergedConfigs;
 
   // Stores the final configurations for isolated systems.
   // Key1: systemName, Key2: componentName
-  std::map<std::string, std::map<std::string, nlohmann::json>> m_isolatedConfigs;
+  std::map<std::string, std::map<std::string, nlohmann::ordered_json>> m_isolatedConfigs;
 
   // Stores a map of all user-configurable settings, aggregated for the UI.
-  std::map<std::string, nlohmann::json> m_aggregatedUserSettings;
+  std::map<std::string, nlohmann::ordered_json> m_aggregatedUserSettings;
 
   // Stores structured information about all components (framework + plugins) after reconciliation.
   std::map<std::string, ComponentInfo> m_allComponentInfo;

@@ -131,30 +131,23 @@ std::string SettingsWindow::GetTranslatedActionName(const std::string& fullActio
   return fullActionName;
 }
 
-void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName,
-
-                                      const std::string& currentPath, int depth) {
+void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::ordered_json& node, const std::string& systemName, const std::string& currentPath, int depth) {
 
   if (depth > 0) {
-
     ImGui::Dummy(ImVec2(depth * 5.0f, 0.0f));
-
     ImGui::SameLine();
-
   }
 
   std::string fullPath = currentPath.empty() ? key : currentPath + "." + key;
-
   std::string fullSystemPath = systemName + "." + fullPath;
-
   auto& loc = LocalizationManager::GetInstance();
 
   // Extract the actual value node and determine display name
-  const nlohmann::json* valueNode = &node;
+  const nlohmann::ordered_json* valueNode = &node;
   std::string displayName = key; // Default to raw key
 
   // Get metadata for display name and description
-  const nlohmann::json* metaNode = nullptr;
+  const nlohmann::ordered_json* metaNode = nullptr;
   if (node.is_object() && node.contains("_value")) {
       valueNode = &node["_value"];
       if (node.contains("_meta") && node["_meta"].is_object()) {
@@ -198,11 +191,11 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
       const auto& ui_meta = (*metaNode)["ui"];
       if (ui_meta.contains("widget") && ui_meta["widget"].is_string()) {
           std::string widget_type = ui_meta["widget"].get<std::string>();
-          const auto& params = ui_meta.value("params", nlohmann::json::object()); // Get params or empty object
+          const auto& params = ui_meta.value("params", nlohmann::ordered_json::object()); // Get params or empty object
 
           if (widget_type == "slider") {
               if (valueNode->is_number_integer()) {
-                  const auto& params = ui_meta.value("params", nlohmann::json::object());
+                  const auto& params = ui_meta.value("params", nlohmann::ordered_json::object());
                   ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
                   if (params.value("is_logarithmic", false)) {
                       slider_flags |= ImGuiSliderFlags_Logarithmic;
@@ -217,7 +210,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                   ShowTooltip();
                   renderedWithCustomWidget = true;
               } else if (valueNode->is_number_float()) {
-                  const auto& params = ui_meta.value("params", nlohmann::json::object());
+                  const auto& params = ui_meta.value("params", nlohmann::ordered_json::object());
                   ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
                   if (params.value("is_logarithmic", false)) {
                       slider_flags |= ImGuiSliderFlags_Logarithmic;
@@ -259,7 +252,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
           } else if (widget_type == "combo" || widget_type == "radio") {
               if (params.contains("options") && params["options"].is_array()) {
                   std::vector<std::string> option_labels;
-                  std::vector<nlohmann::json> option_values;
+                  std::vector<nlohmann::ordered_json> option_values;
                   int current_selection = -1; // For combo
 
                   for (const auto& option : params["options"]) {
@@ -313,7 +306,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                   }
               }
           } else if (widget_type == "vslider") {
-              const auto& params = ui_meta.value("params", nlohmann::json::object());
+              const auto& params = ui_meta.value("params", nlohmann::ordered_json::object());
               ImGuiSliderFlags slider_flags = ImGuiSliderFlags_None;
               if (params.value("is_logarithmic", false)) {
                   slider_flags |= ImGuiSliderFlags_Logarithmic;
@@ -349,7 +342,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                             ImVec4 color = ImVec4(valueNode->at(0).get<float>(), valueNode->at(1).get<float>(), valueNode->at(2).get<float>(), 1.0f);
                             int flags = params.value("flags", 0);
                             if (ImGui::ColorEdit3(("##" + key).c_str(), (float*)&color, flags)) {
-                                nlohmann::json newColor = {color.x, color.y, color.z};
+                                nlohmann::ordered_json newColor = {color.x, color.y, color.z};
                                 m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, newColor});
                             }
                             ShowTooltip();
@@ -362,7 +355,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
                             ImVec4 color = ImVec4(valueNode->at(0).get<float>(), valueNode->at(1).get<float>(), valueNode->at(2).get<float>(), valueNode->at(3).get<float>());
                             int flags = params.value("flags", 0);
                             if (ImGui::ColorEdit4(("##" + key).c_str(), (float*)&color, flags)) {
-                                nlohmann::json newColor = {color.x, color.y, color.z, color.w};
+                                nlohmann::ordered_json newColor = {color.x, color.y, color.z, color.w};
                                 m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, newColor});
                             }
                             ShowTooltip();
@@ -403,13 +396,13 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
 
   if (!renderedWithCustomWidget) {
       // For default-rendered widgets, we still check if there are any applicable 'params'
-      const nlohmann::json params = (metaNode && metaNode->contains("ui") && (*metaNode)["ui"].is_object() && (*metaNode)["ui"].contains("params"))
+      const nlohmann::ordered_json params = (metaNode && metaNode->contains("ui") && (*metaNode)["ui"].is_object() && (*metaNode)["ui"].contains("params"))
                                         ? (*metaNode)["ui"]["params"]
-                                        : nlohmann::json::object();
+                                        : nlohmann::ordered_json::object();
 
       if (valueNode->is_boolean()) {
         bool value = valueNode->get<bool>();
-        if (ImGui::Checkbox(("##" + key).c_str(), &value)) {
+        if (ImGui::Checkbox(label.c_str(), &value)) {
           m_eventManager.System.OnRequestSettingChange.Call({m_currentComponent, fullSystemPath, value});
         }
         ShowTooltip();
@@ -532,7 +525,7 @@ void SettingsWindow::RenderKeybindsSettings() {
         }
 
         // --- Data Grouping ---
-        std::map<std::string, std::vector<std::tuple<std::string, std::string, const nlohmann::json*>>> groupedActions;
+        std::map<std::string, std::vector<std::tuple<std::string, std::string, const nlohmann::ordered_json*>>> groupedActions;
         for (const auto& [group, actions] : m_configService.GetMergedConfig("keybinds")->items()) {
             std::string ownerName = group.substr(0, group.find('.'));
             for (const auto& [actionName, actionObject] : actions.items()) {
@@ -637,7 +630,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                         ImGui::PushID((fullActionName + ":add_button").c_str());
                         if (ImGui::SmallButton(ICON_FA_PLUS)) {
                             m_actionBeingEdited = fullActionName;
-                            m_editingBindingObject = nlohmann::json::object();
+                            m_editingBindingObject = nlohmann::ordered_json::object();
                             m_eventManager.System.OnRequestInputCapture.Call({fullActionName, m_editingBindingObject});
                         }
                         if (ImGui::IsItemHovered()) {
@@ -649,7 +642,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                         // --- Column 1: Keybinds ---
                         ImGui::TableSetColumnIndex(1);
 
-                        const nlohmann::json* bindings = nullptr;
+                        const nlohmann::ordered_json* bindings = nullptr;
                         if (actionObject->is_object() && actionObject->contains("bindings") && (*actionObject)["bindings"].is_array()) {
                             bindings = &(*actionObject)["bindings"];
                         }
@@ -660,7 +653,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
                                 if (ImGui::Button(loc.Get(m_keybindsUnassignedTextKey).c_str())) {
                                     m_actionBeingEdited = fullActionName;
-                                    m_editingBindingObject = nlohmann::json::object();
+                                    m_editingBindingObject = nlohmann::ordered_json::object();
                                     m_eventManager.System.OnRequestInputCapture.Call({fullActionName, m_editingBindingObject});
                                 }
                                 if (ImGui::IsItemHovered()) {
@@ -729,18 +722,30 @@ void SettingsWindow::RenderKeybindsSettings() {
     }
 }
 
-void SettingsWindow::DrawSettingsRows(const nlohmann::json& settingsNode, const std::string& systemName, const std::string& parentPath) {
+void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode, const std::string& systemName, const std::string& parentPath) {
   auto& loc = LocalizationManager::GetInstance();
 
   for (auto it = settingsNode.begin(); it != settingsNode.end(); ++it) {
     const std::string& key = it.key();
-    const nlohmann::json& value = it.value();
+    const nlohmann::ordered_json& value = it.value();
 
     if (key == "_meta") continue;
 
     if (value.is_object() && value.contains("_meta") && value["_meta"].value("hide_in_ui", false)) {
       continue;
     }
+
+    const nlohmann::ordered_json* actualValueNode = &value;
+    if (value.is_object() && value.contains("_value")) {
+        actualValueNode = &value["_value"];
+    }
+
+    bool hasCustomWidget = (value.is_object() && value.contains("_meta") && value["_meta"].is_object() &&
+                            value["_meta"].contains("ui") && value["_meta"]["ui"].is_object() &&
+                            value["_meta"]["ui"].value("widget", "").empty() == false);
+
+    bool isDefaultBoolean = actualValueNode->is_boolean() && !hasCustomWidget;
+
 
     std::string currentPath = parentPath.empty() ? key : parentPath + "." + key;
     size_t depth = parentPath.empty() ? 0 : std::count(parentPath.begin(), parentPath.end(), '.') + 1;
@@ -758,7 +763,10 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::json& settingsNode, const 
                                  : loc.Get(m_currentComponent, titleKey);
       }
     }
-    ImGui::TextUnformatted(settingDisplayName.c_str());
+    
+    if (!isDefaultBoolean) { // Only draw label in column 0 if it's NOT a default boolean
+        ImGui::TextUnformatted(settingDisplayName.c_str());
+    }
 
     if (value.is_object() && value.contains("_meta") && value["_meta"].is_object() &&
         value["_meta"].contains("descriptionKey") && value["_meta"]["descriptionKey"].is_string()) {
@@ -1062,7 +1070,7 @@ void SettingsWindow::RenderContent() {
           m_eventManager.System.OnRequestInputCaptureCancel.Call({});
           logger->Info("User chose to add a new binding for action '{}' with press type '{}'.", m_conflictInfo->actionFullName, pressType);
           
-          nlohmann::json newBinding = m_conflictInfo->capturedInput->ToJson();
+          nlohmann::ordered_json newBinding = m_conflictInfo->capturedInput->ToJson();
           newBinding["press_type"] = pressType;
 
           m_eventManager.System.OnRequestBindingUpdate.Call({m_conflictInfo->actionFullName, m_conflictInfo->originalBinding, newBinding, std::nullopt});
@@ -1073,12 +1081,12 @@ void SettingsWindow::RenderContent() {
       };
       
       // --- Helper lambda to reassign a binding ---
-      auto reassignBinding = [&](const std::optional<std::pair<std::string, nlohmann::json>>& conflict) {
+      auto reassignBinding = [&](const std::optional<std::pair<std::string, nlohmann::ordered_json>>& conflict) {
           if (!conflict) return;
           m_eventManager.System.OnRequestInputCaptureCancel.Call({});
           logger->Info("User confirmed reassigning input '{}' from '{}' to '{}'.", inputDisplayName, conflict->first, m_conflictInfo->actionFullName);
 
-          nlohmann::json newBindingJson = m_conflictInfo->capturedInput->ToJson();
+          nlohmann::ordered_json newBindingJson = m_conflictInfo->capturedInput->ToJson();
           const auto& conflictingBindingJson = conflict->second;
           if (conflictingBindingJson.contains("press_type")) {
             newBindingJson["press_type"] = conflictingBindingJson["press_type"];
@@ -1426,7 +1434,7 @@ void SettingsWindow::RenderContent() {
         m_currentPressThreshold = finalThreshold;
 
         if (m_originalBindingCopy.value("press_threshold_ms", 500) != finalThreshold) {
-          nlohmann::json oldBinding = m_originalBindingCopy;
+          nlohmann::ordered_json oldBinding = m_originalBindingCopy;
           m_originalBindingCopy["press_threshold_ms"] = finalThreshold;
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, oldBinding, "press_threshold_ms", finalThreshold});
 

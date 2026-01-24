@@ -34,14 +34,14 @@ class IWindow {
    * @brief Applies settings from a json object to the window.
    * @param settings The json object containing the window's settings.
    */
-  virtual void ApplySettings(const nlohmann::json& settings) = 0;
+  virtual void ApplySettings(const nlohmann::ordered_json& settings) = 0;
   virtual void SetDrawCallback(SPF_DrawCallback callback) = 0;
 
   /**
    * @brief Gets the current state of the window as a json object.
    * @return A json object representing the window's current settings.
    */
-  virtual nlohmann::json GetCurrentSettings() const = 0;
+  virtual nlohmann::ordered_json GetCurrentSettings() const = 0;
 
   // --- Event Handlers (Optional) ---
   virtual void OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) {}

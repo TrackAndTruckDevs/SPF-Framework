@@ -13,7 +13,7 @@ SPF_NS_BEGIN
 namespace Modules {
 class InputFactory {
  public:
-  static std::unique_ptr<IBindableInput> CreateFromJson(const nlohmann::json& configJson) {
+  static std::unique_ptr<IBindableInput> CreateFromJson(const nlohmann::ordered_json& configJson) {
     if (!configJson.is_object() || !configJson.contains("type")) {
       return nullptr;
     }

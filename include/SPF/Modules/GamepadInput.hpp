@@ -9,11 +9,11 @@ SPF_NS_BEGIN
 namespace Modules {
 class GamepadInput : public IBindableInput {
  public:
-  explicit GamepadInput(const nlohmann::json& config);
+  explicit GamepadInput(const nlohmann::ordered_json& config);
 
   // IBindableInput implementation
   bool IsTriggeredBy(const Input::GamepadEvent& event) const override;
-  nlohmann::json ToJson() const override;
+  nlohmann::ordered_json ToJson() const override;
   std::string GetDisplayName() const override;
   bool IsValid() const override;
   InputType GetType() const override;

@@ -49,7 +49,7 @@ typedef enum {
  *          query the type and value of a JSON object that is owned by the core
  *          framework. This is essential for maintaining ABI stability, as the
  *          plugin does not need to link against the framework's JSON library
- *          or know about its internal data structures (like `nlohmann::json`).
+ *          or know about its internal data structures (like `nlohmann::ordered_json`).
  *
  * @section Workflow
  * 1. Receive this API as an argument in a callback (e.g., `OnSettingChanged`).

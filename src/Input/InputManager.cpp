@@ -115,7 +115,7 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
   }
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing && event.pressed) {
-    auto capturedInput = std::make_shared<Modules::KeyboardInput>(nlohmann::json{{"type", "keyboard"}, {"key", VirtualKeyMapping::GetInstance().GetKeyName(event.key)}});
+    auto capturedInput = std::make_shared<Modules::KeyboardInput>(nlohmann::ordered_json{{"type", "keyboard"}, {"key", VirtualKeyMapping::GetInstance().GetKeyName(event.key)}});
     auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
     if (!conflicts.empty()) {
@@ -557,7 +557,7 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event) {
   }
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing && event.pressed && !IsAxis(event.button)) {
-    auto capturedInput = std::make_shared<Modules::GamepadInput>(nlohmann::json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+    auto capturedInput = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
     auto conflicts = Modules::KeyBindsManager::GetInstance().GetBindingsForInput(*capturedInput);
 
     if (!conflicts.empty()) {
@@ -654,7 +654,7 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
         return true;  // Already captured this frame, consume to prevent duplicates.
       }
 
-      auto capturedInput = std::make_shared<Modules::MouseInput>(nlohmann::json{{"type", "mouse"}, {"key", MouseButtonMapping::GetInstance().ToString(button)}});
+      auto capturedInput = std::make_shared<Modules::MouseInput>(nlohmann::ordered_json{{"type", "mouse"}, {"key", MouseButtonMapping::GetInstance().ToString(button)}});
 
       if (!capturedInput->IsValid()) {
         return true;  // Consume invalid inputs (like a programmatic error) but don't capture.
@@ -727,7 +727,7 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event) {
 
   if (m_captureState == InputCaptureState::Capturing) {
     if (event.pressed) {
-      auto capturedInput = std::make_shared<Modules::JoystickInput>(nlohmann::json{{"type", "joystick"}, {"key", JoystickButtonMapping::GetInstance().ToString(buttonIndex)}});
+      auto capturedInput = std::make_shared<Modules::JoystickInput>(nlohmann::ordered_json{{"type", "joystick"}, {"key", JoystickButtonMapping::GetInstance().ToString(buttonIndex)}});
 
       if (!capturedInput->IsValid()) {
         return true;  // Consume invalid inputs but don't capture.
@@ -847,7 +847,7 @@ void InputManager::SetMouseAxesControl(bool gameHasControl) { m_gameControlsMous
 void InputManager::SetMouseButtonsControl(bool gameHasControl) { m_gameControlsMouseButtons = gameHasControl; }
 void InputManager::SetMouseWheelControl(bool gameHasControl) { m_gameControlsMouseWheel = gameHasControl; }
 
-void InputManager::StartInputCapture(const std::string& actionFullName, const nlohmann::json& originalBinding) {
+void InputManager::StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding) {
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   logger->Info("Starting key capture for action: {}", actionFullName);
   m_captureState = InputCaptureState::Capturing;

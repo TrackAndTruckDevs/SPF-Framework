@@ -6,7 +6,7 @@ SPF_NS_BEGIN
 namespace Modules {
 using namespace SPF::System;
 
-KeyboardInput::KeyboardInput(const nlohmann::json& config) {
+KeyboardInput::KeyboardInput(const nlohmann::ordered_json& config) {
   std::string keyName = config.value("key", "Unknown");
   m_key = VirtualKeyMapping::GetInstance().GetKey(keyName);
 }
@@ -18,7 +18,7 @@ bool KeyboardInput::IsTriggeredBy(const Input::KeyboardEvent& event) const {
 
 bool KeyboardInput::IsTriggeredBy(System::Keyboard key) const { return key == m_key; }
 
-nlohmann::json KeyboardInput::ToJson() const {
+nlohmann::ordered_json KeyboardInput::ToJson() const {
   return {{"type", "keyboard"},
           {"key", std::string(VirtualKeyMapping::GetInstance().GetKeyName(m_key))}};
 }

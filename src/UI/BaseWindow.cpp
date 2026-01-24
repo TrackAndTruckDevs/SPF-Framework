@@ -72,7 +72,7 @@ const char* BaseWindow::GetWindowTitle() const {
 
 bool BaseWindow::IsConfiguredAsDockable() const { return m_isConfiguredAsDockable; }
 
-void BaseWindow::ApplySettings(const nlohmann::json& settings) {
+void BaseWindow::ApplySettings(const nlohmann::ordered_json& settings) {
   m_validSettingKeys.clear();
 
   m_isConfiguredAsDockable = settings.contains("is_docked");
@@ -132,8 +132,8 @@ void BaseWindow::ApplySettings(const nlohmann::json& settings) {
   m_stateIsDirty = true;
 }
 
-nlohmann::json BaseWindow::GetCurrentSettings() const {
-  nlohmann::json settings;
+nlohmann::ordered_json BaseWindow::GetCurrentSettings() const {
+  nlohmann::ordered_json settings;
   settings["is_visible"] = m_isVisible;
   settings["is_interactive"] = m_isInteractive;
 

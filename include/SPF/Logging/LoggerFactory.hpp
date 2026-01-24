@@ -24,16 +24,16 @@ class LoggerFactory : public Config::IConfigurable {
  public:
   static LoggerFactory& GetInstance();
 
-  Core::InitializationReport Initialize(const std::filesystem::path& log_dir, const nlohmann::json& framework_config);
+  Core::InitializationReport Initialize(const std::filesystem::path& log_dir, const nlohmann::ordered_json& framework_config);
   void Shutdown();
 
   std::shared_ptr<Logger> GetLogger(const std::string& name);
   std::shared_ptr<Sinks::LoggerWindowSink> GetUISink() const;
 
-  void ApplyConfigurationFor(const std::string& componentName, const nlohmann::json& config);
+  void ApplyConfigurationFor(const std::string& componentName, const nlohmann::ordered_json& config);
 
   // --- IConfigurable Implementation ---
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override;
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
  private:
   std::shared_ptr<Logger> GetLogger_unlocked(const std::string& name);
@@ -43,7 +43,7 @@ class LoggerFactory : public Config::IConfigurable {
   LoggerFactory(const LoggerFactory&) = delete;
   LoggerFactory& operator=(const LoggerFactory&) = delete;
 
-  void CreateGlobalSinks(const nlohmann::json& framework_sinks_config, Core::InitializationReport& report);
+  void CreateGlobalSinks(const nlohmann::ordered_json& framework_sinks_config, Core::InitializationReport& report);
   void AddGlobalSink(const std::shared_ptr<ILogSink>& sink);
   void RemoveGlobalSink(const std::shared_ptr<ILogSink>& sink);
   void ManagePrivateFileSink(const std::string& componentName, bool wantsFileSink);

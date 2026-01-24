@@ -21,13 +21,13 @@ public:
      * @brief Constructs a MouseInput object from a JSON configuration.
      * @param config The JSON object defining the binding (e.g., {"type": "mouse", "button": "MOUSE_MIDDLE"}).
      */
-    explicit MouseInput(const nlohmann::json& config);
+    explicit MouseInput(const nlohmann::ordered_json& config);
 
     // --- IBindableInput Overrides ---
     
     bool IsTriggeredBy(const Input::MouseButtonEvent& event) const override;
     
-    nlohmann::json ToJson() const override;
+    nlohmann::ordered_json ToJson() const override;
     
     std::string GetDisplayName() const override;
 

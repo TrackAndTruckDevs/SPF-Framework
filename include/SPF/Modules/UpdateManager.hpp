@@ -63,7 +63,7 @@ class UpdateManager : public Config::IConfigurable {  //  Inherit from IConfigur
   std::optional<std::vector<System::Patron>> GetLastPatrons() const { return m_lastPatrons; }
 
   // --- IConfigurable Implementation ---
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override {
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override {
     return false;  // UpdateManager does not have its own configurable settings for now
   }
 

@@ -26,8 +26,8 @@ int ConfigApi::Cfg_GetString(SPF_Config_Handle* handle, const char* key, const c
     if (!pm.GetConfigService()) {
         value_str = defaultValue;
     } else {
-        nlohmann::json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
-        const nlohmann::json* valueNode = &result;
+        nlohmann::ordered_json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
+        const nlohmann::ordered_json* valueNode = &result;
         if (result.is_object() && result.contains("_value")) {
             valueNode = &result["_value"];
         }
@@ -58,8 +58,8 @@ int64_t ConfigApi::Cfg_GetInt(SPF_Config_Handle* handle, const char* key, int64_
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
     
-    nlohmann::json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
-    const nlohmann::json* valueNode = &result;
+    nlohmann::ordered_json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
+    const nlohmann::ordered_json* valueNode = &result;
     if (result.is_object() && result.contains("_value")) {
         valueNode = &result["_value"];
     }
@@ -81,8 +81,8 @@ int32_t ConfigApi::Cfg_GetInt32(SPF_Config_Handle* handle, const char* key, int3
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
 
-    nlohmann::json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
-    const nlohmann::json* valueNode = &result;
+    nlohmann::ordered_json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
+    const nlohmann::ordered_json* valueNode = &result;
     if (result.is_object() && result.contains("_value")) {
         valueNode = &result["_value"];
     }
@@ -108,8 +108,8 @@ double ConfigApi::Cfg_GetFloat(SPF_Config_Handle* handle, const char* key, doubl
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
 
-    nlohmann::json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
-    const nlohmann::json* valueNode = &result;
+    nlohmann::ordered_json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
+    const nlohmann::ordered_json* valueNode = &result;
     if (result.is_object() && result.contains("_value")) {
         valueNode = &result["_value"];
     }
@@ -131,8 +131,8 @@ bool ConfigApi::Cfg_GetBool(SPF_Config_Handle* handle, const char* key, bool def
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
 
-    nlohmann::json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
-    const nlohmann::json* valueNode = &result;
+    nlohmann::ordered_json result = pm.GetConfigService()->GetValue(cfgHandle->pluginName, key, defaultValue);
+    const nlohmann::ordered_json* valueNode = &result;
     if (result.is_object() && result.contains("_value")) {
         valueNode = &result["_value"];
     }
@@ -145,8 +145,8 @@ SPF_JsonValue_Handle* ConfigApi::Cfg_GetJsonValueHandle(SPF_Config_Handle* handl
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return nullptr;
 
-    const nlohmann::json* valueNode = pm.GetConfigService()->GetValuePtr(cfgHandle->pluginName, key);
-    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(valueNode));
+    const nlohmann::ordered_json* valueNode = pm.GetConfigService()->GetValuePtr(cfgHandle->pluginName, key);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::ordered_json*>(valueNode));
 }
 
 void ConfigApi::Cfg_SetBool(SPF_Config_Handle* handle, const char* key, bool value) {

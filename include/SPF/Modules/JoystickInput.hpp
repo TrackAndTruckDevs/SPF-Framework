@@ -21,13 +21,13 @@ public:
      * @brief Constructs a JoystickInput object from a JSON configuration.
      * @param config The JSON object defining the binding (e.g., {"type": "joystick", "key": "BUTTON_15"}).
      */
-    explicit JoystickInput(const nlohmann::json& config);
+    explicit JoystickInput(const nlohmann::ordered_json& config);
 
     // --- IBindableInput Overrides ---
     
     bool IsTriggeredBy(const Input::JoystickEvent& event) const override;
     
-    nlohmann::json ToJson() const override;
+    nlohmann::ordered_json ToJson() const override;
     
     std::string GetDisplayName() const override;
 

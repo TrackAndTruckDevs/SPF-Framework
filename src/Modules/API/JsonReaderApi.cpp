@@ -8,7 +8,7 @@ namespace Modules::API {
 
 SPF_JsonType JsonReaderApi::Json_GetType(const SPF_JsonValue_Handle* handle) {
   if (!handle) return SPF_JSON_TYPE_UNKNOWN;
-  const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+  const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
   if (json_value->is_null()) return SPF_JSON_TYPE_NULL;
   if (json_value->is_object()) return SPF_JSON_TYPE_OBJECT;
   if (json_value->is_array()) return SPF_JSON_TYPE_ARRAY;
@@ -22,42 +22,42 @@ SPF_JsonType JsonReaderApi::Json_GetType(const SPF_JsonValue_Handle* handle) {
 
 bool JsonReaderApi::Json_GetBool(const SPF_JsonValue_Handle* handle, bool default_value) {
   if (!handle) return default_value;
-  const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+  const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
   if (!json_value->is_boolean()) return default_value;
   return json_value->get<bool>();
 }
 
 int64_t JsonReaderApi::Json_GetInt(const SPF_JsonValue_Handle* handle, int64_t default_value) {
   if (!handle) return default_value;
-  const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+  const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
   if (!json_value->is_number_integer()) return default_value;
   return json_value->get<int64_t>();
 }
 
 int32_t JsonReaderApi::Json_GetInt32(const SPF_JsonValue_Handle* handle, int32_t default_value) {
     if (!handle) return default_value;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_number_integer()) return default_value;
     return static_cast<int32_t>(json_value->get<int64_t>());
 }
 
 uint64_t JsonReaderApi::Json_GetUint(const SPF_JsonValue_Handle* handle, uint64_t default_value) {
     if (!handle) return default_value;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_number_unsigned()) return default_value;
     return json_value->get<uint64_t>();
 }
 
 double JsonReaderApi::Json_GetFloat(const SPF_JsonValue_Handle* handle, double default_value) {
   if (!handle) return default_value;
-  const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+  const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
   if (!json_value->is_number_float()) return default_value;
   return json_value->get<double>();
 }
 
 int JsonReaderApi::Json_GetString(const SPF_JsonValue_Handle* handle, char* out_buffer, int buffer_size) {
   if (!handle || !out_buffer || buffer_size <= 0) return 0;
-  const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+  const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
   if (!json_value->is_string()) {
     *out_buffer = '\0';
     return 0;
@@ -75,36 +75,36 @@ int JsonReaderApi::Json_GetString(const SPF_JsonValue_Handle* handle, char* out_
 
 bool JsonReaderApi::Json_HasMember(const SPF_JsonValue_Handle* handle, const char* memberName) {
     if (!handle || !memberName) return false;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_object()) return false;
     return json_value->contains(memberName);
 }
 
 SPF_JsonValue_Handle* JsonReaderApi::Json_GetMember(const SPF_JsonValue_Handle* handle, const char* memberName) {
     if (!handle || !memberName) return nullptr;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_object() || !json_value->contains(memberName)) return nullptr;
     
-    const nlohmann::json& member = json_value->at(memberName);
-    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(&member));
+    const nlohmann::ordered_json& member = json_value->at(memberName);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::ordered_json*>(&member));
 }
 
 int JsonReaderApi::Json_GetArraySize(const SPF_JsonValue_Handle* handle) {
     if (!handle) return 0;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_array()) return 0;
     return static_cast<int>(json_value->size());
 }
 
 SPF_JsonValue_Handle* JsonReaderApi::Json_GetArrayItem(const SPF_JsonValue_Handle* handle, int index) {
     if (!handle) return nullptr;
-    const auto* json_value = reinterpret_cast<const nlohmann::json*>(handle);
+    const auto* json_value = reinterpret_cast<const nlohmann::ordered_json*>(handle);
     if (!json_value->is_array() || index < 0 || static_cast<size_t>(index) >= json_value->size()) {
         return nullptr;
     }
 
-    const nlohmann::json& item = json_value->at(index);
-    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::json*>(&item));
+    const nlohmann::ordered_json& item = json_value->at(index);
+    return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::ordered_json*>(&item));
 }
 
 void JsonReaderApi::FillJsonReaderApi(SPF_JsonReader_API* api) {

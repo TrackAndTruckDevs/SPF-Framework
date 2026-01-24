@@ -96,16 +96,16 @@ struct IConfigService {
    * @brief Gets all aggregated user settings for display in the UI.
    * This map contains all user-configurable settings, structured for easy consumption by the UI.
    * @return A constant reference to a map where the key is the full setting path
-   *         and the value is its current nlohmann::json representation.
+   *         and the value is its current nlohmann::ordered_json representation.
    */
-  virtual const std::map<std::string, nlohmann::json>& GetAggregatedUserSettings() const = 0;
+  virtual const std::map<std::string, nlohmann::ordered_json>& GetAggregatedUserSettings() const = 0;
 
   /**
    * @brief Gets the final, merged configuration for a "merged" system.
    * @param systemName The name of the system (e.g., "keybinds").
    * @return A const pointer to the merged JSON object, or nullptr if not found or not a merged system.
    */
-  virtual const nlohmann::json* GetMergedConfig(const std::string& systemName) const = 0;
+  virtual const nlohmann::ordered_json* GetMergedConfig(const std::string& systemName) const = 0;
 
   /**
    * @brief Gets all aggregated settings for an "isolated" system.
@@ -113,7 +113,7 @@ struct IConfigService {
    * @return A const pointer to a map where the key is the component name (e.g., "framework", "TestPlugin")
    *         and the value is its specific configuration JSON. Returns nullptr if not found.
    */
-  virtual const std::map<std::string, nlohmann::json>* GetAllComponentSettings(const std::string& systemName) const = 0;
+  virtual const std::map<std::string, nlohmann::ordered_json>* GetAllComponentSettings(const std::string& systemName) const = 0;
 
   /**
    * @brief Gets a single value from a component's configuration.
@@ -123,7 +123,7 @@ struct IConfigService {
    * @param defaultValue The value to return if the key is not found.
    * @return The found JSON value, or the default value.
    */
-  virtual nlohmann::json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::json& defaultValue) const = 0;
+  virtual nlohmann::ordered_json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const = 0;
 
   /**
    * @brief Gets a stable pointer to a single value from a component's configuration.
@@ -133,7 +133,7 @@ struct IConfigService {
    * @return A constant pointer to the found JSON value, or nullptr if not found.
    *         The lifetime of the pointed-to object is managed by the service.
    */
-  virtual const nlohmann::json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const = 0;
+  virtual const nlohmann::ordered_json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const = 0;
 
   // --- Data Modification & Reset ---
 
@@ -144,7 +144,7 @@ struct IConfigService {
    * @param jsonPath A dot-separated path to the value (e.g., "window.size.width").
    * @param value The JSON value to set.
    */
-  virtual void SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::json& value) = 0;
+  virtual void SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::ordered_json& value) = 0;
 
   /**
    * @brief Updates a specific binding.
@@ -153,15 +153,15 @@ struct IConfigService {
    * @param newBinding The new JSON object for the binding.
    * @param bindingToClear Optional: if the input was taken from another action, this holds the action name and binding JSON to clear.
    */
-  virtual void UpdateBinding(const std::string& actionFullName, const nlohmann::json& originalBinding, const nlohmann::json& newBinding,
-                             const std::optional<std::pair<std::string, nlohmann::json>>& bindingToClear) = 0;
+  virtual void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
+                             const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) = 0;
 
   /**
    * @brief Deletes a specific binding from an action.
    * @param actionFullName The full name of the action to modify.
    * @param bindingToDelete The specific JSON object of the binding to remove from the array.
    */
-  virtual void DeleteBinding(const std::string& actionFullName, const nlohmann::json& bindingToDelete) = 0;
+  virtual void DeleteBinding(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete) = 0;
 
   /**
    * @brief Updates a single property of a specific binding.
@@ -170,7 +170,7 @@ struct IConfigService {
    * @param propertyName The name of the JSON property to change (e.g., "press_type").
    * @param newValue The new value for the property.
    */
-  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::json& originalBinding, const std::string& propertyName, const nlohmann::json& newValue) = 0;
+  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) = 0;
 
   /**
    * @brief Resets a specific key in a component's config to its default value from the manifest.

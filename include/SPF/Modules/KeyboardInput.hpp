@@ -9,11 +9,11 @@ SPF_NS_BEGIN
 namespace Modules {
 class KeyboardInput : public IBindableInput {
  public:
-  explicit KeyboardInput(const nlohmann::json& config);
+  explicit KeyboardInput(const nlohmann::ordered_json& config);
 
   bool IsTriggeredBy(const Input::KeyboardEvent& event) const override;
   bool IsTriggeredBy(System::Keyboard key) const override;
-  nlohmann::json ToJson() const override;
+  nlohmann::ordered_json ToJson() const override;
   std::string GetDisplayName() const override;
   bool IsValid() const override;
   InputType GetType() const override;

@@ -86,7 +86,7 @@ class InputManager {
   void ProcessJoystickActions();
 
   // --- Key Capture ---
-  void StartInputCapture(const std::string& actionFullName, const nlohmann::json& originalBinding);
+  void StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding);
   void CancelInputCapture();
 
   // --- Consumer Management ---
@@ -154,7 +154,7 @@ class InputManager {
   InputCaptureState m_captureState = InputCaptureState::Idle;
   bool m_inPostCaptureCooldown = false;
   std::string m_capturingActionFullName;
-  nlohmann::json m_capturingOriginalBinding;
+  nlohmann::ordered_json m_capturingOriginalBinding;
 
   // Frame-specific blacklist to prevent input processing from multiple hooks
   std::optional<System::GamepadButton> m_capturedButtonThisFrame;

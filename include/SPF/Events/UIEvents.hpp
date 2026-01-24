@@ -37,7 +37,7 @@ struct RequestPluginStateChange {
 struct RequestSettingChange {
   std::string componentName;
   std::string keyPath;
-  nlohmann::json newValue;
+  nlohmann::ordered_json newValue;
 };
 
 /**
@@ -47,7 +47,7 @@ struct OnSettingWasChanged {
   std::string systemName;
   std::string componentName;
   std::string keyPath;
-  nlohmann::json newValue;
+  nlohmann::ordered_json newValue;
 };
 
 /**
@@ -55,7 +55,7 @@ struct OnSettingWasChanged {
  */
 struct RequestInputCapture {
   std::string actionFullName;      // e.g., "framework.ui.main_window.toggle"
-  nlohmann::json originalBinding;  // e.g., {"key": "KEY_DELETE", "type": "keyboard"}
+  nlohmann::ordered_json originalBinding;  // e.g., {"key": "KEY_DELETE", "type": "keyboard"}
 };
 
 /**
@@ -63,10 +63,10 @@ struct RequestInputCapture {
  */
 struct RequestBindingUpdate {
   std::string actionFullName;
-  nlohmann::json originalBinding;
-  nlohmann::json newBinding;
+  nlohmann::ordered_json originalBinding;
+  nlohmann::ordered_json newBinding;
   // Optional: if an input is reassigned, this holds the action and binding that should be cleared.
-  std::optional<std::pair<std::string, nlohmann::json>> bindingToClear;
+  std::optional<std::pair<std::string, nlohmann::ordered_json>> bindingToClear;
 };
 
 /**
@@ -74,7 +74,7 @@ struct RequestBindingUpdate {
  */
 struct RequestDeleteBinding {
   std::string actionFullName;
-  nlohmann::json bindingToDelete;
+  nlohmann::ordered_json bindingToDelete;
 };
 
 struct RequestExecuteCommand {
@@ -86,9 +86,9 @@ struct RequestExecuteCommand {
  */
 struct RequestBindingPropertyUpdate {
   std::string actionFullName;
-  nlohmann::json originalBinding;
+  nlohmann::ordered_json originalBinding;
   std::string propertyName;
-  nlohmann::json newValue;
+  nlohmann::ordered_json newValue;
 };
 
 /**

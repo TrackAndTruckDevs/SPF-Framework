@@ -56,7 +56,7 @@ struct JoystickEvent {
 struct InputCaptured {
   std::shared_ptr<Modules::IBindableInput> capturedInput;
   std::string actionFullName;
-  nlohmann::json originalBinding;
+  nlohmann::ordered_json originalBinding;
 };
 
 /**
@@ -65,7 +65,7 @@ struct InputCaptured {
 struct GamepadButtonCaptured {
   System::GamepadButton capturedButton;
   std::string actionFullName;
-  nlohmann::json originalBinding;
+  nlohmann::ordered_json originalBinding;
 };
 
 /**
@@ -81,8 +81,8 @@ struct InputCaptureCancelled {
 struct InputCaptureConflict {
   std::string actionFullName;                              // The action we are trying to rebind
   std::shared_ptr<Modules::IBindableInput> capturedInput;  // The input that was activated
-  std::vector<std::pair<std::string, nlohmann::json>> conflictingBindings;  // Vector of {actionName, bindingJson}
-  nlohmann::json originalBinding;                          // The original binding object we are editing
+  std::vector<std::pair<std::string, nlohmann::ordered_json>> conflictingBindings;  // Vector of {actionName, bindingJson}
+  nlohmann::ordered_json originalBinding;                          // The original binding object we are editing
 };
 
 /**

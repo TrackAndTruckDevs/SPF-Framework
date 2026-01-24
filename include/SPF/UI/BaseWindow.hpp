@@ -24,8 +24,8 @@ class BaseWindow : public IWindow {
   bool IsDocked() const;
   bool IsInteractive() const override;
   bool IsFocused() const override;
-  void ApplySettings(const nlohmann::json& settings) override;
-  nlohmann::json GetCurrentSettings() const override;
+  void ApplySettings(const nlohmann::ordered_json& settings) override;
+  nlohmann::ordered_json GetCurrentSettings() const override;
   void SetDrawCallback(SPF_DrawCallback) override {}
   void Focus() override;
 

@@ -9,8 +9,8 @@
 #include <thread>
 #include <random> // For mock error simulation
 
-// Use the nlohmann::json library
-using json = nlohmann::json;
+// Use the nlohmann::ordered_json library
+using json = nlohmann::ordered_json;
 
 namespace {
     // --- Constants for the API ---

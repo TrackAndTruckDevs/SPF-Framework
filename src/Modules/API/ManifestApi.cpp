@@ -4,7 +4,7 @@
 #include "fmt/format.h"
 
 #include <string> // For std::string
-#include <nlohmann/json.hpp> // For nlohmann::json
+#include <nlohmann/json.hpp> // For nlohmann::ordered_json
 #include <cstring> // For strncpy_s
 #include <algorithm> // For std::min
 
@@ -41,16 +41,16 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
         cppManifest.configPolicy.requiredHooks.push_back(cManifest.configPolicy.requiredHooks[i]);
     }
 
-    // --- Settings Data (JSON string to nlohmann::json) ---
+    // --- Settings Data (JSON string to nlohmann::ordered_json) ---
     if (cManifest.settingsJson) {
         try {
-            cppManifest.settings = nlohmann::json::parse(cManifest.settingsJson);
-        } catch (const nlohmann::json::parse_error& e) {
+            cppManifest.settings = nlohmann::ordered_json::parse(cManifest.settingsJson);
+        } catch (const nlohmann::ordered_json::parse_error& e) {
             logger->Error("ConvertCManifestToCppManifest: Failed to parse settings JSON for plugin '{}'. Error: {}. Returning empty settings.", pluginName, e.what());
-            cppManifest.settings = nlohmann::json::object();
+            cppManifest.settings = nlohmann::ordered_json::object();
         }
     } else {
-        cppManifest.settings = nlohmann::json::object();
+        cppManifest.settings = nlohmann::ordered_json::object();
     }
 
     // --- Logging Data ---
@@ -145,8 +145,8 @@ SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_M
                 } else if (widgetType == "combo" || widgetType == "radio") {
                     if (cMeta.widget_params.choice.options_json[0] != '\0') {
                         try {
-                            cppMeta.widget_params["options"] = nlohmann::json::parse(cMeta.widget_params.choice.options_json);
-                        } catch (const nlohmann::json::parse_error& e) {
+                            cppMeta.widget_params["options"] = nlohmann::ordered_json::parse(cMeta.widget_params.choice.options_json);
+                        } catch (const nlohmann::ordered_json::parse_error& e) {
                             logger->Error("ConvertCManifestToCppManifest: Failed to parse options_json for custom setting '{}' in plugin '{}'. Error: {}. Returning empty options.", cMeta.keyPath, pluginName, e.what());
                             // Leave cppMeta.widget_params["options"] as empty or handle as appropriate
                         }

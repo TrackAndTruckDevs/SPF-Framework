@@ -46,7 +46,7 @@ struct Binding {
   Input::PressType PressType = Input::PressType::Short;      // Specifies if this binding is for a short or long press
   ActivationBehavior Behavior = ActivationBehavior::Toggle;  // Specifies how the action is triggered over time
   std::optional<std::chrono::milliseconds> PressThreshold;
-  nlohmann::json originalBindingJson; // Store the original JSON for better conflict reporting
+  nlohmann::ordered_json originalBindingJson; // Store the original JSON for better conflict reporting
 };
 
 struct Action {
@@ -61,14 +61,14 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   KeyBindsManager(Input::InputManager& inputManager, Events::EventManager& eventManager);
   ~KeyBindsManager();
 
-  Core::InitializationReport Initialize(const nlohmann::json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo);
+   Core::InitializationReport Initialize(const nlohmann::ordered_json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo);
 
-  /**
+   /**
    * @brief Non-destructively updates the key assignments for all actions from a new config.
    * This preserves the registered action callbacks.
    * @param keyBindsConfig The new keybinds configuration object.
    */
-  void UpdateKeybindings(const nlohmann::json* keyBindsConfig);
+  void UpdateKeybindings(const nlohmann::ordered_json* keyBindsConfig);
 
   void RegisterAction(const std::string& actionKey, ActionCallback callback);
   void UnregisterOwner(const std::string& owner);
@@ -79,8 +79,8 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   struct PressTypeConflictAnalysis {
     bool isShortPressAvailable = true;
     bool isLongPressAvailable = true;
-    std::optional<std::pair<std::string, nlohmann::json>> shortPressConflict;
-    std::optional<std::pair<std::string, nlohmann::json>> longPressConflict;
+    std::optional<std::pair<std::string, nlohmann::ordered_json>> shortPressConflict;
+    std::optional<std::pair<std::string, nlohmann::ordered_json>> longPressConflict;
   };
 
   /**
@@ -88,7 +88,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
    * @param input The input to check.
    * @return A vector of pairs, where each pair contains the name of a conflicting action and its full binding JSON object.
    */
-  std::vector<std::pair<std::string, nlohmann::json>> GetBindingsForInput(const IBindableInput& input) const;
+  std::vector<std::pair<std::string, nlohmann::ordered_json>> GetBindingsForInput(const IBindableInput& input) const;
 
   /**
    * @brief Analyzes a given physical input and determines the availability of short and long press slots.
@@ -104,7 +104,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
    * @param actionToExclude The full name of the action to exclude from the search (usually the one being edited).
    * @return An optional pair containing the name and binding JSON of the conflicting action, if found.
    */
-  std::optional<std::pair<std::string, nlohmann::json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
+  std::optional<std::pair<std::string, nlohmann::ordered_json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
                                                                              const std::string& actionToExclude) const;
 
   const Binding* GetBindingForInput(System::Keyboard key, Input::PressType pressType) const;
@@ -132,7 +132,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   bool OnGamepadAxisMove(const Input::GamepadEvent& event) override;
 
   // IConfigurable implementation
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override;
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
  private:
   void OnPluginLoaded(const Events::OnPluginDidLoad& e);

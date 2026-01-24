@@ -42,7 +42,7 @@ struct IBindableInput {
    * @brief Serializes the input to a JSON object for configuration.
    * @return A json object representing the input.
    */
-  virtual nlohmann::json ToJson() const = 0;
+  virtual nlohmann::ordered_json ToJson() const = 0;
 
   /**
    * @brief Gets a user-friendly display name for the input (e.g., "KEY_A", "Gamepad A").

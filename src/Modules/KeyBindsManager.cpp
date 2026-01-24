@@ -31,7 +31,7 @@ struct BindingProperties {
   std::optional<std::chrono::milliseconds> pressThreshold;
 };
 
-BindingProperties ParseBindingProperties(const nlohmann::json& config) {
+BindingProperties ParseBindingProperties(const nlohmann::ordered_json& config) {
   BindingProperties props;
 
   if (config.contains("consume")) {
@@ -90,7 +90,7 @@ KeyBindsManager::~KeyBindsManager() {
   m_inputManager.UnregisterConsumer(this);
 }
 
-Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo) {
+Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::ordered_json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo) {
   m_inputManager.RegisterConsumer(this);
   auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
   logger->Info("KeyBindsManager initialized and registered as InputConsumer.");
@@ -123,7 +123,7 @@ Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::json* key
     for (auto const& [actionName, actionNode] : actions.items()) {
       std::string fullActionKey = groupName + "." + actionName;
 
-      const nlohmann::json* inputs = nullptr;
+      const nlohmann::ordered_json* inputs = nullptr;
       if (actionNode.is_object() && actionNode.contains("bindings")) {
         inputs = &actionNode["bindings"];
       } else if (actionNode.is_array()) {
@@ -170,7 +170,7 @@ Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::json* key
   return report;
 }
 
-void KeyBindsManager::UpdateKeybindings(const nlohmann::json* keyBindsConfig) {
+void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsConfig) {
   auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
   logger->Info("Updating keybindings from new config...");
 
@@ -190,7 +190,7 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::json* keyBindsConfig) {
         continue;
       }
 
-      const nlohmann::json* inputs = nullptr;
+      const nlohmann::ordered_json* inputs = nullptr;
       if (actionNode.is_object() && actionNode.contains("bindings")) {
         inputs = &actionNode["bindings"];
       } else if (actionNode.is_array()) {
@@ -244,8 +244,8 @@ void KeyBindsManager::UnregisterOwner(const std::string& owner) {
   });
 }
 
-std::vector<std::pair<std::string, nlohmann::json>> KeyBindsManager::GetBindingsForInput(const IBindableInput& input) const {
-  std::vector<std::pair<std::string, nlohmann::json>> conflicts;
+std::vector<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::GetBindingsForInput(const IBindableInput& input) const {
+  std::vector<std::pair<std::string, nlohmann::ordered_json>> conflicts;
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
       if (binding.Input && binding.Input->IsSameAs(input)) {
@@ -526,7 +526,7 @@ void KeyBindsManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) 
   }
 }
 
-bool KeyBindsManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) {
+bool KeyBindsManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
   // This component only cares about the 'keybinds' system.
   // The actual update is handled by the OnKeybindsModified event flow.
   // We just return true here to confirm ownership of the system and prevent
@@ -555,7 +555,7 @@ KeyBindsManager::PressTypeConflictAnalysis KeyBindsManager::AnalyzeConflictsForI
   return analysis;
 }
 
-std::optional<std::pair<std::string, nlohmann::json>> KeyBindsManager::FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
+std::optional<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
                                                                                               const std::string& actionToExclude) const {
   for (const auto& [actionName, action] : m_actions) {
     // Skip the action that is currently being edited.

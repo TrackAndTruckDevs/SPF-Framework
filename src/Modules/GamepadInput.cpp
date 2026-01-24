@@ -9,7 +9,7 @@ SPF_NS_BEGIN
 namespace Modules {
 using namespace SPF::System;
 
-GamepadInput::GamepadInput(const nlohmann::json& config) {
+GamepadInput::GamepadInput(const nlohmann::ordered_json& config) {
   std::string buttonName = config.value("button", "UNKNOWN_BUTTON");
   m_button = GamepadButtonMapping::GetInstance().GetButton(buttonName);
 }
@@ -19,7 +19,7 @@ bool GamepadInput::IsTriggeredBy(const Input::GamepadEvent& event) const {
   return event.button == m_button;
 }
 
-nlohmann::json GamepadInput::ToJson() const {
+nlohmann::ordered_json GamepadInput::ToJson() const {
   return {{"type", "gamepad"},
           {"button", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}};
 }

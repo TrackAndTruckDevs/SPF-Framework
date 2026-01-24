@@ -15,7 +15,7 @@ using namespace SPF::System;
 
 namespace {
 // Helper to recursively flatten a JSON object into a map of key-path strings.
-void FlattenJson(const nlohmann::json& node, const std::string& prefix, std::map<std::string, std::string>& targetMap) {
+void FlattenJson(const nlohmann::ordered_json& node, const std::string& prefix, std::map<std::string, std::string>& targetMap) {
   for (auto& [key, value] : node.items()) {
     std::string newPrefix = prefix.empty() ? key : prefix + "." + key;
     if (value.is_object()) {
@@ -32,7 +32,7 @@ LocalizationManager& LocalizationManager::GetInstance() {
   return instance;
 }
 
-Core::InitializationReport LocalizationManager::Initialize(const std::map<std::string, nlohmann::json>* allConfigs) {
+Core::InitializationReport LocalizationManager::Initialize(const std::map<std::string, nlohmann::ordered_json>* allConfigs) {
   Shutdown();  // Ensure idempotency
 
   Core::InitializationReport report;
@@ -174,7 +174,7 @@ bool LocalizationManager::LoadLanguageFile(const std::string& componentName, con
 
   try {
     std::ifstream file(langFilePath);
-    nlohmann::json newLanguageData = nlohmann::json::parse(file);
+    nlohmann::ordered_json newLanguageData = nlohmann::ordered_json::parse(file);
 
     // Use the new flattening mechanism
     m_translations[componentName].clear();
@@ -248,7 +248,7 @@ const std::string& LocalizationManager::GetWithFallback(const std::string& prima
     return *it;
 }
 
-bool LocalizationManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) {
+bool LocalizationManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
   if (systemName != "localization" || keyPath != "language") {
     return false;
   }

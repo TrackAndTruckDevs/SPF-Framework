@@ -351,7 +351,7 @@ void Core::InitServices() {
 
   // Phase 3: Initialize the logger factory now that config is available.
   const auto* loggingConfigs = m_configService->GetAllComponentSettings("logging");
-  auto loggerReport = LoggerFactory::GetInstance().Initialize(PathManager::GetLogsPath(), loggingConfigs ? loggingConfigs->at("framework") : nlohmann::json{});
+  auto loggerReport = LoggerFactory::GetInstance().Initialize(PathManager::GetLogsPath(), loggingConfigs ? loggingConfigs->at("framework") : nlohmann::ordered_json{});
   m_configurableServices.push_back(&LoggerFactory::GetInstance());
   m_logger = LoggerFactory::GetInstance().GetLogger("Core");  // Logger is assigned here.
 
@@ -876,7 +876,7 @@ void Core::OnInputCaptureConflict(const Input::InputCaptureConflict& e) {
 void Core::OnRequestInputCaptureCancel(const Events::UI::RequestInputCaptureCancel& e) { m_inputManager->CancelInputCapture(); }
 
 void Core::OnRequestBindingUpdate(const Events::UI::RequestBindingUpdate& e) {
-  nlohmann::json newBindingWithDefaults = e.newBinding;
+  nlohmann::ordered_json newBindingWithDefaults = e.newBinding;
 
   // If originalBinding is empty, it's a new binding, so we should add defaults.
   if (e.originalBinding.empty()) {

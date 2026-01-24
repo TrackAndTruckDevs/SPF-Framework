@@ -41,7 +41,7 @@ LoggerWindow::LoggerWindow(const std::string& componentName, const std::string& 
 
 const char* LoggerWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
 
-bool LoggerWindow::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) {
+bool LoggerWindow::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
   // We only care about changes to the global logging level for our own component
   if (systemName == "logging" && componentName == m_componentName && keyPath == "level") {
     if (newValue.is_string()) {

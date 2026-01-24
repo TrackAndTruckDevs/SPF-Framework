@@ -61,7 +61,7 @@ class UIManager : public Config::IConfigurable {
   // This method centralizes UI window creation within UIManager.
   void CreateAndRegisterFrameworkWindows();
 
-  Core::InitializationReport Initialize(const std::map<std::string, nlohmann::json>* allUIConfigs);
+  Core::InitializationReport Initialize(const std::map<std::string, nlohmann::ordered_json>* allUIConfigs);
   void Shutdown();
 
   void RegisterWindow(std::shared_ptr<IWindow> window);
@@ -72,7 +72,7 @@ class UIManager : public Config::IConfigurable {
   void SetRenderer(Rendering::Renderer* renderer) { m_renderer = renderer; }
   Rendering::Renderer* GetRenderer() const { return m_renderer; }
 
-  std::map<std::string, nlohmann::json> GetAllWindowSettings() const;
+  std::map<std::string, nlohmann::ordered_json> GetAllWindowSettings() const;
 
   void NotifyInputCaptured(const Input::InputCaptured& e);
   void NotifyInputCaptureCancelled(const Input::InputCaptureCancelled& e);
@@ -86,7 +86,7 @@ class UIManager : public Config::IConfigurable {
   void ToggleMouseOverridden();
 
   // --- IConfigurable Implementation ---
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override;
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
   ImFont* GetFont(const std::string& name) const;
 
@@ -112,7 +112,7 @@ class UIManager : public Config::IConfigurable {
 
   std::vector<std::shared_ptr<IWindow>> m_windows;
   std::map<std::string, ImFont*> m_fonts;
-  const std::map<std::string, nlohmann::json>* m_allUIConfigs = nullptr;
+  const std::map<std::string, nlohmann::ordered_json>* m_allUIConfigs = nullptr;
   std::string m_windowToFocus;
   std::string m_lastFocusedDockedWindowId;
   bool m_wasShellVisibleLastFrame = false;

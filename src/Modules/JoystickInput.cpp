@@ -4,7 +4,7 @@
 SPF_NS_BEGIN
 namespace Modules {
 
-JoystickInput::JoystickInput(const nlohmann::json& config) : m_buttonIndex(-1) {
+JoystickInput::JoystickInput(const nlohmann::ordered_json& config) : m_buttonIndex(-1) {
     if (config.contains("key") && config["key"].is_string()) {
         m_buttonIndex = System::JoystickButtonMapping::GetInstance().FromString(config["key"].get<std::string>());
     }
@@ -14,7 +14,7 @@ bool JoystickInput::IsTriggeredBy(const Input::JoystickEvent& event) const {
     return m_buttonIndex == event.buttonIndex;
 }
 
-nlohmann::json JoystickInput::ToJson() const {
+nlohmann::ordered_json JoystickInput::ToJson() const {
     return {
         {"type", "joystick"},
         {"key", System::JoystickButtonMapping::GetInstance().ToString(m_buttonIndex)}

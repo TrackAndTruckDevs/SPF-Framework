@@ -44,9 +44,9 @@ class SettingsWindow : public BaseWindow {
  private:
   void OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e);
   void PopulateConfigurableComponents();
-  void RenderSettingsNode(const std::string& key, const nlohmann::json& node, const std::string& systemName, const std::string& currentPath, int depth);
+  void RenderSettingsNode(const std::string& key, const nlohmann::ordered_json& node, const std::string& systemName, const std::string& currentPath, int depth);
   void RenderKeybindsSettings();
-  void DrawSettingsRows(const nlohmann::json& settingsNode, const std::string& systemName, const std::string& parentPath);
+  void DrawSettingsRows(const nlohmann::ordered_json& settingsNode, const std::string& systemName, const std::string& parentPath);
   std::string GetTranslatedActionName(const std::string& fullActionName) const;
 
   Config::IConfigService& m_configService;
@@ -57,16 +57,16 @@ class SettingsWindow : public BaseWindow {
 
   // State for keybinding editor
   std::optional<std::string> m_actionBeingEdited;
-  nlohmann::json m_editingBindingObject;
+  nlohmann::ordered_json m_editingBindingObject;
   std::optional<std::string> m_editingBindingAction;      // For the details popup
-  std::optional<nlohmann::json> m_editingBindingDetails;  // For the details popup
-  nlohmann::json m_originalBindingCopy;                   // Copy of the binding when popup opened
+  std::optional<nlohmann::ordered_json> m_editingBindingDetails;  // For the details popup
+  nlohmann::ordered_json m_originalBindingCopy;                   // Copy of the binding when popup opened
   int m_currentPressThreshold = 500;                      // Buffer for the slider
   std::optional<Input::InputCaptured> m_bufferedInputInfo;
   std::optional<Input::InputCaptureConflict> m_conflictInfo;
 
   // For press-type swap conflict resolution in the details popup
-  std::optional<std::pair<std::string, nlohmann::json>> m_pressTypeSwapConflict;
+  std::optional<std::pair<std::string, nlohmann::ordered_json>> m_pressTypeSwapConflict;
   std::optional<std::string> m_pressTypeSwapNewValue;
   bool m_shouldOpenBindingDetailsPopup = false;
 

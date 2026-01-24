@@ -24,7 +24,7 @@ LoggerFactory& LoggerFactory::GetInstance() {
 }
 
 // --- Lifecycle ---
-Core::InitializationReport LoggerFactory::Initialize(const std::filesystem::path& log_dir, const nlohmann::json& framework_config) {
+Core::InitializationReport LoggerFactory::Initialize(const std::filesystem::path& log_dir, const nlohmann::ordered_json& framework_config) {
   std::lock_guard<std::mutex> lock(m_mutex);
   InitializationReport report;
   report.ServiceName = "LoggerFactory";
@@ -85,7 +85,7 @@ std::shared_ptr<Sinks::LoggerWindowSink> LoggerFactory::GetUISink() const {
   return m_uiSink;
 }
 
-void LoggerFactory::ApplyConfigurationFor(const std::string& componentName, const nlohmann::json& config) {
+void LoggerFactory::ApplyConfigurationFor(const std::string& componentName, const nlohmann::ordered_json& config) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_isInitialized) return;
 
@@ -126,7 +126,7 @@ void LoggerFactory::ApplyConfigurationFor(const std::string& componentName, cons
 }
 
 // --- IConfigurable ---
-bool LoggerFactory::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) {
+bool LoggerFactory::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
   if (systemName != "logging") {
     return false;
   }
@@ -185,7 +185,7 @@ std::shared_ptr<Logger> LoggerFactory::GetLogger_unlocked(const std::string& nam
   return newLogger;
 }
 
-void LoggerFactory::CreateGlobalSinks(const nlohmann::json& framework_config, Core::InitializationReport& report) {
+void LoggerFactory::CreateGlobalSinks(const nlohmann::ordered_json& framework_config, Core::InitializationReport& report) {
     // Set factory logger level first
     LogLevel level = LogLevel::Info;
     if (framework_config.contains("level")) {

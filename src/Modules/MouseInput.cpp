@@ -4,7 +4,7 @@
 SPF_NS_BEGIN
 namespace Modules {
 
-MouseInput::MouseInput(const nlohmann::json& config) : m_button(System::MouseButton::Unknown) {
+MouseInput::MouseInput(const nlohmann::ordered_json& config) : m_button(System::MouseButton::Unknown) {
     if (config.contains("key") && config["key"].is_string()) {
         m_button = System::MouseButtonMapping::GetInstance().FromString(config["key"].get<std::string>());
     }
@@ -18,7 +18,7 @@ bool MouseInput::IsTriggeredBy(const Input::MouseButtonEvent& event) const {
     return static_cast<int>(m_button) == event.iButton;
 }
 
-nlohmann::json MouseInput::ToJson() const {
+nlohmann::ordered_json MouseInput::ToJson() const {
     return {
         {"type", "mouse"},
         {"key", System::MouseButtonMapping::GetInstance().ToString(m_button)}

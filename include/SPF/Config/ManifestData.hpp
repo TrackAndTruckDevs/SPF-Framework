@@ -44,7 +44,7 @@ struct ConfigPolicyData {
 // --- Settings Block (Arbitrary JSON content for settings.config.settings) ---
 // This represents the content of the "settings": { "config": { "settings": { ... } } } block
 // The user clarified that this should be arbitrary JSON for both framework and plugins.
-// So, the top-level ManifestData will have a nlohmann::json member for this.
+// So, the top-level ManifestData will have a nlohmann::ordered_json member for this.
 
 // --- Logging Settings Block ---
 /**
@@ -141,7 +141,7 @@ struct CustomSettingMetadata {
      * This JSON object will contain key-value pairs like "min": 0.0, "max": 100.0, "format": "%.2f",
      * or "options": [...] for combo/radio widgets.
      */
-    nlohmann::json widget_params;
+    nlohmann::ordered_json widget_params;
 };
 
 /**
@@ -183,7 +183,7 @@ struct ManifestData {
     InfoData info;                  ///< @brief General information block.
     ConfigPolicyData configPolicy;  ///< @brief Configuration policy block.
     // The entire "settings" block, including "config" and nested "settings", as arbitrary JSON
-    nlohmann::json settings;
+    nlohmann::ordered_json settings;
 
     LoggingData logging;            ///< @brief Default logging configuration.
     LocalizationData localization;  ///< @brief Default localization configuration.

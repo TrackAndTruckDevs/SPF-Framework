@@ -23,7 +23,7 @@ class LoggerWindow : public BaseWindow, public Config::IConfigurable {
                Config::IConfigService& configService);
 
   // --- IConfigurable Implementation ---
-  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) override;
+  bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
  protected:
   void RenderContent() override;

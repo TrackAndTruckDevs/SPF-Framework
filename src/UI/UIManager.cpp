@@ -159,7 +159,7 @@ UIManager::~UIManager() {
   Shutdown();
 }
 
-Core::InitializationReport UIManager::Initialize(const std::map<std::string, nlohmann::json>* allUIConfigs) {
+Core::InitializationReport UIManager::Initialize(const std::map<std::string, nlohmann::ordered_json>* allUIConfigs) {
   m_allUIConfigs = allUIConfigs;  // Still needed for settings application
 
   auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
@@ -206,7 +206,7 @@ void UIManager::RegisterWindow(std::shared_ptr<IWindow> window) {
       const auto& componentUIConfig = compIt->second;
       if (componentUIConfig.contains("windows") && componentUIConfig["windows"].contains(windowId)) {
         const auto& windowConfig = componentUIConfig["windows"][windowId];
-        nlohmann::json strippedConfig;
+        nlohmann::ordered_json strippedConfig;
 
         for (const auto& [key, node] : windowConfig.items()) {
           if (node.is_object() && node.contains("_value")) {
@@ -225,8 +225,8 @@ void UIManager::RegisterWindow(std::shared_ptr<IWindow> window) {
   m_windows.push_back(std::move(window));
 }
 
-std::map<std::string, nlohmann::json> UIManager::GetAllWindowSettings() const {
-  std::map<std::string, nlohmann::json> allSettings;
+std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() const {
+  std::map<std::string, nlohmann::ordered_json> allSettings;
   for (const auto& window : m_windows) {
     if (!window) continue;
     // This structure assumes settings are grouped by component
@@ -617,7 +617,7 @@ void UIManager::DestroyWindowsForOwner(const std::string& owner) {
   std::erase_if(m_windows, [&](const std::shared_ptr<IWindow>& window) { return window->GetComponentName() == owner; });
 }
 
-bool UIManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::json& newValue) {
+bool UIManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
   if (systemName != "ui") {
     return false;  // This component only handles UI settings.
   }
@@ -640,8 +640,8 @@ bool UIManager::OnSettingChanged(const std::string& systemName, const std::strin
   IWindow* window = GetWindow(componentName, windowId);
   if (window) {
     // Create a mini-json with just the changed property to pass to the window
-    nlohmann::json settingUpdate;
-    const nlohmann::json* valueToApply = &newValue;
+    nlohmann::ordered_json settingUpdate;
+    const nlohmann::ordered_json* valueToApply = &newValue;
     if (newValue.is_object() && newValue.contains("_value")) {
       valueToApply = &newValue["_value"];
     }
