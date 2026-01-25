@@ -12,12 +12,12 @@ namespace Modules::API {
 SPF_Config_Handle* ConfigApi::Cfg_GetContext(const char* pluginName) {
     auto& pm = PluginManager::GetInstance();
     if (!pluginName || !pm.GetHandleManager()) return nullptr;
-    auto handle = std::make_unique<Handles::ConfigHandle>(pluginName);
-    return reinterpret_cast<SPF_Config_Handle*>(pm.GetHandleManager()->RegisterHandle(pluginName, std::move(handle)));
+    auto h_unique = std::make_unique<Handles::ConfigHandle>(pluginName);
+    return reinterpret_cast<SPF_Config_Handle*>(pm.GetHandleManager()->RegisterHandle(pluginName, std::move(h_unique)));
 }
 
-int ConfigApi::Cfg_GetString(SPF_Config_Handle* handle, const char* key, const char* defaultValue, char* out_buffer, int buffer_size) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+int ConfigApi::Cfg_GetString(SPF_Config_Handle* h, const char* key, const char* defaultValue, char* out_buffer, int buffer_size) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key || !out_buffer || buffer_size <= 0) return 0;
 
     auto& pm = PluginManager::GetInstance();
@@ -43,8 +43,8 @@ int ConfigApi::Cfg_GetString(SPF_Config_Handle* handle, const char* key, const c
     }
 }
 
-void ConfigApi::Cfg_SetString(SPF_Config_Handle* handle, const char* key, const char* value) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+void ConfigApi::Cfg_SetString(SPF_Config_Handle* h, const char* key, const char* value) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key || !value) return;
     auto& pm = PluginManager::GetInstance();
     if (pm.GetConfigService()) {
@@ -52,8 +52,8 @@ void ConfigApi::Cfg_SetString(SPF_Config_Handle* handle, const char* key, const 
     }
 }
 
-int64_t ConfigApi::Cfg_GetInt(SPF_Config_Handle* handle, const char* key, int64_t defaultValue) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+int64_t ConfigApi::Cfg_GetInt(SPF_Config_Handle* h, const char* key, int64_t defaultValue) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return defaultValue;
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
@@ -66,8 +66,8 @@ int64_t ConfigApi::Cfg_GetInt(SPF_Config_Handle* handle, const char* key, int64_
     return valueNode->get<int64_t>();
 }
 
-void ConfigApi::Cfg_SetInt(SPF_Config_Handle* handle, const char* key, int64_t value) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+void ConfigApi::Cfg_SetInt(SPF_Config_Handle* h, const char* key, int64_t value) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return;
     auto& pm = PluginManager::GetInstance();
     if (pm.GetConfigService()) {
@@ -75,8 +75,8 @@ void ConfigApi::Cfg_SetInt(SPF_Config_Handle* handle, const char* key, int64_t v
     }
 }
 
-int32_t ConfigApi::Cfg_GetInt32(SPF_Config_Handle* handle, const char* key, int32_t defaultValue) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+int32_t ConfigApi::Cfg_GetInt32(SPF_Config_Handle* h, const char* key, int32_t defaultValue) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return defaultValue;
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
@@ -93,8 +93,8 @@ int32_t ConfigApi::Cfg_GetInt32(SPF_Config_Handle* handle, const char* key, int3
     return static_cast<int32_t>(value64);
 }
 
-void ConfigApi::Cfg_SetInt32(SPF_Config_Handle* handle, const char* key, int32_t value) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+void ConfigApi::Cfg_SetInt32(SPF_Config_Handle* h, const char* key, int32_t value) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return;
     auto& pm = PluginManager::GetInstance();
     if (pm.GetConfigService()) {
@@ -102,8 +102,8 @@ void ConfigApi::Cfg_SetInt32(SPF_Config_Handle* handle, const char* key, int32_t
     }
 }
 
-double ConfigApi::Cfg_GetFloat(SPF_Config_Handle* handle, const char* key, double defaultValue) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+double ConfigApi::Cfg_GetFloat(SPF_Config_Handle* h, const char* key, double defaultValue) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return defaultValue;
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
@@ -116,8 +116,8 @@ double ConfigApi::Cfg_GetFloat(SPF_Config_Handle* handle, const char* key, doubl
     return valueNode->get<double>();
 }
 
-void ConfigApi::Cfg_SetFloat(SPF_Config_Handle* handle, const char* key, double value) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+void ConfigApi::Cfg_SetFloat(SPF_Config_Handle* h, const char* key, double value) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return;
     auto& pm = PluginManager::GetInstance();
     if (pm.GetConfigService()) {
@@ -125,8 +125,8 @@ void ConfigApi::Cfg_SetFloat(SPF_Config_Handle* handle, const char* key, double 
     }
 }
 
-bool ConfigApi::Cfg_GetBool(SPF_Config_Handle* handle, const char* key, bool defaultValue) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+bool ConfigApi::Cfg_GetBool(SPF_Config_Handle* h, const char* key, bool defaultValue) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return defaultValue;
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return defaultValue;
@@ -139,8 +139,8 @@ bool ConfigApi::Cfg_GetBool(SPF_Config_Handle* handle, const char* key, bool def
     return valueNode->get<bool>();
 }
 
-SPF_JsonValue_Handle* ConfigApi::Cfg_GetJsonValueHandle(SPF_Config_Handle* handle, const char* key) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+SPF_JsonValue_Handle* ConfigApi::Cfg_GetJsonValueHandle(SPF_Config_Handle* h, const char* key) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return nullptr;
     auto& pm = PluginManager::GetInstance();
     if (!pm.GetConfigService()) return nullptr;
@@ -149,8 +149,8 @@ SPF_JsonValue_Handle* ConfigApi::Cfg_GetJsonValueHandle(SPF_Config_Handle* handl
     return reinterpret_cast<SPF_JsonValue_Handle*>(const_cast<nlohmann::ordered_json*>(valueNode));
 }
 
-void ConfigApi::Cfg_SetBool(SPF_Config_Handle* handle, const char* key, bool value) {
-    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(handle);
+void ConfigApi::Cfg_SetBool(SPF_Config_Handle* h, const char* key, bool value) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key) return;
     auto& pm = PluginManager::GetInstance();
     if (pm.GetConfigService()) {
@@ -161,18 +161,18 @@ void ConfigApi::Cfg_SetBool(SPF_Config_Handle* handle, const char* key, bool val
 void ConfigApi::FillConfigApi(SPF_Config_API* api) {
     if (!api) return;
 
-    api->GetContext = &ConfigApi::Cfg_GetContext;
-    api->GetString = &ConfigApi::Cfg_GetString;
-    api->SetString = &ConfigApi::Cfg_SetString;
-    api->GetInt = &ConfigApi::Cfg_GetInt;
-    api->SetInt = &ConfigApi::Cfg_SetInt;
-    api->GetInt32 = &ConfigApi::Cfg_GetInt32;
-    api->SetInt32 = &ConfigApi::Cfg_SetInt32;
-    api->GetFloat = &ConfigApi::Cfg_GetFloat;
-    api->SetFloat = &ConfigApi::Cfg_SetFloat;
-    api->GetBool = &ConfigApi::Cfg_GetBool;
-    api->GetJsonValueHandle = &ConfigApi::Cfg_GetJsonValueHandle;
-    api->SetBool = &ConfigApi::Cfg_SetBool;
+    api->Cfg_GetContext = &ConfigApi::Cfg_GetContext;
+    api->Cfg_GetString = &ConfigApi::Cfg_GetString;
+    api->Cfg_SetString = &ConfigApi::Cfg_SetString;
+    api->Cfg_GetInt = &ConfigApi::Cfg_GetInt;
+    api->Cfg_SetInt = &ConfigApi::Cfg_SetInt;
+    api->Cfg_GetInt32 = &ConfigApi::Cfg_GetInt32;
+    api->Cfg_SetInt32 = &ConfigApi::Cfg_SetInt32;
+    api->Cfg_GetFloat = &ConfigApi::Cfg_GetFloat;
+    api->Cfg_SetFloat = &ConfigApi::Cfg_SetFloat;
+    api->Cfg_GetBool = &ConfigApi::Cfg_GetBool;
+    api->Cfg_GetJsonValueHandle = &ConfigApi::Cfg_GetJsonValueHandle;
+    api->Cfg_SetBool = &ConfigApi::Cfg_SetBool;
 }
 
 } // namespace Modules::API

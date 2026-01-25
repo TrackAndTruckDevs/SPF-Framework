@@ -429,7 +429,7 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
     // with the Config API to get the new value.
     // Example:
     // if (strcmp(keyPath, "settings.some_bool") == 0) {
-    //     bool newValue = g_ctx.loadAPI->config->GetBool(config_handle, keyPath, false);
+    //     bool newValue = g_ctx.loadAPI->config->Cfg_GetBool(config_handle, keyPath, false);
     //     // ... react to the new value ...
     // }
 }

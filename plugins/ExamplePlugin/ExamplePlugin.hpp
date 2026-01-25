@@ -402,7 +402,7 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
 void InitializeVirtualDevice();
 
 /**
- * @brief Parses the `a_complex_object` setting to demonstrate `GetJsonValueHandle` and `JsonReaderApi`.
+ * @brief Parses the `a_complex_object` setting to demonstrate `Cfg_GetJsonValueHandle` and `JsonReaderApi`.
  */
 void ParseComplexObject();
 

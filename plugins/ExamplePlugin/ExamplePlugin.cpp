@@ -48,7 +48,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     {
         // `name`: The unique programmatic name of your plugin. No spaces or special characters.
         // This is used for internal identification, folder names, and config files.
-        // CRITICAL: This MUST match the name used in `GetContext` calls for various APIs.
+        // CRITICAL: This MUST match the name used in `Cfg_GetContext` calls for various APIs.
         api->Info_SetName(h, PLUGIN_NAME);
 
         // `version`: The version of your plugin. It's a best practice to follow Semantic Versioning (semver.org).
@@ -283,8 +283,8 @@ void OnLoad(const SPF_Load_API* load_api) {
 
         // Read initial values from the config file. The `GetContext` call gets a handle
         // specific to our plugin, ensuring we don't conflict with other plugins' settings.
-        auto config = g_ctx.loadAPI->config->GetContext(PLUGIN_NAME);
-        g_ctx.someNumber = g_ctx.loadAPI->config->GetInt32(config, "settings.a_simple_number", 42);
+        auto config = g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME);
+        g_ctx.someNumber = g_ctx.loadAPI->config->Cfg_GetInt32(config, "settings.a_simple_number", 42);
 
         // Log the initial value. Use a local buffer for safe cross-DLL string formatting.
         char log_buffer[256];
@@ -579,7 +579,7 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
     // Check which setting has changed and react accordingly.
     if (strcmp(keyPath, "settings.a_simple_number") == 0) {
         // Update the cached value in our global context using the ConfigApi.
-        g_ctx.someNumber = g_ctx.loadAPI->config->GetInt32(config_handle, "settings.a_simple_number", 42);
+        g_ctx.someNumber = g_ctx.loadAPI->config->Cfg_GetInt32(config_handle, "settings.a_simple_number", 42);
 
         // Log the change for debugging purposes.
         char log_buffer[256];
@@ -932,7 +932,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->Text("This slider modifies a value in settings.json.");
             if (ui->SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
                 // If the slider is moved, update the configuration file.
-                g_ctx.loadAPI->config->SetInt32(g_ctx.loadAPI->config->GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
+                g_ctx.loadAPI->config->Cfg_SetInt32(g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
                 g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
             }
             ui->Separator();
@@ -1236,8 +1236,8 @@ void InitializeVirtualDevice() {
 }
 
 /**
- * @brief Parses the `a_complex_object` setting to demonstrate `GetJsonValueHandle` and `JsonReaderApi`.
- * @details This function retrieves a complex JSON object from the config using `ConfigApi::GetJsonValueHandle`
+ * @brief Parses the `a_complex_object` setting to demonstrate `Cfg_GetJsonValueHandle` and `JsonReaderApi`.
+ * @details This function retrieves a complex JSON object from the config using `Cfg_GetJsonValueHandle`
  *          and then uses the `JsonReaderApi` to extract nested values. It showcases how to handle
  *          advanced configuration structures within a plugin.
  */
@@ -1249,13 +1249,13 @@ void ParseComplexObject() {
 
     auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
     auto config = g_ctx.coreAPI->config;
-    auto config_handle = config->GetContext(PLUGIN_NAME);
+    auto config_handle = config->Cfg_GetContext(PLUGIN_NAME);
     const auto* json_reader = g_ctx.coreAPI->json_reader;
 
     char log_buffer[512]; // Increased buffer size for potentially long strings
 
     // 1. Get the handle to the complex JSON object from the Config API.
-    const SPF_JsonValue_Handle* object_handle = config->GetJsonValueHandle(config_handle, "settings.a_complex_object");
+    const SPF_JsonValue_Handle* object_handle = config->Cfg_GetJsonValueHandle(config_handle, "settings.a_complex_object");
 
     if (object_handle) {
         g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Parsing complex object 'settings.a_complex_object':");

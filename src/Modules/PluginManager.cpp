@@ -436,7 +436,7 @@ void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, c
     auto& plugin = it->second;
     if (plugin->exports.OnSettingChanged) {
       // Get the config handle for the plugin to pass to the new callback signature.
-      SPF_Config_Handle* configHandle = m_configAPI.GetContext(pluginName.c_str());
+      SPF_Config_Handle* configHandle = m_configAPI.Cfg_GetContext(pluginName.c_str());
       plugin->exports.OnSettingChanged(configHandle, keyPath.c_str());
     }
   }
