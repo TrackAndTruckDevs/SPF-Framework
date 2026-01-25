@@ -17,7 +17,7 @@ namespace MyPlugin {
 
 /**
  * @brief A constant for the plugin's name.
- * @details This MUST match the name used in `GetContext` calls for various APIs
+ * @details This MUST match the name used in `Cfg_GetContext` calls for various APIs
  * and the plugin's directory name.
  */
 const char* PLUGIN_NAME = "MyPlugin";

@@ -43,7 +43,7 @@
 // #include <SPF/SPF_API/SPF_VirtInput_API.h>      // For SPF_VirtualDevice_Handle
 // #include <SPF/SPF_API/SPF_Camera_API.h>         // For SPF_Camera_API
 // #include <SPF/SPF_API/SPF_GameLog_API.h>        // For SPF_GameLog_Callback_Handle
-// #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged)
+// #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged). Functions: Json_GetType, Json_GetString, etc.
 
 // =================================================================================================
 // 2. Standard Library Includes
@@ -190,10 +190,10 @@ void OnUnload();
 * @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
 * @details Uncomment this if your plugin defines custom settings in its manifest and needs to react
 *          to changes made by the user or other parts of the framework.
-* @param config_handle The configuration context handle for this plugin.
+* @param h The configuration context handle for this plugin.
 * @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
  */
-// void OnSettingChanged(SPF_Config_Handle *config_handle, const char *keyPath);
+// void OnSettingChanged(SPF_Config_Handle *h, const char *keyPath);
 
 /**
  * @brief Called once to allow the plugin to register its UI rendering callbacks.

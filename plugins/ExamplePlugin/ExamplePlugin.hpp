@@ -14,7 +14,7 @@
 // Including them is necessary to use any framework functionality. Each header corresponds to a
 // specific framework subsystem.
 #include <SPF/SPF_API/SPF_Plugin.h>            // Defines the core plugin export structures (SPF_Plugin_Exports, SPF_Core_API) and lifecycle functions. This is mandatory.
-#include <SPF/SPF_API/SPF_Manifest_API.h>      // For defining the plugin's metadata (name, version, required hooks, etc.) via GetManifestData.
+#include <SPF/SPF_API/SPF_Manifest_API.h>      // For defining the plugin's metadata (name, version, required hooks, etc.) via BuildManifest.
 #include <SPF/SPF_API/SPF_Logger_API.h>        // For logging messages to the framework's central logger.
 #include <SPF/SPF_API/SPF_Config_API.h>        // For reading from and writing to the plugin's dedicated settings file.
 #include <SPF/SPF_API/SPF_Localization_API.h>  // For handling multi-language strings from translation files.

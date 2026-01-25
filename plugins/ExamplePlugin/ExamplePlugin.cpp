@@ -1255,43 +1255,43 @@ void ParseComplexObject() {
     char log_buffer[512]; // Increased buffer size for potentially long strings
 
     // 1. Get the handle to the complex JSON object from the Config API.
-    const SPF_JsonValue_Handle* object_handle = config->Cfg_GetJsonValueHandle(config_handle, "settings.a_complex_object");
+    const SPF_JsonValue_Handle* object_h = config->Cfg_GetJsonValueHandle(config_handle, "settings.a_complex_object");
 
-    if (object_handle) {
+    if (object_h) {
         g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Parsing complex object 'settings.a_complex_object':");
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
 
         // 2. Use the JsonReader API to check for and get the 'mode' member.
-        if (json_reader->HasMember(object_handle, "mode")) {
-            const SPF_JsonValue_Handle* mode_handle = json_reader->GetMember(object_handle, "mode");
-            if (mode_handle && json_reader->GetType(mode_handle) == SPF_JSON_TYPE_STRING) {
+        if (json_reader->Json_HasMember(object_h, "mode")) {
+            const SPF_JsonValue_Handle* mode_h = json_reader->Json_GetMember(object_h, "mode");
+            if (mode_h && json_reader->Json_GetType(mode_h) == SPF_JSON_TYPE_STRING) {
                 char mode_str[64];
-                json_reader->GetString(mode_handle, mode_str, sizeof(mode_str));
+                json_reader->Json_GetString(mode_h, mode_str, sizeof(mode_str));
                 g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Mode: %s", mode_str);
                 g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
             }
         }
 
         // 3. Get the 'enabled' member.
-        const SPF_JsonValue_Handle* enabled_handle = json_reader->GetMember(object_handle, "enabled");
-        if (enabled_handle && json_reader->GetType(enabled_handle) == SPF_JSON_TYPE_BOOLEAN) {
-            bool enabled_val = json_reader->GetBool(enabled_handle, false);
+        const SPF_JsonValue_Handle* enabled_h = json_reader->Json_GetMember(object_h, "enabled");
+        if (enabled_h && json_reader->Json_GetType(enabled_h) == SPF_JSON_TYPE_BOOLEAN) {
+            bool enabled_val = json_reader->Json_GetBool(enabled_h, false);
             g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Enabled: %s", enabled_val ? "true" : "false");
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
         }
 
         // 4. Get the 'targets' array and iterate through it.
-        const SPF_JsonValue_Handle* targets_handle = json_reader->GetMember(object_handle, "targets");
-        if (targets_handle && json_reader->GetType(targets_handle) == SPF_JSON_TYPE_ARRAY) {
-            int array_size = json_reader->GetArraySize(targets_handle);
+        const SPF_JsonValue_Handle* targets_h = json_reader->Json_GetMember(object_h, "targets");
+        if (targets_h && json_reader->Json_GetType(targets_h) == SPF_JSON_TYPE_ARRAY) {
+            int array_size = json_reader->Json_GetArraySize(targets_h);
             g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Found 'targets' array with %d elements:", array_size);
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
 
             for (int i = 0; i < array_size; ++i) {
-                const SPF_JsonValue_Handle* item_handle = json_reader->GetArrayItem(targets_handle, i);
-                if (item_handle && json_reader->GetType(item_handle) == SPF_JSON_TYPE_STRING) {
+                const SPF_JsonValue_Handle* item_h = json_reader->Json_GetArrayItem(targets_h, i);
+                if (item_h && json_reader->Json_GetType(item_h) == SPF_JSON_TYPE_STRING) {
                     char item_str[64];
-                    json_reader->GetString(item_handle, item_str, sizeof(item_str));
+                    json_reader->Json_GetString(item_h, item_str, sizeof(item_str));
                     g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "    - Target[%d]: %s", i, item_str);
                     g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
                 }
