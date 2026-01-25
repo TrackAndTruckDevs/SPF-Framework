@@ -288,7 +288,7 @@ void OnLoad(const SPF_Load_API* load_api) {
 
         // Log the initial value. Use a local buffer for safe cross-DLL string formatting.
         char log_buffer[256];
-        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Initial value for 'a_simple_number' is %d.", g_ctx.someNumber);
+        g_ctx.loadAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Initial value for 'a_simple_number' is %d.", g_ctx.someNumber);
         g_ctx.loadAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
     }
 }
@@ -400,36 +400,36 @@ void OnUpdate() {
     {
         const auto& data = g_ctx.eventDataCache.gameState;
         strcat_safe("[GameState]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game ID: %s (%s)\n", data.game_id, data.game_name); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Version: %u.%u\n", data.scs_game_version_major, data.scs_game_version_minor); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Telemetry Version: %u.%u\n", data.telemetry_game_version_major, data.telemetry_game_version_minor); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Paused: %s, Scale: %.2f, MP Time Offset: %d\n", data.paused ? "Yes" : "No", data.scale, data.multiplayer_time_offset); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game ID: %s (%s)\n", data.game_id, data.game_name); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Version: %u.%u\n", data.scs_game_version_major, data.scs_game_version_minor); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Telemetry Version: %u.%u\n", data.telemetry_game_version_major, data.telemetry_game_version_minor); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Paused: %s, Scale: %.2f, MP Time Offset: %d\n", data.paused ? "Yes" : "No", data.scale, data.multiplayer_time_offset); strcat_safe(temp_line_buffer);
     }
 
     // --- Timestamps ---
     {
         const auto& data = g_ctx.eventDataCache.timestamps;
         strcat_safe("[Timestamps]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Sim: %llu, Render: %llu, Paused Sim: %llu\n", data.simulation, data.render, data.paused_simulation); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Sim: %llu, Render: %llu, Paused Sim: %llu\n", data.simulation, data.render, data.paused_simulation); strcat_safe(temp_line_buffer);
     }
 
     // --- CommonData ---
     {
         const auto& data = g_ctx.eventDataCache.commonData;
         strcat_safe("[CommonData]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Time: %u, Next Rest: %d min\n", data.game_time, data.next_rest_stop); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Game Time: %u, Next Rest: %d min\n", data.game_time, data.next_rest_stop); strcat_safe(temp_line_buffer);
     }
 
     // --- TruckConstants ---
     {
         const auto& data = g_ctx.eventDataCache.truckConstants;
         strcat_safe("[TruckConstants]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Truck: %s %s (%s, %s)\n", data.brand, data.name, data.brand_id, data.id); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  License: %s (%s, %s)\n", data.license_plate, data.license_plate_country, data.license_plate_country_id); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Drivetrain: %u Fwd, %u Rev, RPM Limit: %.0f, Diff Ratio: %.2f\n", data.forward_gear_count, data.reverse_gear_count, data.rpm_limit, data.differential_ratio); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Capacities: Fuel: %.1f L, AdBlue: %.1f L\n", data.fuel_capacity, data.adblue_capacity); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Truck: %s %s (%s, %s)\n", data.brand, data.name, data.brand_id, data.id); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  License: %s (%s, %s)\n", data.license_plate, data.license_plate_country, data.license_plate_country_id); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Drivetrain: %u Fwd, %u Rev, RPM Limit: %.0f, Diff Ratio: %.2f\n", data.forward_gear_count, data.reverse_gear_count, data.rpm_limit, data.differential_ratio); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Capacities: Fuel: %.1f L, AdBlue: %.1f L\n", data.fuel_capacity, data.adblue_capacity); strcat_safe(temp_line_buffer);
         for (uint32_t i = 0; i < data.wheel_count; ++i) {
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Wheel %u: Radius=%.3f, Steerable=%d, Powered=%d, Liftable=%d\n", i, data.wheels[i].radius, data.wheels[i].steerable, data.wheels[i].powered, data.wheels[i].liftable); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Wheel %u: Radius=%.3f, Steerable=%d, Powered=%d, Liftable=%d\n", i, data.wheels[i].radius, data.wheels[i].steerable, data.wheels[i].powered, data.wheels[i].liftable); strcat_safe(temp_line_buffer);
         }
     }
 
@@ -437,31 +437,31 @@ void OnUpdate() {
     {
         const auto& data = g_ctx.eventDataCache.truckData;
         strcat_safe("[TruckData]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  World Pos: (%.2f, %.2f, %.2f)\n", data.world_placement.position.x, data.world_placement.position.y, data.world_placement.position.z); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Speed: %.1f kph, RPM: %.0f\n", data.speed * 3.6f, data.engine_rpm); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Gear: %d (Displayed: %d), Cruise Control: %.1f kph\n", data.gear, data.displayed_gear, data.cruise_control_speed * 3.6f); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Brakes: Parking=%d, Motor=%d, Retarder=%u, Temp: %.1f C\n", data.parking_brake, data.motor_brake, data.retarder_level, data.brake_temperature); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Pressures: Air=%.1f psi, Oil=%.1f psi\n", data.air_pressure, data.oil_pressure); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Temps: Water=%.1f C, Oil=%.1f C\n", data.water_temperature, data.oil_temperature); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Fluids: Fuel=%.1f L, AdBlue=%.1f L\n", data.fuel_amount, data.adblue_amount); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Lights: L=%d R=%d, Park=%d, Low=%d, High=%d, Beacon=%d\n", data.lblinker, data.rblinker, data.light_parking, data.light_low_beam, data.light_high_beam, data.light_beacon); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Wear: Eng=%.3f, Trans=%.3f, Cab=%.3f, Chas=%.3f, Wheels=%.3f\n", data.wear_engine, data.wear_transmission, data.wear_cabin, data.wear_chassis, data.wear_wheels); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Odometer: %.1f km\n", data.odometer); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  World Pos: (%.2f, %.2f, %.2f)\n", data.world_placement.position.x, data.world_placement.position.y, data.world_placement.position.z); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Speed: %.1f kph, RPM: %.0f\n", data.speed * 3.6f, data.engine_rpm); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Gear: %d (Displayed: %d), Cruise Control: %.1f kph\n", data.gear, data.displayed_gear, data.cruise_control_speed * 3.6f); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Brakes: Parking=%d, Motor=%d, Retarder=%u, Temp: %.1f C\n", data.parking_brake, data.motor_brake, data.retarder_level, data.brake_temperature); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Pressures: Air=%.1f psi, Oil=%.1f psi\n", data.air_pressure, data.oil_pressure); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Temps: Water=%.1f C, Oil=%.1f C\n", data.water_temperature, data.oil_temperature); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Fluids: Fuel=%.1f L, AdBlue=%.1f L\n", data.fuel_amount, data.adblue_amount); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Lights: L=%d R=%d, Park=%d, Low=%d, High=%d, Beacon=%d\n", data.lblinker, data.rblinker, data.light_parking, data.light_low_beam, data.light_high_beam, data.light_beacon); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Wear: Eng=%.3f, Trans=%.3f, Cab=%.3f, Chas=%.3f, Wheels=%.3f\n", data.wear_engine, data.wear_transmission, data.wear_cabin, data.wear_chassis, data.wear_wheels); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Odometer: %.1f km\n", data.odometer); strcat_safe(temp_line_buffer);
     }
 
     // --- Trailers ---
     {
         const auto& data = g_ctx.eventDataCache.trailers;
         strcat_safe("[Trailers]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Count: %zu\n", data.size()); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Count: %zu\n", data.size()); strcat_safe(temp_line_buffer);
         for (size_t i = 0; i < data.size(); ++i) {
             const auto& trailer = data[i];
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Trailer %zu: %s (%s) Conn: %d\n", i, trailer.constants.name, trailer.constants.id, trailer.data.connected); strcat_safe(temp_line_buffer);
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "      Damage: Cargo=%.3f, Chassis=%.3f, Wheels=%.3f\n", trailer.data.cargo_damage, trailer.data.wear_chassis, trailer.data.wear_wheels); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Trailer %zu: %s (%s) Conn: %d\n", i, trailer.constants.name, trailer.constants.id, trailer.data.connected); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "      Damage: Cargo=%.3f, Chassis=%.3f, Wheels=%.3f\n", trailer.data.cargo_damage, trailer.data.wear_chassis, trailer.data.wear_wheels); strcat_safe(temp_line_buffer);
             for (uint32_t j = 0; j < trailer.constants.wheel_count; ++j) {
                 const auto& wheel_data = trailer.data.wheels[j];
                 const auto& wheel_const = trailer.constants.wheels[j];
-                format->Format(temp_line_buffer, sizeof(temp_line_buffer), "      Trailer Wheel %u: R=%.3f, Defl=%.3f, Ground=%d, Vel=%.2f\n", j, wheel_const.radius, wheel_data.suspension_deflection, wheel_data.on_ground, wheel_data.angular_velocity); strcat_safe(temp_line_buffer);
+                format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "      Trailer Wheel %u: R=%.3f, Defl=%.3f, Ground=%d, Vel=%.2f\n", j, wheel_const.radius, wheel_data.suspension_deflection, wheel_data.on_ground, wheel_data.angular_velocity); strcat_safe(temp_line_buffer);
             }
         }
     }
@@ -471,13 +471,13 @@ void OnUpdate() {
         const auto& job_const = g_ctx.eventDataCache.jobConstants;
         const auto& job_data = g_ctx.eventDataCache.jobData;
         strcat_safe("[Job]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  On Job: %s\n", job_data.on_job ? "Yes" : "No"); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  On Job: %s\n", job_data.on_job ? "Yes" : "No"); strcat_safe(temp_line_buffer);
         if (job_data.on_job) {
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Cargo: %s (%s), Mass: %.0f kg\n", job_const.cargo_name, job_const.cargo_id, job_const.cargo_mass); strcat_safe(temp_line_buffer);
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Route: %s -> %s\n", job_const.source_city, job_const.destination_city); strcat_safe(temp_line_buffer);
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Company: %s -> %s\n", job_const.source_company, job_const.destination_company); strcat_safe(temp_line_buffer);
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Income: %llu, Market: %s\n", job_const.income, job_const.job_market); strcat_safe(temp_line_buffer);
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    Time Left: %u min, Cargo Dmg: %.3f\n", job_data.remaining_delivery_minutes, job_data.cargo_damage); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Cargo: %s (%s), Mass: %.0f kg\n", job_const.cargo_name, job_const.cargo_id, job_const.cargo_mass); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Route: %s -> %s\n", job_const.source_city, job_const.destination_city); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Company: %s -> %s\n", job_const.source_company, job_const.destination_company); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Income: %llu, Market: %s\n", job_const.income, job_const.job_market); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    Time Left: %u min, Cargo Dmg: %.3f\n", job_data.remaining_delivery_minutes, job_data.cargo_damage); strcat_safe(temp_line_buffer);
         }
     }
 
@@ -485,15 +485,15 @@ void OnUpdate() {
     {
         const auto& data = g_ctx.eventDataCache.navigationData;
         strcat_safe("[Navigation]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Distance: %.0f m, Time: %.0f s (%.1f real s), Speed Limit: %.0f kph\n", data.navigation_distance, data.navigation_time, data.navigation_time_real_seconds, data.navigation_speed_limit * 3.6f); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Distance: %.0f m, Time: %.0f s (%.1f real s), Speed Limit: %.0f kph\n", data.navigation_distance, data.navigation_time, data.navigation_time_real_seconds, data.navigation_speed_limit * 3.6f); strcat_safe(temp_line_buffer);
     }
 
     // --- Controls ---
     {
         const auto& data = g_ctx.eventDataCache.controls;
         strcat_safe("[Controls]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  User: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.userInput.throttle, data.userInput.brake, data.userInput.steering, data.userInput.clutch); strcat_safe(temp_line_buffer);
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Effective: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.effectiveInput.throttle, data.effectiveInput.brake, data.effectiveInput.steering, data.effectiveInput.clutch); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  User: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.userInput.throttle, data.userInput.brake, data.userInput.steering, data.userInput.clutch); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Effective: Thr=%.2f, Brk=%.2f, Steer=%.2f, Clutch=%.2f\n", data.effectiveInput.throttle, data.effectiveInput.brake, data.effectiveInput.steering, data.effectiveInput.clutch); strcat_safe(temp_line_buffer);
     }
 
     // --- GameplayEvents ---
@@ -501,13 +501,13 @@ void OnUpdate() {
         const auto& event_id = g_ctx.eventDataCache.lastGameplayEventId;
         const auto& data = g_ctx.eventDataCache.gameplayEvents;
         strcat_safe("[GameplayEvents]\n");
-        format->Format(temp_line_buffer, sizeof(temp_line_buffer), "  Last Event ID: %s\n", event_id); strcat_safe(temp_line_buffer);
+        format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "  Last Event ID: %s\n", event_id); strcat_safe(temp_line_buffer);
         if (strcmp(event_id, "player.fined") == 0) {
-            format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Fine Details: Amount=%lld, Offence=%s\n", data.player_fined.fine_amount, data.player_fined.fine_offence); strcat_safe(temp_line_buffer);
+            format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Fine Details: Amount=%lld, Offence=%s\n", data.player_fined.fine_amount, data.player_fined.fine_offence); strcat_safe(temp_line_buffer);
         } else if (strcmp(event_id, "job.delivered") == 0) {
-             format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Delivered: Revenue=%lld, XP=%d, Dist=%.1f km\n", data.job_delivered.revenue, data.job_delivered.earned_xp, data.job_delivered.distance_km); strcat_safe(temp_line_buffer);
+             format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Delivered: Revenue=%lld, XP=%d, Dist=%.1f km\n", data.job_delivered.revenue, data.job_delivered.earned_xp, data.job_delivered.distance_km); strcat_safe(temp_line_buffer);
         } else if (strcmp(event_id, "job.cancelled") == 0) {
-             format->Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Cancelled: Penalty=%lld\n", data.job_cancelled.penalty); strcat_safe(temp_line_buffer);
+             format->Fmt_Format(temp_line_buffer, sizeof(temp_line_buffer), "    -> Job Cancelled: Penalty=%lld\n", data.job_cancelled.penalty); strcat_safe(temp_line_buffer);
         }
     }
 
@@ -583,7 +583,7 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
 
         // Log the change for debugging purposes.
         char log_buffer[256];
-        g_ctx.loadAPI->formatting->Format(log_buffer, sizeof(log_buffer), "'a_simple_number' was changed externally. New value: %d", g_ctx.someNumber);
+        g_ctx.loadAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "'a_simple_number' was changed externally. New value: %d", g_ctx.someNumber);
         g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     } else if (strcmp(keyPath, "settings.a_complex_object") == 0) {
         // The complex object setting has changed. Re-parse it.
@@ -606,7 +606,7 @@ void OnGameLogMessage(const char* log_line, void* user_data) {
     // Example: Log a message to our own plugin log if we see a specific message in the game log.
     if (strstr(log_line, "Loaded")) {
         char buffer[4096];
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Game Log contains 'Loaded': %s", log_line);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Game Log contains 'Loaded': %s", log_line);
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, buffer);
     }
 }
@@ -624,7 +624,7 @@ void OnToggleMainWindow() {
         g_ctx.uiAPI->SetVisibility(g_ctx.mainWindowHandle, !isCurrentlyVisible);
 
         char log_buffer[256];
-        g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Main window visibility toggled to: %s", !isCurrentlyVisible ? "visible" : "hidden");
+        g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Main window visibility toggled to: %s", !isCurrentlyVisible ? "visible" : "hidden");
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     }
 }
@@ -647,7 +647,7 @@ void OnCameraKeybind() {
         g_ctx.coreAPI->camera->SwitchTo(next_camera_type);
 
         char log_buffer[256];
-        g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Switched camera from %d to %d via keybind.", current_camera_type, next_camera_type);
+        g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Switched camera from %d to %d via keybind.", current_camera_type, next_camera_type);
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     } else {
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_WARN, "Could not get current camera type to cycle.");
@@ -945,7 +945,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->console && g_ctx.consoleCommand[0] != '\0') {
                     g_ctx.coreAPI->console->ExecuteCommand(g_ctx.consoleCommand);
                     char log_buffer[512];
-                    g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Executed console command: '%s'", g_ctx.consoleCommand);
+                    g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Executed console command: '%s'", g_ctx.consoleCommand);
                     g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
                 }
             }
@@ -982,7 +982,7 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
     SPF_CameraType current_camera;
     if (g_ctx.coreAPI->camera->GetCurrentCamera(&current_camera)) {
         char buffer[256];
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Current Camera Type: %d", current_camera);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Current Camera Type: %d", current_camera);
         ui->Text(buffer);
     } else {
         ui->Text("Could not retrieve current camera type.");
@@ -1002,7 +1002,7 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
     float x, y, z;
     if (g_ctx.coreAPI->camera->GetCameraWorldCoordinates(&x, &y, &z)) {
         char buffer[256];
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "X: %.2f, Y: %.2f, Z: %.2f", x, y, z);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "X: %.2f, Y: %.2f, Z: %.2f", x, y, z);
         ui->Text("Current Camera Position:");
         ui->Text(buffer);
     } else {
@@ -1036,11 +1036,11 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     // Display truck data.
     SPF_TruckData truck_data;
     g_ctx.coreAPI->telemetry->GetTruckData(telemetry, &truck_data);
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Speed: %.0f kph", truck_data.speed * 3.6f);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Speed: %.0f kph", truck_data.speed * 3.6f);
     ui->Text(buffer);
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Engine RPM: %.0f", truck_data.engine_rpm);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Engine RPM: %.0f", truck_data.engine_rpm);
     ui->Text(buffer);
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Gear: %d", truck_data.displayed_gear);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Gear: %d", truck_data.displayed_gear);
     ui->Text(buffer);
     ui->Separator();
 
@@ -1051,11 +1051,11 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     g_ctx.coreAPI->telemetry->GetJobData(telemetry, &job_data);
     if (job_data.on_job) {
         ui->Text("Currently on a job!");
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Cargo: %s", job_constants.cargo_name);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Cargo: %s", job_constants.cargo_name);
         ui->Text(buffer);
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Destination: %s, %s", job_constants.destination_company, job_constants.destination_city);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Destination: %s, %s", job_constants.destination_company, job_constants.destination_city);
         ui->Text(buffer);
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Cargo Damage: %.1f%%", job_data.cargo_damage * 100.0f);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Cargo Damage: %.1f%%", job_data.cargo_damage * 100.0f);
         ui->Text(buffer);
     } else {
         ui->Text("Not currently on a job.");
@@ -1072,27 +1072,27 @@ void RenderEventsTab(SPF_UI_API* ui, void* user_data) {
 
     char buffer[512];
 
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "Last Gameplay Event: %s", g_ctx.eventDataCache.lastGameplayEventId);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Last Gameplay Event: %s", g_ctx.eventDataCache.lastGameplayEventId);
     ui->Text(buffer);
     ui->Separator();
 
     ui->Text("Game State:");
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Paused: %s", g_ctx.eventDataCache.gameState.paused ? "Yes" : "No");
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Paused: %s", g_ctx.eventDataCache.gameState.paused ? "Yes" : "No");
     ui->Text(buffer);
     ui->Separator();
 
     ui->Text("Truck Data:");
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Speed: %.0f kph", g_ctx.eventDataCache.truckData.speed * 3.6f);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Speed: %.0f kph", g_ctx.eventDataCache.truckData.speed * 3.6f);
     ui->Text(buffer);
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Engine RPM: %.0f", g_ctx.eventDataCache.truckData.engine_rpm);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Engine RPM: %.0f", g_ctx.eventDataCache.truckData.engine_rpm);
     ui->Text(buffer);
     ui->Separator();
 
     ui->Text("Trailer Info:");
-    g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Attached Trailers: %zu", g_ctx.eventDataCache.trailers.size());
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Attached Trailers: %zu", g_ctx.eventDataCache.trailers.size());
     ui->Text(buffer);
     if (!g_ctx.eventDataCache.trailers.empty()) {
-        g_ctx.coreAPI->formatting->Format(buffer, sizeof(buffer), "  Trailer 1 Brand: %s", g_ctx.eventDataCache.trailers[0].constants.brand);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Trailer 1 Brand: %s", g_ctx.eventDataCache.trailers[0].constants.brand);
         ui->Text(buffer);
     }
 }
@@ -1258,7 +1258,7 @@ void ParseComplexObject() {
     const SPF_JsonValue_Handle* object_h = config->Cfg_GetJsonValueHandle(config_handle, "settings.a_complex_object");
 
     if (object_h) {
-        g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "Parsing complex object 'settings.a_complex_object':");
+        g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Parsing complex object 'settings.a_complex_object':");
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
 
         // 2. Use the JsonReader API to check for and get the 'mode' member.
@@ -1267,7 +1267,7 @@ void ParseComplexObject() {
             if (mode_h && json_reader->Json_GetType(mode_h) == SPF_JSON_TYPE_STRING) {
                 char mode_str[64];
                 json_reader->Json_GetString(mode_h, mode_str, sizeof(mode_str));
-                g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Mode: %s", mode_str);
+                g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "  -> Mode: %s", mode_str);
                 g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
             }
         }
@@ -1276,7 +1276,7 @@ void ParseComplexObject() {
         const SPF_JsonValue_Handle* enabled_h = json_reader->Json_GetMember(object_h, "enabled");
         if (enabled_h && json_reader->Json_GetType(enabled_h) == SPF_JSON_TYPE_BOOLEAN) {
             bool enabled_val = json_reader->Json_GetBool(enabled_h, false);
-            g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Enabled: %s", enabled_val ? "true" : "false");
+            g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "  -> Enabled: %s", enabled_val ? "true" : "false");
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
         }
 
@@ -1284,7 +1284,7 @@ void ParseComplexObject() {
         const SPF_JsonValue_Handle* targets_h = json_reader->Json_GetMember(object_h, "targets");
         if (targets_h && json_reader->Json_GetType(targets_h) == SPF_JSON_TYPE_ARRAY) {
             int array_size = json_reader->Json_GetArraySize(targets_h);
-            g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "  -> Found 'targets' array with %d elements:", array_size);
+            g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "  -> Found 'targets' array with %d elements:", array_size);
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
 
             for (int i = 0; i < array_size; ++i) {
@@ -1292,7 +1292,7 @@ void ParseComplexObject() {
                 if (item_h && json_reader->Json_GetType(item_h) == SPF_JSON_TYPE_STRING) {
                     char item_str[64];
                     json_reader->Json_GetString(item_h, item_str, sizeof(item_str));
-                    g_ctx.coreAPI->formatting->Format(log_buffer, sizeof(log_buffer), "    - Target[%d]: %s", i, item_str);
+                    g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "    - Target[%d]: %s", i, item_str);
                     g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buffer);
                 }
             }

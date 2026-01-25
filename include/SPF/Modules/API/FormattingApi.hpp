@@ -17,7 +17,7 @@ class FormattingApi {
  private:
   // --- C-API Trampoline Implementations ---
 
-  static int F_Format(char* buffer, size_t buffer_size, const char* format, ...);
+  static int Fmt_Format(char* buffer, size_t buffer_size, const char* format, ...);
 };
 
 }  // namespace Modules::API

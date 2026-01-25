@@ -248,7 +248,7 @@ void OnLoad(const SPF_Load_API* load_api) {
 
         if (g_ctx.loggerHandle && g_ctx.formattingAPI) {
             char log_buffer[256];
-            g_ctx.formattingAPI->Format(log_buffer, sizeof(log_buffer), "%s has been loaded!", PLUGIN_NAME);
+            g_ctx.formattingAPI->Fmt_Format(log_buffer, sizeof(log_buffer), "%s has been loaded!", PLUGIN_NAME);
             g_ctx.loadAPI->logger->Log(g_ctx.loggerHandle, SPF_LOG_INFO, log_buffer);
         }
     }
@@ -273,7 +273,7 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     if (g_ctx.loggerHandle && g_ctx.formattingAPI) {
         char log_buffer[256];
-        g_ctx.formattingAPI->Format(log_buffer, sizeof(log_buffer), "%s has been activated!", PLUGIN_NAME);
+        g_ctx.formattingAPI->Fmt_Format(log_buffer, sizeof(log_buffer), "%s has been activated!", PLUGIN_NAME);
         g_ctx.loadAPI->logger->Log(g_ctx.loggerHandle, SPF_LOG_INFO, log_buffer);
     }
 
@@ -370,7 +370,7 @@ void OnUnload() {
 
     if (g_ctx.loadAPI && g_ctx.loggerHandle && g_ctx.formattingAPI) {
         char log_buffer[256];
-        g_ctx.formattingAPI->Format(log_buffer, sizeof(log_buffer), "%s is being unloaded.", PLUGIN_NAME);
+        g_ctx.formattingAPI->Fmt_Format(log_buffer, sizeof(log_buffer), "%s is being unloaded.", PLUGIN_NAME);
         g_ctx.loadAPI->logger->Log(g_ctx.loggerHandle, SPF_LOG_INFO, log_buffer);
     }
 
