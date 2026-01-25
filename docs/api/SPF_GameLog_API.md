@@ -1,96 +1,95 @@
 # SPF Game Log API
 
-The SPF Game Log API provides a powerful event-based mechanism for your plugin to "listen" to the game's log (`game.log.txt`) in real-time.
+The SPF Game Log API provides a real-time stream of every message written to the game's internal log file (`game.log.txt`). This event-driven mechanism allows plugins to react to a wide range of in-game events that are not available through standard telemetry channels.
 
 ## Why Use It?
 
-Many in-game events do not have dedicated telemetry data channels but are written as plain text to the game's log. By subscribing to these log lines, your plugin can react to a much wider range of events, such as:
-*   Hiring or firing a driver.
-*   Discovering a new city.
-*   Game saving events.
-*   And many more.
+Many critical game events, such as economic transactions, asset loading, or script notifications, are only reported via the game log. By subscribing to these log lines, your plugin can monitor:
+*   Driver hiring and management events.
+*   Discovery of new cities and dealerships.
+*   Game saving and loading sequences.
+*   Internal engine warnings or specific script triggers.
 
 ## Workflow
 
-1.  **Implement a Callback:** Create a function in your plugin that matches the `SPF_GameLog_Callback` signature. This function will be your event handler.
-2.  **Register the Callback:** In your plugin's `OnLoad` function, call `RegisterCallback`, passing a pointer to your handler function.
-3.  **Process Events:** Your callback will now be invoked every time the game writes a new line to its log, allowing you to parse the string and react accordingly.
+1.  **Define a Callback:** Implement a function matching the `SPF_GameLog_Callback_t` signature.
+2.  **Get Context:** Call `GLog_GetContext()` once during initialization to obtain your plugin's log monitoring handle.
+3.  **Register Subscription:** Use `GLog_RegisterCallback()` to link your function to the log stream.
+4.  **Parse and React:** Use standard string manipulation (like `strstr`) within your callback to detect and handle specific log patterns.
 
 ## Getting the API
 
-The Game Log API is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnLoad` function.
+The Game Log API is provided as part of the main `SPF_Core_API` struct received in your plugin's `OnActivated` lifecycle event.
 
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
+#include "SPF/SPF_API/SPF_GameLog_API.h"
 
-// Global pointer to the Core API
-const SPF_Core_API* s_coreAPI = NULL;
+const SPF_GameLog_API* s_logAPI = NULL;
+SPF_GameLog_Handle* s_logCtx = NULL;
+SPF_GameLog_Callback_Handle* s_subscription = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
+    s_logAPI = core_api->gamelog;
     
-    // You can now access s_coreAPI->gamelog anywhere in your plugin
+    if (s_logAPI) {
+        // 1. Get our context
+        s_logCtx = s_logAPI->GLog_GetContext("MyPlugin");
+        
+        // 2. Register the monitor
+        s_subscription = s_logAPI->GLog_RegisterCallback(s_logCtx, OnLogLine, NULL);
+    }
 }
 ```
 
-## Callback Definition
-
-Your callback function must match the following signature:
-
----
-**`void YourCallback(const char* log_line, void* user_data)`**
-
-*   `log_line`: A pointer to a null-terminated string containing the raw log line from the game.
-*   `user_data`: A user-defined pointer that you can optionally pass during registration. This is useful for providing context to your callback, such as a pointer to one of your plugin's C++ objects.
-
 ## Function Reference
 
-The API consists of a single function, accessed via the `gamelog` member of your `SPF_Core_API` pointer.
+### `SPF_GameLog_Handle* GLog_GetContext(const char* pluginName)`
+Retrieves the monitoring context for your plugin.
+*   **pluginName:** The unique programmatic name of your plugin.
+*   **Returns:** A handle to the context, or NULL on failure.
 
 ---
-**`SPF_GameLog_Callback_Handle RegisterCallback(const char* pluginName, SPF_GameLog_Callback callback, void* user_data)`**
+### `SPF_GameLog_Callback_Handle* GLog_RegisterCallback(SPF_GameLog_Handle* h, SPF_GameLog_Callback_t callback, void* userData)`
+Subscribes to the live game log stream.
+*   **h:** The context handle obtained from `GLog_GetContext`.
+*   **callback:** The function to be called for every new log line.
+*   **userData:** An optional pointer passed back to your callback for context.
+*   **Returns:** A handle to the specific subscription.
 
-Registers a callback function to be invoked for each new game log line.
+**Lifecycle Note:** You do not need to manually unregister. All subscriptions are automatically cleaned up when the plugin is unloaded and its handles are destroyed.
 
-*   **Parameters:**
-    *   `pluginName`: Your plugin's name, which must match the manifest. This is used for internal tracking.
-    *   `callback`: A function pointer to your handler.
-    *   `user_data`: An optional pointer to your own data that will be passed to your callback.
-*   **Returns:** An opaque `SPF_GameLog_Callback_Handle`. You should store this handle. The framework will automatically unregister the callback when the plugin is unloaded.
+---
+
+## Callback Signature
+
+Your handler must match this definition:
+
+**`void OnLogLine(const char* message, void* userData)`**
+*   `message`: The raw text of the log line.
+*   `userData`: The pointer provided during registration.
+
+---
 
 ## Complete Example
 
-This example demonstrates how to register a callback to detect when a new driver is hired.
+This example demonstrates how to detect when the game starts saving.
 
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
-#include <string.h> // For strstr
+#include <string.h>
 
-// Global reference to the Core API
-const SPF_Core_API* s_coreAPI = NULL;
-// Handle for our callback registration
-SPF_GameLog_Callback_Handle s_driverHiredCallbackHandle = NULL;
-
-// 1. Implement the callback function
-void OnGameLogMessage(const char* log_line, void* user_data) {
-    // Check if the log line contains the substring "driver hired"
-    if (strstr(log_line, "driver hired") != NULL) {
-        // A new driver was hired! Trigger some logic.
-        // For example, log a message using the Logger API.
-        if (s_coreAPI && s_coreAPI->logger) {
-            SPF_Logger_Handle* myLogger = s_coreAPI->logger->GetContext("MyPlugin");
-            s_coreAPI->logger->Log(myLogger, SPF_LOG_INFO, "Detected a new driver was hired!");
-        }
+void OnLogLine(const char* message, void* userData) {
+    // Detect the start of a save operation
+    if (strstr(message, "Game has been saved")) {
+        // ... perform logic here ...
     }
 }
 
-// 2. Register the callback when the plugin loads
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
-
-    if (s_coreAPI && s_coreAPI->gamelog) {
-        // Register our function. We don't need user_data for this simple example, so we pass NULL.
-        s_driverHiredCallbackHandle = s_coreAPI->gamelog->RegisterCallback("MyPlugin", OnGameLogMessage, NULL);
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
+    if (core_api->gamelog) {
+        SPF_GameLog_Handle* h = core_api->gamelog->GLog_GetContext("MyPlugin");
+        core_api->gamelog->GLog_RegisterCallback(h, OnLogLine, NULL);
     }
 }
 ```

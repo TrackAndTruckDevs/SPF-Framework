@@ -221,11 +221,11 @@ struct PluginContext {
 
   /**
    * @brief Handle for the registered GameLog callback.
-   * @details This handle is returned by `g_ctx.coreAPI->gamelog->RegisterCallback` and
+   * @details This handle is returned by `g_ctx.coreAPI->gamelog->GLog_RegisterCallback` and
    * must be stored to keep the callback active. Its destruction (managed by the framework)
    * will automatically unregister the callback.
    */
-  SPF_GameLog_Callback_Handle gameLogCallbackHandle = nullptr;
+  SPF_GameLog_Callback_Handle* gameLogCallbackHandle = nullptr;
 };
 
 /**

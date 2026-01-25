@@ -316,7 +316,8 @@ void OnActivated(const SPF_Core_API* core_api) {
     }
 
     if (g_ctx.coreAPI && g_ctx.coreAPI->gamelog) {
-        g_ctx.gameLogCallbackHandle = g_ctx.coreAPI->gamelog->RegisterCallback(PLUGIN_NAME, OnGameLogMessage, nullptr);
+        SPF_GameLog_Handle* glog_h = g_ctx.coreAPI->gamelog->GLog_GetContext(PLUGIN_NAME);
+        g_ctx.gameLogCallbackHandle = g_ctx.coreAPI->gamelog->GLog_RegisterCallback(glog_h, OnGameLogMessage, nullptr);
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered game log callback.");
     }
 
