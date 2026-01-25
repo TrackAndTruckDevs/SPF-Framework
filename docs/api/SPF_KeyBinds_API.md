@@ -26,18 +26,18 @@ The process is simple and involves two main steps:
 
 To register callbacks, you must first get your plugin's unique `SPF_KeyBinds_Handle`.
 
-```c
+```cpp
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_KeyBinds_API.h"
 
-SPF_KeyBinds_API* s_keybindsAPI = NULL;
+const SPF_KeyBinds_API* s_keybindsAPI = NULL;
 SPF_KeyBinds_Handle* s_myPluginKeybinds = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_keybindsAPI = (SPF_KeyBinds_API*)params->GetAPI(SPF_API_KEYBINDS);
+void MyPlugin_OnActivated(const SPF_Core_API* api) {
+    s_keybindsAPI = api->keybinds;
     
     if (s_keybindsAPI) {
-        s_myPluginKeybinds = s_keybindsAPI->GetContext("MyPlugin");
+        s_myPluginKeybinds = s_keybindsAPI->Kbind_GetContext("MyPlugin");
     }
 }
 ```
@@ -45,20 +45,20 @@ SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
 ## Function Reference
 
 ---
-**`SPF_KeyBinds_Handle* GetContext(const char* pluginName)`**
+**`SPF_KeyBinds_Handle* Kbind_GetContext(const char* pluginName)`**
 Gets a keybinds context handle for your plugin.
 *   **pluginName:** Your plugin's name, which must match the manifest.
 *   **Returns:** A handle to the keybinds context, or `NULL`.
 
 ---
-**`void Register(SPF_KeyBinds_Handle* handle, const char* actionName, void (*callback)(void))`**
+**`void Kbind_Register(SPF_KeyBinds_Handle* h, const char* actionName, void (*callback)(void))`**
 Registers a callback function for a specific action defined in the manifest.
-*   **handle:** The context handle obtained from `GetContext`.
+*   **h:** The context handle obtained from `Kbind_GetContext`.
 *   **actionName:** The name of the action. This **must** exactly match an `actionName` you defined in your manifest.
 *   **callback:** A pointer to a `void(void)` function that will be called when the action is triggered.
 
 ---
-**`void UnregisterAll(SPF_KeyBinds_Handle* handle)`**
+**`void Kbind_UnregisterAll(SPF_KeyBinds_Handle* h)`**
 Manually unregisters all actions and callbacks associated with your plugin's handle. This is normally handled automatically when the plugin unloads.
 
 ## Complete Example
@@ -88,16 +88,14 @@ void ToggleMainWindow() {
     s_isWindowVisible = !s_isWindowVisible;
     
     // In a real plugin, you would use the UI API to show/hide the window
-    // For example: s_uiAPI->SetWindowVisible("MyMainWindow", s_isWindowVisible);
 }
 
-// In your Init/OnLoad function
-void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    // ... get s_keybindsAPI and s_myPluginKeybinds ...
-    
-    if (s_keybindsAPI && s_myPluginKeybinds) {
-        // Register the "toggle_main_window" action to our C function
-        s_keybindsAPI->Register(s_myPluginKeybinds, "toggle_main_window", &ToggleMainWindow);
+// In your activation function
+void MyPlugin_OnActivated(const SPF_Core_API* api) {
+    if (api->keybinds) {
+        SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
+        // Register the "MyPlugin.UI.toggle_main_window" action to our C function
+        api->keybinds->Kbind_Register(h, "MyPlugin.UI.toggle_main_window", &ToggleMainWindow);
     }
 }
 ```

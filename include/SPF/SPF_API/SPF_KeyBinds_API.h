@@ -1,3 +1,42 @@
+/**                                                                                               
+* @file SPF_KeyBinds_API.h                                                                          
+* @brief API for registering logical actions and linking them to user-defined keybinds.
+*                                                                                                 
+* @details This API allows plugins to define abstract "actions" (like 'toggle_menu' 
+* or 'fire_laser') and bind them to physical inputs (keyboard, gamepad, joystick) 
+* defined in the manifest. 
+* 
+* The system decoupling allows users to fully rebind any action via the framework's 
+* UI without any changes to the plugin's code.
+*                                                                                                 
+* ================================================================================================
+* KEY CONCEPTS                                                                                    
+* ================================================================================================
+*                                                                                                 
+* 1. **Logical Actions**: You register callbacks for action NAMES, not keys. The 
+*    actual key assignment is handled by the framework and stored in the config.
+*                                                                                                 
+* 2. **Dot Notation**: Action names are formed as 'GroupName.ActionName' (e.g., 
+*    'MyPlugin.UI.Toggle'). These must match the names declared in your manifest.
+*                                                                                                 
+* 3. **Automatic Cleanup**: Keybind handles are managed by the framework. All 
+*    registrations are automatically cleaned up when the plugin is unloaded.
+*                                                                                                 
+* ================================================================================================
+* USAGE EXAMPLE (C++)                                                                             
+* ================================================================================================
+* @code                                                                                           
+* void MyActionCallback() {
+*     Log("Keybind triggered!");
+* }
+*
+* void OnActivated(const SPF_Core_API* api) {
+*     SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
+*     api->keybinds->Kbind_Register(h, "MyPlugin.General.DoWork", MyActionCallback);
+* }
+* @endcode                                                                                        
+*/ 
+
 #pragma once
 
 #include <stdbool.h>
@@ -37,7 +76,7 @@ typedef struct SPF_KeyBinds_Handle SPF_KeyBinds_Handle;
  *     - `actionName`: A string that describes the specific action, typically a verb.
  *     - One or more default `SPF_KeybindDefinition_C` structs for the key(s).
  *
- * 2.  **Register Callback**: In your `OnLoad` function, call `Register()`, passing the **full action name**
+ * 2.  **Register Callback**: In your `OnActivated` function, call `Kbind_Register()`, passing the **full action name**
  *     (i.e., the concatenated "groupName.actionName") and a pointer to your callback function.
  *     The framework will not find the action if this name does not exactly match.
  *
@@ -66,7 +105,7 @@ typedef struct SPF_KeyBinds_API {
      * @return A handle to the keybinds context, or `NULL` if the plugin
      *         could not be found.
      */
-    SPF_KeyBinds_Handle* (*GetContext)(const char* pluginName);
+    SPF_KeyBinds_Handle* (*Kbind_GetContext)(const char* pluginName);
 
     /**
      * @brief Registers a callback function for a specific action defined in the manifest.
@@ -75,14 +114,14 @@ typedef struct SPF_KeyBinds_API {
      *          (e.g., "toggle_window") and the C++ code that should execute when
      *          that action is triggered by its assigned keybind.
      *
-     * @param handle The context handle obtained from `GetContext`.
+     * @param h The context handle obtained from `Kbind_GetContext`.
      * @param actionName The **full name** of the action, formed by joining the `groupName` and `actionName`
      *                   from the manifest with a period (e.g., "MyPlugin.MainWindow.toggle"). This
      *                   MUST exactly match the intended full action name.
      * @param callback The function pointer to be called when the action is triggered.
      *                 The callback function must have a `void(void)` signature.
      */
-    void (*Register)(SPF_KeyBinds_Handle* handle, const char* actionName, void (*callback)(void));
+    void (*Kbind_Register)(SPF_KeyBinds_Handle* h, const char* actionName, void (*callback)(void));
 
     /**
      * @brief Unregisters all actions and callbacks associated with the handle.
@@ -92,9 +131,9 @@ typedef struct SPF_KeyBinds_API {
      *          disable all keybind handling for your plugin mid-session without
      *          a full unload/reload cycle.
      *
-     * @param handle The context handle.
+     * @param h The context handle.
      */
-    void (*UnregisterAll)(SPF_KeyBinds_Handle* handle);
+    void (*Kbind_UnregisterAll)(SPF_KeyBinds_Handle* h);
 
 } SPF_KeyBinds_API;
 

@@ -309,9 +309,9 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     // Register callbacks for systems that require the core API.
     if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
-        auto keybinds = g_ctx.coreAPI->keybinds->GetContext(PLUGIN_NAME);
-        g_ctx.coreAPI->keybinds->Register(keybinds, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
-        g_ctx.coreAPI->keybinds->Register(keybinds, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
+        auto keybinds = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
+        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
+        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered keybinds.");
     }
 

@@ -10,9 +10,9 @@ class KeyBindsApi {
   static void FillKeyBindsApi(SPF_KeyBinds_API* api);
 
  private:
-  static SPF_KeyBinds_Handle* Kbd_GetContext(const char* pluginName);
-  static void Kbd_Register(SPF_KeyBinds_Handle* handle, const char* actionName, void (*callback)(void));
-  static void Kbd_UnregisterAll(SPF_KeyBinds_Handle* handle);
+  static SPF_KeyBinds_Handle* Kbind_GetContext(const char* pluginName);
+  static void Kbind_Register(SPF_KeyBinds_Handle* h, const char* actionName, void (*callback)(void));
+  static void Kbind_UnregisterAll(SPF_KeyBinds_Handle* h);
 };
 }  // namespace Modules::API
 SPF_NS_END
