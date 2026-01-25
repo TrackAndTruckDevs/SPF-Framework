@@ -1,3 +1,44 @@
+/**                                                                                               
+* @file SPF_Camera_API.h                                                                          
+* @brief API for controlling and inspecting all in-game cameras.
+*                                                                                                 
+* @details This API provides exhaustive control over various game camera types, 
+* including interior, behind (orbit), top-down, and the developer (free) camera. 
+* It allows plugins to switch active cameras, move seat positions, adjust FOV, 
+* and create custom camera animations.
+*                                                                                                 
+* ================================================================================================
+* KEY CONCEPTS                                                                                    
+* ================================================================================================
+*                                                                                                 
+* 1. **Camera Types**: Use 'SPF_CameraType' to identify which camera system you want to
+*    manipulate. Not all functions work for all types (e.g., 'SetInteriorSeatPos' only 
+*    affects the interior camera).
+*                                                                                                 
+* 2. **Angular Units**: CRITICAL: All rotation values (yaw, pitch, roll) are handled in 
+*    **RADIANS**, not degrees. 
+*    - Range for yaw: -PI to +PI (-3.14159 to +3.14159).
+*    - Range for pitch: -PI/2 to +PI/2 (-1.57079 to +1.57079).
+*                                                                                                 
+* 3. **Coordinate Systems**: 
+*    - **Local**: Relative to the truck's cabin or pivot point.
+*    - **World**: Global game coordinates.
+*                                                                                                 
+* ================================================================================================
+* USAGE EXAMPLE (C++)                                                                             
+* ================================================================================================
+* @code                                                                                           
+* // Switch to interior camera
+* api->Cam_SwitchTo(SPF_CAMERA_INTERIOR);
+*
+* // Move the driver's seat slightly back (X, Y, Z in meters)
+* api->Cam_SetInteriorSeatPos(0.0f, 0.0f, -0.1f);
+*
+* // Look 45 degrees to the right (value in radians)
+* api->Cam_SetInteriorHeadRot(0.785f, 0.0f);
+* @endcode                                                                                        
+*/ 
+
 #pragma once
 
 #include <stdint.h>
@@ -177,6 +218,12 @@ typedef void (*SPF_Camera_SetInteriorRotationDefaults_t)(float lr, float ud);
  * @return True on success, false otherwise.
  */
 typedef bool (*SPF_Camera_GetBehindLiveState_t)(float* pitch, float* yaw, float* zoom);
+
+/**
+ * @brief Sets the live state of the behind camera.
+ * @param pitch, yaw, zoom New values in RADIANS for angles.
+ */
+typedef void (*SPF_Camera_SetBehindLiveState_t)(float pitch, float yaw, float zoom);
 
 /**
  * @brief Gets the distance settings for the behind camera.
@@ -986,266 +1033,268 @@ typedef struct SPF_Camera_API {
     /**
      * @brief Switches the active in-game camera. See `SPF_Camera_SwitchTo_t` for details.
      */
-    SPF_Camera_SwitchTo_t SwitchTo;
+    SPF_Camera_SwitchTo_t Cam_SwitchTo;
 
     /**
      * @brief Gets a pointer to the raw camera object. See `SPF_Camera_GetCameraObject_t` for details.
      */
-    SPF_Camera_GetCameraObject_t GetCameraObject;
+    SPF_Camera_GetCameraObject_t Cam_GetCameraObject;
 
     /**
      * @brief Gets the type of the currently active camera. See `SPF_Camera_GetCurrentCamera_t` for details.
      */
-    SPF_Camera_GetCurrentCamera_t GetCurrentCamera;
+    SPF_Camera_GetCurrentCamera_t Cam_GetCurrentCamera;
 
     /**
      * @brief Resets a specific camera to its default values. See `SPF_Camera_ResetToDefaults_t` for details.
      */
-    SPF_Camera_ResetToDefaults_t ResetToDefaults;
+    SPF_Camera_ResetToDefaults_t Cam_ResetToDefaults;
 
     // --- Interior Camera ---
     /** @brief Gets the interior camera's seat position. See `SPF_Camera_GetInteriorSeatPos_t`. */
-    SPF_Camera_GetInteriorSeatPos_t GetInteriorSeatPos;
+    SPF_Camera_GetInteriorSeatPos_t Cam_GetInteriorSeatPos;
     /** @brief Sets the interior camera's seat position. See `SPF_Camera_SetInteriorSeatPos_t`. */
-    SPF_Camera_SetInteriorSeatPos_t SetInteriorSeatPos;
+    SPF_Camera_SetInteriorSeatPos_t Cam_SetInteriorSeatPos;
     /** @brief Gets the interior camera's head rotation. See `SPF_Camera_GetInteriorHeadRot_t`. */
-    SPF_Camera_GetInteriorHeadRot_t GetInteriorHeadRot;
+    SPF_Camera_GetInteriorHeadRot_t Cam_GetInteriorHeadRot;
     /** @brief Sets the interior camera's head rotation. See `SPF_Camera_SetInteriorHeadRot_t`. */
-    SPF_Camera_SetInteriorHeadRot_t SetInteriorHeadRot;
+    SPF_Camera_SetInteriorHeadRot_t Cam_SetInteriorHeadRot;
     /** @brief Gets the interior camera's base FOV. See `SPF_Camera_GetInteriorFov_t`. */
-    SPF_Camera_GetInteriorFov_t GetInteriorFov;
+    SPF_Camera_GetInteriorFov_t Cam_GetInteriorFov;
     /** @brief Gets the interior camera's final (calculated) FOV. See `SPF_Camera_GetInteriorFinalFov_t`. */
-    SPF_Camera_GetInteriorFinalFov_t GetInteriorFinalFov;
+    SPF_Camera_GetInteriorFinalFov_t Cam_GetInteriorFinalFov;
     /** @brief Sets the interior camera's base FOV. See `SPF_Camera_SetInteriorFov_t`. */
-    SPF_Camera_SetInteriorFov_t SetInteriorFov;
+    SPF_Camera_SetInteriorFov_t Cam_SetInteriorFov;
     /** @brief Gets the interior camera's rotation limits. See `SPF_Camera_GetInteriorRotationLimits_t`. */
-    SPF_Camera_GetInteriorRotationLimits_t GetInteriorRotationLimits;
+    SPF_Camera_GetInteriorRotationLimits_t Cam_GetInteriorRotationLimits;
     /** @brief Sets the interior camera's rotation limits. See `SPF_Camera_SetInteriorRotationLimits_t`. */
-    SPF_Camera_SetInteriorRotationLimits_t SetInteriorRotationLimits;
+    SPF_Camera_SetInteriorRotationLimits_t Cam_SetInteriorRotationLimits;
     /** @brief Gets the interior camera's default rotation. See `SPF_Camera_GetInteriorRotationDefaults_t`. */
-    SPF_Camera_GetInteriorRotationDefaults_t GetInteriorRotationDefaults;
+    SPF_Camera_GetInteriorRotationDefaults_t Cam_GetInteriorRotationDefaults;
     /** @brief Sets the interior camera's default rotation. See `SPF_Camera_SetInteriorRotationDefaults_t`. */
-    SPF_Camera_SetInteriorRotationDefaults_t SetInteriorRotationDefaults;
+    SPF_Camera_SetInteriorRotationDefaults_t Cam_SetInteriorRotationDefaults;
 
     // --- Behind Camera ---
     /** @brief Gets the behind camera's live pitch, yaw, and zoom. See `SPF_Camera_GetBehindLiveState_t`. */
-    SPF_Camera_GetBehindLiveState_t GetBehindLiveState;
+    SPF_Camera_GetBehindLiveState_t Cam_GetBehindLiveState;
+    /** @brief Sets the behind camera's live pitch, yaw, and zoom. See `SPF_Camera_SetBehindLiveState_t`. */
+    SPF_Camera_SetBehindLiveState_t Cam_SetBehindLiveState;
     /** @brief Gets the behind camera's distance settings. See `SPF_Camera_GetBehindDistanceSettings_t`. */
-    SPF_Camera_GetBehindDistanceSettings_t GetBehindDistanceSettings;
+    SPF_Camera_GetBehindDistanceSettings_t Cam_GetBehindDistanceSettings;
     /** @brief Sets the behind camera's distance settings. See `SPF_Camera_SetBehindDistanceSettings_t`. */
-    SPF_Camera_SetBehindDistanceSettings_t SetBehindDistanceSettings;
+    SPF_Camera_SetBehindDistanceSettings_t Cam_SetBehindDistanceSettings;
     /** @brief Gets the behind camera's elevation settings. See `SPF_Camera_GetBehindElevationSettings_t`. */
-    SPF_Camera_GetBehindElevationSettings_t GetBehindElevationSettings;
+    SPF_Camera_GetBehindElevationSettings_t Cam_GetBehindElevationSettings;
     /** @brief Sets the behind camera's elevation settings. See `SPF_Camera_SetBehindElevationSettings_t`. */
-    SPF_Camera_SetBehindElevationSettings_t SetBehindElevationSettings;
+    SPF_Camera_SetBehindElevationSettings_t Cam_SetBehindElevationSettings;
     /** @brief Gets the behind camera's pivot offset. See `SPF_Camera_GetBehindPivot_t`. */
-    SPF_Camera_GetBehindPivot_t GetBehindPivot;
+    SPF_Camera_GetBehindPivot_t Cam_GetBehindPivot;
     /** @brief Sets the behind camera's pivot offset. See `SPF_Camera_SetBehindPivot_t`. */
-    SPF_Camera_SetBehindPivot_t SetBehindPivot;
+    SPF_Camera_SetBehindPivot_t Cam_SetBehindPivot;
     /** @brief Gets the behind camera's dynamic offset settings. See `SPF_Camera_GetBehindDynamicOffset_t`. */
-    SPF_Camera_GetBehindDynamicOffset_t GetBehindDynamicOffset;
+    SPF_Camera_GetBehindDynamicOffset_t Cam_GetBehindDynamicOffset;
     /** @brief Sets the behind camera's dynamic offset settings. See `SPF_Camera_SetBehindDynamicOffset_t`. */
-    SPF_Camera_SetBehindDynamicOffset_t SetBehindDynamicOffset;
+    SPF_Camera_SetBehindDynamicOffset_t Cam_SetBehindDynamicOffset;
     /** @brief Gets the behind camera's base FOV. See `SPF_Camera_GetBehindFov_t`. */
-    SPF_Camera_GetBehindFov_t GetBehindFov;
+    SPF_Camera_GetBehindFov_t Cam_GetBehindFov;
     /** @brief Gets the behind camera's final (calculated) FOV. See `SPF_Camera_GetBehindFinalFov_t`. */
-    SPF_Camera_GetBehindFinalFov_t GetBehindFinalFov;
+    SPF_Camera_GetBehindFinalFov_t Cam_GetBehindFinalFov;
     /** @brief Sets the behind camera's base FOV. See `SPF_Camera_SetBehindFov_t`. */
-    SPF_Camera_SetBehindFov_t SetBehindFov;
+    SPF_Camera_SetBehindFov_t Cam_SetBehindFov;
 
     // --- Top Camera ---
     /** @brief Gets the top-down camera's height range. See `SPF_Camera_GetTopHeight_t`. */
-    SPF_Camera_GetTopHeight_t GetTopHeight;
+    SPF_Camera_GetTopHeight_t Cam_GetTopHeight;
     /** @brief Gets the top-down camera's movement speed. See `SPF_Camera_GetTopSpeed_t`. */
-    SPF_Camera_GetTopSpeed_t GetTopSpeed;
+    SPF_Camera_GetTopSpeed_t Cam_GetTopSpeed;
     /** @brief Gets the top-down camera's forward/backward offsets. See `SPF_Camera_GetTopOffsets_t`. */
-    SPF_Camera_GetTopOffsets_t GetTopOffsets;
+    SPF_Camera_GetTopOffsets_t Cam_GetTopOffsets;
     /** @brief Sets the top-down camera's height range. See `SPF_Camera_SetTopHeight_t`. */
-    SPF_Camera_SetTopHeight_t SetTopHeight;
+    SPF_Camera_SetTopHeight_t Cam_SetTopHeight;
     /** @brief Sets the top-down camera's movement speed. See `SPF_Camera_SetTopSpeed_t`. */
-    SPF_Camera_SetTopSpeed_t SetTopSpeed;
+    SPF_Camera_SetTopSpeed_t Cam_SetTopSpeed;
     /** @brief Sets the top-down camera's forward/backward offsets. See `SPF_Camera_SetTopOffsets_t`. */
-    SPF_Camera_SetTopOffsets_t SetTopOffsets;
+    SPF_Camera_SetTopOffsets_t Cam_SetTopOffsets;
     /** @brief Gets the top-down camera's base FOV. See `SPF_Camera_GetTopFov_t`. */
-    SPF_Camera_GetTopFov_t GetTopFov;
+    SPF_Camera_GetTopFov_t Cam_GetTopFov;
     /** @brief Gets the top-down camera's final (calculated) FOV. See `SPF_Camera_GetTopFinalFov_t`. */
-    SPF_Camera_GetTopFinalFov_t GetTopFinalFov;
+    SPF_Camera_GetTopFinalFov_t Cam_GetTopFinalFov;
     /** @brief Sets the top-down camera's base FOV. See `SPF_Camera_SetTopFov_t`. */
-    SPF_Camera_SetTopFov_t SetTopFov;
+    SPF_Camera_SetTopFov_t Cam_SetTopFov;
 
     // --- Window Camera ---
     /** @brief Gets the window camera's head offset. See `SPF_Camera_GetWindowHeadOffset_t`. */
-    SPF_Camera_GetWindowHeadOffset_t GetWindowHeadOffset;
+    SPF_Camera_GetWindowHeadOffset_t Cam_GetWindowHeadOffset;
     /** @brief Gets the window camera's live rotation. See `SPF_Camera_GetWindowLiveRotation_t`. */
-    SPF_Camera_GetWindowLiveRotation_t GetWindowLiveRotation;
+    SPF_Camera_GetWindowLiveRotation_t Cam_GetWindowLiveRotation;
     /** @brief Gets the window camera's rotation limits. See `SPF_Camera_GetWindowRotationLimits_t`. */
-    SPF_Camera_GetWindowRotationLimits_t GetWindowRotationLimits;
+    SPF_Camera_GetWindowRotationLimits_t Cam_GetWindowRotationLimits;
     /** @brief Gets the window camera's default rotation. See `SPF_Camera_GetWindowRotationDefaults_t`. */
-    SPF_Camera_GetWindowRotationDefaults_t GetWindowRotationDefaults;
+    SPF_Camera_GetWindowRotationDefaults_t Cam_GetWindowRotationDefaults;
     /** @brief Sets the window camera's head offset. See `SPF_Camera_SetWindowHeadOffset_t`. */
-    SPF_Camera_SetWindowHeadOffset_t SetWindowHeadOffset;
+    SPF_Camera_SetWindowHeadOffset_t Cam_SetWindowHeadOffset;
     /** @brief Sets the window camera's live rotation. See `SPF_Camera_SetWindowLiveRotation_t`. */
-    SPF_Camera_SetWindowLiveRotation_t SetWindowLiveRotation;
+    SPF_Camera_SetWindowLiveRotation_t Cam_SetWindowLiveRotation;
     /** @brief Sets the window camera's rotation limits. See `SPF_Camera_SetWindowRotationLimits_t`. */
-    SPF_Camera_SetWindowRotationLimits_t SetWindowRotationLimits;
+    SPF_Camera_SetWindowRotationLimits_t Cam_SetWindowRotationLimits;
     /** @brief Sets the window camera's default rotation. See `SPF_Camera_SetWindowRotationDefaults_t`. */
-    SPF_Camera_SetWindowRotationDefaults_t SetWindowRotationDefaults;
+    SPF_Camera_SetWindowRotationDefaults_t Cam_SetWindowRotationDefaults;
     /** @brief Gets the window camera's base FOV. See `SPF_Camera_GetWindowFov_t`. */
-    SPF_Camera_GetWindowFov_t GetWindowFov;
+    SPF_Camera_GetWindowFov_t Cam_GetWindowFov;
     /** @brief Gets the window camera's final (calculated) FOV. See `SPF_Camera_GetWindowFinalFov_t`. */
-    SPF_Camera_GetWindowFinalFov_t GetWindowFinalFov;
+    SPF_Camera_GetWindowFinalFov_t Cam_GetWindowFinalFov;
     /** @brief Sets the window camera's base FOV. See `SPF_Camera_SetWindowFov_t`. */
-    SPF_Camera_SetWindowFov_t SetWindowFov;
+    SPF_Camera_SetWindowFov_t Cam_SetWindowFov;
 
     // --- Bumper Camera ---
     /** @brief Gets the bumper camera's offset. See `SPF_Camera_GetBumperOffset_t`. */
-    SPF_Camera_GetBumperOffset_t GetBumperOffset;
+    SPF_Camera_GetBumperOffset_t Cam_GetBumperOffset;
     /** @brief Sets the bumper camera's offset. See `SPF_Camera_SetBumperOffset_t`. */
-    SPF_Camera_SetBumperOffset_t SetBumperOffset;
+    SPF_Camera_SetBumperOffset_t Cam_SetBumperOffset;
     /** @brief Gets the bumper camera's base FOV. See `SPF_Camera_GetBumperFov_t`. */
-    SPF_Camera_GetBumperFov_t GetBumperFov;
+    SPF_Camera_GetBumperFov_t Cam_GetBumperFov;
     /** @brief Gets the bumper camera's final (calculated) FOV. See `SPF_Camera_GetBumperFinalFov_t`. */
-    SPF_Camera_GetBumperFinalFov_t GetBumperFinalFov;
+    SPF_Camera_GetBumperFinalFov_t Cam_GetBumperFinalFov;
     /** @brief Sets the bumper camera's base FOV. See `SPF_Camera_SetBumperFov_t`. */
-    SPF_Camera_SetBumperFov_t SetBumperFov;
+    SPF_Camera_SetBumperFov_t Cam_SetBumperFov;
 
     // --- Wheel Camera ---
     /** @brief Gets the wheel camera's offset. See `SPF_Camera_GetWheelOffset_t`. */
-    SPF_Camera_GetWheelOffset_t GetWheelOffset;
+    SPF_Camera_GetWheelOffset_t Cam_GetWheelOffset;
     /** @brief Sets the wheel camera's offset. See `SPF_Camera_SetWheelOffset_t`. */
-    SPF_Camera_SetWheelOffset_t SetWheelOffset;
+    SPF_Camera_SetWheelOffset_t Cam_SetWheelOffset;
     /** @brief Gets the wheel camera's base FOV. See `SPF_Camera_GetWheelFov_t`. */
-    SPF_Camera_GetWheelFov_t GetWheelFov;
+    SPF_Camera_GetWheelFov_t Cam_GetWheelFov;
     /** @brief Gets the wheel camera's final (calculated) FOV. See `SPF_Camera_GetWheelFinalFov_t`. */
-    SPF_Camera_GetWheelFinalFov_t GetWheelFinalFov;
+    SPF_Camera_GetWheelFinalFov_t Cam_GetWheelFinalFov;
     /** @brief Sets the wheel camera's base FOV. See `SPF_Camera_SetWheelFov_t`. */
-    SPF_Camera_SetWheelFov_t SetWheelFov;
+    SPF_Camera_SetWheelFov_t Cam_SetWheelFov;
 
     // --- Cabin Camera ---
     /** @brief Gets the cabin camera's base FOV. See `SPF_Camera_GetCabinFov_t`. */
-    SPF_Camera_GetCabinFov_t GetCabinFov;
+    SPF_Camera_GetCabinFov_t Cam_GetCabinFov;
     /** @brief Gets the cabin camera's final (calculated) FOV. See `SPF_Camera_GetCabinFinalFov_t`. */
-    SPF_Camera_GetCabinFinalFov_t GetCabinFinalFov;
+    SPF_Camera_GetCabinFinalFov_t Cam_GetCabinFinalFov;
     /** @brief Sets the cabin camera's base FOV. See `SPF_Camera_SetCabinFov_t`. */
-    SPF_Camera_SetCabinFov_t SetCabinFov;
+    SPF_Camera_SetCabinFov_t Cam_SetCabinFov;
 
     // --- TV Camera ---
     /** @brief Gets the TV camera's max distance. See `SPF_Camera_GetTVMaxDistance_t`. */
-    SPF_Camera_GetTVMaxDistance_t GetTVMaxDistance;
+    SPF_Camera_GetTVMaxDistance_t Cam_GetTVMaxDistance;
     /** @brief Gets the TV camera's uplift near prefabs. See `SPF_Camera_GetTVPrefabUplift_t`. */
-    SPF_Camera_GetTVPrefabUplift_t GetTVPrefabUplift;
+    SPF_Camera_GetTVPrefabUplift_t Cam_GetTVPrefabUplift;
     /** @brief Gets the TV camera's uplift on roads. See `SPF_Camera_GetTVRoadUplift_t`. */
-    SPF_Camera_GetTVRoadUplift_t GetTVRoadUplift;
+    SPF_Camera_GetTVRoadUplift_t Cam_GetTVRoadUplift;
     /** @brief Sets the TV camera's max distance. See `SPF_Camera_SetTVMaxDistance_t`. */
-    SPF_Camera_SetTVMaxDistance_t SetTVMaxDistance;
+    SPF_Camera_SetTVMaxDistance_t Cam_SetTVMaxDistance;
     /** @brief Sets the TV camera's uplift near prefabs. See `SPF_Camera_SetTVPrefabUplift_t`. */
-    SPF_Camera_SetTVPrefabUplift_t SetTVPrefabUplift;
+    SPF_Camera_SetTVPrefabUplift_t Cam_SetTVPrefabUplift;
     /** @brief Sets the TV camera's uplift on roads. See `SPF_Camera_SetTVRoadUplift_t`. */
-    SPF_Camera_SetTVRoadUplift_t SetTVRoadUplift;
+    SPF_Camera_SetTVRoadUplift_t Cam_SetTVRoadUplift;
     /** @brief Gets the TV camera's base FOV. See `SPF_Camera_GetTVFov_t`. */
-    SPF_Camera_GetTVFov_t GetTVFov;
+    SPF_Camera_GetTVFov_t Cam_GetTVFov;
     /** @brief Gets the TV camera's final (calculated) FOV. See `SPF_Camera_GetTVFinalFov_t`. */
-    SPF_Camera_GetTVFinalFov_t GetTVFinalFov;
+    SPF_Camera_GetTVFinalFov_t Cam_GetTVFinalFov;
     /** @brief Sets the TV camera's base FOV. See `SPF_Camera_SetTVFov_t`. */
-    SPF_Camera_SetTVFov_t SetTVFov;
+    SPF_Camera_SetTVFov_t Cam_SetTVFov;
 
     // ---Camera World Coordinates ---
     /** @brief Gets the world coordinates of the active camera. See `SPF_Camera_GetWorldCoordinates_t`. */
-    SPF_Camera_GetWorldCoordinates_t GetCameraWorldCoordinates;
+    SPF_Camera_GetWorldCoordinates_t Cam_GetCameraWorldCoordinates;
 
     // --- Free Camera ---
     /** @brief Gets the free camera's position. See `SPF_Camera_GetFreePosition_t`. */
-    SPF_Camera_GetFreePosition_t GetFreePosition;
+    SPF_Camera_GetFreePosition_t Cam_GetFreePosition;
     /** @brief Sets the free camera's position. See `SPF_Camera_SetFreePosition_t`. */
-    SPF_Camera_SetFreePosition_t SetFreePosition;
+    SPF_Camera_SetFreePosition_t Cam_SetFreePosition;
     /** @brief Gets the free camera's orientation as a quaternion. See `SPF_Camera_GetFreeQuaternion_t`. */
-    SPF_Camera_GetFreeQuaternion_t GetFreeQuaternion;
+    SPF_Camera_GetFreeQuaternion_t Cam_GetFreeQuaternion;
     /** @brief Gets the free camera's orientation (mouse look/roll). See `SPF_Camera_GetFreeOrientation_t`. */
-    SPF_Camera_GetFreeOrientation_t GetFreeOrientation;
+    SPF_Camera_GetFreeOrientation_t Cam_GetFreeOrientation;
     /** @brief Sets the free camera's orientation (mouse look/roll). See `SPF_Camera_SetFreeOrientation_t`. */
-    SPF_Camera_SetFreeOrientation_t SetFreeOrientation;
+    SPF_Camera_SetFreeOrientation_t Cam_SetFreeOrientation;
     /** @brief Gets the free camera's base FOV. See `SPF_Camera_GetFreeFov_t`. */
-    SPF_Camera_GetFreeFov_t GetFreeFov;
+    SPF_Camera_GetFreeFov_t Cam_GetFreeFov;
     /** @brief Gets the free camera's final (calculated) FOV. See `SPF_Camera_GetFreeFinalFov_t`. */
-    SPF_Camera_GetFreeFinalFov_t GetFreeFinalFov;
+    SPF_Camera_GetFreeFinalFov_t Cam_GetFreeFinalFov;
     /** @brief Sets the free camera's base FOV. See `SPF_Camera_SetFreeFov_t`. */
-    SPF_Camera_SetFreeFov_t SetFreeFov;
+    SPF_Camera_SetFreeFov_t Cam_SetFreeFov;
     /** @brief Gets the free camera's movement speed. See `SPF_Camera_GetFreeSpeed_t`. */
-    SPF_Camera_GetFreeSpeed_t GetFreeSpeed;
+    SPF_Camera_GetFreeSpeed_t Cam_GetFreeSpeed;
     /** @brief Sets the free camera's movement speed. See `SPF_Camera_SetFreeSpeed_t`. */
-    SPF_Camera_SetFreeSpeed_t SetFreeSpeed;
+    SPF_Camera_SetFreeSpeed_t Cam_SetFreeSpeed;
 
     // --- Debug Camera ---
     /** @brief Enables or disables the debug camera system. See `SPF_Camera_EnableDebugCamera_t`. */
-    SPF_Camera_EnableDebugCamera_t EnableDebugCamera;
+    SPF_Camera_EnableDebugCamera_t Cam_EnableDebugCamera;
     /** @brief Checks if the debug camera is enabled. See `SPF_Camera_GetDebugCameraEnabled_t`. */
-    SPF_Camera_GetDebugCameraEnabled_t GetDebugCameraEnabled;
+    SPF_Camera_GetDebugCameraEnabled_t Cam_GetDebugCameraEnabled;
     /** @brief Sets the debug camera's mode. See `SPF_Camera_SetDebugCameraMode_t`. */
-    SPF_Camera_SetDebugCameraMode_t SetDebugCameraMode;
+    SPF_Camera_SetDebugCameraMode_t Cam_SetDebugCameraMode;
     /** @brief Gets the debug camera's current mode. See `SPF_Camera_GetDebugCameraMode_t`. */
-    SPF_Camera_GetDebugCameraMode_t GetDebugCameraMode;
+    SPF_Camera_GetDebugCameraMode_t Cam_GetDebugCameraMode;
 
     // Debug Camera HUD & UI
     /** @brief Sets the visibility of the debug HUD. See `SPF_Camera_SetDebugHudVisible_t`. */
-    SPF_Camera_SetDebugHudVisible_t SetDebugHudVisible;
+    SPF_Camera_SetDebugHudVisible_t Cam_SetDebugHudVisible;
     /** @brief Checks if the debug HUD is visible. See `SPF_Camera_GetDebugHudVisible_t`. */
-    SPF_Camera_GetDebugHudVisible_t GetDebugHudVisible;
+    SPF_Camera_GetDebugHudVisible_t Cam_GetDebugHudVisible;
     /** @brief Sets the position of the debug HUD. See `SPF_Camera_SetDebugHudPosition_t`. */
-    SPF_Camera_SetDebugHudPosition_t SetDebugHudPosition;
+    SPF_Camera_SetDebugHudPosition_t Cam_SetDebugHudPosition;
     /** @brief Gets the position of the debug HUD. See `SPF_Camera_GetDebugHudPosition_t`. */
-    SPF_Camera_GetDebugHudPosition_t GetDebugHudPosition;
+    SPF_Camera_GetDebugHudPosition_t Cam_GetDebugHudPosition;
     /** @brief Sets the visibility of the main game UI. See `SPF_Camera_SetDebugGameUiVisible_t`. */
-    SPF_Camera_SetDebugGameUiVisible_t SetDebugGameUiVisible;
+    SPF_Camera_SetDebugGameUiVisible_t Cam_SetDebugGameUiVisible;
     /** @brief Checks if the main game UI is visible. See `SPF_Camera_GetDebugGameUiVisible_t`. */
-    SPF_Camera_GetDebugGameUiVisible_t GetDebugGameUiVisible;
+    SPF_Camera_GetDebugGameUiVisible_t Cam_GetDebugGameUiVisible;
 
     // --- Debug Camera State Management ---
     /** @brief Gets the number of saved camera states. See `SPF_Camera_GetStateCount_t`. */
-    SPF_Camera_GetStateCount_t GetStateCount;
+    SPF_Camera_GetStateCount_t Cam_GetStateCount;
     /** @brief Gets the index of the current camera state. See `SPF_Camera_GetCurrentStateIndex_t`. */
-    SPF_Camera_GetCurrentStateIndex_t GetCurrentStateIndex;
+    SPF_Camera_GetCurrentStateIndex_t Cam_GetCurrentStateIndex;
     /** @brief Retrieves a camera state by index. See `SPF_Camera_GetState_t`. */
-    SPF_Camera_GetState_t GetState;
+    SPF_Camera_GetState_t Cam_GetState;
     /** @brief Applies a camera state by index. See `SPF_Camera_ApplyState_t`. */
-    SPF_Camera_ApplyState_t ApplyState;
+    SPF_Camera_ApplyState_t Cam_ApplyState;
     /** @brief Cycles to the next/previous camera state. See `SPF_Camera_CycleState_t`. */
-    SPF_Camera_CycleState_t CycleState;
+    SPF_Camera_CycleState_t Cam_CycleState;
     /** @brief Saves the current camera view as a new state. See `SPF_Camera_SaveCurrentState_t`. */
-    SPF_Camera_SaveCurrentState_t SaveCurrentState;
+    SPF_Camera_SaveCurrentState_t Cam_SaveCurrentState;
     /** @brief Reloads all camera states from the config file. See `SPF_Camera_ReloadStatesFromFile_t`. */
-    SPF_Camera_ReloadStatesFromFile_t ReloadStatesFromFile;
+    SPF_Camera_ReloadStatesFromFile_t Cam_ReloadStatesFromFile;
 
     // New In-Memory State Functions
     /** @brief Clears all camera states from memory. See `SPF_Camera_ClearAllStatesInMemory_t`. */
-    SPF_Camera_ClearAllStatesInMemory_t ClearAllStatesInMemory;
+    SPF_Camera_ClearAllStatesInMemory_t Cam_ClearAllStatesInMemory;
     /** @brief Adds a new camera state to memory. See `SPF_Camera_AddStateInMemory_t`. */
-    SPF_Camera_AddStateInMemory_t AddStateInMemory;
+    SPF_Camera_AddStateInMemory_t Cam_AddStateInMemory;
     /** @brief Edits an in-memory camera state. See `SPF_Camera_EditStateInMemory_t`. */
-    SPF_Camera_EditStateInMemory_t EditStateInMemory;
+    SPF_Camera_EditStateInMemory_t Cam_EditStateInMemory;
     /** @brief Deletes an in-memory camera state. See `SPF_Camera_DeleteStateInMemory_t`. */
-    SPF_Camera_DeleteStateInMemory_t DeleteStateInMemory;
+    SPF_Camera_DeleteStateInMemory_t Cam_DeleteStateInMemory;
 
     // --- Debug Camera Animation Control ---
     /** @brief Starts the camera animation. See `SPF_Anim_Play_t`. */
-    SPF_Anim_Play_t Anim_Play;
+    SPF_Anim_Play_t Cam_Anim_Play;
     /** @brief Pauses the camera animation. See `SPF_Anim_Pause_t`. */
-    SPF_Anim_Pause_t Anim_Pause;
+    SPF_Anim_Pause_t Cam_Anim_Pause;
     /** @brief Stops the camera animation. See `SPF_Anim_Stop_t`. */
-    SPF_Anim_Stop_t Anim_Stop;
+    SPF_Anim_Stop_t Cam_Anim_Stop;
     /** @brief Jumps to a specific frame in the animation. See `SPF_Anim_GoToFrame_t`. */
-    SPF_Anim_GoToFrame_t Anim_GoToFrame;
+    SPF_Anim_GoToFrame_t Cam_Anim_GoToFrame;
     /** @brief Scrubs the animation to a specific position. See `SPF_Anim_ScrubTo_t`. */
-    SPF_Anim_ScrubTo_t Anim_ScrubTo;
+    SPF_Anim_ScrubTo_t Cam_Anim_ScrubTo;
     /** @brief Toggles reverse playback for the animation. See `SPF_Anim_SetReverse_t`. */
-    SPF_Anim_SetReverse_t Anim_SetReverse;
+    SPF_Anim_SetReverse_t Cam_Anim_SetReverse;
     /** @brief Gets the current animation playback state. See `SPF_Anim_GetPlaybackState_t`. */
-    SPF_Anim_GetPlaybackState_t Anim_GetPlaybackState;
+    SPF_Anim_GetPlaybackState_t Cam_Anim_GetPlaybackState;
     /** @brief Gets the current animation frame index. See `SPF_Anim_GetCurrentFrame_t`. */
-    SPF_Anim_GetCurrentFrame_t Anim_GetCurrentFrame;
+    SPF_Anim_GetCurrentFrame_t Cam_Anim_GetCurrentFrame;
     /** @brief Gets the progress within the current frame transition. See `SPF_Anim_GetCurrentFrameProgress_t`. */
-    SPF_Anim_GetCurrentFrameProgress_t Anim_GetCurrentFrameProgress;
+    SPF_Anim_GetCurrentFrameProgress_t Cam_Anim_GetCurrentFrameProgress;
     /** @brief Checks if the animation is playing in reverse. See `SPF_Anim_IsReversed_t`. */
-    SPF_Anim_IsReversed_t Anim_IsReversed;
+    SPF_Anim_IsReversed_t Cam_Anim_IsReversed;
 
 
 } SPF_Camera_API;

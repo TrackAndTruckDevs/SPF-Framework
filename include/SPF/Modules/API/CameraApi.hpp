@@ -31,6 +31,7 @@ class CameraApi {
 
   // --- Behind Camera Trampolines ---
   static bool T_Camera_GetBehindLiveState(float* pitch, float* yaw, float* zoom);
+  static void T_Camera_SetBehindLiveState(float pitch, float yaw, float zoom);
   static bool T_Camera_GetBehindDistanceSettings(float* min, float* max, float* trailer_max_offset, float* def, float* trailer_def, float* change_speed, float* laziness);
   static void T_Camera_SetBehindDistanceSettings(float min, float max, float trailer_max_offset, float def, float trailer_def, float change_speed, float laziness);
   static bool T_Camera_GetBehindElevationSettings(float* azimuth_laziness, float* min, float* max, float* def, float* trailer_def, float* height_limit);

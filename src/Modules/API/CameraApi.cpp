@@ -135,6 +135,13 @@ bool CameraApi::T_Camera_GetBehindLiveState(float* pitch, float* yaw, float* zoo
   return false;
 }
 
+void CameraApi::T_Camera_SetBehindLiveState(float pitch, float yaw, float zoom) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behindCam = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behindCam->SetLiveState(pitch, yaw, zoom);
+  }
+}
+
 bool CameraApi::T_Camera_GetBehindDistanceSettings(float* min, float* max, float* trailer_max_offset, float* def, float* trailer_def, float* change_speed, float* laziness) {
   auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
   if (auto* behindCam = dynamic_cast<GameCameraBehind*>(pCamera)) {
@@ -857,147 +864,148 @@ bool CameraApi::T_Camera_GetFreeFinalFov(float* out_horiz, float* out_vert) {
 void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   if (!camera_api) return;
 
-  camera_api->SwitchTo = &CameraApi::T_Camera_SwitchTo;
-  camera_api->GetCameraObject = &CameraApi::T_Camera_GetCameraObject;
-  camera_api->GetCurrentCamera = &CameraApi::T_Camera_GetCurrentCamera;
-  camera_api->ResetToDefaults = &CameraApi::T_Camera_ResetToDefaults;
+  camera_api->Cam_SwitchTo = &CameraApi::T_Camera_SwitchTo;
+  camera_api->Cam_GetCameraObject = &CameraApi::T_Camera_GetCameraObject;
+  camera_api->Cam_GetCurrentCamera = &CameraApi::T_Camera_GetCurrentCamera;
+  camera_api->Cam_ResetToDefaults = &CameraApi::T_Camera_ResetToDefaults;
 
   // Interior
-  camera_api->GetInteriorSeatPos = &T_Camera_GetInteriorSeatPos;
-  camera_api->SetInteriorSeatPos = &T_Camera_SetInteriorSeatPos;
-  camera_api->GetInteriorHeadRot = &T_Camera_GetInteriorHeadRot;
-  camera_api->SetInteriorHeadRot = &T_Camera_SetInteriorHeadRot;
-  camera_api->GetInteriorFov = &T_Camera_GetInteriorFov;
-  camera_api->GetInteriorFinalFov = &T_Camera_GetInteriorFinalFov;
-  camera_api->SetInteriorFov = &T_Camera_SetInteriorFov;
-  camera_api->GetInteriorRotationLimits = &T_Camera_GetInteriorRotationLimits;
-  camera_api->SetInteriorRotationLimits = &T_Camera_SetInteriorRotationLimits;
-  camera_api->GetInteriorRotationDefaults = &T_Camera_GetInteriorRotationDefaults;
-  camera_api->SetInteriorRotationDefaults = &T_Camera_SetInteriorRotationDefaults;
+  camera_api->Cam_GetInteriorSeatPos = &T_Camera_GetInteriorSeatPos;
+  camera_api->Cam_SetInteriorSeatPos = &T_Camera_SetInteriorSeatPos;
+  camera_api->Cam_GetInteriorHeadRot = &T_Camera_GetInteriorHeadRot;
+  camera_api->Cam_SetInteriorHeadRot = &T_Camera_SetInteriorHeadRot;
+  camera_api->Cam_GetInteriorFov = &T_Camera_GetInteriorFov;
+  camera_api->Cam_GetInteriorFinalFov = &T_Camera_GetInteriorFinalFov;
+  camera_api->Cam_SetInteriorFov = &T_Camera_SetInteriorFov;
+  camera_api->Cam_GetInteriorRotationLimits = &T_Camera_GetInteriorRotationLimits;
+  camera_api->Cam_SetInteriorRotationLimits = &T_Camera_SetInteriorRotationLimits;
+  camera_api->Cam_GetInteriorRotationDefaults = &T_Camera_GetInteriorRotationDefaults;
+  camera_api->Cam_SetInteriorRotationDefaults = &T_Camera_SetInteriorRotationDefaults;
 
   // Behind
-  camera_api->GetBehindLiveState = &T_Camera_GetBehindLiveState;
-  camera_api->GetBehindDistanceSettings = &T_Camera_GetBehindDistanceSettings;
-  camera_api->SetBehindDistanceSettings = &T_Camera_SetBehindDistanceSettings;
-  camera_api->GetBehindElevationSettings = &T_Camera_GetBehindElevationSettings;
-  camera_api->SetBehindElevationSettings = &T_Camera_SetBehindElevationSettings;
-  camera_api->GetBehindPivot = &T_Camera_GetBehindPivot;
-  camera_api->SetBehindPivot = &T_Camera_SetBehindPivot;
-  camera_api->GetBehindDynamicOffset = &T_Camera_GetBehindDynamicOffset;
-  camera_api->SetBehindDynamicOffset = &T_Camera_SetBehindDynamicOffset;
-  camera_api->GetBehindFov = &T_Camera_GetBehindFov;
-  camera_api->GetBehindFinalFov = &T_Camera_GetBehindFinalFov;
-  camera_api->SetBehindFov = &T_Camera_SetBehindFov;
+  camera_api->Cam_GetBehindLiveState = &T_Camera_GetBehindLiveState;
+  camera_api->Cam_SetBehindLiveState = &T_Camera_SetBehindLiveState;
+  camera_api->Cam_GetBehindDistanceSettings = &T_Camera_GetBehindDistanceSettings;
+  camera_api->Cam_SetBehindDistanceSettings = &T_Camera_SetBehindDistanceSettings;
+  camera_api->Cam_GetBehindElevationSettings = &T_Camera_GetBehindElevationSettings;
+  camera_api->Cam_SetBehindElevationSettings = &T_Camera_SetBehindElevationSettings;
+  camera_api->Cam_GetBehindPivot = &T_Camera_GetBehindPivot;
+  camera_api->Cam_SetBehindPivot = &T_Camera_SetBehindPivot;
+  camera_api->Cam_GetBehindDynamicOffset = &T_Camera_GetBehindDynamicOffset;
+  camera_api->Cam_SetBehindDynamicOffset = &T_Camera_SetBehindDynamicOffset;
+  camera_api->Cam_GetBehindFov = &T_Camera_GetBehindFov;
+  camera_api->Cam_GetBehindFinalFov = &T_Camera_GetBehindFinalFov;
+  camera_api->Cam_SetBehindFov = &T_Camera_SetBehindFov;
 
   // Top
-  camera_api->GetTopHeight = &T_Camera_GetTopHeight;
-  camera_api->GetTopSpeed = &T_Camera_GetTopSpeed;
-  camera_api->GetTopOffsets = &T_Camera_GetTopOffsets;
-  camera_api->SetTopHeight = &T_Camera_SetTopHeight;
-  camera_api->SetTopSpeed = &T_Camera_SetTopSpeed;
-  camera_api->SetTopOffsets = &T_Camera_SetTopOffsets;
-  camera_api->GetTopFov = &T_Camera_GetTopFov;
-  camera_api->GetTopFinalFov = &T_Camera_GetTopFinalFov;
-  camera_api->SetTopFov = &T_Camera_SetTopFov;
+  camera_api->Cam_GetTopHeight = &T_Camera_GetTopHeight;
+  camera_api->Cam_GetTopSpeed = &T_Camera_GetTopSpeed;
+  camera_api->Cam_GetTopOffsets = &T_Camera_GetTopOffsets;
+  camera_api->Cam_SetTopHeight = &T_Camera_SetTopHeight;
+  camera_api->Cam_SetTopSpeed = &T_Camera_SetTopSpeed;
+  camera_api->Cam_SetTopOffsets = &T_Camera_SetTopOffsets;
+  camera_api->Cam_GetTopFov = &T_Camera_GetTopFov;
+  camera_api->Cam_GetTopFinalFov = &T_Camera_GetTopFinalFov;
+  camera_api->Cam_SetTopFov = &T_Camera_SetTopFov;
 
   // Window
-  camera_api->GetWindowHeadOffset = &T_Camera_GetWindowHeadOffset;
-  camera_api->GetWindowLiveRotation = &T_Camera_GetWindowLiveRotation;
-  camera_api->GetWindowRotationLimits = &T_Camera_GetWindowRotationLimits;
-  camera_api->GetWindowRotationDefaults = &T_Camera_GetWindowRotationDefaults;
-  camera_api->SetWindowHeadOffset = &T_Camera_SetWindowHeadOffset;
-  camera_api->SetWindowLiveRotation = &T_Camera_SetWindowLiveRotation;
-  camera_api->SetWindowRotationLimits = &T_Camera_SetWindowRotationLimits;
-  camera_api->SetWindowRotationDefaults = &T_Camera_SetWindowRotationDefaults;
-  camera_api->GetWindowFov = &T_Camera_GetWindowFov;
-  camera_api->GetWindowFinalFov = &T_Camera_GetWindowFinalFov;
-  camera_api->SetWindowFov = &T_Camera_SetWindowFov;
+  camera_api->Cam_GetWindowHeadOffset = &T_Camera_GetWindowHeadOffset;
+  camera_api->Cam_GetWindowLiveRotation = &T_Camera_GetWindowLiveRotation;
+  camera_api->Cam_GetWindowRotationLimits = &T_Camera_GetWindowRotationLimits;
+  camera_api->Cam_GetWindowRotationDefaults = &T_Camera_GetWindowRotationDefaults;
+  camera_api->Cam_SetWindowHeadOffset = &T_Camera_SetWindowHeadOffset;
+  camera_api->Cam_SetWindowLiveRotation = &T_Camera_SetWindowLiveRotation;
+  camera_api->Cam_SetWindowRotationLimits = &T_Camera_SetWindowRotationLimits;
+  camera_api->Cam_SetWindowRotationDefaults = &T_Camera_SetWindowRotationDefaults;
+  camera_api->Cam_GetWindowFov = &T_Camera_GetWindowFov;
+  camera_api->Cam_GetWindowFinalFov = &T_Camera_GetWindowFinalFov;
+  camera_api->Cam_SetWindowFov = &T_Camera_SetWindowFov;
 
   // Bumper
-  camera_api->GetBumperOffset = &T_Camera_GetBumperOffset;
-  camera_api->SetBumperOffset = &T_Camera_SetBumperOffset;
-  camera_api->GetBumperFov = &T_Camera_GetBumperFov;
-  camera_api->GetBumperFinalFov = &T_Camera_GetBumperFinalFov;
-  camera_api->SetBumperFov = &T_Camera_SetBumperFov;
+  camera_api->Cam_GetBumperOffset = &T_Camera_GetBumperOffset;
+  camera_api->Cam_SetBumperOffset = &T_Camera_SetBumperOffset;
+  camera_api->Cam_GetBumperFov = &T_Camera_GetBumperFov;
+  camera_api->Cam_GetBumperFinalFov = &T_Camera_GetBumperFinalFov;
+  camera_api->Cam_SetBumperFov = &T_Camera_SetBumperFov;
 
   // Wheel
-  camera_api->GetWheelOffset = &T_Camera_GetWheelOffset;
-  camera_api->SetWheelOffset = &T_Camera_SetWheelOffset;
-  camera_api->GetWheelFov = &T_Camera_GetWheelFov;
-  camera_api->GetWheelFinalFov = &T_Camera_GetWheelFinalFov;
-  camera_api->SetWheelFov = &T_Camera_SetWheelFov;
+  camera_api->Cam_GetWheelOffset = &T_Camera_GetWheelOffset;
+  camera_api->Cam_SetWheelOffset = &T_Camera_SetWheelOffset;
+  camera_api->Cam_GetWheelFov = &T_Camera_GetWheelFov;
+  camera_api->Cam_GetWheelFinalFov = &T_Camera_GetWheelFinalFov;
+  camera_api->Cam_SetWheelFov = &T_Camera_SetWheelFov;
 
   // Cabin
-  camera_api->GetCabinFov = &T_Camera_GetCabinFov;
-  camera_api->GetCabinFinalFov = &T_Camera_GetCabinFinalFov;
-  camera_api->SetCabinFov = &T_Camera_SetCabinFov;
+  camera_api->Cam_GetCabinFov = &T_Camera_GetCabinFov;
+  camera_api->Cam_GetCabinFinalFov = &T_Camera_GetCabinFinalFov;
+  camera_api->Cam_SetCabinFov = &T_Camera_SetCabinFov;
 
   // TV
-  camera_api->GetTVMaxDistance = &T_Camera_GetTVMaxDistance;
-  camera_api->GetTVPrefabUplift = &T_Camera_GetTVPrefabUplift;
-  camera_api->GetTVRoadUplift = &T_Camera_GetTVRoadUplift;
-  camera_api->SetTVMaxDistance = &T_Camera_SetTVMaxDistance;
-  camera_api->SetTVPrefabUplift = &T_Camera_SetTVPrefabUplift;
-  camera_api->SetTVRoadUplift = &T_Camera_SetTVRoadUplift;
-  camera_api->GetTVFov = &T_Camera_GetTVFov;
-  camera_api->GetTVFinalFov = &T_Camera_GetTVFinalFov;
-  camera_api->SetTVFov = &T_Camera_SetTVFov;
+  camera_api->Cam_GetTVMaxDistance = &T_Camera_GetTVMaxDistance;
+  camera_api->Cam_GetTVPrefabUplift = &T_Camera_GetTVPrefabUplift;
+  camera_api->Cam_GetTVRoadUplift = &T_Camera_GetTVRoadUplift;
+  camera_api->Cam_SetTVMaxDistance = &T_Camera_SetTVMaxDistance;
+  camera_api->Cam_SetTVPrefabUplift = &T_Camera_SetTVPrefabUplift;
+  camera_api->Cam_SetTVRoadUplift = &T_Camera_SetTVRoadUplift;
+  camera_api->Cam_GetTVFov = &T_Camera_GetTVFov;
+  camera_api->Cam_GetTVFinalFov = &T_Camera_GetTVFinalFov;
+  camera_api->Cam_SetTVFov = &T_Camera_SetTVFov;
 
   // World Coords
-  camera_api->GetCameraWorldCoordinates = &T_Camera_GetWorldCoordinates;
+  camera_api->Cam_GetCameraWorldCoordinates = &T_Camera_GetWorldCoordinates;
 
   // Free Cam
-  camera_api->GetFreePosition = &T_Camera_GetFreePosition;
-  camera_api->SetFreePosition = &T_Camera_SetFreePosition;
-  camera_api->GetFreeQuaternion = &T_Camera_GetFreeQuaternion;
-  camera_api->GetFreeOrientation = &T_Camera_GetFreeOrientation;
-  camera_api->SetFreeOrientation = &T_Camera_SetFreeOrientation;
-  camera_api->GetFreeFov = &T_Camera_GetFreeFov;
-  camera_api->GetFreeFinalFov = &T_Camera_GetFreeFinalFov;
-  camera_api->SetFreeFov = &T_Camera_SetFreeFov;
-  camera_api->GetFreeSpeed = &T_Camera_GetFreeSpeed;
-  camera_api->SetFreeSpeed = &T_Camera_SetFreeSpeed;
+  camera_api->Cam_GetFreePosition = &T_Camera_GetFreePosition;
+  camera_api->Cam_SetFreePosition = &T_Camera_SetFreePosition;
+  camera_api->Cam_GetFreeQuaternion = &T_Camera_GetFreeQuaternion;
+  camera_api->Cam_GetFreeOrientation = &T_Camera_GetFreeOrientation;
+  camera_api->Cam_SetFreeOrientation = &T_Camera_SetFreeOrientation;
+  camera_api->Cam_GetFreeFov = &T_Camera_GetFreeFov;
+  camera_api->Cam_GetFreeFinalFov = &T_Camera_GetFreeFinalFov;
+  camera_api->Cam_SetFreeFov = &T_Camera_SetFreeFov;
+  camera_api->Cam_GetFreeSpeed = &T_Camera_GetFreeSpeed;
+  camera_api->Cam_SetFreeSpeed = &T_Camera_SetFreeSpeed;
 
   // Debug
-  camera_api->EnableDebugCamera = &T_Camera_EnableDebugCamera;
-  camera_api->GetDebugCameraEnabled = &T_Camera_GetDebugCameraEnabled;
-  camera_api->SetDebugCameraMode = &T_Camera_SetDebugCameraMode;
-  camera_api->GetDebugCameraMode = &T_Camera_GetDebugCameraMode;
+  camera_api->Cam_EnableDebugCamera = &T_Camera_EnableDebugCamera;
+  camera_api->Cam_GetDebugCameraEnabled = &T_Camera_GetDebugCameraEnabled;
+  camera_api->Cam_SetDebugCameraMode = &T_Camera_SetDebugCameraMode;
+  camera_api->Cam_GetDebugCameraMode = &T_Camera_GetDebugCameraMode;
 
   // Debug HUD & UI
-  camera_api->SetDebugHudVisible = &T_Camera_SetDebugHudVisible;
-  camera_api->GetDebugHudVisible = &T_Camera_GetDebugHudVisible;
-  camera_api->SetDebugHudPosition = &T_Camera_SetDebugHudPosition;
-  camera_api->GetDebugHudPosition = &T_Camera_GetDebugHudPosition;
-  camera_api->SetDebugGameUiVisible = &T_Camera_SetDebugGameUiVisible;
-  camera_api->GetDebugGameUiVisible = &T_Camera_GetDebugGameUiVisible;
+  camera_api->Cam_SetDebugHudVisible = &T_Camera_SetDebugHudVisible;
+  camera_api->Cam_GetDebugHudVisible = &T_Camera_GetDebugHudVisible;
+  camera_api->Cam_SetDebugHudPosition = &T_Camera_SetDebugHudPosition;
+  camera_api->Cam_GetDebugHudPosition = &T_Camera_GetDebugHudPosition;
+  camera_api->Cam_SetDebugGameUiVisible = &T_Camera_SetDebugGameUiVisible;
+  camera_api->Cam_GetDebugGameUiVisible = &T_Camera_GetDebugGameUiVisible;
 
   // Debug Camera State Management
-  camera_api->GetStateCount = &T_Camera_GetStateCount;
-  camera_api->GetCurrentStateIndex = &T_Camera_GetCurrentStateIndex;
-  camera_api->GetState = &T_Camera_GetState;
-  camera_api->ApplyState = &T_Camera_ApplyState;
-  camera_api->CycleState = &T_Camera_CycleState;
-  camera_api->SaveCurrentState = &T_Camera_SaveCurrentState;
-  camera_api->ReloadStatesFromFile = &T_Camera_ReloadStatesFromFile;
+  camera_api->Cam_GetStateCount = &T_Camera_GetStateCount;
+  camera_api->Cam_GetCurrentStateIndex = &T_Camera_GetCurrentStateIndex;
+  camera_api->Cam_GetState = &T_Camera_GetState;
+  camera_api->Cam_ApplyState = &T_Camera_ApplyState;
+  camera_api->Cam_CycleState = &T_Camera_CycleState;
+  camera_api->Cam_SaveCurrentState = &T_Camera_SaveCurrentState;
+  camera_api->Cam_ReloadStatesFromFile = &T_Camera_ReloadStatesFromFile;
 
   // In-Memory State Management
-  camera_api->ClearAllStatesInMemory = &T_Camera_ClearAllStatesInMemory;
-  camera_api->AddStateInMemory = &T_Camera_AddStateInMemory;
-  camera_api->EditStateInMemory = &T_Camera_EditStateInMemory;
-  camera_api->DeleteStateInMemory = &T_Camera_DeleteStateInMemory;
+  camera_api->Cam_ClearAllStatesInMemory = &T_Camera_ClearAllStatesInMemory;
+  camera_api->Cam_AddStateInMemory = &T_Camera_AddStateInMemory;
+  camera_api->Cam_EditStateInMemory = &T_Camera_EditStateInMemory;
+  camera_api->Cam_DeleteStateInMemory = &T_Camera_DeleteStateInMemory;
 
   // Animation Control
-  camera_api->Anim_Play = &T_Anim_Play;
-  camera_api->Anim_Pause = &T_Anim_Pause;
-  camera_api->Anim_Stop = &T_Anim_Stop;
-  camera_api->Anim_GoToFrame = &T_Anim_GoToFrame;
-  camera_api->Anim_ScrubTo = &T_Anim_ScrubTo;
-  camera_api->Anim_SetReverse = &T_Anim_SetReverse;
-  camera_api->Anim_GetPlaybackState = &T_Anim_GetPlaybackState;
-  camera_api->Anim_GetCurrentFrame = &T_Anim_GetCurrentFrame;
-  camera_api->Anim_GetCurrentFrameProgress = &T_Anim_GetCurrentFrameProgress;
-  camera_api->Anim_IsReversed = &T_Anim_IsReversed;
+  camera_api->Cam_Anim_Play = &T_Anim_Play;
+  camera_api->Cam_Anim_Pause = &T_Anim_Pause;
+  camera_api->Cam_Anim_Stop = &T_Anim_Stop;
+  camera_api->Cam_Anim_GoToFrame = &T_Anim_GoToFrame;
+  camera_api->Cam_Anim_ScrubTo = &T_Anim_ScrubTo;
+  camera_api->Cam_Anim_SetReverse = &T_Anim_SetReverse;
+  camera_api->Cam_Anim_GetPlaybackState = &T_Anim_GetPlaybackState;
+  camera_api->Cam_Anim_GetCurrentFrame = &T_Anim_GetCurrentFrame;
+  camera_api->Cam_Anim_GetCurrentFrameProgress = &T_Anim_GetCurrentFrameProgress;
+  camera_api->Cam_Anim_IsReversed = &T_Anim_IsReversed;
 }
 
 }  // namespace Modules::API

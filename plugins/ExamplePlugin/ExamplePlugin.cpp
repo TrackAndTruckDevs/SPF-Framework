@@ -638,13 +638,13 @@ void OnCameraKeybind() {
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->camera) return;
 
     SPF_CameraType current_camera_type;
-    if (g_ctx.coreAPI->camera->GetCurrentCamera(&current_camera_type)) {
+    if (g_ctx.coreAPI->camera->Cam_GetCurrentCamera(&current_camera_type)) {
         // Determine the next camera in the cycle.
         SPF_CameraType next_camera_type = (current_camera_type == SPF_CAMERA_INTERIOR) ? SPF_CAMERA_BEHIND :
                                           (current_camera_type == SPF_CAMERA_BEHIND) ? SPF_CAMERA_DEVELOPER_FREE :
                                           SPF_CAMERA_INTERIOR;
         // Switch to the next camera.
-        g_ctx.coreAPI->camera->SwitchTo(next_camera_type);
+        g_ctx.coreAPI->camera->Cam_SwitchTo(next_camera_type);
 
         char log_buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Switched camera from %d to %d via keybind.", current_camera_type, next_camera_type);
@@ -980,7 +980,7 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
 
     // Get and display the current camera type.
     SPF_CameraType current_camera;
-    if (g_ctx.coreAPI->camera->GetCurrentCamera(&current_camera)) {
+    if (g_ctx.coreAPI->camera->Cam_GetCurrentCamera(&current_camera)) {
         char buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Current Camera Type: %d", current_camera);
         ui->Text(buffer);
@@ -991,16 +991,16 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
 
     // Add buttons to switch to a specific camera.
     ui->Text("Switch to a specific camera:");
-    if (ui->Button("Interior", 0, 0)) g_ctx.coreAPI->camera->SwitchTo(SPF_CAMERA_INTERIOR);
+    if (ui->Button("Interior", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_INTERIOR);
     ui->SameLine(0, 5);
-    if (ui->Button("Behind", 0, 0)) g_ctx.coreAPI->camera->SwitchTo(SPF_CAMERA_BEHIND);
+    if (ui->Button("Behind", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_BEHIND);
     ui->SameLine(0, 5);
-    if (ui->Button("Developer Free", 0, 0)) g_ctx.coreAPI->camera->SwitchTo(SPF_CAMERA_DEVELOPER_FREE);
+    if (ui->Button("Developer Free", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_DEVELOPER_FREE);
     ui->Separator();
 
     // Get and display the camera's world coordinates.
     float x, y, z;
-    if (g_ctx.coreAPI->camera->GetCameraWorldCoordinates(&x, &y, &z)) {
+    if (g_ctx.coreAPI->camera->Cam_GetCameraWorldCoordinates(&x, &y, &z)) {
         char buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "X: %.2f, Y: %.2f, Z: %.2f", x, y, z);
         ui->Text("Current Camera Position:");
