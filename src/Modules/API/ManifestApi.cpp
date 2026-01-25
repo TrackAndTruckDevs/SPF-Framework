@@ -1,225 +1,310 @@
-// src/Modules/API/ManifestApi.cpp
 #include "SPF/Modules/API/ManifestApi.hpp"
-#include "SPF/Logging/LoggerFactory.hpp" // For logging
-#include "fmt/format.h"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/SPF_API/SPF_Manifest_API.h" // Builder definitions
 
-#include <string> // For std::string
-#include <nlohmann/json.hpp> // For nlohmann::ordered_json
-#include <cstring> // For strncpy_s
-#include <algorithm> // For std::min
+#include <nlohmann/json.hpp>
 
 SPF_NS_BEGIN
-
 namespace Modules::API {
 
-SPF::Config::ManifestData ManifestApi::ConvertCManifestToCppManifest(const SPF_ManifestData_C& cManifest, const std::string& pluginName) {
-    SPF::Config::ManifestData cppManifest;
+using namespace SPF::Config;
+
+// =================================================================================================
+// 1. Helper Functions (Internal)
+// =================================================================================================
+
+static ManifestData* Cast(SPF_Manifest_Builder_Handle* h) {
+    return reinterpret_cast<ManifestData*>(h);
+}
+
+static void LogError(const char* context, const char* message) {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ManifestApi");
+    if (logger) logger->Error("{}: {}", context, message);
+}
 
-    // --- Info Data ---
-    if (cManifest.info.name[0] != '\0') cppManifest.info.name = cManifest.info.name;
-    if (cManifest.info.version[0] != '\0') cppManifest.info.version = cManifest.info.version;
-    if (cManifest.info.min_framework_version[0] != '\0') cppManifest.info.minFrameworkVersion = cManifest.info.min_framework_version;
-    if (cManifest.info.author[0] != '\0') cppManifest.info.author = cManifest.info.author;
-    if (cManifest.info.descriptionKey[0] != '\0') cppManifest.info.descriptionKey = cManifest.info.descriptionKey;
-    if (cManifest.info.descriptionLiteral[0] != '\0') cppManifest.info.descriptionLiteral = cManifest.info.descriptionLiteral;
-    if (cManifest.info.email[0] != '\0') cppManifest.info.email = cManifest.info.email;
-    if (cManifest.info.discordUrl[0] != '\0') cppManifest.info.discordUrl = cManifest.info.discordUrl;
-    if (cManifest.info.steamProfileUrl[0] != '\0') cppManifest.info.steamProfileUrl = cManifest.info.steamProfileUrl;
-    if (cManifest.info.githubUrl[0] != '\0') cppManifest.info.githubUrl = cManifest.info.githubUrl;
-    if (cManifest.info.youtubeUrl[0] != '\0') cppManifest.info.youtubeUrl = cManifest.info.youtubeUrl;
-    if (cManifest.info.scsForumUrl[0] != '\0') cppManifest.info.scsForumUrl = cManifest.info.scsForumUrl;
-    if (cManifest.info.patreonUrl[0] != '\0') cppManifest.info.patreonUrl = cManifest.info.patreonUrl;
-    if (cManifest.info.websiteUrl[0] != '\0') cppManifest.info.websiteUrl = cManifest.info.websiteUrl;
+// =================================================================================================
+// 2. Info Implementations
+// =================================================================================================
 
-    // --- Config Policy Data ---
-    cppManifest.configPolicy.allowUserConfig = cManifest.configPolicy.allowUserConfig;
-    for (unsigned int i = 0; i < cManifest.configPolicy.userConfigurableSystemsCount && i < SPF_MANIFEST_MAX_SYSTEMS; ++i) {
-        cppManifest.configPolicy.userConfigurableSystems.push_back(cManifest.configPolicy.userConfigurableSystems[i]);
+static void Info_SetName(SPF_Manifest_Builder_Handle* h, const char* name) {
+    if (h && name) Cast(h)->info.name = name;
+}
+
+static void Info_SetVersion(SPF_Manifest_Builder_Handle* h, const char* version) {
+    if (h && version) Cast(h)->info.version = version;
+}
+
+static void Info_SetMinFrameworkVersion(SPF_Manifest_Builder_Handle* h, const char* version) {
+    if (h && version) Cast(h)->info.minFrameworkVersion = version;
+}
+
+static void Info_SetAuthor(SPF_Manifest_Builder_Handle* h, const char* author) {
+    if (h && author) Cast(h)->info.author = author;
+}
+
+static void Info_SetDescriptionKey(SPF_Manifest_Builder_Handle* h, const char* key) {
+    if (h && key) Cast(h)->info.descriptionKey = key;
+}
+
+static void Info_SetDescriptionLiteral(SPF_Manifest_Builder_Handle* h, const char* desc) {
+    if (h && desc) Cast(h)->info.descriptionLiteral = desc;
+}
+
+static void Info_SetEmail(SPF_Manifest_Builder_Handle* h, const char* email) {
+    if (h && email) Cast(h)->info.email = email;
+}
+
+static void Info_SetDiscordUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.discordUrl = url;
+}
+
+static void Info_SetSteamProfileUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.steamProfileUrl = url;
+}
+
+static void Info_SetGithubUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.githubUrl = url;
+}
+
+static void Info_SetYoutubeUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.youtubeUrl = url;
+}
+
+static void Info_SetScsForumUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.scsForumUrl = url;
+}
+
+static void Info_SetPatreonUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.patreonUrl = url;
+}
+
+static void Info_SetWebsiteUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
+    if (h && url) Cast(h)->info.websiteUrl = url;
+}
+
+// =================================================================================================
+// 3. Policy Implementations
+// =================================================================================================
+
+static void Policy_SetAllowUserConfig(SPF_Manifest_Builder_Handle* h, bool allow) {
+    if (h) Cast(h)->configPolicy.allowUserConfig = allow;
+}
+
+static void Policy_AddConfigurableSystem(SPF_Manifest_Builder_Handle* h, const char* systemName) {
+    if (h && systemName) Cast(h)->configPolicy.userConfigurableSystems.push_back(systemName);
+}
+
+static void Policy_AddRequiredHook(SPF_Manifest_Builder_Handle* h, const char* hookName) {
+    if (h && hookName) Cast(h)->configPolicy.requiredHooks.push_back(hookName);
+}
+
+// =================================================================================================
+// 4. Settings Defaults (JSON)
+// =================================================================================================
+
+static void Settings_SetJson(SPF_Manifest_Builder_Handle* h, const char* jsonStr) {
+    if (!h || !jsonStr || *jsonStr == '\0') return;
+    try {
+        auto j = nlohmann::ordered_json::parse(jsonStr);
+        if (j.is_object()) {
+            Cast(h)->settings = std::move(j);
+        } else {
+            LogError("Settings_SetJson", "Root of custom settings must be a JSON object.");
+        }
+    } catch (const std::exception& e) {
+        LogError("Settings_SetJson", e.what());
     }
-    for (unsigned int i = 0; i < cManifest.configPolicy.requiredHooksCount && i < SPF_MANIFEST_MAX_HOOKS; ++i) {
-        cppManifest.configPolicy.requiredHooks.push_back(cManifest.configPolicy.requiredHooks[i]);
-    }
+}
 
-    // --- Settings Data (JSON string to nlohmann::ordered_json) ---
-    if (cManifest.settingsJson) {
+// =================================================================================================
+// 5. System Defaults
+// =================================================================================================
+
+static void Defaults_SetLogging(SPF_Manifest_Builder_Handle* h, const char* level, bool fileSink) {
+    if (!h) return;
+    auto* m = Cast(h);
+    if (level && *level) m->logging.level = level;
+    m->logging.sinks.file = fileSink;
+    m->logging.sinks.ui = true; // Always enable UI logging by default, controlled by framework
+}
+
+static void Defaults_SetLocalization(SPF_Manifest_Builder_Handle* h, const char* langCode) {
+    if (h && langCode && *langCode) Cast(h)->localization.language = langCode;
+}
+
+static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, 
+                                const char* type, const char* key, const char* pressType, 
+                                int thresholdMs, const char* consume, const char* behavior) {
+    if (!h || !group || !action || *group == '\0' || *action == '\0') return;
+    
+    KeybindDefinition def;
+    if (type && *type) def.type = type;
+    if (key && *key) def.key = key;
+    if (pressType && *pressType) def.pressType = pressType;
+    if (thresholdMs > 0) def.pressThresholdMs = thresholdMs;
+    if (consume && *consume) def.consume = consume;
+    if (behavior && *behavior) def.behavior = behavior;
+
+    Cast(h)->keybinds.actions[group][action].push_back(std::move(def));
+}
+
+static void Defaults_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, 
+                               bool isVisible, bool isInteractive, 
+                               int x, int y, int w, int height, 
+                               bool isCollapsed, bool autoScroll) {
+    if (!h || !windowName || *windowName == '\0') return;
+
+    WindowData win;
+    win.isVisible = isVisible;
+    win.isInteractive = isInteractive;
+    win.posX = x;
+    win.posY = y;
+    win.sizeW = w;
+    win.sizeH = height;
+    win.isCollapsed = isCollapsed;
+    win.autoScroll = autoScroll;
+
+    Cast(h)->ui.windows[windowName] = win;
+}
+
+// =================================================================================================
+// 6. Metadata Implementations
+// =================================================================================================
+
+static void Meta_AddCustomSetting(SPF_Manifest_Builder_Handle* h, const char* keyPath, 
+                                  const char* titleKey, const char* descKey, 
+                                  const char* widgetType, const char* widgetParamsJson, bool hideInUI) {
+    if (!h || !keyPath || *keyPath == '\0') return;
+
+    CustomSettingMetadata meta;
+    meta.keyPath = keyPath;
+    if (titleKey && *titleKey) meta.titleKey = titleKey;
+    if (descKey && *descKey) meta.descriptionKey = descKey;
+    meta.hide_in_ui = hideInUI;
+
+    if (widgetType && *widgetType) meta.widget = widgetType;
+    if (widgetParamsJson && *widgetParamsJson) {
         try {
-            cppManifest.settings = nlohmann::ordered_json::parse(cManifest.settingsJson);
-        } catch (const nlohmann::ordered_json::parse_error& e) {
-            logger->Error("ConvertCManifestToCppManifest: Failed to parse settings JSON for plugin '{}'. Error: {}. Returning empty settings.", pluginName, e.what());
-            cppManifest.settings = nlohmann::ordered_json::object();
-        }
-    } else {
-        cppManifest.settings = nlohmann::ordered_json::object();
-    }
-
-    // --- Logging Data ---
-    if (cManifest.logging.level[0] != '\0') {
-        cppManifest.logging.level = cManifest.logging.level;
-        cppManifest.logging.sinks.file = cManifest.logging.sinks.file;
-        // cppManifest.logging.sinks.ui = cManifest.logging.sinks.ui; // This line is handled by the user
-    }
-
-    // --- Localization Data ---
-    if (cManifest.localization.language[0] != '\0') {
-        cppManifest.localization.language = cManifest.localization.language;
-    }
-
-    // --- Keybinds Data ---
-    for (unsigned int i = 0; i < cManifest.keybinds.actionCount && i < SPF_MANIFEST_MAX_ACTIONS_PER_GROUP; ++i) {
-        const auto& cAction = cManifest.keybinds.actions[i];
-        std::string groupName = cAction.groupName;
-        std::string actionName = cAction.actionName;
-
-        if (groupName.empty() || actionName.empty()) continue;
-
-        for (unsigned int j = 0; j < cAction.definitionCount && j < SPF_MANIFEST_MAX_KEYBINDS_PER_ACTION; ++j) {
-            const auto& cDef = cAction.definitions[j];
-            SPF::Config::KeybindDefinition def_cpp;
-            if (cDef.type[0] != '\0') def_cpp.type = cDef.type;
-            if (cDef.key[0] != '\0') def_cpp.key = cDef.key;
-            if (cDef.pressType[0] != '\0') def_cpp.pressType = cDef.pressType;
-            if (cDef.pressThresholdMs != 0) def_cpp.pressThresholdMs = cDef.pressThresholdMs;
-            if (cDef.consume[0] != '\0') def_cpp.consume = cDef.consume;
-            if (cDef.behavior[0] != '\0') def_cpp.behavior = cDef.behavior;
-            cppManifest.keybinds.actions[groupName][actionName].push_back(def_cpp);
-        }
-    }
-
-    // --- UI Data ---
-    for (unsigned int i = 0; i < cManifest.ui.windowsCount && i < SPF_MANIFEST_MAX_WINDOWS; ++i) {
-        const auto& cWindow = cManifest.ui.windows[i];
-        std::string windowName = cWindow.name;
-        if (windowName.empty()) {
-            windowName = fmt::format("UnnamedWindow_{}", i);
-            logger->Warn("ConvertCManifestToCppManifest: Window at index {} for plugin '{}' has no name. Using a generated name: '{}'.", i, pluginName, windowName);
-        }
-
-        SPF::Config::WindowData windowData;
-        windowData.isVisible = cWindow.isVisible;
-        windowData.isInteractive = cWindow.isInteractive;
-        if (cWindow.posX != 0) windowData.posX = cWindow.posX;
-        if (cWindow.posY != 0) windowData.posY = cWindow.posY;
-        if (cWindow.sizeW != 0) windowData.sizeW = cWindow.sizeW;
-        if (cWindow.sizeH != 0) windowData.sizeH = cWindow.sizeH;
-        windowData.isCollapsed = cWindow.isCollapsed;
-        // windowData.isDocked = cWindow.isDocked;
-        // windowData.dockPriority = cWindow.dockPriority;
-        // windowData.allowUndocking = cWindow.allowUndocking;
-        windowData.autoScroll = cWindow.autoScroll;
-        
-        cppManifest.ui.windows[windowName] = windowData;
-    }
-
-            // --- Custom Settings Metadata ---
-        for (unsigned int i = 0; i < cManifest.customSettingsMetadataCount && i < 128; ++i) {
-            const auto& cMeta = cManifest.customSettingsMetadata[i];
-            if (cMeta.keyPath[0] == '\0') continue;
-    
-            SPF::Config::CustomSettingMetadata cppMeta;
-            cppMeta.keyPath = cMeta.keyPath;
-            if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-            if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-            cppMeta.hide_in_ui = cMeta.hide_in_ui;
-    
-            // NEW: Widget and widget_params
-            if (cMeta.widget[0] != '\0') {
-                cppMeta.widget = cMeta.widget;
-                std::string widgetType = cMeta.widget;
-    
-                if (widgetType == "slider") {
-                    if (cMeta.widget_params.slider.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.slider.min_val;
-                    if (cMeta.widget_params.slider.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.slider.max_val;
-                    if (cMeta.widget_params.slider.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.slider.format;
-                    if (cMeta.widget_params.slider.is_logarithmic) cppMeta.widget_params["is_logarithmic"] = true;
-                } else if (widgetType == "drag") {
-                    if (cMeta.widget_params.drag.speed != 0.0f) cppMeta.widget_params["speed"] = cMeta.widget_params.drag.speed;
-                    if (cMeta.widget_params.drag.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.drag.min_val;
-                    if (cMeta.widget_params.drag.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.drag.max_val;
-                    if (cMeta.widget_params.drag.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.drag.format;
-                } else if (widgetType == "input_double") {
-                    if (cMeta.widget_params.input_double.step != 0.0) cppMeta.widget_params["step"] = cMeta.widget_params.input_double.step;
-                    if (cMeta.widget_params.input_double.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.input_double.format;
-                } else if (widgetType == "input") {
-                    if (cMeta.widget_params.input.step != 0.0) cppMeta.widget_params["step"] = cMeta.widget_params.input.step;
-                } else if (widgetType == "combo" || widgetType == "radio") {
-                    if (cMeta.widget_params.choice.options_json[0] != '\0') {
-                        try {
-                            cppMeta.widget_params["options"] = nlohmann::ordered_json::parse(cMeta.widget_params.choice.options_json);
-                        } catch (const nlohmann::ordered_json::parse_error& e) {
-                            logger->Error("ConvertCManifestToCppManifest: Failed to parse options_json for custom setting '{}' in plugin '{}'. Error: {}. Returning empty options.", cMeta.keyPath, pluginName, e.what());
-                            // Leave cppMeta.widget_params["options"] as empty or handle as appropriate
-                        }
-                    }
-                } else if (widgetType == "color3" || widgetType == "color4") {
-                    if (cMeta.widget_params.color.flags != 0) cppMeta.widget_params["flags"] = cMeta.widget_params.color.flags;
-                } else if (widgetType == "multiline") {
-                    if (cMeta.widget_params.multiline.height_in_lines != 0) cppMeta.widget_params["height_in_lines"] = cMeta.widget_params.multiline.height_in_lines;
-                } else if (widgetType == "input_with_hint") {
-                    if (cMeta.widget_params.input_with_hint.hint[0] != '\0') cppMeta.widget_params["hint"] = cMeta.widget_params.input_with_hint.hint;
-                                } else if (widgetType == "vslider") {
-                                    if (cMeta.widget_params.vslider.min_val != 0.0f) cppMeta.widget_params["min"] = cMeta.widget_params.vslider.min_val;
-                                    if (cMeta.widget_params.vslider.max_val != 0.0f) cppMeta.widget_params["max"] = cMeta.widget_params.vslider.max_val;
-                                    if (cMeta.widget_params.vslider.width != 0.0f) cppMeta.widget_params["width"] = cMeta.widget_params.vslider.width;
-                                    if (cMeta.widget_params.vslider.height != 0.0f) cppMeta.widget_params["height"] = cMeta.widget_params.vslider.height;
-                                    if (cMeta.widget_params.vslider.format[0] != '\0') cppMeta.widget_params["format"] = cMeta.widget_params.vslider.format;
-                                    if (cMeta.widget_params.vslider.is_logarithmic) cppMeta.widget_params["is_logarithmic"] = true;
-                                }
+            auto j = nlohmann::ordered_json::parse(widgetParamsJson);
+            if (j.is_object()) {
+                meta.widget_params = std::move(j);
+            } else {
+                LogError("Meta_AddCustomSetting", "Widget parameters must be a JSON object.");
             }
-            cppManifest.customSettingsMetadata.push_back(cppMeta);
+        } catch (const std::exception& e) {
+            LogError("Meta_AddCustomSetting", e.what());
         }
+    }
+
+    Cast(h)->customSettingsMetadata.push_back(std::move(meta));
+}
+
+static void Meta_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, const char* title, const char* desc) {
+    if (!h || !group || !action) return;
+    KeybindActionMetadata meta;
+    meta.groupName = group;
+    meta.actionName = action;
+    if (title) meta.titleKey = title;
+    if (desc) meta.descriptionKey = desc;
+    Cast(h)->keybindsMetadata.push_back(meta);
+}
+
+static void Meta_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, const char* title, const char* desc) {
+    if (!h || !windowName) return;
+    WindowMetadata meta;
+    meta.windowName = windowName;
+    if (title) meta.titleKey = title;
+    if (desc) meta.descriptionKey = desc;
+    Cast(h)->uiMetadata.push_back(meta);
+}
+
+static void Meta_AddStandardSetting(SPF_Manifest_Builder_Handle* h, const char* system, const char* key, const char* title, const char* desc) {
+    if (!h || !system || !key) return;
     
-        // --- Keybind Action Metadata ---
-        for (unsigned int i = 0; i < cManifest.keybindsMetadataCount && i < 128; ++i) {
-            const auto& cMeta = cManifest.keybindsMetadata[i];
-            if (cMeta.groupName[0] == '\0' || cMeta.actionName[0] == '\0') continue;
-        SPF::Config::KeybindActionMetadata cppMeta;
-        cppMeta.groupName = cMeta.groupName;
-        cppMeta.actionName = cMeta.actionName;
-        if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-        if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-        cppManifest.keybindsMetadata.push_back(cppMeta);
+    StandardSettingMetadata meta;
+    meta.key = key;
+    if (title) meta.titleKey = title;
+    if (desc) meta.descriptionKey = desc;
+
+    if (std::string(system) == "logging") {
+        Cast(h)->loggingMetadata.push_back(meta);
+    } else if (std::string(system) == "localization") {
+        Cast(h)->localizationMetadata.push_back(meta);
+    }
+}
+
+// =================================================================================================
+// 7. API Table Population
+// =================================================================================================
+
+static void FillBuilderApi(SPF_Manifest_Builder_API* api) {
+    api->Info_SetName = Info_SetName;
+    api->Info_SetVersion = Info_SetVersion;
+    api->Info_SetMinFrameworkVersion = Info_SetMinFrameworkVersion;
+    api->Info_SetAuthor = Info_SetAuthor;
+    api->Info_SetDescriptionKey = Info_SetDescriptionKey;
+    api->Info_SetDescriptionLiteral = Info_SetDescriptionLiteral;
+    api->Info_SetEmail = Info_SetEmail;
+    api->Info_SetDiscordUrl = Info_SetDiscordUrl;
+    api->Info_SetSteamProfileUrl = Info_SetSteamProfileUrl;
+    api->Info_SetGithubUrl = Info_SetGithubUrl;
+    api->Info_SetYoutubeUrl = Info_SetYoutubeUrl;
+    api->Info_SetScsForumUrl = Info_SetScsForumUrl;
+    api->Info_SetPatreonUrl = Info_SetPatreonUrl;
+    api->Info_SetWebsiteUrl = Info_SetWebsiteUrl;
+
+    api->Policy_SetAllowUserConfig = Policy_SetAllowUserConfig;
+    api->Policy_AddConfigurableSystem = Policy_AddConfigurableSystem;
+    api->Policy_AddRequiredHook = Policy_AddRequiredHook;
+
+    api->Settings_SetJson = Settings_SetJson;
+
+    api->Defaults_SetLogging = Defaults_SetLogging;
+    api->Defaults_SetLocalization = Defaults_SetLocalization;
+    api->Defaults_AddKeybind = Defaults_AddKeybind;
+    api->Defaults_AddWindow = Defaults_AddWindow;
+
+    api->Meta_AddCustomSetting = Meta_AddCustomSetting;
+    api->Meta_AddKeybind = Meta_AddKeybind;
+    api->Meta_AddWindow = Meta_AddWindow;
+    api->Meta_AddStandardSetting = Meta_AddStandardSetting;
+}
+
+// =================================================================================================
+// 8. Main Entry Point
+// =================================================================================================
+
+ManifestData ManifestApi::BuildManifest(SPF_GetManifestAPI_Func pGetManifestFunc, const std::string& pluginName) {
+    ManifestData manifest;
+    
+    // Default name fallback
+    manifest.info.name = pluginName;
+
+    if (!pGetManifestFunc) {
+        return manifest;
     }
 
-    // --- Logging Metadata ---
-    for (unsigned int i = 0; i < cManifest.loggingMetadataCount && i < 16; ++i) {
-        const auto& cMeta = cManifest.loggingMetadata[i];
-        if (cMeta.key[0] == '\0') continue;
-
-        SPF::Config::StandardSettingMetadata cppMeta;
-        cppMeta.key = cMeta.key;
-        if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-        if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-        cppManifest.loggingMetadata.push_back(cppMeta);
+    SPF_Manifest_API pluginApi;
+    if (!pGetManifestFunc(&pluginApi) || !pluginApi.BuildManifest) {
+        return manifest;
     }
 
-    // --- Localization Metadata ---
-    for (unsigned int i = 0; i < cManifest.localizationMetadataCount && i < 16; ++i) {
-        const auto& cMeta = cManifest.localizationMetadata[i];
-        if (cMeta.key[0] == '\0') continue;
+    // Create the Builder API table
+    SPF_Manifest_Builder_API builderApi;
+    FillBuilderApi(&builderApi);
 
-        SPF::Config::StandardSettingMetadata cppMeta;
-        cppMeta.key = cMeta.key;
-        if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-        if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-        cppManifest.localizationMetadata.push_back(cppMeta);
+    // Call the plugin's builder function
+    // cast &manifest to the opaque handle type
+    try {
+        pluginApi.BuildManifest(reinterpret_cast<SPF_Manifest_Builder_Handle*>(&manifest), &builderApi);
+    } catch (const std::exception& e) {
+        LogError("BuildManifest", e.what());
+    } catch (...) {
+        LogError("BuildManifest", "Unknown exception occurred in plugin's BuildManifest.");
     }
 
-    // --- UI Metadata ---
-    for (unsigned int i = 0; i < cManifest.uiMetadataCount && i < SPF_MANIFEST_MAX_WINDOWS; ++i) {
-        const auto& cMeta = cManifest.uiMetadata[i];
-        if (cMeta.windowName[0] == '\0') continue;
-
-        SPF::Config::WindowMetadata cppMeta;
-        cppMeta.windowName = cMeta.windowName;
-        if (cMeta.titleKey[0] != '\0') cppMeta.titleKey = cMeta.titleKey;
-        if (cMeta.descriptionKey[0] != '\0') cppMeta.descriptionKey = cMeta.descriptionKey;
-        cppManifest.uiMetadata.push_back(cppMeta);
-    }
-
-    return cppManifest;
+    return manifest;
 }
 
 } // namespace Modules::API
-
 SPF_NS_END

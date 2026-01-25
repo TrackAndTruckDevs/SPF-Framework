@@ -247,12 +247,13 @@ extern PluginContext g_ctx;
 // --- Manifest ---
 
 /**
- * @brief Fills the manifest structure with this plugin's metadata.
+ * @brief Constructs the plugin's manifest using the provided Builder API.
  * @details This function is called by the framework *before* the plugin is loaded to learn
- * about its name, version, default settings, and requirements.
- * @param[out] out_manifest A reference to the manifest structure to be filled by the function.
+ * about its identity, default settings, and requirements.
+ * @param h An opaque handle to the manifest builder object.
+ * @param api A table of functions provided by the framework to populate the manifest.
  */
-void GetManifestData(SPF_ManifestData_C& out_manifest);
+void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api);
 
 // --- Plugin Lifecycle ---
 // These are the primary entry points called by the framework in a specific, guaranteed order.

@@ -32,97 +32,79 @@ PluginContext g_ctx;
 // 2. Manifest Implementation
 // =================================================================================================
 
-void GetManifestData(SPF_ManifestData_C& out_manifest) {
+void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
     // This function defines all the metadata for your plugin. The framework calls this
     // function *before* loading your plugin DLL to understand what it is.
 
-    // --- 2.1. Plugin Information (SPF_InfoData_C) ---
+    // --- 2.1. Plugin Information ---
     // This section provides the basic identity of your plugin.
     {
-        auto& info = out_manifest.info;
-
         // `name`: (Optional) A unique name for the plugin (e.g., "MyPlugin").
         // If not specified, the framework will use the name of your DLL file, but specifying it
         // here is recommended to avoid potential conflicts.
-        strncpy_s(info.name, PLUGIN_NAME, sizeof(info.name));
+        api->Info_SetName(h, PLUGIN_NAME);
 
         // `version`: (Optional) The plugin's version string (e.g., "1.0.0").
-        strncpy_s(info.version, "0.1.0", sizeof(info.version));
+        api->Info_SetVersion(h, "0.1.0");
 
         // Recommended to fill in
         // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.0").
         // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
         // This prevents crashes due to API changes.
-        strncpy_s(info.min_framework_version, "1.0.0", sizeof(info.min_framework_version));
+        api->Info_SetMinFrameworkVersion(h, "1.0.0");
 
         // `author`: (Optional) The name of the author or organization.
-        strncpy_s(info.author, "Your Name/Organization", sizeof(info.author));
+        api->Info_SetAuthor(h, "Your Name/Organization");
 
         // `descriptionLiteral`: (Optional) A simple, hardcoded description for your plugin.
         // This is used as a fallback if the localized description key is not found.
-        strncpy_s(info.descriptionLiteral, "A minimal template plugin for the SPF API.", sizeof(info.descriptionLiteral));
+        api->Info_SetDescriptionLiteral(h, "A minimal template plugin for the SPF API.");
 
         // `descriptionKey`: (Optional) A key for a localized description string.
         // This requires using the Localization API and having corresponding translation files.
-        // strncpy_s(info.descriptionKey, "plugin.description", sizeof(info.descriptionKey));
+        // api->Info_SetDescriptionKey(h, "plugin.description");
 
         // --- Optional Social and Project Links ---
         // Uncomment any of the following lines to provide contact or project URLs.
         // These will be displayed in the plugin's information panel in the UI.
 
-        // `email`: (Optional) A contact email.
-        // strncpy_s(info.email, "your.email@example.com", sizeof(info.email));
-        // `discordUrl`: (Optional) A URL to a Discord server.
-        // strncpy_s(info.discordUrl, "https://discord.gg/your_invite_code", sizeof(info.discordUrl));
-        // `steamProfileUrl`: (Optional) A URL to a Steam profile.
-        // strncpy_s(info.steamProfileUrl, "https://steamcommunity.com/id/your_profile", sizeof(info.steamProfileUrl));
-        // `githubUrl`: (Optional) A URL to the GitHub repository for this plugin.
-        // strncpy_s(info.githubUrl, "https://github.com/your_username/your_repo", sizeof(info.githubUrl));
-        // `youtubeUrl`: (Optional) A URL to a YouTube channel or video.
-        // strncpy_s(info.youtubeUrl, "https://www.youtube.com/your_channel", sizeof(info.youtubeUrl));
-        // `scsForumUrl`: (Optional) A URL to a thread on the SCS Software forums.
-        // strncpy_s(info.scsForumUrl, "https://forum.scssoft.com/viewtopic.php?f=your_topic", sizeof(info.scsForumUrl));
-        // `patreonUrl`: (Optional) A URL to a Patreon page.
-        // strncpy_s(info.patreonUrl, "https://www.patreon.com/your_creator_name", sizeof(info.patreonUrl));
-        // `websiteUrl`: (Optional) A URL to a personal or project website.
-        // strncpy_s(info.websiteUrl, "https://your.website.com", sizeof(info.websiteUrl));
+        // api->Info_SetEmail(h, "your.email@example.com");
+        // api->Info_SetDiscordUrl(h, "https://discord.gg/your_invite_code");
+        // api->Info_SetSteamProfileUrl(h, "https://steamcommunity.com/id/your_profile");
+        // api->Info_SetGithubUrl(h, "https://github.com/your_username/your_repo");
+        // api->Info_SetYoutubeUrl(h, "https://www.youtube.com/your_channel");
+        // api->Info_SetScsForumUrl(h, "https://forum.scssoft.com/viewtopic.php?f=your_topic");
+        // api->Info_SetPatreonUrl(h, "https://www.patreon.com/your_creator_name");
+        // api->Info_SetWebsiteUrl(h, "https://your.website.com");
     }
 
-    // --- 2.2. Configuration Policy (SPF_ConfigPolicyData_C) ---
+    // --- 2.2. Configuration Policy ---
     // This section defines how your plugin interacts with the framework's configuration system.
     {
-        auto& policy = out_manifest.configPolicy;
-
         // `allowUserConfig`: Set to `true` if you want a `settings.json` file to be created
         // for your plugin, allowing users (or the framework UI) to override default settings.
-        policy.allowUserConfig = false;
+        api->Policy_SetAllowUserConfig(h, false);
 
-        // `userConfigurableSystemsCount`: The number of framework systems (e.g., "settings", "logging", "localization", "ui")
-        // that should have a configuration section generated in the settings UI for your plugin.
-        // IMPORTANT: Always initialize this to 0 if you are not listing any systems to avoid errors.
-        policy.userConfigurableSystemsCount = 0; //To enable configurable systems, uncomment the block below and set the count accordingly
-        // strncpy_s(policy.userConfigurableSystems[0], "logging", sizeof(policy.userConfigurableSystems[0]));
-        // strncpy_s(policy.userConfigurableSystems[1], "settings", sizeof(policy.userConfigurableSystems[1]));
-        // strncpy_s(policy.userConfigurableSystems[1], "localization", sizeof(policy.userConfigurableSystems[1]));
-        // strncpy_s(policy.userConfigurableSystems[1], "ui", sizeof(policy.userConfigurableSystems[1]));
+        // To enable configurable systems, uncomment the calls below.
+        // api->Policy_AddConfigurableSystem(h, "logging");
+        // api->Policy_AddConfigurableSystem(h, "settings");
+        // api->Policy_AddConfigurableSystem(h, "localization");
+        // api->Policy_AddConfigurableSystem(h, "ui");
 
-        // `requiredHooksCount`: List any game hooks your plugin absolutely requires to function.
-        // The framework will ensure these hooks are enabled whenever your plugin is active,
-        // regardless of user settings.
-        // IMPORTANT: Always initialize this to 0 if you are not listing any hooks to avoid errors.
-        policy.requiredHooksCount = 0; // To enable required hooks, uncomment the lines below and set the count accordingly.
-        // strncpy_s(policy.requiredHooks[0], "GameConsole", sizeof(policy.requiredHooks[0])); // Example: Requires GameConsole hook
+        // To enable required hooks, uncomment the line below.
+        // api->Policy_AddRequiredHook(h, "GameConsole"); // Example: Requires GameConsole hook
     }
 
     // --- 2.3. Custom Settings (settingsJson) ---
     // A JSON string literal that defines the default values for your plugin's custom settings.
-    // If `policy.allowUserConfig` is true, the framework creates a `settings.json` file.
+    // If `Policy_SetAllowUserConfig` is true, the framework creates a `settings.json` file.
     // The JSON object you provide here will be inserted under a top-level key named "settings".
-    out_manifest.settingsJson = nullptr;
+    
+    // api->Settings_SetJson(h, nullptr);
+    
     // Example: Define some default custom settings.
-    // To provide user-friendly names and descriptions, see `customSettingsMetadata` at the end.
     /*
-    out_manifest.settingsJson = R"json(
+    api->Settings_SetJson(h, R"json(
         {
             "some_number": 42,
             "some_bool": false,
@@ -132,7 +114,7 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
                 "beta": false
             }
         }
-    )json";
+    )json");
     */
 
     // --- 2.4. Default Settings for Framework Systems ---
@@ -141,12 +123,8 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // --- Logging ---
     // Requires: SPF_Logger_API.h
     {
-        auto& logging = out_manifest.logging;
         // `level`: Default minimum log level for this plugin (e.g., "trace", "debug", "info", "warn", "error", "critical").
-        strncpy_s(logging.level, "info", sizeof(logging.level));
-        // `sinks.file`: If true, logs from this plugin will be written to a dedicated file
-        // (e.g., `MyPlugin/logs/MyPlugin.log`) in addition to the main framework log.
-        logging.sinks.file = false;
+        api->Defaults_SetLogging(h, "info", false);
     }
 
     // --- Localization ---
@@ -154,70 +132,46 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // Uncomment if your plugin uses localized strings.
     /*
     {
-        auto& localization = out_manifest.localization;
         // `language`: Default language code (e.g., "en", "de", "uk").
-        strncpy_s(localization.language, "en", sizeof(localization.language));
+        api->Defaults_SetLocalization(h, "en");
     }
     */
 
     // --- Keybinds ---
     // Requires: SPF_KeyBinds_API.h
     // Uncomment and configure if your plugin needs custom keybinds.
-    // auto& keybinds = out_manifest.keybinds;
-    // keybinds.actionCount = 1; // Number of distinct actions defined by your plugin.
-    // {
+    /*
+    {
         // --- Action 0: A sample keybind to toggle a window ---
-        // auto& action = keybinds.actions[0];
         // `groupName`: Logical grouping for actions, used to avoid name collisions.
         // Best practice: "{PluginName}.{Feature}".
-        // strncpy_s(action.groupName, "MyPlugin.MainWindow", sizeof(action.groupName));
         // `actionName`: Specific action (e.g., "toggle", "activate").
-        // strncpy_s(action.actionName, "toggle", sizeof(action.actionName));
-
         // Define one or more default key combinations for this action.
-        // action.definitionCount = 1;
-        // {
-            // --- Definition 0 ---
-            // auto& def = action.definitions[0];
-            // `type`: "keyboard" or "gamepad".
-            // strncpy_s(def.type, "keyboard", sizeof(def.type));
-            // `key`: Key name (see VirtualKeyMapping.cpp or GamepadButtonMapping.cpp).
-            // strncpy_s(def.key, "KEY_F5", sizeof(def.key));
-            // `pressType`: "short" (tap) or "long" (hold).
-            // strncpy_s(def.pressType, "short", sizeof(def.pressType));
-            // `pressThresholdMs`: For "long" press, time in ms to hold.
-            // def.pressThresholdMs = 300;
-            // `consume`: When to consume input: "never", "on_ui_focus", "always".
-            // strncpy_s(def.consume, "always", sizeof(def.consume));
-            // `behavior`: How action behaves. Valid values: "toggle" (on/off), "hold" (while pressed).
-            // strncpy_s(def.behavior, "toggle", sizeof(def.behavior));
-        // }
-    // }
+        // `type`: "keyboard" or "gamepad".
+        // `key`: Key name (see VirtualKeyMapping.cpp or GamepadButtonMapping.cpp).
+        // `pressType`: "short" (tap) or "long" (hold).
+        // `pressThresholdMs`: For "long" press, time in ms to hold.
+        // `consume`: When to consume input: "never", "on_ui_focus", "always".
+        // `behavior`: How action behaves. Valid values: "toggle" (on/off), "hold" (while pressed).
+        api->Defaults_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
+    }
+    */
 
     // --- UI ---
     // Requires: SPF_UI_API.h
     // Uncomment and configure if your plugin needs GUI windows.
-    // auto& ui = out_manifest.ui;
-    // ui.windowsCount = 1; // Number of UI windows defined by your plugin.
-    // {
+    /*
+    {
         // --- Window 0: The main window for the plugin ---
-        // auto& window = ui.windows[0];
         // `name`: Unique ID for this window within the plugin.
-        // strncpy_s(window.name, "MainWindow", sizeof(window.name));
         // `isVisible`: Default visibility state.
-        // window.isVisible = true;
         // `isInteractive`: If false, mouse clicks pass through the window to the game.
-        // window.isInteractive = true;
         // Default position and size on screen.
-        // window.posX = 100;
-        // window.posY = 100;
-        // window.sizeW = 400;
-        // window.sizeH = 300;
         // `isCollapsed`: Default collapsed state.
-        // window.isCollapsed = false;
         // `autoScroll`: If the window should auto-scroll to the bottom on new content.
-        // window.autoScroll = false;
-    // }
+        api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
+    }
+    */
 
     // =============================================================================================
     // 2.5. Metadata for UI Display (Optional)
@@ -230,54 +184,50 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
     // --- Custom Settings Metadata ---
     // Provide titles and descriptions for the settings defined in `settingsJson`.
     
-    /*out_manifest.customSettingsMetadataCount = 0; // To enable custom settings metadata, uncomment the lines below and set the count accordingly.
+    /*
     {
         //--- Metadata for "some_number" ---
-        auto& meta = out_manifest.customSettingsMetadata[0];
-        strncpy_s(meta.keyPath, "some_number", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "My Awesome Number", sizeof(meta.titleKey)); // Can be a localization key or literal text
-        strncpy_s(meta.descriptionKey, "This is the description for the awesome number.", sizeof(meta.descriptionKey)); // Can be a localization key or literal text
-        meta.hide_in_ui = false; // This is the default, so this line is not strictly necessary
-
-        //Optional: Specify a UI widget (e.g., "slider") and its parameters.
-        strncpy_s(meta.widget, "slider", sizeof(meta.widget));
-        meta.widget_params.slider.min_val = 0;
-        meta.widget_params.slider.max_val = 100;
-        strncpy_s(meta.widget_params.slider.format, "%d", sizeof(meta.widget_params.slider.format));
+        // Can be a localization key or literal text.
+        // Optional: Specify a UI widget (e.g., "slider") and its parameters.
+        api->Meta_AddCustomSetting(h, "some_number", "My Awesome Number", "This is the description for the awesome number.", "slider", "{ \"min\": 0, \"max\": 100, \"format\": \"%d\" }", false);
 
         //--- Example of a hidden setting ---
-        auto& hidden_meta = out_manifest.customSettingsMetadata[1];
-        strncpy_s(hidden_meta.keyPath, "internal_coordinates", sizeof(hidden_meta.keyPath));
         // No title or description needed, as it won't be shown
-        hidden_meta.hide_in_ui = true; // This will hide the setting from the UI
-    }*/
+        api->Meta_AddCustomSetting(h, "internal_coordinates", nullptr, nullptr, nullptr, nullptr, true);
+    }
+    */
 
     // --- Keybinds Metadata ---
     // Provide titles and descriptions for the actions defined in `keybinds`.
 
-    /*out_manifest.keybindsMetadataCount = 0; // To enable keybinds metadata, uncomment the lines below and set the count accordingly.
+    /*
     {
-        auto& meta = out_manifest.keybindsMetadata[0];
-        strncpy_s(meta.groupName, "MyPlugin.MainWindow", sizeof(meta.groupName)); // Must match the action's groupName
-        strncpy_s(meta.actionName, "toggle", sizeof(meta.actionName));           // Must match the action's actionName
-        strncpy_s(meta.titleKey, "Toggle Main Window", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "Opens or closes the main window of MyPlugin.", sizeof(meta.descriptionKey));
-    }*/
+        // `groupName`: Must match the action's groupName.
+        // `actionName`: Must match the action's actionName.
+        api->Meta_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "Toggle Main Window", "Opens or closes the main window of MyPlugin.");
+    }
+    */
 
     // --- Standard Settings Metadata (Logging, Localization, UI) ---
     // You can override the default titles/descriptions for standard framework settings.
     /*
-    out_manifest.loggingMetadataCount = 0; // To enable logging metadata, uncomment the lines below and set the count accordingly.
-    out_manifest.localizationMetadataCount = 0; // To enable localization metadata, uncomment the lines below and set the count accordingly.
-    out_manifest.uiMetadataCount = 0; // To enable UI metadata, uncomment the lines below and set the count accordingly.
-    
-    // {
+    {
         // Example: Override the description for the "level" setting in the logging section.
-        // auto& meta = out_manifest.loggingMetadata[0];
-        // strncpy_s(meta.key, "level", sizeof(meta.key));
-        // strncpy_s(meta.titleKey, "Log Level (MyPlugin)", sizeof(meta.titleKey)); // Override title
-        // strncpy_s(meta.descriptionKey, "Sets the minimum level for messages to be logged by MyPlugin.", sizeof(meta.descriptionKey));
-    // }
+        api->Meta_AddStandardSetting(h, "logging", "level", "Log Level (MyPlugin)", "Sets the minimum level for messages to be logged by MyPlugin.");
+    }
+    */
+
+    /*
+    // --- TIP: Mass Metadata Registration ---
+    // For plugins with many settings, use helper lambdas to avoid repetition.
+    // NOTE: Requires '#include <string>'.
+
+    auto AddSliderHelper = [&](const char* key, const char* title, float min, float max, const char* fmt) {
+        std::string p = "{ \"min\": " + std::to_string(min) + ", \"max\": " + std::to_string(max) + ", \"format\": \"" + fmt + "\" }";
+        api->Meta_AddCustomSetting(h, key, title, nullptr, "slider", p.c_str(), false);
+    };
+
+    AddSliderHelper("my_feature.fov", "Field of View", 60.0f, 120.0f, "%.0f");
     */
 }
 
@@ -690,7 +640,7 @@ extern "C" {
  */
 SPF_PLUGIN_EXPORT bool SPF_GetManifestAPI(SPF_Manifest_API* out_api) {
     if (out_api) {
-        out_api->GetManifestData = GetManifestData;
+        out_api->BuildManifest = BuildManifest;
         return true;
     }
     return false;

@@ -2,30 +2,26 @@
 
 #include "SPF/Namespace.hpp"
 #include "SPF/Config/ManifestData.hpp"        // For the C++ ManifestData structure
-#include "SPF/SPF_API/SPF_Manifest_API.h"  // For the C-compatible SPF_ManifestData_C structure
+#include "SPF/SPF_API/SPF_Manifest_API.h"   // For SPF_GetManifestAPI_Func and Builder types
+
+#include <string>
 
 SPF_NS_BEGIN
 namespace Modules::API {
 
 /**
- * @brief Provides functionality to convert C-compatible manifest structures
- *        into C++ ManifestData objects.
- * This API acts as a centralized utility for handling manifest data conversion,
- * ensuring consistency and isolating the conversion logic from other components
- * like PluginManager.
+ * @brief Handles the construction of plugin manifests using the C-API Builder pattern.
  */
 class ManifestApi {
  public:
   /**
-   * @brief Converts a C-compatible SPF_ManifestData_C structure into a C++ ManifestData object.
-   * This function is designed to be robust, handling potential data conversion errors
-   * by logging them and returning a partially filled ManifestData object in case of failure.
-   *
-   * @param cManifest A pointer to the C-compatible SPF_ManifestData_C structure provided by a plugin.
-   * @param pluginName The name of the plugin providing the manifest (for logging purposes).
-   * @return A C++ ManifestData object representing the converted manifest.
+   * @brief Invokes the plugin's builder function to populate a C++ ManifestData object.
+   * 
+   * @param pGetManifestFunc Pointer to the plugin's exported `SPF_GetManifestAPI` function.
+   * @param pluginName The name of the plugin (used for initial fallback and logging).
+   * @return A fully populated C++ ManifestData object.
    */
-  static SPF::Config::ManifestData ConvertCManifestToCppManifest(const SPF_ManifestData_C& cManifest, const std::string& pluginName);
+  static SPF::Config::ManifestData BuildManifest(SPF_GetManifestAPI_Func pGetManifestFunc, const std::string& pluginName);
 };
 
 }  // namespace Modules::API

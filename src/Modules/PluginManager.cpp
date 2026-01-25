@@ -122,31 +122,19 @@ void PluginManager::LoadAllDiscoveredPluginManifests() {
             continue;
         }
 
-        auto getManifestApiFunc = reinterpret_cast<SPF_GetManifestAPI_t>(GetProcAddress(handle, "SPF_GetManifestAPI"));
+        auto getManifestApiFunc = reinterpret_cast<SPF_GetManifestAPI_Func>(GetProcAddress(handle, "SPF_GetManifestAPI"));
         if (getManifestApiFunc) {
-            SPF_Manifest_API manifestApi{};
-            if (getManifestApiFunc(&manifestApi)) {
-                if (manifestApi.GetManifestData) {
-                    try {
-                        auto cManifest = std::make_unique<SPF_ManifestData_C>();
-                        manifestApi.GetManifestData(*cManifest.get());
+            try {
+                // Use the new Builder-based ManifestApi to construct the C++ manifest
+                SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::BuildManifest(getManifestApiFunc, pluginName);
 
-                        // Convert C manifest to C++ manifest
-                        SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::ConvertCManifestToCppManifest(*cManifest, pluginName);
-
-                        // Register the C++ manifest
-                        m_configService->RegisterPluginManifest(pluginName, cppManifest);
-                        logger->Info("    -> Successfully registered manifest for plugin '{}' from new C-API.", pluginName);
-                    } catch (const std::exception& e) {
-                        logger->Error("    -> An exception occurred while calling GetManifestData for '{}'. This plugin might be incompatible. Error: {}", pluginName, e.what());
-                    } catch (...) {
-                        logger->Error("    -> An unknown exception occurred while calling GetManifestData for '{}'. This plugin is likely incompatible and its manifest will be skipped.", pluginName);
-                    }
-                } else {
-                    logger->Error("    -> Manifest API struct for plugin '{}' does not contain a valid GetManifestData function pointer.", pluginName);
-                }
-            } else {
-                logger->Error("    -> SPF_GetManifestAPI function returned false for plugin '{}'. Manifest not registered.", pluginName);
+                // Register the C++ manifest
+                m_configService->RegisterPluginManifest(pluginName, cppManifest);
+                logger->Info("    -> Successfully built and registered manifest for plugin '{}' from new C-API.", pluginName);
+            } catch (const std::exception& e) {
+                logger->Error("    -> An exception occurred while building manifest for '{}'. Error: {}", pluginName, e.what());
+            } catch (...) {
+                logger->Error("    -> An unknown exception occurred while building manifest for '{}'.", pluginName);
             }
         } else {
             logger->Info("    -> SPF_GetManifestAPI not found for plugin '{}'. This plugin does not provide an in-code manifest via the new C-API.", pluginName);

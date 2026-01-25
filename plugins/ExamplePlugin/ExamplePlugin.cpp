@@ -36,87 +36,81 @@ PluginContext g_ctx;
 // 2. Manifest Implementation
 // =================================================================================================
 
-void GetManifestData(SPF_ManifestData_C& out_manifest) {
+void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
     // This function is where you define all the metadata for your plugin. The framework calls this
     // function *before* loading your plugin DLL to understand what it is, what it needs, and how it
-    // can be configured. This uses a C-style struct for maximum ABI (Application Binary Interface)
+    // can be configured. This uses a Helper/Builder API for maximum ABI (Application Binary Interface)
     // stability, ensuring compatibility even if the plugin and framework are built with different
     // compilers or settings.
 
-    // --- 2.1. Plugin Information (SPF_InfoData_C) ---
+    // --- 2.1. Plugin Information ---
     // This section provides the basic identity of your plugin.
     {
-        auto& info = out_manifest.info;
-
         // `name`: The unique programmatic name of your plugin. No spaces or special characters.
         // This is used for internal identification, folder names, and config files.
         // CRITICAL: This MUST match the name used in `GetContext` calls for various APIs.
-        strncpy_s(info.name, PLUGIN_NAME, sizeof(info.name));
+        api->Info_SetName(h, PLUGIN_NAME);
 
         // `version`: The version of your plugin. It's a best practice to follow Semantic Versioning (semver.org).
         // Example: "1.0.0", "2.1.0-beta", etc.
-        strncpy_s(info.version, "0.1.0-alpha", sizeof(info.version));
+        api->Info_SetVersion(h, "0.1.0-alpha");
 
         // Recommended to fill in
         // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.6").
         // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
         // This prevents crashes due to API changes.
-        strncpy_s(info.min_framework_version, "1.0.6", sizeof(info.min_framework_version));
+        api->Info_SetMinFrameworkVersion(h, "1.0.6");
 
         // `author`: (Optional) Your name or your organization's name.
-        strncpy_s(info.author, "Your Name", sizeof(info.author));
+        api->Info_SetAuthor(h, "Your Name");
 
         //---Optional Social and Project Links ---
-        strncpy_s(info.email, "mailto:your.email@example.com", sizeof(info.email));
-        strncpy_s(info.discordUrl, "discordUrl", sizeof(info.discordUrl));
-        strncpy_s(info.steamProfileUrl, "steamProfileUrl", sizeof(info.steamProfileUrl));
-        strncpy_s(info.githubUrl, "githubUrl", sizeof(info.githubUrl));
-        strncpy_s(info.youtubeUrl, "youtubeUrl", sizeof(info.youtubeUrl));
-        strncpy_s(info.scsForumUrl, "scsForumUrl", sizeof(info.scsForumUrl));
-        strncpy_s(info.patreonUrl, "patreonUrl", sizeof(info.patreonUrl));
-        strncpy_s(info.websiteUrl, "websiteUrl", sizeof(info.websiteUrl));
+        api->Info_SetEmail(h, "mailto:your.email@example.com");
+        api->Info_SetDiscordUrl(h, "discordUrl");
+        api->Info_SetSteamProfileUrl(h, "steamProfileUrl");
+        api->Info_SetGithubUrl(h, "githubUrl");
+        api->Info_SetYoutubeUrl(h, "youtubeUrl");
+        api->Info_SetScsForumUrl(h, "scsForumUrl");
+        api->Info_SetPatreonUrl(h, "patreonUrl");
+        api->Info_SetWebsiteUrl(h, "websiteUrl");
 
         // `descriptionKey`: (Optional) A key for a localized description string. If you provide a key
         // (e.g., "plugin.description"), the framework will look it up in your translation files.
         // If you leave it empty, it will use `descriptionLiteral` instead.
-        info.descriptionKey[0] = '\0';
+        api->Info_SetDescriptionKey(h, "");
 
         // `descriptionLiteral`: A fallback description used if `descriptionKey` is empty or not found.
-        strncpy_s(info.descriptionLiteral, "A template plugin to demonstrate the SPF API.", sizeof(info.descriptionLiteral));
+        api->Info_SetDescriptionLiteral(h, "A template plugin to demonstrate the SPF API.");
     }
 
-    // --- 2.2. Configuration Policy (SPF_ConfigPolicyData_C) ---
+    // --- 2.2. Configuration Policy ---
     // This section defines how your plugin interacts with the framework's configuration system.
     {
-        auto& policy = out_manifest.configPolicy;
-
         // `allowUserConfig`: If `true`, the framework will generate a `settings.json` file
         // inside the plugin's config folder (e.g., `/plugins/ExamplePlugin/config/settings.json`),
         // allowing users to override default settings.
-        policy.allowUserConfig = true;
+        api->Policy_SetAllowUserConfig(h, true);
 
         // `userConfigurableSystems`: A list of framework systems that the user can configure for this
         // plugin via the main Settings UI. Common values are "settings", "logging", "localization", "ui".
         // Note: The "keybinds" system is always user-configurable and does not need to be listed here.
-        policy.userConfigurableSystemsCount = 4;
-        strcpy_s(policy.userConfigurableSystems[0], "settings");
-        strcpy_s(policy.userConfigurableSystems[1], "logging");
-        strcpy_s(policy.userConfigurableSystems[2], "localization");
-        strcpy_s(policy.userConfigurableSystems[3], "ui");
+        api->Policy_AddConfigurableSystem(h, "settings");
+        api->Policy_AddConfigurableSystem(h, "logging");
+        api->Policy_AddConfigurableSystem(h, "localization");
+        api->Policy_AddConfigurableSystem(h, "ui");
 
         // `requiredHooks`: (Optional) A list of function hooks required for the plugin to work.
         // If a hook is listed here, the framework will ensure it is enabled whenever this plugin is
         // active, and the user will not be able to disable it from the UI.
-        policy.requiredHooksCount = 2;
-        strcpy_s(policy.requiredHooks[0], "GameConsole"); // We need this for the console command example.
-        strcpy_s(policy.requiredHooks[1], "GameLogHook");   // We need this for the game log example.
+        api->Policy_AddRequiredHook(h, "GameConsole"); // We need this for the console command example.
+        api->Policy_AddRequiredHook(h, "GameLogHook");   // We need this for the game log example.
     }
 
     // --- 2.3. Custom Settings (settingsJson) ---
     // This is a JSON string literal that defines the default values for your plugin's custom settings.
     // If `allowUserConfig` is true, the framework will create a `settings.json` file for the plugin,
     // and the JSON object you provide here will be inserted under a top-level key named "settings".
-    out_manifest.settingsJson = R"json({
+    api->Settings_SetJson(h, R"json({
         "a_simple_number": 42,
         "a_slider_number": 50.5,
         "a_drag_number": 10,
@@ -130,289 +124,134 @@ void GetManifestData(SPF_ManifestData_C& out_manifest) {
         "a_vslider_float": 0.5,
         "a_hinted_input": "",
         "a_log_slider": 10.0
-    })json";
+    })json");
 
     // --- 2.4. Default Settings for Framework Systems ---
     // Here you can provide default configurations for various framework systems for your plugin.
 
     // --- Logging ---
-    auto& logging = out_manifest.logging;
     // `level`: The default minimum log level. Can be "trace", "debug", "info", "warn", "error", "critical".
-    strncpy_s(logging.level, "info", sizeof(logging.level));
     // `sinks.file`: If `true`, a dedicated log file for this plugin will be created (e.g., `ExamplePlugin/logs/ExamplePlugin.log`).
-    // If `false`, this plugin's logs will go to the main framework log file.
-    logging.sinks.file = true;
+    api->Defaults_SetLogging(h, "info", true);
 
     // --- Localization ---
-    auto& localization = out_manifest.localization;
     // `language`: The default language code (e.g., "en", "de", "uk"). This should match the name
     // of your translation file (e.g., `en.json`).
-    strncpy_s(localization.language, "en", sizeof(localization.language));
+    api->Defaults_SetLocalization(h, "en");
 
     // --- Keybinds ---
-    auto& keybinds = out_manifest.keybinds;
-    keybinds.actionCount = 2; // We are defining two distinct actions.
     {
         // First action: Toggle the main window.
-        auto& action = keybinds.actions[0];
         // `groupName`: A category for the action. Best practice is "{PluginName}.{Feature}".
-        strncpy_s(action.groupName, "ExamplePlugin.MainWindow", sizeof(action.groupName));
         // `actionName`: The specific action, usually a verb.
-        strncpy_s(action.actionName, "toggle", sizeof(action.actionName));
         // The full action name becomes "ExamplePlugin.MainWindow.toggle".
+        // `type`: "keyboard", "gamepad". `key`: "KEY_F5". `pressType`: "short", "long".
+        // `thresholdMs`: For "long" press. `consume`: "never", "on_ui_focus", "always".
+        // `behavior`: "toggle" (on/off), "hold" (while pressed).
+        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
 
-        action.definitionCount = 1; // This action has one default key definition.
-        auto& def = action.definitions[0];
-        strncpy_s(def.type, "keyboard", sizeof(def.type));
-        strncpy_s(def.key, "KEY_F5", sizeof(def.key)); // See VirtualKeyMapping.cpp for all key names.
-        strncpy_s(def.pressType, "short", sizeof(def.pressType)); // "short" or "long" press.
-        def.pressThresholdMs = 300; // For "long" press, the time in ms to hold.
-        // `consume`: When to prevent the game from receiving the input. "never", "on_ui_focus", "always".
-        strncpy_s(def.consume, "always", sizeof(def.consume));
-        // `behavior`: How the action is triggered. "toggle" (on/off), "hold" (while pressed).
-        strncpy_s(def.behavior, "toggle", sizeof(def.behavior));
-    }
-    {
         // Second action: Cycle through camera views.
-        auto& action = keybinds.actions[1];
-        strncpy_s(action.groupName, "ExamplePlugin.Camera", sizeof(action.groupName));
-        strncpy_s(action.actionName, "cycle", sizeof(action.actionName));
-        action.definitionCount = 1;
-        auto& def = action.definitions[0];
-        strncpy_s(def.type, "keyboard", sizeof(def.type));
-        strncpy_s(def.key, "KEY_F6", sizeof(def.key));
-        strncpy_s(def.pressType, "short", sizeof(def.pressType));
-        def.pressThresholdMs = 300;
-        strncpy_s(def.consume, "always", sizeof(def.consume));
-        strncpy_s(def.behavior, "press", sizeof(def.behavior));
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "short", 300, "always", "press");
     }
 
     // --- UI ---
-    auto& ui = out_manifest.ui;
-    ui.windowsCount = 1; // We are defining one window.
     {
-        auto& window = ui.windows[0];
         // `name`: The unique ID for this window within the plugin.
-        strncpy_s(window.name, "MainWindow", sizeof(window.name));
-        window.isVisible = true;      // Default visibility state.
-        window.isInteractive = true;  // If false, the window is see-through to mouse clicks.
-        window.posX = 100;            // Default position on the screen.
-        window.posY = 100;
-        window.sizeW = 400;           // Default size.
-        window.sizeH = 300;
-        window.isCollapsed = false;   // Default collapsed state.
-        window.autoScroll = false;    // If the window should auto-scroll to the bottom on new content.
+        // `isVisible`: Default visibility. `isInteractive`: transparent to clicks if false.
+        // `posX/Y`: Position. `sizeW/H`: Dimensions. `isCollapsed`: state. `autoScroll`: scroll to bottom.
+        api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
     }
 
     // --- 2.5. Metadata for Localization and UI Hints ---
     // This section is optional. It allows you to provide translatable names and descriptions
     // for your settings, keybinds, and UI elements. You can also specify custom UI widgets.
-    out_manifest.customSettingsMetadataCount = 13;
 
     // Example 1: A simple integer input (default behavior).
     // This setting uses the default ImGui::InputInt widget because no specific 'widget' type is provided.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[0];
-        strncpy_s(meta.keyPath, "a_simple_number", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.simple_number.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.simple_number.description", sizeof(meta.descriptionKey));
-        meta.widget[0] = '\0'; // No specific widget type, framework will default based on data type.
-    }
+    api->Meta_AddCustomSetting(h, "a_simple_number", "setting.simple_number.title", "setting.simple_number.description", nullptr, nullptr, false);
 
     // Example 2: A float slider with custom range and format.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[1];
-        strncpy_s(meta.keyPath, "a_slider_number", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.slider_number.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.slider_number.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be a "slider".
-        strncpy_s(meta.widget, "slider", sizeof(meta.widget));
-        
-        // Fill in the corresponding union parameters for a slider.
-        // These parameters define the range and display format of the slider.
-        meta.widget_params.slider.min_val = 0.0f;
-        meta.widget_params.slider.max_val = 100.0f;
-        strncpy_s(meta.widget_params.slider.format, "%.1f %%", sizeof(meta.widget_params.slider.format));
-    }
+    // Specify the widget type to be a "slider".
+    api->Meta_AddCustomSetting(h, "a_slider_number", "setting.slider_number.title", "setting.slider_number.description", "slider", "{ \"min\": 0.0, \"max\": 100.0, \"format\": \"%.1f %%\" }", false);
 
     // Example 3: An integer with a draggable input (drag widget).
-    {
-        auto& meta = out_manifest.customSettingsMetadata[2]; // Index 2 for the third setting
-        strncpy_s(meta.keyPath, "a_drag_number", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.drag_number.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.drag_number.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be a "drag" control.
-        strncpy_s(meta.widget, "drag", sizeof(meta.widget));
-        
-        // Fill in the corresponding union parameters for a drag widget.
-        // These parameters define the speed of change and the value range.
-        meta.widget_params.drag.speed = 0.5f; // How much value changes per pixel when dragging
-        meta.widget_params.drag.min_val = -100.0f;
-        meta.widget_params.drag.max_val = 100.0f;
-        strncpy_s(meta.widget_params.drag.format, "%d units", sizeof(meta.widget_params.drag.format)); // Custom format string
-    }
+    // Specify the widget type to be a "drag" control.
+    api->Meta_AddCustomSetting(h, "a_drag_number", "setting.drag_number.title", "setting.drag_number.description", "drag", "{ \"speed\": 0.5, \"min\": -100.0, \"max\": 100.0, \"format\": \"%d units\" }", false);
 
     // Example 4: A dropdown (combo box) for selecting a string option.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[3]; // Index 3 for the fourth setting
-        strncpy_s(meta.keyPath, "a_dropdown_choice", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.dropdown.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.dropdown.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be a "combo" box.
-        strncpy_s(meta.widget, "combo", sizeof(meta.widget));
-        
-        // Provide the options as a JSON string. Each option has a 'value' and a 'labelKey'.
-        // The 'value' can be a string or a number. The 'labelKey' is for localization or literal text.
-        const char* options = R"json([
-            { "value": "option_a", "labelKey": "options.a.title" },
-            { "value": "option_b", "labelKey": "options.b.title" },
-            { "value": "option_c", "labelKey": "This is a literal label" }
-        ])json";
-        strncpy_s(meta.widget_params.choice.options_json, options, sizeof(meta.widget_params.choice.options_json));
-    }
+    // Specify the widget type to be a "combo" box.
+    const char* combo_options = R"json({ "options": [
+        { "value": "option_a", "labelKey": "options.a.title" },
+        { "value": "option_b", "labelKey": "options.b.title" },
+        { "value": "option_c", "labelKey": "This is a literal label" }
+    ]})json";
+    api->Meta_AddCustomSetting(h, "a_dropdown_choice", "setting.dropdown.title", "setting.dropdown.description", "combo", combo_options, false);
 
     // Example 5: Radio buttons for selecting a numeric option.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[4]; // Index 4 for the fifth setting
-        strncpy_s(meta.keyPath, "a_radio_choice", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.radio.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.radio.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be "radio" buttons.
-        strncpy_s(meta.widget, "radio", sizeof(meta.widget));
-        
-        // Radio buttons use the same choice parameters (`options_json`) as combo boxes.
-        // Note that the 'value' can be numeric.
-        const char* options = R"json([
-            { "value": 1, "labelKey": "options.radio_one" },
-            { "value": 2, "labelKey": "options.radio_two" },
-            { "value": 3, "labelKey": "options.radio_three" }
-        ])json";
-        strncpy_s(meta.widget_params.choice.options_json, options, sizeof(meta.widget_params.choice.options_json));
-    }
+    // Specify the widget type to be "radio" buttons.
+    const char* radio_options = R"json({ "options": [
+        { "value": 1, "labelKey": "options.radio_one" },
+        { "value": 2, "labelKey": "options.radio_two" },
+        { "value": 3, "labelKey": "options.radio_three" }
+    ]})json";
+    api->Meta_AddCustomSetting(h, "a_radio_choice", "setting.radio.title", "setting.radio.description", "radio", radio_options, false);
 
     // Example 6: An RGB Color Picker.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[5]; // Index 5 for the sixth setting
-        strncpy_s(meta.keyPath, "a_color", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.color.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.color.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be a "color3" picker (RGB).
-        // The setting's value in settingsJson should be an array of 3 floats, e.g., [R, G, B].
-        strncpy_s(meta.widget, "color3", sizeof(meta.widget));
-        
-        // Fill in parameters for a color picker. 'flags' allow for advanced customization.
-        // Set to 0 for default color picker behavior.
-        meta.widget_params.color.flags = 0;
-    }
+    // Specify the widget type to be a "color3" picker (RGB).
+    api->Meta_AddCustomSetting(h, "a_color", "setting.color.title", "setting.color.description", "color3", "{ \"flags\": 0 }", false);
 
     // Example 7: A multiline text input field.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[6]; // Index 6 for the seventh setting
-        strncpy_s(meta.keyPath, "a_text_note", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.note.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.note.description", sizeof(meta.descriptionKey));
-
-        // Specify the widget type to be a "multiline" text input.
-        strncpy_s(meta.widget, "multiline", sizeof(meta.widget));
-        meta.widget_params.multiline.height_in_lines = 4; // Set the text box height to be 4 lines tall.
-    }
+    // Specify the widget type to be a "multiline" text input.
+    api->Meta_AddCustomSetting(h, "a_text_note", "setting.note.title", "setting.note.description", "multiline", "{ \"height_in_lines\": 4 }", false);
 
     // Example 8: A complex object (no widget, for programmatic access).
-    {
-        auto& meta = out_manifest.customSettingsMetadata[7];
-        strncpy_s(meta.keyPath, "a_complex_object", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.complex_object.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.complex_object.description", sizeof(meta.descriptionKey));
-        meta.widget[0] = '\0'; // No widget, this setting is for internal logic.
-        meta.hide_in_ui = true; //hide the display for the user
-    }
+    api->Meta_AddCustomSetting(h, "a_complex_object", "setting.complex_object.title", "setting.complex_object.description", nullptr, nullptr, true);
 
     // Example 9: A simple float input (default behavior, now with +/- buttons).
-    {
-        auto& meta = out_manifest.customSettingsMetadata[8];
-        strncpy_s(meta.keyPath, "a_float_input", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.float_input.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.float_input.description", sizeof(meta.descriptionKey));
-        meta.widget[0] = '\0'; // Default 'input' widget for floats
-    }
+    api->Meta_AddCustomSetting(h, "a_float_input", "setting.float_input.title", "setting.float_input.description", nullptr, nullptr, false);
 
     // Example 10: A double input with custom step.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[9];
-        strncpy_s(meta.keyPath, "a_double_input", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.double_input.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.double_input.description", sizeof(meta.descriptionKey));
-        strncpy_s(meta.widget, "input_double", sizeof(meta.widget));
-        meta.widget_params.input_double.step = 0.005; // Custom step for double
-        strncpy_s(meta.widget_params.input_double.format, "%.4f", sizeof(meta.widget_params.input_double.format));
-    }
+    api->Meta_AddCustomSetting(h, "a_double_input", "setting.double_input.title", "setting.double_input.description", "input_double", "{ \"step\": 0.005, \"format\": \"%.4f\" }", false);
 
     // Example 11: A vertical float slider.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[10];
-        strncpy_s(meta.keyPath, "a_vslider_float", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.vslider_float.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.vslider_float.description", sizeof(meta.descriptionKey));
-        strncpy_s(meta.widget, "vslider", sizeof(meta.widget));
-        meta.widget_params.vslider.min_val = -1.0f;
-        meta.widget_params.vslider.max_val = 1.0f;
-        meta.widget_params.vslider.width = 30.0f;
-        meta.widget_params.vslider.height = 100.0f;
-        strncpy_s(meta.widget_params.vslider.format, "%.2f", sizeof(meta.widget_params.vslider.format));
-    }
+    api->Meta_AddCustomSetting(h, "a_vslider_float", "setting.vslider_float.title", "setting.vslider_float.description", "vslider", "{ \"min\": -1.0, \"max\": 1.0, \"width\": 30.0, \"height\": 100.0, \"format\": \"%.2f\" }", false);
 
     // Example 12: An input field with a hint.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[11];
-        strncpy_s(meta.keyPath, "a_hinted_input", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.hinted_input.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.hinted_input.description", sizeof(meta.descriptionKey));
-        strncpy_s(meta.widget, "input_with_hint", sizeof(meta.widget));
-        strncpy_s(meta.widget_params.input_with_hint.hint, "Enter your username", sizeof(meta.widget_params.input_with_hint.hint));
-    }
+    api->Meta_AddCustomSetting(h, "a_hinted_input", "setting.hinted_input.title", "setting.hinted_input.description", "input_with_hint", "{ \"hint\": \"Enter your username\" }", false);
 
     // Example 13: A logarithmic slider.
-    {
-        auto& meta = out_manifest.customSettingsMetadata[12];
-        strncpy_s(meta.keyPath, "a_log_slider", sizeof(meta.keyPath));
-        strncpy_s(meta.titleKey, "setting.log_slider.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "setting.log_slider.description", sizeof(meta.descriptionKey));
-        strncpy_s(meta.widget, "slider", sizeof(meta.widget));
-        meta.widget_params.slider.min_val = 0.1f;
-        meta.widget_params.slider.max_val = 1000.0f;
-        meta.widget_params.slider.is_logarithmic = true;
-    }
+    api->Meta_AddCustomSetting(h, "a_log_slider", "setting.log_slider.title", "setting.log_slider.description", "slider", "{ \"min\": 0.1, \"max\": 1000.0, \"is_logarithmic\": true }", false);
 
     // --- Keybinds Metadata ---
-    out_manifest.keybindsMetadataCount = 2;
     {
-        auto& meta = out_manifest.keybindsMetadata[0];
-        strncpy_s(meta.groupName, "ExamplePlugin.MainWindow", sizeof(meta.groupName));
-        strncpy_s(meta.actionName, "toggle", sizeof(meta.actionName));
-        strncpy_s(meta.titleKey, "keybind.main_window_toggle.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "keybind.main_window_toggle.description", sizeof(meta.descriptionKey));
-    }
-    {
-        auto& meta = out_manifest.keybindsMetadata[1];
-        strncpy_s(meta.groupName, "ExamplePlugin.Camera", sizeof(meta.groupName));
-        strncpy_s(meta.actionName, "cycle", sizeof(meta.actionName));
-        strncpy_s(meta.titleKey, "keybind.camera_cycle.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "keybind.camera_cycle.description", sizeof(meta.descriptionKey));
+        api->Meta_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keybind.main_window_toggle.title", "keybind.main_window_toggle.description");
+        api->Meta_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keybind.camera_cycle.title", "keybind.camera_cycle.description");
     }
 
     // --- UI Metadata ---
-    out_manifest.uiMetadataCount = 1;
     {
-        auto& meta = out_manifest.uiMetadata[0];
-        strncpy_s(meta.windowName, "MainWindow", sizeof(meta.windowName));
-        strncpy_s(meta.titleKey, "ui.window.main_window.title", sizeof(meta.titleKey));
-        strncpy_s(meta.descriptionKey, "ui.window.main_window.description", sizeof(meta.descriptionKey));
+        api->Meta_AddWindow(h, "MainWindow", "ui.window.main_window.title", "ui.window.main_window.description");
     }
+
+    /*
+    // --- TIP: Mass Metadata Registration ---
+    // If your plugin has many similar settings (e.g., dozens of sliders for camera positions),
+    // do not call api->Meta_AddCustomSetting manually every time. Use helper lambdas to
+    // reduce boilerplate and ensure consistent formatting.
+    //
+    // NOTE: This approach requires '#include <string>' in your file.
+
+    auto AddSliderHelper = [&](const char* key, const char* titleKey, float min, float max, const char* fmt) {
+        std::string params = "{ \"min\": " + std::to_string(min) + 
+                             ", \"max\": " + std::to_string(max) + 
+                             ", \"format\": \"" + fmt + "\" }";
+        api->Meta_AddCustomSetting(h, key, titleKey, nullptr, "slider", params.c_str(), false);
+    };
+
+    // Now you can register multiple sliders in a single line each:
+    AddSliderHelper("rendering.fov", "setting.fov.title", 60.0f, 120.0f, "%.0f deg");
+    AddSliderHelper("audio.volume", "setting.volume.title", 0.0f, 1.0f, "%.2f");
+    */
 }
 
 // =================================================================================================
@@ -1536,14 +1375,14 @@ extern "C" {
 /**
  * @brief Exports the manifest API to the framework.
  * @param[out] out_api A pointer to a structure that this function must fill with a pointer
- *                     to the plugin's `GetManifestData` function.
+ *                     to the plugin's `BuildManifest` function.
  * @return `true` on success, `false` on failure.
  * @details This is the very first function the framework calls. It allows the framework to get
  *          the plugin's manifest *before* the plugin is fully loaded.
  */
 SPF_PLUGIN_EXPORT bool SPF_GetManifestAPI(SPF_Manifest_API* out_api) {
     if (out_api) {
-        out_api->GetManifestData = GetManifestData;
+        out_api->BuildManifest = BuildManifest;
         return true;
     }
     return false;

@@ -1,27 +1,25 @@
-# The Plugin Manifest
+# Plugin Manifest API
 
-The manifest is the most important part of an SPF plugin. It is a "contract" that your plugin makes with the framework, declaring its identity, features, default settings, and requirements *before* it is fully loaded.
+The Manifest is the most critical part of an SPF plugin. It serves as a "contract" between your plugin and the framework, declaring its identity, features, default settings, and requirements *before* the plugin is fully loaded.
 
-The entire manifest is defined by filling out a single C-style struct, `SPF_ManifestData_C`, within a function that your plugin exports. The framework calls this function at startup to learn about your plugin.
+In the current architecture, the manifest is defined using a **Builder API**. Instead of filling a static memory structure, the plugin invokes a series of functions provided by the framework to describe its parameters. This ensures absolute ABI stability and allows for easy integration with various programming languages.
 
 ## The Entry Point: `SPF_GetManifestAPI`
 
-Every SPF plugin **must** export a C-function named `SPF_GetManifestAPI`. The framework looks for this function by name when it first loads your DLL.
+Every SPF plugin **must** export a C-compatible function named `SPF_GetManifestAPI`. The framework looks for this function by name when it first attempts to load your DLL.
 
-Your implementation of this function should be simple: you just need to assign your manifest-generating function to the provided API struct.
+Your implementation must assign your manifest construction function (e.g., `BuildManifest`) to the provided API structure.
 
 ```c
 #include "SPF/SPF_API/SPF_Manifest_API.h"
 
-// Forward declaration of our function that will fill the manifest
-void MyPlugin_GetManifestData(SPF_ManifestData_C& out_manifest);
+// Prototype of your manifest construction function
+void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api);
 
-// The main exported function must be wrapped in extern "C"
 extern "C" {
-    // Use your plugin's export macro, e.g., __declspec(dllexport)
     SPF_PLUGIN_EXPORT bool SPF_GetManifestAPI(SPF_Manifest_API* out_api) {
         if (out_api) {
-            out_api->GetManifestData = MyPlugin_GetManifestData;
+            out_api->BuildManifest = MyPlugin_BuildManifest;
             return true;
         }
         return false;
@@ -29,125 +27,118 @@ extern "C" {
 }
 ```
 
-## The `GetManifestData` Function
+## The `BuildManifest` Function
 
-This is where you will define everything about your plugin. The framework will call this function, passing it a reference to a `SPF_ManifestData_C` struct that you must fill out.
+This is where you define your plugin's properties. The framework invokes this function, passing two arguments:
+1.  **`h` (Handle)**: An opaque pointer to the manifest object in the framework's memory.
+2.  **`api`**: A table of function pointers used to populate the data.
 
 ```c
-void MyPlugin_GetManifestData(SPF_ManifestData_C& out_manifest) {
-    // ... all your definitions go here ...
+void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
+    // api->... calls go here
 }
 ```
 
-### Main Data Blocks
-
-The `SPF_ManifestData_C` struct is composed of several smaller structs.
-
 ---
-**`info` (`SPF_InfoData_C`)**
-Contains essential metadata about your plugin.
 
-*   `name`: A unique programmatic name for your plugin (e.g., `"MyPlugin"`).
-*   `version`: The plugin's version string (e.g., `"1.2.0"`).
-*   `min_framework_version`: (Optional) The minimum required framework version (e.g., `"1.0.6"`).
-*   `author`: Your name or your organization's name.
-*   `descriptionKey` / `descriptionLiteral`: A description for the UI.
-*   (Optional) Social & Project Links: `email`, `discordUrl`, `steamProfileUrl`, `githubUrl`, `youtubeUrl`, `scsForumUrl`, `patreonUrl`, `websiteUrl`.
 
----
-**`configPolicy` (`SPF_ConfigPolicyData_C`)**
-Defines the plugin's requirements and configuration rules.
+## 1. Plugin Identity (`Info_...`)
 
-*   `allowUserConfig`: Set to `true` to allow users to have their own `settings.json`.
-*   `userConfigurableSystems`: An array of strings listing which framework systems (e.g., `"logging"`, `"ui"`) the user can configure for your plugin.
-*   `requiredHooks`: A critical array where you list hooks that are essential for your plugin to function (e.g., `"GameConsole"`). The framework will ensure these are always enabled.
+These functions define how your plugin is identified and displayed in the UI.
 
----
-**`settingsJson` (`const char*`)**
-A JSON string literal containing default values for your plugin's custom settings. This can include simple values (numbers, strings) as well as complex nested objects and arrays.
+*   `Info_SetName(h, "Name")`: Unique programmatic ID. No spaces. Used for folder names and logs.
+*   `Info_SetVersion(h, "1.0.0")`: Plugin version string.
+*   `Info_SetMinFrameworkVersion(h, "1.0.6")`: Minimum SPF version required to load this plugin.
+*   `Info_SetAuthor(h, "Author Name")`: Your name or organization.
+*   `Info_SetDescriptionLiteral(h, "Text")`: A plain-text description of the plugin.
+*   **Social Links**: Dedicated functions are available for Discord, GitHub, Youtube, Steam, Patreon, SCS Forum, and Website URLs.
 
-For details on how to access these values at runtime, see the [`SPF_Config_API`](SPF_Config_API.md) documentation, which explains both simple and advanced data retrieval.
 
----
-**`keybinds` (`SPF_KeybindsData_C`)**
-Defines all the "actions" your plugin provides and their default key combinations. Each action needs a `groupName`, `actionName`, and one or more default key definitions.
+## 2. Configuration Policy (`Policy_...`)
 
----
-**`ui` (`SPF_UIData_C`)**
-Defines the default state for any UI windows your plugin creates, including their name, default visibility, position, and size.
+Defines rules for interacting with the framework's configuration engine.
 
----
-**`customSettingsMetadata` (`SPF_CustomSettingMetadata_C` array)**
-Provide metadata for your custom settings.
-*   `keyPath`: The dot-separated path to your custom setting (e.g., `"my_feature.some_value"`).
-*   `titleKey`: A localization key or literal text for the setting's display name.
-*   `descriptionKey`: A localization key or literal text for the setting's detailed description.
-*   `hide_in_ui`: (Optional) A boolean. If set to `true`, this setting will be completely hidden from the Settings UI. This is useful for storing internal plugin state in `settings.json` that the user should not see. Defaults to `false` (visible).
-*   `widget`: (Optional) A string indicating the UI widget type to use for this setting. If left empty, the framework will choose a default based on the setting's data type.
-    *   **Valid Types**: `"input"`, `"input_double"`, `"slider"`, `"drag"`, `"combo"`, `"radio"`, `"color3"`, `"color4"`, `"multiline"`, `"input_with_hint"`, `"vslider"`.
-*   `widget_params`: (Optional) A union of structures providing parameters specific to the chosen `widget` type.
-    *   `input`: For the default `"input"` widget with numeric types. Fields include `step` (for +/- buttons).
-    *   `input_double`: For `"input_double"` widget. Fields include `step` and `format`.
-    *   `slider`: For `"slider"` widget. Fields include `min_val`, `max_val`, `format`, and `is_logarithmic`.
-    *   `vslider`: For `"vslider"` widget. Fields include `min_val`, `max_val`, `width`, `height`, `format`, and `is_logarithmic`.
-    *   `drag`: For `"drag"` widget. Fields include `speed`, `min_val`, `max_val`, `format`.
-    *   `choice`: For `"combo"` and `"radio"` widgets. Field is `options_json` (a JSON string of `value`/`labelKey` pairs).
-    *   `color`: For `"color3"` and `"color4"` widgets. Field is `flags` (ImGuiColorEditFlags bitmask).
-    *   `multiline`: For `"multiline"` widget. Field is `height_in_lines`.
-    *   `input_with_hint`: For `"input_with_hint"` widget. Field is `hint` (placeholder text).
+*   `Policy_SetAllowUserConfig(h, true)`: If enabled, the framework manages a `settings.json` file for the plugin and enables the Settings UI.
+*   `Policy_AddConfigurableSystem(h, "system")`: Adds a specific tab to the plugin's settings menu.
+    *   **Valid Values**: `"settings"` (Custom variables), `"logging"`, `"localization"`, `"ui"`.
+*   `Policy_AddRequiredHook(h, "HookName")`: Declares a mandatory dependency on a hook. The framework will force-enable this hook.
 
-### The Metadata System
 
-For every data object you define (a keybind, a UI window, a custom setting), you can also provide **metadata**. Metadata consists of a user-friendly title and a detailed description, which the framework uses to build the Settings UI automatically.
+## 3. Custom Settings Defaults (`Settings_SetJson`)
 
-You provide metadata by filling out one of the `...Metadata` arrays in the manifest (e.g., `customSettingsMetadata`, `keybindsMetadata`).
+This function defines the structure and default values for your plugin-specific variables.
 
-Each metadata entry has a `titleKey` and `descriptionKey`. These fields can be used in two ways:
+```cpp
+const char* defaults = R"json({
+    "enable_feature_x": true,
+    "power_level": 50,
+    "ui_colors": { "main": [1.0, 0.0, 0.0] }
+})";
+api->Settings_SetJson(h, defaults);
+```
+*Note: This data is placed strictly within the `"settings": { ... }` section of your configuration file.*
 
-*   **With Localization (Recommended):** Provide a key that matches an entry in your localization files (e.g., `"my_setting.title"`). The framework will look up the translation.
-*   **As Literal Text:** Provide the text directly (e.g., `"My Awesome Setting"`). If the framework can't find a translation key with that name, it will fall back to using the string as literal text.
 
-Providing metadata is optional, but **highly recommended** for a good user experience.
+## 4. System Defaults (`Defaults_...`)
 
-## Complete Example
+*   **Logging**: `Defaults_SetLogging(h, level, fileSink)`
+    *   `level`: `"trace"`, `"debug"`, `"info"`, `"warn"`, `"error"`, `"critical"`.
+    *   `fileSink`: `true` to enable a dedicated log file for the plugin.
+*   **Localization**: `Defaults_SetLocalization(h, "en")`
+    *   Sets the default initial language.
+*   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, pressType, threshold, consume, behavior)`
+    *   `type`: `"keyboard"`, `"gamepad"`, `"mouse"`.
+    *   `pressType`: `"short"`, `"long"`.
+    *   `consume`: `"always"`, `"never"`, `"on_ui_focus"`.
+    *   `behavior`: `"press"` (one-shot), `"toggle"` (on/off), `"hold"` (active while pressed).
+*   **Windows**: `Defaults_AddWindow(h, name, visible, interactive, x, y, w, h, collapsed, autoScroll)`
+    *   Defines the initial state of your plugin's ImGui windows.
 
-Here is a simplified example of a `GetManifestData` implementation.
 
-```c
+## 5. Metadata and UI Rendering (`Meta_...`)
+
+Metadata provides human-readable labels and instructs the framework on which UI widgets to use.
+
+### `Meta_AddCustomSetting`
+Links a JSON key from your defaults to a specific UI widget.
+
+*   `keyPath`: Path to the variable (e.g., `"ui_colors.main"`).
+*   `title`: Label displayed in the UI (can be a localization key).
+*   `desc`: Tooltip description.
+*   `widgetType`: `"slider"`, `"drag"`, `"combo"`, `"radio"`, `"color3"`, `"multiline"`, `"input_with_hint"`.
+*   `widgetParamsJson`: Widget-specific configuration in JSON format.
+
+**Widget Parameter Examples:**
+*   **Slider**: `"{ \"min\": 0, \"max\": 100, \"format\": \"%d %%\" }"`
+*   **Combo Box**: `"{ \"options\": [ { \"value\": \"A\", \"labelKey\": \"Option A\" } ] }"`
+*   **Multiline**: `"{ \"height_in_lines\": 5 }"`
+
+
+## Complete Implementation Example
+
+```cpp
 #include "SPF/SPF_API/SPF_Manifest_API.h"
-#include <string.h> // For strncpy_s or a safe equivalent
 
-void MyPlugin_GetManifestData(SPF_ManifestData_C& out_manifest) {
-    // 1. Info
-    strncpy_s(out_manifest.info.name, "MyPlugin", sizeof(out_manifest.info.name));
-    strncpy_s(out_manifest.info.version, "1.0.0", sizeof(out_manifest.info.version));
-    strncpy_s(out_manifest.info.author, "My Name", sizeof(out_manifest.info.author));
-    strncpy_s(out_manifest.info.descriptionKey, "myplugin.description", sizeof(out_manifest.info.descriptionKey));
+void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
+    // 1. Identity
+    api->Info_SetName(h, "SimplePlugin");
+    api->Info_SetVersion(h, "1.0.0");
+    api->Info_SetAuthor(h, "Developer");
 
     // 2. Policy
-    out_manifest.configPolicy.allowUserConfig = true;
-    out_manifest.configPolicy.requiredHooksCount = 1;
-    strncpy_s(out_manifest.configPolicy.requiredHooks[0], "GameConsole", sizeof(out_manifest.configPolicy.requiredHooks[0]));
+    api->Policy_SetAllowUserConfig(h, true);
+    api->Policy_AddConfigurableSystem(h, "settings");
+    api->Policy_AddConfigurableSystem(h, "keybinds");
 
-    // 3. Keybind Action
-    out_manifest.keybinds.actionCount = 1;
-    auto& keybindAction = out_manifest.keybinds.actions[0];
-    strncpy_s(keybindAction.groupName, "MyPlugin.UI", sizeof(keybindAction.groupName));
-    strncpy_s(keybindAction.actionName, "toggle_window", sizeof(keybindAction.actionName));
-    keybindAction.definitionCount = 1;
-    strncpy_s(keybindAction.definitions[0].key, "DIK_F6", sizeof(keybindAction.definitions[0].key));
-    // It's good practice to fill out all fields, even if with default values
-    strncpy_s(keybindAction.definitions[0].type, "keyboard", sizeof(keybindAction.definitions[0].type));
-    strncpy_s(keybindAction.definitions[0].pressType, "short", sizeof(keybindAction.definitions[0].pressType));
-    strncpy_s(keybindAction.definitions[0].consume, "on_ui_focus", sizeof(keybindAction.definitions[0].consume));
-    strncpy_s(keybindAction.definitions[0].behavior, "toggle", sizeof(keybindAction.definitions[0].behavior));
+    // 3. Custom Data
+    api->Settings_SetJson(h, "{ \"volume\": 0.5 }");
 
-    // 4. Metadata for the Keybind
-    out_manifest.keybindsMetadataCount = 1;
-    auto& keybindMeta = out_manifest.keybindsMetadata[0];
-    strncpy_s(keybindMeta.groupName, "MyPlugin.UI", sizeof(keybindMeta.groupName));
-    strncpy_s(keybindMeta.actionName, "toggle_window", sizeof(keybindMeta.actionName));
-    strncpy_s(keybindMeta.titleKey, "keybind.toggle_window.title", sizeof(keybindMeta.titleKey));
-    strncpy_s(keybindMeta.descriptionKey, "keybind.toggle_window.desc", sizeof(keybindMeta.descriptionKey));
+    // 4. UI Rendering
+    api->Meta_AddCustomSetting(h, "volume", "Volume", "Plugin audio level", 
+                               "slider", "{ \"min\": 0.0, \"max\": 1.0, \"format\": \"%.2f\" }", false);
+
+    // 5. Default Keybind
+    api->Defaults_AddKeybind(h, "Main", "Open", "keyboard", "KEY_F10", "short", 0, "always", "toggle");
+    api->Meta_AddKeybind(h, "Main", "Open", "Open Menu", "Press F10 to enter settings.");
 }
 ```

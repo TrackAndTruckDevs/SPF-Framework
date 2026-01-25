@@ -1,649 +1,450 @@
 /**
  * @file SPF_Manifest_API.h
- * @brief Defines the C-style API for a plugin to declare its metadata,
- * default settings, and requirements to the framework.
+ * @brief API for defining plugin identity, configuration defaults, and UI layout.
  *
- * The manifest is a contract between the plugin and the SPF core. It allows
- * the core to understand the plugin's identity, how it should be configured,
- * and what framework features it intends to use, all *before* the plugin is
- * fully loaded and its `OnLoad` function is called.
+ * @details The Manifest API is the standard interface for plugin initialization.
+ * During the boot phase, the framework calls the plugin's `BuildManifest` function
+ * and provides a function table. The plugin calls these functions to register its
+ * metadata, default settings, and UI requirements.
+ * 
+ * =================================================================================================
+ * COMPREHENSIVE USAGE EXAMPLE
+ * =================================================================================================
+ * @code
+ * // Recommended: Use a constant for your plugin name.
+ * const char* PLUGIN_NAME = "MySuperPlugin";
  *
- * This C-API is designed for stability across different compilers. The plugin
- * implements a function that fills these C-style structs, and the framework
- * internally converts this data into its more flexible C++ representations.
+ * void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
+ *
+ *     // --- 1. Basic Identity ---
+ *     api->Info_SetName(h, PLUGIN_NAME);               // Internal unique ID (No spaces)
+ *     api->Info_SetVersion(h, "1.2.0");                // Semantic version (e.g. "1.0.0")
+ *     api->Info_SetAuthor(h, "John Doe");              // Displayed author name
+ *     api->Info_SetMinFrameworkVersion(h, "1.0.6");    // Prevents load on incompatible framework
+ *     api->Info_SetDescriptionLiteral(h, "Main Description."); // Fallback if no translation found
+ *     api->Info_SetWebsiteUrl(h, "https://example.com");
+ *
+ *     // --- 2. Configuration Policy ---
+ *     api->Policy_SetAllowUserConfig(h, true);           // Enables 'settings.json' and UI menu
+ *     api->Policy_AddConfigurableSystem(h, "settings");  // Shows 'Custom Settings' tab in UI
+ *     api->Policy_AddConfigurableSystem(h, "logging");   // Shows 'Logging' tab in UI
+ *     api->Policy_AddRequiredHook(h, "GameConsole");     // Enforces a mandatory hook dependency
+ *
+ *     // --- 3. Custom Settings Defaults ---
+ *     // This JSON defines default values ONLY for the "settings" section of 'settings.json'.
+ *     // These variables are specific to your plugin's internal logic.
+ *     const char* defaults = R"json({
+ *         "rendering": {
+ *             "fov": 75.0,
+ *             "mode": "high"
+ *         },
+ *         "theme_color": [1.0, 0.5, 0.0]
+ *     })json";
+ *     api->Settings_SetJson(h, defaults);
+ *
+ *     // --- 4. Standard System Defaults ---
+ *     
+ *     // Logging: Level ("trace", "debug", "info", "warn", "error", "critical"), FileSink (bool)
+ *     api->Defaults_SetLogging(h, "info", true);
+ *
+ *     // Keybinds: Group, Action, Device ("keyboard", "gamepad"), Key (e.g. "KEY_F5"), 
+ *     // PressType ("short", "long"), Threshold (ms), Consume ("always", "never", "on_ui_focus"),
+ *     // Behavior ("press", "toggle", "hold")
+ *     api->Defaults_AddKeybind(h, "MyPlugin.Main", "toggle", "keyboard", "KEY_F5", "short", 0, "always", "toggle");
+ *
+ *     // Windows: Name, Visible (bool), Interactive (bool), X, Y, W, H, Collapsed (bool), AutoScroll (bool)
+ *     api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
+ *
+ *     // --- 5. UI Metadata (Widgets & Hints) ---
+ *     // Links keys from step 3 to specific UI widgets and provides descriptions.
+ *     
+ *     // Slider for 'rendering.fov'
+ *     api->Meta_AddCustomSetting(h, "rendering.fov", "Field of View", "Set preferred FOV",
+ *                                "slider", "{ \"min\": 60.0, \"max\": 120.0, \"format\": \"%.0f deg\" }", false);
+ *
+ *     // Dropdown for 'rendering.mode'
+ *     const char* modeOpts = "{ \"options\": [ { \"value\": \"low\", \"labelKey\": \"Low\" }, { \"value\": \"high\", \"labelKey\": \"High\" } ] }";
+ *     api->Meta_AddCustomSetting(h, "rendering.mode", "Quality", nullptr, "combo", modeOpts, false);
+ *
+ *     // UI Metadata for standard elements
+ *     api->Meta_AddKeybind(h, "MyPlugin.Main", "toggle", "Toggle Menu", "Opens the main UI.");
+ *     api->Meta_AddWindow(h, "MainWindow", "Main Plugin UI", "Primary interaction window.");
+ * }
+ *
+ * // Standard export function required by the framework
+ * extern "C" SPF_PLUGIN_EXPORT bool SPF_GetManifestAPI(SPF_Manifest_API* out_api) {
+ *     if (!out_api) return false;
+ *     out_api->BuildManifest = MyPlugin_BuildManifest;
+ *     return true;
+ * }
+ * @endcode
  */
 #pragma once
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // =================================================================================================
-// Manifest Constants
-// =================================================================================================
-
-// Define maximum lengths for strings and array counts to be copied into C-style arrays.
-// These ensure that the data passed from the plugin does not overflow the framework's buffers.
-#define SPF_MANIFEST_MAX_STRING_LENGTH 256
-#define SPF_MANIFEST_MAX_SYSTEMS 32
-#define SPF_MANIFEST_MAX_HOOKS 32
-#define SPF_MANIFEST_MAX_KEYBINDS_PER_ACTION 16
-#define SPF_MANIFEST_MAX_ACTIONS_PER_GROUP 64
-#define SPF_MANIFEST_MAX_GROUPS 64
-#define SPF_MANIFEST_MAX_WINDOWS 32
-
-// =================================================================================================
-// Manifest Data Blocks (C-compatible)
+// Opaque Handle Definition
 // =================================================================================================
 
 /**
- * @struct SPF_InfoData_C
- * @brief Contains essential metadata about the plugin.
- * This information is used for display in UI, for logging, and for identification.
+ * @brief Opaque handle representing the internal Manifest Builder object.
+ * @details The plugin holds this handle but cannot access its memory directly.
+ * All manipulations must be done via the function pointers provided in `SPF_Manifest_Builder_API`.
  */
-typedef struct SPF_InfoData_C {
-    // (Optional) A unique name for the plugin (e.g. "MyPlugin"). MUST be unique. If not specified it will be taken from the name of your dll, possible conflicts
-    char name[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) The plugin's version (e.g., "1.0.0").
-    char version[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional, but recommended) The minimum version of the SPF Framework required for this plugin to function correctly (e.g., "1.0.6").
-    // If the user's framework version is lower than this, the plugin will be disabled. This prevents crashes due to API changes.
-    char min_framework_version[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) The name of the author or organization.
-    char author[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) A key for a localized description string from your translation files.
-    char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) A fallback description if the localization key is not found.
-    char descriptionLiteral[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-     // --- Social and Project Links ---
-    // (Optional) Contact email for the author.
-    char email[SPF_MANIFEST_MAX_STRING_LENGTH];    
-    // (Optional) URL to a Discord server invite.
-    char discordUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to a Steam profile.
-    char steamProfileUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to the GitHub repository.
-    char githubUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to a YouTube channel/video.
-    char youtubeUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to an SCS Software forum thread.
-    char scsForumUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to a Patreon page.
-    char patreonUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // (Optional) URL to a personal or project website.
-    char websiteUrl[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_InfoData_C;
-
-/**
- * @struct SPF_ConfigPolicyData_C
- * @brief Defines the plugin's policies regarding configuration.
- */
-typedef struct SPF_ConfigPolicyData_C {
-    // If `true`, the framework will allow users to override the plugin's settings
-    // via a `settings.json` file.
-    bool allowUserConfig;
-
-    // List of framework systems (e.g. "settings", "logging", "ui", "localization".... ) that the user can configure via the UI for this plugin.
-    // Note: The "keybinds" system is always user-configurable and does not need to be listed here.
-    char userConfigurableSystems[SPF_MANIFEST_MAX_SYSTEMS][SPF_MANIFEST_MAX_STRING_LENGTH];
-    unsigned int userConfigurableSystemsCount;
-
-    // List of functional hooks required for the plugin to work.
-    // The framework guarantees that the hooks listed here will be enabled regardless of the settings
-    char requiredHooks[SPF_MANIFEST_MAX_HOOKS][SPF_MANIFEST_MAX_STRING_LENGTH];
-    unsigned int requiredHooksCount;
-} SPF_ConfigPolicyData_C;
-
-/**
- * @struct SPF_LoggingData_C
- * @brief Default logging settings for the plugin.
- */
-typedef struct SPF_LoggingSinks_C {
-    // If `true`, plugin logs will be written separately to a file in the MyPlagin/logs folder. If false, plugin logs can be found in the framework log file framework.log
-    bool file;
-} SPF_LoggingSinks_C;
-
-typedef struct SPF_LoggingData_C {
-    // Default log level. e.g., "trace", "debug", "info", "warn", "error", "critical". 
-    // Logging level, for the sink file, the user interface has its own filter
-    char level[SPF_MANIFEST_MAX_STRING_LENGTH];
-    SPF_LoggingSinks_C sinks;
-} SPF_LoggingData_C;
-
-/**
- * @struct SPF_LocalizationData_C
- * @brief Default localization settings.
- */
-typedef struct SPF_LocalizationData_C {
-    // The default language for the plugin's strings (e.g., "en").
-    char language[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_LocalizationData_C;
-
-/**
- * @struct SPF_KeybindsData_C
- * @brief Defines the default keybinds for actions provided by the plugin.
- */
-typedef struct SPF_KeybindDefinition_C {
-    // The input device type. Valid values: "keyboard", "gamepad".
-    char type[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    // The specific key or button name.
-    // For a list of valid keyboard keys, see `VirtualKeyMapping.cpp`.
-    // For a list of valid gamepad buttons, see `GamepadButtonMapping.cpp`.
-    char key[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    // The type of press required. Valid values: "short", "long".
-    char pressType[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    // For "long" pressType, the time in milliseconds to hold the key.
-    int pressThresholdMs;
-
-    // When to consume the input, preventing the game from seeing it.
-    // Valid values: "never", "on_ui_focus", "always".
-    char consume[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    // How the key behaves. Valid values: "toggle", "hold".
-    char behavior[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_KeybindDefinition_C;
-
-typedef struct SPF_KeybindAction_C {
-    /**
-     * @brief The primary identifier for the action's group. Can be any string.
-     * @details The framework combines this with `actionName` to form the full action name.
-     *          Best Practice: "{PluginName}.{Category}" or "{PluginName}.{Category}.{Noun}".
-     *          Example: "MyPlugin.UI.MainWindow"
-     */
-    char groupName[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief The name of the specific action, typically a verb.
-     *          Example: "log_message"
-     *          Example: "toggle"
-     */
-    char actionName[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief The array of key combinations that can trigger this action.
-     * @see SPF_KeybindActionMetadata_C to provide a translatable name and description for this action.
-     */
-    SPF_KeybindDefinition_C definitions[SPF_MANIFEST_MAX_KEYBINDS_PER_ACTION];
-    unsigned int definitionCount;
-} SPF_KeybindAction_C;
-
-typedef struct SPF_KeybindsData_C {
-    // A flat list of all actions and their keybinds.
-    SPF_KeybindAction_C actions[SPF_MANIFEST_MAX_ACTIONS_PER_GROUP];
-    unsigned int actionCount;
-} SPF_KeybindsData_C;
-
-/**
- * @struct SPF_UIData_C
- * @brief Defines the default state for any UI windows the plugin creates.
- * @see SPF_WindowMetadata_C to provide a translatable title and description for this window in the settings panel.
- */
-typedef struct SPF_WindowData_C {
-    // Unique identifier for the window. e.g., "my_plugin_main_window"
-    char name[SPF_MANIFEST_MAX_STRING_LENGTH];
-    // Default visibility state. 
-    bool isVisible;
-    // Whether the user can interact with the window. Whether the window opens in "transparency" mode (all input goes to the game, we don't intercept anything)
-    bool isInteractive;
-    // Default position on the screen.
-    int posX, posY;
-    // Default size.
-    int sizeW, sizeH;
-    // Default collapsed state.
-    bool isCollapsed;
-    // If the window should auto-scroll to the bottom on new content.
-    bool autoScroll;
-} SPF_WindowData_C;
-
-typedef struct SPF_UIData_C {
-    SPF_WindowData_C windows[SPF_MANIFEST_MAX_WINDOWS];
-    unsigned int windowsCount;
-} SPF_UIData_C;
-
+typedef struct SPF_Manifest_Builder_Handle SPF_Manifest_Builder_Handle;
 
 // =================================================================================================
-// Manifest Metadata Blocks (C-compatible)
+// Manifest Builder API (Function Table)
 // =================================================================================================
 
 /**
- * @mainpage How to Use Metadata
- * 
- * @section metadata_what 1. What is Metadata?
- * The `...Metadata` arrays (e.g., `customSettingsMetadata`, `keybindsMetadata`, `loggingMetadata`) are used to provide human-readable names and descriptions for your settings, actions, and windows. This information is primarily used to build the user interface, such as the "Settings" window. By providing metadata, you allow the framework to display user-friendly labels and tooltips instead of raw technical keys.
- *
- * @section metadata_usage 2. Using `titleKey` and `descriptionKey` (Two Methods)
- * The `titleKey` and `descriptionKey` fields are flexible and can be used in two ways, depending on whether your plugin uses localization.
- *
- * @subsection metadata_usage_loc Method A: With Localization (Recommended)
- * Provide a translation key that corresponds to an entry in your plugin's localization files (e.g., `MyPlugin/localization/en.json`).
- * @code{.cpp}
- * // In manifest:
- * strncpy_s(out_manifest.customSettingsMetadata[0].titleKey, "settings.some_number.title", ...);
- * 
- * // In MyPlugin/localization/en.json:
- * {
- *     "settings": {
- *       "some_number": {
- *         "title": "My Awesome Number"
- *       }
- *     }
- * }
- * @endcode
- * The framework will automatically find and display "My Awesome Number".
- *
- * @subsection metadata_usage_lit Method B: Without Localization (Literal Text)
- * If your plugin does not have localization files, or for a very simple case, you can put the desired text directly into the `titleKey` and `descriptionKey` fields.
- * @code{.cpp}
- * // In manifest:
- * strncpy_s(out_manifest.customSettingsMetadata[0].titleKey, "My Awesome Number", ...);
- * strncpy_s(out_manifest.customSettingsMetadata[0].descriptionKey, "This is the description for my number.", ...);
- * @endcode
- * If the framework cannot find the string "My Awesome Number" as a key in any translation file, it will log a one-time warning and then fall back to using the string itself as the literal text to display. This allows for easy, non-localized UI text.
+ * @struct SPF_Manifest_Builder_API
+ * @brief A table of function pointers provided by the framework to the plugin.
+ * @details The plugin uses these functions to populate the manifest data during the initialization phase.
  */
-
-/**
- * @struct SPF_CustomSettingMetadata_C
- * @brief Defines display metadata for a custom setting declared in `settingsJson`.
- * @details It is **strongly recommended** to provide metadata for all custom settings to ensure a user-friendly UI.
- *          See the "How to Use Metadata" guide at the top of this section for usage details.
- */
-typedef struct SPF_CustomSettingMetadata_C {
+typedef struct SPF_Manifest_Builder_API {
+    
+    // -------------------------------------------------------------------------
+    // 1. Plugin Information (InfoData)
+    // -------------------------------------------------------------------------
+    // These functions define the identity of the plugin.
+    
     /**
-     * @brief The key path of the setting this metadata applies to (e.g., "some_number", "feature_flags.alpha").
+     * @brief Sets the internal programmatic name of the plugin.
+     * @param h The builder handle.
+     * @param name The unique name (e.g., "MyPlugin"). MUST match the name used in `GetContext` calls.
+     *             No spaces or special characters allowed.
      */
-    char keyPath[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Info_SetName)(SPF_Manifest_Builder_Handle* h, const char* name);
 
     /**
-     * @brief A localization key or literal text for the setting's display name (title).
+     * @brief Sets the display version of the plugin.
+     * @param h The builder handle.
+     * @param version The version string (recommended: Semantic Versioning, e.g., "1.0.0").
      */
-    char titleKey[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Info_SetVersion)(SPF_Manifest_Builder_Handle* h, const char* version);
 
     /**
-     * @brief A localization key or literal text for the setting's detailed description (tooltip).
+     * @brief Sets the minimum required version of the SPF Framework.
+     * @details If the running framework version is lower than this, the plugin will fail to load
+     *          and an error will be displayed to the user.
+     * @param h The builder handle.
+     * @param version The version string (e.g., "1.0.6").
      */
-    char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Info_SetMinFrameworkVersion)(SPF_Manifest_Builder_Handle* h, const char* version);
 
     /**
-     * @brief (Optional) If set to `true`, this setting will not be displayed in the settings UI.
-     * @details This is useful for storing internal plugin state that should persist in `settings.json`
-     *          but should not be exposed to the user. Defaults to `false` (visible) if not specified,
-     *          as C-structs are typically zero-initialized.
+     * @brief Sets the author's name.
+     * @param h The builder handle.
+     * @param author The author's name or organization.
      */
-    bool hide_in_ui;
-
-    // ---------------------------------------------------------------------------------------------
-    // Optional UI Rendering Hints
-    // ---------------------------------------------------------------------------------------------
-    // The following fields are optional and allow you to control how a setting is displayed in the UI.
-    // If 'widget' is left empty, the framework will choose a default widget based on the setting's data type.
-    // ---------------------------------------------------------------------------------------------
+    void (*Info_SetAuthor)(SPF_Manifest_Builder_Handle* h, const char* author);
 
     /**
-     * @brief (Optional) The type of UI widget to use for this setting.
+     * @brief Sets the localization key for the plugin's description.
+     * @details The framework will look up this key in the plugin's locale files.
+     * @param h The builder handle.
+     * @param key The localization key (e.g., "plugin.description").
+     */
+    void (*Info_SetDescriptionKey)(SPF_Manifest_Builder_Handle* h, const char* key);
+
+    /**
+     * @brief Sets a literal description string (fallback if key is missing).
+     * @param h The builder handle.
+     * @param desc The description text.
+     */
+    void (*Info_SetDescriptionLiteral)(SPF_Manifest_Builder_Handle* h, const char* desc);
+
+    /**
+     * @brief Sets the author's contact email.
+     * @param h The builder handle.
+     * @param email The email address (e.g., "mailto:dev@example.com").
+     */
+    void (*Info_SetEmail)(SPF_Manifest_Builder_Handle* h, const char* email);
+
+    // --- Social Media & Project Links ---
+    // These URLs will be displayed in the plugin's "About" section in the UI.
+    
+    void (*Info_SetDiscordUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetSteamProfileUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetGithubUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetYoutubeUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetScsForumUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetPatreonUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+    void (*Info_SetWebsiteUrl)(SPF_Manifest_Builder_Handle* h, const char* url);
+
+    // -------------------------------------------------------------------------
+    // 2. Configuration Policy
+    // -------------------------------------------------------------------------
+    // Defines how the plugin interacts with the framework's configuration system
+    // and declares its mandatory dependencies.
+
+    /**
+     * @brief Enables or disables the framework-managed configuration for the plugin.
+     * @details If set to 'true':
+     *          1. The framework automatically creates and manages a 'settings.json' file 
+     *             for the plugin (located in /plugins/PluginName/config/).
+     *          2. The plugin will appear in the main "Settings" menu of the framework.
+     *          3. User changes in the UI will be automatically saved to disk.
+     * 
+     * @param h The builder handle.
+     * @param allow Set to 'true' to enable the automatic settings system.
+     */
+    void (*Policy_SetAllowUserConfig)(SPF_Manifest_Builder_Handle* h, bool allow);
+
+    /**
+     * @brief Registers a standard framework system to be visible in the plugin's settings UI.
+     * @details Only systems added via this function will have a corresponding tab in the 
+     *          plugin's configuration window.
+     * 
+     * @param h The builder handle.
+     * @param systemName One of the following predefined system identifiers:
+     *                   - "settings"     : Shows the "Custom Settings" tab (variables from Settings_SetJson).
+     *                   - "logging"      : Shows the "Logging" tab (log levels and file output).
+     *                   - "localization" : Shows the "Language" tab (language selection).
+     *                   - "ui"           : Shows the "UI / Windows" tab (window positions and visibility).
+     * 
+     * @note The "keybinds" system is always enabled by default if any keybinds are defined 
+     *       and does not need to be manually added here.
+     */
+    void (*Policy_AddConfigurableSystem)(SPF_Manifest_Builder_Handle* h, const char* systemName);
+
+    /**
+     * @brief Declares a mandatory dependency on a framework-level function hook.
+     * @details Use this to ensure that a specific hook (e.g., "GameConsole") is active 
+     *          whenever your plugin is loaded. The framework will enforce this and 
+     *          prevent the user from disabling the required hook via the UI.
+     * 
+     * @param h The builder handle.
+     * @param hookName The internal name of the hook (e.g., "GameConsole", "GameLogHook").
+     */
+    void (*Policy_AddRequiredHook)(SPF_Manifest_Builder_Handle* h, const char* hookName);
+
+    // -------------------------------------------------------------------------
+    // 3. Custom Settings Defaults
+    // -------------------------------------------------------------------------
+    // Use this section to define variables that are unique to your plugin.
+
+    /**
+     * @brief Sets the default JSON structure for the plugin's custom variables.
+     * @details This function defines the initial state of the "settings": { ... } 
+     *          section within the plugin's 'settings.json'. 
+     * 
+     * @important Do NOT include "logging", "ui", or "keybinds" keys in this JSON. 
+     *            Those sections are managed automatically by the 'Defaults_...' functions.
+     * 
+     * @param h The builder handle.
+     * @param json A string containing a valid JSON object.
+     *             Example: 
+     *             R"json({
+     *                 "enable_visuals": true,
+     *                 "update_interval_ms": 100,
+     *                 "colors": { "primary": [1.0, 1.0, 1.0] }
+     *             })json"
+     */
+    void (*Settings_SetJson)(SPF_Manifest_Builder_Handle* h, const char* json);
+
+    // -------------------------------------------------------------------------
+    // 4. Default Configurations for Framework Systems
+    // -------------------------------------------------------------------------
+
+    /**
+     * @brief Configures default logging behavior (populates "logging" section).
+     * @param h The builder handle.
+     * @param level Default log level: "trace", "debug", "info", "warn", "error", or "critical".
+     * @param fileSink Enable writing to [Plugin]/logs/[Plugin].log.
+     */
+    void (*Defaults_SetLogging)(SPF_Manifest_Builder_Handle* h, const char* level, bool fileSink);
+
+    /**
+     * @brief Sets the default language code.
+     * @param h The builder handle.
+     * @param langCode The ISO language code (e.g., "en", "ua", "de"). Matches the translation file name.
+     */
+    void (*Defaults_SetLocalization)(SPF_Manifest_Builder_Handle* h, const char* langCode);
+
+    /**
+     * @brief Adds a default keybind definition for an action.
+     * @param h The builder handle.
+     * @param groupName The group name (e.g., "MyPlugin.Main").
+     * @param actionName The action name (e.g., "toggle_window").
+     * @param type Input device type. Valid values: "keyboard", "gamepad", "mouse".
+     * @param key The key/button name (e.g., "KEY_F5", "BTN_A"). See `VirtualKeyMapping` for list.
+     * @param pressType Type of press. Valid values: "short", "long".
+     * @param thresholdMs Time in milliseconds required for a "long" press. (0 for short press).
+     * @param consume Input consumption policy. Valid values: "always", "never", "on_ui_focus".
+     * @param behavior Action behavior. Valid values: "press", "toggle", "hold".
+     */
+    void (*Defaults_AddKeybind)(SPF_Manifest_Builder_Handle* h, 
+                                const char* groupName, 
+                                const char* actionName, 
+                                const char* type, 
+                                const char* key, 
+                                const char* pressType, 
+                                int thresholdMs, 
+                                const char* consume, 
+                                const char* behavior);
+
+    /**
+     * @brief Adds a default UI window configuration.
+     * @param h The builder handle.
+     * @param windowName Unique identifier for the window.
+     * @param isVisible Default visibility state.
+     * @param isInteractive If true, receives mouse/keyboard input.
+     * @param x Default X position.
+     * @param y Default Y position.
+     * @param w Default Width.
+     * @param h Default Height.
+     * @param isCollapsed Default collapsed state.
+     * @param autoScroll Default auto-scroll state.
+     */
+    void (*Defaults_AddWindow)(SPF_Manifest_Builder_Handle* h, 
+                               const char* windowName, 
+                               bool isVisible, 
+                               bool isInteractive, 
+                               int x, int y, int w, int height, 
+                               bool isCollapsed, 
+                               bool autoScroll);
+
+    // -------------------------------------------------------------------------
+    // 5. Metadata (UI Definitions)
+    // -------------------------------------------------------------------------
+    // These functions describe how the settings and elements defined above should be displayed in the UI.
+
+    /**
+     * @brief Adds metadata for a custom setting to control its UI representation.
+      * 
+     * @param h The builder handle.
+     * @param keyPath The JSON path to the setting (e.g., "my_feature.speed").
+     * @param titleKey Localization key for the setting title.
+     * @param descKey Localization key for the setting description.
+     * @param widgetType (Optional) The type of widget to use. Pass NULL for auto-detection.
+     *                   Valid types:
+     *                   - "input": Simple text/number input (default).
+     *                   - "input_double": Number input for doubles.
+     *                   - "input_with_hint": Text input with a placeholder hint.
+     *                   - "slider": Horizontal slider (float/int).
+     *                   - "vslider": Vertical slider.
+     *                   - "drag": Draggable number field.
+     *                   - "combo": Dropdown list.
+     *                   - "radio": Radio button group.
+     *                   - "color3": RGB color picker.
+     *                   - "multiline": Multi-line text area.
+     * 
+     * @param widgetParamsJson (Optional) JSON string defining widget parameters. Pass NULL if none.
+     *                         
+     *                         **Widget Parameter Formats:**
+     *                         
+     *                         **slider / drag / vslider:**
+     *                         {
+     *                           "min": 0.0,       // Minimum value
+     *                           "max": 100.0,     // Maximum value
+     *                           "format": "%.1f", // Display format (printf style)
+     *                           "step": 1.0,      // (Drag only) Speed/Step
+     *                           "width": 30.0,    // (VSlider only) Width in pixels
+     *                           "height": 100.0,  // (VSlider only) Height in pixels
+     *                           "logarithmic": false // (Slider only) Logarithmic scale
+     *                         }
      *
-     * If this is empty or not specified, a default widget will be chosen based on the data type
-     * (e.g., a checkbox for booleans, a simple input for numbers/strings).
+     *                         **combo / radio:**
+     *                         {
+     *                           "options": [
+     *                             { "value": "val1", "labelKey": "opt.one" },
+     *                             { "value": 2, "labelKey": "opt.two" }
+     *                           ]
+     *                         }
      *
-     * Valid Widget Types:
-     * - "input":      Default text/number input. For numeric types, `step` can be provided via `widget_params.input`.
-     * - "input_double": A text/number input for double precision numbers. (ImGui::InputDouble)
-     * - "slider":     A slider for numbers. (ImGui::SliderFloat, SliderInt)
-     * - "drag":       A draggable field for numbers. (ImGui::DragFloat, DragInt)
-     * - "combo":      A dropdown/combobox for selecting one option.
-     * - "radio":      A group of radio buttons for selecting one option.
-     * - "color3":     A color picker for an RGB color. The setting value should be a JSON array of 3 floats (e.g., [1.0, 0.5, 0.2]).
-     * - "color4":     A color picker for an RGBA color. The setting value should be a JSON array of 4 floats (e.g., [1.0, 0.5, 0.2, 1.0]).
-     * - "multiline":  A multi-line text input field.
-     * - "input_with_hint": A text input with a placeholder hint.
-     * - "vslider": A vertical slider for numbers.
+     *                         **input_double:**
+     *                         { "step": 0.01, "format": "%.4f" }
+     *
+     *                         **input_with_hint:**
+     *                         { "hint": "Type here..." }
+     *
+     *                         **color3:**
+     *                         { "flags": 0 } // ImGuiColorEditFlags
+     *
+     *                         **multiline:**
+     *                         { "height_in_lines": 4 }
+     *
+     * @param hideInUI If true, this setting will not appear in the Settings UI.
      */
-    char widget[64];
+    void (*Meta_AddCustomSetting)(SPF_Manifest_Builder_Handle* h, 
+                                  const char* keyPath, 
+                                  const char* titleKey, 
+                                  const char* descKey, 
+                                  const char* widgetType, 
+                                  const char* widgetParamsJson, 
+                                  bool hideInUI);
 
     /**
-     * @brief (Optional) A union of parameters specific to the chosen widget type.
-     *
-     * Based on the value of `widget`, you should fill in the corresponding struct within this union.
-     * For example, if `widget` is "slider", you must initialize the `slider` struct.
-     * It is crucial to only initialize the member that matches the widget type.
+     * @brief Adds metadata for a keybind action.
+     * @param h The builder handle.
+     * @param groupName The group name (must match `Defaults_AddKeybind`).
+     * @param actionName The action name (must match `Defaults_AddKeybind`).
+     * @param titleKey Localization key for the title.
+     * @param descKey Localization key for the description.
      */
-    union {
-        /**
-         * @brief Parameters for "slider" widget.
-         */
-        struct {
-            float min_val;      ///< The minimum value of the slider.
-            float max_val;      ///< The maximum value of the slider.
-            char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
-            bool is_logarithmic; ///< If true, the slider will use logarithmic scaling.
-        } slider;
-
-        /**
-         * @brief Parameters for "drag" widget.
-         */
-        struct {
-            float speed;        ///< The speed/increment when dragging the value.
-            float min_val;      ///< The minimum value.
-            float max_val;      ///< The maximum value.
-            char format[32];    ///< The display format (e.g., "%.2f", "%d C"). If empty, a default is used.
-        } drag;
-
-        /**
-         * @brief Parameters for the default "input" widget when used with numeric types.
-         */
-        struct {
-            double step;        ///< The step increment/decrement for the +/- buttons.
-        } input;
-
-        /**
-         * @brief Parameters for "input_double" widget.
-         */
-        struct {
-            double step;        ///< The step increment/decrement for the +/- buttons.
-            char format[32];    ///< The display format (e.g., "%.6f").
-        } input_double;
-
-        /**
-         * @brief Parameters for "combo" and "radio" widgets.
-         */
-        struct {
-            /**
-             * @brief A JSON string representing the available options.
-             *
-             * The JSON must be an array of objects, where each object has a "value" and a "labelKey".
-             * - "value": The actual string or number to be stored in the settings when this option is chosen.
-             * - "labelKey": A localization key or literal text for the option's display name.
-             *
-             * @b Example:
-             * @code
-             * R"json([
-             *   { "value": "option_a", "labelKey": "options.a.title" },
-             *   { "value": "option_b", "labelKey": "Use This Text Directly" },
-             *   { "value": 10, "labelKey": "options.c.title" }
-             * ])json"
-             * @endcode
-             */
-            char options_json[1024];
-        } choice;
-
-        /**
-         * @brief Parameters for "color3" and "color4" widgets.
-         */
-        struct {
-            /**
-             * @brief (Advanced) A bitmask of ImGuiColorEditFlags to customize the color picker's behavior.
-             * See imgui.h for available flags (e.g., ImGuiColorEditFlags_NoInputs, ImGuiColorEditFlags_AlphaBar).
-             * Set to 0 for default behavior.
-             */
-            int flags;
-        } color;
-
-        /**
-         * @brief Parameters for "multiline" widget.
-         */
-        struct {
-            /**
-             * @brief The height of the text box, specified in number of text lines.
-             */
-            int height_in_lines;
-        } multiline;
-
-        /**
-         * @brief Parameters for "input_with_hint" widget.
-         */
-        struct {
-            /**
-             * @brief The placeholder text to display when the input is empty.
-             */
-            char hint[256];
-        } input_with_hint;
-
-        /**
-         * @brief Parameters for "vslider" widget.
-         */
-        struct {
-            float min_val;      ///< The minimum value of the slider.
-            float max_val;      ///< The maximum value of the slider.
-            float width;        ///< The width of the slider widget.
-            float height;       ///< The height of the slider widget.
-            char format[32];    ///< The display format (e.g., "%.2f", "%d C").
-            bool is_logarithmic; ///< If true, the slider will use logarithmic scaling.
-        } vslider;
-    } widget_params;
-} SPF_CustomSettingMetadata_C;
-
-/**
- * @struct SPF_KeybindActionMetadata_C
- * @brief Defines display metadata for a keybind action.
- * @details It is **strongly recommended** to provide metadata for all keybind actions to explain what they do.
- *          See the "How to Use Metadata" guide at the top of this section for usage details.
- */
-typedef struct SPF_KeybindActionMetadata_C {
-    /**
-     * @brief The group name of the action (must match `groupName` in `SPF_KeybindAction_C`).
-     */
-    char groupName[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Meta_AddKeybind)(SPF_Manifest_Builder_Handle* h, const char* groupName, const char* actionName, const char* titleKey, const char* descKey);
 
     /**
-     * @brief The action name (must match `actionName` in `SPF_KeybindAction_C`).
+     * @brief Adds metadata for a UI window.
+     * @param h The builder handle.
+     * @param windowName The window name (must match `Defaults_AddWindow`).
+     * @param titleKey Localization key for the title.
+     * @param descKey Localization key for the description.
      */
-    char actionName[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Meta_AddWindow)(SPF_Manifest_Builder_Handle* h, const char* windowName, const char* titleKey, const char* descKey);
 
     /**
-     * @brief A localization key or literal text for the action's display name.
+     * @brief Adds metadata for a standard framework setting (logging/localization).
+     * @param h The builder handle.
+     * @param system System name: "logging" or "localization".
+     * @param key The specific setting key (e.g., "level", "language").
+     * @param titleKey Localization key for the title.
+     * @param descKey Localization key for the description.
      */
-    char titleKey[SPF_MANIFEST_MAX_STRING_LENGTH];
+    void (*Meta_AddStandardSetting)(SPF_Manifest_Builder_Handle* h, const char* system, const char* key, const char* titleKey, const char* descKey);
 
-    /**
-     * @brief A localization key or literal text for the action's detailed description (tooltip).
-     */
-    char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_KeybindActionMetadata_C;
-
-/**
- * @struct SPF_StandardSettingMetadata_C
- * @brief Defines override metadata for a standard framework system setting (e.g., logging level).
- * @details You are **not required** to provide this metadata. If omitted, the framework automatically uses its own default titles and descriptions.
- *          Only provide this if you want to override the default text or add a new language translation.
- *          See the "How to Use Metadata" guide at the top of this section for usage details.
- */
-typedef struct SPF_StandardSettingMetadata_C {
-    /**
-     * @brief The key of the setting this metadata applies to (e.g., "level", "language").
-     */
-    char key[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief Your custom localization key or literal text for the setting's display name.
-     */
-    char titleKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief Your custom localization key or literal text for the setting's detailed description.
-     */
-    char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_StandardSettingMetadata_C;
-
-/**
- * @struct SPF_WindowMetadata_C
- * @brief Defines override metadata for a UI window or its properties.
- * @details You are **not required** to provide this metadata. If omitted, the framework automatically uses its own default titles and descriptions.
- *          Only provide this if you want to override the default text.
- *          See the "How to Use Metadata" guide at the top of this section for usage details.
- */
-typedef struct SPF_WindowMetadata_C {
-    /**
-     * @brief The name of the window or window property this metadata applies to.
-     * @example "my_plugin_main_window" (for a window group)
-     * @example "is_visible" (for a generic window property)
-     */
-    char windowName[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief Your custom localization key or literal text for the item's title in the settings panel.
-     */
-    char titleKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-
-    /**
-     * @brief Your custom localization key or literal text for the item's description (tooltip).
-     */
-    char descriptionKey[SPF_MANIFEST_MAX_STRING_LENGTH];
-} SPF_WindowMetadata_C;
-
-
-/**
- * @struct SPF_ManifestData_C
- * @brief The top-level structure that aggregates all manifest information.
- * A plugin must populate this structure and pass it to the framework.
- */
-typedef struct SPF_ManifestData_C {
-    // --- Standard Metadata & Policies ---
-    SPF_InfoData_C info;
-    SPF_ConfigPolicyData_C configPolicy;
-
-    // --- Custom Plugin Settings ---
-    /**
-     * @brief A JSON string literal containing default values for the plugin's custom settings.
-     *
-     * @details This is where a plugin defines its own configuration values that are not part of the
-     *          standard framework systems (like logging, ui, etc.).
-     *
-     * @section Structure and Merging
-     * If `configPolicy.allowUserConfig` is true, the framework generates a single `settings.json`
-     * file for the plugin (e.g., in `plugins/MyPlugin/config/settings.json`).
-     *
-     * The JSON object you provide here will be inserted into that main `settings.json` file
-     * under a top-level key named `"settings"`.
-     *
-     * @b Example:
-     * If you define your `settingsJson` in the manifest like this:
-     * @code{.cpp}
-      * out_manifest.settingsJson = R"json(
-     *     {
-     *         "some_number": 42,
-     *         "some_bool": false,
-     *         "feature_flags": {
-     *             "alpha": true,
-     *             "beta": false
-     *         }
-     *     }
-     * )json";
-     * @endcode
-     *
-     * The resulting `settings.json` will contain a section like this:
-     * @code{.json}
-     * {
-      *     "settings": {
-     *         "some_number": 42,
-     *         "some_bool": false,
-     *         "feature_flags": {
-     *             "alpha": true,
-     *             "beta": false
-     *         }
-     *     }
-     * }
-     * @endcode
-     *
-     * To access `some_number` programmatically via the `SPF_Config_API`, you would use the
-     * key `"settings.some_number"`.
-     *
-     * @section Localization
-     * To provide translatable display names and descriptions for these settings, add corresponding
-     * entries to the `customSettingsMetadata` array. If no metadata is provided for a setting,
-     * the framework will use the setting's raw key as its display name.
-     *
-     * @code{.cpp}
-     * // 1. Define the data in settingsJson
-     * out_manifest.settingsJson = R"json({ "some_number": 42 })json";
-     *
-     * // 2. Provide metadata for localization
-     * out_manifest.customSettingsMetadataCount = 1;
-     * strncpy_s(out_manifest.customSettingsMetadata[0].keyPath, "some_number", ...);
-     * strncpy_s(out_manifest.customSettingsMetadata[0].titleKey, "setting.some_number.title", ...);
-     * @endcode
-     */
-    const char* settingsJson;
-
-    // --- Default Settings for Framework Systems ---
-    SPF_LoggingData_C logging;
-    SPF_LocalizationData_C localization;
-    SPF_KeybindsData_C keybinds;
-    SPF_UIData_C ui;
-
-    // --- METADATA FOR LOCALIZATION ---
-    /**
-     * @brief Optional arrays for providing translatable display names and descriptions for your settings, actions, and windows.
-     *
-     * @details This system separates the core definition of a setting/action from its presentation metadata.
-     *          This keeps the primary definitions clean while allowing for rich, localized UI.
-     *
-     *          For each item you want to add a translated name/description to, you add an entry to the
-     *          corresponding metadata array below (e.g., `customSettingsMetadata`, `keybindsMetadata`).
-     *
-     *          If you do not provide metadata for an item, the framework will fall back to using its
-     *          raw key name as a label in the UI and will not show a description. This ensures that
-     *          providing metadata is purely optional and additive.
-     */
-    SPF_CustomSettingMetadata_C customSettingsMetadata[128];
-    unsigned int customSettingsMetadataCount;
-
-    SPF_KeybindActionMetadata_C keybindsMetadata[128];
-    unsigned int keybindsMetadataCount;
-
-    SPF_StandardSettingMetadata_C loggingMetadata[16];
-    unsigned int loggingMetadataCount;
-
-    SPF_StandardSettingMetadata_C localizationMetadata[16];
-    unsigned int localizationMetadataCount;
-
-    SPF_WindowMetadata_C uiMetadata[SPF_MANIFEST_MAX_WINDOWS];
-    unsigned int uiMetadataCount;
-} SPF_ManifestData_C;
+} SPF_Manifest_Builder_API;
 
 // =================================================================================================
-// Plugin Exported API
+// Plugin Export Definition
 // =================================================================================================
 
 /**
- * @brief A function pointer that the plugin implements to fill the manifest data.
- * @param out_manifest A reference to the C-struct that the plugin must populate.
+ * @typedef SPF_BuildManifest_t
+ * @brief Function pointer type for the plugin's manifest builder function.
+ * @details The plugin must implement a function matching this signature.
  */
-typedef void (*SPF_GetManifestData_t)(SPF_ManifestData_C& out_manifest);
+typedef void (*SPF_BuildManifest_t)(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api);
 
 /**
  * @struct SPF_Manifest_API
- * @brief A struct containing function pointers related to the manifest.
- * The framework asks the plugin to fill this struct.
+ * @brief Structure used to pass the builder function pointer from the plugin to the framework.
  */
 typedef struct SPF_Manifest_API {
-    SPF_GetManifestData_t GetManifestData;
+    /**
+     * @brief Pointer to the plugin's implementation of the manifest builder.
+     * @details The framework will call this function, providing a handle and the API table.
+     */
+    SPF_BuildManifest_t BuildManifest;
 } SPF_Manifest_API;
 
+
 /**
- * @brief The main exported function the framework looks for to get the manifest API.
- *
- * A plugin MUST export a function named `SPF_GetManifestAPI` with this signature.
- * The framework calls it to get a pointer to the plugin's `GetManifestData` function.
- *
- * @section Implementation Note for C++ Plugins
- * When implementing this function in your `.cpp` file, you MUST wrap it in
- * `extern "C" { ... }` to prevent C++ name mangling. For example:
- * @code{.cpp}
- * extern "C" {
- *     SPF_PLUGIN_EXPORT bool SPF_GetManifestAPI(SPF_Manifest_API* out_api) {
- *         // ... your implementation ...
- *     }
- * }
- * @endcode
- *
- * @param out_api A pointer to a structure that the plugin must fill with its
- *                `GetManifestData` function pointer.
- * @return `true` on success, `false` on failure.
+ * @brief The name of the export function the plugin must implement to provide manifest info.
+ * Signature: bool SPF_GetManifestAPI(SPF_Manifest_API* out_api);
  */
-typedef bool (*SPF_GetManifestAPI_t)(SPF_Manifest_API* out_api);
+#define SPF_GetManifestAPI_ExportName "SPF_GetManifestAPI"
+
+// Typedef for the export function itself (for creating the export definition)
+typedef bool (*SPF_GetManifestAPI_Func)(SPF_Manifest_API* out_api);
 
 
 #ifdef __cplusplus
