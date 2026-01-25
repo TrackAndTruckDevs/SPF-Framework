@@ -20,7 +20,7 @@ SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
     if (s_cameraAPI) {
         // The API was successfully acquired and is ready to use.
         // For example, you can now switch the camera:
-        // s_cameraAPI->SwitchTo(SPF_CAMERA_BEHIND);
+        // s_cameraAPI->Cam_SwitchTo(SPF_CAMERA_BEHIND);
     }
 }
 ```
@@ -112,7 +112,7 @@ Switches the currently active in-game camera to the specified type.
 *   **Example:**
     ```c
     // Switch to the behind-the-truck camera
-    s_cameraAPI->SwitchTo(SPF_CAMERA_BEHIND);
+    s_cameraAPI->Cam_SwitchTo(SPF_CAMERA_BEHIND);
     ```
 
 ---
@@ -124,7 +124,7 @@ Gets the type of the currently active camera.
 *   **Example:**
     ```c
     SPF_CameraType current_cam_type;
-    if (s_cameraAPI->GetCurrentCamera(&current_cam_type)) {
+    if (s_cameraAPI->Cam_GetCurrentCamera(&current_cam_type)) {
         if (current_cam_type == SPF_CAMERA_INTERIOR) {
             // We are in the interior camera
         }
@@ -151,29 +151,29 @@ Gets the world coordinates (position) of the currently active camera.
 This group of functions allows you to read and modify parameters specifically for the interior (in-cabin) camera.
 
 ---
-**`GetInteriorSeatPos(float* x, float* y, float* z)` / `SetInteriorSeatPos(float x, float y, float z)`**
+**`Cam_GetInteriorSeatPos(float* x, float* y, float* z)` / `Cam_SetInteriorSeatPos(float x, float y, float z)`**
 Gets or sets the current XYZ coordinates of the seat position, which adjusts the camera's viewpoint.
 
 ---
-**`GetInteriorHeadRot(float* yaw, float* pitch)` / `SetInteriorHeadRot(float yaw, float pitch)`**
+**`Cam_GetInteriorHeadRot(float* yaw, float* pitch)` / `Cam_SetInteriorHeadRot(float yaw, float pitch)`**
 Gets or sets the current head rotation of the driver.
 *   `yaw`: Horizontal rotation (looking left/right).
 *   `pitch`: Vertical rotation (looking up/down).
 
 ---
-**`GetInteriorFov(float* fov)` / `SetInteriorFov(float fov)`**
+**`Cam_GetInteriorFov(float* fov)` / `Cam_SetInteriorFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the interior camera.
 
 ---
-**`GetInteriorFinalFov(float* out_horiz, float* out_vert)`**
+**`Cam_GetInteriorFinalFov(float* out_horiz, float* out_vert)`**
 Gets the final, calculated Field of View (FOV) after all dynamic adjustments (like UI-based FOV changes) have been applied.
 
 ---
-**`GetInteriorRotationLimits(float* left, float* right, float* up, float* down)` / `SetInteriorRotationLimits(float left, float right, float up, float down)`**
+**`Cam_GetInteriorRotationLimits(float* left, float* right, float* up, float* down)` / `Cam_SetInteriorRotationLimits(float left, float right, float up, float down)`**
 Gets or sets the maximum rotation angles for the interior camera view.
 
 ---
-**`GetInteriorRotationDefaults(float* lr, float* ud)` / `SetInteriorRotationDefaults(float lr, float ud)`**
+**`Cam_GetInteriorRotationDefaults(float* lr, float* ud)` / `Cam_SetInteriorRotationDefaults(float lr, float ud)`**
 Gets or sets the default rotation values (left/right and up/down) that the camera resets to.
 
 
@@ -182,27 +182,27 @@ Gets or sets the default rotation values (left/right and up/down) that the camer
 Functions for controlling the third-person chase camera.
 
 ---
-**`GetBehindLiveState(float* pitch, float* yaw, float* zoom)`**
+**`Cam_GetBehindLiveState(float* pitch, float* yaw, float* zoom)`**
 Gets the live orientation and zoom level of the camera.
 
 ---
-**`GetBehindDistanceSettings(...)` / `SetBehindDistanceSettings(...)`**
+**`Cam_GetBehindDistanceSettings(...)` / `Cam_SetBehindDistanceSettings(...)`**
 Gets or sets the camera's distance from the truck, including min/max, default, and trailer-specific values.
 
 ---
-**`GetBehindElevationSettings(...)` / `SetBehindElevationSettings(...)`**
+**`Cam_GetBehindElevationSettings(...)` / `Cam_SetBehindElevationSettings(...)`**
 Gets or sets the camera's elevation and azimuth (horizontal follow) behavior.
 
 ---
-**`GetBehindPivot(float* x, float* y, float* z)` / `SetBehindPivot(float x, float y, float z)`**
+**`Cam_GetBehindPivot(float* x, float* y, float* z)` / `Cam_SetBehindPivot(float x, float y, float z)`**
 Gets or sets the camera's pivot point offset from the truck.
 
 ---
-**`GetBehindDynamicOffset(...)` / `SetBehindDynamicOffset(...)`**
+**`Cam_GetBehindDynamicOffset(...)` / `Cam_SetBehindDynamicOffset(...)`**
 Gets or sets the dynamic offset that changes based on vehicle speed.
 
 ---
-**`GetBehindFov(float* fov)` / `SetBehindFov(float fov)`**
+**`Cam_GetBehindFov(float* fov)` / `Cam_SetBehindFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the behind camera.
 
 <br>
@@ -212,19 +212,19 @@ Gets or sets the base Field of View (FOV) for the behind camera.
 Functions for controlling the top-down "satellite" view camera.
 
 ---
-**`GetTopHeight(float* min_height, float* max_height)` / `SetTopHeight(float min_height, float max_height)`**
+**`Cam_GetTopHeight(float* min_height, float* max_height)` / `Cam_SetTopHeight(float min_height, float max_height)`**
 Gets or sets the minimum and maximum height range for the camera.
 
 ---
-**`GetTopSpeed(float* speed)` / `SetTopSpeed(float speed)`**
+**`Cam_GetTopSpeed(float* speed)` / `Cam_SetTopSpeed(float speed)`**
 Gets or sets the camera's movement speed.
 
 ---
-**`GetTopOffsets(float* forward, float* backward)` / `SetTopOffsets(float forward, float backward)`**
+**`Cam_GetTopOffsets(float* forward, float* backward)` / `Cam_SetTopOffsets(float forward, float backward)`**
 Gets or sets the maximum forward and backward offset limits for the camera.
 
 ---
-**`GetTopFov(float* fov)` / `SetTopFov(float fov)`**
+**`Cam_GetTopFov(float* fov)` / `Cam_SetTopFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the top-down camera.
 
 <br>
@@ -266,23 +266,23 @@ The TV camera API allows you to control its maximum distance (`GetTVMaxDistance`
 This API provides control over the game's free-roam developer camera.
 
 ---
-**`GetFreePosition(float* x, float* y, float* z)` / `SetFreePosition(float x, float y, float z)`**
+**`Cam_GetFreePosition(float* x, float* y, float* z)` / `Cam_SetFreePosition(float x, float y, float z)`**
 Gets or sets the world-space XYZ position of the free camera.
 
 ---
-**`GetFreeQuaternion(float* x, float* y, float* z, float* w)`**
+**`Cam_GetFreeQuaternion(float* x, float* y, float* z, float* w)`**
 Gets the camera's orientation as a quaternion.
 
 ---
-**`GetFreeOrientation(float* mouse_x, float* mouse_y, float* roll)` / `SetFreeOrientation(float mouse_x, float mouse_y, float roll)`**
+**`Cam_GetFreeOrientation(float* mouse_x, float* mouse_y, float* roll)` / `Cam_SetFreeOrientation(float mouse_x, float mouse_y, float roll)`**
 Gets or sets the camera's orientation using the internal "mouse look" and roll values.
 
 ---
-**`GetFreeFov(float* fov)` / `SetFreeFov(float fov)`**
+**`Cam_GetFreeFov(float* fov)` / `Cam_SetFreeFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the free camera.
 
 ---
-**`GetFreeSpeed(float* speed)` / `SetFreeSpeed(float speed)`**
+**`Cam_GetFreeSpeed(float* speed)` / `Cam_SetFreeSpeed(float speed)`**
 Gets or sets the movement speed of the free camera.
 
 <br>
@@ -292,23 +292,23 @@ Gets or sets the movement speed of the free camera.
 The SPF Camera API exposes a powerful debug camera system that allows for saving, loading, and animating camera positions. This is separate from the standard free camera.
 
 ---
-**`EnableDebugCamera(bool enable)` / `GetDebugCameraEnabled(bool* out_isEnabled)`**
+**`Cam_EnableDebugCamera(bool enable)` / `Cam_GetDebugCameraEnabled(bool* out_isEnabled)`**
 Enables or disables the entire debug camera system.
 
 ---
-**`SetDebugCameraMode(SPF_DebugCameraMode mode)` / `GetDebugCameraMode(SPF_DebugCameraMode* out_mode)`**
+**`Cam_SetDebugCameraMode(SPF_DebugCameraMode mode)` / `Cam_GetDebugCameraMode(SPF_DebugCameraMode* out_mode)`**
 Gets or sets the current behavior mode of the debug camera (e.g., Simple, Video, Cinematic, Animated). See `SPF_DebugCameraMode` for details.
 
 ---
-**`SetDebugHudVisible(bool visible)` / `GetDebugHudVisible(bool* out_isVisible)`**
+**`Cam_SetDebugHudVisible(bool visible)` / `Cam_GetDebugHudVisible(bool* out_isVisible)`**
 Shows or hides the debug camera's on-screen information HUD.
 
 ---
-**`SetDebugHudPosition(SPF_DebugHudPosition position)` / `GetDebugHudPosition(SPF_DebugHudPosition* out_position)`**
+**`Cam_SetDebugHudPosition(SPF_DebugHudPosition position)` / `Cam_GetDebugHudPosition(SPF_DebugHudPosition* out_position)`**
 Gets or sets the screen corner for the debug HUD.
 
 ---
-**`SetDebugGameUiVisible(bool visible)` / `GetDebugGameUiVisible(bool* out_isVisible)`**
+**`Cam_SetDebugGameUiVisible(bool visible)` / `Cam_GetDebugGameUiVisible(bool* out_isVisible)`**
 Shows or hides the main game UI (dashboard, mirrors, etc.) while the debug camera is active.
 
 <br>
@@ -318,47 +318,47 @@ Shows or hides the main game UI (dashboard, mirrors, etc.) while the debug camer
 This API allows you to work with a list of saved camera states (positions).
 
 ---
-**`GetStateCount()`**
+**`Cam_GetStateCount()`**
 Returns the total number of saved camera states.
 
 ---
-**`GetCurrentStateIndex()`**
+**`Cam_GetCurrentStateIndex()`**
 Returns the index of the currently active camera state.
 
 ---
-**`GetState(int index, SPF_CameraState_t* out_state)`**
+**`Cam_GetState(int index, SPF_CameraState_t* out_state)`**
 Retrieves the data for a specific camera state by its index. See `SPF_CameraState_t`.
 
 ---
-**`ApplyState(int index)`**
+**`Cam_ApplyState(int index)`**
 Applies a saved state, instantly moving the camera to that state's position and orientation.
 
 ---
-**`CycleState(int direction)`**
+**`Cam_CycleState(int direction)`**
 Cycles to the next (if direction > 0) or previous (if direction < 0) state in the list.
 
 ---
-**`SaveCurrentState()`**
+**`Cam_SaveCurrentState()`**
 Saves the camera's current position, orientation, and FOV as a new state at the end of the list.
 
 ---
-**`ReloadStatesFromFile()`**
+**`Cam_ReloadStatesFromFile()`**
 Reloads all camera states from the configuration file, discarding any in-memory changes.
 
 ---
-**`ClearAllStatesInMemory()`**
+**`Cam_ClearAllStatesInMemory()`**
 Clears all camera states currently held in memory.
 
 ---
-**`AddStateInMemory(const SPF_CameraState_t* state)`**
+**`Cam_AddStateInMemory(const SPF_CameraState_t* state)`**
 Adds a new camera state to the in-memory list.
 
 ---
-**`EditStateInMemory(int index, const SPF_CameraState_t* newState)`**
+**`Cam_EditStateInMemory(int index, const SPF_CameraState_t* newState)`**
 Edits an existing in-memory camera state at a specific index.
 
 ---
-**`DeleteStateInMemory(int index)`**
+**`Cam_DeleteStateInMemory(int index)`**
 Deletes an in-memory camera state at a specific index.
 
 <br>
@@ -368,42 +368,42 @@ Deletes an in-memory camera state at a specific index.
 These functions control the playback of an animation using the list of saved camera states. This is typically used with `SPF_DEBUG_CAMERA_MODE_ANIMATED`.
 
 ---
-**`Anim_Play(int startIndex)`**
+**`Cam_Anim_Play(int startIndex)`**
 Starts playing the camera animation sequence from a given state index.
 
 ---
-**`Anim_Pause()`**
+**`Cam_Anim_Pause()`**
 Pauses the currently playing animation.
 
 ---
-**`Anim_Stop()`**
+**`Cam_Anim_Stop()`**
 Stops the animation and resets it.
 
 ---
-**`Anim_GoToFrame(int frameIndex)`**
+**`Cam_Anim_GoToFrame(int frameIndex)`**
 Instantly jumps to a specific frame (state) in the animation sequence.
 
 ---
-**`Anim_ScrubTo(float position)`**
+**`Cam_Anim_ScrubTo(float position)`**
 Scrubs the animation to a specific position, where `0.0` is the beginning and `1.0` is the end.
 
 ---
-**`Anim_SetReverse(bool isReversed)`**
+**`Cam_Anim_SetReverse(bool isReversed)`**
 Sets the animation to play in reverse.
 
 ---
-**`Anim_GetPlaybackState()`**
+**`Cam_Anim_GetPlaybackState()`**
 Returns the current `SPF_AnimPlaybackState` (e.g., Playing, Paused, Stopped).
 
 ---
-**`Anim_GetCurrentFrame()`**
+**`Cam_Anim_GetCurrentFrame()`**
 Returns the index of the current frame (state) in the animation.
 
 ---
-**`Anim_GetCurrentFrameProgress()`**
+**`Cam_Anim_GetCurrentFrameProgress()`**
 Returns the interpolation progress (0.0 to 1.0) between the current frame and the next.
 
 ---
-**`Anim_IsReversed()`**
+**`Cam_Anim_IsReversed()`**
 Checks if the animation is currently set to play in reverse.
 

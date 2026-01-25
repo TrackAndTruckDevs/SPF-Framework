@@ -1,3 +1,39 @@
+/**                                                                                               
+* @file SPF_GameConsole_API.h                                                                          
+* @brief API for programmatically executing commands in the in-game developer console.
+*                                                                                                 
+* @details This API provides a bridge between your plugin and the game engine's 
+* built-in command processor. It allows you to run any command that a user could 
+* manually type into the developer console (e.g., 'g_traffic', 'g_set_time').
+*                                                                                                 
+* This is a one-way interface designed for automation and integration of existing 
+* game features into your plugin's UI or logic.                                       
+*                                                                                                 
+* ================================================================================================
+* KEY CONCEPTS                                                                                    
+* ================================================================================================
+*                                                                                                 
+* 1. **Mandatory Hook**: To use this API, your plugin MUST declare a dependency on the 
+*    'GameConsole' hook in its manifest using 'api->Policy_AddRequiredHook(handle, "GameConsole")'.
+*                                                                                                 
+* 2. **One-Way Execution**: This API only sends commands to the game. It does not 
+*    receive feedback or return values from the console. 
+*                                                                                                 
+* 3. **No Command Registration**: This API is for execution only. It cannot be used to 
+*    register new, custom console commands.
+*                                                                                                 
+* ================================================================================================
+* USAGE EXAMPLE (C++)                                                                             
+* ================================================================================================
+* @code                                                                                           
+* // In response to a UI button click:
+* if (ui->Button("Fast Forward Time", 0, 0)) {
+*     // Skip to afternoon
+*     api->GCon_ExecuteCommand("g_set_time 14 00");
+* }
+* @endcode                                                                                        
+*/ 
+
 #pragma once
 
 #ifdef __cplusplus
@@ -6,44 +42,16 @@ extern "C" {
 
 /**
  * @struct SPF_GameConsole_API
- * @brief Provides a C-style API for plugins to execute commands in the in-game console.
- *
- * @details This API allows a plugin to programmatically run any command that a user
- *          could type into the game's developer console. It is a one-way interface
- *          for sending commands to the game engine.
- *
- * @section Workflow
- * 1.  **Request Hook**: In your plugin's manifest (`GetManifestData`), you must
- *     add `"GameConsole"` to the `requiredHooks` array and increment
- *     `requiredHooksCount`. The framework will not provide the console API
- *     pointer if this hook is not requested.
- * 2.  **Get the API**: The `SPF_GameConsole_API` pointer is available within the
- *     main `SPF_Core_API` struct provided to your plugin's `OnLoad` function.
- * 3.  **Execute a Command**: Call the `ExecuteCommand` function with the desired
- *     command string at any point in your plugin's logic (e.g., in response to
- *     a button click or a keybind).
- *
- * @section Example
- * @code{.cpp}
- * // In your plugin's UI rendering function:
- * if (ui->Button("Enable Police", 0, 0))
- * {
- *     if (g_coreAPI && g_coreAPI->console)
- *     {
- *         g_coreAPI->console->ExecuteCommand("g_police 1");
- *     }
- * }
- * @endcode
- *
- * @note This API is for **executing** existing commands only. It does not provide
- *       a mechanism for plugins to **register** new custom commands with the console.
+ * @brief Table of function pointers for interacting with the game's console.
  */
 typedef struct SPF_GameConsole_API {
     /**
      * @brief Executes a command string in the in-game console.
-     * @param command The command string to execute (e.g., "g_traffic 1", "g_set_time 14 30").
+     * @details The command is processed immediately by the game engine. 
+     *          Ensure the console system is active and the hook is requested.
+     * @param command The command string to execute (e.g., "g_traffic 1", "quit").
      */
-    void (*ExecuteCommand)(const char* command);
+    void (*GCon_ExecuteCommand)(const char* command);
 
 } SPF_GameConsole_API;
 

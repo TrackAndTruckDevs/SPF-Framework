@@ -943,7 +943,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->SameLine(0, 0);
             if (ui->Button("Execute", 0, 0)) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->console && g_ctx.consoleCommand[0] != '\0') {
-                    g_ctx.coreAPI->console->ExecuteCommand(g_ctx.consoleCommand);
+                    g_ctx.coreAPI->console->GCon_ExecuteCommand(g_ctx.consoleCommand);
                     char log_buffer[512];
                     g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Executed console command: '%s'", g_ctx.consoleCommand);
                     g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);

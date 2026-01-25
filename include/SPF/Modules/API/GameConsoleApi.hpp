@@ -10,7 +10,7 @@ class GameConsoleApi {
   static void FillGameConsoleApi(SPF_GameConsole_API* api);
 
  private:
-  static void T_ExecuteCommand(const char* command);
+  static void GCon_ExecuteCommand(const char* command);
 };
 }  // namespace Modules::API
 SPF_NS_END

@@ -4,27 +4,29 @@ The SPF Game Console API provides a simple, one-way interface for your plugin to
 
 ## Prerequisites: Requesting the Hook
 
-To ensure the framework can safely hook into the game's console, your plugin **must** request access. In your plugin's manifest (`GetManifestData`), you must add `"GameConsole"` to the `requiredHooks` array.
+To ensure the framework can safely hook into the game's console, your plugin **must** declare its dependency. In your plugin's manifest builder function, you must add the "GameConsole" hook.
 
 **Example Manifest Snippet:**
 ```c
-g_manifest.requiredHooksCount = 1;
-g_manifest.requiredHooks[0] = "GameConsole";
+void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
+    // ...
+    api->Policy_AddRequiredHook(h, "GameConsole");
+}
 ```
 If you do not request this hook, the framework will not provide a pointer to the Game Console API, and it will be `NULL`.
 
 ## Getting the API
 
-Unlike some other APIs, the Game Console API is not requested by name. Instead, it is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnLoad` function.
+The Game Console API is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnActivated` lifecycle event.
 
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
-#include "SPF/SPF_API/SPF_GameConsole_API.h" // For documentation, not strictly required to call
+#include "SPF/SPF_API/SPF_GameConsole_API.h"
 
 // Global pointer to the Core API
 const SPF_Core_API* s_coreAPI = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
     s_coreAPI = core_api;
     
     // You can now access s_coreAPI->console anywhere in your plugin
@@ -36,7 +38,7 @@ SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
 The API consists of a single function, accessed via the `console` member of your `SPF_Core_API` pointer.
 
 ---
-**`void ExecuteCommand(const char* command)`**
+### `void GCon_ExecuteCommand(const char* command)`
 
 Executes a command string in the in-game console as if a user had typed it.
 
@@ -59,11 +61,8 @@ void RenderMyUI(const SPF_UI_API* ui) {
     if (s_coreAPI && s_coreAPI->console && ui->Button("Toggle Police", 0, 0)) {
         police_enabled = !police_enabled;
         
-        if (police_enabled) {
-            s_coreAPI->console->ExecuteCommand("g_police 1");
-        } else {
-            s_coreAPI->console->ExecuteCommand("g_police 0");
-        }
+        const char* cmd = police_enabled ? "g_police 1" : "g_police 0";
+        s_coreAPI->console->GCon_ExecuteCommand(cmd);
     }
 }
 ```
