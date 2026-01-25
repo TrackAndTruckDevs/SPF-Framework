@@ -202,6 +202,8 @@ void PluginManager::InitializePlugins() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
   if (!logger) return;
 
+  m_isLateInitDone = true; // Set this BEFORE loading plugins to enable immediate hook installation during OnActivated
+
   logger->Info("--- Initializing Enabled Plugins ---");
   const auto& componentInfoMap = m_configService->GetAllComponentInfo();
 
@@ -357,7 +359,6 @@ void PluginManager::RegisterPluginUIs() {
   for (const auto& [name, plugin] : m_plugins) {
     RegisterUIForPlugin(*plugin);
   }
-  m_isLateInitDone = true;  // Set the flag that late init is done
   logger->Info("--- Finished Registering Plugin UIs and Keybind Actions ---");
 }
 

@@ -13,14 +13,14 @@ class HooksApi {
    * @param api The API structure to fill.
    * @param pRegister A pointer to the registration function (implemented in PluginManager).
    */
-  static void FillHooksApi(SPF_Hooks_API* api, SPF_Hooks_Register_t pRegister);
+  static void FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister);
 
  private:
-  // Trampolines for stateless hook functions
-  static uintptr_t T_FindPattern(const char* signature);
-  static uintptr_t T_FindPatternFrom(const char* signature, uintptr_t startAddress, size_t searchLength);
-  static bool T_IsEnabled(SPF_Hook_Handle* handle);
-  static bool T_IsInstalled(SPF_Hook_Handle* handle);
+  static SPF_Hook_Handle* Hook_Register(const char* pluginName, const char* hookName, const char* displayName, void* pDetour, void** ppOriginal, const char* signature, bool isEnabled);
+  static uintptr_t Hook_FindPattern(const char* signature);
+  static uintptr_t Hook_FindPatternFrom(const char* signature, uintptr_t startAddress, size_t searchLength);
+  static bool Hook_IsEnabled(SPF_Hook_Handle* h);
+  static bool Hook_IsInstalled(SPF_Hook_Handle* h);
 };
 }  // namespace Modules::API
 SPF_NS_END

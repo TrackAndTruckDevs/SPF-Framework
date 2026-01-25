@@ -1317,7 +1317,7 @@ void InstallGameStringFormattingHook() {
     // This is a byte signature of the target function in memory.
     const char* signature = "48 89 5C 24 08 48 89 6C 24 18 48 89 74 24 20 57 41 54 41 55 41 56 41 57 B8 70 88 00 00 ? ? ? ? ? 48 2B E0 48";
 
-    g_ctx.coreAPI->hooks->Register(
+    g_ctx.coreAPI->hooks->Hook_Register(
         PLUGIN_NAME,
         "GameStringFormattingHook", // Renamed hook ID for consistency
         "Game String Formatting Hook", // Renamed hook description for consistency

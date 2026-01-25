@@ -9,7 +9,7 @@ The API uses pattern scanning to locate functions in memory, making your hooks r
 Before using this API, it is critical to understand three concepts:
 
 **1. Signature**
-A signature is a unique sequence of bytes that represents the beginning of a function in the game's compiled code. Instead of relying on a fixed memory address (which changes with every game update), we find the function by searching for this unique "fingerprint". Wildcards (`?`) can be used for bytes that might change.
+A signature is a unique sequence of bytes that represents the beginning of a function in the game's compiled code. Instead of relying on a fixed memory address (which changes with every game update), we find the function by searching for this unique "fingerprint". Wildcards (`?` or `??`) can be used for bytes that might change.
 
 **2. Detour**
 A detour is your C++ function that the framework will execute *instead of* the original game function. For this to work safely, your detour function **must** have the exact same signature as the function you are hooking: the same calling convention, the same return type, and the same parameters in the same order.
@@ -23,18 +23,18 @@ When the framework installs a hook, it creates a "trampoline" – a small piece 
 2.  **Define Function Type:** In your C++ code, define a `using` or `typedef` for a function pointer that matches the original function's signature.
 3.  **Implement Detour:** Write your detour function, matching the signature from the previous step.
 4.  **Call the Original:** Inside your detour, call the original function using the trampoline pointer.
-5.  **Register Hook:** In your plugin's `OnLoad` function, call `Register`, providing the signature, pointers to your detour and trampoline, and other metadata.
+5.  **Register Hook:** In your plugin's `OnActivated` function, call `Hook_Register`, providing the signature, pointers to your detour and trampoline, and other metadata.
 
 ## Getting the API
 
-The Hooks API is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnLoad` function.
+The Hooks API is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnActivated` lifecycle event.
 
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
 
 const SPF_Core_API* s_coreAPI = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
     s_coreAPI = core_api;
 }
 ```
@@ -44,7 +44,7 @@ SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
 Functions are accessed via the `hooks` member of your `SPF_Core_API` pointer.
 
 ---
-**`SPF_Hook_Handle* Register(...)`**
+### `SPF_Hook_Handle* Hook_Register(...)`
 Finds a function by its byte signature and installs a hook.
 
 *   **Parameters:**
@@ -58,16 +58,18 @@ Finds a function by its byte signature and installs a hook.
 *   **Returns:** An opaque handle to the hook, or `NULL` on failure.
 
 ---
-**`uintptr_t FindPattern(const char* signature)`**
+### `uintptr_t Hook_FindPattern(const char* signature)`
 Finds a byte pattern in the game's memory and returns the address. This is useful for reading data or for more complex hooking scenarios.
 
 ---
-**`bool IsEnabled(SPF_Hook_Handle* handle)`**
+### `bool Hook_IsEnabled(SPF_Hook_Handle* h)`
 Checks if a hook is currently enabled in the configuration.
 
 ---
-**`bool IsInstalled(SPF_Hook_Handle* handle)`**
+### `bool Hook_IsInstalled(SPF_Hook_Handle* h)`
 Checks if a hook is currently active in memory (i.e., successfully found and installed).
+
+---
 
 ## Complete Example
 
@@ -89,10 +91,7 @@ static SomeGameFunction_t o_SomeGameFunction = NULL;
 // 3. Implement your detour function with the matching signature
 void Detour_SomeGameFunction(int param1, bool param2) {
     // 4. Your custom logic can run before the original function
-    if (s_coreAPI && s_coreAPI->logger) {
-        SPF_Logger_Handle* myLogger = s_coreAPI->logger->GetContext("MyPlugin");
-        s_coreAPI->logger->Log(myLogger, SPF_LOG_INFO, "SomeGameFunction was hooked!");
-    }
+    // ... logic ...
 
     // 5. Call the original function using the trampoline. This is CRITICAL.
     o_SomeGameFunction(param1, param2);
@@ -100,12 +99,12 @@ void Detour_SomeGameFunction(int param1, bool param2) {
     // 6. Your custom logic can also run after the original function returns
 }
 
-// 7. Register the hook when the plugin loads
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
+// 7. Register the hook when the plugin activates
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
     s_coreAPI = core_api;
 
     if (s_coreAPI && s_coreAPI->hooks) {
-        s_coreAPI->hooks->Register(
+        s_coreAPI->hooks->Hook_Register(
             "MyPlugin",                             // Plugin name
             "SomeGameFunctionHook",                 // Unique hook name
             "My Test Hook",                         // Display name for UI
