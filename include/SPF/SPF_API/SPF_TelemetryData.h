@@ -7,6 +7,16 @@
 // It is designed to be included by plugins that wish to access telemetry data.
 // The layout and types are fixed to ensure ABI stability.
 
+/**
+ * @section ABI Stability Rules (For Framework Developers)
+ * To maintain binary compatibility with older plugins:
+ * 1. NEVER change the order of existing fields in these structures.
+ * 2. NEVER remove existing fields.
+ * 3. NEW FIELDS must always be added to the VERY END of the structure.
+ * 4. Ensure that the framework's copy logic (TelemetryApi.cpp) uses struct_size 
+ *    to avoid writing beyond the plugin's allocated memory.
+ */
+
 // --- Max Sizes for Arrays ---
 // These values are based on the SCS SDK headers (e.g., scssdk_telemetry_common.h)
 #define SPF_TELEMETRY_SUBSTANCE_MAX_COUNT 64

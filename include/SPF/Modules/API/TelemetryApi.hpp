@@ -95,37 +95,37 @@ class TelemetryApi {
   static void InvokeGearboxConstantsCallback(const SPF::Telemetry::SCS::GearboxConstants& cpp_data, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
 
   // --- Event Subscription (New RAII-based C-API Proxies) ---
-  static SPF_Telemetry_Callback_Handle* T_RegisterForGameState(SPF_Telemetry_Handle* handle, SPF_Telemetry_GameState_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForTimestamps(SPF_Telemetry_Handle* handle, SPF_Telemetry_Timestamps_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForCommonData(SPF_Telemetry_Handle* handle, SPF_Telemetry_CommonData_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForTruckConstants(SPF_Telemetry_Handle* handle, SPF_Telemetry_TruckConstants_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForTrailerConstants(SPF_Telemetry_Handle* handle, SPF_Telemetry_TrailerConstants_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForTruckData(SPF_Telemetry_Handle* handle, SPF_Telemetry_TruckData_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForTrailers(SPF_Telemetry_Handle* handle, SPF_Telemetry_Trailers_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForJobConstants(SPF_Telemetry_Handle* handle, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForJobData(SPF_Telemetry_Handle* handle, SPF_Telemetry_JobData_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForNavigationData(SPF_Telemetry_Handle* handle, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForControls(SPF_Telemetry_Handle* handle, SPF_Telemetry_Controls_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForSpecialEvents(SPF_Telemetry_Handle* handle, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForGameplayEvents(SPF_Telemetry_Handle* handle, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
-  static SPF_Telemetry_Callback_Handle* T_RegisterForGearboxConstants(SPF_Telemetry_Handle* handle, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForGameState(SPF_Telemetry_Handle* h, SPF_Telemetry_GameState_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForTimestamps(SPF_Telemetry_Handle* h, SPF_Telemetry_Timestamps_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForCommonData(SPF_Telemetry_Handle* h, SPF_Telemetry_CommonData_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForTruckConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForTrailerConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_TrailerConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForTruckData(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckData_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForTrailers(SPF_Telemetry_Handle* h, SPF_Telemetry_Trailers_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForJobConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForJobData(SPF_Telemetry_Handle* h, SPF_Telemetry_JobData_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForNavigationData(SPF_Telemetry_Handle* h, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForControls(SPF_Telemetry_Handle* h, SPF_Telemetry_Controls_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForSpecialEvents(SPF_Telemetry_Handle* h, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForGameplayEvents(SPF_Telemetry_Handle* h, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForGearboxConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
 
  private:
-  static SPF_Telemetry_Handle* T_GetContext(const char* pluginName);
-  static void T_GetGameState(SPF_Telemetry_Handle* handle, SPF_GameState* out_data);
-  static void T_GetTimestamps(SPF_Telemetry_Handle* handle, SPF_Timestamps* out_data);
-  static void T_GetCommonData(SPF_Telemetry_Handle* handle, SPF_CommonData* out_data);
-  static void T_GetTruckConstants(SPF_Telemetry_Handle* handle, SPF_TruckConstants* out_data);
-  static void T_GetTruckData(SPF_Telemetry_Handle* handle, SPF_TruckData* out_data);
-  static void T_GetTrailers(SPF_Telemetry_Handle* handle, SPF_Trailer* out_trailers, uint32_t* in_out_count);
-  static void T_GetJobConstants(SPF_Telemetry_Handle* handle, SPF_JobConstants* out_data);
-  static void T_GetJobData(SPF_Telemetry_Handle* handle, SPF_JobData* out_data);
-  static void T_GetNavigationData(SPF_Telemetry_Handle* handle, SPF_NavigationData* out_data);
-  static void T_GetControls(SPF_Telemetry_Handle* handle, SPF_Controls* out_data);
-  static void T_GetSpecialEvents(SPF_Telemetry_Handle* handle, SPF_SpecialEvents* out_data);
-  static void T_GetGameplayEvents(SPF_Telemetry_Handle* handle, SPF_GameplayEvents* out_data);
-  static void T_GetGearboxConstants(SPF_Telemetry_Handle* handle, SPF_GearboxConstants* out_data);
-  static int T_GetLastGameplayEventId(SPF_Telemetry_Handle* handle, char* out_buffer, int buffer_size);
+  static SPF_Telemetry_Handle* Tel_GetContext(const char* pluginName);
+  static void Tel_GetGameState(SPF_Telemetry_Handle* h, SPF_GameState* out_data, size_t struct_size);
+  static void Tel_GetTimestamps(SPF_Telemetry_Handle* h, SPF_Timestamps* out_data, size_t struct_size);
+  static void Tel_GetCommonData(SPF_Telemetry_Handle* h, SPF_CommonData* out_data, size_t struct_size);
+  static void Tel_GetTruckConstants(SPF_Telemetry_Handle* h, SPF_TruckConstants* out_data, size_t struct_size);
+  static void Tel_GetTruckData(SPF_Telemetry_Handle* h, SPF_TruckData* out_data, size_t struct_size);
+  static void Tel_GetTrailers(SPF_Telemetry_Handle* h, SPF_Trailer* out_trailers, size_t struct_size, uint32_t* in_out_count);
+  static void Tel_GetJobConstants(SPF_Telemetry_Handle* h, SPF_JobConstants* out_data, size_t struct_size);
+  static void Tel_GetJobData(SPF_Telemetry_Handle* h, SPF_JobData* out_data, size_t struct_size);
+  static void Tel_GetNavigationData(SPF_Telemetry_Handle* h, SPF_NavigationData* out_data, size_t struct_size);
+  static void Tel_GetControls(SPF_Telemetry_Handle* h, SPF_Controls* out_data, size_t struct_size);
+  static void Tel_GetSpecialEvents(SPF_Telemetry_Handle* h, SPF_SpecialEvents* out_data, size_t struct_size);
+  static void Tel_GetGameplayEvents(SPF_Telemetry_Handle* h, SPF_GameplayEvents* out_data, size_t struct_size);
+  static void Tel_GetGearboxConstants(SPF_Telemetry_Handle* h, SPF_GearboxConstants* out_data, size_t struct_size);
+  static int  Tel_GetLastGameplayEventId(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
 
 
 

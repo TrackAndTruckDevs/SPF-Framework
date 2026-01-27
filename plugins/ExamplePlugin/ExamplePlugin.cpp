@@ -333,23 +333,23 @@ void OnActivated(const SPF_Core_API* core_api) {
     // --- Telemetry Event Example ---
     // Get a handle for the telemetry API and register our callbacks.
     if (g_ctx.coreAPI && g_ctx.coreAPI->telemetry) {
-        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
+        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->Tel_GetContext(PLUGIN_NAME);
         if (g_ctx.telemetryHandle) {
             auto tel = g_ctx.coreAPI->telemetry;
-            g_ctx.gameStateCallback = tel->RegisterForGameState(g_ctx.telemetryHandle, OnGameStateUpdate, &g_ctx);
-            g_ctx.timestampsCallback = tel->RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestampsUpdate, &g_ctx);
-            g_ctx.commonDataCallback = tel->RegisterForCommonData(g_ctx.telemetryHandle, OnCommonDataUpdate, &g_ctx);
-            g_ctx.truckConstantsCallback = tel->RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstantsUpdate, &g_ctx);
-            g_ctx.trailerConstantsCallback = tel->RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstantsUpdate, &g_ctx);
-            g_ctx.truckDataCallback = tel->RegisterForTruckData(g_ctx.telemetryHandle, OnTruckDataUpdate, &g_ctx);
-            g_ctx.trailersCallback = tel->RegisterForTrailers(g_ctx.telemetryHandle, OnTrailersUpdate, &g_ctx);
-            g_ctx.jobConstantsCallback = tel->RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstantsUpdate, &g_ctx);
-            g_ctx.jobDataCallback = tel->RegisterForJobData(g_ctx.telemetryHandle, OnJobDataUpdate, &g_ctx);
-            g_ctx.navigationDataCallback = tel->RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationDataUpdate, &g_ctx);
-            g_ctx.controlsCallback = tel->RegisterForControls(g_ctx.telemetryHandle, OnControlsUpdate, &g_ctx);
-            g_ctx.specialEventsCallback = tel->RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEventsUpdate, &g_ctx);
-            g_ctx.gameplayEventsCallback = tel->RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvent, &g_ctx);
-            g_ctx.gearboxConstantsCallback = tel->RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstantsUpdate, &g_ctx);
+            g_ctx.gameStateCallback = tel->Tel_RegisterForGameState(g_ctx.telemetryHandle, OnGameStateUpdate, &g_ctx);
+            g_ctx.timestampsCallback = tel->Tel_RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestampsUpdate, &g_ctx);
+            g_ctx.commonDataCallback = tel->Tel_RegisterForCommonData(g_ctx.telemetryHandle, OnCommonDataUpdate, &g_ctx);
+            g_ctx.truckConstantsCallback = tel->Tel_RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstantsUpdate, &g_ctx);
+            g_ctx.trailerConstantsCallback = tel->Tel_RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstantsUpdate, &g_ctx);
+            g_ctx.truckDataCallback = tel->Tel_RegisterForTruckData(g_ctx.telemetryHandle, OnTruckDataUpdate, &g_ctx);
+            g_ctx.trailersCallback = tel->Tel_RegisterForTrailers(g_ctx.telemetryHandle, OnTrailersUpdate, &g_ctx);
+            g_ctx.jobConstantsCallback = tel->Tel_RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstantsUpdate, &g_ctx);
+            g_ctx.jobDataCallback = tel->Tel_RegisterForJobData(g_ctx.telemetryHandle, OnJobDataUpdate, &g_ctx);
+            g_ctx.navigationDataCallback = tel->Tel_RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationDataUpdate, &g_ctx);
+            g_ctx.controlsCallback = tel->Tel_RegisterForControls(g_ctx.telemetryHandle, OnControlsUpdate, &g_ctx);
+            g_ctx.specialEventsCallback = tel->Tel_RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEventsUpdate, &g_ctx);
+            g_ctx.gameplayEventsCallback = tel->Tel_RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvent, &g_ctx);
+            g_ctx.gearboxConstantsCallback = tel->Tel_RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstantsUpdate, &g_ctx);
 
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered all telemetry callbacks.");
         }
@@ -1055,11 +1055,11 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_Separator();
 
     char buffer[256];
-    auto telemetry = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
+    auto telemetry = g_ctx.coreAPI->telemetry->Tel_GetContext(PLUGIN_NAME);
 
     // Display truck data.
     SPF_TruckData truck_data;
-    g_ctx.coreAPI->telemetry->GetTruckData(telemetry, &truck_data);
+    g_ctx.coreAPI->telemetry->Tel_GetTruckData(telemetry, &truck_data, sizeof(SPF_TruckData));
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Speed: %.0f kph", truck_data.speed * 3.6f);
     ui->UI_Text(buffer);
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Engine RPM: %.0f", truck_data.engine_rpm);
@@ -1070,9 +1070,9 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
 
     // Display job data.
     SPF_JobConstants job_constants;
-    g_ctx.coreAPI->telemetry->GetJobConstants(telemetry, &job_constants);
+    g_ctx.coreAPI->telemetry->Tel_GetJobConstants(telemetry, &job_constants, sizeof(SPF_JobConstants));
     SPF_JobData job_data;
-    g_ctx.coreAPI->telemetry->GetJobData(telemetry, &job_data);
+    g_ctx.coreAPI->telemetry->Tel_GetJobData(telemetry, &job_data, sizeof(SPF_JobData));
     if (job_data.on_job) {
         ui->UI_Text("Currently on a job!");
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Cargo: %s", job_constants.cargo_name);

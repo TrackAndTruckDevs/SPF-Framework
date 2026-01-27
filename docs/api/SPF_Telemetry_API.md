@@ -26,16 +26,19 @@ const SPF_Core_API* s_coreAPI = NULL;
 SPF_Telemetry_Handle* s_telemetryHandle = NULL;
 
 // In your OnActivated function (or similar plugin lifecycle entry point):
-void MyPlugin_OnActivated() {
-    if (s_coreAPI && s_coreAPI->telemetry) {
-        s_telemetryHandle = s_coreAPI->telemetry->GetContext("MyPlugin");
+void MyPlugin_OnActivated(const SPF_Core_API* api) {
+    if (api && api->telemetry) {
+        s_telemetryHandle = api->telemetry->Tel_GetContext("MyPlugin");
     }
 }
 ```
 
-### 1. Polling (Using `Get...()` Functions)
+### 1. Polling (Using `Tel_Get...()` Functions)
 
-**Method:** Directly call `Get...()` functions (e.g., `GetTruckData`, `GetJobConstants`) to retrieve a snapshot of the current telemetry data.
+**Method:** Directly call `Tel_Get...()` functions (e.g., `Tel_GetTruckData`, `Tel_GetJobConstants`) to retrieve a snapshot of the current telemetry data.
+
+> [!IMPORTANT]
+> **ABI Stability**: When calling polling functions, you MUST provide the size of your local structure (e.g., `sizeof(SPF_TruckData)`). This allows the framework to safely populate your data even if new fields are added to the API in the future.
 
 **Use Cases:**
 *   **Infrequent Data Retrieval:** When you only need to check a value occasionally, for example, when a user opens a UI window or presses a specific key.
@@ -45,7 +48,7 @@ void MyPlugin_OnActivated() {
 **Advantages:** Simple to implement, easy to understand.
 **Disadvantages:** Can be inefficient if used for high-frequency updates, as the plugin actively requests data even if it hasn't changed.
 
-### 2. Event-Driven (Using `RegisterFor...()` Functions)
+### 2. Event-Driven (Using `Tel_RegisterFor...()` Functions)
 
 **Method:** Subscribe to specific telemetry events. The framework will call your registered callback function *only when the relevant data changes*. This method uses a RAII (Resource Acquisition Is Initialization) approach for managing subscriptions.
 
@@ -60,8 +63,8 @@ void MyPlugin_OnActivated() {
 ### Workflow for Event-Driven Subscriptions:
 
 1.  **Define Callback:** Create a C-style callback function matching the signature for the event you need (e.g., `SPF_Telemetry_TruckData_Callback`).
-2.  **Register Callback:** Call the corresponding `RegisterFor...()` function (e.g., `RegisterForTruckData`), passing your context handle, the callback function, and any user data. This function will return a `SPF_Telemetry_Callback_Handle*`.
-3.  **Automatic Lifetime Management:** The returned `SPF_Telemetry_Callback_Handle*` represents the subscription. You are **no longer required to manually unregister it**. The framework automatically manages the lifetime of this subscription. When your plugin's main `SPF_Telemetry_Handle` (obtained via `GetContext`) is destroyed during plugin shutdown, all associated callback subscriptions are automatically and safely unregistered.
+2.  **Register Callback:** Call the corresponding `Tel_RegisterFor...()` function (e.g., `Tel_RegisterForTruckData`), passing your context handle, the callback function, and any user data. This function will return a `SPF_Telemetry_Callback_Handle*`.
+3.  **Automatic Lifetime Management:** The returned `SPF_Telemetry_Callback_Handle*` represents the subscription. You are **no longer required to manually unregister it**. The framework automatically manages the lifetime of this subscription. When your plugin's main `SPF_Telemetry_Handle` (obtained via `Tel_GetContext`) is destroyed during plugin shutdown, all associated callback subscriptions are automatically and safely unregistered.
 
 
 
@@ -71,40 +74,40 @@ The API consists of a series of getter functions that populate C structs (define
 
 | Function | Populates Struct | Description |
 |---|---|---|
-| `GetGameState` | `SPF_GameState*` | General game version and state info. |
-| `GetTimestamps` | `SPF_Timestamps*` | Simulation and render timestamps. |
-| `GetCommonData` | `SPF_CommonData*` | Common data like game time and rest stops. |
-| `GetTruckConstants`| `SPF_TruckConstants*`| Static configuration of the player's truck. |
-| `GetTruckData` | `SPF_TruckData*` | Live, dynamic data for the player's truck. |
-| `GetTrailers` | `SPF_Trailer[]` | Data for all attached trailers. |
-| `GetJobConstants` | `SPF_JobConstants*`| Static information about the current job. |
-| `GetJobData` | `SPF_JobData*` | Dynamic data about the current job. |
-| `GetNavigationData`| `SPF_NavigationData*`| Data from the in-game GPS. |
-| `GetControls` | `SPF_Controls*` | Player control input data. |
-| `GetSpecialEvents`| `SPF_SpecialEvents*` | Flags for one-time gameplay events. |
-| `GetGameplayEvents`| `SPF_GameplayEvents*`| Detailed data for the most recent event. |
-| `GetGearboxConstants`|`SPF_GearboxConstants*`| H-shifter layout information. |
+| `Tel_GetGameState` | `SPF_GameState*` | General game version and state info. Requires `struct_size`. |
+| `Tel_GetTimestamps` | `SPF_Timestamps*` | Simulation and render timestamps. Requires `struct_size`. |
+| `Tel_GetCommonData` | `SPF_CommonData*` | Common data like game time and rest stops. Requires `struct_size`. |
+| `Tel_GetTruckConstants`| `SPF_TruckConstants*`| Static configuration of the player's truck. Requires `struct_size`. |
+| `Tel_GetTruckData` | `SPF_TruckData*` | Live, dynamic data for the player's truck. Requires `struct_size`. |
+| `Tel_GetTrailers` | `SPF_Trailer[]` | Data for all attached trailers. Requires `struct_size` of a single element. |
+| `Tel_GetJobConstants` | `SPF_JobConstants*`| Static information about the current job. Requires `struct_size`. |
+| `Tel_GetJobData` | `SPF_JobData*` | Dynamic data about the current job. Requires `struct_size`. |
+| `Tel_GetNavigationData`| `SPF_NavigationData*`| Data from the in-game GPS. Requires `struct_size`. |
+| `Tel_GetControls` | `SPF_Controls*` | Player control input data. Requires `struct_size`. |
+| `Tel_GetSpecialEvents`| `SPF_SpecialEvents*` | Flags for one-time gameplay events. Requires `struct_size`. |
+| `Tel_GetGameplayEvents`| `SPF_GameplayEvents*`| Detailed data for the most recent event. Requires `struct_size`. |
+| `Tel_GetGearboxConstants`|`SPF_GearboxConstants*`| H-shifter layout information. Requires `struct_size`. |
 
 ## Event-Driven Registration Reference
 
-This section lists the functions used to subscribe to telemetry data updates. These functions follow a RAII pattern, returning a handle that automatically manages the subscription's lifetime.
+This section lists the functions used to subscribe to telemetry data updates.
 
 | Function | Callback Signature | Description |
 |---|---|---|
-| `RegisterForGameState` | `SPF_Telemetry_GameState_Callback` | Registers for general game state changes. |
-| `RegisterForTimestamps` | `SPF_Telemetry_Timestamps_Callback` | Registers for game time and timestamp updates. |
-| `RegisterForCommonData` | `SPF_Telemetry_CommonData_Callback` | Registers for common, frequently-updated data. |
-| `RegisterForTruckConstants`| `SPF_Telemetry_TruckConstants_Callback`| Registers for static truck configuration changes. |
-| `RegisterForTruckData` | `SPF_Telemetry_TruckData_Callback` | Registers for live, dynamic truck data updates. |
-| `RegisterForTrailerConstants`| `SPF_Telemetry_TrailerConstants_Callback`| Registers for static trailer configuration changes. |
-| `RegisterForTrailers` | `SPF_Telemetry_Trailers_Callback` | Registers for live data updates for active trailers. The callback receives a filtered list. |
-| `RegisterForJobConstants` | `SPF_Telemetry_JobConstants_Callback`| Registers for static job information changes. |
-| `RegisterForJobData` | `SPF_Telemetry_JobData_Callback` | Registers for dynamic job data updates. |
-| `RegisterForNavigationData`| `SPF_Telemetry_NavigationData_Callback`| Registers for in-game GPS data updates. |
-| `RegisterForControls` | `SPF_Telemetry_Controls_Callback` | Registers for player control input updates. |
-| `RegisterForSpecialEvents`| `SPF_Telemetry_SpecialEvents_Callback`| Registers for one-time gameplay event flags. |
-| `RegisterForGameplayEvents`| `SPF_Telemetry_GameplayEvents_Callback`| Registers for detailed data for the most recent event. |
-| `RegisterForGearboxConstants`|`SPF_Telemetry_GearboxConstants_Callback`| Registers for H-shifter layout information changes. |
+| `Tel_RegisterForGameState` | `SPF_Telemetry_GameState_Callback` | Registers for general game state changes. |
+| `Tel_RegisterForTimestamps` | `SPF_Telemetry_Timestamps_Callback` | Registers for game time and timestamp updates. |
+| `Tel_RegisterForCommonData` | `SPF_Telemetry_CommonData_Callback` | Registers for common, frequently-updated data. |
+| `Tel_RegisterForTruckConstants`| `SPF_Telemetry_TruckConstants_Callback`| Registers for static truck configuration changes. |
+| `Tel_RegisterForTruckData` | `SPF_Telemetry_TruckData_Callback` | Registers for live, dynamic truck data updates. |
+| `Tel_RegisterForTrailerConstants`| `SPF_Telemetry_TrailerConstants_Callback`| Registers for static trailer configuration changes. |
+| `Tel_RegisterForTrailers` | `SPF_Telemetry_Trailers_Callback` | Registers for live data updates for active trailers. |
+| `Tel_RegisterForJobConstants` | `SPF_Telemetry_JobConstants_Callback`| Registers for static job information changes. |
+| `Tel_RegisterForJobData` | `SPF_Telemetry_JobData_Callback` | Registers for dynamic job data updates. |
+| `Tel_RegisterForNavigationData`| `SPF_Telemetry_NavigationData_Callback`| Registers for in-game GPS data updates. |
+| `Tel_RegisterForControls` | `SPF_Telemetry_Controls_Callback` | Registers for player control input updates. |
+| `Tel_RegisterForSpecialEvents`| `SPF_Telemetry_SpecialEvents_Callback`| Registers for one-time gameplay event flags. |
+| `Tel_RegisterForGameplayEvents`| `SPF_Telemetry_GameplayEvents_Callback`| Registers for detailed data for the most recent event. |
+| `Tel_RegisterForGearboxConstants`|`SPF_Telemetry_GearboxConstants_Callback`| Registers for H-shifter layout information changes. |
 
 ## Data Structure Reference
 
@@ -174,22 +177,18 @@ void MyPlugin_OnUpdate() {
     if (!s_coreAPI || !s_telemetryHandle) return;
 
     SPF_TruckData truck_data;
-    s_coreAPI->telemetry->GetTruckData(s_telemetryHandle, &truck_data);
+    // Pass sizeof(truck_data) for ABI stability
+    s_coreAPI->telemetry->Tel_GetTruckData(s_telemetryHandle, &truck_data, sizeof(SPF_TruckData));
 
     // Convert speed from m/s to kph for display
     float current_speed_kph = truck_data.speed * 3.6f;
     
-    // Format and log the speed (using other APIs)
+    // Format and log the speed (using Formatting API)
     char buffer[128];
-    s_coreAPI->formatting->Format(buffer, sizeof(buffer), "Current speed: %.2f kph", current_speed_kph);
+    s_coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Current speed: %.2f kph", current_speed_kph);
     
-    // Use throttled logging to avoid spamming the log file every frame
-    s_coreAPI->logger->LogThrottled(
-        s_coreAPI->logger->GetLogger("MyPlugin"),
-        SPF_LOG_INFO, 
-        "myplugin.speedlog", // A unique key for this log message
-        1000, // Log at most once every 1000ms (1 second)
-        buffer
-    );
+    // Use throttled logging to avoid spamming
+    s_coreAPI->logger->Log(s_telemetryHandle, SPF_LOG_INFO, buffer); 
+    // Note: Use a throttled wrapper if logging inside OnUpdate!
 }
 ```

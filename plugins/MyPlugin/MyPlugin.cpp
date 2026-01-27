@@ -299,30 +299,28 @@ void OnActivated(const SPF_Core_API* core_api) {
     // Requires: SPF_Telemetry_API.h, SPF_TelemetryData.h (uncomment in MyPlugin.hpp)
     // 1. Check if the telemetry API is available.
     if (g_ctx.coreAPI && g_ctx.coreAPI->telemetry) {
-        // 2. Get the telemetry context handle for this plugin. This is the main handle
-        //    that manages all telemetry subscriptions for this plugin.
-        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
+        // 2. Get the telemetry context handle for this plugin.
+        g_ctx.telemetryHandle = g_ctx.coreAPI->telemetry->Tel_GetContext(PLUGIN_NAME);
 
         // 3. Register callbacks for the telemetry data you need.
         //    The returned handles are managed by the framework and will be automatically
-        //    cleaned up when the plugin unloads. Storing them in g_ctx is optional but good practice.
-        //    The final parameter (e.g., &g_ctx) is user data passed to the callback.
+        //    cleaned up when the plugin unloads.
         if (g_ctx.telemetryHandle) {
             const auto tel = g_ctx.coreAPI->telemetry; // Shortcut for Telemetry API
-            g_ctx.gameStateSubscription = tel->RegisterForGameState(g_ctx.telemetryHandle, OnGameState, &g_ctx);
-            g_ctx.timestampsSubscription = tel->RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestamps, &g_ctx);
-            g_ctx.commonDataSubscription = tel->RegisterForCommonData(g_ctx.telemetryHandle, OnCommonData, &g_ctx);
-            g_ctx.truckConstantsSubscription = tel->RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstants, &g_ctx);
-            g_ctx.trailerConstantsSubscription = tel->RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstants, &g_ctx);
-            g_ctx.truckDataSubscription = tel->RegisterForTruckData(g_ctx.telemetryHandle, OnTruckData, &g_ctx);
-            g_ctx.trailersSubscription = tel->RegisterForTrailers(g_ctx.telemetryHandle, OnTrailers, &g_ctx);
-            g_ctx.jobConstantsSubscription = tel->RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstants, &g_ctx);
-            g_ctx.jobDataSubscription = tel->RegisterForJobData(g_ctx.telemetryHandle, OnJobData, &g_ctx);
-            g_ctx.navigationDataSubscription = tel->RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationData, &g_ctx);
-            g_ctx.controlsSubscription = tel->RegisterForControls(g_ctx.telemetryHandle, OnControls, &g_ctx);
-            g_ctx.specialEventsSubscription = tel->RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEvents, &g_ctx);
-            g_ctx.gameplayEventsSubscription = tel->RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvents, &g_ctx);
-            g_ctx.gearboxConstantsSubscription = tel->RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstants, &g_ctx);
+            g_ctx.gameStateSubscription = tel->Tel_RegisterForGameState(g_ctx.telemetryHandle, OnGameState, &g_ctx);
+            g_ctx.timestampsSubscription = tel->Tel_RegisterForTimestamps(g_ctx.telemetryHandle, OnTimestamps, &g_ctx);
+            g_ctx.commonDataSubscription = tel->Tel_RegisterForCommonData(g_ctx.telemetryHandle, OnCommonData, &g_ctx);
+            g_ctx.truckConstantsSubscription = tel->Tel_RegisterForTruckConstants(g_ctx.telemetryHandle, OnTruckConstants, &g_ctx);
+            g_ctx.trailerConstantsSubscription = tel->Tel_RegisterForTrailerConstants(g_ctx.telemetryHandle, OnTrailerConstants, &g_ctx);
+            g_ctx.truckDataSubscription = tel->Tel_RegisterForTruckData(g_ctx.telemetryHandle, OnTruckData, &g_ctx);
+            g_ctx.trailersSubscription = tel->Tel_RegisterForTrailers(g_ctx.telemetryHandle, OnTrailers, &g_ctx);
+            g_ctx.jobConstantsSubscription = tel->Tel_RegisterForJobConstants(g_ctx.telemetryHandle, OnJobConstants, &g_ctx);
+            g_ctx.jobDataSubscription = tel->Tel_RegisterForJobData(g_ctx.telemetryHandle, OnJobData, &g_ctx);
+            g_ctx.navigationDataSubscription = tel->Tel_RegisterForNavigationData(g_ctx.telemetryHandle, OnNavigationData, &g_ctx);
+            g_ctx.controlsSubscription = tel->Tel_RegisterForControls(g_ctx.telemetryHandle, OnControls, &g_ctx);
+            g_ctx.specialEventsSubscription = tel->Tel_RegisterForSpecialEvents(g_ctx.telemetryHandle, OnSpecialEvents, &g_ctx);
+            g_ctx.gameplayEventsSubscription = tel->Tel_RegisterForGameplayEvents(g_ctx.telemetryHandle, OnGameplayEvents, &g_ctx);
+            g_ctx.gearboxConstantsSubscription = tel->Tel_RegisterForGearboxConstants(g_ctx.telemetryHandle, OnGearboxConstants, &g_ctx);
         }
     }
     */
