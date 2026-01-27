@@ -128,6 +128,10 @@
                 "language": {
                     "title": "语言",
                     "description": "设置此组件的界面语言。"
+                },
+                "sync_plugin_languages": {
+                    "title": "同步插件语言",
+                    "description": "自动将插件语言与框架语言同步（如果插件支持）。"
                 }
             },
             "ui": {

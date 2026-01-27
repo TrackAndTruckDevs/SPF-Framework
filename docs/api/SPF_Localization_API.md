@@ -39,20 +39,20 @@ Your translation files should be simple key-value JSON objects. You can nest obj
 
 ## Getting the API Context
 
-To use the API, you must first get your plugin's `SPF_Localization_Handle`.
+To use the localization API, you first need to get your plugin's unique handle.
 
-```c
+```cpp
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_Localization_API.h"
 
-SPF_Localization_API* s_locAPI = NULL;
+const SPF_Localization_API* s_locAPI = NULL;
 SPF_Localization_Handle* s_myPluginLoc = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_locAPI = (SPF_Localization_API*)params->GetAPI(SPF_API_LOCALIZATION);
+void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
+    s_locAPI = core_api->localization;
     
     if (s_locAPI) {
-        s_myPluginLoc = s_locAPI->GetContext("MyPlugin");
+        s_myPluginLoc = s_locAPI->Loc_GetContext("MyPlugin");
     }
 }
 ```
@@ -60,25 +60,37 @@ SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
 ## Function Reference
 
 ---
-**`SPF_Localization_Handle* GetContext(const char* pluginName)`**
+**`SPF_Localization_Handle* Loc_GetContext(const char* pluginName)`**
 Gets a localization context handle for your plugin.
+*   **pluginName:** Your plugin's name, which must match the manifest.
+*   **Returns:** A handle to the localization context, or `NULL`.
 
 ---
-**`int GetString(SPF_Localization_Handle* handle, const char* key, char* out_buffer, int buffer_size)`**
+**`int Loc_GetString(SPF_Localization_Handle* h, const char* key, char* out_buffer, int buffer_size)`**
 Retrieves a translated string from the currently loaded language file.
-*   **key:** The key for the string. For nested objects, use dot notation (e.g., `"my_window.buttons.ok"`).
-*   **out_buffer:** A buffer to store the resulting string.
-*   **Returns:** The number of characters written. A return value `>= buffer_size` indicates truncation.
+*   **h:** The context handle obtained from `Loc_GetContext`.
+*   **key:** The key for the string (e.g., "my_window.title").
+*   **out_buffer:** Buffer to receive the string.
+*   **buffer_size:** Size of the output buffer.
+*   **Returns:** Number of characters written (excluding null terminator).
 
 ---
-**`bool SetLanguage(SPF_Localization_Handle* handle, const char* langCode)`**
+**`bool Loc_SetLanguage(SPF_Localization_Handle* h, const char* langCode)`**
 Changes the active language at runtime. This will load the corresponding file (e.g., `de.json` for `"de"`). The system will fall back to the default language for any keys not found in the new file.
 
 ---
-**`const char** GetAvailableLanguages(SPF_Localization_Handle* handle, int* count)`**
+**`const char** Loc_GetAvailableLanguages(SPF_Localization_Handle* h, int* count)`**
 Gets a list of all language codes discovered in your plugin's `localization/` directory.
 *   **count:** A pointer to an `int` that will be filled with the number of languages found.
 *   **Returns:** A `const char**` array of language codes. This memory is managed by the framework and should not be modified or freed.
+
+---
+**`const char* Loc_GetFrameworkLanguage()`**
+Gets the language code currently used by the framework interface (e.g., "en", "uk"). Plugins can use this to automatically synchronize their language with the framework's settings.
+
+---
+**`bool Loc_HasLanguage(SPF_Localization_Handle* h, const char* langCode)`**
+Checks if a specific translation file (e.g., `uk.json`) exists for this plugin. This is useful for smart synchronization, allowing a plugin to skip switching if it doesn't support the framework's current language.
 
 ## Complete Example
 
@@ -92,7 +104,7 @@ This example shows how to get a translated window title and how to create a lang
 
 void RenderMyWindow(const SPF_UI_API* ui) {
     char window_title[128];
-    s_locAPI->GetString(s_myPluginLoc, "my_window.title", window_title, sizeof(window_title));
+    s_locAPI->Loc_GetString(s_myPluginLoc, "my_window.title", window_title, sizeof(window_title));
     
     ui->Begin(window_title, NULL, 0);
     // ... window content ...
@@ -101,7 +113,7 @@ void RenderMyWindow(const SPF_UI_API* ui) {
 
 void RenderSettings(const SPF_UI_API* ui) {
     int lang_count = 0;
-    const char** lang_codes = s_locAPI->GetAvailableLanguages(s_myPluginLoc, &lang_count);
+    const char** lang_codes = s_locAPI->Loc_GetAvailableLanguages(s_myPluginLoc, &lang_count);
 
     // In a real UI, you would use a combo box. Here we just show buttons.
     for (int i = 0; i < lang_count; i++) {
@@ -112,11 +124,11 @@ void RenderSettings(const SPF_UI_API* ui) {
         snprintf(lang_key, sizeof(lang_key), "language.%s", lang_codes[i]);
         
         // Get the display name for the language (e.g., "English" for "en")
-        s_locAPI->GetString(s_myPluginLoc, lang_key, lang_display_name, sizeof(lang_display_name));
+        s_locAPI->Loc_GetString(s_myPluginLoc, lang_key, lang_display_name, sizeof(lang_display_name));
         
         if (ui->Button(lang_display_name, 0, 0)) {
             // Set the new language when the button is clicked
-            s_locAPI->SetLanguage(s_myPluginLoc, lang_codes[i]);
+            s_locAPI->Loc_SetLanguage(s_myPluginLoc, lang_codes[i]);
         }
     }
 }

@@ -285,6 +285,27 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
   m_eventManager->System.OnPluginDidLoad.Call({pluginName});
   logger->Info("Successfully loaded and initialized plugin '{}'.", pluginName);
 
+  // --- Automatic Language Synchronization during load ---
+  // If global sync is enabled, we force the plugin to match the framework's language BEFORE OnActivated.
+  auto syncSetting = m_configService->GetValue("framework", "localization.sync_plugin_languages", false);
+  bool shouldSync = false;
+  if (syncSetting.is_boolean()) {
+      shouldSync = syncSetting.get<bool>();
+  } else if (syncSetting.is_object() && syncSetting.contains("_value") && syncSetting["_value"].is_boolean()) {
+      shouldSync = syncSetting["_value"].get<bool>();
+  }
+
+  if (shouldSync) {
+      auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
+      std::string frameworkLang = l10n.GetComponentLanguage("framework");
+      
+      if (l10n.LanguageFileExists(pluginName, frameworkLang)) {
+          logger->Info("  -> Auto-syncing plugin '{}' language to framework: '{}'", pluginName, frameworkLang);
+          // Set via ConfigService to ensure UI updates and setting is persisted
+          m_configService->SetValue(pluginName, "localization.language", frameworkLang);
+      }
+  }
+
   if (insertedPlugin->exports.OnActivated) {
     logger->Debug("    -> Calling OnActivated() for plugin '{}'...", insertedPlugin->name);
     insertedPlugin->exports.OnActivated(&m_coreAPI);
@@ -439,6 +460,28 @@ void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, c
       // Get the config handle for the plugin to pass to the new callback signature.
       SPF_Config_Handle* configHandle = m_configAPI.Cfg_GetContext(pluginName.c_str());
       plugin->exports.OnSettingChanged(configHandle, keyPath.c_str());
+    }
+  }
+}
+
+void PluginManager::NotifyAllPluginsOfLanguageChange(const std::string& langCode) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  logger->Info("Broadcasting language change to all plugins: '{}'", langCode);
+  
+  auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
+
+  for (auto& [name, plugin] : m_plugins) {
+    // 1. Update Configuration (UI & Persistence)
+    // Only update config if the plugin actually supports this language
+    if (l10n.LanguageFileExists(name, langCode)) {
+        // This will trigger OnSettingWasChanged -> LocalizationManager::OnSettingChanged -> SetComponentLanguage
+        // So we don't need to call SetComponentLanguage manually here.
+        m_configService->SetValue(name, "localization.language", langCode);
+    }
+
+    // 2. Notify C-API (Plugin Logic)
+    if (plugin->exports.OnLanguageChanged) {
+      plugin->exports.OnLanguageChanged(langCode.c_str());
     }
   }
 }

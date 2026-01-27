@@ -128,6 +128,10 @@
                 "language": {
                     "title": "언어",
                     "description": "이 구성 요소의 인터페이스 언어를 설정합니다."
+                },
+                "sync_plugin_languages": {
+                    "title": "플러그인 언어 동기화",
+                    "description": "플러그인 언어를 프레임워크 언어와 자동으로 동기화합니다(플러그인에서 지원하는 경우)."
                 }
             },
             "ui": {

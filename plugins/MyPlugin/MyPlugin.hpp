@@ -196,6 +196,14 @@ void OnUnload();
 // void OnSettingChanged(SPF_Config_Handle *h, const char *keyPath);
 
 /**
+ * @brief Called when the framework's global interface language is changed.
+ * @details This allows the plugin to automatically synchronize its language with the framework.
+ *          Requires: SPF_Localization_API.h
+ * @param langCode The new language code (e.g., "en", "uk").
+ */
+// void OnLanguageChanged(const char* langCode);
+
+/**
  * @brief Called once to allow the plugin to register its UI rendering callbacks.
  * @details Uncomment this if your plugin defines UI windows in its manifest and needs to draw content.
  *          Requires: SPF_UI_API.h (for parameter)

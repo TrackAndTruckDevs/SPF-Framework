@@ -13,44 +13,43 @@ namespace Modules::API {
 
 // Trampolines that are exposed to plugins via the C-API
 
-SPF_Localization_Handle* LocalizationApi::L_GetContext(const char* pluginName) {
+SPF_Localization_Handle* LocalizationApi::Loc_GetContext(const char* pluginName) {
     auto& pm = SPF::Modules::PluginManager::GetInstance();
     if (!pluginName || !pm.GetHandleManager()) return nullptr;
-    auto handle = std::make_unique<SPF::Handles::LocalizationHandle>(pluginName);
-    return reinterpret_cast<SPF_Localization_Handle*>(pm.GetHandleManager()->RegisterHandle(pluginName, std::move(handle)));
+    auto unique_h = std::make_unique<SPF::Handles::LocalizationHandle>(pluginName);
+    return reinterpret_cast<SPF_Localization_Handle*>(pm.GetHandleManager()->RegisterHandle(pluginName, std::move(unique_h)));
 }
 
-int LocalizationApi::L_GetString(SPF_Localization_Handle* handle, const char* key, char* out_buffer, int buffer_size) {
-    if (!handle || !key || !out_buffer || buffer_size <= 0) return 0;
+int LocalizationApi::Loc_GetString(SPF_Localization_Handle* h, const char* key, char* out_buffer, int buffer_size) {
+    if (!h || !key || !out_buffer || buffer_size <= 0) return 0;
 
-    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(handle);
+    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(h);
     std::string result = SPF::Localization::LocalizationManager::GetInstance().Get(l10nHandle->pluginName, key);
 
     if (result.length() < buffer_size) {
         strcpy_s(out_buffer, buffer_size, result.c_str());
-        return result.length();
+        return static_cast<int>(result.length());
     } else {
         *out_buffer = '\0';          // Clear buffer on failure
-        return result.length() + 1;  // Return required size
+        return static_cast<int>(result.length()) + 1;  // Return required size
     }
 }
 
-bool LocalizationApi::L_SetLanguage(SPF_Localization_Handle* handle, const char* langCode) {
-    if (!handle || !langCode) return false;
-    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(handle);
+bool LocalizationApi::Loc_SetLanguage(SPF_Localization_Handle* h, const char* langCode) {
+    if (!h || !langCode) return false;
+    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(h);
     return SPF::Localization::LocalizationManager::GetInstance().SetComponentLanguage(l10nHandle->pluginName, langCode);
 }
 
-const char** LocalizationApi::L_GetAvailableLanguages(SPF_Localization_Handle* handle, int* count) {
+const char** LocalizationApi::Loc_GetAvailableLanguages(SPF_Localization_Handle* h, int* count) {
     auto& pm = SPF::Modules::PluginManager::GetInstance();
-    if (!handle) {
+    if (!h) {
         if (count) *count = 0;
         return nullptr;
     }
-    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(handle);
+    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(h);
     auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
     
-    // The cache is now a member of PluginManager, we need to access it through the singleton
     auto& languages_cache = pm.GetL10nAvailableLanguagesCache();
     auto& c_str_cache = pm.GetL10nAvailableLanguagesCStrCache();
 
@@ -66,11 +65,26 @@ const char** LocalizationApi::L_GetAvailableLanguages(SPF_Localization_Handle* h
     return c_str_cache.data();
 }
 
+const char* LocalizationApi::Loc_GetFrameworkLanguage() {
+    static std::string s_framework_lang_cache;
+    s_framework_lang_cache = SPF::Localization::LocalizationManager::GetInstance().GetComponentLanguage("framework");
+    return s_framework_lang_cache.c_str();
+}
+
+bool LocalizationApi::Loc_HasLanguage(SPF_Localization_Handle* h, const char* langCode) {
+    if (!h || !langCode) return false;
+    auto* l10nHandle = reinterpret_cast<SPF::Handles::LocalizationHandle*>(h);
+    return SPF::Localization::LocalizationManager::GetInstance().LanguageFileExists(l10nHandle->pluginName, langCode);
+}
+
 void LocalizationApi::FillLocalizationApi(SPF_Localization_API* api) {
-    api->GetContext = &LocalizationApi::L_GetContext;
-    api->GetString = &LocalizationApi::L_GetString;
-    api->SetLanguage = &LocalizationApi::L_SetLanguage;
-    api->GetAvailableLanguages = &LocalizationApi::L_GetAvailableLanguages;
+    if (!api) return;
+    api->Loc_GetContext = &LocalizationApi::Loc_GetContext;
+    api->Loc_GetString = &LocalizationApi::Loc_GetString;
+    api->Loc_SetLanguage = &LocalizationApi::Loc_SetLanguage;
+    api->Loc_GetAvailableLanguages = &LocalizationApi::Loc_GetAvailableLanguages;
+    api->Loc_GetFrameworkLanguage = &LocalizationApi::Loc_GetFrameworkLanguage;
+    api->Loc_HasLanguage = &LocalizationApi::Loc_HasLanguage;
 }
 
 } // namespace Modules::API

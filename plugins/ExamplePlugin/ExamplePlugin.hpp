@@ -314,6 +314,13 @@ void OnUnload();
 void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath);
 
 /**
+ * @brief Called when the framework's global interface language is changed.
+ * @details This allows the plugin to automatically synchronize its language with the framework.
+ * @param langCode The new language code (e.g., "en", "uk").
+ */
+void OnLanguageChanged(const char* langCode);
+
+/**
  * @brief Called for each new line added to the in-game log.
  * @details This callback is registered with the Game Log API. It's useful for monitoring game
  * events that are only reported in the log, like hiring a driver or discovering a city.

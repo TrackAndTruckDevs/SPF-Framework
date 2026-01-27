@@ -68,6 +68,7 @@ struct LoggingData {
  */
 struct LocalizationData {
     std::optional<std::string> language; ///< @brief Default language for the component (e.g., "en_US").
+    std::optional<bool> sync_plugin_languages; ///< @brief Framework-only: automatically sync plugin languages with the framework.
 };
 
 // --- Keybinds Settings Block ---

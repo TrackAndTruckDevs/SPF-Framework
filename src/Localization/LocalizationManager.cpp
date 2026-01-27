@@ -65,12 +65,14 @@ Core::InitializationReport LocalizationManager::Initialize(const std::map<std::s
     }
 
     if (LoadLanguageFile(componentName, lang)) {
+      m_currentLanguages[componentName] = lang;
       report.InfoMessages.push_back(fmt::format("Successfully loaded configured language '{}' for component '{}'.", lang, componentName));
     } else {
       report.Errors.push_back(
           {fmt::format("Failed to load language '{}' for component '{}'. It might be missing or corrupted.", lang, componentName), fmt::format("{}.language", componentName)});
       // Attempt to fall back to default language
       if (lang != DEFAULT_LANGUAGE && LoadLanguageFile(componentName, DEFAULT_LANGUAGE)) {
+        m_currentLanguages[componentName] = DEFAULT_LANGUAGE;
         report.Warnings.push_back(
             Core::InitializationReport::Issue{fmt::format("Successfully loaded fallback language '{}' for component '{}'.", DEFAULT_LANGUAGE, componentName), ""});
       }
@@ -115,9 +117,19 @@ const std::vector<std::string>& LocalizationManager::GetAvailableLanguagesFor(co
   return m_availableLanguages.at(componentName);
 }
 
+std::string LocalizationManager::GetComponentLanguage(const std::string& componentName) const {
+    std::lock_guard lock(m_mutex);
+    auto it = m_currentLanguages.find(componentName);
+    if (it != m_currentLanguages.end()) {
+        return it->second;
+    }
+    return DEFAULT_LANGUAGE;
+}
+
 bool LocalizationManager::SetComponentLanguage(const std::string& componentName, const std::string& langCode) {
   std::lock_guard lock(m_mutex);
   if (LoadLanguageFile(componentName, langCode)) {
+    m_currentLanguages[componentName] = langCode;
     return true;
   }
 
@@ -126,6 +138,7 @@ bool LocalizationManager::SetComponentLanguage(const std::string& componentName,
 
   if (langCode != DEFAULT_LANGUAGE) {
     if (LoadLanguageFile(componentName, DEFAULT_LANGUAGE)) {
+      m_currentLanguages[componentName] = DEFAULT_LANGUAGE;
       return true;  // Fallback succeeded
     }
   }

@@ -10,10 +10,12 @@ class LocalizationApi {
   static void FillLocalizationApi(SPF_Localization_API* api);
 
  private:
-  static SPF_Localization_Handle* L_GetContext(const char* pluginName);
-  static int L_GetString(SPF_Localization_Handle* handle, const char* key, char* out_buffer, int buffer_size);
-  static bool L_SetLanguage(SPF_Localization_Handle* handle, const char* langCode);
-  static const char** L_GetAvailableLanguages(SPF_Localization_Handle* handle, int* count);
+  static SPF_Localization_Handle* Loc_GetContext(const char* pluginName);
+  static int Loc_GetString(SPF_Localization_Handle* h, const char* key, char* out_buffer, int buffer_size);
+  static bool Loc_SetLanguage(SPF_Localization_Handle* h, const char* langCode);
+  static const char** Loc_GetAvailableLanguages(SPF_Localization_Handle* h, int* count);
+  static const char* Loc_GetFrameworkLanguage();
+  static bool Loc_HasLanguage(SPF_Localization_Handle* h, const char* langCode);
 };
 
 }  // namespace Modules::API

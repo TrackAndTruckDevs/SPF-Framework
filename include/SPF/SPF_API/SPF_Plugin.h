@@ -198,6 +198,14 @@ typedef struct {
    */
   void (*OnGameWorldReady)();
 
+  /**
+   * @brief (Optional) Called when the framework's global interface language is changed.
+   * @details This allows plugins to automatically synchronize their own language 
+   *          with the framework's settings for a seamless user experience.
+   * @param langCode The new language code (e.g., "en", "uk").
+   */
+  void (*OnLanguageChanged)(const char* langCode);
+
 } SPF_Plugin_Exports;
 
 // =================================================================================================

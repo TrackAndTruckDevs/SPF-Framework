@@ -84,6 +84,7 @@ class PluginManager {
   void UpdateAllPlugins();
 
       void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath);
+  void NotifyAllPluginsOfLanguageChange(const std::string& langCode);
 
 
 

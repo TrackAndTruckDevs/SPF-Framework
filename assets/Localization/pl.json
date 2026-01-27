@@ -128,6 +128,10 @@
                 "language": {
                     "title": "Język",
                     "description": "Ustawia język interfejsu dla tego komponentu."
+                },
+                "sync_plugin_languages": {
+                    "title": "Synchronizuj języki wtyczek",
+                    "description": "Automatycznie synchronizuj języki wtyczek z językiem frameworka (jeśli wtyczka to obsługuje)."
                 }
             },
             "ui": {

@@ -32,6 +32,8 @@ class LocalizationManager : public Config::IConfigurable {
 
 
   bool SetComponentLanguage(const std::string& componentName, const std::string& langCode);
+  std::string GetComponentLanguage(const std::string& componentName) const;
+  bool LanguageFileExists(const std::string& componentName, const std::string& langCode) const;
   const std::vector<std::string>& GetAvailableLanguagesFor(const std::string& componentName);
   const std::string& Get(const std::string& componentName, const std::string& key);
   const std::string& Get(const std::string& key);
@@ -63,8 +65,6 @@ class LocalizationManager : public Config::IConfigurable {
   void ScanAvailableLanguages(const std::string& componentName, const std::filesystem::path& directory);
   bool LoadLanguageFile(const std::string& componentName, const std::string& langCode);
 
-  bool LanguageFileExists(const std::string& componentName, const std::string& langCode) const;
-
   // --- Constants ---
   static constexpr const char* FRAMEWORK_COMPONENT_NAME = "framework";
   static constexpr const char* DEFAULT_LANGUAGE = "en";
@@ -72,6 +72,7 @@ class LocalizationManager : public Config::IConfigurable {
   // --- Member Variables ---
   mutable std::mutex m_mutex;
   std::map<std::string, std::vector<std::string>> m_availableLanguages;
+  std::map<std::string, std::string> m_currentLanguages;
   std::map<std::string, std::map<std::string, std::string>> m_translations;
   std::map<std::string, std::unordered_set<std::string>> m_reportedMissingKeys;
 };

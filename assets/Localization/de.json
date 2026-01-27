@@ -128,6 +128,10 @@
                 "language": {
                     "title": "Sprache",
                     "description": "Legt die Oberflächensprache für diese Komponente fest."
+                },
+                "sync_plugin_languages": {
+                    "title": "Plugin-Sprachen synchronisieren",
+                    "description": "Plugin-Sprachen automatisch mit der Sprache des Frameworks synchronisieren (sofern vom Plugin unterstützt)."
                 }
             },
             "ui": {

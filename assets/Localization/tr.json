@@ -128,6 +128,10 @@
                 "language": {
                     "title": "Dil",
                     "description": "Bu bileşen için arayüz dilini ayarlar."
+                },
+                "sync_plugin_languages": {
+                    "title": "Eklenti Dillerini Senkronize Et",
+                    "description": "Eklenti dillerini otomatik olarak framework diliyle senkronize et (eklenti tarafından destekleniyorsa)."
                 }
             },
             "ui": {

@@ -163,6 +163,15 @@ nlohmann::ordered_json SerializeLocalization(const ManifestData& manifest, const
         }
         j["language"] = node;
     }
+
+    if (manifest.localization.sync_plugin_languages.has_value()) {
+        nlohmann::ordered_json node;
+        node["_value"] = manifest.localization.sync_plugin_languages.value();
+        if (const auto* meta = findLocMeta("sync_plugin_languages")) {
+            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+        }
+        j["sync_plugin_languages"] = node;
+    }
     return j;
 }
 
@@ -1380,7 +1389,7 @@ void ConfigService::SaveAllDirty() {
   logger->Info("--- Finished saving dirty configurations ---");
 }
 
- nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName, const std::string& keyPath, const  nlohmann::ordered_json& defaultValue) const {
+nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName, const std::string& keyPath, const  nlohmann::ordered_json& defaultValue) const {
   if (keyPath.rfind("info.", 0) == 0) {
     auto manifestIt = m_manifests.find(componentName);
     if (manifestIt != m_manifests.end()) {
@@ -1440,7 +1449,16 @@ void ConfigService::SaveAllDirty() {
   try {
     std::string pointerPath = "/" + std::regex_replace(restOfPath, std::regex("\\."), "/");
      nlohmann::ordered_json::json_pointer ptr(pointerPath);
-    return configRoot->at(ptr);
+    
+    // Retrieve the raw node
+    const auto& rawNode = configRoot->at(ptr);
+
+    // Automatically unwrap _value if present (transparent access)
+    if (rawNode.is_object() && rawNode.contains("_value")) {
+        return rawNode["_value"];
+    }
+    return rawNode;
+
   } catch (const  nlohmann::ordered_json::out_of_range&) {
     return defaultValue;
   } catch (const  nlohmann::ordered_json::parse_error&) {

@@ -832,10 +832,35 @@ void Core::OnSettingWasChanged(const Events::UI::OnSettingWasChanged& e) {
     }
   }
 
+  std::string fullKeyPath = e.systemName + "." + e.keyPath;
+
+  // --- GLOBAL BROADCASTS ---
+  // If the framework's language changes, we notify ALL plugins via the dedicated OnLanguageChanged callback.
+  // This broadcast only happens if the 'sync_plugin_languages' setting is enabled in the framework config.
+  if (e.componentName == "framework" && fullKeyPath == "localization.language") {
+      bool shouldSync = m_configService->GetValue("framework", "localization.sync_plugin_languages", false).get<bool>();
+      
+      if (shouldSync) {
+          std::string newLangCode;
+          if (e.newValue.is_object() && e.newValue.contains("_value")) {
+              newLangCode = e.newValue["_value"].get<std::string>();
+          } else if (e.newValue.is_string()) {
+              newLangCode = e.newValue.get<std::string>();
+          }
+
+          if (!newLangCode.empty()) {
+              m_logger->Info("Broadcasting framework language change to all plugins: '{}'", newLangCode);
+              PluginManager::GetInstance().NotifyAllPluginsOfLanguageChange(newLangCode);
+          }
+      } else {
+          m_logger->Debug("Framework language changed, but plugin synchronization is disabled.");
+      }
+  }
+
   // --- DISPATCH TO PLUGINS IF NOT HANDLED ---
   if (!wasHandledByFramework) {
-    std::string fullKeyPath = e.systemName + "." + e.keyPath;
-          PluginManager::GetInstance().NotifyPluginOfSettingChange(e.componentName, fullKeyPath);  }
+    PluginManager::GetInstance().NotifyPluginOfSettingChange(e.componentName, fullKeyPath);
+  }
 }
 
 void Core::OnRequestInputCapture(const Events::UI::RequestInputCapture& e) { m_inputManager->StartInputCapture(e.actionFullName, e.originalBinding); }

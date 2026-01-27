@@ -436,6 +436,26 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
 */
 
 /*
+// --- OnLanguageChanged Callback ---
+// Requires: SPF_Localization_API.h
+// This callback allows your plugin to automatically match the framework's language.
+void OnLanguageChanged(const char* langCode) {
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->localization || !langCode) return;
+
+    SPF_Localization_Handle* h = g_ctx.coreAPI->localization->Loc_GetContext(PLUGIN_NAME);
+    
+    // Loc_GetFrameworkLanguage(): Returns the current language code used by the framework.
+    // Loc_HasLanguage(h, code): Checks if your plugin actually has a translation for that code.
+    
+    // Example: Smart synchronization
+    if (g_ctx.coreAPI->localization->Loc_HasLanguage(h, langCode)) {
+        g_ctx.coreAPI->localization->Loc_SetLanguage(h, langCode);
+        // Log sync event...
+    }
+}
+*/
+
+/*
 // --- OnRegisterUI Callback ---
 // Requires: SPF_UI_API.h
 */
@@ -663,6 +683,7 @@ SPF_PLUGIN_EXPORT bool SPF_GetPlugin(SPF_Plugin_Exports* exports) {
         // exports->OnGameWorldReady = OnGameWorldReady; // Assign your OnGameWorldReady function for game-world-dependent logic.
         // exports->OnRegisterUI = OnRegisterUI;         // Assign your OnRegisterUI function if you have UI windows.
         // exports->OnSettingChanged = OnSettingChanged; // Assign your OnSettingChanged function if you implement it.
+        // exports->OnLanguageChanged = OnLanguageChanged; // Assign your OnLanguageChanged function for auto-sync.
         return true;
     }
     return false;

@@ -128,6 +128,10 @@
                 "language": {
                     "title": "Language",
                     "description": "Sets the interface language for this component."
+                },
+                "sync_plugin_languages": {
+                    "title": "Sync Plugin Languages",
+                    "description": "Automatically synchronize plugin languages with the framework's language (if supported by the plugin)."
                 }
             },
             "ui": {

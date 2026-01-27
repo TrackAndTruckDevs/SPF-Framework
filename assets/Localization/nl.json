@@ -128,6 +128,10 @@
                 "language": {
                     "title": "Taal",
                     "description": "Stelt de interfacetaal voor dit component in."
+                },
+                "sync_plugin_languages": {
+                    "title": "Plugin-talen synchroniseren",
+                    "description": "Plugin-talen automatisch synchroniseren met de taal van het framework (indien ondersteund door de plugin)."
                 }
             },
             "ui": {

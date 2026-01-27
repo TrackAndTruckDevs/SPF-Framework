@@ -59,7 +59,7 @@ inline const ManifestData& GetFrameworkManifestData() {
 
                       }},
       // .localization
-      .localization = {.language = "en"},
+      .localization = {.language = "en", .sync_plugin_languages = false},
       // .keybinds
       .keybinds = {.actions = {{"framework.ui.main_window",
                                 {{"toggle",
@@ -220,7 +220,8 @@ inline const ManifestData& GetFrameworkManifestData() {
             {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"}
         },
         .localizationMetadata = {
-            {"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"}
+            {"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"},
+            {"sync_plugin_languages", "settings_window.setting_names.localization.sync_plugin_languages.title", "settings_window.setting_names.localization.sync_plugin_languages.description"}
         },
         .uiMetadata = {
             // Metadata for the 'windows' group itself

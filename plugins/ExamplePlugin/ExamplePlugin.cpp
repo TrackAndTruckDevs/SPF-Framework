@@ -594,6 +594,27 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
 }
 
 /**
+ * @brief Called by the framework when the global interface language is changed.
+ * @param langCode The new language code (e.g., "en", "uk").
+ * @details This allows the plugin to automatically synchronize its language with the framework.
+ */
+void OnLanguageChanged(const char* langCode) {
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->localization || !langCode) return;
+
+    SPF_Localization_Handle* h = g_ctx.coreAPI->localization->Loc_GetContext(PLUGIN_NAME);
+    
+    // Check if the plugin actually has a translation for the new language.
+    // If it doesn't, we do NOTHING (stay on the current language).
+    if (g_ctx.coreAPI->localization->Loc_HasLanguage(h, langCode)) {
+        if (g_ctx.coreAPI->localization->Loc_SetLanguage(h, langCode)) {
+            char log_buffer[256];
+            g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Plugin language synchronized to: %s", langCode);
+            g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+        }
+    }
+}
+
+/**
  * @brief Registered with the GameLogHook, this is called for each new line added to the game's log.
  * @param log_line The content of the log line.
  * @param user_data A custom pointer passed during registration (not used here).
@@ -925,7 +946,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
 
             // Example of getting and displaying a translated string.
             char welcome_msg[256];
-            g_ctx.loadAPI->localization->GetString(g_ctx.loadAPI->localization->GetContext(PLUGIN_NAME), "messages.welcome", welcome_msg, sizeof(welcome_msg));
+            g_ctx.loadAPI->localization->Loc_GetString(g_ctx.loadAPI->localization->Loc_GetContext(PLUGIN_NAME), "messages.welcome", welcome_msg, sizeof(welcome_msg));
             ui->Text(welcome_msg);
             ui->Separator();
 
@@ -1413,6 +1434,7 @@ SPF_PLUGIN_EXPORT bool SPF_GetPlugin(SPF_Plugin_Exports* exports) {
 
         exports->OnRegisterUI = OnRegisterUI;
         exports->OnSettingChanged = OnSettingChanged;
+        exports->OnLanguageChanged = OnLanguageChanged; // Export the new language sync callback
         return true;
     }
     return false;
