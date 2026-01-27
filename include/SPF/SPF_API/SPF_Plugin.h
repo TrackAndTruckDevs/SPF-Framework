@@ -4,18 +4,56 @@
  * @file SPF_Plugin.h
  * @brief The single, mandatory header file for any SPF plugin.
  *
- * This file defines the stable C-style ABI (Application Binary Interface)
+ * @details This file defines the stable C-style ABI (Application Binary Interface)
  * that all plugins must use to communicate with the SPF core. It ensures
  * that plugins remain compatible even if the core is compiled with a
  * different compiler version.
  *
- * To create a plugin, you must:
- * 1. Include this header file.
- * 2. Implement the functions defined in SPF_Plugin_Exports.
- * 3. Export a single function, SPF_GetPlugin, which fills the provided
- *    SPF_Plugin_Exports structure with pointers to your implementations.
- * 4. (Recommended) Export the SPF_GetManifestAPI function to provide
- *    plugin metadata to the core before it is fully loaded.
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ * 
+ * 1. **Context-Driven**: Most APIs require a handle (e.g., 'SPF_Logger_Handle'). These 
+ *    handles are unique to your plugin and should be obtained during 'OnLoad' or 'OnActivated'.
+ * 
+ * 2. **Lifecycle Aware**: The plugin goes through distinct stages ('OnLoad' -> 'OnActivated'). 
+ *    Different services become available at different stages.
+ * 
+ * 3. **ABI Stability**: Structures like 'SPF_Core_API' are designed to be extendable. 
+ *    New pointers are always added to the end to ensure binary compatibility.
+ * 
+ * ================================================================================================
+ * WORKFLOW
+ * ================================================================================================
+ * 
+ * 1. **Declare Manifest**: Export 'SPF_GetManifestAPI' to tell the framework your plugin's name, 
+ *    version, and required hooks.
+ * 
+ * 2. **Implement Exports**: Implement functions defined in 'SPF_Plugin_Exports' and 
+ *    export them via 'SPF_GetPlugin'.
+ * 
+ * 3. **Early Init (OnLoad)**: Initialize loggers, configs, and **CRITICAL**: Create any 
+ *    virtual input devices here to ensure the game SDK registers them.
+ * 
+ * 4. **Late Init (OnActivated)**: Access game telemetry, install hooks, and register UI windows.
+ * 
+ * ================================================================================================
+ * ABI STABILITY GUARANTEES
+ * ================================================================================================
+ * 
+ * To ensure your plugin remains compatible with future framework versions without a re-compile:
+ * 1. The order of existing function pointers in API structures will **NEVER** change.
+ * 2. Fields will **NEVER** be deleted from released API structures.
+ * 3. New functionality is only added by appending to the **end** of structures.
+ * 
+ * ================================================================================================
+ * DEVELOPER REQUIREMENTS
+ * ================================================================================================
+ * 
+ * *   **String Safety**: ALWAYS use the 'SPF_Formatting_API' for cross-DLL string formatting 
+ *     (e.g., inside 'Fmt_Format' or 'Log' calls) to avoid memory management crashes.
+ * *   **Handle Validation**: Always check if pointers and handles are non-NULL before use.
+ * *   **Thread Safety**: UI calls must only be made within the registered draw callbacks.
  */
 
 #include <stdbool.h>
@@ -39,15 +77,6 @@ extern "C" {
 typedef struct SPF_Core_API SPF_Core_API;
 typedef struct SPF_Load_API SPF_Load_API;
 typedef struct SPF_UI_API SPF_UI_API;
-
-// --- Opaque Handles (Pointers to internal framework objects) ---
-// The plugin interacts with these handles without knowing their internal structure,
-// ensuring ABI stability and separation of concerns.
-typedef struct SPF_Logger_Handle SPF_Logger_Handle;
-typedef struct SPF_Localization_Handle SPF_Localization_Handle;
-typedef struct SPF_Config_Handle SPF_Config_Handle;
-typedef struct SPF_KeyBinds_Handle SPF_KeyBinds_Handle;
-typedef struct SPF_Telemetry_Handle SPF_Telemetry_Handle;
 
 // --- Sub-System API Structs (Accessed via SPF_Load_API or SPF_Core_API) ---
 typedef struct SPF_Logger_API SPF_Logger_API;
@@ -167,11 +196,10 @@ typedef struct {
    * itself (e.g., `logging`, `keybinds`, `ui`). The call will only occur
    * for custom configuration blocks defined by the plugin in its manifest.
    *
-   * @param config_handle The configuration context handle for the plugin, the same
-   *                      handle returned by `SPF_Config_API.GetContext()`.
+   * @param config_handle The configuration context handle for the plugin.
    * @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
    */
-  void (*OnSettingChanged)(SPF_Config_Handle* config_handle, const char* keyPath);
+  void (*OnSettingChanged)(struct SPF_Config_Handle* config_handle, const char* keyPath);
 
   /**
    * @brief (Mandatory) Called after the plugin is fully loaded and activated.
@@ -218,8 +246,11 @@ typedef struct {
  * @struct SPF_Load_API
  * @brief Provides access to essential core services available at load time.
  *
- * This structure is passed to the `OnLoad` function and contains only services
+ * @details This structure is passed to the `OnLoad` function and contains only services
  * that are guaranteed to be available immediately when the plugin is loaded.
+ * 
+ * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added 
+ * to the end of this structure.
  */
 struct SPF_Load_API {
   /**
@@ -254,8 +285,11 @@ struct SPF_Load_API {
  * @struct SPF_Core_API
  * @brief The gateway to all framework functionality available to plugins.
  *
- * This structure is the main entry point to all framework subsystems.
+ * @details This structure is the main entry point to all framework subsystems.
  * A pointer to it is provided in `OnActivated`, and the plugin must save it.
+ * 
+ * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added 
+ * to the end of this structure.
  */
 struct SPF_Core_API {
   /**

@@ -53,9 +53,11 @@ The framework initializes your plugin in stages, calling the functions you provi
 
 ---
 **1. `OnLoad(const SPF_Load_API* load_api)`**
-*   **When:** Immediately after your DLL is loaded, before the manifest is fully processed.
-*   **Purpose:** Perform essential, early setup. The primary task here is to acquire handles for core services like the logger and config system.
-*   **Available API:** You receive the `SPF_Load_API` struct, which contains only a limited set of guaranteed services: `logger`, `config`, `localization`, and `formatting`. **You cannot register hooks or keybinds here.**
+*   **When:** Immediately after your DLL is loaded, during the early initialization phase.
+*   **Purpose:** Perform essential, early setup. 
+    - Acquire handles for core services like the logger and config system.
+    - **CRITICAL**: Create all virtual input devices here using the `input` API. The game SDK only allows device registration during its initial boot phase. Devices created later will not be visible to the game without a SDK restart.
+*   **Available API:** You receive the `SPF_Load_API` struct, which contains core services: `logger`, `config`, `localization`, `input` (Virtual Input), and `formatting`. **You cannot register hooks or keybinds here.**
 
 ---
 **2. `OnActivated(const SPF_Core_API* core_api)`**
@@ -97,11 +99,20 @@ The framework initializes your plugin in stages, calling the functions you provi
 
 The framework provides two main structs to access its services, corresponding to the lifecycle stages.
 
+### ABI Stability Guarantees
+
+The SPF Framework is designed with binary compatibility in mind. To ensure that your compiled plugins remain functional across future framework updates without requiring a re-compile, the framework adheres to the following rules:
+
+*   **Immutable Order**: The order of existing function pointers in the API structures (like `SPF_Core_API`) is guaranteed to never change.
+*   **Safe Expansion**: New functionality is only added by appending new pointers to the **end** of the structures.
+*   **Size-Aware Polling**: For data structures that might grow (like Telemetry), the API requires you to pass `sizeof(YourStruct)`. This allows the framework to detect if your plugin is older and avoid writing data into memory you haven't allocated.
+
 ### `SPF_Load_API`
-Passed to `OnLoad`, this contains only the essential services that are available before the plugin is fully active:
+Passed to `OnLoad`, this contains the services available during the early boot sequence:
 *   `logger`
 *   `config`
 *   `localization`
+*   `input`: The Virtual Input API (for early device registration).
 *   `formatting`
 
 ### `SPF_Core_API`
