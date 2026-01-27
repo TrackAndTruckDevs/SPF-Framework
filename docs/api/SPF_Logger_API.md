@@ -1,104 +1,119 @@
 # SPF Logger API
 
-The SPF Logger API provides a centralized and powerful system for logging messages from your plugin. By routing your logs through the framework, you ensure they are consistently timestamped, formatted, and sent to all configured outputs (such as the in-game console and a dedicated log file for your plugin).
+The **SPF Logger API** provides a standardized way for plugins to log messages to the framework's central logging system. This ensures that logs are consistently formatted, timestamped, and routed to the correct output sinks (e.g., console, file, UI).
 
-## Important: Pre-Formatting Strings
+**Header:** `include/SPF/SPF_API/SPF_Logger_API.h`
 
-This API does **not** provide a `printf`-style formatting function (e.g., `Log("Value: %d", my_value)`). Passing variadic arguments (`...`) across DLL boundaries is inherently unsafe and can cause crashes.
+## Key Concepts
 
-**You must format all strings in a local buffer *before* calling the `Log` function.**
+1.  **Context-Based**: Logging operations require a context handle (`SPF_Logger_Handle`). This associates the log message with your specific plugin, allowing for per-plugin log levels and file separation.
+2.  **No Variadic Arguments**: To ensure binary compatibility and safety across DLL boundaries, the Logger API does **not** support `printf`-style formatting directly. You must format your strings into a buffer *before* calling the log function.
+3.  **Throttling**: The API provides a mechanism to limit the frequency of log messages, which is essential for logging inside high-frequency loops (like `OnUpdate`).
 
-It is highly recommended to use the `SPF_Formatting_API` for this purpose, as it is also designed to be safe for cross-DLL use.
+## API Reference
 
-## Getting the API
+### Types
 
-The Logger API is provided as part of the main `SPF_Core_API` struct that your plugin receives in its `OnLoad` function.
+#### `SPF_Logger_Handle`
+An opaque pointer representing a logger instance for a specific plugin. Do not access the contents of this struct directly.
 
-```c
-#include "SPF/SPF_API/SPF_Plugin.h"
-#include "SPF/SPF_API/SPF_Logger_API.h"
+#### `SPF_LogLevel`
+An enumeration defining the severity of the log message.
 
-const SPF_Core_API* s_coreAPI = NULL;
-SPF_Logger_Handle* s_myLogger = NULL;
-
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
-    
-    if (s_coreAPI && s_coreAPI->logger) {
-        // Get the logger context for our plugin
-        s_myLogger = s_coreAPI->logger->GetLogger("MyPlugin");
-    }
-}
-```
-
-## Log Levels (`SPF_LogLevel`)
-
-You can specify a severity level for each message you log.
-
-| Value | Level | Description |
-|---|---|---|
-| `SPF_LOG_TRACE` | 0 | Fine-grained debugging information. |
+| Level | Value | Description |
+| :--- | :--- | :--- |
+| `SPF_LOG_TRACE` | 0 | Fine-grained debugging information (verbose). |
 | `SPF_LOG_DEBUG` | 1 | Messages useful during development. |
 | `SPF_LOG_INFO` | 2 | General informational messages. |
 | `SPF_LOG_WARN` | 3 | Warnings about potential issues. |
-| `SPF_LOG_ERROR` | 4 | Errors that occurred but don't stop the program. |
-| `SPF_LOG_CRITICAL` | 5 | Critical errors that may require shutdown. |
+| `SPF_LOG_ERROR` | 4 | Errors that occurred but didn't stop execution. |
+| `SPF_LOG_CRITICAL` | 5 | Critical errors requiring immediate attention. |
 
-## Function Reference
+### Functions
 
-Functions are accessed via the `logger` member of your `SPF_Core_API` pointer.
-
----
-**`SPF_Logger_Handle* GetLogger(const char* pluginName)`**
-Gets a logger handle for your plugin. You should call this once and cache the handle for the lifetime of your plugin.
-*   **pluginName:** Your plugin's name, which must match the manifest.
-
----
-**`void Log(SPF_Logger_Handle* handle, SPF_LogLevel level, const char* message)`**
-Logs a pre-formatted message.
-*   **handle:** The handle obtained from `GetLogger`.
-*   **level:** The severity of the message (e.g., `SPF_LOG_INFO`).
-*   **message:** The null-terminated string to log.
-
----
-**`void LogThrottled(SPF_Logger_Handle* handle, SPF_LogLevel level, const char* throttle_key, uint32_t throttle_ms, const char* message)`**
-Logs a message, but only if `throttle_ms` milliseconds have passed since the last time a message with the same `throttle_key` was logged. This is essential for messages in high-frequency code (like `OnUpdate`).
-*   **throttle_key:** A unique, persistent string literal to identify this specific log point (e.g., `"myplugin.update.position_log"`).
-*   **throttle_ms:** The cooldown period in milliseconds.
-
----
-**`void SetLevel(SPF_Logger_Handle* handle, SPF_LogLevel level)`** and **`SPF_LogLevel GetLevel(SPF_Logger_Handle* handle)`**
-Sets or gets the minimum log level for this logger instance. Messages below this level will be ignored. For example, if the level is `SPF_LOG_INFO`, `TRACE` and `DEBUG` messages will not be processed.
-
-## Complete Example
-
+#### `Log_GetContext`
 ```c
-// Assumes s_coreAPI and s_myLogger are initialized as shown above.
+SPF_Logger_Handle* (*Log_GetContext)(const char* pluginName);
+```
+Gets the logger handle for your plugin. Call this once during initialization (e.g., in `OnLoad`) and cache the result.
+*   **pluginName**: The unique name of your plugin (must match the manifest).
 
-void SomeFunction() {
-    if (!s_coreAPI || !s_coreAPI->logger || !s_myLogger) return;
+#### `Log`
+```c
+void (*Log)(SPF_Logger_Handle* h, SPF_LogLevel level, const char* message);
+```
+Logs a pre-formatted message.
+*   **h**: The logger handle.
+*   **level**: The severity level.
+*   **message**: The null-terminated string to log.
 
-    char buffer[256];
-    int value = 42;
+#### `Log_SetLevel`
+```c
+void (*Log_SetLevel)(SPF_Logger_Handle* h, SPF_LogLevel level);
+```
+Sets the minimum log level for this plugin. Messages below this level will be ignored.
+*   **h**: The logger handle.
+*   **level**: The new minimum level.
 
-    // Use the Formatting API to safely prepare the string
-    s_coreAPI->formatting->Format(buffer, sizeof(buffer), "The value is: %d", value);
+#### `Log_GetLevel`
+```c
+SPF_LogLevel (*Log_GetLevel)(SPF_Logger_Handle* h);
+```
+Gets the current minimum log level.
+
+#### `LogThrottled`
+```c
+void (*LogThrottled)(SPF_Logger_Handle* h, SPF_LogLevel level, const char* throttle_key, uint32_t throttle_ms, const char* message);
+```
+Logs a message only if a certain amount of time has passed since the last log with the same `throttle_key`.
+*   **throttle_key**: A unique string ID for this log message (e.g., "myplugin.update.error").
+*   **throttle_ms**: Minimum time in milliseconds between logs.
+
+## Usage Example
+
+```cpp
+#include "SPF/SPF_API/SPF_Logger_API.h"
+#include "SPF/SPF_API/SPF_Formatting_API.h"
+
+// Global handles
+static SPF_Logger_Handle* g_hLog = nullptr;
+static const SPF_Formatting_API* g_fmt = nullptr;
+
+// 1. Initialization (in OnLoad)
+void OnLoad(const SPF_Load_API* api) {
+    // Get the logger context
+    g_hLog = api->logger->Log_GetContext("MyPlugin");
     
-    // Log the pre-formatted string
-    s_coreAPI->logger->Log(s_myLogger, SPF_LOG_INFO, buffer);
+    // Cache the formatting API for convenience
+    g_fmt = api->formatting;
+    
+    // Log a simple string
+    api->logger->Log(g_hLog, SPF_LOG_INFO, "MyPlugin loaded successfully!");
 }
 
-// Example for a function that runs every frame
-void OnUpdate() {
-    if (!s_coreAPI || !s_coreAPI->logger || !s_myLogger) return;
+// 2. Logging with Formatting
+void LogSomeData(int value, float speed) {
+    if (!g_hLog || !g_fmt) return;
 
-    // This message will only be logged at most once every 5 seconds (5000 ms)
-    s_coreAPI->logger->LogThrottled(
-        s_myLogger, 
-        SPF_LOG_DEBUG, 
-        "myplugin.onupdate.tick", // Unique key for this log point
-        5000, 
-        "OnUpdate is running..."
+    char buffer[256];
+    
+    // Use the framework's safe formatting API
+    g_fmt->Fmt_Format(buffer, sizeof(buffer), "Value: %d, Speed: %.2f", value, speed);
+    
+    // Pass the formatted buffer to the logger
+    // Note: The function is named 'Log', not 'Log_Log'
+    g_loadApi->logger->Log(g_hLog, SPF_LOG_INFO, buffer);
+}
+
+// 3. Throttled Logging (in OnUpdate)
+void OnUpdate() {
+    // This will appear in the log at most once every 1000ms (1 second)
+    g_loadApi->logger->LogThrottled(
+        g_hLog, 
+        SPF_LOG_WARN, 
+        "myplugin.update_warning", // Unique Key
+        1000,                      // Throttle Time
+        "This is a frequent warning!"
     );
 }
 ```

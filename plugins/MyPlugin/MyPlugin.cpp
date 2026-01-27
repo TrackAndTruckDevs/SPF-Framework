@@ -99,9 +99,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     // A JSON string literal that defines the default values for your plugin's custom settings.
     // If `Policy_SetAllowUserConfig` is true, the framework creates a `settings.json` file.
     // The JSON object you provide here will be inserted under a top-level key named "settings".
-    
-    // api->Settings_SetJson(h, nullptr);
-    
+
     // Example: Define some default custom settings.
     /*
     api->Settings_SetJson(h, R"json(
@@ -243,7 +241,7 @@ void OnLoad(const SPF_Load_API* load_api) {
     // --- Essential API Initialization ---
     // Get and cache the logger and formatting API handles.
     if (g_ctx.loadAPI) {
-        g_ctx.loggerHandle = g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME);
+        g_ctx.loggerHandle = g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME);
         g_ctx.formattingAPI = g_ctx.loadAPI->formatting;
 
         if (g_ctx.loggerHandle && g_ctx.formattingAPI) {

@@ -278,7 +278,7 @@ void OnLoad(const SPF_Load_API* load_api) {
     // crashes if the framework fails to provide them for some reason.
     if (g_ctx.loadAPI && g_ctx.loadAPI->logger && g_ctx.loadAPI->config) {
         // Get a handle to our plugin's dedicated logger instance.
-        auto logger = g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME);
+        auto logger = g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME);
         g_ctx.loadAPI->logger->Log(logger, SPF_LOG_INFO, "ExamplePlugin has been loaded!");
 
         // Read initial values from the config file. The `GetContext` call gets a handle
@@ -305,7 +305,7 @@ void OnLoad(const SPF_Load_API* load_api) {
  */
 void OnActivated(const SPF_Core_API* core_api) {
     g_ctx.coreAPI = core_api;
-    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
 
     // Register callbacks for systems that require the core API.
     if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
@@ -361,7 +361,7 @@ void OnActivated(const SPF_Core_API* core_api) {
  */
 void OnGameWorldReady() {
     if (g_ctx.coreAPI && g_ctx.coreAPI->logger) {
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO,
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
                                   "OnGameWorldReady called! Game world is loaded and ready.");
         
         // Example: Now would be a good time to find camera offsets or install
@@ -383,7 +383,7 @@ void OnUpdate() {
         return;
     }
 
-    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
     auto format = g_ctx.coreAPI->formatting;
 
     char full_log_buffer[16384];
@@ -533,7 +533,7 @@ void OnUpdate() {
  */
 void OnUnload() {
     if (g_ctx.loadAPI && g_ctx.loadAPI->logger) {
-        g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "ExamplePlugin is being unloaded.");
+        g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "ExamplePlugin is being unloaded.");
     }
 
     // It's good practice to null out all cached pointers on unload. This helps prevent
@@ -585,7 +585,7 @@ void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath) {
         // Log the change for debugging purposes.
         char log_buffer[256];
         g_ctx.loadAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "'a_simple_number' was changed externally. New value: %d", g_ctx.someNumber);
-        g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+        g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     } else if (strcmp(keyPath, "settings.a_complex_object") == 0) {
         // The complex object setting has changed. Re-parse it.
         // This demonstrates the use of GetJsonValueHandle and JsonReaderApi.
@@ -609,7 +609,7 @@ void OnLanguageChanged(const char* langCode) {
         if (g_ctx.coreAPI->localization->Loc_SetLanguage(h, langCode)) {
             char log_buffer[256];
             g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Plugin language synchronized to: %s", langCode);
-            g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+            g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
         }
     }
 }
@@ -629,7 +629,7 @@ void OnGameLogMessage(const char* log_line, void* user_data) {
     if (strstr(log_line, "Loaded")) {
         char buffer[4096];
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Game Log contains 'Loaded': %s", log_line);
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, buffer);
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, buffer);
     }
 }
 
@@ -647,7 +647,7 @@ void OnToggleMainWindow() {
 
         char log_buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Main window visibility toggled to: %s", !isCurrentlyVisible ? "visible" : "hidden");
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     }
 }
 
@@ -670,9 +670,9 @@ void OnCameraKeybind() {
 
         char log_buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Switched camera from %d to %d via keybind.", current_camera_type, next_camera_type);
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
     } else {
-        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_WARN, "Could not get current camera type to cycle.");
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN, "Could not get current camera type to cycle.");
     }
 }
 
@@ -955,7 +955,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             if (ui->SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
                 // If the slider is moved, update the configuration file.
                 g_ctx.loadAPI->config->Cfg_SetInt32(g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
-                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
+                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
             }
             ui->Separator();
 
@@ -968,7 +968,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
                     g_ctx.coreAPI->console->GCon_ExecuteCommand(g_ctx.consoleCommand);
                     char log_buffer[512];
                     g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Executed console command: '%s'", g_ctx.consoleCommand);
-                    g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+                    g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
                 }
             }
             ui->Separator();
@@ -1232,7 +1232,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
 void InitializeVirtualDevice() {
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->input) return;
 
-    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
     g_ctx.virtualDevice = g_ctx.coreAPI->input->CreateDevice(
         PLUGIN_NAME,
         "Example_virtual_device",
@@ -1269,7 +1269,7 @@ void ParseComplexObject() {
         return;
     }
 
-    auto logger = g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME);
+    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
     auto config = g_ctx.coreAPI->config;
     auto config_handle = config->Cfg_GetContext(PLUGIN_NAME);
     const auto* json_reader = g_ctx.coreAPI->json_reader;
@@ -1347,7 +1347,7 @@ void InstallGameStringFormattingHook() {
         signature,
         true // Enable the hook immediately
     );
-    g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "Registered 'GameStringFormatting' hook.");
+    g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Registered 'GameStringFormatting' hook.");
 }
 
 // =================================================================================================
@@ -1375,7 +1375,7 @@ void* Detour_GameStringFormatting(void* pOutput, const char** ppInput) {
             *ppInput = modifiedQuitButton;
 
             if (g_ctx.loadAPI && g_ctx.loadAPI->logger) {
-                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->GetLogger(PLUGIN_NAME), SPF_LOG_INFO, "Overriding 'quit_game' button color.");
+                g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Overriding 'quit_game' button color.");
             }
         }
     }

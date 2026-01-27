@@ -19,11 +19,11 @@ class LoggerApi {
  private:
   // --- C-API Trampoline Implementations ---
 
-  static SPF_Logger_Handle* L_GetLogger(const char* pluginName);
-  static void L_Log(SPF_Logger_Handle* handle, SPF_LogLevel level, const char* message);
-  static void L_SetLevel(SPF_Logger_Handle* handle, SPF_LogLevel level);
-  static SPF_LogLevel L_GetLevel(SPF_Logger_Handle* handle);
-  static void L_LogThrottled(SPF_Logger_Handle* handle, SPF_LogLevel level, const char* throttle_key, uint32_t throttle_ms, const char* message);
+  static SPF_Logger_Handle* Log_GetContext(const char* pluginName);
+  static void Log(SPF_Logger_Handle* h, SPF_LogLevel level, const char* message);
+  static void Log_SetLevel(SPF_Logger_Handle* h, SPF_LogLevel level);
+  static SPF_LogLevel Log_GetLevel(SPF_Logger_Handle* h);
+  static void LogThrottled(SPF_Logger_Handle* h, SPF_LogLevel level, const char* throttle_key, uint32_t throttle_ms, const char* message);
 };
 
 }  // namespace Modules::API

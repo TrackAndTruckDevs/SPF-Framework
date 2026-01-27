@@ -27,14 +27,22 @@
 * USAGE EXAMPLE (C++)                                                                             
 * ================================================================================================
 * @code                                                                                           
-* char buffer[256];
-* int value = 42;
+* // Assume 'api' is the SPF_Plugin_API* passed to OnLoad
+* SPF_Formatting_API* fmt = api->formatting;
+* SPF_Logger_API* log = api->logger;
+* 
+* // Get logger handle once (e.g. in OnLoad)
+* SPF_Logger_Handle* hLog = log->Log_GetContext("MyPlugin");
 *
-* // Format the string safely
-* api->Fmt_Format(buffer, sizeof(buffer), "The current value is: %d", value);
+* void LogValue(int value) {
+*     char buffer[256];
+*     
+*     // Format the string safely
+*     fmt->Fmt_Format(buffer, sizeof(buffer), "The current value is: %d", value);
 *
-* // Use the result with other APIs
-* logApi->Log(logger_h, SPF_LOG_INFO, buffer);
+*     // Use the result with the logger API
+*     log->Log(hLog, SPF_LOG_INFO, buffer);
+* }
 * @endcode                                                                                        
 */ 
 
