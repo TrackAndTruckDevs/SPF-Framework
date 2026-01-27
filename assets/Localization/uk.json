@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Інформація про плагін",
             "description": "Опис",
-            "settings": "Налаштування"
+            "settings": "Налаштування",
+            "restart_sdk": "Перезапустіть SDK для активації віртуальних пристроїв введення"
         },
         "info_popup": {
             "author": "Автор:",
             "version": "Версія:"
         },
         "status": {
-            "incompatible": "потребує SPF Framework версії:"
+            "incompatible": "потребує SPF Framework версії:",
+            "virt_input_restart_required": "Потрібен перезапуск для віртуального введення"
         }
     },
     "settings_window": {

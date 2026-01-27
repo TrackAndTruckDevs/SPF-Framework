@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Eklenti Bilgisi",
             "description": "Açıklama",
-            "settings": "Ayarlar"
+            "settings": "Ayarlar",
+            "restart_sdk": "Sanal giriş cihazlarını etkinleştirmek için SDK'yı yeniden başlatın"
         },
         "info_popup": {
             "author": "Yazar:",
             "version": "Sürüm:"
         },
         "status": {
-            "incompatible": "Oyun sürümü SPF Framework:"
+            "incompatible": "Oyun sürümü SPF Framework:",
+            "virt_input_restart_required": "Sanal girişler için yeniden başlatma gerekli"
         }
     },
     "settings_window": {

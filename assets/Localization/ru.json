@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Информация о плагине",
             "description": "Описание",
-            "settings": "Настройки"
+            "settings": "Настройки",
+            "restart_sdk": "Перезапустите SDK для активации виртуальных устройств ввода"
         },
         "info_popup": {
             "author": "Автор:",
             "version": "Версия:"
         },
         "status": {
-            "incompatible": "Требуется версия SPF Framework:"
+            "incompatible": "Требуется версия SPF Framework:",
+            "virt_input_restart_required": "Требуется перезапуск для виртуального ввода"
         }
     },
     "settings_window": {

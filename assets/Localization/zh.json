@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "插件信息",
             "description": "描述",
-            "settings": "设置"
+            "settings": "设置",
+            "restart_sdk": "重启 SDK 以激活虚拟输入设备"
         },
         "info_popup": {
             "author": "作者：",
             "version": "版本："
         },
         "status": {
-            "incompatible": "所需的 SPF 框架版本"
+            "incompatible": "所需的 SPF 框架版本",
+            "virt_input_restart_required": "虚拟输入需要重启"
         }
     },
     "settings_window": {

@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Plugin Informatie",
             "description": "Beschrijving",
-            "settings": "Instellingen"
+            "settings": "Instellingen",
+            "restart_sdk": "Start de SDK opnieuw op om virtuele invoerapparaten te activeren"
         },
         "info_popup": {
             "author": "Auteur:",
             "version": "Versie:"
         },
         "status": {
-            "incompatible": "Vereist SPF Framework:"
+            "incompatible": "Vereist SPF Framework:",
+            "virt_input_restart_required": "Opnieuw opstarten vereist voor virtuele invoer"
         }
     },
     "settings_window": {

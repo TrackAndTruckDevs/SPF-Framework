@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Informazioni Plugin",
             "description": "Descrizione",
-            "settings": "Impostazioni"
+            "settings": "Impostazioni",
+            "restart_sdk": "Riavvia l'SDK per attivare i dispositivi di input virtuali"
         },
         "info_popup": {
             "author": "Autore:",
             "version": "Versione:"
         },
         "status": {
-            "incompatible": "Richiede versione SPF Framework:"
+            "incompatible": "Richiede versione SPF Framework:",
+            "virt_input_restart_required": "Riavvio richiesto per gli input virtuali"
         }
     },
     "settings_window": {

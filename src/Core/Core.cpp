@@ -194,6 +194,10 @@ void Core::TryStartInitialization() {
   m_configurableServices.push_back(&Logging::LoggerFactory::GetInstance());
   InitManagersAndPlugins();
 
+  // Preload plugins so they can create virtual input devices during their OnLoad phase.
+  // This must happen before RegisterCreatedDevices().
+  PluginManager::GetInstance().InitializePlugins();
+
   // Automatically trigger usage tracking once per session.
   m_eventManager->System.OnRequestTrackUsage.Call({});
 
@@ -596,8 +600,8 @@ void Core::ShutdownServices() {
 void Core::LateInit() {
   m_logger->Info("LateInit called. Initializing UI-dependent components...");
   // This is called by the renderer once the graphics device is ready.
-  m_logger->Info("-> [LateInit] Loading initially enabled plugins...");
-  PluginManager::GetInstance().InitializePlugins();
+  m_logger->Info("-> [LateInit] Activating preloaded plugins...");
+  PluginManager::GetInstance().ActivatePlugins();
 
   m_logger->Info("-> [LateInit] Processing initial hook dependencies for enabled plugins...");
   const auto& componentInfoMap = m_configService->GetAllComponentInfo();

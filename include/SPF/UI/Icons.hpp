@@ -33,6 +33,7 @@
 #define ICON_FA_HAND_HOLDING_HEART "\uf4be"
 #define ICON_FA_ARROWS_ROTATE "\uf021"
 #define ICON_FA_SCALE_BALANCED "\uf24e"
+#define ICON_FA_EXCLAMATION_TRIANGLE "\uf071"
 
 // Icons for Patreon Tier Status
 #define ICON_FA_CROWN "\uf521"

@@ -202,9 +202,7 @@ void PluginManager::InitializePlugins() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
   if (!logger) return;
 
-  m_isLateInitDone = true; // Set this BEFORE loading plugins to enable immediate hook installation during OnActivated
-
-  logger->Info("--- Initializing Enabled Plugins ---");
+  logger->Info("--- Preloading Enabled Plugins (OnLoad stage) ---");
   const auto& componentInfoMap = m_configService->GetAllComponentInfo();
 
   for (const auto& [name, info] : componentInfoMap) {
@@ -215,7 +213,7 @@ void PluginManager::InitializePlugins() {
       LoadPlugin(name);
     }
   }
-  logger->Info("--- Finished Initializing Plugins ---");
+  logger->Info("--- Finished Preloading Plugins ---");
 }
 
 void PluginManager::LoadPlugin(const std::string& pluginName) {
@@ -281,12 +279,45 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
     plugin->exports.OnLoad(&m_loadAPI);
   }
 
-  auto& insertedPlugin = (m_plugins[pluginName] = std::move(plugin));
+  m_plugins[pluginName] = std::move(plugin);
   m_eventManager->System.OnPluginDidLoad.Call({pluginName});
-  logger->Info("Successfully loaded and initialized plugin '{}'.", pluginName);
+  logger->Info("Successfully preloaded plugin '{}'.", pluginName);
 
-  // --- Automatic Language Synchronization during load ---
-  // If global sync is enabled, we force the plugin to match the framework's language BEFORE OnActivated.
+  // If late init has already run, activate the plugin immediately
+  if (m_isLateInitDone) {
+    ActivatePlugin(pluginName);
+  }
+}
+
+void PluginManager::ActivatePlugins() {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (!logger) return;
+
+  m_isLateInitDone = true;
+
+  logger->Info("--- Activating All Loaded Plugins (OnActivated stage) ---");
+  
+  // Create a copy of keys to avoid iterator invalidation if plugins load others (unlikely but safe)
+  std::vector<std::string> pluginNames;
+  for (const auto& [name, plugin] : m_plugins) {
+    pluginNames.push_back(name);
+  }
+
+  for (const auto& name : pluginNames) {
+    ActivatePlugin(name);
+  }
+  
+  logger->Info("--- Finished Activating Plugins ---");
+}
+
+void PluginManager::ActivatePlugin(const std::string& pluginName) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  auto it = m_plugins.find(pluginName);
+  if (it == m_plugins.end()) return;
+
+  auto& plugin = *it->second;
+
+  // --- Automatic Language Synchronization before activation ---
   auto syncSetting = m_configService->GetValue("framework", "localization.sync_plugin_languages", false);
   bool shouldSync = false;
   if (syncSetting.is_boolean()) {
@@ -298,31 +329,24 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
   if (shouldSync) {
       auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
       std::string frameworkLang = l10n.GetComponentLanguage("framework");
-      
       if (l10n.LanguageFileExists(pluginName, frameworkLang)) {
           logger->Info("  -> Auto-syncing plugin '{}' language to framework: '{}'", pluginName, frameworkLang);
-          // Set via ConfigService to ensure UI updates and setting is persisted
           m_configService->SetValue(pluginName, "localization.language", frameworkLang);
       }
   }
 
-  if (insertedPlugin->exports.OnActivated) {
-    logger->Debug("    -> Calling OnActivated() for plugin '{}'...", insertedPlugin->name);
-    insertedPlugin->exports.OnActivated(&m_coreAPI);
+  if (plugin.exports.OnActivated) {
+    logger->Debug("    -> Calling OnActivated() for plugin '{}'...", plugin.name);
+    plugin.exports.OnActivated(&m_coreAPI);
   }
 
-  // If the game world is already loaded when this plugin is loaded,
-  // we need to manually trigger its OnGameWorldReady event.
-  if (m_isGameWorldReady && insertedPlugin->exports.OnGameWorldReady) {
-    logger->Info("Game world is already ready, calling OnGameWorldReady() for dynamically loaded plugin '{}'...", insertedPlugin->name);
-    insertedPlugin->exports.OnGameWorldReady();
+  if (m_isGameWorldReady && plugin.exports.OnGameWorldReady) {
+    logger->Info("Game world is already ready, calling OnGameWorldReady() for plugin '{}'...", plugin.name);
+    plugin.exports.OnGameWorldReady();
   }
 
-  // If late init has already run, register UI for this single plugin immediately
-  if (m_isLateInitDone) {
-    logger->Info("Registering UI for dynamically loaded plugin '{}'...", pluginName);
-    RegisterUIForPlugin(*insertedPlugin);
-  }
+  // Register UI for this plugin
+  RegisterUIForPlugin(plugin);
 }
 
 void PluginManager::UnloadPlugin(const std::string& pluginName) {
@@ -548,6 +572,7 @@ void PluginManager::FillAPIs() {
   m_loadAPI.logger = &m_loggerAPI;
   m_loadAPI.localization = &m_localizationAPI;
   m_loadAPI.config = &m_configAPI;
+  m_loadAPI.input = &m_inputAPI;
   m_loadAPI.formatting = &m_formattingAPI;
 
   // --- Fill Core API (all services) ---

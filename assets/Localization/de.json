@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Plugin-Informationen",
             "description": "Beschreibung",
-            "settings": "Einstellungen"
+            "settings": "Einstellungen",
+            "restart_sdk": "SDK neu starten, um virtuelle Eingabegeräte zu aktivieren"
         },
         "info_popup": {
             "author": "Autor:",
             "version": "Version:"
         },
         "status": {
-            "incompatible": "Benötigt version SPF Framework:"
+            "incompatible": "Benötigt version SPF Framework:",
+            "virt_input_restart_required": "Neustart für virtuelle Eingaben erforderlich"
         }
     },
     "settings_window": {

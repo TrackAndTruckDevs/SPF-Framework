@@ -37,6 +37,8 @@ class PluginsWindow : public BaseWindow {
   std::string m_locInfoPopupAuthor;
   std::string m_locInfoPopupVersion;
   std::string m_locStatusIncompatible;
+  std::string m_locVirtInputRestartRequired;
+  std::string m_locTooltipRestartSDK;
 };
 }  // namespace UI
 

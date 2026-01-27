@@ -55,7 +55,7 @@ typedef struct SPF_Localization_API SPF_Localization_API;
 typedef struct SPF_Config_API SPF_Config_API;
 typedef struct SPF_KeyBinds_API SPF_KeyBinds_API;
 typedef struct SPF_Telemetry_API SPF_Telemetry_API;
-typedef struct SPF_Input_API SPF_Input_API;
+typedef struct SPF_VirtInput_API SPF_VirtInput_API;
 typedef struct SPF_Camera_API SPF_Camera_API;
 typedef struct SPF_GameConsole_API SPF_GameConsole_API;
 typedef struct SPF_Formatting_API SPF_Formatting_API;
@@ -240,6 +240,11 @@ struct SPF_Load_API {
   SPF_Config_API* config;
 
   /**
+   * @brief Input API. Allows simulating input (key presses, mouse movements).
+   */
+  SPF_VirtInput_API* input;
+
+  /**
    * @brief Formatting API. Provides safe, cross-DLL string formatting.
    */
   SPF_Formatting_API* formatting;
@@ -289,7 +294,7 @@ struct SPF_Core_API {
   /**
    * @brief Input API. Allows simulating input (key presses, mouse movements).
    */
-  SPF_Input_API* input;
+  SPF_VirtInput_API* input;
 
   /**
    * @brief Hooks API. Allows intercepting game functions (hooking) to modify

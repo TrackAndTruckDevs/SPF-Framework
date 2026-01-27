@@ -44,10 +44,23 @@ class IInputService {
   virtual Input::SCS::VirtualDevice* GetDevice(const std::string& name) = 0;
 
   /**
+   * @brief Checks if a device can be registered and marks it for registration.
+   * @param device The device to register.
+   * @param componentName The name of the component (plugin) requesting registration.
+   * @return True if we are still in the initialization phase and registration is possible.
+   */
+  virtual bool RegisterDevice(Input::SCS::VirtualDevice* device, const std::string& componentName) = 0;
+
+  /**
    * @brief Iterates over all created devices and registers them with the game SDK.
    * This should only be called from within the scs_input_init context.
    */
   virtual void RegisterCreatedDevices() = 0;
+
+  /**
+   * @brief Returns true if a component tried to register a device after the initial SDK phase.
+   */
+  virtual bool IsRestartRequiredForComponent(const std::string& componentName) const = 0;
 };
 
 }  // namespace Modules

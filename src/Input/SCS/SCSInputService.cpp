@@ -32,6 +32,23 @@ VirtualDevice* SCSInputService::CreateDevice(const std::string& name, const std:
   return m_devices.back().get();
 }
 
+bool SCSInputService::RegisterDevice(VirtualDevice* device, const std::string& componentName) {
+  if (!device) return false;
+
+  if (m_registrationClosed) {
+    m_logger.Error("Late registration attempt for device '{}' (Plugin: '{}'). The SDK input initialization window is already closed. A framework restart is required.", 
+                   device->GetName(), componentName);
+    m_componentsRequiringRestart.insert(componentName);
+    return false;
+  }
+
+  return true;
+}
+
+bool SCSInputService::IsRestartRequiredForComponent(const std::string& componentName) const {
+    return m_componentsRequiringRestart.count(componentName) > 0;
+}
+
 VirtualDevice* SCSInputService::GetDevice(const std::string& name) {
   for (const auto& device : m_devices) {
     if (device->GetName() == name) {
@@ -57,6 +74,8 @@ void SCSInputService::RegisterCreatedDevices() {
       m_logger.Error("  -> Failed to register device: {}", device->GetName());
     }
   }
+
+  m_registrationClosed = true;
 }
 
 scs_result_t SCSAPIFUNC SCSInputService::StaticEventCallback(scs_input_event_t* const event_info, const scs_u32_t flags, const scs_context_t context) {

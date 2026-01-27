@@ -264,6 +264,11 @@ void OnLoad(const SPF_Load_API* load_api) {
     // Localization API
     // Requires: SPF_Localization_API.h
     */
+
+    /*
+    // Virtual Input API
+    // Requires: SPF_VirtInput_API.h
+    */
 }
 
 void OnActivated(const SPF_Core_API* core_api) {
@@ -330,11 +335,6 @@ void OnActivated(const SPF_Core_API* core_api) {
     /*
     // Game Console API
     // Requires: SPF_GameConsole_API.h
-    */
-
-    /*
-    // Virtual Input API
-    // Requires: SPF_VirtInput_API.h
     */
 
     /*
@@ -496,7 +496,7 @@ void OnGameWorldReady() {
 /*
 // --- InitializeVirtualDevice Helper ---
 // Requires: SPF_VirtInput_API.h
-// This function could be called from OnActivated.
+// This function could be called from OnLoad.
 */
 
 /*

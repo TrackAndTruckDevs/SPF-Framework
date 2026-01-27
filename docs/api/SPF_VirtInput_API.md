@@ -1,11 +1,13 @@
 # SPF Virtual Input API
 
-The SPF Virtual Input API is a powerful feature that allows your plugin to create "virtual" input devices, such as gamepads or steering wheels. Your plugin can then programmatically simulate button presses and axis movements on these devices, and the game will recognize them as if they came from a physical piece of hardware.
+The SPF Virtual Input API allows your plugin to create "virtual" input devices, such as gamepads or steering wheels. Your plugin can then programmatically simulate button presses and axis movements on these devices, and the game will recognize them as if they came from a physical piece of hardware.
 
 This can be used for a wide range of applications, including:
 *   Using a mobile phone's accelerometer to control steering.
 *   Creating custom input hardware that communicates with your plugin.
 *   Mapping data from external sources to in-game controls.
+
+**Header:** `include/SPF/SPF_API/SPF_VirtInput_API.h`
 
 ## Core Concept: Device Types
 
@@ -21,10 +23,21 @@ A semantical device's inputs are mapped directly to specific game functions by t
 
 Creating and using a virtual device follows a clear, multi-step process:
 
-1.  **Create Device:** Call `CreateDevice()` to create a new device and get its handle.
-2.  **Add Inputs:** Call `AddButton()` and `AddAxis()` to define all the inputs your device will have. This must be done *before* registering the device.
-3.  **Register Device:** Call `Register()` to finalize the device's configuration and make it visible to the game. No more inputs can be added after this point.
-4.  **Simulate Events:** In your plugin's main loop (e.g., `OnUpdate`), call functions like `PressButton()`, `ReleaseButton()`, and `SetAxisValue()` to send input events to the game.
+1.  **Create Device:** Call `Virt_CreateDevice()` to create a new device and get its handle.
+2.  **Add Inputs:** Call `Virt_AddButton()` and `Virt_AddAxis()` to define all the inputs your device will have. This must be done *before* registering the device.
+3.  **Register Device:** Call `Virt_Register()` to finalize the device's configuration and make it visible to the game. No more inputs can be added after this point.
+4.  **Simulate Events:** In your plugin's main loop (e.g., `OnUpdate`), call functions like `Virt_PressButton()`, `Virt_ReleaseButton()`, and `Virt_SetAxisValue()` to send input events to the game.
+
+## Critical Lifecycle Rules
+
+> [!CAUTION]
+> **Virtual devices MUST be created during the `OnLoad` phase.**
+
+The underlying game engine (SCS SDK) only allows virtual device registration during the initial input boot sequence. 
+
+*   **Correct Placement**: Always call `Virt_CreateDevice` and `Virt_Register` inside your plugin's `OnLoad` function.
+*   **The Late Enablement Issue**: If your plugin is disabled when the game starts, the framework will not load it during the boot sequence. If you then enable the plugin through the UI mid-session, its `OnLoad` will be called, but the game will reject the device registration because the "registration window" is already closed.
+*   **Solution**: If you enable a virtual-input plugin mid-session, you **must restart the SPF SDK** (using the "Restart SDK" button in the framework UI) to re-trigger the boot sequence and make the device visible to the game.
 
 ## Getting the API
 
@@ -34,20 +47,18 @@ The Virtual Input API is provided as part of the main `SPF_Core_API` struct, whe
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 
-const SPF_Core_API* s_coreAPI = NULL;
-
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
-    // s_coreAPI->input can now be used
+// In OnActivated:
+void OnActivated(const SPF_Core_API* api) {
+    // api->input can now be used
+    // Its type is SPF_VirtInput_API*
 }
 ```
-*Note: The API is defined in `SPF_VirtInput_API.h` but the struct member in `SPF_Core_API` is named `input`.*
 
 ## Function Reference
 
 ### Device Creation
 ---
-**`SPF_VirtualDevice_Handle* CreateDevice(...)`**
+**`SPF_VirtualDevice_Handle* Virt_CreateDevice(...)`**
 Creates a new virtual device.
 *   `pluginName`: Your plugin's name.
 *   `deviceName`: A unique internal name for the device (e.g., `"my_virtual_gamepad"`).
@@ -56,32 +67,34 @@ Creates a new virtual device.
 *   **Returns:** A handle to the device.
 
 ---
-**`void AddButton(SPF_VirtualDevice_Handle* handle, const char* inputName, const char* displayName)`**
-Adds a button to a device. Must be called before `Register()`.
+**`void Virt_AddButton(SPF_VirtualDevice_Handle* h, const char* inputName, const char* displayName)`**
+Adds a button to a device. Must be called before `Virt_Register()`.
+*   `h`: The handle to the virtual device.
 *   `inputName`: Programmatic name used to identify the button (e.g., `"action_a"`).
-*   `displayName`: Name shown in the game's UI (e.g., `"Action A"`).
+*   `displayName`: Name shown in the game's UI for binding (e.g., `"Action A"`).
 
 ---
-**`void AddAxis(SPF_VirtualDevice_Handle* handle, const char* inputName, const char* displayName)`**
-Adds an axis to a device. Must be called before `Register()`.
+**`void Virt_AddAxis(SPF_VirtualDevice_Handle* h, const char* inputName, const char* displayName)`**
+Adds an axis to a device. Must be called before `Virt_Register()`.
+*   `h`: The handle to the virtual device.
 *   `inputName`: Programmatic name for the axis (e.g., `"x_axis"`).
 *   `displayName`: Name shown in the UI (e.g., `"X Axis"`).
 
 ---
-**`bool Register(SPF_VirtualDevice_Handle* handle)`**
+**`bool Virt_Register(SPF_VirtualDevice_Handle* h)`**
 Finalizes and registers the device with the game.
 
 ### Event Simulation
 ---
-**`void PressButton(SPF_VirtualDevice_Handle* handle, const char* inputName)`**
-Simulates pressing and holding a button. The button remains pressed until `ReleaseButton` is called.
+**`void Virt_PressButton(SPF_VirtualDevice_Handle* h, const char* inputName)`**
+Simulates pressing and holding a button. The button remains pressed until `Virt_ReleaseButton` is called.
 
 ---
-**`void ReleaseButton(SPF_VirtualDevice_Handle* handle, const char* inputName)`**
+**`void Virt_ReleaseButton(SPF_VirtualDevice_Handle* h, const char* inputName)`**
 Simulates releasing a button.
 
 ---
-**`void SetAxisValue(SPF_VirtualDevice_Handle* handle, const char* inputName, float value)`**
+**`void Virt_SetAxisValue(SPF_VirtualDevice_Handle* h, const char* inputName, float value)`**
 Sets the value of an axis. The value is typically in the range of -1.0 to 1.0.
 
 ## Complete Example
@@ -91,47 +104,37 @@ This example creates a generic virtual gamepad with one button and one axis.
 ```c
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
-#include "SPF/SPF_API/SPF_Telemetry_API.h" // For getting truck data
 
-const SPF_Core_API* s_coreAPI = NULL;
-SPF_VirtualDevice_Handle* s_myGamepad = NULL;
+static SPF_VirtualDevice_Handle* s_hGamepad = NULL;
 
-// 1. Create and register the device on load
-SPF_PLUGIN_ENTRY void MyPlugin_OnLoad(const SPF_Core_API* core_api) {
-    s_coreAPI = core_api;
-
-    if (s_coreAPI && s_coreAPI->input) {
-        // Create a generic device
-        s_myGamepad = s_coreAPI->input->CreateDevice("MyPlugin", "my_gamepad", "My Virtual Gamepad", SPF_INPUT_DEVICE_TYPE_GENERIC);
+void MyPlugin_OnActivated(const SPF_Core_API* api) {
+    if (api && api->input) {
+        // 1. Create a generic device
+        s_hGamepad = api->input->Virt_CreateDevice("MyPlugin", "my_gamepad", "My Virtual Gamepad", SPF_INPUT_DEVICE_TYPE_GENERIC);
         
-        if (s_myGamepad) {
-            // Add inputs before registering
-            s_coreAPI->input->AddButton(s_myGamepad, "honk_button", "Virtual Honk");
-            s_coreAPI->input->AddAxis(s_myGamepad, "steer_axis", "Virtual Steering");
+        if (s_hGamepad) {
+            // 2. Add inputs before registering
+            api->input->Virt_AddButton(s_hGamepad, "honk_button", "Virtual Honk");
+            api->input->Virt_AddAxis(s_hGamepad, "steer_axis", "Virtual Steering");
             
-            // Finalize the device
-            s_coreAPI->input->Register(s_myGamepad);
+            // 3. Finalize the device
+            api->input->Virt_Register(s_hGamepad);
         }
     }
 }
 
-// 2. Simulate events in the update loop
 void MyPlugin_OnUpdate() {
-    if (!s_coreAPI || !s_coreAPI->telemetry || !s_myGamepad) return;
+    if (!s_hGamepad) return;
 
-    // Example: Press the button if the truck speed is over 20 m/s
-    SPF_TruckData truck_data;
-    s_coreAPI->telemetry->GetTruckData(s_coreAPI->telemetry->GetContext("MyPlugin"), &truck_data);
-
-    if (truck_data.speed > 20.0f) {
-        s_coreAPI->input->PressButton(s_myGamepad, "honk_button");
+    // 4. Simulate events
+    if (ShouldHonk()) {
+        g_coreApi->input->Virt_PressButton(s_hGamepad, "honk_button");
     } else {
-        s_coreAPI->input->ReleaseButton(s_myGamepad, "honk_button");
+        g_coreApi->input->Virt_ReleaseButton(s_hGamepad, "honk_button");
     }
 
-    // Example: Map some other value to the steering axis
-    float some_value = -0.5f; // This could come from anywhere (e.g., phone sensor)
-    s_coreAPI->input->SetAxisValue(s_myGamepad, "steer_axis", some_value);
+    float steering = 0.5f; 
+    g_coreApi->input->Virt_SetAxisValue(s_hGamepad, "steer_axis", steering);
 }
 ```
 After running this code, you can go into the game's controls menu, see "My Virtual Gamepad", and bind "Virtual Honk" and "Virtual Steering" to game actions.

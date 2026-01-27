@@ -12,7 +12,7 @@
 SPF_NS_BEGIN
 namespace Modules::API {
 
-SPF_VirtualDevice_Handle* VirtualInputApi::I_CreateDevice(const char* pluginName, const char* deviceName, const char* displayName, SPF_InputDeviceType type) {
+SPF_VirtualDevice_Handle* VirtualInputApi::Virt_CreateDevice(const char* pluginName, const char* deviceName, const char* displayName, SPF_InputDeviceType type) {
     auto& pm = PluginManager::GetInstance();
     if (!pluginName || !deviceName || !displayName || !pm.GetInputService() || !pm.GetHandleManager()) return nullptr;
 
@@ -29,66 +29,65 @@ SPF_VirtualDevice_Handle* VirtualInputApi::I_CreateDevice(const char* pluginName
     auto* device = pm.GetInputService()->CreateDevice(prefixedName, displayName, static_cast<scs_input_device_type_t>(type));
     if (!device) return nullptr;
 
-    auto handle = std::make_unique<Handles::InputDeviceHandle>(device);
+    auto handle = std::make_unique<Handles::InputDeviceHandle>(device, pluginName);
     return reinterpret_cast<SPF_VirtualDevice_Handle*>(pm.GetHandleManager()->RegisterHandle(pluginName, std::move(handle)));
 }
 
-void VirtualInputApi::I_AddButton(SPF_VirtualDevice_Handle* handle, const char* inputName, const char* displayName) {
-    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(handle);
+void VirtualInputApi::Virt_AddButton(SPF_VirtualDevice_Handle* h, const char* inputName, const char* displayName) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
     if (devHandle && devHandle->device && inputName && displayName) {
         devHandle->device->AddButton(inputName, displayName);
     }
 }
 
-void VirtualInputApi::I_AddAxis(SPF_VirtualDevice_Handle* handle, const char* inputName, const char* displayName) {
-    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(handle);
+void VirtualInputApi::Virt_AddAxis(SPF_VirtualDevice_Handle* h, const char* inputName, const char* displayName) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
     if (devHandle && devHandle->device && inputName && displayName) {
         devHandle->device->AddAxis(inputName, displayName);
     }
 }
 
-bool VirtualInputApi::I_Register(SPF_VirtualDevice_Handle* handle) {
-    // This is a slightly more complex case. The device is already created in the SCSInputService.
-    // The SCSInputService is responsible for registering it with the game at the correct time (in its Initialize method).
-    // This function could perhaps trigger that registration if we change the logic, but for now, we can make it a no-op
-    // or have it log that registration is automatic.
+bool VirtualInputApi::Virt_Register(SPF_VirtualDevice_Handle* h) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
+    if (!devHandle || !devHandle->device) return false;
+
     auto& pm = PluginManager::GetInstance();
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-    if (logger) logger->Info("I_Register is a no-op. Devices are registered centrally after all plugins are loaded.");
-    return true;
+    if (!pm.GetInputService()) return false;
+
+    return pm.GetInputService()->RegisterDevice(devHandle->device, devHandle->ownerName);
 }
 
-void VirtualInputApi::I_PressButton(SPF_VirtualDevice_Handle* handle, const char* inputName) {
-    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(handle);
+void VirtualInputApi::Virt_PressButton(SPF_VirtualDevice_Handle* h, const char* inputName) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
     if (devHandle && devHandle->device && inputName) {
         devHandle->device->PushButtonPress(inputName);
     }
 }
 
-void VirtualInputApi::I_ReleaseButton(SPF_VirtualDevice_Handle* handle, const char* inputName) {
-    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(handle);
+void VirtualInputApi::Virt_ReleaseButton(SPF_VirtualDevice_Handle* h, const char* inputName) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
     if (devHandle && devHandle->device && inputName) {
         devHandle->device->PushButtonRelease(inputName);
     }
 }
 
-void VirtualInputApi::I_SetAxisValue(SPF_VirtualDevice_Handle* handle, const char* inputName, float value) {
-    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(handle);
+void VirtualInputApi::Virt_SetAxisValue(SPF_VirtualDevice_Handle* h, const char* inputName, float value) {
+    auto* devHandle = reinterpret_cast<Handles::InputDeviceHandle*>(h);
     if (devHandle && devHandle->device && inputName) {
         devHandle->device->PushAxisChange(inputName, value);
     }
 }
 
-void VirtualInputApi::FillVirtualInputApi(SPF_Input_API* api) {
+void VirtualInputApi::FillVirtualInputApi(SPF_VirtInput_API* api) {
     if (!api) return;
 
-    api->CreateDevice = &VirtualInputApi::I_CreateDevice;
-    api->AddButton = &VirtualInputApi::I_AddButton;
-    api->AddAxis = &VirtualInputApi::I_AddAxis;
-    api->Register = &VirtualInputApi::I_Register;
-    api->PressButton = &VirtualInputApi::I_PressButton;
-    api->ReleaseButton = &VirtualInputApi::I_ReleaseButton;
-    api->SetAxisValue = &VirtualInputApi::I_SetAxisValue;
+    api->Virt_CreateDevice = &VirtualInputApi::Virt_CreateDevice;
+    api->Virt_AddButton = &VirtualInputApi::Virt_AddButton;
+    api->Virt_AddAxis = &VirtualInputApi::Virt_AddAxis;
+    api->Virt_Register = &VirtualInputApi::Virt_Register;
+    api->Virt_PressButton = &VirtualInputApi::Virt_PressButton;
+    api->Virt_ReleaseButton = &VirtualInputApi::Virt_ReleaseButton;
+    api->Virt_SetAxisValue = &VirtualInputApi::Virt_SetAxisValue;
 }
 
 } // namespace Modules::API

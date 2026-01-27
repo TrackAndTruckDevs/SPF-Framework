@@ -76,6 +76,8 @@ class PluginManager {
   void DiscoverPlugins();
   void InitializePlugins();
   void LoadPlugin(const std::string& pluginName);
+  void ActivatePlugins();
+  void ActivatePlugin(const std::string& pluginName);
   void UnloadPlugin(const std::string& pluginName);
   void QueuePluginForUnload(const std::string& pluginName);
   void ProcessUnloadQueue();
@@ -155,7 +157,7 @@ class PluginManager {
   SPF_KeyBinds_API m_keybindsAPI{};
   SPF_UI_API m_uiAPI{};
   SPF_Telemetry_API m_telemetryAPI{};
-  SPF_Input_API m_inputAPI{};
+  SPF_VirtInput_API m_inputAPI{};
   SPF_Hooks_API m_hooksAPI{};
   SPF_Camera_API m_cameraAPI{};
   SPF_GameConsole_API m_gameConsoleAPI{};

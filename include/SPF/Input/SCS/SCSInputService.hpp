@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <set>
 
 SPF_NS_BEGIN
 
@@ -37,7 +38,9 @@ class SCSInputService final : public Modules::IInputService {
 
   // --- Device Management ---
   VirtualDevice* CreateDevice(const std::string& name, const std::string& displayName, scs_input_device_type_t type) override;
+  bool RegisterDevice(VirtualDevice* device, const std::string& componentName) override;
   void RegisterCreatedDevices() override;
+  bool IsRestartRequiredForComponent(const std::string& componentName) const override;
 
  private:
   // --- Static Callbacks for SCS SDK ---
@@ -53,6 +56,8 @@ class SCSInputService final : public Modules::IInputService {
 
   // --- SDK State ---
   scs_input_register_device_t m_register_device_func = nullptr;
+  bool m_registrationClosed = false;
+  std::set<std::string> m_componentsRequiringRestart;
 
   // --- Owned Devices ---
   std::vector<std::unique_ptr<VirtualDevice>> m_devices;

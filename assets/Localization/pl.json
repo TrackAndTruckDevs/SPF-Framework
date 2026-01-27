@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Informacje o wtyczce",
             "description": "Opis",
-            "settings": "Ustawienia"
+            "settings": "Ustawienia",
+            "restart_sdk": "Uruchom ponownie SDK, aby aktywować wirtualne urządzenia wejściowe"
         },
         "info_popup": {
             "author": "Autor:",
             "version": "Wersja:"
         },
         "status": {
-            "incompatible": "Wymaga wersji SPF Framework:"
+            "incompatible": "Wymaga wersji SPF Framework:",
+            "virt_input_restart_required": "Wymagany restart dla wirtualnych wejść"
         }
     },
     "settings_window": {

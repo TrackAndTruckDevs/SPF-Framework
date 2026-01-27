@@ -2,7 +2,9 @@
 #include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include "SPF/Modules/PluginManager.hpp"
+#include "SPF/Modules/IInputService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
@@ -29,6 +31,8 @@ PluginsWindow::PluginsWindow(Config::IConfigService& configService, Events::Even
   m_locInfoPopupAuthor = "plugins_window.info_popup.author";
   m_locInfoPopupVersion = "plugins_window.info_popup.version";
   m_locStatusIncompatible = "plugins_window.status.incompatible";
+  m_locVirtInputRestartRequired = "plugins_window.status.virt_input_restart_required";
+  m_locTooltipRestartSDK = "plugins_window.tooltips.restart_sdk";
 }
 
 const char* PluginsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_locTitle).c_str(); }
@@ -93,6 +97,41 @@ void PluginsWindow::RenderContent() {
 
       const std::string displayName = componentInfo.name.value_or(componentId);
       ImGui::TextUnformatted(displayName.c_str());
+
+      // --- Restart Required Warning (Virtual Input) ---
+      if (pluginManager.GetInputService() && pluginManager.GetInputService()->IsRestartRequiredForComponent(componentId)) {
+          const std::string warningText = loc.Get(m_locVirtInputRestartRequired);
+          
+          // Calculate total width for right-alignment: icon + spacing + text + spacing + reload_icon
+          float warningIconWidth = Typography::CalcTextSize(ICON_FA_EXCLAMATION_TRIANGLE).x;
+          float textWidth = Typography::CalcTextSize(warningText.c_str()).x;
+          float reloadIconWidth = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
+          float spacing = ImGui::GetStyle().ItemSpacing.x;
+          float totalWidth = warningIconWidth + spacing + textWidth + spacing + reloadIconWidth;
+
+          // Position to the right with 10px margin
+          ImGui::SameLine();
+          float currentPosX = ImGui::GetCursorPosX();
+          float availWidth = ImGui::GetContentRegionAvail().x;
+          ImGui::SetCursorPosX(currentPosX + availWidth - totalWidth - 10.0f);
+
+          // 1. Yellow Warning Icon
+          Typography::Text(TextStyle::Regular().Color(Colors::YELLOW), ICON_FA_EXCLAMATION_TRIANGLE);
+          
+          // 2. Localized Text
+          ImGui::SameLine();
+          Typography::Text(TextStyle::Regular().Color(Colors::WHITE), warningText.c_str());
+
+          // 3. Interactive Reload Icon (Gold on hover)
+          ImGui::SameLine();
+          if (HyperlinkButton(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+              m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
+          }
+          if (ImGui::IsItemHovered()) {
+              ImGui::SetTooltip("%s", loc.Get(m_locTooltipRestartSDK).c_str());
+          }
+      }
+
       if (!isCompatible) {
         ImGui::SameLine();
         Typography::Text(TextStyle::Bold().Color(Colors::RED), "%s %s", loc.Get(m_locStatusIncompatible).c_str(), componentInfo.incompatibilityReason.value_or(""));

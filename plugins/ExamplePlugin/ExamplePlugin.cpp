@@ -276,15 +276,18 @@ void OnLoad(const SPF_Load_API* load_api) {
 
     // It's crucial to check if the API pointers are valid before using them. This prevents
     // crashes if the framework fails to provide them for some reason.
-    if (g_ctx.loadAPI && g_ctx.loadAPI->logger && g_ctx.loadAPI->config) {
+    if (g_ctx.loadAPI && g_ctx.loadAPI->logger && g_ctx.loadAPI->config && g_ctx.loadAPI->input) {
         // Get a handle to our plugin's dedicated logger instance.
         auto logger = g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME);
         g_ctx.loadAPI->logger->Log(logger, SPF_LOG_INFO, "ExamplePlugin has been loaded!");
 
-        // Read initial values from the config file. The `GetContext` call gets a handle
-        // specific to our plugin, ensuring we don't conflict with other plugins' settings.
+        // Read initial values from the config file.
         auto config = g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME);
         g_ctx.someNumber = g_ctx.loadAPI->config->Cfg_GetInt32(config, "settings.a_simple_number", 42);
+
+        // Initialize virtual devices early (in OnLoad) so they can be registered by the game SDK
+        // during its own input initialization phase.
+        InitializeVirtualDevice(g_ctx.loadAPI->input, g_ctx.loadAPI->logger);
 
         // Log the initial value. Use a local buffer for safe cross-DLL string formatting.
         char log_buffer[256];
@@ -322,7 +325,6 @@ void OnActivated(const SPF_Core_API* core_api) {
     }
 
     // Initialize more complex features that need the core API.
-    InitializeVirtualDevice();
     InstallGameStringFormattingHook();
 
     // Parse the complex object on activation to demonstrate GetJsonValueHandle and JsonReaderApi.
@@ -1136,10 +1138,10 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_Button("Hold to Honk", 0, 0); // The button itself is just for show.
     if (ui->UI_IsItemActive()) {
         // While the ImGui button is held down, press the virtual button.
-        g_ctx.coreAPI->input->PressButton(g_ctx.virtualDevice, "virt_honk");
+        g_ctx.coreAPI->input->Virt_PressButton(g_ctx.virtualDevice, "virt_honk");
     } else {
         // When the ImGui button is released, release the virtual button.
-        g_ctx.coreAPI->input->ReleaseButton(g_ctx.virtualDevice, "virt_honk");
+        g_ctx.coreAPI->input->Virt_ReleaseButton(g_ctx.virtualDevice, "virt_honk");
     }
     ui->UI_Separator();
 
@@ -1148,7 +1150,7 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_Text("Virtual Throttle Axis:");
     if (ui->UI_SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f")) {
         // When the slider value changes, update the virtual axis value.
-        g_ctx.coreAPI->input->SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
+        g_ctx.coreAPI->input->Virt_SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
     }
 }
 
@@ -1229,11 +1231,11 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
  *          will appear in the game's keybinding menu, allowing the user to assign them to
  *          physical hardware. The plugin can then programmatically control them.
  */
-void InitializeVirtualDevice() {
-    if (!g_ctx.coreAPI || !g_ctx.coreAPI->input) return;
+void InitializeVirtualDevice(SPF_VirtInput_API* input_api, SPF_Logger_API* logger_api) {
+    if (!input_api || !logger_api) return;
 
-    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
-    g_ctx.virtualDevice = g_ctx.coreAPI->input->CreateDevice(
+    auto logger = logger_api->Log_GetContext(PLUGIN_NAME);
+    g_ctx.virtualDevice = input_api->Virt_CreateDevice(
         PLUGIN_NAME,
         "Example_virtual_device",
         "ExamplePlugin Virtual Controller",
@@ -1241,19 +1243,19 @@ void InitializeVirtualDevice() {
     );
 
     if (!g_ctx.virtualDevice) {
-        g_ctx.coreAPI->logger->Log(logger, SPF_LOG_ERROR, "Failed to create virtual device.");
+        logger_api->Log(logger, SPF_LOG_ERROR, "Failed to create virtual device.");
         return;
     }
 
     // Add a button and an axis to the virtual device.
-    g_ctx.coreAPI->input->AddButton(g_ctx.virtualDevice, "virt_honk", "Virtual Honk");
-    g_ctx.coreAPI->input->AddAxis(g_ctx.virtualDevice, "virt_throttle", "Virtual Throttle");
+    input_api->Virt_AddButton(g_ctx.virtualDevice, "virt_honk", "Virtual Honk");
+    input_api->Virt_AddAxis(g_ctx.virtualDevice, "virt_throttle", "Virtual Throttle");
 
     // Register the device with the framework to make it active.
-    if (g_ctx.coreAPI->input->Register(g_ctx.virtualDevice)) {
-        g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Successfully registered virtual device.");
+    if (input_api->Virt_Register(g_ctx.virtualDevice)) {
+        logger_api->Log(logger, SPF_LOG_INFO, "Successfully registered virtual device.");
     } else {
-        g_ctx.coreAPI->logger->Log(logger, SPF_LOG_ERROR, "Failed to register virtual device.");
+        logger_api->Log(logger, SPF_LOG_ERROR, "Failed to register virtual device.");
     }
 }
 

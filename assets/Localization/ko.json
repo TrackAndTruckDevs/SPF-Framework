@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "플러그인 정보",
             "description": "설명",
-            "settings": "설정"
+            "settings": "설정",
+            "restart_sdk": "가상 입력 장치를 활성화하려면 SDK를 재시작하십시오"
         },
         "info_popup": {
             "author": "제작자:",
             "version": "버전:"
         },
         "status": {
-            "incompatible": "필수 SPF 프레임워크 버전:"
+            "incompatible": "필수 SPF 프레임워크 버전:",
+            "virt_input_restart_required": "가상 입력을 위해 재시작이 필요합니다"
         }
     },
     "settings_window": {

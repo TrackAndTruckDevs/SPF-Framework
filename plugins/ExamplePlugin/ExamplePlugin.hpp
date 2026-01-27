@@ -406,7 +406,7 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
  * @brief Creates and registers the plugin's virtual input device.
  * @details This demonstrates the workflow for the Virtual Input API: create, add inputs, then register.
  */
-void InitializeVirtualDevice();
+void InitializeVirtualDevice(SPF_VirtInput_API* input_api, SPF_Logger_API* logger_api);
 
 /**
  * @brief Parses the `a_complex_object` setting to demonstrate `Cfg_GetJsonValueHandle` and `JsonReaderApi`.

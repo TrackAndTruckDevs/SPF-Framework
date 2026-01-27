@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Informace o pluginu",
             "description": "Popis",
-            "settings": "Nastavení"
+            "settings": "Nastavení",
+            "restart_sdk": "Restartujte SDK pro aktivaci virtuálních vstupních zařízení"
         },
         "info_popup": {
             "author": "Autor:",
             "version": "Verze:"
         },
         "status": {
-            "incompatible": "Vyžaduje verzi SPF Framework:"
+            "incompatible": "Vyžaduje verzi SPF Framework:",
+            "virt_input_restart_required": "Pro virtuální vstupy je vyžadován restart"
         }
     },
     "settings_window": {

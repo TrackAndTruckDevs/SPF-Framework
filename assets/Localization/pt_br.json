@@ -88,14 +88,16 @@
         "tooltips": {
             "info": "Informações do Plugin",
             "description": "Descrição",
-            "settings": "Configurações"
+            "settings": "Configurações",
+            "restart_sdk": "Reinicie o SDK para ativar dispositivos de entrada virtuais"
         },
         "info_popup": {
             "author": "Autor:",
             "version": "Versão:"
         },
         "status": {
-            "incompatible": "Requer a versão SPF Framework:"
+            "incompatible": "Requer a versão SPF Framework:",
+            "virt_input_restart_required": "Reinicialização necessária para entradas virtuais"
         }
     },
     "settings_window": {

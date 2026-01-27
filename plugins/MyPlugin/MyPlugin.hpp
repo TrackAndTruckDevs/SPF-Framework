@@ -40,7 +40,7 @@
 // #include <SPF/SPF_API/SPF_Telemetry_API.h>      // For SPF_Telemetry_Handle
 // #include <SPF/SPF_API/SPF_Hooks_API.h>          // For SPF_Hooks_API, SPF_Hook_Handle
 // #include <SPF/SPF_API/SPF_GameConsole_API.h>    // For SPF_GameConsole_API
-// #include <SPF/SPF_API/SPF_VirtInput_API.h>      // For SPF_VirtualDevice_Handle
+// #include <SPF/SPF_API/SPF_VirtInput_API.h>      // For SPF_VirtInput_API, SPF_VirtualDevice_Handle
 // #include <SPF/SPF_API/SPF_Camera_API.h>         // For SPF_Camera_API
 // #include <SPF/SPF_API/SPF_GameLog_API.h>        // For SPF_GameLog_Callback_Handle
 // #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged). Functions: Json_GetType, Json_GetString, etc.
