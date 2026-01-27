@@ -1,3 +1,44 @@
+/**                                                                                               
+* @file SPF_UI_API.h                                                                          
+* @brief C-style API for creating and managing plugin UI windows.
+*                                                                                                 
+* @details This API provides a stable C interface to the framework's underlying 
+*          ImGui-based rendering engine. It uses an immediate-mode paradigm where 
+*          the UI is defined and processed every frame inside a draw callback.
+*                                                                                                 
+* ================================================================================================
+* KEY CONCEPTS                                                                                    
+* ================================================================================================
+*                                                                                                 
+* 1. **Immediate Mode**: UI elements are not persistent objects. They are "drawn" 
+*    every frame within the draw callback. State must be managed by the plugin.
+*                                                                                                 
+* 2. **Draw Callbacks**: The framework calls a plugin-provided function to render 
+*    each window. This function receives a pointer to the 'SPF_UI_API' table.
+*                                                                                                 
+* 3. **Window Lifecycle**: Windows are declared in the manifest, registered in 
+*    'OnRegisterUI', and drawn during the frame rendering phase.
+*                                                                                                 
+* ================================================================================================
+* USAGE EXAMPLE (C++)                                                                             
+* ================================================================================================
+* @code                                                                                           
+* // 1. Define your rendering logic
+* void MyPlugin_RenderWindow(SPF_UI_API* ui, void* user_data) {
+*     ui->UI_Text("Welcome to my Plugin!");
+*     
+*     static bool my_bool = false;
+*     if (ui->UI_Checkbox("Enable Feature", &my_bool)) {
+*         // React to change...
+*     }
+* }
+*
+* // 2. Register the callback during initialization
+* void OnRegisterUI(SPF_UI_API* api) {
+*     api->UI_RegisterDrawCallback("MyPlugin", "MainWindow", MyPlugin_RenderWindow, nullptr);
+* }
+* @endcode                                                                                        
+*/ 
 #pragma once
 
 #include <stdbool.h>
@@ -128,12 +169,12 @@ typedef void (*SPF_DrawCallback)(struct SPF_UI_API* builder, void* user_data);
  * 2.  **Implement a Draw Callback**: For each window, create a C-style function in your
  *     plugin that will be responsible for drawing its content. This function must
  *     match the `SPF_DrawCallback` signature.
- * 3.  **Register the Callback**: Implement the `OnRegisterUI` lifecycle function in your
- *     plugin. The framework will call this function once. Inside it, call
- *     `RegisterDrawCallback` for each window, linking the window ID from the
- *     manifest to your corresponding draw callback function.
- * 4.  **Draw Widgets**: Inside your draw callback, use the provided `SPF_UI_API*`
- *     pointer to call widget functions (`Text`, `Button`, etc.) to build your UI.
+      * 3.  **Register the Callback**: Implement the `OnRegisterUI` lifecycle function in your
+      *     plugin. The framework will call this function once. Inside it, call
+      *     `UI_RegisterDrawCallback` for each window, linking the window ID from the
+      *     manifest to your corresponding draw callback function.
+      * 4.  **Draw Widgets**: Inside your draw callback, use the provided `SPF_UI_API*`
+      *      pointer to call widget functions (`Text`, `Button`, etc.) to build your UI.
  *     This is done every frame the window is visible.
  */
 typedef struct SPF_UI_API {
@@ -150,13 +191,13 @@ typedef struct SPF_UI_API {
      * @param drawCallback A function pointer that will be called to render the window's content.
      * @param user_data An optional pointer to user data that will be passed to the callback.
      */
-    void (*RegisterDrawCallback)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data);
+    void (*UI_RegisterDrawCallback)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data);
 
     /**
      * @brief Registers a draw callback for a window with additional control flags.
      *
      * @details This function is an alternative way to register a window. It extends
-     *          `RegisterDrawCallback` by allowing you to provide `SPF_Window_Flags`
+     *          `UI_RegisterDrawCallback` by allowing you to provide `SPF_Window_Flags`
      *          to control the window's behavior (e.g., disable resizing, add a menu bar).
      *
      * @param pluginName The name of the plugin owning this window.
@@ -165,7 +206,7 @@ typedef struct SPF_UI_API {
      * @param user_data An optional pointer to user data.
      * @param flags A bitmask of `SPF_Window_Flags` to control window properties.
      */
-    void (*RegisterDrawCallbackWithFlags)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data, SPF_Window_Flags flags);
+    void (*UI_RegisterDrawCallbackWithFlags)(const char* pluginName, const char* windowId, SPF_DrawCallback drawCallback, void* user_data, SPF_Window_Flags flags);
 
     /**
      * @brief Gets a handle to a window for programmatic control.
@@ -173,21 +214,21 @@ typedef struct SPF_UI_API {
      * @param windowId The unique identifier for the window.
      * @return A handle to the window, or NULL if not found.
      */
-    SPF_Window_Handle* (*GetWindowHandle)(const char* pluginName, const char* windowId);
+    SPF_Window_Handle* (*UI_GetWindowHandle)(const char* pluginName, const char* windowId);
 
     /**
      * @brief Programmatically sets the visibility of a window.
      * @param handle The window handle obtained from GetWindowHandle.
      * @param isVisible The new visibility state.
      */
-    void (*SetVisibility)(SPF_Window_Handle* handle, bool isVisible);
+    void (*UI_SetVisibility)(SPF_Window_Handle* handle, bool isVisible);
 
     /**
      * @brief Gets the current visibility of a window.
      * @param handle The window handle.
      * @return True if the window is currently visible, false otherwise.
      */
-    bool (*IsVisible)(SPF_Window_Handle* handle);
+    bool (*UI_IsVisible)(SPF_Window_Handle* handle);
 
 
 
@@ -200,7 +241,7 @@ typedef struct SPF_UI_API {
      *          printf-style formatting by default.
      * @param text The string to display.
      */
-    void (*Text)(const char* text);
+    void (*UI_Text)(const char* text);
 
     /**
      * @brief Displays colored text.
@@ -209,7 +250,7 @@ typedef struct SPF_UI_API {
      * @param text The format string for the text.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*TextColored)(float r, float g, float b, float a, const char* text);
+    void (*UI_TextColored)(float r, float g, float b, float a, const char* text);
 
     /**
      * @brief Displays disabled (grayed-out) text.
@@ -218,7 +259,7 @@ typedef struct SPF_UI_API {
      * @param text The format string for the text.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*TextDisabled)(const char* text);
+    void (*UI_TextDisabled)(const char* text);
 
     /**
      * @brief Displays text that wraps automatically within the current content region.
@@ -227,7 +268,7 @@ typedef struct SPF_UI_API {
      * @param text The format string for the text.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*TextWrapped)(const char* text);
+    void (*UI_TextWrapped)(const char* text);
 
     /**
      * @brief Displays a label followed by text.
@@ -237,7 +278,7 @@ typedef struct SPF_UI_API {
      * @param text The format string for the value text.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*LabelText)(const char* label, const char* text);
+    void (*UI_LabelText)(const char* label, const char* text);
 
     /**
      * @brief Displays text preceded by a bullet point.
@@ -246,7 +287,7 @@ typedef struct SPF_UI_API {
      * @param text The format string for the text.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*BulletText)(const char* text);
+    void (*UI_BulletText)(const char* text);
 
     /**
      * @brief Displays a clickable button.
@@ -255,15 +296,15 @@ typedef struct SPF_UI_API {
      * @param height The height of the button. Use 0 for auto-height.
      * @return True if the button was clicked this frame, false otherwise.
      */
-    bool (*Button)(const char* label, float width, float height);
+    bool (*UI_Button)(const char* label, float width, float height);
 
     /**
      * @brief Displays a small clickable button.
-     * @details A compact version of `Button`.
+     * @details A compact version of `UI_Button`.
      * @param label The text displayed on the button.
      * @return True if the button was clicked this frame, false otherwise.
      */
-    bool (*SmallButton)(const char* label);
+    bool (*UI_SmallButton)(const char* label);
 
     /**
      * @brief Creates an invisible button for custom interaction areas.
@@ -275,7 +316,7 @@ typedef struct SPF_UI_API {
      * @param height The height of the invisible button.
      * @return True if the invisible button was clicked this frame, false otherwise.
      */
-    bool (*InvisibleButton)(const char* str_id, float width, float height);
+    bool (*UI_InvisibleButton)(const char* str_id, float width, float height);
 
     /**
      * @brief Displays a checkbox for boolean values.
@@ -283,7 +324,7 @@ typedef struct SPF_UI_API {
      * @param v A pointer to the boolean variable to be linked to the checkbox state.
      * @return True if the checkbox's state changed this frame, false otherwise.
      */
-    bool (*Checkbox)(const char* label, bool* v);
+    bool (*UI_Checkbox)(const char* label, bool* v);
 
     /**
      * @brief Displays a radio button.
@@ -292,7 +333,7 @@ typedef struct SPF_UI_API {
      * @param active The current active state of this radio button.
      * @return True if the radio button was clicked this frame, false otherwise.
      */
-    bool (*RadioButton)(const char* label, bool active);
+    bool (*UI_RadioButton)(const char* label, bool active);
 
     /**
      * @brief Displays a progress bar.
@@ -301,12 +342,12 @@ typedef struct SPF_UI_API {
      * @param height The height of the progress bar. Use 0 for auto-height.
      * @param overlay An optional text string to display over the progress bar.
      */
-    void (*ProgressBar)(float fraction, float width, float height, const char* overlay);
+    void (*UI_ProgressBar)(float fraction, float width, float height, const char* overlay);
 
     /**
      * @brief Displays a simple bullet point.
      */
-    void (*Bullet)();
+    void (*UI_Bullet)();
 
     // --- Layout & Spacing ---
 
@@ -314,28 +355,28 @@ typedef struct SPF_UI_API {
      * @brief Adds a horizontal line separator.
      * @details Visually separates widgets on the same line or in the same column.
      */
-    void (*Separator)();
+    void (*UI_Separator)();
 
     /**
      * @brief Adds a vertical space.
      * @details Inserts vertical blank space equal to one line height.
      */
-    void (*Spacing)();
+    void (*UI_Spacing)();
 
     /**
      * @brief Indents the following widgets.
      * @details Moves the cursor position to the right, effectively indenting all
-     *          subsequent widgets until `Unindent` is called.
+     *          subsequent widgets until `UI_Unindent` is called.
      * @param indent_w The amount of horizontal space to indent by. Use 0.0f for default.
      */
-    void (*Indent)(float indent_w);
+    void (*UI_Indent)(float indent_w);
 
     /**
      * @brief Unindents the following widgets.
      * @details Moves the cursor position to the left, canceling the effect of `Indent`.
      * @param indent_w The amount of horizontal space to unindent by. Use 0.0f for default.
      */
-    void (*Unindent)(float indent_w);
+    void (*UI_Unindent)(float indent_w);
 
     /**
      * @brief Places the next widget on the same line as the previous one.
@@ -343,7 +384,7 @@ typedef struct SPF_UI_API {
      * @param offset_from_start_x Optional horizontal offset from the start of the line. Use 0.0f for default.
      * @param spacing Optional horizontal spacing between the current and previous widget. Use -1.0f for default.
      */
-    void (*SameLine)(float offset_from_start_x, float spacing);
+    void (*UI_SameLine)(float offset_from_start_x, float spacing);
 
     // --- Input Widgets ---
 
@@ -354,7 +395,7 @@ typedef struct SPF_UI_API {
      * @param buf_size The size of the character buffer.
      * @return True if the input text was modified this frame, false otherwise.
      */
-    bool (*InputText)(const char* label, char* buf, size_t buf_size);
+    bool (*UI_InputText)(const char* label, char* buf, size_t buf_size);
 
     /**
      * @brief Displays an integer input field.
@@ -365,7 +406,7 @@ typedef struct SPF_UI_API {
      * @param flags Additional flags to customize behavior (e.g., `ImGuiInputTextFlags_CharsHexadecimal`).
      * @return True if the input value was modified this frame, false otherwise.
      */
-    bool (*InputInt)(const char* label, int* v, int step, int step_fast, int flags);
+    bool (*UI_InputInt)(const char* label, int* v, int step, int step_fast, int flags);
 
     /**
      * @brief Displays a floating-point number input field.
@@ -377,7 +418,7 @@ typedef struct SPF_UI_API {
      * @param flags Additional flags to customize behavior.
      * @return True if the input value was modified this frame, false otherwise.
      */
-    bool (*InputFloat)(const char* label, float* v, float step, float step_fast, const char* format, int flags);
+    bool (*UI_InputFloat)(const char* label, float* v, float step, float step_fast, const char* format, int flags);
 
     /**
      * @brief Displays a double-precision floating-point number input field.
@@ -388,23 +429,23 @@ typedef struct SPF_UI_API {
      * @param format The format string for displaying the double.
      * @return True if the input value was modified this frame, false otherwise.
      */
-    bool (*InputDouble)(const char* label, double* v, double step, double step_fast, const char* format);
+    bool (*UI_InputDouble)(const char* label, double* v, double step, double step_fast, const char* format);
 
     /**
      * @brief Begins a combo box (dropdown list).
-     * @details This function must be followed by calls to `Selectable` for each item
-     *          and then `EndCombo`.
+     * @details This function must be followed by calls to `UI_Selectable` for each item
+     *          and then `UI_EndCombo`.
      * @param label The text label for the combo box.
      * @param preview_value The text to display when the combo box is closed.
      * @return True if the combo box is open, false otherwise.
      */
-    bool (*BeginCombo)(const char* label, const char* preview_value);
+    bool (*UI_BeginCombo)(const char* label, const char* preview_value);
 
     /**
      * @brief Ends a combo box.
-     * @details Must be called after `BeginCombo`.
+     * @details Must be called after `UI_BeginCombo`.
      */
-    void (*EndCombo)();
+    void (*UI_EndCombo)();
 
     /**
      * @brief Displays a selectable item, typically used within combo boxes or menus.
@@ -412,18 +453,18 @@ typedef struct SPF_UI_API {
      * @param selected The current selected state of the item.
      * @return True if the item was clicked this frame, false otherwise.
      */
-    bool (*Selectable)(const char* label, bool selected);
+    bool (*UI_Selectable)(const char* label, bool selected);
 
     // --- Tree Nodes ---
 
     /**
      * @brief Displays a collapsible tree node.
-     * @details Used to create hierarchical UI elements. Widgets drawn after `TreeNode`
-     *          will appear as children until `TreePop` is called.
+     * @details Used to create hierarchical UI elements. Widgets drawn after `UI_TreeNode`
+     *          will appear as children until `UI_TreePop` is called.
      * @param label The text label for the tree node.
      * @return True if the tree node is open (expanded), false otherwise.
      */
-    bool (*TreeNode)(const char* label);
+    bool (*UI_TreeNode)(const char* label);
 
     /**
      * @brief Pushes a string ID onto the ID stack, intended for use with custom tree nodes.
@@ -431,82 +472,82 @@ typedef struct SPF_UI_API {
      *          or custom collapsible headers.
      * @param str_id The string identifier to push.
      */
-    void (*TreePush)(const char* str_id);
+    void (*UI_TreePush)(const char* str_id);
 
     /**
-     * @brief Pops an ID from the ID stack, matching a previous `TreePush`.
+     * @brief Pops an ID from the ID stack, matching a previous `UI_TreePush`.
      */
-    void (*TreePop)();
+    void (*UI_TreePop)();
 
     // --- Tabs ---
 
     /**
      * @brief Begins a tab bar.
      * @details This function creates a horizontal bar that can contain multiple tab items.
-     *          It must be matched with an `EndTabBar`.
+     *          It must be matched with an `UI_EndTabBar`.
      * @param str_id A unique string identifier for the tab bar.
      * @return True if the tab bar is visible, false otherwise.
      */
-    bool (*BeginTabBar)(const char* str_id);
+    bool (*UI_BeginTabBar)(const char* str_id);
 
     /**
      * @brief Ends a tab bar.
-     * @details Must be called after `BeginTabBar`.
+     * @details Must be called after `UI_BeginTabBar`.
      */
-    void (*EndTabBar)();
+    void (*UI_EndTabBar)();
 
     /**
      * @brief Begins a tab item within a tab bar.
      * @details This function creates a clickable tab within a tab bar.
-     *          It must be matched with an `EndTabItem`.
+     *          It must be matched with an `UI_EndTabItem`.
      * @param label The text label for the tab item.
      * @return True if the tab item is currently selected and its content is visible, false otherwise.
      */
-    bool (*BeginTabItem)(const char* label);
+    bool (*UI_BeginTabItem)(const char* label);
 
     /**
      * @brief Ends a tab item.
-     * @details Must be called after `BeginTabItem`.
+     * @details Must be called after `UI_BeginTabItem`.
      */
-    void (*EndTabItem)();
+    void (*UI_EndTabItem)();
 
     // --- Tables ---
 
     /**
      * @brief Begins a table.
-     * @details This function creates a table layout. It must be matched with an `EndTable`.
+     * @details This function creates a table layout. It must be matched with an `UI_EndTable`.
      * @param str_id A unique string identifier for the table.
      * @param column The number of columns in the table.
      * @return True if the table is visible, false otherwise.
      */
-    bool (*BeginTable)(const char* str_id, int column);
+    bool (*UI_BeginTable)(const char* str_id, int column);
 
     /**
      * @brief Ends a table.
-     * @details Must be called after `BeginTable`.
+     * @details Must be called after `UI_BeginTable`.
      */
-    void (*EndTable)();
+    void (*UI_EndTable)();
 
     /**
      * @brief Advances to the next row in a table.
      * @details Call this function to start a new row after drawing all columns for the current row.
      */
-    void (*TableNextRow)();
+    void (*UI_TableNextRow)();
 
     /**
      * @brief Advances to the next column in a table.
      * @details Call this function to move to the next column within the current row.
      * @return True if there is a next column to move to, false if it's the last column.
      */
-    bool (*TableNextColumn)();
+    bool (*UI_TableNextColumn)();
 
     /**
      * @brief Sets up a column in a table.
      * @details This function defines properties for a table column, such as its label.
-     *          It should be called after `BeginTable` and before any calls to `TableNextRow` or `TableNextColumn`.
+     *          It should be called after `UI_BeginTable` and before any calls to `UI_TableNextRow` or `UI_TableNextColumn`.
      * @param label The label for the column header.
      */
-    void (*TableSetupColumn)(const char* label);
+    void (*UI_TableSetupColumn)(const char* label);
 
     // --- Popups & Tooltips ---
 
@@ -516,41 +557,41 @@ typedef struct SPF_UI_API {
      *          They are usually triggered by an item being hovered or clicked.
      * @param str_id A unique string identifier for the popup.
      */
-    void (*OpenPopup)(const char* str_id);
+    void (*UI_OpenPopup)(const char* str_id);
 
     /**
      * @brief Begins a popup.
-     * @details This function must be matched with an `EndPopup`. The content of the popup
+     * @details This function must be matched with an `UI_EndPopup`. The content of the popup
      *          will be drawn between these calls.
      * @param str_id The string identifier of the popup to begin.
      * @return True if the popup is open and its content is visible, false otherwise.
      */
-    bool (*BeginPopup)(const char* str_id);
+    bool (*UI_BeginPopup)(const char* str_id);
 
     /**
      * @brief Ends a popup.
-     * @details Must be called after `BeginPopup`.
+     * @details Must be called after `UI_BeginPopup`.
      */
-    void (*EndPopup)();
+    void (*UI_EndPopup)();
 
     /**
      * @brief Checks if the last item is hovered by the mouse.
      * @return True if the last item is hovered, false otherwise.
      */
-    bool (*IsItemHovered)();
+    bool (*UI_IsItemHovered)();
 
     /**
      * @brief Checks if the last item is active (e.g., being clicked or dragged).
      * @return True if the last item is active, false otherwise.
      */
-    bool (*IsItemActive)();
+    bool (*UI_IsItemActive)();
 
     /**
      * @brief Sets a tooltip for the immediately preceding item.
      * @param text The text to display in the tooltip.
      * @param ... Optional arguments for printf-style formatting.
      */
-    void (*SetTooltip)(const char* text);
+    void (*UI_SetTooltip)(const char* text);
 
     // --- Advanced Inputs ---
 
@@ -561,7 +602,7 @@ typedef struct SPF_UI_API {
      * @param buf_size The size of the character buffer.
      * @return True if the input text was modified this frame, false otherwise.
      */
-    bool (*InputTextMultiline)(const char* label, char* buf, size_t buf_size);
+    bool (*UI_InputTextMultiline)(const char* label, char* buf, size_t buf_size);
 
     /**
      * @brief Displays a 2-element float slider.
@@ -571,7 +612,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderFloat2)(const char* label, float v[2], float v_min, float v_max);
+    bool (*UI_SliderFloat2)(const char* label, float v[2], float v_min, float v_max);
     
     /**
      * @brief Displays a 3-element float slider.
@@ -581,7 +622,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderFloat3)(const char* label, float v[3], float v_min, float v_max);
+    bool (*UI_SliderFloat3)(const char* label, float v[3], float v_min, float v_max);
     
     /**
      * @brief Displays a 4-element float slider.
@@ -591,7 +632,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderFloat4)(const char* label, float v[4], float v_min, float v_max);
+    bool (*UI_SliderFloat4)(const char* label, float v[4], float v_min, float v_max);
     
     /**
      * @brief Displays a 2-element integer slider.
@@ -601,7 +642,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderInt2)(const char* label, int v[2], int v_min, int v_max);
+    bool (*UI_SliderInt2)(const char* label, int v[2], int v_min, int v_max);
     
     /**
      * @brief Displays a 3-element integer slider.
@@ -611,7 +652,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderInt3)(const char* label, int v[3], int v_min, int v_max);
+    bool (*UI_SliderInt3)(const char* label, int v[3], int v_min, int v_max);
     
     /**
      * @brief Displays a 4-element integer slider.
@@ -621,7 +662,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*SliderInt4)(const char* label, int v[4], int v_min, int v_max);
+    bool (*UI_SliderInt4)(const char* label, int v[4], int v_min, int v_max);
     
     /**
      * @brief Displays a 3-element color editor (RGB).
@@ -629,7 +670,7 @@ typedef struct SPF_UI_API {
      * @param col A pointer to an array of 3 floats (RGB components).
      * @return True if the color was modified.
      */
-    bool (*ColorEdit3)(const char* label, float col[3]);
+    bool (*UI_ColorEdit3)(const char* label, float col[3]);
     
     /**
      * @brief Displays a 4-element color editor (RGBA).
@@ -637,7 +678,7 @@ typedef struct SPF_UI_API {
      * @param col A pointer to an array of 4 floats (RGBA components).
      * @return True if the color was modified.
      */
-    bool (*ColorEdit4)(const char* label, float col[4]);
+    bool (*UI_ColorEdit4)(const char* label, float col[4]);
     
     /**
      * @brief Displays a float drag control.
@@ -648,7 +689,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*DragFloat)(const char* label, float* v, float v_speed, float v_min, float v_max);
+    bool (*UI_DragFloat)(const char* label, float* v, float v_speed, float v_min, float v_max);
     
     /**
      * @brief Displays an integer drag control.
@@ -659,7 +700,7 @@ typedef struct SPF_UI_API {
      * @param v_max The maximum value.
      * @return True if the value was modified.
      */
-    bool (*DragInt)(const char* label, int* v, float v_speed, int v_min, int v_max);
+    bool (*UI_DragInt)(const char* label, int* v, float v_speed, int v_min, int v_max);
 
     /**
      * @brief Displays an integer slider.
@@ -670,7 +711,7 @@ typedef struct SPF_UI_API {
      * @param format The format string for displaying the integer (e.g., "%d units").
      * @return True if the slider's value was modified this frame, false otherwise.
      */
-    bool (*SliderInt)(const char* label, int* v, int v_min, int v_max, const char* format);
+    bool (*UI_SliderInt)(const char* label, int* v, int v_min, int v_max, const char* format);
 
     /**
      * @brief Displays a floating-point number slider.
@@ -681,51 +722,51 @@ typedef struct SPF_UI_API {
      * @param format The format string for displaying the float (e.g., "%.3f").
      * @return True if the slider's value was modified this frame, false otherwise.
      */
-    bool (*SliderFloat)(const char* label, float* v, float v_min, float v_max, const char* format);
+    bool (*UI_SliderFloat)(const char* label, float* v, float v_min, float v_max, const char* format);
 
     // --- Style ---
 
     /**
      * @brief Pushes a color onto the style stack.
-     * @details Changes the color of subsequent widgets until `PopStyleColor` is called.
-     *          Each `PushStyleColor` must be matched with a `PopStyleColor`.
+     * @details Changes the color of subsequent widgets until `UI_PopStyleColor` is called.
+     *          Each `UI_PushStyleColor` must be matched with a `UI_PopStyleColor`.
      * @param im_gui_color_idx The index of the color variable to change (e.g., `ImGuiCol_Text`).
      * @param r, g, b, a The new color components (0.0f to 1.0f).
      */
-    void (*PushStyleColor)(int im_gui_color_idx, float r, float g, float b, float a);
+    void (*UI_PushStyleColor)(int im_gui_color_idx, float r, float g, float b, float a);
 
     /**
      * @brief Pops `count` colors from the style stack.
      * @details Restores the previous colors.
      * @param count The number of colors to pop.
      */
-    void (*PopStyleColor)(int count);
+    void (*UI_PopStyleColor)(int count);
 
     /**
      * @brief Pushes a float style variable onto the style stack.
      * @details Changes a float-type style variable until `PopStyleVar` is called.
-     *          Each `PushStyleVarFloat` must be matched with a `PopStyleVar`.
+     *          Each `UI_PushStyleVarFloat` must be matched with a `PopStyleVar`.
      * @param im_gui_stylevar_idx The index of the style variable to change (e.g., `ImGuiStyleVar_Alpha`).
      * @param val The new float value.
      */
-    void (*PushStyleVarFloat)(int im_gui_stylevar_idx, float val);
+    void (*UI_PushStyleVarFloat)(int im_gui_stylevar_idx, float val);
 
     /**
      * @brief Pushes a 2-element vector style variable onto the style stack.
-     * @details Changes an ImVec2-type style variable until `PopStyleVar` is called.
-     *          Each `PushStyleVarVec2` must be matched with a `PopStyleVar`.
+     * @details Changes an ImVec2-type style variable until `UI_PopStyleVar` is called.
+     *          Each `UI_PushStyleVarVec2` must be matched with a `UI_PopStyleVar`.
      * @param im_gui_stylevar_idx The index of the style variable to change (e.g., `ImGuiStyleVar_WindowPadding`).
      * @param val_x The X component of the new vector value.
      * @param val_y The Y component of the new vector value.
      */
-    void (*PushStyleVarVec2)(int im_gui_stylevar_idx, float val_x, float val_y);
+    void (*UI_PushStyleVarVec2)(int im_gui_stylevar_idx, float val_x, float val_y);
 
     /**
      * @brief Pops `count` style variables from the style stack.
      * @details Restores the previous style variables.
      * @param count The number of style variables to pop.
      */
-    void (*PopStyleVar)(int count);
+    void (*UI_PopStyleVar)(int count);
 
     // --- Custom Drawing ---
 
@@ -734,29 +775,29 @@ typedef struct SPF_UI_API {
      * @param[out] out_width Pointer to a float to store the viewport's width.
      * @param[out] out_height Pointer to a float to store the viewport's height.
      */
-    void (*GetViewportSize)(float* out_width, float* out_height);
+    void (*UI_GetViewportSize)(float* out_width, float* out_height);
 
     /**
      * @brief Adds a filled rectangle to the foreground draw list of the current window.
      * @details This is a convenient function for simple custom drawing. For more advanced
-     *          drawing, use `GetWindowDrawList` and `DrawList_AddRectFilled`.
+     *          drawing, use `UI_GetWindowDrawList` and `UI_DrawList_AddRectFilled`.
      * @param x1, y1 The top-left corner of the rectangle.
      * @param x2, y2 The bottom-right corner of the rectangle.
      * @param r, g, b, a The color components (0.0f to 1.0f).
      */
-    void (*AddRectFilled)(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
+    void (*UI_AddRectFilled)(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
 
 
     // --- Text Styling API (v1.0 - SPF-377) ---
     // The following set of functions allows for the creation and manipulation of text style objects.
-    // These objects can then be passed to rendering functions like `TextStyled` and `RenderMarkdown`
+    // These objects can then be passed to rendering functions like UI_`TextStyled` and `UI_RenderMarkdown`
     // to control typography, color, layout, and more.
     //
     // Workflow:
-    // 1. Create a style object with `Style_Create()`.
-    // 2. Configure it using the `Style_Set...()` functions.
-    // 3. Pass the handle to a rendering function like `TextStyled()`.
-    // 4. Destroy the style object with `Style_Destroy()` when it's no longer needed to release memory.
+    // 1. Create a style object with `UI_Style_Create()`.
+    // 2. Configure it using the `UI_Style_Set...()` functions.
+    // 3. Pass the handle to a rendering function like `UI_TextStyled()`.
+    // 4. Destroy the style object with `UI_Style_Destroy()` when it's no longer needed to release memory.
 
     /**
      * @brief Creates a new, empty text style handle.
@@ -764,27 +805,27 @@ typedef struct SPF_UI_API {
      *          with `Style_Destroy` to prevent memory leaks.
      * @return A new `SPF_TextStyle_Handle`.
      */
-    SPF_TextStyle_Handle (*Style_Create)();
+    SPF_TextStyle_Handle (*UI_Style_Create)();
 
     /**
      * @brief Destroys a text style handle and releases its memory.
      * @param handle The style handle to destroy.
      */
-    void (*Style_Destroy)(SPF_TextStyle_Handle handle);
+    void (*UI_Style_Destroy)(SPF_TextStyle_Handle handle);
 
     /**
      * @brief Sets the font for the text style.
      * @param handle The style handle to modify.
      * @param font The desired font from the `SPF_Font` enum.
      */
-    void (*Style_SetFont)(SPF_TextStyle_Handle handle, SPF_Font font);
+    void (*UI_Style_SetFont)(SPF_TextStyle_Handle handle, SPF_Font font);
 
     /**
      * @brief Sets the color of the text.
      * @param handle The style handle to modify.
      * @param r, g, b, a The color components (0.0f to 1.0f).
      */
-    void (*Style_SetColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+    void (*UI_Style_SetColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
 
     /**
      * @brief Sets the horizontal alignment of the text.
@@ -792,14 +833,14 @@ typedef struct SPF_UI_API {
      * @param handle The style handle to modify.
      * @param align The desired alignment from the `SPF_TextAlign` enum.
      */
-    void (*Style_SetAlign)(SPF_TextStyle_Handle handle, SPF_TextAlign align);
+    void (*UI_Style_SetAlign)(SPF_TextStyle_Handle handle, SPF_TextAlign align);
 
     /**
      * @brief Enables or disables automatic text wrapping.
      * @param handle The style handle to modify.
      * @param wrap Set to true to enable wrapping, false to disable.
      */
-    void (*Style_SetWrap)(SPF_TextStyle_Handle handle, bool wrap);
+    void (*UI_Style_SetWrap)(SPF_TextStyle_Handle handle, bool wrap);
 
     /**
      * @brief Sets padding around the text block.
@@ -807,7 +848,7 @@ typedef struct SPF_UI_API {
      * @param pad_x Horizontal padding.
      * @param pad_y Vertical padding.
      */
-    void (*Style_SetPadding)(SPF_TextStyle_Handle handle, float pad_x, float pad_y);
+    void (*UI_Style_SetPadding)(SPF_TextStyle_Handle handle, float pad_x, float pad_y);
 
     /**
      * @brief Turns the text into a separator with a label.
@@ -815,21 +856,21 @@ typedef struct SPF_UI_API {
      * @param handle The style handle to modify.
      * @param is_separator Set to true to render as a separator.
      */
-    void (*Style_SetSeparator)(SPF_TextStyle_Handle handle, bool is_separator);
+    void (*UI_Style_SetSeparator)(SPF_TextStyle_Handle handle, bool is_separator);
 
     /**
      * @brief Enables or disables an underline decoration.
      * @param handle The style handle to modify.
      * @param is_underline Set to true to draw an underline.
      */
-    void (*Style_SetUnderline)(SPF_TextStyle_Handle handle, bool is_underline);
+    void (*UI_Style_SetUnderline)(SPF_TextStyle_Handle handle, bool is_underline);
 
     /**
      * @brief Enables or disables a strikethrough decoration.
      * @param handle The style handle to modify.
      * @param is_strikethrough Set to true to draw a strikethrough line.
      */
-    void (*Style_SetStrikethrough)(SPF_TextStyle_Handle handle, bool is_strikethrough);
+    void (*UI_Style_SetStrikethrough)(SPF_TextStyle_Handle handle, bool is_strikethrough);
 
     // --- Styled Rendering (v1.0 - SPF-377) ---
 
@@ -839,12 +880,12 @@ typedef struct SPF_UI_API {
      *          for applying a complex style object (created via Style_Create) to a piece of
      *          text. The format string 'fmt' and subsequent arguments work exactly like the
      *          standard C printf function.
-     * @param handle A handle to a style object created with `Style_Create`. If NULL, default
+     * @param handle A handle to a style object created with `UI_Style_Create`. If NULL, default
      *               styling will be used.
      * @param fmt A printf-style format string.
      * @param ... Optional subsequent arguments for the format string.
      */
-    void (*TextStyled)(SPF_TextStyle_Handle handle, const char* fmt, ...);
+    void (*UI_TextStyled)(SPF_TextStyle_Handle handle, const char* fmt, ...);
 
     /**
      * @brief Renders a block of text formatted with Markdown.
@@ -857,7 +898,7 @@ typedef struct SPF_UI_API {
      *                          elements (e.g., H1 will use the 'h1' font). If NULL,
      *                          a default style is used.
      */
-    void (*RenderMarkdown)(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
+    void (*UI_RenderMarkdown)(const char* markdown_text, SPF_TextStyle_Handle base_style_handle);
 
 
     // --- Custom Widget API ---
@@ -865,17 +906,17 @@ typedef struct SPF_UI_API {
     // needed to create fully custom widgets beyond the standard set.
     //
     // Workflow for a custom widget:
-    // 1. Create a canvas for your widget, typically with `InvisibleButton()`.
-    // 2. Query mouse state relative to the widget using functions like `IsItemHovered()`, `GetMousePos()`, etc.
-    // 3. Get the window's draw list using `GetWindowDrawList()`.
-    // 4. Use the `DrawList_...()` functions to draw your custom shapes, text, and visuals.
+    // 1. Create a canvas for your widget, typically with `UI_InvisibleButton()`.
+    // 2. Query mouse state relative to the widget using functions like `UI_IsItemHovered()`, `UI_GetMousePos()`, etc.
+    // 3. Get the window's draw list using `UI_GetWindowDrawList()`.
+    // 4. Use the `UI_DrawList_...()` functions to draw your custom shapes, text, and visuals.
 
     /**
      * @brief Converts an RGBA color from four floats (0.0-1.0) to a packed 32-bit integer color.
-     * @details This is the format required by all `DrawList` functions.
+     * @details This is the format required by all `UI_DrawList` functions.
      * @return A 32-bit unsigned integer representing the color (e.g., 0xAABBGGRR).
      */
-    uint32_t (*ColorConvertFloat4ToU32)(float r, float g, float b, float a);
+    uint32_t (*UI_ColorConvertFloat4ToU32)(float r, float g, float b, float a);
 
     /**
      * @brief Gets a handle to the draw list for the current window.
@@ -883,7 +924,7 @@ typedef struct SPF_UI_API {
      *          to draw shapes, text, and images. This handle is valid for the current frame only.
      * @return A handle to the draw list.
      */
-    SPF_DrawList_Handle (*GetWindowDrawList)();
+    SPF_DrawList_Handle (*UI_GetWindowDrawList)();
 
     // --- DrawList Drawing Functions ---
 
@@ -895,7 +936,7 @@ typedef struct SPF_UI_API {
      * @param col The color of the line as a packed 32-bit integer.
      * @param thickness The thickness of the line in pixels.
      */
-    void (*DrawList_AddLine)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
+    void (*UI_DrawList_AddLine)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
 
     /**
      * @brief Adds a filled rectangle to the draw list.
@@ -905,7 +946,7 @@ typedef struct SPF_UI_API {
      * @param col The fill color as a packed 32-bit integer.
      * @param rounding The radius of the corners. 0 for a sharp rectangle.
      */
-    void (*DrawList_AddRectFilled)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding);
+    void (*UI_DrawList_AddRectFilled)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding);
 
     /**
      * @brief Adds a filled circle to the draw list.
@@ -915,17 +956,17 @@ typedef struct SPF_UI_API {
      * @param col The fill color as a packed 32-bit integer.
      * @param num_segments The number of segments to use to approximate the circle. More segments = smoother circle.
      */
-    void (*DrawList_AddCircleFilled)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+    void (*UI_DrawList_AddCircleFilled)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
 
     /**
      * @brief Adds text to the draw list at a specific screen position.
-     * @details Unlike `Text()`, this is a low-level draw command and does not interact with layout.
+     * @details Unlike `UI_Text()`, this is a low-level draw command and does not interact with layout.
      * @param dl The draw list handle.
      * @param pos_x, pos_y The top-left screen coordinate to start drawing the text.
      * @param col The color of the text as a packed 32-bit integer.
      * @param text The text to draw.
      */
-    void (*DrawList_AddText)(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
+    void (*UI_DrawList_AddText)(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
 
     /**
      * @brief Adds a rectangle (outline) to the draw list.
@@ -936,7 +977,7 @@ typedef struct SPF_UI_API {
      * @param rounding The radius of the corners. 0 for a sharp rectangle.
      * @param thickness The thickness of the outline.
      */
-    void (*DrawList_AddRect)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness);
+    void (*UI_DrawList_AddRect)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness);
     
     /**
      * @brief Adds a filled quadrilateral to the draw list.
@@ -944,7 +985,7 @@ typedef struct SPF_UI_API {
      * @param p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y The four corner points of the quad.
      * @param col The fill color.
      */
-    void (*DrawList_AddQuadFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
+    void (*UI_DrawList_AddQuadFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
 
     /**
      * @brief Adds a filled triangle to the draw list.
@@ -952,7 +993,7 @@ typedef struct SPF_UI_API {
      * @param p1_x, p1_y, p2_x, p2_y, p3_x, p3_y The three corner points of the triangle.
      * @param col The fill color.
      */
-    void (*DrawList_AddTriangleFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col);
+    void (*UI_DrawList_AddTriangleFilled)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col);
     
     /**
      * @brief Adds a cubic Bezier curve to the draw list.
@@ -965,7 +1006,7 @@ typedef struct SPF_UI_API {
      * @param thickness The thickness of the curve.
      * @param num_segments The number of line segments to use to approximate the curve.
      */
-    void (*DrawList_AddBezierCubic)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness, int num_segments);
+    void (*UI_DrawList_AddBezierCubic)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness, int num_segments);
 
     // --- DrawList Path/Polyline Functions ---
 
@@ -980,19 +1021,19 @@ typedef struct SPF_UI_API {
      * @param closed If true, a line will be drawn from the last point to the first.
      * @param thickness The thickness of the lines.
      */
-    void (*DrawList_AddPolyline)(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, bool closed, float thickness);
+    void (*UI_DrawList_AddPolyline)(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, bool closed, float thickness);
 
     /**
      * @brief Clears the current path in the draw list. A path is a sequence of points that can be stroked or filled.
      */
-    void (*DrawList_PathClear)(SPF_DrawList_Handle dl);
+    void (*UI_DrawList_PathClear)(SPF_DrawList_Handle dl);
 
     /**
      * @brief Adds a line from the current path position to a new position.
      * @param dl The draw list handle.
      * @param pos_x, pos_y The new position to draw a line to.
      */
-    void (*DrawList_PathLineTo)(SPF_DrawList_Handle dl, float pos_x, float pos_y);
+    void (*UI_DrawList_PathLineTo)(SPF_DrawList_Handle dl, float pos_x, float pos_y);
 
     /**
      * @brief Draws an outline of the current path.
@@ -1001,14 +1042,14 @@ typedef struct SPF_UI_API {
      * @param closed If true, a line will be drawn from the last point to the first before stroking.
      * @param thickness The thickness of the outline.
      */
-    void (*DrawList_PathStroke)(SPF_DrawList_Handle dl, uint32_t col, bool closed, float thickness);
+    void (*UI_DrawList_PathStroke)(SPF_DrawList_Handle dl, uint32_t col, bool closed, float thickness);
 
     /**
      * @brief Fills the interior of the current path (if it's a convex polygon).
      * @param dl The draw list handle.
      * @param col The fill color.
      */
-    void (*DrawList_PathFillConvex)(SPF_DrawList_Handle dl, uint32_t col);
+    void (*UI_DrawList_PathFillConvex)(SPF_DrawList_Handle dl, uint32_t col);
     
 
     // --- Advanced Interaction API (v1.1 - SPF-412) ---
@@ -1018,14 +1059,14 @@ typedef struct SPF_UI_API {
      * @param[out] out_x Pointer to a float to store the x-coordinate.
      * @param[out] out_y Pointer to a float to store the y-coordinate.
      */
-    void (*GetMousePos)(float* out_x, float* out_y);
+    void (*UI_GetMousePos)(float* out_x, float* out_y);
 
     /**
      * @brief Checks if the user is currently dragging the mouse with a specific button held down.
      * @param mouse_button_index The index of the mouse button (0=Left, 1=Right, 2=Middle).
      * @return True if the user is dragging with the specified button, false otherwise.
      */
-    bool (*IsMouseDragging)(int mouse_button_index);
+    bool (*UI_IsMouseDragging)(int mouse_button_index);
 
     /**
      * @brief Gets the total displacement of the mouse since a drag operation started.
@@ -1033,41 +1074,41 @@ typedef struct SPF_UI_API {
      * @param[out] out_dx Pointer to a float to store the horizontal displacement.
      * @param[out] out_dy Pointer to a float to store the vertical displacement.
      */
-    void (*GetMouseDragDelta)(int mouse_button_index, float* out_dx, float* out_dy);
+    void (*UI_GetMouseDragDelta)(int mouse_button_index, float* out_dx, float* out_dy);
 
     /**
      * @brief Checks if a mouse button is currently held down.
      * @param mouse_button_index The index of the mouse button (0=Left, 1=Right, 2=Middle).
      * @return True if the button is held down.
      */
-    bool (*IsMouseDown)(int mouse_button_index);
+    bool (*UI_IsMouseDown)(int mouse_button_index);
 
     /**
      * @brief Checks if a mouse button was clicked (pressed and released) in the current frame.
      * @param mouse_button_index The index of the mouse button.
      * @return True if the button was clicked this frame.
      */
-    bool (*IsMouseClicked)(int mouse_button_index);
+    bool (*UI_IsMouseClicked)(int mouse_button_index);
 
     /**
      * @brief Checks if a mouse button was released in the current frame.
      * @param mouse_button_index The index of the mouse button.
      * @return True if the button was released this frame.
      */
-    bool (*IsMouseReleased)(int mouse_button_index);
+    bool (*UI_IsMouseReleased)(int mouse_button_index);
 
     /**
      * @brief Checks if a mouse button was double-clicked.
      * @param mouse_button_index The index of the mouse button.
      * @return True if the button was double-clicked.
      */
-    bool (*IsMouseDoubleClicked)(int mouse_button_index);
+    bool (*UI_IsMouseDoubleClicked)(int mouse_button_index);
 
     /**
      * @brief Gets the vertical scroll amount of the mouse wheel for the current frame.
      * @return A positive value for scrolling up, a negative value for scrolling down, and 0 if no scroll.
      */
-    float (*GetMouseWheel)();
+    float (*UI_GetMouseWheel)();
 
     
     // --- Layout & Positioning API ---
@@ -1081,21 +1122,21 @@ typedef struct SPF_UI_API {
      * @param[out] out_x Pointer to a float to store the available width.
      * @param[out] out_y Pointer to a float to store the available height.
      */
-    void (*GetContentRegionAvail)(float* out_x, float* out_y);
+    void (*UI_GetContentRegionAvail)(float* out_x, float* out_y);
 
     /**
      * @brief Gets the position of the current window.
      * @param[out] out_x Pointer to a float to store the window's x-coordinate.
      * @param[out] out_y Pointer to a float to store the window's y-coordinate.
      */
-    void (*GetWindowPos)(float* out_x, float* out_y);
+    void (*UI_GetWindowPos)(float* out_x, float* out_y);
 
     /**
      * @brief Gets the size of the current window's content region.
      * @param[out] out_x Pointer to a float to store the window's width.
      * @param[out] out_y Pointer to a float to store the window's height.
      */
-    void (*GetWindowSize)(float* out_x, float* out_y);
+    void (*UI_GetWindowSize)(float* out_x, float* out_y);
 
     /**
      * @brief Gets the screen-space position of the layout cursor.
@@ -1103,29 +1144,29 @@ typedef struct SPF_UI_API {
      * @param[out] out_x Pointer to a float to store the cursor's x-coordinate.
      * @param[out] out_y Pointer to a float to store the cursor's y-coordinate.
      */
-    void (*GetCursorScreenPos)(float* out_x, float* out_y);
+    void (*UI_GetCursorScreenPos)(float* out_x, float* out_y);
 
     /**
      * @brief Sets the screen-space position of the layout cursor.
      * @param x The new x-coordinate for the cursor.
      * @param y The new y-coordinate for the cursor.
      */
-    void (*SetCursorScreenPos)(float x, float y);
+    void (*UI_SetCursorScreenPos)(float x, float y);
 
     /**
      * @brief Gets the bounding box of the last drawn item.
      * @param[out] min_x, min_y Pointer to store the top-left corner of the item.
      * @param[out] max_x, max_y Pointer to store the bottom-right corner of the item.
      */
-    void (*GetItemRectMin)(float* out_x, float* out_y);
-    void (*GetItemRectMax)(float* out_x, float* out_y);
+    void (*UI_GetItemRectMin)(float* out_x, float* out_y);
+    void (*UI_GetItemRectMax)(float* out_x, float* out_y);
 
     /**
      * @brief Gets the size of the last drawn item.
      * @param[out] out_x Pointer to a float to store the item's width.
      * @param[out] out_y Pointer to a float to store the item's height.
      */
-    void (*GetItemRectSize)(float* out_x, float* out_y);
+    void (*UI_GetItemRectSize)(float* out_x, float* out_y);
 
 
     // --- Miscellaneous Utilities API ---
@@ -1134,34 +1175,34 @@ typedef struct SPF_UI_API {
      * @brief Retrieves the content of the system clipboard.
      * @return A read-only pointer to a string containing the clipboard text.
      */
-    const char* (*GetClipboardText)();
+    const char* (*UI_GetClipboardText)();
 
     /**
      * @brief Sets the content of the system clipboard.
      * @param text The string to set as the clipboard content.
      */
-    void (*SetClipboardText)(const char* text);
+    void (*UI_SetClipboardText)(const char* text);
 
     /**
      * @brief Gets a font handle by its key.
      * @details The available font keys are defined by the framework (e.g., "regular", "bold", "h1").
-     *          This handle can be used with `PushFont`.
+     *          This handle can be used with `UI_PushFont`.
      * @param font_key The string identifier for the font.
      * @return An opaque handle to the font, or NULL if not found.
      */
-    SPF_Font_Handle* (*GetFont)(const char* font_key);
+    SPF_Font_Handle* (*UI_GetFont)(const char* font_key);
 
     /**
      * @brief Pushes a font onto the font stack, making it the active font for subsequent widgets.
-     * @details Must be matched with a call to `PopFont`.
-     * @param font_handle The font handle obtained from `GetFont`.
+     * @details Must be matched with a call to `UI_PopFont`.
+     * @param font_handle The font handle obtained from `UI_GetFont`.
      */
-    void (*PushFont)(SPF_Font_Handle* font_handle);
+    void (*UI_PushFont)(SPF_Font_Handle* font_handle);
 
     /**
      * @brief Pops the current font from the font stack, restoring the previous font.
      */
-    void (*PopFont)();
+    void (*UI_PopFont)();
 
     /**
      * @brief Gets a handle to the global ImGui style object.
@@ -1170,63 +1211,63 @@ typedef struct SPF_UI_API {
      *          current ImGui style settings.
      * @return A handle to the global style object.
      */
-    SPF_Style_Handle* (*GetStyle)();
+    SPF_Style_Handle* (*UI_GetStyle)();
 
     /**
      * @brief Gets the WindowPadding from the global style.
-     * @param style_handle The style handle obtained from `GetStyle`.
+     * @param style_handle The style handle obtained from `UI_GetStyle`.
      * @param[out] out_x Pointer to a float to store the X component of window padding.
      * @param[out] out_y Pointer to a float to store the Y component of window padding.
      */
-    void (*Style_GetWindowPadding)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+    void (*UI_Style_GetWindowPadding)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
 
     /**
      * @brief Gets the ItemSpacing from the global style.
-     * @param style_handle The style handle obtained from `GetStyle`.
+     * @param style_handle The style handle obtained from `UI_GetStyle`.
      * @param[out] out_x Pointer to a float to store the X component of item spacing.
      * @param[out] out_y Pointer to a float to store the Y component of item spacing.
      */
-    void (*Style_GetItemSpacing)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+    void (*UI_Style_GetItemSpacing)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
     
     /**
      * @brief Gets the FramePadding from the global style.
-     * @param style_handle The style handle obtained from `GetStyle`.
+     * @param style_handle The style handle obtained from `UI_GetStyle`.
      * @param[out] out_x Pointer to a float to store the X component of frame padding.
      * @param[out] out_y Pointer to a float to store the Y component of frame padding.
      */
-    void (*Style_GetFramePadding)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
+    void (*UI_Style_GetFramePadding)(SPF_Style_Handle* style_handle, float* out_x, float* out_y);
 
     /**
      * @brief Pushes a string identifier onto the ID stack.
      * @details Use this to create unique IDs for widgets in loops or complex components.
-     *          Each `PushID` must be matched with a `PopID`.
+     *          Each `UI_PushID` must be matched with a `UI_PopID`.
      * @param str_id A string to be used as an ID.
      */
-    void (*PushID_Str)(const char* str_id);
+    void (*UI_PushID_Str)(const char* str_id);
 
     /**
      * @brief Pushes an integer identifier onto the ID stack.
      * @param int_id An integer to be used as an ID.
      */
-    void (*PushID_Int)(int int_id);
+    void (*UI_PushID_Int)(int int_id);
     
     /**
      * @brief Pushes a pointer identifier onto the ID stack.
      * @param ptr_id A pointer to be used as an ID.
      */
-    void (*PushID_Ptr)(void* ptr_id);
+    void (*UI_PushID_Ptr)(void* ptr_id);
 
     /**
      * @brief Pops the last identifier from the ID stack.
      */
-    void (*PopID)();
+    void (*UI_PopID)();
 
     /**
      * @brief Calculates a unique ID from a string, without pushing it to the stack.
      * @param str_id The string to hash into an ID.
      * @return The calculated 32-bit ID.
      */
-    uint32_t (*GetID_Str)(const char* str_id);
+    uint32_t (*UI_GetID_Str)(const char* str_id);
 
 
     // --- Drag and Drop API ---
@@ -1234,49 +1275,49 @@ typedef struct SPF_UI_API {
     /**
      * @brief Begins a drag and drop source.
      * @details Call this after an item to make it a draggable source.
-     *          If it returns true, you must call `SetDragDropPayload` and then `EndDragDropSource`.
+     *          If it returns true, you must call `UI_SetDragDropPayload` and then `UI_EndDragDropSource`.
      * @return True if the user is dragging this item, false otherwise.
      */
-    bool (*BeginDragDropSource)();
+    bool (*UI_BeginDragDropSource)();
 
     /**
      * @brief Sets the data payload for the current drag and drop operation.
-     * @details This function is called within a `BeginDragDropSource`/`EndDragDropSource` block.
+     * @details This function is called within a `UI_BeginDragDropSource`/`UI_EndDragDropSource` block.
      * @param type A string identifier for the type of payload (e.g., "LIST_ITEM").
      * @param data A pointer to the data to be transferred.
      * @param size The size of the data in bytes.
      * @return True if the payload was set successfully.
      */
-    bool (*SetDragDropPayload)(const char* type, const void* data, size_t size);
+    bool (*UI_SetDragDropPayload)(const char* type, const void* data, size_t size);
 
     /**
      * @brief Ends a drag and drop source.
-     * @details Must be called after `BeginDragDropSource`.
+     * @details Must be called after `UI_BeginDragDropSource`.
      */
-    void (*EndDragDropSource)();
+    void (*UI_EndDragDropSource)();
 
     /**
      * @brief Begins a drag and drop target.
      * @details Call this after an item to make it a drop target. If it returns true,
-     *          you can call `AcceptDragDropPayload` and must then call `EndDragDropTarget`.
+     *          you can call `UI_AcceptDragDropPayload` and must then call `UI_EndDragDropTarget`.
      * @return True if a draggable item is hovering over this target.
      */
-    bool (*BeginDragDropTarget)();
+    bool (*UI_BeginDragDropTarget)();
 
     /**
      * @brief Accepts a drag and drop payload.
-     * @details This function is called within a `BeginDragDropTarget`/`EndDragDropTarget` block.
+     * @details This function is called within a `UI_BeginDragDropTarget`/`UI_EndDragDropTarget` block.
      *          It checks if the payload type matches and, if so, returns the payload.
      * @param type The string identifier for the type of payload to accept.
      * @return A handle to the payload if the type matches and the drop occurred, otherwise NULL.
      *         The handle is only valid for the current frame.
      */
-    const SPF_Payload_Handle* (*AcceptDragDropPayload)(const char* type);
+    const SPF_Payload_Handle* (*UI_AcceptDragDropPayload)(const char* type);
 
     /**
      * @brief Ends a drag and drop target.
-     * @details Must be called after `BeginDragDropTarget`.
+     * @details Must be called after `UI_BeginDragDropTarget`.
      */
-    void (*EndDragDropTarget)();
+    void (*UI_EndDragDropTarget)();
 
 } SPF_UI_API;

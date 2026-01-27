@@ -641,9 +641,9 @@ void OnGameLogMessage(const char* log_line, void* user_data) {
 void OnToggleMainWindow() {
     if (g_ctx.uiAPI && g_ctx.mainWindowHandle) {
         // Read the current visibility state directly from the framework.
-        const bool isCurrentlyVisible = g_ctx.uiAPI->IsVisible(g_ctx.mainWindowHandle);
+        const bool isCurrentlyVisible = g_ctx.uiAPI->UI_IsVisible(g_ctx.mainWindowHandle);
         // Instruct the UI API to apply the inverse of the current state.
-        g_ctx.uiAPI->SetVisibility(g_ctx.mainWindowHandle, !isCurrentlyVisible);
+        g_ctx.uiAPI->UI_SetVisibility(g_ctx.mainWindowHandle, !isCurrentlyVisible);
 
         char log_buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Main window visibility toggled to: %s", !isCurrentlyVisible ? "visible" : "hidden");
@@ -919,10 +919,10 @@ void OnRegisterUI(SPF_UI_API* ui_api) {
         g_ctx.uiAPI = ui_api;
         // Register our main rendering function (`RenderMainWindow`) to be called for the window
         // identified by `PLUGIN_NAME` and "MainWindow".
-        ui_api->RegisterDrawCallback(PLUGIN_NAME, "MainWindow", RenderMainWindow, nullptr);
+        ui_api->UI_RegisterDrawCallback(PLUGIN_NAME, "MainWindow", RenderMainWindow, nullptr);
 
         // Get and cache the handle to our window for efficient access later.
-        g_ctx.mainWindowHandle = g_ctx.uiAPI->GetWindowHandle(PLUGIN_NAME, "MainWindow");
+        g_ctx.mainWindowHandle = g_ctx.uiAPI->UI_GetWindowHandle(PLUGIN_NAME, "MainWindow");
     }
 }
 
@@ -940,30 +940,30 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
     // to the window name itself.
 
     // A tab bar is a good way to organize a complex UI.
-    if (ui->BeginTabBar("##MainWindowTabs")) {
-        if (ui->BeginTabItem("General")) {
-            ui->Text("Hello from the ExamplePlugin window!");
+    if (ui->UI_BeginTabBar("##MainWindowTabs")) {
+        if (ui->UI_BeginTabItem("General")) {
+            ui->UI_Text("Hello from the ExamplePlugin window!");
 
             // Example of getting and displaying a translated string.
             char welcome_msg[256];
             g_ctx.loadAPI->localization->Loc_GetString(g_ctx.loadAPI->localization->Loc_GetContext(PLUGIN_NAME), "messages.welcome", welcome_msg, sizeof(welcome_msg));
-            ui->Text(welcome_msg);
-            ui->Separator();
+            ui->UI_Text(welcome_msg);
+            ui->UI_Separator();
 
             // --- Config UI Example ---
-            ui->Text("This slider modifies a value in settings.json.");
-            if (ui->SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
+            ui->UI_Text("This slider modifies a value in settings.json.");
+            if (ui->UI_SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
                 // If the slider is moved, update the configuration file.
                 g_ctx.loadAPI->config->Cfg_SetInt32(g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
                 g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
             }
-            ui->Separator();
+            ui->UI_Separator();
 
             // --- Game Console Example ---
-            ui->Text("Enter a command to execute in the in-game console:");
-            ui->InputText("##ConsoleCommand", g_ctx.consoleCommand, sizeof(g_ctx.consoleCommand));
-            ui->SameLine(0, 0);
-            if (ui->Button("Execute", 0, 0)) {
+            ui->UI_Text("Enter a command to execute in the in-game console:");
+            ui->UI_InputText("##ConsoleCommand", g_ctx.consoleCommand, sizeof(g_ctx.consoleCommand));
+            ui->UI_SameLine(0, 0);
+            if (ui->UI_Button("Execute", 0, 0)) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->console && g_ctx.consoleCommand[0] != '\0') {
                     g_ctx.coreAPI->console->GCon_ExecuteCommand(g_ctx.consoleCommand);
                     char log_buffer[512];
@@ -971,20 +971,20 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
                     g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
                 }
             }
-            ui->Separator();
+            ui->UI_Separator();
 
             // --- Hook Example ---
-            ui->Text("This checkbox controls a function hook:");
-            ui->Checkbox("Make 'Quit' button red", &g_ctx.isModificationActive);
-            ui->EndTabItem();
+            ui->UI_Text("This checkbox controls a function hook:");
+            ui->UI_Checkbox("Make 'Quit' button red", &g_ctx.isModificationActive);
+            ui->UI_EndTabItem();
         }
         // Render the content of other tabs by calling their respective functions.
-        if (ui->BeginTabItem("Camera")) { RenderCameraTab(ui, user_data); ui->EndTabItem(); }
-        if (ui->BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->EndTabItem(); }
-        if (ui->BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->EndTabItem(); }
-        if (ui->BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->EndTabItem(); }
-        if (ui->BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->EndTabItem(); }
-        ui->EndTabBar();
+        if (ui->UI_BeginTabItem("Camera")) { RenderCameraTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
+        ui->UI_EndTabBar();
     }
 }
 
@@ -993,42 +993,42 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
  */
 void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->camera || !ui) {
-        ui->Text("Camera API is not available.");
+        ui->UI_Text("Camera API is not available.");
         return;
     }
-    ui->Text("Use this tab to interact with the game's camera system.");
-    ui->Text("You can also press F6 to cycle through the cameras.");
-    ui->Separator();
+    ui->UI_Text("Use this tab to interact with the game's camera system.");
+    ui->UI_Text("You can also press F6 to cycle through the cameras.");
+    ui->UI_Separator();
 
     // Get and display the current camera type.
     SPF_CameraType current_camera;
     if (g_ctx.coreAPI->camera->Cam_GetCurrentCamera(&current_camera)) {
         char buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Current Camera Type: %d", current_camera);
-        ui->Text(buffer);
+        ui->UI_Text(buffer);
     } else {
-        ui->Text("Could not retrieve current camera type.");
+        ui->UI_Text("Could not retrieve current camera type.");
     }
-    ui->Separator();
+    ui->UI_Separator();
 
     // Add buttons to switch to a specific camera.
-    ui->Text("Switch to a specific camera:");
-    if (ui->Button("Interior", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_INTERIOR);
-    ui->SameLine(0, 5);
-    if (ui->Button("Behind", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_BEHIND);
-    ui->SameLine(0, 5);
-    if (ui->Button("Developer Free", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_DEVELOPER_FREE);
-    ui->Separator();
+    ui->UI_Text("Switch to a specific camera:");
+    if (ui->UI_Button("Interior", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_INTERIOR);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Behind", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_BEHIND);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Developer Free", 0, 0)) g_ctx.coreAPI->camera->Cam_SwitchTo(SPF_CAMERA_DEVELOPER_FREE);
+    ui->UI_Separator();
 
     // Get and display the camera's world coordinates.
     float x, y, z;
     if (g_ctx.coreAPI->camera->Cam_GetCameraWorldCoordinates(&x, &y, &z)) {
         char buffer[256];
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "X: %.2f, Y: %.2f, Z: %.2f", x, y, z);
-        ui->Text("Current Camera Position:");
-        ui->Text(buffer);
+        ui->UI_Text("Current Camera Position:");
+        ui->UI_Text(buffer);
     } else {
-        ui->Text("Could not get camera world coordinates.");
+        ui->UI_Text("Could not get camera world coordinates.");
     }
 }
 
@@ -1046,11 +1046,11 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     // Use Get...() for infrequent snapshots or specific UI displays, but prefer callbacks
     // for continuous, performance-critical data handling.
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->telemetry || !ui) {
-        ui->Text("Telemetry API is not available.");
+        ui->UI_Text("Telemetry API is not available.");
         return;
     }
-    ui->Text("This tab displays live data from the Telemetry API.");
-    ui->Separator();
+    ui->UI_Text("This tab displays live data from the Telemetry API.");
+    ui->UI_Separator();
 
     char buffer[256];
     auto telemetry = g_ctx.coreAPI->telemetry->GetContext(PLUGIN_NAME);
@@ -1059,12 +1059,12 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     SPF_TruckData truck_data;
     g_ctx.coreAPI->telemetry->GetTruckData(telemetry, &truck_data);
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Speed: %.0f kph", truck_data.speed * 3.6f);
-    ui->Text(buffer);
+    ui->UI_Text(buffer);
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Engine RPM: %.0f", truck_data.engine_rpm);
-    ui->Text(buffer);
+    ui->UI_Text(buffer);
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Gear: %d", truck_data.displayed_gear);
-    ui->Text(buffer);
-    ui->Separator();
+    ui->UI_Text(buffer);
+    ui->UI_Separator();
 
     // Display job data.
     SPF_JobConstants job_constants;
@@ -1072,50 +1072,50 @@ void RenderTelemetryTab(SPF_UI_API* ui, void* user_data) {
     SPF_JobData job_data;
     g_ctx.coreAPI->telemetry->GetJobData(telemetry, &job_data);
     if (job_data.on_job) {
-        ui->Text("Currently on a job!");
+        ui->UI_Text("Currently on a job!");
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Cargo: %s", job_constants.cargo_name);
-        ui->Text(buffer);
+        ui->UI_Text(buffer);
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Destination: %s, %s", job_constants.destination_company, job_constants.destination_city);
-        ui->Text(buffer);
+        ui->UI_Text(buffer);
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Cargo Damage: %.1f%%", job_data.cargo_damage * 100.0f);
-        ui->Text(buffer);
+        ui->UI_Text(buffer);
     } else {
-        ui->Text("Not currently on a job.");
+        ui->UI_Text("Not currently on a job.");
     }
 }
 
 void RenderEventsTab(SPF_UI_API* ui, void* user_data) {
     if (!g_ctx.coreAPI || !ui) {
-        ui->Text("Core API not available.");
+        ui->UI_Text("Core API not available.");
         return;
     }
-    ui->Text("This tab displays the last data received from event callbacks.");
-    ui->Separator();
+    ui->UI_Text("This tab displays the last data received from event callbacks.");
+    ui->UI_Separator();
 
     char buffer[512];
 
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Last Gameplay Event: %s", g_ctx.eventDataCache.lastGameplayEventId);
-    ui->Text(buffer);
-    ui->Separator();
+    ui->UI_Text(buffer);
+    ui->UI_Separator();
 
-    ui->Text("Game State:");
+    ui->UI_Text("Game State:");
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Paused: %s", g_ctx.eventDataCache.gameState.paused ? "Yes" : "No");
-    ui->Text(buffer);
-    ui->Separator();
+    ui->UI_Text(buffer);
+    ui->UI_Separator();
 
-    ui->Text("Truck Data:");
+    ui->UI_Text("Truck Data:");
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Speed: %.0f kph", g_ctx.eventDataCache.truckData.speed * 3.6f);
-    ui->Text(buffer);
+    ui->UI_Text(buffer);
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Engine RPM: %.0f", g_ctx.eventDataCache.truckData.engine_rpm);
-    ui->Text(buffer);
-    ui->Separator();
+    ui->UI_Text(buffer);
+    ui->UI_Separator();
 
-    ui->Text("Trailer Info:");
+    ui->UI_Text("Trailer Info:");
     g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Attached Trailers: %zu", g_ctx.eventDataCache.trailers.size());
-    ui->Text(buffer);
+    ui->UI_Text(buffer);
     if (!g_ctx.eventDataCache.trailers.empty()) {
         g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "  Trailer 1 Brand: %s", g_ctx.eventDataCache.trailers[0].constants.brand);
-        ui->Text(buffer);
+        ui->UI_Text(buffer);
     }
 }
 
@@ -1124,69 +1124,69 @@ void RenderEventsTab(SPF_UI_API* ui, void* user_data) {
  */
 void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
     if (!g_ctx.coreAPI || !g_ctx.coreAPI->input || !g_ctx.virtualDevice || !ui) {
-        ui->Text("Virtual Input API not available or device not initialized.");
+        ui->UI_Text("Virtual Input API not available or device not initialized.");
         return;
     }
-    ui->Text("Use the controls below to simulate input.");
-    ui->Text("You must bind 'Virtual Honk' and 'Virtual Throttle' in the game's keybinding menu.");
-    ui->Separator();
+    ui->UI_Text("Use the controls below to simulate input.");
+    ui->UI_Text("You must bind 'Virtual Honk' and 'Virtual Throttle' in the game's keybinding menu.");
+    ui->UI_Separator();
 
     // Example of a virtual button.
-    ui->Text("Virtual Honk Button:");
-    ui->Button("Hold to Honk", 0, 0); // The button itself is just for show.
-    if (ui->IsItemActive()) {
+    ui->UI_Text("Virtual Honk Button:");
+    ui->UI_Button("Hold to Honk", 0, 0); // The button itself is just for show.
+    if (ui->UI_IsItemActive()) {
         // While the ImGui button is held down, press the virtual button.
         g_ctx.coreAPI->input->PressButton(g_ctx.virtualDevice, "virt_honk");
     } else {
         // When the ImGui button is released, release the virtual button.
         g_ctx.coreAPI->input->ReleaseButton(g_ctx.virtualDevice, "virt_honk");
     }
-    ui->Separator();
+    ui->UI_Separator();
 
     // Example of a virtual axis.
     static float throttle_value = 0.0f;
-    ui->Text("Virtual Throttle Axis:");
-    if (ui->SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f")) {
+    ui->UI_Text("Virtual Throttle Axis:");
+    if (ui->UI_SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f")) {
         // When the slider value changes, update the virtual axis value.
         g_ctx.coreAPI->input->SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
     }
 }
 
 void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
-    if (!ui->Style_Create) {
-        ui->Text("Styling API not available in this version of the framework.");
+    if (!ui->UI_Style_Create) {
+        ui->UI_Text("Styling API not available in this version of the framework.");
         return;
     }
 
-    ui->TextWrapped("This tab demonstrates the features of the new Text Styling and Markdown API.");
-    ui->Separator();
+    ui->UI_TextWrapped("This tab demonstrates the features of the new Text Styling and Markdown API.");
+    ui->UI_Separator();
 
     // 1. Create style handles
-    SPF_TextStyle_Handle h1_style = ui->Style_Create();
-    SPF_TextStyle_Handle centered_text_style = ui->Style_Create();
-    SPF_TextStyle_Handle separator_style = ui->Style_Create();
-    SPF_TextStyle_Handle markdown_base_style = ui->Style_Create();
+    SPF_TextStyle_Handle h1_style = ui->UI_Style_Create();
+    SPF_TextStyle_Handle centered_text_style = ui->UI_Style_Create();
+    SPF_TextStyle_Handle separator_style = ui->UI_Style_Create();
+    SPF_TextStyle_Handle markdown_base_style = ui->UI_Style_Create();
 
     // 2. Configure the styles
-    ui->Style_SetFont(h1_style, SPF_FONT_H1);
-    ui->Style_SetColor(h1_style, 1.0f, 0.84f, 0.0f, 1.0f); // Gold color
-    ui->Style_SetAlign(h1_style, SPF_TEXT_ALIGN_CENTER);
+    ui->UI_Style_SetFont(h1_style, SPF_FONT_H1);
+    ui->UI_Style_SetColor(h1_style, 1.0f, 0.84f, 0.0f, 1.0f); // Gold color
+    ui->UI_Style_SetAlign(h1_style, SPF_TEXT_ALIGN_CENTER);
 
-    ui->Style_SetAlign(centered_text_style, SPF_TEXT_ALIGN_CENTER);
-    ui->Style_SetWrap(centered_text_style, true);
-    ui->Style_SetPadding(centered_text_style, 0.f, 10.f);
+    ui->UI_Style_SetAlign(centered_text_style, SPF_TEXT_ALIGN_CENTER);
+    ui->UI_Style_SetWrap(centered_text_style, true);
+    ui->UI_Style_SetPadding(centered_text_style, 0.f, 10.f);
 
-    ui->Style_SetSeparator(separator_style, true);
-    ui->Style_SetColor(separator_style, 0.6f, 0.6f, 0.6f, 1.0f); // Gray
+    ui->UI_Style_SetSeparator(separator_style, true);
+    ui->UI_Style_SetColor(separator_style, 0.6f, 0.6f, 0.6f, 1.0f); // Gray
 
     // 3. Use the styles to render UI
-    ui->TextStyled(h1_style, "Welcome to the Styling API!");
+    ui->UI_TextStyled(h1_style, "Welcome to the Styling API!");
 
-    ui->TextStyled(centered_text_style, "This text is centered and will wrap if it becomes too long to fit in the available space. This demonstrates alignment, wrapping, and vertical padding.");
+    ui->UI_TextStyled(centered_text_style, "This text is centered and will wrap if it becomes too long to fit in the available space. This demonstrates alignment, wrapping, and vertical padding.");
 
-    ui->Spacing();
+    ui->UI_Spacing();
 
-    ui->TextStyled(separator_style, "Markdown Demo");
+    ui->UI_TextStyled(separator_style, "Markdown Demo");
 
     const char* markdown =
         "# This is an H1 Header\n"
@@ -1207,14 +1207,14 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         "> This is a blockquote. It adds a visual indentation and a left border.";
     
     // The base style for markdown can have padding, but the renderer will handle fonts/colors.
-    ui->Style_SetPadding(markdown_base_style, 10.0f, 5.0f);
-    ui->RenderMarkdown(markdown, markdown_base_style);
+    ui->UI_Style_SetPadding(markdown_base_style, 10.0f, 5.0f);
+    ui->UI_RenderMarkdown(markdown, markdown_base_style);
     
     // 4. Clean up the style handles
-    ui->Style_Destroy(h1_style);
-    ui->Style_Destroy(centered_text_style);
-    ui->Style_Destroy(separator_style);
-    ui->Style_Destroy(markdown_base_style);
+    ui->UI_Style_Destroy(h1_style);
+    ui->UI_Style_Destroy(centered_text_style);
+    ui->UI_Style_Destroy(separator_style);
+    ui->UI_Style_Destroy(markdown_base_style);
 }
 
 // =================================================================================================
