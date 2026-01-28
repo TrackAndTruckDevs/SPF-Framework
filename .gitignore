@@ -31,3 +31,5 @@
 !/CMakeLists.txt
 
 !/README.md
+
+!/version.rc.in

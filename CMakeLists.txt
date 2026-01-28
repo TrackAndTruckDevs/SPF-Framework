@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Define our project.
-project(SPF VERSION 1.0.0 LANGUAGES CXX)
+project(SPF VERSION 1.1.0 LANGUAGES CXX)
 
 # Enable generation of compile_commands.json, which is necessary for IWYU.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -178,9 +178,15 @@ target_include_directories(imgui_md PUBLIC
 target_link_libraries(imgui_md PRIVATE md4c imgui)
 
 # main framework library.
+# Generate Windows resource file for DLL metadata (version, description, etc.)
+if(WIN32)
+    configure_file(version.rc.in version.rc @ONLY)
+endif()
+
 add_library(SPF SHARED
 
     ${SPF_FONT_HEADERS}
+    ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 
     "src/dllmain.cpp"
     "src/Core/Core.cpp"
@@ -360,30 +366,34 @@ add_subdirectory(plugins)
 # cmake -D GAME_PLUGINS_DIR="C:/Path/to/your/game/plugins"
 set(GAME_PLUGINS_DIR "E:/SteamLibrary/steamapps/common/American Truck Simulator/bin/win_x64/plugins" CACHE PATH "Path to the game's plugins directory")
 
-# Check if the path exists and display a message.
+# OPTIONAL: Define the path to the installer's staging directory.
+# This is used by framework developers to automatically update the release package.
+set(INSTALLER_DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../installer/dist" CACHE PATH "Staging directory for the installer")
+
+# 1. Deployment to Game Directory
 if(EXISTS "${GAME_PLUGINS_DIR}")
     message(STATUS "Deployment directory set to: ${GAME_PLUGINS_DIR}")
 
-    # Create a command that executes AFTER the SPF target is built.
-    # It copies the built DLL to the game's plugins folder.
     add_custom_command(TARGET SPF POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:SPF>"
-            "${GAME_PLUGINS_DIR}"
-        COMMENT "Deploying scs-telemetry.dll to ${GAME_PLUGINS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:SPF>" "${GAME_PLUGINS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets/Localization" "${GAME_PLUGINS_DIR}/spfAssets/localization"
+        COMMENT "Deploying spf-framework.dll and assets to game directory"
     )
-
-    # Create a command for copying localization resources.
-    # It copies the entire contents of the assets/Localization folder.
-    add_custom_command(TARGET SPF POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/assets/Localization"
-            "${GAME_PLUGINS_DIR}/spfAssets/localization"
-        COMMENT "Deploying localization files to ${GAME_PLUGINS_DIR}/spfAssets/localization"
-    )
-
 else()
-    message(WARNING "Deployment directory NOT FOUND: ${GAME_PLUGINS_DIR}. DLL and assets will not be deployed.")
+    message(WARNING "Deployment directory NOT FOUND: ${GAME_PLUGINS_DIR}. DLL and assets will not be deployed to game.")
+endif()
+
+# 2. Staging for Installer (triggered only if the directory exists)
+if(EXISTS "${INSTALLER_DIST_DIR}")
+    message(STATUS "Installer staging directory found: ${INSTALLER_DIST_DIR}")
+
+    add_custom_command(TARGET SPF POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALLER_DIST_DIR}/spfAssets/localization"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALLER_DIST_DIR}/spfPlugins"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:SPF>" "${INSTALLER_DIST_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets/Localization" "${INSTALLER_DIST_DIR}/spfAssets/localization"
+        COMMENT "Staging files for the installer at ${INSTALLER_DIST_DIR}"
+    )
 endif()
 # --- End of Deployment ---
 
