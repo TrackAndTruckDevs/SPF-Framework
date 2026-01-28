@@ -201,6 +201,7 @@ These functions allow you to build complex shapes.
 *   `UI_IsMouseReleased(...)`: Checks if a mouse button was released this frame.
 *   `UI_IsMouseDoubleClicked(...)`: Checks for a double-click.
 *   `UI_GetMouseWheel()`: Gets the mouse wheel's vertical scroll value for this frame.
+*   `UI_SetMouseBlockState(bool axes, bool buttons, bool wheel)`: Programmatically blocks physical mouse input from reaching the game. This is useful for custom animations or interaction modes where you want to prevent the game camera or controls from reacting to the mouse.
 
 # Layout & Positioning API
 These functions provide information about the current window and layout state, allowing for precise placement of custom elements.

@@ -348,11 +348,18 @@ void UIManager::RenderAll() {
   }
 
   if (!isAnyWindowTrulyVisible && !isAnimationPlaying) {
-    // If no UI is visible and no animation is playing, reset override and give game control.
+    // If no UI is visible and no animation is playing, reset override.
+    // However, we MUST still check if a plugin has programmatically requested a block.
     m_isMouseControlOverridden = false;
-    m_inputManager->SetMouseAxesControl(true);
-    m_inputManager->SetMouseButtonsControl(true);
-    m_inputManager->SetMouseWheelControl(true);
+
+    bool axesBlockedByPlugin = m_inputManager->IsProgrammaticMouseAxesBlockRequested();
+    bool buttonsBlockedByPlugin = m_inputManager->IsProgrammaticMouseButtonsBlockRequested();
+    bool wheelBlockedByPlugin = m_inputManager->IsProgrammaticMouseWheelBlockRequested();
+
+    m_inputManager->SetMouseAxesControl(!axesBlockedByPlugin);
+    m_inputManager->SetMouseButtonsControl(!buttonsBlockedByPlugin);
+    m_inputManager->SetMouseWheelControl(!wheelBlockedByPlugin);
+    
     ImGui::GetIO().MouseDrawCursor = false;
   } else {
     // Special case: Animation is playing, but no windows are visible.
@@ -391,11 +398,20 @@ void UIManager::RenderAll() {
       // 2. Apply the toggle override using XOR.
       bool final_uiShouldHaveControl = auto_uiShouldHaveControl ^ m_isMouseControlOverridden;
 
+      // --- Programmatic Blocking (Plugin Requested) ---
+      // Plugins can request specific blocking (e.g. for animations).
+      // This is additive to the UI control state.
+      bool axesBlockedByPlugin = m_inputManager->IsProgrammaticMouseAxesBlockRequested();
+      bool buttonsBlockedByPlugin = m_inputManager->IsProgrammaticMouseButtonsBlockRequested();
+      bool wheelBlockedByPlugin = m_inputManager->IsProgrammaticMouseWheelBlockRequested();
+
       // 3. Apply the final state
       ImGui::GetIO().MouseDrawCursor = final_uiShouldHaveControl;
-      m_inputManager->SetMouseAxesControl(!final_uiShouldHaveControl);
-      m_inputManager->SetMouseButtonsControl(!final_uiShouldHaveControl);
-      m_inputManager->SetMouseWheelControl(!final_uiShouldHaveControl);
+      
+      // Game control is true only if UI doesn't have it AND plugin doesn't block it.
+      m_inputManager->SetMouseAxesControl(!final_uiShouldHaveControl && !axesBlockedByPlugin);
+      m_inputManager->SetMouseButtonsControl(!final_uiShouldHaveControl && !buttonsBlockedByPlugin);
+      m_inputManager->SetMouseWheelControl(!final_uiShouldHaveControl && !wheelBlockedByPlugin);
     }
   }
 

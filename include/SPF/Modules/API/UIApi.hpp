@@ -114,6 +114,7 @@ class UIApi {
   static bool UI_IsMouseReleased(int mouse_button_index);
   static bool UI_IsMouseDoubleClicked(int mouse_button_index);
   static float UI_GetMouseWheel();
+  static void UI_SetMouseBlockState(bool blockAxes, bool blockButtons, bool blockWheel);
 
   // --- Layout & Positioning API Trampolines ---
   static void UI_GetContentRegionAvail(float* out_x, float* out_y);

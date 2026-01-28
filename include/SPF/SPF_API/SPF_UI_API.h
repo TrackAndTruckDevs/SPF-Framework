@@ -1110,6 +1110,20 @@ typedef struct SPF_UI_API {
      */
     float (*UI_GetMouseWheel)();
 
+    /**
+     * @brief Programmatically controls whether physical mouse input is blocked from the game.
+     * 
+     * @details This allows a plugin to temporarily "capture" mouse movement or buttons 
+     *          to prevent them from affecting the game camera or controls. This is 
+     *          useful during custom animations (e.g. cabin walk transitions) or special 
+     *          interaction modes.
+     * 
+     * @param blockAxes If true, mouse movement (axes) will be blocked from the game.
+     * @param blockButtons If true, mouse buttons will be blocked from the game.
+     * @param blockWheel If true, the mouse wheel will be blocked from the game.
+     */
+    void (*UI_SetMouseBlockState)(bool blockAxes, bool blockButtons, bool blockWheel);
+
     
     // --- Layout & Positioning API ---
     // The following functions provide information about the current window, layout state,

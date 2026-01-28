@@ -1,4 +1,6 @@
+#include <Windows.h>
 #include "SPF/Modules/API/UIApi.hpp"
+#include "SPF/Input/InputManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"  // For PluginManager::GetInstance()
 #include "SPF/Modules/HandleManager.hpp"  // For HandleManager
 #include "SPF/UI/UIManager.hpp"           // For UIManager::GetWindow
@@ -375,12 +377,15 @@ bool UIApi::UI_IsMouseDoubleClicked(int mouse_button_index) {
 }
 
 float UIApi::UI_GetMouseWheel() {
-    return ImGui::GetIO().MouseWheel;
+  return ImGui::GetIO().MouseWheel;
 }
 
-// --- Layout & Positioning API Implementation ---
+void UIApi::UI_SetMouseBlockState(bool blockAxes, bool blockButtons, bool blockWheel) {
+    Input::InputManager::GetInstance().SetProgrammaticMouseBlock(blockAxes, blockButtons, blockWheel);
+}
 
 void UIApi::UI_GetContentRegionAvail(float* out_x, float* out_y) {
+
     if (out_x && out_y) {
         const ImVec2 content_region = ImGui::GetContentRegionAvail();
         *out_x = content_region.x;
@@ -654,8 +659,8 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_IsMouseReleased = &UIApi::UI_IsMouseReleased;
   ui_api->UI_IsMouseDoubleClicked = &UIApi::UI_IsMouseDoubleClicked;
   ui_api->UI_GetMouseWheel = &UIApi::UI_GetMouseWheel;
+  ui_api->UI_SetMouseBlockState = &UIApi::UI_SetMouseBlockState;
 
-  // --- Layout & Positioning API ---
   ui_api->UI_GetContentRegionAvail = &UIApi::UI_GetContentRegionAvail;
   ui_api->UI_GetWindowPos = &UIApi::UI_GetWindowPos;
   ui_api->UI_GetWindowSize = &UIApi::UI_GetWindowSize;

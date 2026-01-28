@@ -27,6 +27,10 @@
 #include <optional>
 
 // --- System ---
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
 #include <Xinput.h>  // For XINPUT_STATE and XUSER_MAX_COUNT
 
 SPF_NS_BEGIN
@@ -106,6 +110,12 @@ class InputManager {
   void SetMouseButtonsControl(bool gameHasControl);
   void SetMouseWheelControl(bool gameHasControl);
 
+  // --- Programmatic (Plugin) Mouse Blocking ---
+  void SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel);
+  bool IsProgrammaticMouseAxesBlockRequested() const { return m_pluginRequestedMouseAxesBlock; }
+  bool IsProgrammaticMouseButtonsBlockRequested() const { return m_pluginRequestedMouseButtonsBlock; }
+  bool IsProgrammaticMouseWheelBlockRequested() const { return m_pluginRequestedMouseWheelBlock; }
+
   bool ShouldGameControlMouseAxes() const;
   bool ShouldGameControlMouseButtons() const;
   bool ShouldGameControlMouseWheel() const;
@@ -131,6 +141,10 @@ class InputManager {
   bool m_gameControlsMouseAxes = true;
   bool m_gameControlsMouseButtons = true;
   bool m_gameControlsMouseWheel = true;
+
+  bool m_pluginRequestedMouseAxesBlock = false;
+  bool m_pluginRequestedMouseButtonsBlock = false;
+  bool m_pluginRequestedMouseWheelBlock = false;
 
   // The central state machine for all inputs
   std::map<System::GamepadButton, ButtonState> m_buttonStates;

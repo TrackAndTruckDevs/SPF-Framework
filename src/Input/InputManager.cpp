@@ -847,6 +847,12 @@ void InputManager::SetMouseAxesControl(bool gameHasControl) { m_gameControlsMous
 void InputManager::SetMouseButtonsControl(bool gameHasControl) { m_gameControlsMouseButtons = gameHasControl; }
 void InputManager::SetMouseWheelControl(bool gameHasControl) { m_gameControlsMouseWheel = gameHasControl; }
 
+void InputManager::SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel) {
+    m_pluginRequestedMouseAxesBlock = blockAxes;
+    m_pluginRequestedMouseButtonsBlock = blockButtons;
+    m_pluginRequestedMouseWheelBlock = blockWheel;
+}
+
 void InputManager::StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding) {
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   logger->Info("Starting key capture for action: {}", actionFullName);

@@ -991,6 +991,11 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
                     g_ctx.coreAPI->keybinds->Kbind_SetBlockState(h, "ExamplePlugin.Demo.honk", g_ctx.isHonkIntercepted);
                 }
             }
+
+            static bool blockMouse = false;
+            if (ui->UI_Checkbox("Block Game Mouse Look", &blockMouse)) {
+                ui->UI_SetMouseBlockState(blockMouse, false, false);
+            }
             ui->UI_Separator();
 
             // --- Hook Example ---
