@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Никогда",
             "on_ui_focus": "При фокусе UI",
-            "always": "Всегда"
+            "always": "Всегда",
+            "manual": "Управляется плагином"
         }
     }
 }

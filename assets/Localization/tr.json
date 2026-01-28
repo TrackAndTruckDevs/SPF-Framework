@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Asla",
             "on_ui_focus": "UI Odaklandığında",
-            "always": "Her Zaman"
+            "always": "Her Zaman",
+            "manual": "Eklenti Tarafından Yönetiliyor"
         }
     }
 }

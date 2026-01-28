@@ -244,6 +244,15 @@ void KeyBindsManager::UnregisterOwner(const std::string& owner) {
   });
 }
 
+void KeyBindsManager::SetBlockState(const std::string& actionKey, bool blocked) {
+    auto it = m_actions.find(actionKey);
+    if (it != m_actions.end()) {
+        for (auto& binding : it->second.Inputs) {
+            binding.programmaticallyBlocked = blocked;
+        }
+    }
+}
+
 std::vector<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::GetBindingsForInput(const IBindableInput& input) const {
   std::vector<std::pair<std::string, nlohmann::ordered_json>> conflicts;
   for (const auto& [actionName, action] : m_actions) {
@@ -308,12 +317,14 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent&
   ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
-      // When determining the initial blocking policy, we check if ANY binding for this key wants to consume it,
-      // regardless of the press type. The InputManager needs to know immediately on press if the input
-      // should be blocked, even if the action is for a long press.
       if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-        if (binding.Policy > strictestPolicy) {
-          strictestPolicy = binding.Policy;
+        ConsumptionPolicy effectivePolicy = binding.Policy;
+        if (effectivePolicy == ConsumptionPolicy::Manual) {
+            effectivePolicy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+        }
+
+        if (effectivePolicy > strictestPolicy) {
+          strictestPolicy = effectivePolicy;
         }
       }
     }
@@ -325,12 +336,14 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& 
   ConsumptionPolicy strictestPolicy = ConsumptionPolicy::Never;
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
-      // When determining the initial blocking policy, we check if ANY binding for this button wants to consume it,
-      // regardless of the press type. The InputManager needs to know immediately on press if the input
-      // should be blocked, even if the action is for a long press.
       if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-        if (binding.Policy > strictestPolicy) {
-          strictestPolicy = binding.Policy;
+        ConsumptionPolicy effectivePolicy = binding.Policy;
+        if (effectivePolicy == ConsumptionPolicy::Manual) {
+            effectivePolicy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+        }
+
+        if (effectivePolicy > strictestPolicy) {
+          strictestPolicy = effectivePolicy;
         }
       }
     }
@@ -343,8 +356,13 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEve
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
       if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-        if (binding.Policy > strictestPolicy) {
-          strictestPolicy = binding.Policy;
+        ConsumptionPolicy effectivePolicy = binding.Policy;
+        if (effectivePolicy == ConsumptionPolicy::Manual) {
+            effectivePolicy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+        }
+
+        if (effectivePolicy > strictestPolicy) {
+          strictestPolicy = effectivePolicy;
         }
       }
     }
@@ -357,8 +375,13 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::JoystickEvent&
   for (const auto& [actionName, action] : m_actions) {
     for (const auto& binding : action.Inputs) {
       if (binding.Input && binding.Input->IsTriggeredBy(event)) {
-        if (binding.Policy > strictestPolicy) {
-          strictestPolicy = binding.Policy;
+        ConsumptionPolicy effectivePolicy = binding.Policy;
+        if (effectivePolicy == ConsumptionPolicy::Manual) {
+            effectivePolicy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+        }
+
+        if (effectivePolicy > strictestPolicy) {
+          strictestPolicy = effectivePolicy;
         }
       }
     }

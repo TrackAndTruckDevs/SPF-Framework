@@ -21,6 +21,10 @@
 *                                                                                                 
 * 3. **Automatic Cleanup**: Keybind handles are managed by the framework. All 
 *    registrations are automatically cleaned up when the plugin is unloaded.
+* 
+* 4. **Dynamic Blocking**: If an action's 'consume' policy is set to 'manual', 
+*    the plugin can programmatically block the physical key from the game 
+*    using 'Kbind_SetBlockState()'.
 *                                                                                                 
 * ================================================================================================
 * USAGE EXAMPLE (C++)                                                                             
@@ -134,6 +138,20 @@ typedef struct SPF_KeyBinds_API {
      * @param h The context handle.
      */
     void (*Kbind_UnregisterAll)(SPF_KeyBinds_Handle* h);
+
+    /**
+     * @brief Programmatically controls whether an action's physical input is blocked from the game.
+     * 
+     * @details This function is only effective if the action's 'consume' policy is set to 'manual' 
+     *          in the framework settings. It allows the plugin to decide at runtime when a 
+     *          shared key (e.g., WASD) should be captured by the plugin or passed to the game.
+     * 
+     * @param h The context handle.
+     * @param actionName The **full name** of the action (e.g., "MyPlugin.Movement.Forward").
+     * @param block If true, the framework will consume the input and block it from the game. 
+     *              If false, the input will be passed through to the game.
+     */
+    void (*Kbind_SetBlockState)(SPF_KeyBinds_Handle* h, const char* actionName, bool block);
 
 } SPF_KeyBinds_API;
 

@@ -152,6 +152,10 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
 
         // Second action: Cycle through camera views.
         api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "short", 300, "always", "press");
+
+        // Third action: Demonstrate programmatic blocking (using 'manual' consume policy).
+        // By default, it uses the 'H' key (standard for Horn in ATS/ETS2).
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Demo", "honk", "keyboard", "KEY_H", "short", 0, "manual", "press");
     }
 
     // --- UI ---
@@ -315,6 +319,10 @@ void OnActivated(const SPF_Core_API* core_api) {
         auto keybinds = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
         g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
         g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
+        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.Demo.honk", []() {
+            auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "BEEP! (Honk action triggered in plugin)");
+        });
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered keybinds.");
     }
 
@@ -971,6 +979,16 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
                     char log_buffer[512];
                     g_ctx.coreAPI->formatting->Fmt_Format(log_buffer, sizeof(log_buffer), "Executed console command: '%s'", g_ctx.consoleCommand);
                     g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, log_buffer);
+                }
+            }
+            ui->UI_Separator();
+
+            // --- Dynamic Blocking Example ---
+            ui->UI_Text("Dynamic Input Blocking (requires 'Plugin Managed' in settings):");
+            if (ui->UI_Checkbox("Block Game Horn (H key)", &g_ctx.isHonkIntercepted)) {
+                if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
+                    auto h = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
+                    g_ctx.coreAPI->keybinds->Kbind_SetBlockState(h, "ExamplePlugin.Demo.honk", g_ctx.isHonkIntercepted);
                 }
             }
             ui->UI_Separator();

@@ -13,6 +13,7 @@ class KeyBindsApi {
   static SPF_KeyBinds_Handle* Kbind_GetContext(const char* pluginName);
   static void Kbind_Register(SPF_KeyBinds_Handle* h, const char* actionName, void (*callback)(void));
   static void Kbind_UnregisterAll(SPF_KeyBinds_Handle* h);
+  static void Kbind_SetBlockState(SPF_KeyBinds_Handle* h, const char* actionName, bool block);
 };
 }  // namespace Modules::API
 SPF_NS_END

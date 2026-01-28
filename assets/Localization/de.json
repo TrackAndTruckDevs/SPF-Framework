@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Niemals",
             "on_ui_focus": "Bei UI-Fokus",
-            "always": "Immer"
+            "always": "Immer",
+            "manual": "Vom Plugin verwaltet"
         }
     }
 }

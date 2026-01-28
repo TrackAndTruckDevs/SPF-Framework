@@ -47,6 +47,7 @@ struct Binding {
   ActivationBehavior Behavior = ActivationBehavior::Toggle;  // Specifies how the action is triggered over time
   std::optional<std::chrono::milliseconds> PressThreshold;
   nlohmann::ordered_json originalBindingJson; // Store the original JSON for better conflict reporting
+  bool programmaticallyBlocked = false;       // Used when Policy is set to Manual
 };
 
 struct Action {
@@ -72,6 +73,12 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
 
   void RegisterAction(const std::string& actionKey, ActionCallback callback);
   void UnregisterOwner(const std::string& owner);
+
+  /**
+   * @brief Manually sets the blocking state for an action.
+   * This is only effective if the binding's policy is set to 'manual'.
+   */
+  void SetBlockState(const std::string& actionKey, bool blocked);
 
   /**
    * @brief Describes the conflicts for short and long press types for a given physical input.

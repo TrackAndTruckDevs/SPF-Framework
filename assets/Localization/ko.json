@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "안 함",
             "on_ui_focus": "UI 포커스 시",
-            "always": "항상"
+            "always": "항상",
+            "manual": "플러그인 관리"
         }
     }
 }

@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Nunca",
             "on_ui_focus": "Al enfocar la UI",
-            "always": "Siempre"
+            "always": "Siempre",
+            "manual": "Gestionado por el plugin"
         }
     }
 }

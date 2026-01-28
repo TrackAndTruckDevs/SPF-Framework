@@ -201,6 +201,11 @@ struct PluginContext {
   char consoleCommand[256] = "g_traffic 1";
 
   /**
+   * @brief A flag to control programmatic blocking of the 'Honk' action.
+   */
+  bool isHonkIntercepted = false;
+
+  /**
    * @brief A flag to control whether the game string formatting hook should modify the quit button color.
    * @details This is a simple boolean toggled by a checkbox in the UI. It is read by the
    * `Detour_GameStringFormatting` hook function to decide whether to apply its modification.

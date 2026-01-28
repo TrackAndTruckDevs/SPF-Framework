@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Nooit",
             "on_ui_focus": "Bij UI Focus",
-            "always": "Altijd"
+            "always": "Altijd",
+            "manual": "Beheerd door plugin"
         }
     }
 }

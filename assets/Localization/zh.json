@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "从不",
             "on_ui_focus": "UI 聚焦时",
-            "always": "总是"
+            "always": "总是",
+            "manual": "由插件管理"
         }
     }
 }

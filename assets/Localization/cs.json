@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Nikdy",
             "on_ui_focus": "Při zaměření na UI",
-            "always": "Vždy"
+            "always": "Vždy",
+            "manual": "Spravováno pluginem"
         }
     }
 }

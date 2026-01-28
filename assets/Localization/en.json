@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "Never",
             "on_ui_focus": "On UI Focus",
-            "always": "Always"
+            "always": "Always",
+            "manual": "Plugin Managed"
         }
     }
 }

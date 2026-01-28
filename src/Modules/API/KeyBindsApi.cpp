@@ -35,12 +35,21 @@ void KeyBindsApi::Kbind_UnregisterAll(SPF_KeyBinds_Handle* h) {
     pm.GetKeyBindsManager()->UnregisterOwner(kbdHandle->pluginName);
 }
 
+void KeyBindsApi::Kbind_SetBlockState(SPF_KeyBinds_Handle* h, const char* actionName, bool block) {
+    if (!h || !actionName) return;
+    auto& pm = PluginManager::GetInstance();
+    if (pm.GetKeyBindsManager()) {
+        pm.GetKeyBindsManager()->SetBlockState(actionName, block);
+    }
+}
+
 void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
     if (!api) return;
 
     api->Kbind_GetContext = &KeyBindsApi::Kbind_GetContext;
     api->Kbind_Register = &KeyBindsApi::Kbind_Register;
     api->Kbind_UnregisterAll = &KeyBindsApi::Kbind_UnregisterAll;
+    api->Kbind_SetBlockState = &KeyBindsApi::Kbind_SetBlockState;
 }
 
 } // namespace Modules::API

@@ -938,7 +938,8 @@
         "consumption_policy": {
             "never": "しない",
             "on_ui_focus": "UIフォーカス時",
-            "always": "常に"
+            "always": "常に",
+            "manual": "プラグインによる管理"
         }
     }
 }
