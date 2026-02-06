@@ -119,10 +119,15 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   const Binding* GetBindingForInput(System::MouseButton button, Input::PressType pressType) const;
   const Binding* GetBindingForInput(int buttonIndex, Input::PressType pressType) const;
 
+  /**
+   * @brief Selects the best active binding for a given trigger and press type, prioritizing chords.
+   */
+  const Binding* FindBestBinding(uint32_t triggerHardwareCode, Input::PressType pressType) const;
+
   Config::ConsumptionPolicy GetPolicyForEvent(const Input::KeyboardEvent& event, Input::PressType pressType) const;
-  Config::ConsumptionPolicy GetPolicyForEvent(const Input::GamepadEvent& event) const;
-  Config::ConsumptionPolicy GetPolicyForEvent(const Input::MouseButtonEvent& event) const;
-  Config::ConsumptionPolicy GetPolicyForEvent(const Input::JoystickEvent& event) const;
+  Config::ConsumptionPolicy GetPolicyForEvent(const Input::GamepadEvent& event, Input::PressType pressType) const;
+  Config::ConsumptionPolicy GetPolicyForEvent(const Input::MouseButtonEvent& event, Input::PressType pressType) const;
+  Config::ConsumptionPolicy GetPolicyForEvent(const Input::JoystickEvent& event, Input::PressType pressType) const;
 
   std::chrono::milliseconds GetLongPressThreshold() const;
 

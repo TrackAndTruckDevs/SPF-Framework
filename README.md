@@ -358,6 +358,6 @@ This project would not be possible without the incredible work of the open-sourc
 *   **[cpr (C++ Requests)](https://github.com/libcpr/cpr)**: For handling all external web requests with a clean, modern interface.
 *   **[md4c](https://github.com/mity/md4c)** & **[imgui_md](https://github.com/mekhontsev/imgui_md)**: For providing fast and lightweight Markdown rendering within the UI.
 *   **[zlib](https://github.com/madler/zlib)**: For data compression, used as a dependency by other core components.
-*   **[SCS SDK](https://github.com/SCSSoftware/ts-sdk-plugins)**: For providing the official telemetry interface that makes this all possible.
+*   **[SCS SDK](https://modding.scssoft.com/wiki/Documentation/Engine/SDK/Telemetry)**: For providing the official telemetry interface that makes this all possible.
 
 We are also deeply grateful to the **[hry-core](https://github.com/Hary309/hry-core)** project, which served as a significant architectural inspiration for this framework.

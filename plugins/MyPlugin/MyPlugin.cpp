@@ -149,7 +149,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // `key`: Key name (see VirtualKeyMapping.cpp or GamepadButtonMapping.cpp).
         // `pressType`: "short" (tap) or "long" (hold).
         // `pressThresholdMs`: For "long" press, time in ms to hold.
-        // `consume`: When to consume input: "never", "on_ui_focus", "always".
+        // `consume`: When to consume input: "never", "on_ui_focus", "always", "manual".
         // `behavior`: How action behaves. Valid values: "toggle" (on/off), "hold" (while pressed).
         api->Defaults_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
     }

@@ -39,6 +39,7 @@ class SettingsWindow : public BaseWindow {
  public:
   void OnInputCaptured(const Input::InputCaptured& e);
   void OnInputCaptureCancelled(const Input::InputCaptureCancelled& e);
+  void OnInputCaptureUpdate(const Input::InputCaptureUpdate& e);
   void OnInputCaptureConflict(const Input::InputCaptureConflict& e);
 
  private:
@@ -54,9 +55,11 @@ class SettingsWindow : public BaseWindow {
   Events::EventManager& m_eventManager;
 
   std::unique_ptr<Utils::Sink<void(const Events::UI::FocusComponentInSettingsWindow&)>> m_onFocusComponentSink;
+  std::unique_ptr<Utils::Sink<void(const Input::InputCaptureUpdate&)>> m_onInputCaptureUpdateSink;
 
   // State for keybinding editor
   std::optional<std::string> m_actionBeingEdited;
+  std::vector<std::shared_ptr<Modules::IBindableInput>> m_currentChordInputs;
   nlohmann::ordered_json m_editingBindingObject;
   std::optional<std::string> m_editingBindingAction;      // For the details popup
   std::optional<nlohmann::ordered_json> m_editingBindingDetails;  // For the details popup

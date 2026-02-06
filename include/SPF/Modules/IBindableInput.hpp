@@ -3,10 +3,12 @@
 #include "SPF/Namespace.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include <nlohmann/json.hpp>
+#include <set>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Modules {
-enum class InputType { Keyboard, Gamepad, Mouse, Joystick, Unknown };
+enum class InputType { Keyboard, Gamepad, Mouse, Joystick, Chord, Unknown };
 
 /**
  * @brief An interface for a specific input that can be bound to an action.
@@ -30,6 +32,25 @@ struct IBindableInput {
 
   // Overload for raw keyboard key checks
   virtual bool IsTriggeredBy(System::Keyboard key) const { return false; }
+
+  /**
+   * @brief Gets a unique hardware code for the physical input.
+   * This is used to track the state of multiple keys simultaneously.
+   * @return A 32-bit identifier where the upper byte is the device type.
+   */
+  virtual uint32_t GetHardwareCode() const = 0;
+
+  /**
+   * @brief Checks if this input is considered active given the set of currently pressed keys.
+   * For single inputs, checks if its code is in the set. For chords, checks if ALL its codes are in the set.
+   */
+  virtual bool IsActive(const std::set<uint32_t>& pressedCodes) const = 0;
+
+  /**
+   * @brief Checks if this input involves a specific physical key/button.
+   * For chords, this returns true if any of the constituent inputs match the code.
+   */
+  virtual bool InvolvesHardwareCode(uint32_t code) const = 0;
 
   /**
    * @brief Checks if this bindable input is the same as another one.

@@ -69,6 +69,17 @@ std::string MouseButtonMapping::GetButtonDisplayName(MouseButton button) const {
     return "Unknown";
 }
 
+MouseButton MouseButtonMapping::FromWinAPI(int vKey) const {
+    switch (vKey) {
+        case 0x01: return MouseButton::Left;
+        case 0x02: return MouseButton::Right;
+        case 0x04: return MouseButton::Middle;
+        case 0x05: return MouseButton::X1;
+        case 0x06: return MouseButton::X2;
+        default: return MouseButton::Unknown;
+    }
+}
+
 } // namespace System
 
 SPF_NS_END

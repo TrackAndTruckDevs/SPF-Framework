@@ -63,6 +63,13 @@ public:
      */
     std::string GetButtonDisplayName(MouseButton button) const;
 
+    /**
+     * @brief Converts a Windows Virtual Key code (VK_) to its corresponding MouseButton enum value.
+     * @param vKey The Windows virtual key code.
+     * @return The MouseButton enum value, or MouseButton::Unknown if not found.
+     */
+    MouseButton FromWinAPI(int vKey) const;
+
 private:
     MouseButtonMapping();
     ~MouseButtonMapping() = default;

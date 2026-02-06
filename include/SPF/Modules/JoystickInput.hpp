@@ -34,6 +34,10 @@ public:
     bool IsValid() const override;
     
     InputType GetType() const override { return InputType::Joystick; }
+
+    uint32_t GetHardwareCode() const override;
+    bool IsActive(const std::set<uint32_t>& pressedCodes) const override;
+    bool InvolvesHardwareCode(uint32_t code) const override;
     
     bool IsSameAs(const IBindableInput& other) const override;
 

@@ -76,6 +76,14 @@ struct InputCaptureCancelled {
 };
 
 /**
+ * @brief Fired by InputManager during a chord capture session to update the UI.
+ */
+struct InputCaptureUpdate {
+    std::vector<std::shared_ptr<Modules::IBindableInput>> currentChordInputs; 
+    std::string actionFullName;
+};
+
+/**
  * @brief Fired by Core when a captured key is already bound to another action.
  */
 struct InputCaptureConflict {

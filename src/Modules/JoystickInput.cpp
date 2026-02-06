@@ -30,6 +30,18 @@ bool JoystickInput::IsValid() const {
     return m_buttonIndex >= 0 && m_buttonIndex < 128;
 }
 
+uint32_t JoystickInput::GetHardwareCode() const {
+    return 0x04000000 | static_cast<uint32_t>(m_buttonIndex);
+}
+
+bool JoystickInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
+    return pressedCodes.count(GetHardwareCode()) > 0;
+}
+
+bool JoystickInput::InvolvesHardwareCode(uint32_t code) const {
+    return GetHardwareCode() == code;
+}
+
 bool JoystickInput::IsSameAs(const IBindableInput& other) const {
     if (other.GetType() != InputType::Joystick) {
         return false;

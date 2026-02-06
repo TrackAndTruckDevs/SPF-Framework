@@ -3,7 +3,8 @@
 #include "SPF/Modules/KeyboardInput.hpp"
 #include "SPF/Modules/GamepadInput.hpp"
 #include "SPF/Modules/MouseInput.hpp"
-#include "SPF/Modules/JoystickInput.hpp" // Added missing include
+#include "SPF/Modules/JoystickInput.hpp"
+#include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include <nlohmann/json.hpp>
 #include <memory>
@@ -51,6 +52,25 @@ class InputFactory {
             return input;
         } else {
             logger->Warn("Validation failed for joystick input: {}", configJson.dump());
+            return nullptr;
+        }
+    } else if (type == "chord") {
+        if (!configJson.contains("bindings") || !configJson["bindings"].is_array()) {
+            logger->Warn("Chord input missing 'bindings' array: {}", configJson.dump());
+            return nullptr;
+        }
+        auto chord = std::make_unique<ChordInput>();
+        for (const auto& innerJson : configJson["bindings"]) {
+            if (!innerJson.is_object()) continue;
+            auto innerInput = CreateFromJson(innerJson);
+            if (innerInput) {
+                chord->AddInput(std::move(innerInput));
+            }
+        }
+        if (chord->IsValid()) {
+            return chord;
+        } else {
+            logger->Warn("Validation failed for chord input: {}", configJson.dump());
             return nullptr;
         }
     }

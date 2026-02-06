@@ -13,21 +13,36 @@
 // Define the function pointer type for the original XInputGetState
 typedef DWORD(WINAPI* XInputGetState_t)(DWORD, XINPUT_STATE*);
 
-// Pointer to the original function
+// Pointer to the original functions
 static XInputGetState_t oXInputGetState = nullptr;
+static XInputGetState_t oXInputGetStateEx = nullptr;
 
-// Pointer to the target function address, which will persist across reloads
+// Pointer to the target function addresses
 static void* pXInputGetStateTarget = nullptr;
+static void* pXInputGetStateExTarget = nullptr;
 
 // Storage for previous gamepad states to detect changes
 static XINPUT_GAMEPAD g_previousGamepads[XUSER_MAX_COUNT] = {};
 
-// State for the correct blocking mechanism
-static DWORD s_lastPacketNumber = 0;
-static WORD s_blockedButtonsMask = 0;
+// State for the correct blocking mechanism, now per-controller
+static DWORD s_lastPacketNumber[XUSER_MAX_COUNT] = {0};
+static WORD s_blockedButtonsMask[XUSER_MAX_COUNT] = {0};
 
-// Our hooked function
+// Forward declaration
+static DWORD InternalProcessXInputState(DWORD dwUserIndex, XINPUT_STATE* pState, XInputGetState_t originalFunc);
+
+// Our hooked functions
 DWORD WINAPI HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) {
+  // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+  // logger->TraceThrottled(std::chrono::seconds(5), "XInput: HookedXInputGetState is active for user={}", dwUserIndex);
+  return InternalProcessXInputState(dwUserIndex, pState, oXInputGetState);
+}
+
+DWORD WINAPI HookedXInputGetStateEx(DWORD dwUserIndex, XINPUT_STATE* pState) {
+  return InternalProcessXInputState(dwUserIndex, pState, oXInputGetStateEx);
+}
+
+static DWORD InternalProcessXInputState(DWORD dwUserIndex, XINPUT_STATE* pState, XInputGetState_t originalFunc) {
   auto& inputManager = SPF::Input::InputManager::GetInstance();
 
   // --- One-time SubType detection and registration with InputManager ---
@@ -44,84 +59,101 @@ DWORD WINAPI HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) {
   }
 
   // Call the original function first to get the true, unmodified state
-  DWORD result = oXInputGetState(dwUserIndex, pState);
+  DWORD result = originalFunc(dwUserIndex, pState);
 
   if (result == ERROR_SUCCESS && pState) {
+    // Capture RAW state for logic, compare with TRUE previous state.
+    const XINPUT_GAMEPAD hardwareState = pState->Gamepad;
+
     // Get the classified device type from the manager, which now knows about this device's SubType
     SPF::System::DeviceType classifiedType = inputManager.GetXInputDeviceType(dwUserIndex);
 
-    // Frame-level block persistence logic
-    if (pState->dwPacketNumber != s_lastPacketNumber) {
-      s_blockedButtonsMask = 0;
-      s_lastPacketNumber = pState->dwPacketNumber;
+    // Frame-level block persistence logic, now per-controller
+    if (pState->dwPacketNumber != s_lastPacketNumber[dwUserIndex]) {
+      s_blockedButtonsMask[dwUserIndex] = 0;
+      s_lastPacketNumber[dwUserIndex] = pState->dwPacketNumber;
     }
 
-    // Now, apply the block mask from any previous polls within this same input frame.
-    pState->Gamepad.wButtons &= ~s_blockedButtonsMask;
+    // Now, apply the block mask from any previous polls within this same input packet.
+    pState->Gamepad.wButtons &= ~s_blockedButtonsMask[dwUserIndex];
 
-    // For change detection, compare the TRUE current state with the TRUE previous state.
-    const XINPUT_GAMEPAD& currentState = pState->Gamepad;
     const XINPUT_GAMEPAD& previousState = g_previousGamepads[dwUserIndex];
+    auto& mapping = SPF::System::GamepadButtonMapping::GetInstance();
+    bool anyMasked = false;
 
     if (classifiedType == SPF::System::DeviceType::Xbox) {
       // --- Standard Gamepad Processing (All Inputs) ---
       inputManager.SetXInputDeviceActive(true);
 
       // --- Process Buttons ---
-      WORD pressedButtons = currentState.wButtons & ~previousState.wButtons;
-      WORD releasedButtons = previousState.wButtons & ~currentState.wButtons;
+      WORD allButtons[] = {XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y,
+                           XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT,
+                           XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER, XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_START,
+                           XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB};
 
-      auto processButton = [&](SPF::System::GamepadButton btn, WORD xbtn) {
+      for (WORD xbtn : allButtons) {
+        SPF::System::GamepadButton btn = mapping.FromXInput(xbtn);
+        if (btn == SPF::System::GamepadButton::Unknown) continue;
+
+        bool isPressed = (hardwareState.wButtons & xbtn) != 0;
+        bool wasPressed = (previousState.wButtons & xbtn) != 0;
+
         bool block = false;
-        if (pressedButtons & xbtn) {
+        if (isPressed && !wasPressed) {
+          // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          // logger->Trace("XInput: Physical PRESS for user={}, button={}", dwUserIndex, (int)btn);
           block = inputManager.PublishGamepadEvent({(int)dwUserIndex, btn, true, 1.0f});
-        } else if (releasedButtons & xbtn) {
+        } else if (!isPressed && wasPressed) {
+          // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          // logger->Trace("XInput: Physical RELEASE for user={}, button={}", dwUserIndex, (int)btn);
           inputManager.PublishGamepadEvent({(int)dwUserIndex, btn, false, 0.0f});
         }
-        if (block) {
-          pState->Gamepad.wButtons &= ~xbtn;
-          s_blockedButtonsMask |= xbtn;
-        }
-      };
 
-      processButton(SPF::System::GamepadButton::FaceDown, XINPUT_GAMEPAD_A);
-      processButton(SPF::System::GamepadButton::FaceRight, XINPUT_GAMEPAD_B);
-      processButton(SPF::System::GamepadButton::FaceLeft, XINPUT_GAMEPAD_X);
-      processButton(SPF::System::GamepadButton::FaceUp, XINPUT_GAMEPAD_Y);
-      processButton(SPF::System::GamepadButton::DPadUp, XINPUT_GAMEPAD_DPAD_UP);
-      processButton(SPF::System::GamepadButton::DPadDown, XINPUT_GAMEPAD_DPAD_DOWN);
-      processButton(SPF::System::GamepadButton::DPadLeft, XINPUT_GAMEPAD_DPAD_LEFT);
-      processButton(SPF::System::GamepadButton::DPadRight, XINPUT_GAMEPAD_DPAD_RIGHT);
-      processButton(SPF::System::GamepadButton::LeftShoulder, XINPUT_GAMEPAD_LEFT_SHOULDER);
-      processButton(SPF::System::GamepadButton::RightShoulder, XINPUT_GAMEPAD_RIGHT_SHOULDER);
-      processButton(SPF::System::GamepadButton::SpecialLeft, XINPUT_GAMEPAD_BACK);
-      processButton(SPF::System::GamepadButton::SpecialRight, XINPUT_GAMEPAD_START);
-      processButton(SPF::System::GamepadButton::LeftStick, XINPUT_GAMEPAD_LEFT_THUMB);
-      processButton(SPF::System::GamepadButton::RightStick, XINPUT_GAMEPAD_RIGHT_THUMB);
+        // Always check with the manager if this button should be blocked right now.
+        if (block || inputManager.IsGamepadButtonBlocked(btn)) {
+          // if (!block) {
+          //     auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          //     logger->TraceThrottled(std::chrono::milliseconds(500), "XInput: Masking button {} for user={}", (int)btn, dwUserIndex);
+          // }
+          pState->Gamepad.wButtons &= ~xbtn;
+          s_blockedButtonsMask[dwUserIndex] |= xbtn;
+          anyMasked = true;
+        }
+      }
 
       // --- Process Triggers ---
-      auto processTrigger = [&](SPF::System::GamepadButton btn, BYTE currentVal, const BYTE& prevVal) {
+      auto processTrigger = [&](SPF::System::GamepadButton btn, BYTE& gameVal, BYTE rawCurVal, BYTE rawPrevVal) {
         const float deadzone = XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 255.0f;
-        float normValue = static_cast<float>(currentVal) / 255.0f;
+        float normValue = static_cast<float>(rawCurVal) / 255.0f;
         bool isPressed = normValue >= deadzone;
-        bool wasPressed = (static_cast<float>(prevVal) / 255.0f) >= deadzone;
+        bool wasPressed = (static_cast<float>(rawPrevVal) / 255.0f) >= deadzone;
+        
+        bool block = false;
         if (isPressed != wasPressed) {
-          inputManager.PublishGamepadEvent({(int)dwUserIndex, btn, isPressed, normValue});
+          block = inputManager.PublishGamepadEvent({(int)dwUserIndex, btn, isPressed, normValue});
         }
         if (isPressed || wasPressed) {
-          inputManager.ProcessAndDecide({(int)dwUserIndex, btn, false, normValue});
+          block |= inputManager.ProcessAndDecide({(int)dwUserIndex, btn, false, normValue});
+        }
+
+        if (block || inputManager.IsGamepadButtonBlocked(btn)) {
+            // if (rawCurVal > 0) {
+            //     auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+            //     logger->TraceThrottled(std::chrono::milliseconds(500), "XInput: Masking trigger {} for user={}", (int)btn, dwUserIndex);
+            // }
+            gameVal = 0;
         }
       };
-      processTrigger(SPF::System::GamepadButton::LeftTrigger, currentState.bLeftTrigger, previousState.bLeftTrigger);
-      processTrigger(SPF::System::GamepadButton::RightTrigger, currentState.bRightTrigger, previousState.bRightTrigger);
+      processTrigger(SPF::System::GamepadButton::LeftTrigger, pState->Gamepad.bLeftTrigger, hardwareState.bLeftTrigger, previousState.bLeftTrigger);
+      processTrigger(SPF::System::GamepadButton::RightTrigger, pState->Gamepad.bRightTrigger, hardwareState.bRightTrigger, previousState.bRightTrigger);
 
       // --- Process Analog Sticks ---
-      auto processStick = [&](SPF::System::GamepadButton btnX, SPF::System::GamepadButton btnY, SHORT cX, SHORT cY, const SHORT& pX, const SHORT& pY) {
+      auto processStick = [&](SPF::System::GamepadButton btnX, SPF::System::GamepadButton btnY, SHORT rawX, SHORT rawY, SHORT rawPX, SHORT rawPY) {
         const float deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE / 32767.0f;
-        float normX = std::abs(static_cast<float>(cX) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(cX) / 32767.0f;
-        float normY = std::abs(static_cast<float>(cY) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(cY) / 32767.0f;
-        float pNormX = std::abs(static_cast<float>(pX) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(pX) / 32767.0f;
-        float pNormY = std::abs(static_cast<float>(pY) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(pY) / 32767.0f;
+        float normX = std::abs(static_cast<float>(rawX) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(rawX) / 32767.0f;
+        float normY = std::abs(static_cast<float>(rawY) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(rawY) / 32767.0f;
+        float pNormX = std::abs(static_cast<float>(rawPX) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(rawPX) / 32767.0f;
+        float pNormY = std::abs(static_cast<float>(rawPY) / 32767.0f) < deadzone ? 0.0f : static_cast<float>(rawPY) / 32767.0f;
         if (std::abs(normX - pNormX) > 0.01f) {
           inputManager.ProcessAndDecide({(int)dwUserIndex, btnX, false, normX});
         }
@@ -129,25 +161,35 @@ DWORD WINAPI HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) {
           inputManager.ProcessAndDecide({(int)dwUserIndex, btnY, false, normY});
         }
       };
-      processStick(SPF::System::GamepadButton::LeftStickX, SPF::System::GamepadButton::LeftStickY, currentState.sThumbLX, currentState.sThumbLY, previousState.sThumbLX, previousState.sThumbLY);
-      processStick(SPF::System::GamepadButton::RightStickX, SPF::System::GamepadButton::RightStickY, currentState.sThumbRX, currentState.sThumbRY, previousState.sThumbRX, previousState.sThumbRY);
+      processStick(SPF::System::GamepadButton::LeftStickX, SPF::System::GamepadButton::LeftStickY, hardwareState.sThumbLX, hardwareState.sThumbLY, previousState.sThumbLX, previousState.sThumbLY);
+      processStick(SPF::System::GamepadButton::RightStickX, SPF::System::GamepadButton::RightStickY, hardwareState.sThumbRX, hardwareState.sThumbRY, previousState.sThumbRX, previousState.sThumbRY);
 
     } else if (classifiedType == SPF::System::DeviceType::Joystick) {
       // --- Generic Joystick Processing (Buttons Only) ---
       inputManager.SetXInputDeviceActive(true); // Still an XInput device
-      WORD pressedButtons = currentState.wButtons & ~previousState.wButtons;
-      WORD releasedButtons = previousState.wButtons & ~currentState.wButtons;
+      WORD pressedButtons = hardwareState.wButtons & ~previousState.wButtons;
+      WORD releasedButtons = previousState.wButtons & ~hardwareState.wButtons;
 
       auto processJoystickButton = [&](WORD xbtn, int buttonIndex) {
         bool block = false;
         if (pressedButtons & xbtn) {
+          // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          // logger->Trace("XInput (Joystick Mode): Physical PRESS for user={}, button={}", dwUserIndex, buttonIndex);
           block = inputManager.PublishJoystickEvent({buttonIndex, true});
         } else if (releasedButtons & xbtn) {
+          // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          // logger->Trace("XInput (Joystick Mode): Physical RELEASE for user={}, button={}", dwUserIndex, buttonIndex);
           inputManager.PublishJoystickEvent({buttonIndex, false});
         }
-        if (block) {
+        
+        if (block || inputManager.IsJoystickButtonBlocked(buttonIndex)) {
+          // if (!block) {
+          //     auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+          //     logger->Trace("XInput (Joystick Mode): Blocking (Retroactive) for user={}, button={}", dwUserIndex, buttonIndex);
+          // }
           pState->Gamepad.wButtons &= ~xbtn;
-          s_blockedButtonsMask |= xbtn;
+          s_blockedButtonsMask[dwUserIndex] |= xbtn;
+          anyMasked = true;
         }
       };
 
@@ -166,11 +208,15 @@ DWORD WINAPI HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState) {
       processJoystickButton(XINPUT_GAMEPAD_DPAD_DOWN, 11);
       processJoystickButton(XINPUT_GAMEPAD_DPAD_LEFT, 12);
       processJoystickButton(XINPUT_GAMEPAD_DPAD_RIGHT, 13);
-      // Triggers and sticks are intentionally not processed for the Joystick type
+    }
+
+    // Force packet change if masking is active to ensure the game processes the "release"
+    if (anyMasked) {
+        pState->dwPacketNumber++;
     }
 
     // This is crucial and must happen regardless of device type to prevent repeat-press events.
-    g_previousGamepads[dwUserIndex] = currentState;
+    g_previousGamepads[dwUserIndex] = hardwareState;
   }
 
   return result;
@@ -210,23 +256,32 @@ bool XInputHook::Install() {
   }
 
   pXInputGetStateTarget = reinterpret_cast<void*>(GetProcAddress(hMod, "XInputGetState"));
-  if (!pXInputGetStateTarget) {
-    logger->Error("Cannot find XInputGetState in {}.", dllName);
+  if (pXInputGetStateTarget) {
+    if (auto err = MH_CreateHook(pXInputGetStateTarget, reinterpret_cast<LPVOID>(&HookedXInputGetState), reinterpret_cast<LPVOID*>(&oXInputGetState)); err != MH_OK) {
+      logger->Error("Failed to create hook for XInputGetState: {}", MH_StatusToString(err));
+    } else if (auto err = MH_EnableHook(pXInputGetStateTarget); err != MH_OK) {
+      logger->Error("Failed to enable hook for XInputGetState: {}", MH_StatusToString(err));
+    }
+  }
+
+  // Also hook Ordinal 100 (XInputGetStateEx), commonly used by modern games
+  pXInputGetStateExTarget = reinterpret_cast<void*>(GetProcAddress(hMod, (LPCSTR)100));
+  if (pXInputGetStateExTarget && pXInputGetStateExTarget != pXInputGetStateTarget) {
+    if (auto err = MH_CreateHook(pXInputGetStateExTarget, reinterpret_cast<LPVOID>(&HookedXInputGetState), reinterpret_cast<LPVOID*>(&oXInputGetStateEx)); err != MH_OK) {
+      logger->Warn("Note: Could not hook XInput ordinal 100 (not critical).");
+    } else if (auto err = MH_EnableHook(pXInputGetStateExTarget); err != MH_OK) {
+      logger->Error("Failed to enable hook for XInput ordinal 100.");
+    } else {
+      logger->Info("Successfully hooked XInputGetStateEx (Ordinal 100).");
+    }
+  }
+
+  if (!pXInputGetStateTarget && !pXInputGetStateExTarget) {
+    logger->Error("Cannot find XInputGetState or ordinal 100 in {}.", dllName);
     return false;
   }
 
-  if (auto err = MH_CreateHook(pXInputGetStateTarget, reinterpret_cast<LPVOID>(&HookedXInputGetState), reinterpret_cast<LPVOID*>(&oXInputGetState)); err != MH_OK) {
-    logger->Error("Failed to create hook for XInputGetState: {}", MH_StatusToString(err));
-    pXInputGetStateTarget = nullptr;
-    return false;
-  }
-
-  if (auto err = MH_EnableHook(pXInputGetStateTarget); err != MH_OK) {
-    logger->Error("Failed to enable hook for XInputGetState: {}", MH_StatusToString(err));
-    return false;
-  }
-
-  logger->Info("XInput hook installed successfully on {}.", dllName);
+  logger->Info("XInput hook installation complete on {}.", dllName);
   return true;
 }
 
@@ -246,12 +301,18 @@ void XInputHook::Remove() {
   if (pXInputGetStateTarget) {
     MH_DisableHook(pXInputGetStateTarget);
     MH_RemoveHook(pXInputGetStateTarget);
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
-    logger->Info("XInput hook removed.");
-
-    pXInputGetStateTarget = nullptr;
-    oXInputGetState = nullptr;
   }
+  if (pXInputGetStateExTarget) {
+    MH_DisableHook(pXInputGetStateExTarget);
+    MH_RemoveHook(pXInputGetStateExTarget);
+  }
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
+  logger->Info("XInput hooks removed.");
+
+  pXInputGetStateTarget = nullptr;
+  pXInputGetStateExTarget = nullptr;
+  oXInputGetState = nullptr;
+  oXInputGetStateEx = nullptr;
 }
 }  // namespace Hooks
 

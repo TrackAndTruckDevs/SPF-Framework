@@ -28,6 +28,43 @@ std::string GamepadButtonMapping::GetButtonName(GamepadButton button) const {
   return "UNKNOWN_BUTTON";
 }
 
+GamepadButton GamepadButtonMapping::FromXInput(unsigned short xinputFlags) const {
+  // XInput button constants from XInput.h
+  if (xinputFlags & 0x1000) return GamepadButton::FaceDown;       // XINPUT_GAMEPAD_A
+  if (xinputFlags & 0x2000) return GamepadButton::FaceRight;      // XINPUT_GAMEPAD_B
+  if (xinputFlags & 0x4000) return GamepadButton::FaceLeft;       // XINPUT_GAMEPAD_X
+  if (xinputFlags & 0x8000) return GamepadButton::FaceUp;         // XINPUT_GAMEPAD_Y
+  if (xinputFlags & 0x0001) return GamepadButton::DPadUp;         // XINPUT_GAMEPAD_DPAD_UP
+  if (xinputFlags & 0x0002) return GamepadButton::DPadDown;       // XINPUT_GAMEPAD_DPAD_DOWN
+  if (xinputFlags & 0x0004) return GamepadButton::DPadLeft;       // XINPUT_GAMEPAD_DPAD_LEFT
+  if (xinputFlags & 0x0008) return GamepadButton::DPadRight;      // XINPUT_GAMEPAD_DPAD_RIGHT
+  if (xinputFlags & 0x0010) return GamepadButton::SpecialRight;   // XINPUT_GAMEPAD_START
+  if (xinputFlags & 0x0020) return GamepadButton::SpecialLeft;    // XINPUT_GAMEPAD_BACK
+  if (xinputFlags & 0x0040) return GamepadButton::LeftStick;      // XINPUT_GAMEPAD_LEFT_THUMB
+  if (xinputFlags & 0x0080) return GamepadButton::RightStick;     // XINPUT_GAMEPAD_RIGHT_THUMB
+  if (xinputFlags & 0x0100) return GamepadButton::LeftShoulder;   // XINPUT_GAMEPAD_LEFT_SHOULDER
+  if (xinputFlags & 0x0200) return GamepadButton::RightShoulder;  // XINPUT_GAMEPAD_RIGHT_SHOULDER
+
+  return GamepadButton::Unknown;
+}
+
+GamepadButton GamepadButtonMapping::FromDInput(unsigned long dinputOffset) const {
+  // DirectInput offsets from dinput.h (DIJOFS_BUTTON0 = 48)
+  switch (dinputOffset) {
+    case 48: return GamepadButton::FaceDown;       // Button 0
+    case 49: return GamepadButton::FaceRight;      // Button 1
+    case 50: return GamepadButton::FaceLeft;       // Button 2
+    case 51: return GamepadButton::FaceUp;         // Button 3
+    case 52: return GamepadButton::LeftShoulder;   // Button 4
+    case 53: return GamepadButton::RightShoulder;  // Button 5
+    case 54: return GamepadButton::SpecialLeft;    // Button 6
+    case 55: return GamepadButton::SpecialRight;   // Button 7
+    case 56: return GamepadButton::LeftStick;      // Button 8
+    case 57: return GamepadButton::RightStick;     // Button 9
+    default: return GamepadButton::Unknown;
+  }
+}
+
 std::string GamepadButtonMapping::GetButtonDisplayName(GamepadButton button, DeviceType deviceType) const {
   const auto* mapToUse = &m_xboxNames;  // Default to Xbox names
   if (deviceType == DeviceType::PlayStation) {

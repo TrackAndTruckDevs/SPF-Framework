@@ -34,11 +34,13 @@ public:
     /**
      * @brief Validates the binding. A binding is invalid if it uses an unknown button or the reserved Left Mouse Button.
      */
-    bool IsValid() const override;
-    
-    InputType GetType() const override { return InputType::Mouse; }
-    
-    bool IsSameAs(const IBindableInput& other) const override;
+  bool IsValid() const override;
+  InputType GetType() const override { return InputType::Mouse; }
+  uint32_t GetHardwareCode() const override;
+  bool IsActive(const std::set<uint32_t>& pressedCodes) const override;
+  bool InvolvesHardwareCode(uint32_t code) const override;
+
+  bool IsSameAs(const IBindableInput& other) const override;
 
 private:
     System::MouseButton m_button;

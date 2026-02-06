@@ -29,6 +29,18 @@ bool KeyboardInput::IsValid() const { return m_key != System::Keyboard::Unknown;
 
 InputType KeyboardInput::GetType() const { return InputType::Keyboard; }
 
+uint32_t KeyboardInput::GetHardwareCode() const {
+    return 0x01000000 | static_cast<uint32_t>(m_key);
+}
+
+bool KeyboardInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
+    return pressedCodes.count(GetHardwareCode()) > 0;
+}
+
+bool KeyboardInput::InvolvesHardwareCode(uint32_t code) const {
+    return GetHardwareCode() == code;
+}
+
 bool KeyboardInput::IsSameAs(const IBindableInput& other) const {
   if (other.GetType() != InputType::Keyboard) {
     return false;

@@ -277,6 +277,7 @@ add_library(SPF SHARED
     "src/Modules/GamepadInput.cpp"
     "src/Modules/MouseInput.cpp"
     "src/Modules/JoystickInput.cpp"
+    "src/Modules/ChordInput.cpp"
     
     "src/Localization/LocalizationManager.cpp"
     "src/Renderer/D3D11RendererImpl.cpp"

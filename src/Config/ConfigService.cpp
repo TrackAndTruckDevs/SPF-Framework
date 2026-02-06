@@ -1242,20 +1242,14 @@ bool ConfigService::_DeleteBindingInternal(const std::string& actionFullName, co
         if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
             auto& bindingsArray = actionObject["bindings"];
             
-            std::unique_ptr<Modules::IBindableInput> inputToDelete;
-            try { inputToDelete = Modules::InputFactory::CreateFromJson(bindingToDelete); } catch(...) {}
-
-            if (inputToDelete) {
-                for (auto it = bindingsArray.begin(); it != bindingsArray.end(); ++it) {
-                    try {
-                        auto storedInput = Modules::InputFactory::CreateFromJson(*it);
-                        if (storedInput && storedInput->IsSameAs(*inputToDelete)) {
-                            bindingsArray.erase(it);
-                            m_dirtyComponents.insert(componentName);
-                            if (logger) logger->Info("_DeleteBindingInternal: Removed binding '{}' from action '{}'. Component '{}' marked as dirty.", bindingToDelete.dump(), actionFullName, componentName);
-                            return true; // Success
-                        }
-                    } catch(...) {}
+            for (auto it = bindingsArray.begin(); it != bindingsArray.end(); ) {
+                if (*it == bindingToDelete) {
+                    it = bindingsArray.erase(it);
+                    m_dirtyComponents.insert(componentName);
+                    if (logger) logger->Info("_DeleteBindingInternal: Removed binding from action '{}'. Component '{}' marked as dirty.", actionFullName, componentName);
+                    return true;
+                } else {
+                    ++it;
                 }
             }
         }

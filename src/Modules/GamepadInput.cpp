@@ -36,6 +36,18 @@ bool GamepadInput::IsValid() const { return m_button != System::GamepadButton::U
 
 InputType GamepadInput::GetType() const { return InputType::Gamepad; }
 
+uint32_t GamepadInput::GetHardwareCode() const {
+    return 0x02000000 | static_cast<uint32_t>(m_button);
+}
+
+bool GamepadInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
+    return pressedCodes.count(GetHardwareCode()) > 0;
+}
+
+bool GamepadInput::InvolvesHardwareCode(uint32_t code) const {
+    return GetHardwareCode() == code;
+}
+
 bool GamepadInput::IsSameAs(const IBindableInput& other) const {
   if (other.GetType() != InputType::Gamepad) {
     return false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+#include <cstdint>
 
 SPF_NS_BEGIN
 
@@ -30,6 +31,16 @@ class User32Hook {
    * @brief Completely removes all hooks managed by this class on shutdown.
    */
   static void Remove();
+
+  /**
+   * @brief Sends a virtual Key Up event to the game window.
+   *
+   * This is used to "reset" the game's internal state when a key is physically held
+   * but should be logically ignored (e.g., when it becomes part of a blocking chord).
+   *
+   * @param hardwareCode The 32-bit hardware code of the key (as used in InputManager).
+   */
+  static void SendVirtualKeyRelease(uint32_t hardwareCode);
 };
 }  // namespace Hooks
 

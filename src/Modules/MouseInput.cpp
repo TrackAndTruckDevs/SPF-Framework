@@ -30,12 +30,23 @@ std::string MouseInput::GetDisplayName() const {
 }
 
 bool MouseInput::IsValid() const {
-    // A binding is considered invalid if the button is unknown OR if it's the reserved left mouse button.
-    return m_button != System::MouseButton::Unknown && m_button != System::MouseButton::Left;
+  // A binding is considered invalid if the button is unknown OR if it's the reserved left mouse button.
+  return m_button != System::MouseButton::Unknown && m_button != System::MouseButton::Left;
 }
 
-bool MouseInput::IsSameAs(const IBindableInput& other) const {
-    // Check if the other object is also a MouseInput
+uint32_t MouseInput::GetHardwareCode() const {
+    return 0x03000000 | static_cast<uint32_t>(m_button);
+}
+
+bool MouseInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
+    return pressedCodes.count(GetHardwareCode()) > 0;
+}
+
+bool MouseInput::InvolvesHardwareCode(uint32_t code) const {
+    return GetHardwareCode() == code;
+}
+
+bool MouseInput::IsSameAs(const IBindableInput& other) const {    // Check if the other object is also a MouseInput
     if (other.GetType() != InputType::Mouse) {
         return false;
     }

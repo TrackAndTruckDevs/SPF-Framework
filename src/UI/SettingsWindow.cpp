@@ -32,7 +32,8 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
       m_configService(configService),
       m_logLevels(logLevels),
       m_eventManager(eventManager),
-      m_onFocusComponentSink(std::make_unique<Utils::Sink<void(const Events::UI::FocusComponentInSettingsWindow&)>>(eventManager.System.OnFocusComponentInSettingsWindow)) {
+      m_onFocusComponentSink(std::make_unique<Utils::Sink<void(const Events::UI::FocusComponentInSettingsWindow&)>>(eventManager.System.OnFocusComponentInSettingsWindow)),
+      m_onInputCaptureUpdateSink(std::make_unique<Utils::Sink<void(const Input::InputCaptureUpdate&)>>(eventManager.System.OnInputCaptureUpdate)) {
   m_defaultTitle = "Settings";
   m_titleLocalizationKey = "settings_window.title";
   m_keybindsDrawerHeight = m_keybindsDrawerMinHeight;
@@ -78,6 +79,7 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
         m_nullValueFormatKey = "settings_window.main_area.null_value_format";
 
       m_onFocusComponentSink->Connect<&SettingsWindow::OnFocusComponent>(this);
+  m_onInputCaptureUpdateSink->Connect<&SettingsWindow::OnInputCaptureUpdate>(this);
     }
 const char* SettingsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
 
@@ -1167,10 +1169,47 @@ void SettingsWindow::RenderContent() {
       // The event has been processed. Clear the buffer, reset the state, and close the popup.
       m_bufferedInputInfo.reset();
       m_actionBeingEdited.reset();
+      m_currentChordInputs.clear();
       ImGui::CloseCurrentPopup();
     } else {
       // If no key has been captured yet, display the popup's content
       Typography::Text(TextStyle::Regular().Wrapped(), loc.Get(m_keyCapturePressKeyTextKey).c_str());
+
+      ImGui::Spacing();
+      // --- Rich Chord Display ---
+      if (!m_currentChordInputs.empty()) {
+          ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+          for (size_t i = 0; i < m_currentChordInputs.size(); ++i) {
+              const auto& input = m_currentChordInputs[i];
+
+              const char* icon = "";
+              switch (input->GetType()) {
+                  case Modules::InputType::Keyboard: icon = ICON_FA_KEYBOARD; break;
+                  case Modules::InputType::Gamepad:  icon = ICON_FA_GAMEPAD;  break;
+                  case Modules::InputType::Mouse:    icon = ICON_FA_MOUSE;    break;
+                  case Modules::InputType::Joystick: icon = ICON_FA_GAMEPAD;  break;
+                  default: break;
+              }
+
+              std::string label = fmt::format("{} {}", icon, input->GetDisplayName());
+
+              // Render as a button frame to match settings UI, but inactive
+              ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+              ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+              ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+              ImGui::Button(label.c_str());
+              ImGui::PopStyleColor(3);
+
+              if (i < m_currentChordInputs.size() - 1) {
+                  ImGui::SameLine();
+                  Typography::Text(TextStyle::Regular().Color(UI::Colors::GRAY), "+");
+                  ImGui::SameLine();
+              }
+          }
+          ImGui::PopStyleVar();
+          ImGui::Spacing();
+      }
+
       Typography::Text(TextStyle::H3().Color(UI::Colors::YELLOW).Align(TextAlign::Center), this->GetTranslatedActionName(m_actionBeingEdited.value()).c_str());
       ImGui::Separator();
 
@@ -1180,8 +1219,16 @@ void SettingsWindow::RenderContent() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0f, 0.7f, 0.7f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0f, 0.8f, 0.8f));
         if (ImGui::Button(loc.Get(m_keyCaptureDeleteButtonKey).c_str())) {
+          // Store the name in a local variable because m_actionBeingEdited 
+          // will be reset by the Cancel call below.
+          std::string actionName = m_actionBeingEdited.value();
+          nlohmann::ordered_json bindingCopy = m_editingBindingObject;
+
           m_eventManager.System.OnRequestInputCaptureCancel.Call({});
-          m_eventManager.System.OnRequestDeleteBinding.Call({m_actionBeingEdited.value(), m_editingBindingObject});
+          
+          m_currentChordInputs.clear();
+          
+          m_eventManager.System.OnRequestDeleteBinding.Call({actionName, bindingCopy});
           m_actionBeingEdited.reset();
           ImGui::CloseCurrentPopup();
         }
@@ -1193,6 +1240,7 @@ void SettingsWindow::RenderContent() {
         m_eventManager.System.OnRequestInputCaptureCancel.Call({});
         // This is a direct and safe UI state change.
         m_actionBeingEdited.reset();
+        m_currentChordInputs.clear();
         ImGui::CloseCurrentPopup();
       }
     }
@@ -1462,7 +1510,13 @@ void SettingsWindow::OnInputCaptured(const Input::InputCaptured& e) {
 }
 
 void SettingsWindow::OnInputCaptureCancelled(const Input::InputCaptureCancelled& e) {
-  // This is now handled directly in the UI loop within RenderContent for safety.
+  m_actionBeingEdited.reset();
+  m_currentChordInputs.clear();
+}
+
+void SettingsWindow::OnInputCaptureUpdate(const Input::InputCaptureUpdate& e) {
+    if (!m_actionBeingEdited.has_value() || m_actionBeingEdited.value() != e.actionFullName) return;
+    m_currentChordInputs = e.currentChordInputs;
 }
 
 void SettingsWindow::OnInputCaptureConflict(const Input::InputCaptureConflict& e) {

@@ -116,11 +116,48 @@ class InputManager {
   bool IsProgrammaticMouseButtonsBlockRequested() const { return m_pluginRequestedMouseButtonsBlock; }
   bool IsProgrammaticMouseWheelBlockRequested() const { return m_pluginRequestedMouseWheelBlock; }
 
+  const std::set<uint32_t>& GetCurrentlyPressedHardwareCodes() const { return m_currentlyPressedHardwareCodes; }
+
   bool ShouldGameControlMouseAxes() const;
   bool ShouldGameControlMouseButtons() const;
   bool ShouldGameControlMouseWheel() const;
 
   bool IsKeyBlocked(System::Keyboard key) const;
+  bool IsMouseButtonBlocked(System::MouseButton button) const;
+  bool IsJoystickButtonBlocked(int buttonIndex) const;
+  bool IsGamepadButtonBlocked(System::GamepadButton button) const;
+  
+  /**
+   * @brief Consumes a virtual mouse release request. Used by DInput8Hook to inject fake Up events.
+   */
+  bool ConsumeMouseReleaseRequest(System::MouseButton button);
+
+  /**
+   * @brief Consumes a virtual joystick release request. Used by DInput8Hook to inject fake Up events.
+   */
+  bool ConsumeJoystickReleaseRequest(int buttonIndex);
+  bool HasPendingJoystickRelease(int buttonIndex) const;
+
+  bool ConsumeGamepadReleaseRequest(System::GamepadButton button);
+  bool HasPendingGamepadRelease(System::GamepadButton button) const;
+  
+  /**
+   * @brief Checks if a key release event is a virtual one sent by the framework itself.
+   * If the code is found in the pending set, it is removed and true is returned.
+   */
+  bool IsPendingVirtualRelease(uint32_t hardwareCode);
+
+  /**
+   * @brief Returns the timestamp of the most recently pressed key among the provided hardware codes.
+   * Used to calculate the duration of chords based on the last key pressed.
+   */
+  std::chrono::steady_clock::time_point GetChordPressTimestamp(const std::vector<uint32_t>& codes) const;
+
+  /**
+   * @brief Resets the longPressTriggered state for a specific hardware code.
+   * Used when a chord is formed to allow the chord to have its own timing cycle.
+   */
+  void ResetStateForCode(uint32_t code);
 
   // --- Device Detection ---
     void UpdateDeviceType(UINT_PTR deviceId, const std::wstring& productName, DWORD vid, DWORD pid);
@@ -132,6 +169,7 @@ class InputManager {
     System::DeviceType GetDeviceType(UINT_PTR deviceId) const;
 
  private:
+  void UpdateCaptureUI();
   void OnXInputStateGet(DWORD deviceID, XINPUT_STATE* pState);
 
   inline static InputManager* s_instance = nullptr;
@@ -145,6 +183,15 @@ class InputManager {
   bool m_pluginRequestedMouseAxesBlock = false;
   bool m_pluginRequestedMouseButtonsBlock = false;
   bool m_pluginRequestedMouseWheelBlock = false;
+
+  std::set<uint32_t> m_currentlyPressedHardwareCodes;
+
+  // --- Chord Capture State ---
+  std::set<uint32_t> m_captureHeldCodes;      // Keys currently physically held
+  std::set<uint32_t> m_captureRecordedCodes;  // All keys that were part of this chord attempt
+  std::map<uint32_t, std::shared_ptr<Modules::IBindableInput>> m_captureCodeToInputMap; // To reconstruct inputs
+  std::chrono::steady_clock::time_point m_lastCaptureReleaseTime;
+  bool m_isWaitingForCaptureFinalize = false;
 
   // The central state machine for all inputs
   std::map<System::GamepadButton, ButtonState> m_buttonStates;
@@ -176,7 +223,27 @@ class InputManager {
   std::optional<System::MouseButton> m_capturedMouseButtonThisFrame;
   std::optional<int> m_capturedJoystickButtonThisFrame;  // Using int for generic button index
 
-  // --- Device Detection State ---
+  // Keys that were passed to the game (not blocked)
+  // Used to send retroactive "Key Up" events if a blocking chord activates later.
+  std::set<uint32_t> m_keysLeakedToGame;
+  
+  // Keys for which we have sent a virtual "Key Up" event and are waiting for the message loop to process it.
+  // Used to prevent the framework from reacting to its own fake events.
+  std::set<uint32_t> m_pendingVirtualReleases;
+
+  // Mouse buttons that need a virtual release event injected into the DirectInput8 buffer.
+  std::set<System::MouseButton> m_pendingMouseReleases;
+
+  // Joystick buttons that need a virtual release event injected into the DirectInput8 buffer.
+  std::set<int> m_pendingJoystickReleases;
+
+  // Gamepad buttons that need a virtual release event injected into the DirectInput8 buffer.
+  std::set<System::GamepadButton> m_pendingGamepadReleases;
+
+  void HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldBlock);
+  void SetHoldState(uint32_t hardwareCode, PressType type);
+
+  // --- Chord Capture State ---
     std::map<UINT_PTR, System::DeviceType> m_dinputDeviceTypes;
     std::array<System::DeviceType, 4> m_xinputDeviceTypes{};
     bool m_isXInputDeviceActive = false;

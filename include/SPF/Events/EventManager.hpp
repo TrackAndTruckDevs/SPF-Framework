@@ -74,6 +74,7 @@ class EventManager {
     Utils::Signal<void(const UI::RequestInputCaptureCancel&)> OnRequestInputCaptureCancel;
     Utils::Signal<void(const Input::InputCaptured&)> OnInputCaptured;
     Utils::Signal<void(const Input::InputCaptureCancelled&)> OnInputCaptureCancelled;
+    Utils::Signal<void(const Input::InputCaptureUpdate&)> OnInputCaptureUpdate;
     Utils::Signal<void(const Input::InputCaptureConflict&)> OnInputCaptureConflict;
     Utils::Signal<void(const UI::RequestBindingUpdate&)> OnRequestBindingUpdate;
     Utils::Signal<void(const UI::RequestDeleteBinding&)> OnRequestDeleteBinding;

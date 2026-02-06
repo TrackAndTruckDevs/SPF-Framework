@@ -44,25 +44,38 @@ static const GUID IID_IDirectInput8W_spf = {0xbf798031, 0x483a, 0x4da2, {0xaa, 0
 static const GUID GUID_SysMouseEm_spf = {0x6F1D2B80, 0xD5A0, 0x11CF, {0xBF, 0xC7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00}};
 
 typedef HRESULT(WINAPI* GetDeviceData_t)(IDirectInputDevice8W*, DWORD, DIDEVICEOBJECTDATA*, DWORD*, DWORD);
+typedef HRESULT(WINAPI* GetDeviceState_t)(IDirectInputDevice8W*, DWORD, LPVOID);
 
 // Maximum number of unique VTables we can hook. Should be plenty.
 constexpr int MAX_DINPUT_HOOKS = 8;
 
 // Holds the trampoline for each hook
-static GetDeviceData_t g_originalFunctions[MAX_DINPUT_HOOKS] = {nullptr};
+static GetDeviceData_t g_originalGetDeviceData[MAX_DINPUT_HOOKS] = {nullptr};
+static GetDeviceState_t g_originalGetDeviceState[MAX_DINPUT_HOOKS] = {nullptr};
 static int g_hookCount = 0;
 
-// Forward declaration for the universal processing function.
-// It must be declared here because the hook handlers below use it.
-static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut);
+// Forward declarations
+static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut, DWORD capacity);
+static void ProcessDeviceState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvData);
 
 // Define the pool of hook handlers.
 // Using a macro to avoid repetitive code.
 #define DINPUT_HOOK_HANDLER(index)                                                                                                                           \
   HRESULT __stdcall HookedGetDeviceData_##index(IDirectInputDevice8W* self, DWORD cbObjectData, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut, DWORD dwFlags) { \
-    HRESULT result = g_originalFunctions[index](self, cbObjectData, rgdod, pdwInOut, dwFlags);                                                               \
+    DWORD capacity = (pdwInOut != nullptr) ? *pdwInOut : 0;                                                                                                 \
+    HRESULT result = g_originalGetDeviceData[index](self, cbObjectData, rgdod, pdwInOut, dwFlags);                                                               \
     if (SUCCEEDED(result) && self != nullptr && rgdod != nullptr && pdwInOut != nullptr && *pdwInOut > 0) {                                                  \
-      ProcessDeviceData(self, cbObjectData, rgdod, pdwInOut);                                                                                                \
+      ProcessDeviceData(self, cbObjectData, rgdod, pdwInOut, capacity);                                                                                      \
+    } else if (SUCCEEDED(result) && self != nullptr && rgdod != nullptr && pdwInOut != nullptr && capacity > 0) {                                            \
+      /* Even if no physical events, we call it to allow virtual injection */                                                                                \
+      ProcessDeviceData(self, cbObjectData, rgdod, pdwInOut, capacity);                                                                                      \
+    }                                                                                                                                                        \
+    return result;                                                                                                                                           \
+  }                                                                                                                                                          \
+  HRESULT __stdcall HookedGetDeviceState_##index(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvData) {                                                  \
+    HRESULT result = g_originalGetDeviceState[index](self, cbData, lpvData);                                                                                 \
+    if (SUCCEEDED(result) && self != nullptr && lpvData != nullptr) {                                                                                        \
+      ProcessDeviceState(self, cbData, lpvData);                                                                                                             \
     }                                                                                                                                                        \
     return result;                                                                                                                                           \
   }
@@ -78,7 +91,7 @@ DINPUT_HOOK_HANDLER(6)
 DINPUT_HOOK_HANDLER(7)
 
 // Array of pointers to our hook handlers
-static void* g_hookCallbacks[MAX_DINPUT_HOOKS] = {
+static void* g_hookCallbacksData[MAX_DINPUT_HOOKS] = {
     (void*)&HookedGetDeviceData_0,
     (void*)&HookedGetDeviceData_1,
     (void*)&HookedGetDeviceData_2,
@@ -89,16 +102,101 @@ static void* g_hookCallbacks[MAX_DINPUT_HOOKS] = {
     (void*)&HookedGetDeviceData_7,
 };
 
+static void* g_hookCallbacksState[MAX_DINPUT_HOOKS] = {
+    (void*)&HookedGetDeviceState_0,
+    (void*)&HookedGetDeviceState_1,
+    (void*)&HookedGetDeviceState_2,
+    (void*)&HookedGetDeviceState_3,
+    (void*)&HookedGetDeviceState_4,
+    (void*)&HookedGetDeviceState_5,
+    (void*)&HookedGetDeviceState_6,
+    (void*)&HookedGetDeviceState_7,
+};
+
 // Set to keep track of VTable addresses we have already hooked.
 static std::unordered_set<void*> g_hookedTargets;
-static int g_previousPov = -1;  // Used to track D-Pad state
-static LONG g_previousAxisX = 0, g_previousAxisY = 0, g_previousAxisZ = 0;
-static LONG g_previousAxisRX = 0, g_previousAxisRY = 0, g_previousAxisRZ = 0;
-static bool g_previousButtonStates[128] = {};  // To track button press/release state
+static std::map<IDirectInputDevice8W*, DWORD> g_deviceSequenceNumbers; // Track sequence numbers per device
 
-static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut) {
+struct PerDeviceState {
+    bool buttonStates[128] = {};
+    bool virtualUpSent[128] = {};
+    int previousPov = -1;
+    LONG axes[6] = {0}; // X, Y, Z, RX, RY, RZ
+};
+static std::map<IDirectInputDevice8W*, PerDeviceState> g_perDeviceStates;
+
+static DWORD g_lastSeenSequence = 0; // Global sync for sequence numbers across all DInput devices
+
+static void ProcessDeviceState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvData) {
+  auto& inputManager = SPF::Input::InputManager::GetInstance();
+
+  DIDEVICEINSTANCEW instance;
+  instance.dwSize = sizeof(DIDEVICEINSTANCEW);
+  if (SUCCEEDED(IDirectInputDevice8_GetDeviceInfo(self, &instance))) {
+    const auto deviceType = GET_DIDEVICE_TYPE(instance.dwDevType);
+    if (deviceType == DI8DEVTYPE_MOUSE) {
+      // DirectInput mouse state is either DIMOUSESTATE (4 buttons) or DIMOUSESTATE2 (8 buttons).
+      // Both start with axes, then buttons. Buttons are stored as bytes where 0x80 means pressed.
+      
+      // Offset to buttons in DIMOUSESTATE/DIMOUSESTATE2 is after 3 LONG axes (12 bytes)
+      BYTE* pButtons = (BYTE*)lpvData + 12;
+      int maxButtons = (cbData >= sizeof(DIMOUSESTATE2)) ? 8 : 4;
+
+      for (int i = 0; i < maxButtons; ++i) {
+        auto button = static_cast<SPF::System::MouseButton>(i);
+        if (inputManager.IsMouseButtonBlocked(button)) {
+          // Force the button to be seen as released by the game
+          pButtons[i] = 0;
+        }
+      }
+    } else if (deviceType == DI8DEVTYPE_JOYSTICK || deviceType == DI8DEVTYPE_GAMEPAD || 
+               deviceType == DI8DEVTYPE_1STPERSON || deviceType == DI8DEVTYPE_DRIVING || deviceType == DI8DEVTYPE_FLIGHT) {
+        
+        int maxButtons = 0;
+        if (cbData >= sizeof(DIJOYSTATE2)) {
+            maxButtons = 128;
+        } else if (cbData >= sizeof(DIJOYSTATE)) {
+            maxButtons = 32;
+        }
+
+        if (maxButtons > 0) {
+            BYTE* pButtons = (BYTE*)lpvData + DIJOFS_BUTTON0;
+            auto& mapping = SPF::System::GamepadButtonMapping::GetInstance();
+            auto internalDeviceType = inputManager.GetDeviceType((UINT_PTR)self);
+
+            for (int i = 0; i < maxButtons; ++i) {
+                // Ensure we don't write past the buffer provided by the game
+                if (DIJOFS_BUTTON0 + i < (int)cbData) {
+                    bool shouldBlock = inputManager.IsJoystickButtonBlocked(i);
+
+                    // If it's a recognized gamepad (Xbox/PS), also check gamepad-specific block state
+                    if (!shouldBlock && (internalDeviceType == SPF::System::DeviceType::Xbox || internalDeviceType == SPF::System::DeviceType::PlayStation)) {
+                        auto gamepadBtn = mapping.FromDInput(DIJOFS_BUTTON0 + i);
+                        if (gamepadBtn != SPF::System::GamepadButton::Unknown) {
+                            shouldBlock = inputManager.IsGamepadButtonBlocked(gamepadBtn);
+                        }
+                    }
+
+                    if (shouldBlock) {
+                        // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+                        // logger->Trace("DInput8: Masking button {} for device={:p} (State)", i, (void*)self);
+                        pButtons[i] = 0;
+                    }
+                }
+            }
+        }
+    }
+  }
+}
+
+static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut, DWORD capacity) {
   auto& inputManager = SPF::Input::InputManager::GetInstance();  // Declared once for all device types
+  // auto logger_entry = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+  // logger_entry->Trace("DInput8: ProcessDeviceData called for self={:p}, count={}, capacity={}", (void*)self, *pdwInOut, capacity);
   DWORD write_idx = 0;                                           // Declared once for all device types
+
+  // Retrieve or initialize the last sequence number for this device
+  DWORD current_sequence = g_deviceSequenceNumbers[self];
 
   DIDEVICEINSTANCEW instance;
   instance.dwSize = sizeof(DIDEVICEINSTANCEW);
@@ -106,8 +204,15 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
     const auto deviceType = GET_DIDEVICE_TYPE(instance.dwDevType);
     switch (deviceType) {
       case DI8DEVTYPE_MOUSE: {
-        for (DWORD i = 0; i < *pdwInOut; ++i) {
+        DWORD original_count = *pdwInOut;
+        for (DWORD i = 0; i < original_count; ++i) {
           const auto& data = rgdod[i];
+
+          // Update global sequence tracker from real mouse events
+          if (data.dwSequence > g_lastSeenSequence) {
+            g_lastSeenSequence = data.dwSequence;
+          }
+
           bool block_this_event = false;
 
           // Using if-else if instead of switch to avoid C4644 warning
@@ -115,15 +220,22 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
             if (!inputManager.ShouldGameControlMouseAxes()) {
               block_this_event = true;
             }
-          } else if (data.dwOfs >= DIMOFS_BUTTON0 && data.dwOfs <= DIMOFS_BUTTON7)  // DIMOFS_BUTTON7 is the highest defined standard button
-          {
-            if (!inputManager.ShouldGameControlMouseButtons()) {
-              block_this_event = true;
+          } else if (data.dwOfs >= DIMOFS_BUTTON0 && data.dwOfs <= DIMOFS_BUTTON7) {
+            uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(data.dwOfs - DIMOFS_BUTTON0);
+            
+            // Check if this is a virtual event sent by the framework itself
+            if (inputManager.IsPendingVirtualRelease(hardwareCode)) {
+                // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+                // logger->Trace("DInput8: Detected virtual release for framework (ignoring): hardwareCode={:#08x}", hardwareCode);
+                // Pass to game, ignore for framework
+                block_this_event = false; 
+            } else if (inputManager.PublishMouseButton({(int)(data.dwOfs - DIMOFS_BUTTON0), (data.dwData & 0x80) != 0})) {
+                // Framework requested to block this physical event
+                block_this_event = true;
             }
-          } else if (data.dwOfs == DIMOFS_Z)  // Mouse Wheel
-          {
-            if (!inputManager.ShouldGameControlMouseWheel()) {
-              block_this_event = true;
+          } else if (data.dwOfs == DIMOFS_Z) {
+            if (inputManager.PublishMouseWheel({(float)((int)data.dwData) / (float)WHEEL_DELTA})) {
+                block_this_event = true;
             }
           }
 
@@ -132,9 +244,6 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
               inputManager.PublishMouseMove({(long)data.dwData, 0});
             } else if (data.dwOfs == DIMOFS_Y) {
               inputManager.PublishMouseMove({0, (long)data.dwData});
-            } else if (data.dwOfs >= DIMOFS_BUTTON0 && data.dwOfs <= DIMOFS_BUTTON3)  // Only first 4 buttons are standard
-            {
-              inputManager.PublishMouseButton({(int)(data.dwOfs - DIMOFS_BUTTON0), (data.dwData & 0x80) != 0});
             }
 
             // Copy event to the game's buffer
@@ -145,6 +254,26 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
           }
         }
 
+        // --- VIRTUAL INJECTION LOGIC ---
+        // Synchronize sequence numbers
+        DWORD last_sequence = (write_idx > 0) ? rgdod[write_idx - 1].dwSequence : 0;
+
+        for (int b = 0; b <= 7; ++b) {
+            auto button = static_cast<SPF::System::MouseButton>(b);
+            if (inputManager.ConsumeMouseReleaseRequest(button)) {
+                // Safely add if there's space in the buffer provided by the game
+                if (write_idx < capacity) { 
+                    // auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+                    // logger->Trace("DInput8: Injecting virtual UP event for button={} at index={} (capacity={})", b, write_idx, capacity);
+                    rgdod[write_idx].dwOfs = DIMOFS_BUTTON0 + b;
+                    rgdod[write_idx].dwData = 0; // Up
+                    rgdod[write_idx].dwTimeStamp = GetTickCount();
+                    rgdod[write_idx].dwSequence = ++last_sequence;
+                    write_idx++;
+                }
+            }
+        }
+
         *pdwInOut = write_idx;
         break;
       }
@@ -153,6 +282,11 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
       case DI8DEVTYPE_DRIVING:
       case DI8DEVTYPE_FLIGHT:
       case DI8DEVTYPE_1STPERSON: {
+        // Sync with global sequence before processing
+        if (g_lastSeenSequence > current_sequence) {
+          current_sequence = g_lastSeenSequence;
+        }
+
         // --- Get VID/PID for robust device detection ---
         DWORD vid = 0;
         DWORD pid = 0;
@@ -170,191 +304,143 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
 
         // Get the device type based on its device ID
         auto deviceType = inputManager.GetDeviceType((UINT_PTR)self);
+        auto& mapping = SPF::System::GamepadButtonMapping::GetInstance();
+        auto& deviceState = g_perDeviceStates[self];
 
         for (DWORD i = 0; i < *pdwInOut; ++i) {
+          // Update sequence tracker from real events
+          if (rgdod[i].dwSequence > current_sequence) {
+            current_sequence = rgdod[i].dwSequence;
+          }
+          if (current_sequence > g_lastSeenSequence) {
+            g_lastSeenSequence = current_sequence;
+          }
+
           bool block_this_event = false;
 
           // --- Buttons ---
           if (rgdod[i].dwOfs >= DIJOFS_BUTTON0 && rgdod[i].dwOfs < DIJOFS_BUTTON0 + 128) {
             int buttonIndex = rgdod[i].dwOfs - DIJOFS_BUTTON0;
             bool isPressed = (rgdod[i].dwData & 0x80) != 0;
-            bool wasPressed = g_previousButtonStates[buttonIndex];
+            bool wasPressed = deviceState.buttonStates[buttonIndex];
+
+            // Mapping to framework types - ONLY for identified gamepads
+            SPF::System::GamepadButton gamepadBtn = SPF::System::GamepadButton::Unknown;
+            if (deviceType == SPF::System::DeviceType::Xbox || deviceType == SPF::System::DeviceType::PlayStation) {
+                gamepadBtn = mapping.FromDInput(rgdod[i].dwOfs);
+            }
+
+            // Standard joystick/gamepad behavior: only block PRESS events.
+            if (isPressed) {
+                if (gamepadBtn != SPF::System::GamepadButton::Unknown) {
+                    if (inputManager.IsGamepadButtonBlocked(gamepadBtn)) {
+                        block_this_event = true;
+                    }
+                } else if (inputManager.IsJoystickButtonBlocked(buttonIndex)) {
+                    block_this_event = true;
+                }
+                
+                // if (block_this_event) {
+                //     auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+                //     logger->Trace("DInput8: Blocking physical PRESS for device={:p}, button={}", (void*)self, buttonIndex);
+                // }
+            }
 
             if (isPressed != wasPressed) {
-              g_previousButtonStates[buttonIndex] = isPressed;
+                deviceState.buttonStates[buttonIndex] = isPressed;
+                deviceState.virtualUpSent[buttonIndex] = false; // Reset virtual tracking on any physical change
+                bool manager_block = false;
 
-              if (deviceType == SPF::System::DeviceType::Xbox || deviceType == SPF::System::DeviceType::PlayStation) {
-                // Process as a standard gamepad button
-                SPF::System::GamepadButton buttonId = SPF::System::GamepadButton::Unknown;
-                switch (rgdod[i].dwOfs) {
-                  case DIJOFS_BUTTON0:
-                    buttonId = SPF::System::GamepadButton::FaceDown;
-                    break;
-                  case DIJOFS_BUTTON1:
-                    buttonId = SPF::System::GamepadButton::FaceRight;
-                    break;
-                  case DIJOFS_BUTTON2:
-                    buttonId = SPF::System::GamepadButton::FaceLeft;
-                    break;
-                  case DIJOFS_BUTTON3:
-                    buttonId = SPF::System::GamepadButton::FaceUp;
-                    break;
-                  case DIJOFS_BUTTON4:
-                    buttonId = SPF::System::GamepadButton::LeftShoulder;
-                    break;
-                  case DIJOFS_BUTTON5:
-                    buttonId = SPF::System::GamepadButton::RightShoulder;
-                    break;
-                  case DIJOFS_BUTTON6:
-                    buttonId = SPF::System::GamepadButton::SpecialLeft;
-                    break;
-                  case DIJOFS_BUTTON7:
-                    buttonId = SPF::System::GamepadButton::SpecialRight;
-                    break;
-                  case DIJOFS_BUTTON8:
-                    buttonId = SPF::System::GamepadButton::LeftStick;
-                    break;
-                  case DIJOFS_BUTTON9:
-                    buttonId = SPF::System::GamepadButton::RightStick;
-                    break;
-                    // Add more cases if needed for standard gamepads
+                if (gamepadBtn != SPF::System::GamepadButton::Unknown) {
+                    SPF::Input::GamepadEvent event{0, gamepadBtn, isPressed, isPressed ? 1.0f : 0.0f};
+                    manager_block = inputManager.PublishGamepadEvent(event);
+                } else {
+                    SPF::Input::JoystickEvent event{buttonIndex, isPressed};
+                    manager_block = inputManager.PublishJoystickEvent(event);
                 }
 
-                if (buttonId != SPF::System::GamepadButton::Unknown) {
-                  SPF::Input::GamepadEvent event{0, buttonId, isPressed, isPressed ? 1.0f : 0.0f};
-                  block_this_event = inputManager.PublishGamepadEvent(event);
+                if (manager_block && isPressed) {
+                    block_this_event = true;
                 }
-              } else {
-                // Process as a generic joystick button
-                SPF::Input::JoystickEvent event{buttonIndex, isPressed};
-                block_this_event = inputManager.PublishJoystickEvent(event);
-              }
             }
           }
           // --- POV (D-Pad) ---
           else if (rgdod[i].dwOfs == DIJOFS_POV(0)) {
             int currentPov = (int)rgdod[i].dwData;
-            if (currentPov != g_previousPov) {
+            if (currentPov != deviceState.previousPov) {
               // POV handling for standard gamepads (Xbox/PlayStation)
               if (deviceType == SPF::System::DeviceType::Xbox || deviceType == SPF::System::DeviceType::PlayStation) {
-                // POV handling for standard gamepads (Xbox/PlayStation)
+                // ... (POV logic remains same but uses deviceState.previousPov)
                 auto isDirectionActive = [](int pov, int direction) {
                   if (pov == -1) return false;
                   switch (direction) {
-                    case 0:
-                      return pov == 31500 || pov == 0 || pov == 4500;
-                    case 9000:
-                      return pov == 4500 || pov == 9000 || pov == 13500;
-                    case 18000:
-                      return pov == 13500 || pov == 18000 || pov == 22500;
-                    case 27000:
-                      return pov == 22500 || pov == 27000 || pov == 31500;
+                    case 0: return pov == 31500 || pov == 0 || pov == 4500;
+                    case 9000: return pov == 4500 || pov == 9000 || pov == 13500;
+                    case 18000: return pov == 13500 || pov == 18000 || pov == 22500;
+                    case 27000: return pov == 22500 || pov == 27000 || pov == 31500;
                   }
                   return false;
                 };
                 const SPF::System::GamepadButton directions[] = {
                     SPF::System::GamepadButton::DPadUp, SPF::System::GamepadButton::DPadRight, SPF::System::GamepadButton::DPadDown, SPF::System::GamepadButton::DPadLeft};
-                const int povValues[] = {0, 9000, 18000, 27000};  // Up, Right, Down, Left angles
+                const int povValues[] = {0, 9000, 18000, 27000};
 
-                bool shouldBeActiveToGame[4] = {false, false, false, false};  // Up, Right, Down, Left
+                bool shouldBeActiveToGame[4] = {false, false, false, false};
 
                 for (int j = 0; j < 4; ++j) {
                   bool isCurrentlyActive = isDirectionActive(currentPov, povValues[j]);
-                  bool wasPreviouslyActive = isDirectionActive(g_previousPov, povValues[j]);
+                  bool wasPreviouslyActive = isDirectionActive(deviceState.previousPov, povValues[j]);
                   bool consumedThisFrame = false;
 
-                  if (isCurrentlyActive && !wasPreviouslyActive) {  // Press event
-                    consumedThisFrame = inputManager.ProcessAndDecide({0, directions[j], true, 1.0f});
-                  } else if (!isCurrentlyActive && wasPreviouslyActive) {  // Release event
-                    consumedThisFrame = inputManager.ProcessAndDecide({0, directions[j], false, 0.0f});
-                  } else if (isCurrentlyActive && wasPreviouslyActive) {  // Hold event (still active)
-                    // For a held direction, re-evaluate consumption for this frame.
+                  if (isCurrentlyActive && !wasPreviouslyActive) {
+                    consumedThisFrame = inputManager.PublishGamepadEvent({0, directions[j], true, 1.0f});
+                  } else if (!isCurrentlyActive && wasPreviouslyActive) {
+                    consumedThisFrame = inputManager.PublishGamepadEvent({0, directions[j], false, 0.0f});
+                  } else if (isCurrentlyActive && wasPreviouslyActive) {
                     consumedThisFrame = inputManager.ProcessAndDecide({0, directions[j], true, 1.0f});
                   }
 
-                  // If it's currently active and not consumed, it should be active for the game
                   if (isCurrentlyActive && !consumedThisFrame) {
                     shouldBeActiveToGame[j] = true;
                   }
                 }
 
-                // Reconstruct finalPovValue based on shouldBeActiveToGame
                 int reconstructedPov = -1;
-                bool up = shouldBeActiveToGame[0];
-                bool right = shouldBeActiveToGame[1];
-                bool down = shouldBeActiveToGame[2];
-                bool left = shouldBeActiveToGame[3];
+                if (shouldBeActiveToGame[0] && shouldBeActiveToGame[1]) reconstructedPov = 4500;
+                else if (shouldBeActiveToGame[2] && shouldBeActiveToGame[1]) reconstructedPov = 13500;
+                else if (shouldBeActiveToGame[2] && shouldBeActiveToGame[3]) reconstructedPov = 22500;
+                else if (shouldBeActiveToGame[0] && shouldBeActiveToGame[3]) reconstructedPov = 31500;
+                else if (shouldBeActiveToGame[0]) reconstructedPov = 0;
+                else if (shouldBeActiveToGame[1]) reconstructedPov = 9000;
+                else if (shouldBeActiveToGame[2]) reconstructedPov = 18000;
+                else if (shouldBeActiveToGame[3]) reconstructedPov = 27000;
 
-                if (up && right) {
-                  reconstructedPov = 4500;
-                } else if (down && right) {
-                  reconstructedPov = 13500;
-                } else if (down && left) {
-                  reconstructedPov = 22500;
-                } else if (up && left) {
-                  reconstructedPov = 31500;
-                } else if (up) {
-                  reconstructedPov = 0;
-                } else if (right) {
-                  reconstructedPov = 9000;
-                } else if (down) {
-                  reconstructedPov = 18000;
-                } else if (left) {
-                  reconstructedPov = 27000;
-                } else {
-                  reconstructedPov = -1;  // No active and unconsumed directions
-                }
-
-                rgdod[i].dwData = reconstructedPov;  // Assign the reconstructed value
-              } else {
-                // For generic devices, we ignore POV for now, let it pass to game.
+                rgdod[i].dwData = reconstructedPov;
               }
-              g_previousPov = currentPov;  // Update g_previousPov with the original input
+              deviceState.previousPov = currentPov;
             }
           }
           // --- Axes ---
           else if (rgdod[i].dwOfs >= DIJOFS_X && rgdod[i].dwOfs <= DIJOFS_RZ) {
-            // Axis handling for standard gamepads (Xbox/PlayStation)
             if (deviceType == SPF::System::DeviceType::Xbox || deviceType == SPF::System::DeviceType::PlayStation) {
               LONG* pPreviousValue = nullptr;
               SPF::System::GamepadButton axisId = SPF::System::GamepadButton::Unknown;
-              if (rgdod[i].dwOfs == DIJOFS_X) {
-                  pPreviousValue = &g_previousAxisX;
-                  axisId = SPF::System::GamepadButton::LeftStickX;
-              } else if (rgdod[i].dwOfs == DIJOFS_Y) {
-                  pPreviousValue = &g_previousAxisY;
-                  axisId = SPF::System::GamepadButton::LeftStickY;
-              } else if (rgdod[i].dwOfs == DIJOFS_RX) {
-                  pPreviousValue = &g_previousAxisRX;
-                  axisId = SPF::System::GamepadButton::RightStickX;
-              } else if (rgdod[i].dwOfs == DIJOFS_RY) {
-                  pPreviousValue = &g_previousAxisRY;
-                  axisId = SPF::System::GamepadButton::RightStickY;
-              } else if (rgdod[i].dwOfs == DIJOFS_Z) {
-                  pPreviousValue = &g_previousAxisZ;
-                  axisId = SPF::System::GamepadButton::RightTrigger;
-              } else if (rgdod[i].dwOfs == DIJOFS_RZ) {
-                  pPreviousValue = &g_previousAxisRZ;
-                  axisId = SPF::System::GamepadButton::LeftTrigger;
-              }
+              if (rgdod[i].dwOfs == DIJOFS_X) { pPreviousValue = &deviceState.axes[0]; axisId = SPF::System::GamepadButton::LeftStickX; }
+              else if (rgdod[i].dwOfs == DIJOFS_Y) { pPreviousValue = &deviceState.axes[1]; axisId = SPF::System::GamepadButton::LeftStickY; }
+              else if (rgdod[i].dwOfs == DIJOFS_Z) { pPreviousValue = &deviceState.axes[2]; axisId = SPF::System::GamepadButton::RightTrigger; }
+              else if (rgdod[i].dwOfs == DIJOFS_RX) { pPreviousValue = &deviceState.axes[3]; axisId = SPF::System::GamepadButton::RightStickX; }
+              else if (rgdod[i].dwOfs == DIJOFS_RY) { pPreviousValue = &deviceState.axes[4]; axisId = SPF::System::GamepadButton::RightStickY; }
+              else if (rgdod[i].dwOfs == DIJOFS_RZ) { pPreviousValue = &deviceState.axes[5]; axisId = SPF::System::GamepadButton::LeftTrigger; }
 
               if (pPreviousValue && axisId != SPF::System::GamepadButton::Unknown) {
                 LONG currentValue = (LONG)rgdod[i].dwData;
-                float normalizedValue = static_cast<float>(currentValue) / 32767.0f;
-                constexpr float deadzone = 0.2f;
-                if (std::abs(normalizedValue) < deadzone) {
-                  normalizedValue = 0.0f;
-                }
-
-                float oldNormalized = static_cast<float>(*pPreviousValue) / 32767.0f;
-                if (std::abs(normalizedValue - oldNormalized) > 0.01f) {
-                  inputManager.ProcessAndDecide({0, axisId, false, normalizedValue});
+                float norm = static_cast<float>(currentValue) / 32767.0f;
+                float oldNorm = static_cast<float>(*pPreviousValue) / 32767.0f;
+                if (std::abs(norm - oldNorm) > 0.01f) {
+                  inputManager.ProcessAndDecide({0, axisId, false, norm});
                   *pPreviousValue = currentValue;
                 }
               }
-            } else {
-              // For generic devices, we ignore axes for now, let it pass to game.
-              block_this_event = false;
             }
           }
 
@@ -365,6 +451,64 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
             write_idx++;
           }
         }
+
+        // --- VIRTUAL INJECTION LOGIC ---
+        // Final sync before injection (especially if *pdwInOut was 0)
+        if (g_lastSeenSequence > current_sequence) {
+          current_sequence = g_lastSeenSequence;
+        }
+
+        for (int b = 0; b < 128; ++b) {
+             if (inputManager.HasPendingJoystickRelease(b) && !deviceState.virtualUpSent[b]) {
+                 if (write_idx < capacity) {
+                    //  auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
+                    //  logger->Trace("DInput8: Injecting virtual UP for Joystick button={} for device={:p}", b, (void*)self);
+
+                     deviceState.virtualUpSent[b] = true;
+                     rgdod[write_idx].dwOfs = DIJOFS_BUTTON0 + b;
+                     rgdod[write_idx].dwData = 0; // Up
+                     rgdod[write_idx].dwTimeStamp = GetTickCount();
+                     rgdod[write_idx].dwSequence = ++current_sequence;
+                     write_idx++;
+
+                     // Update global sequence to stay ahead
+                     if (current_sequence > g_lastSeenSequence) {
+                         g_lastSeenSequence = current_sequence;
+                     }
+                 }
+             }
+        }
+
+        // --- VIRTUAL GAMEPAD INJECTION ---
+        // Only for identified gamepads (Xbox/PlayStation)
+        if (deviceType == SPF::System::DeviceType::Xbox || deviceType == SPF::System::DeviceType::PlayStation) {
+            for (int b = static_cast<int>(SPF::System::GamepadButton::FaceDown); b <= static_cast<int>(SPF::System::GamepadButton::RightStick); ++b) {
+                auto btn = static_cast<SPF::System::GamepadButton>(b);
+                if (inputManager.ConsumeGamepadReleaseRequest(btn)) {
+                    // Find the DInput offset for this gamepad button
+                    DWORD offset = 0;
+                    for (DWORD off = DIJOFS_BUTTON0; off < DIJOFS_BUTTON0 + 32; ++off) {
+                        if (mapping.FromDInput(off) == btn) {
+                            offset = off;
+                            break;
+                        }
+                    }
+
+                    if (offset != 0 && write_idx < capacity) {
+                        rgdod[write_idx].dwOfs = offset;
+                        rgdod[write_idx].dwData = 0; // Up
+                        rgdod[write_idx].dwTimeStamp = GetTickCount();
+                        rgdod[write_idx].dwSequence = ++current_sequence;
+                        write_idx++;
+
+                        if (current_sequence > g_lastSeenSequence) {
+                            g_lastSeenSequence = current_sequence;
+                        }
+                    }
+                }
+            }
+        }
+
         *pdwInOut = write_idx;
         break;
       }
@@ -373,6 +517,9 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
       }
     }
   }
+  
+  // Save the updated sequence back to the map
+  g_deviceSequenceNumbers[self] = current_sequence;
 }
 
 
@@ -409,21 +556,30 @@ BOOL CALLBACK EnumAndHookDeviceCallback(LPCDIDEVICEINSTANCEW lpddi, LPVOID pvRef
     return DIENUM_CONTINUE;
   }
 
-  void* pTarget = reinterpret_cast<void*>(pDevice->lpVtbl->GetDeviceData);
+  void* pTargetData = reinterpret_cast<void*>(pDevice->lpVtbl->GetDeviceData);
+  void* pTargetState = reinterpret_cast<void*>(pDevice->lpVtbl->GetDeviceState);
   IDirectInputDevice8_Release(pDevice);  // Release immediately after getting the pointer
 
   // Check if this VTable address has already been hooked
-  if (g_hookedTargets.find(pTarget) == g_hookedTargets.end()) {
-    logger->Info("Found new VTable for device '{}' (Type={}) at [{:p}]. Hooking...", instanceName, devType, pTarget);
+  if (g_hookedTargets.find(pTargetData) == g_hookedTargets.end()) {
+    logger->Info("Found new VTable for device '{}' (Type={}) at [{:p}]. Hooking...", instanceName, devType, pTargetData);
 
-    if (auto err = MH_CreateHook(pTarget, g_hookCallbacks[g_hookCount], reinterpret_cast<LPVOID*>(&g_originalFunctions[g_hookCount])); err != MH_OK) {
-      logger->Error(" -> Failed to create hook for VTable at [{:p}]. Error: {}", pTarget, (int)err);
-    } else {
-      g_hookedTargets.insert(pTarget);
+    // Hook GetDeviceData
+    if (auto err = MH_CreateHook(pTargetData, g_hookCallbacksData[g_hookCount], reinterpret_cast<LPVOID*>(&g_originalGetDeviceData[g_hookCount])); err != MH_OK) {
+      logger->Error(" -> Failed to create hook for GetDeviceData at [{:p}]. Error: {}", pTargetData, (int)err);
+    } 
+    // Hook GetDeviceState
+    else if (auto err = MH_CreateHook(pTargetState, g_hookCallbacksState[g_hookCount], reinterpret_cast<LPVOID*>(&g_originalGetDeviceState[g_hookCount])); err != MH_OK) {
+      logger->Error(" -> Failed to create hook for GetDeviceState at [{:p}]. Error: {}", pTargetState, (int)err);
+      MH_RemoveHook(pTargetData); // Cleanup first hook if second fails
+    }
+    else {
+      g_hookedTargets.insert(pTargetData);
+      g_hookedTargets.insert(pTargetState);
       g_hookCount++;
     }
   } else {
-    logger->Info("Device '{}' (Type={}) is covered by existing hook for VTable at [{:p}].", instanceName, devType, pTarget);
+    logger->Info("Device '{}' (Type={}) is covered by existing hook for VTable at [{:p}].", instanceName, devType, pTargetData);
   }
 
   return DIENUM_CONTINUE;
@@ -507,7 +663,8 @@ void DInput8Hook::Remove() {
     logger->Info("DInput8 hooks removed.");
     g_hookedTargets.clear();
     for (int i = 0; i < MAX_DINPUT_HOOKS; ++i) {
-      g_originalFunctions[i] = nullptr;
+      g_originalGetDeviceData[i] = nullptr;
+      g_originalGetDeviceState[i] = nullptr;
     }
     g_hookCount = 0;
   }

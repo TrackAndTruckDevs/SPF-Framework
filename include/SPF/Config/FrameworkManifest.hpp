@@ -68,7 +68,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                                       .key = "KEY_DELETE",      // VirtualKeyMapping.cpp, GamepadButtonMapping.cpp
                                       .pressType = "short",     // short, long
                                       .pressThresholdMs = 500,  // How long does it take to get a long press to work
-                                      .consume = "always",      // never, on_ui_focus, always
+                                      .consume = "always",      // never, on_ui_focus, always, manual 
                                       .behavior = "toggle",     // toggle, hold
                                   }}}}},
                                {"framework.ui",

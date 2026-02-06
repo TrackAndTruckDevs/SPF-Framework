@@ -29,6 +29,12 @@ class GamepadButtonMapping {
   // Gets the canonical string name from a framework's enum (e.g., GamepadButton::FaceDown -> "FACE_DOWN")
   std::string GetButtonName(GamepadButton button) const;
 
+  // Maps XInput button flags (e.g., XINPUT_GAMEPAD_A) to framework's GamepadButton
+  GamepadButton FromXInput(unsigned short xinputFlags) const;
+
+  // Maps DirectInput button offsets (e.g., DIJOFS_BUTTON0) to framework's GamepadButton
+  GamepadButton FromDInput(unsigned long dinputOffset) const;
+
   // Gets the user-friendly display name based on the controller type
   // (e.g., GamepadButton::FaceDown -> "A" for Xbox, "Cross" for PlayStation)
   std::string GetButtonDisplayName(GamepadButton button, DeviceType deviceType) const;

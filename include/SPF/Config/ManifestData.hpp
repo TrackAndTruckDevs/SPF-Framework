@@ -80,7 +80,7 @@ struct KeybindDefinition {
     std::optional<std::string> key;     ///< @brief The specific key or button name (e.g., "v", "dpad_up").
     std::optional<std::string> pressType; ///< @brief The type of press required (e.g., "short", "long").
     std::optional<int> pressThresholdMs; ///< @brief Time in milliseconds to qualify as a long press.
-    std::optional<std::string> consume; ///< @brief Input consumption policy (e.g., "never", "on_ui_focus").
+    std::optional<std::string> consume; ///< @brief Input consumption policy (e.g., "never", "on_ui_focus", "always", "manual").
     std::optional<std::string> behavior; ///< @brief Reserved for future use (e.g., for toggle/hold behavior).
 };
 

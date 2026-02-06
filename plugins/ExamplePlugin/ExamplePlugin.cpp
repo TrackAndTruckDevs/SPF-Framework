@@ -146,7 +146,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // `actionName`: The specific action, usually a verb.
         // The full action name becomes "ExamplePlugin.MainWindow.toggle".
         // `type`: "keyboard", "gamepad". `key`: "KEY_F5". `pressType`: "short", "long".
-        // `thresholdMs`: For "long" press. `consume`: "never", "on_ui_focus", "always".
+        // `thresholdMs`: For "long" press. `consume`: "never", "on_ui_focus", "always", "manual".
         // `behavior`: "toggle" (on/off), "hold" (while pressed).
         api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
 
@@ -525,13 +525,13 @@ void OnUpdate() {
     strcat_safe("--- END EXHAUSTIVE EVENT CACHE LOG ---\n");
 
 
-    g_ctx.coreAPI->logger->LogThrottled(
-        logger,
-        SPF_LOG_INFO,
-        "ExamplePlugin.full_event_cache.log",
-        3000,
-        full_log_buffer
-    );
+    // g_ctx.coreAPI->logger->LogThrottled(
+    //     logger,
+    //     SPF_LOG_INFO,
+    //     "ExamplePlugin.full_event_cache.log",
+    //     3000,
+    //     full_log_buffer
+    // );
 }
 
 /**

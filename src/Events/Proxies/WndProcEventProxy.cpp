@@ -74,6 +74,14 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_KEYUP:
     case WM_SYSKEYUP: {
       auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
+      
+      // Check if this is a virtual release we sent ourselves to fix blocking chords
+      uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(keyMapper.FromWinAPI(wParam));
+      if (SPF::Input::InputManager::GetInstance().IsPendingVirtualRelease(hardwareCode)) {
+          // Ignore this event for the framework
+          break;
+      }
+
       bool isPressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
       SPF::Input::KeyboardEvent event{keyMapper.FromWinAPI(wParam), isPressed};
 
@@ -123,7 +131,7 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     // Handle non-input messages we care about.
     case WM_SIZE: {
       UI::ResizeEvent event{.width = LOWORD(lParam), .height = HIWORD(lParam)};
-      m_logger->Trace("WM_SIZE detected. Calling OnWindowResize with {}x{}", event.width, event.height);
+      m_logger->Info("WM_SIZE detected. Calling OnWindowResize with {}x{}", event.width, event.height);
       m_eventManager.System.OnWindowResize.Call(event);
       break;
     }
