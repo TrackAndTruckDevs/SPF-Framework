@@ -51,17 +51,23 @@ WndProcEventProxy::WndProcEventProxy(EventManager& eventManager, Renderer& rende
     }
 }
 
-void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  // Let ImGui have the first chance to process the message.
-  if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
-    // If ImGui consumes the message, block it from the game and stop further processing here.
-     RenderAPI api = m_renderer.GetDetectedAPI();
+void WndProcEventProxy::SetBlockWndProc(bool block) {
+    if (!block) return;
+    
+    RenderAPI api = m_renderer.GetDetectedAPI();
     switch (api) {
         case RenderAPI::D3D11:  SPF::Hooks::D3D11Hook::block_wndproc_message = true; break;
         case RenderAPI::D3D12:  SPF::Hooks::D3D12Hook::block_wndproc_message = true; break;
         case RenderAPI::OpenGL: SPF::Hooks::OpenGLHook::block_wndproc_message = true; break;
         default: break;
     }
+}
+
+void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  // Let ImGui have the first chance to process the message.
+  if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
+    // If ImGui consumes the message, block it from the game and stop further processing here.
+    SetBlockWndProc(true);
     return;
   }
 
@@ -137,15 +143,7 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     }
   }
 
-  if (blockMessage) {
-    RenderAPI api = m_renderer.GetDetectedAPI();
-    switch (api) {
-        case RenderAPI::D3D11:  SPF::Hooks::D3D11Hook::block_wndproc_message = true; break;
-        case RenderAPI::D3D12:  SPF::Hooks::D3D12Hook::block_wndproc_message = true; break;
-        case RenderAPI::OpenGL: SPF::Hooks::OpenGLHook::block_wndproc_message = true; break;
-        default: break;
-    }
-  }
+  SetBlockWndProc(blockMessage);
 }
 }  // namespace Events::Proxies
 

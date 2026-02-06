@@ -13,7 +13,7 @@
 #include "SPF/Modules/KeyboardInput.hpp"
 #include "SPF/Modules/GamepadInput.hpp"
 #include "SPF/Modules/MouseInput.hpp"
-#include "SPF/Modules/JoystickInput.hpp"  // New include for JoystickInput
+#include "SPF/Modules/JoystickInput.hpp"
 #include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Modules/InputFactory.hpp"
 
@@ -93,6 +93,10 @@ bool InputManager::PublishMouseButton(const MouseButtonEvent& event) {
       m_currentlyPressedHardwareCodes.erase(hardwareCode);
   }
 
+  if (m_capturedHardwareCodesThisFrame.count(hardwareCode)) {
+      return true;
+  }
+
   bool shouldBlock = ProcessAndDecide(event);
 
   if (shouldBlock) {
@@ -128,7 +132,7 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
       m_currentlyPressedHardwareCodes.erase(hardwareCode);
   }
 
-  if (m_capturedKeyThisFrame.has_value() && m_capturedKeyThisFrame.value() == event.key) {
+  if (m_capturedHardwareCodesThisFrame.count(hardwareCode)) {
     return true;  // Consume event from a second hook/source
   }
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
@@ -150,9 +154,10 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
     UpdateCaptureUI();
 
     // Reset the state of the key to prevent immediate action trigger while recording
-    m_keyboardStates[event.key].isDown = false;
-    m_keyboardStates[event.key].wasDown = false;
-    m_keyboardStates[event.key].longPressTriggered = false;
+    auto& state = m_inputStates[hardwareCode];
+    state.isDown = false;
+    state.wasDown = false;
+    state.longPressTriggered = false;
     
     return true;  // Consume the input entirely during capture
   }
@@ -204,8 +209,13 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event) {
       }
   }
 
-  // This function now mirrors PublishKeyboardEvent. It's the main entry point from hooks.
-  // It orchestrates deciding, blocking, and notifying consumers.
+  // Check frame-based capture set
+  if (!IsAxis(event.button)) {
+    uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
+    if (m_capturedHardwareCodesThisFrame.count(hardwareCode)) {
+      return true;
+    }
+  }
 
   // First, process the event through the state machine to determine if it should be blocked from the game.
   bool shouldBlock = ProcessAndDecide(event);
@@ -251,6 +261,10 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event) {
       m_currentlyPressedHardwareCodes.erase(hardwareCode);
   }
 
+  if (m_capturedHardwareCodesThisFrame.count(hardwareCode)) {
+      return true;
+  }
+
   // This function now mirrors PublishKeyboardEvent.
   // Process the event through the state machine to determine blocking
   bool shouldBlock = ProcessAndDecide(event);
@@ -278,124 +292,28 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event) {
 }
 
 void InputManager::ProcessButtonActions() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-  auto now = std::chrono::steady_clock::now();
-  auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
-
   if (!m_inPostCaptureCooldown) {
-    for (auto& pair : m_buttonStates) {
-      auto button = pair.first;
-      auto& state = pair.second;
-
-      // --- Detect and Handle Release (for Short Press) ---
-      if (!state.isDown && state.wasDown) {
-        auto it = m_heldGamepadButtons.find(button);
-        if (it != m_heldGamepadButtons.end()) {
-          PressType originalPressType = it->second;
-          keyBindsManager.TriggerAction(button, originalPressType);
-          m_heldGamepadButtons.erase(it);
-        } else if (!state.longPressTriggered) {
-          // logger->Info("Short press action triggered for button: {}", (int)button);
-          keyBindsManager.TriggerAction(button, PressType::Short);
-        }
-      }
-      // --- Detect and Handle Hold (for Long Press) ---
-      else if (state.isDown && state.wasDown) {
-        if (!state.longPressTriggered) {
-          uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(button);
-          const auto* longPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Long);
-          const auto* shortPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
-
-          auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
-          auto pressTs = state.pressTimestamp;
-          
-          const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
-          if (dominantBinding) {
-              if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
-                  pressTs = GetChordPressTimestamp(chord->GetConstituentHardwareCodes());
-              }
-          }
-
-          if (longPressBinding && longPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = longPressBinding->PressThreshold.value();
-          } else if (shortPressBinding && shortPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = shortPressBinding->PressThreshold.value();
-          }
-
-          auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
-
-          if (pressedDuration >= longPressThreshold) {
-            state.longPressTriggered = true;
-
-            if (longPressBinding) {
-                bool isLead = true;
-                std::vector<uint32_t> keysToBlock;
-                keysToBlock.push_back(hardwareCode);
-
-                if (auto* chord = dynamic_cast<const Modules::ChordInput*>(longPressBinding->Input.get())) {
-                    auto codes = chord->GetConstituentHardwareCodes();
-                    uint32_t maxCode = 0;
-                    for (uint32_t c : codes) if (c > maxCode) maxCode = c;
-                    if (hardwareCode != maxCode) isLead = false;
-                    if (isLead) keysToBlock = codes;
-                }
-
-                if (isLead) {
-                    if (longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
-                        for (uint32_t code : keysToBlock) {
-                            SetHoldState(code, PressType::Long);
-                        }
-                    }
-
-                    keyBindsManager.TriggerAction(button, PressType::Long);
-
-                    // Update block policy based on long press action
-                    GamepadEvent longPressEvent{ 0, button, true, 1.0f, PressType::Long };
-                    auto policy = keyBindsManager.GetPolicyForEvent(longPressEvent, PressType::Long);
-                    bool shouldBlock = false;
-                    switch (policy) {
-                        case Config::ConsumptionPolicy::Always: shouldBlock = true; break;
-                        case Config::ConsumptionPolicy::OnUIFocus: shouldBlock = !m_gameControlsMouseButtons; break;
-                        default: shouldBlock = false; break;
-                    }
-
-                    for (uint32_t code : keysToBlock) {
-                        HandleRetroactiveBlocking(code, shouldBlock);
-                    }
-                }
-            }
-          }
-        }
+    for (auto& pair : m_inputStates) {
+      if ((pair.first >> 24) == 0x02) { // Gamepad
+          EvaluateActionLogic(pair.first, pair.second);
       }
     }
   }
 
   // Sync states for the next frame's logic
-  for (auto& pair : m_buttonStates) {
-    pair.second.wasDown = pair.second.isDown;
+  for (auto& pair : m_inputStates) {
+    if ((pair.first >> 24) == 0x02) pair.second.wasDown = pair.second.isDown;
   }
 }
 
 void InputManager::HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldBlock) {
-    // auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-    // logger->Trace("HandleRetroactiveBlocking: code={:#08x}, shouldBlock={}", hardwareCode, shouldBlock);
-
     uint8_t type = (hardwareCode >> 24) & 0xFF;
     uint32_t rawCode = hardwareCode & 0x00FFFFFF;
     
     // 1. Update internal block state
-    if (type == 0x01) { // Keyboard
-        auto it = m_keyboardStates.find(static_cast<System::Keyboard>(rawCode));
-        if (it != m_keyboardStates.end()) it->second.blockInput = shouldBlock;
-    } else if (type == 0x02) { // Gamepad
-        auto it = m_buttonStates.find(static_cast<System::GamepadButton>(rawCode));
-        if (it != m_buttonStates.end()) it->second.blockInput = shouldBlock;
-    } else if (type == 0x03) { // Mouse
-        auto it = m_mouseButtonStates.find(static_cast<System::MouseButton>(rawCode));
-        if (it != m_mouseButtonStates.end()) it->second.blockInput = shouldBlock;
-    } else if (type == 0x04) { // Joystick
-        auto it = m_joystickButtonStates.find(static_cast<int>(rawCode));
-        if (it != m_joystickButtonStates.end()) it->second.blockInput = shouldBlock;
+    auto it = m_inputStates.find(hardwareCode);
+    if (it != m_inputStates.end()) {
+        it->second.blockInput = shouldBlock;
     }
 
     // 2. Handle retroactive release if needed
@@ -404,9 +322,6 @@ void InputManager::HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldB
             Hooks::User32Hook::SendVirtualKeyRelease(hardwareCode);
             m_pendingVirtualReleases.insert(hardwareCode);
         } else if (type == 0x03) { // Mouse
-            // Instead of SendInput, we queue a release for DInput8Hook to inject into the game's buffer
-            // auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-            // logger->Trace("Queueing virtual mouse release for DInput8 injection: button={}", rawCode);
             m_pendingMouseReleases.insert(static_cast<System::MouseButton>(rawCode));
             m_pendingVirtualReleases.insert(hardwareCode);
         } else if (type == 0x04) { // Joystick
@@ -471,102 +386,16 @@ void InputManager::ProcessKeyboardActions() {
   }
 
   if (!m_inPostCaptureCooldown) {
-    for (auto& pair : m_keyboardStates) {
-      auto key = pair.first;
-      auto& state = pair.second;
-
-      // --- Detect and Handle Release (for Short Press) ---
-      if (!state.isDown && state.wasDown) {
-        auto it = m_heldKeyboardKeys.find(key);
-        if (it != m_heldKeyboardKeys.end()) {
-          PressType originalPressType = it->second;
-          keyBindsManager.TriggerAction(key, originalPressType);
-          m_heldKeyboardKeys.erase(it);
-        } else if (!state.longPressTriggered) {
-          // logger->Info("Short press action triggered for key: {}", (int)key);
-          keyBindsManager.TriggerAction(key, PressType::Short);
-        }
-      }
-      // --- Detect and Handle Hold (for Long Press) ---
-      else if (state.isDown && state.wasDown) {
-        if (!state.longPressTriggered) {
-          uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(key);
-          const auto* longPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Long);
-          const auto* shortPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
-
-          // Determine the 'active' start time and threshold
-          auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
-          auto pressTs = state.pressTimestamp;
-          
-          const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
-          if (dominantBinding) {
-              if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
-                  pressTs = GetChordPressTimestamp(chord->GetConstituentHardwareCodes());
-              }
-          }
-
-          if (longPressBinding && longPressBinding->PressThreshold.has_value()) {
-              longPressThreshold = longPressBinding->PressThreshold.value();
-          } else if (shortPressBinding && shortPressBinding->PressThreshold.has_value()) {
-              longPressThreshold = shortPressBinding->PressThreshold.value();
-          }
-
-          auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
-
-          if (pressedDuration >= longPressThreshold) {
-            state.longPressTriggered = true;
-
-            // Trigger LONG action only if it exists and this key is the 'lead' for the chord
-            // (Lead = highest hardware code in the chord, to avoid double triggers)
-            if (longPressBinding) {
-                bool isLead = true;
-                std::vector<uint32_t> keysToBlock;
-                keysToBlock.push_back(hardwareCode); // Default to blocking self
-
-                if (auto* chord = dynamic_cast<const Modules::ChordInput*>(longPressBinding->Input.get())) {
-                    auto codes = chord->GetConstituentHardwareCodes();
-                    uint32_t maxCode = 0;
-                    for (uint32_t c : codes) if (c > maxCode) maxCode = c;
-                    if (hardwareCode != maxCode) isLead = false;
-                    
-                    if (isLead) keysToBlock = codes; // If we are lead, handle blocking for ALL keys
-                }
-
-                if (isLead) {
-                    keyBindsManager.TriggerAction(key, PressType::Long);
-
-                    // Check for Hold behavior
-                    if (longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
-                        for (uint32_t code : keysToBlock) {
-                            SetHoldState(code, PressType::Long);
-                        }
-                    }
-
-                    // Update block policy
-                    KeyboardEvent longPressEvent{ key, true, PressType::Long };
-                    auto policy = keyBindsManager.GetPolicyForEvent(longPressEvent, PressType::Long);
-                    bool shouldBlock = false;
-                    switch (policy) {
-                        case Config::ConsumptionPolicy::Always: shouldBlock = true; break;
-                        case Config::ConsumptionPolicy::OnUIFocus: shouldBlock = !m_gameControlsMouseButtons; break;
-                        default: shouldBlock = false; break;
-                    }
-
-                    // Apply blocking to ALL keys in the chord (retroactively if needed)
-                    for (uint32_t code : keysToBlock) {
-                        HandleRetroactiveBlocking(code, shouldBlock);
-                    }
-                }
-            }
-          }
-        }
+    for (auto& pair : m_inputStates) {
+      if ((pair.first >> 24) == 0x01) { // Keyboard
+          EvaluateActionLogic(pair.first, pair.second);
       }
     }
   }
 
   // Sync states for the next frame's logic
-  for (auto& pair : m_keyboardStates) {
-    pair.second.wasDown = pair.second.isDown;
+  for (auto& pair : m_inputStates) {
+    if ((pair.first >> 24) == 0x01) pair.second.wasDown = pair.second.isDown;
   }
 
   // Reset the cooldown flag at the very end of all processing
@@ -575,362 +404,181 @@ void InputManager::ProcessKeyboardActions() {
   }
 
   // Reset frame-specific blacklists at the end of all processing.
-  m_capturedButtonThisFrame.reset();
-  m_capturedKeyThisFrame.reset();
-  m_capturedMouseButtonThisFrame.reset();
-  m_capturedJoystickButtonThisFrame.reset();
+  m_capturedHardwareCodesThisFrame.clear();
 }
 
 void InputManager::ProcessMouseActions() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-  auto now = std::chrono::steady_clock::now();
-  auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
-
   if (!m_inPostCaptureCooldown) {
-    for (auto& pair : m_mouseButtonStates) {
-      auto button = pair.first;
-      auto& state = pair.second;
-
-      // --- Detect and Handle Release (for Short Press) ---
-      if (!state.isDown && state.wasDown) {
-        auto it = m_heldMouseButtons.find(button);
-        if (it != m_heldMouseButtons.end()) {
-          PressType originalPressType = it->second;
-          keyBindsManager.TriggerAction(button, originalPressType);
-          m_heldMouseButtons.erase(it);
-        } else if (!state.longPressTriggered) {
-          keyBindsManager.TriggerAction(button, PressType::Short);
-        }
-      }
-      // --- Detect and Handle Hold (for Long Press) ---
-      else if (state.isDown && state.wasDown) {
-        if (!state.longPressTriggered) {
-          uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
-          const auto* longPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Long);
-          const auto* shortPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
-
-          auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
-          auto pressTs = state.pressTimestamp;
-          
-          const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
-          if (dominantBinding) {
-              if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
-                  pressTs = GetChordPressTimestamp(chord->GetConstituentHardwareCodes());
-              }
-          }
-
-          if (longPressBinding && longPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = longPressBinding->PressThreshold.value();
-          } else if (shortPressBinding && shortPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = shortPressBinding->PressThreshold.value();
-          }
-
-          auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
-
-          if (pressedDuration >= longPressThreshold) {
-            state.longPressTriggered = true;
-
-            if (longPressBinding) {
-                bool isLead = true;
-                std::vector<uint32_t> keysToBlock;
-                keysToBlock.push_back(hardwareCode);
-
-                if (auto* chord = dynamic_cast<const Modules::ChordInput*>(longPressBinding->Input.get())) {
-                    auto codes = chord->GetConstituentHardwareCodes();
-                    uint32_t maxCode = 0;
-                    for (uint32_t c : codes) if (c > maxCode) maxCode = c;
-                    if (hardwareCode != maxCode) isLead = false;
-                    if (isLead) keysToBlock = codes;
-                }
-
-                if (isLead) {
-                    if (longPressBinding && longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
-                        for (uint32_t code : keysToBlock) {
-                            SetHoldState(code, PressType::Long);
-                        }
-                    }
-
-                                keyBindsManager.TriggerAction(button, PressType::Long);
-
-                                MouseButtonEvent longPressEvent{(int)button, true, PressType::Long};
-
-                                auto policy = keyBindsManager.GetPolicyForEvent(longPressEvent, PressType::Long);
-                    bool shouldBlock = false;
-                    switch (policy) {
-                        case Config::ConsumptionPolicy::Always: shouldBlock = true; break;
-                        case Config::ConsumptionPolicy::OnUIFocus: shouldBlock = !m_gameControlsMouseButtons; break;
-                        default: shouldBlock = false; break;
-                    }
-                    
-                    for (uint32_t code : keysToBlock) {
-                        HandleRetroactiveBlocking(code, shouldBlock);
-                    }
-                }
-            }
-          }
-        }
+    for (auto& pair : m_inputStates) {
+      if ((pair.first >> 24) == 0x03) { // Mouse
+          EvaluateActionLogic(pair.first, pair.second);
       }
     }
   }
 
   // Sync states for the next frame's logic
-  for (auto& pair : m_mouseButtonStates) {
-    pair.second.wasDown = pair.second.isDown;
+  for (auto& pair : m_inputStates) {
+    if ((pair.first >> 24) == 0x03) pair.second.wasDown = pair.second.isDown;
   }
 }
 
 void InputManager::ProcessJoystickActions() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-  auto now = std::chrono::steady_clock::now();
-  auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
-
   if (!m_inPostCaptureCooldown) {
-    for (auto& pair : m_joystickButtonStates) {
-      auto buttonIndex = pair.first;
-      auto& state = pair.second;
-
-      // --- Detect and Handle Release (for Short Press) ---
-      if (!state.isDown && state.wasDown) {
-        auto it = m_heldJoystickButtons.find(buttonIndex);
-        if (it != m_heldJoystickButtons.end()) {
-          PressType originalPressType = it->second;
-          keyBindsManager.TriggerAction(buttonIndex, originalPressType);
-          m_heldJoystickButtons.erase(it);
-        } else if (!state.longPressTriggered) {
-          keyBindsManager.TriggerAction(buttonIndex, PressType::Short);
-        }
-      }
-      // --- Detect and Handle Hold (for Long Press) ---
-      else if (state.isDown && state.wasDown) {
-        if (!state.longPressTriggered) {
-          uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
-          const auto* longPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Long);
-          const auto* shortPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
-
-          auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
-          auto pressTs = state.pressTimestamp;
-          
-          const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
-          if (dominantBinding) {
-              if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
-                  pressTs = GetChordPressTimestamp(chord->GetConstituentHardwareCodes());
-              }
-          }
-
-          if (longPressBinding && longPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = longPressBinding->PressThreshold.value();
-          } else if (shortPressBinding && shortPressBinding->PressThreshold.has_value()) {
-            longPressThreshold = shortPressBinding->PressThreshold.value();
-          }
-
-          auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
-
-          if (pressedDuration >= longPressThreshold) {
-            state.longPressTriggered = true;
-
-            if (longPressBinding) {
-                bool isLead = true;
-                std::vector<uint32_t> keysToBlock;
-                keysToBlock.push_back(hardwareCode);
-
-                if (auto* chord = dynamic_cast<const Modules::ChordInput*>(longPressBinding->Input.get())) {
-                    auto codes = chord->GetConstituentHardwareCodes();
-                    uint32_t maxCode = 0;
-                    for (uint32_t c : codes) if (c > maxCode) maxCode = c;
-                    if (hardwareCode != maxCode) isLead = false;
-                    if (isLead) keysToBlock = codes;
-                }               
-
-                if (isLead) {
-                    if (longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
-                        for (uint32_t code : keysToBlock) {
-                            SetHoldState(code, PressType::Long);
-                        }
-                    }
-
-                    keyBindsManager.TriggerAction(buttonIndex, PressType::Long);
-
-                    // Update block policy based on long press action
-                    JoystickEvent longPressEvent{buttonIndex, true, PressType::Long};
-                    auto policy = keyBindsManager.GetPolicyForEvent(longPressEvent, PressType::Long);
-                    bool shouldBlock = false;
-                    switch (policy) {
-                        case Config::ConsumptionPolicy::Always: shouldBlock = true; break;
-                        case Config::ConsumptionPolicy::OnUIFocus: shouldBlock = !m_gameControlsMouseButtons; break;
-                        default: shouldBlock = false; break;
-                    }
-
-                    for (uint32_t code : keysToBlock) {
-                        HandleRetroactiveBlocking(code, shouldBlock);
-                    }
-                }
-            }
-          }
-        }
+    for (auto& pair : m_inputStates) {
+      if ((pair.first >> 24) == 0x04) { // Joystick
+          EvaluateActionLogic(pair.first, pair.second);
       }
     }
   }
 
   // Sync states for the next frame's logic
-  for (auto& pair : m_joystickButtonStates) {
-    pair.second.wasDown = pair.second.isDown;
+  for (auto& pair : m_inputStates) {
+    if ((pair.first >> 24) == 0x04) pair.second.wasDown = pair.second.isDown;
   }
 }
 
 bool InputManager::ProcessAndDecide(const GamepadEvent& event) {
-  if (m_capturedButtonThisFrame.has_value() && m_capturedButtonThisFrame.value() == event.button) {
-    return true;  // Consume event from the second hook
-  }
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-  if (m_captureState == InputCaptureState::Capturing && !IsAxis(event.button)) {
-    uint32_t code = 0x02000000 | static_cast<uint32_t>(event.button);
+  uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
 
+  // Handle axes separately from buttons (always pass through for now, as requested)
+  if (IsAxis(event.button)) {
+      return false; 
+  }
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
+  if (m_captureState == InputCaptureState::Capturing) {
     if (event.pressed) {
         logger->Info("Captured gamepad button for action: {}", m_capturingActionFullName);
-        m_captureHeldCodes.insert(code);
-        m_captureRecordedCodes.insert(code);
-        m_captureCodeToInputMap[code] = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        m_captureHeldCodes.insert(hardwareCode);
+        m_captureRecordedCodes.insert(hardwareCode);
+        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
         m_isWaitingForCaptureFinalize = false; 
     } else {
-        m_captureHeldCodes.erase(code);
+        m_captureHeldCodes.erase(hardwareCode);
         m_lastCaptureReleaseTime = std::chrono::steady_clock::now();
         m_isWaitingForCaptureFinalize = true; 
     }
 
     UpdateCaptureUI();
 
-    // Reset the state of the captured button to prevent immediate action trigger
-    m_buttonStates[event.button].isDown = false;
-    m_buttonStates[event.button].wasDown = false;
-    m_buttonStates[event.button].longPressTriggered = false;
+    // Reset the state in the unified map
+    auto& state = m_inputStates[hardwareCode];
+    state.isDown = false;
+    state.wasDown = false;
+    state.longPressTriggered = false;
     return true;  // Consume the event
   }
 
-  // Handle axes separately from buttons.
-  if (IsAxis(event.button)) {
-    // Axes are never blocked from the game, per user clarification.
-    // The parent PublishGamepadEvent function handles sending the axis move to UI consumers.
-    return false;
-  }
-
-  uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
-
-  // Track buttons leaked to game
-  if (event.pressed) {
-     m_keysLeakedToGame.insert(hardwareCode);
-  } else {
-     m_keysLeakedToGame.erase(hardwareCode);
-  }
-
-  // This function is now purely for state management and blocking decisions for buttons.
-  auto& state = m_buttonStates[event.button];
-  bool wasDown = state.isDown;
-  state.isDown = event.pressed;
-
-  // On new press (Up -> Down transition)
-  if (!wasDown && state.isDown) {
-    state.pressTimestamp = std::chrono::steady_clock::now();
-    state.longPressTriggered = false;
-
-    // --- Chord Reset Logic ---
-    uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
-    const auto* bestShort = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-    const auto* bestLong = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Long);
-    const auto* bestChord = (bestShort && dynamic_cast<const Modules::ChordInput*>(bestShort->Input.get())) ? bestShort : 
-                           ((bestLong && dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) ? bestLong : nullptr);
-
-    if (bestChord) {
-        if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestChord->Input.get())) {
-            for (uint32_t code : chord->GetConstituentHardwareCodes()) {
-                ResetStateForCode(code);
-            }
-        }
-    }
-
-    // Check for "Hold" behavior first
-    const auto* binding = Modules::KeyBindsManager::GetInstance().GetBindingForInput(event.button, PressType::Short);  // Hold is based on short press
-    if (binding && binding->Behavior == Modules::ActivationBehavior::Hold) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(event.button, PressType::Short);
-      m_heldGamepadButtons[event.button] = PressType::Short;
-    }
-
-    // Determine initial block policy based on the short press action.
-    GamepadEvent shortPressEvent = event;
-    shortPressEvent.pressType = PressType::Short;
-    auto policy = Modules::KeyBindsManager::GetInstance().GetPolicyForEvent(shortPressEvent, PressType::Short);
-
-    bool shouldBlock = false;
-    switch (policy) {
-      case Config::ConsumptionPolicy::Always:
-        shouldBlock = true;
-        break;
-      case Config::ConsumptionPolicy::OnUIFocus:
-        // Block if any interactive UI is visible.
-        shouldBlock = !m_gameControlsMouseButtons;
-        break;
-      default:
-        shouldBlock = false;
-        break;
-    }
-    state.blockInput = shouldBlock;
-
-    if (state.blockInput) {
-        m_keysLeakedToGame.erase(hardwareCode);
-    }
-  }
-  // On release (Down -> Up transition)
-  else if (wasDown && !state.isDown) {
-    m_keysLeakedToGame.erase(hardwareCode);
-    bool finalBlockDecision = state.blockInput;
-    state.blockInput = false;
-    return finalBlockDecision;
-  }
-
-  // --- Retroactive Blocking Logic ---
-  if (state.blockInput && event.pressed) {
-      if (m_keysLeakedToGame.count(hardwareCode)) {
-          HandleRetroactiveBlocking(hardwareCode, true);
-      }
-
-      const auto* bestBinding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-      if (bestBinding) {
-          if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestBinding->Input.get())) {
-              for (uint32_t constituentCode : chord->GetConstituentHardwareCodes()) {
-                  if (m_keysLeakedToGame.count(constituentCode)) {
-                      HandleRetroactiveBlocking(constituentCode, true);
-                  }
-              }
-          }
-      }
-  } else if (!event.pressed) {
-      m_keysLeakedToGame.erase(hardwareCode);
-      state.blockInput = false;
-  }
-
-  // For held buttons or releases, return the stored blocking decision.
-  return state.blockInput;
+  // Delegate to unified handler
+  return HandleInputState(hardwareCode, event.pressed, event.value, m_inputStates[hardwareCode]);
 }
 
 bool InputManager::IsGamepadButtonBlocked(System::GamepadButton button) const {
-  auto it = m_buttonStates.find(button);
-  if (it != m_buttonStates.end()) {
-    return it->second.blockInput;
-  }
-  return false;
+  uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(button);
+  auto it = m_inputStates.find(hardwareCode);
+  return (it != m_inputStates.end()) ? it->second.blockInput : false;
+}
+
+bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float value, ButtonState& state) {
+    // Track keys leaked to game
+    if (isDown) {
+        m_keysLeakedToGame.insert(hardwareCode);
+    } else {
+        m_keysLeakedToGame.erase(hardwareCode);
+    }
+
+    bool wasDown = state.isDown;
+    state.isDown = isDown;
+
+    // On new press (Up -> Down transition)
+    if (!wasDown && state.isDown) {
+        state.pressTimestamp = std::chrono::steady_clock::now();
+        state.longPressTriggered = false;
+
+        // --- Chord Reset Logic ---
+        const auto* bestShort = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
+        const auto* bestLong = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Long);
+        const auto* bestChord = (bestShort && dynamic_cast<const Modules::ChordInput*>(bestShort->Input.get())) ? bestShort :
+            ((bestLong && dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) ? bestLong : nullptr);
+
+        if (bestChord) {
+            if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestChord->Input.get())) {
+                for (uint32_t code : chord->GetConstituentHardwareCodes()) {
+                    ResetStateForCode(code);
+                }
+            }
+        }
+
+        if (const auto* binding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short)) {
+             if (binding->Behavior == Modules::ActivationBehavior::Hold) {
+                 Modules::KeyBindsManager::GetInstance().TriggerAction(hardwareCode, PressType::Short);
+                 SetHoldState(hardwareCode, PressType::Short);
+             }
+        }
+
+        // Determine initial block policy based on the short press action.
+        Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
+        
+        if (bestShort) {
+             policy = bestShort->Policy;
+        }
+
+        bool shouldBlock = false;
+        switch (policy) {
+        case Config::ConsumptionPolicy::Always:
+            shouldBlock = true;
+            break;
+        case Config::ConsumptionPolicy::OnUIFocus:
+            shouldBlock = !m_gameControlsMouseButtons;
+            break;
+        case Config::ConsumptionPolicy::Manual:
+            shouldBlock = bestShort->programmaticallyBlocked;
+            break;
+        default:
+            shouldBlock = false;
+            break;
+        }
+        state.blockInput = shouldBlock;
+
+        if (state.blockInput) {
+            m_keysLeakedToGame.erase(hardwareCode);
+        }
+    }
+    // On release (Down -> Up transition)
+    else if (wasDown && !state.isDown) {
+        m_keysLeakedToGame.erase(hardwareCode);
+        bool finalBlockDecision = state.blockInput;
+        state.blockInput = false;
+        return finalBlockDecision;
+    }
+
+    // --- Retroactive Blocking Logic ---
+    if (state.blockInput && isDown) {
+        if (m_keysLeakedToGame.count(hardwareCode)) {
+            HandleRetroactiveBlocking(hardwareCode, true);
+        }
+
+        const auto* bestBinding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
+        if (bestBinding) {
+            if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestBinding->Input.get())) {
+                for (uint32_t constituentCode : chord->GetConstituentHardwareCodes()) {
+                    if (m_keysLeakedToGame.count(constituentCode)) {
+                        HandleRetroactiveBlocking(constituentCode, true);
+                    }
+                }
+            }
+        }
+    } else if (!isDown) {
+        m_keysLeakedToGame.erase(hardwareCode);
+    }
+
+    return state.blockInput;
 }
 
 bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
   auto button = static_cast<MouseButton>(event.iButton);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
-  // logger->Trace("ProcessAndDecide (Mouse): button={}, pressed={}, code={:#08x}", event.iButton, event.bPressed, hardwareCode);
-
-  // Track buttons leaked to game
-  if (event.bPressed) {
-     m_keysLeakedToGame.insert(hardwareCode);
-  } else {
-     m_keysLeakedToGame.erase(hardwareCode);
-  }
 
   if (m_captureState == InputCaptureState::Capturing) {
     // In capture mode, we handle input differently.
@@ -955,10 +603,11 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
 
     UpdateCaptureUI();
 
-    // Reset state
-    m_mouseButtonStates[button].isDown = false;
-    m_mouseButtonStates[button].wasDown = false;
-    m_mouseButtonStates[button].longPressTriggered = false;
+    // Reset state in unified map
+    auto& state = m_inputStates[hardwareCode];
+    state.isDown = false;
+    state.wasDown = false;
+    state.longPressTriggered = false;
 
     // CRUCIAL FIX: For any non-left button, always consume the event (press and release)
     // to prevent it from closing the ImGui capture popup.
@@ -966,84 +615,13 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
   }
 
   // --- Regular (Non-Capture) Logic ---
-
-  auto& state = m_mouseButtonStates[button];
-  bool wasDown = state.isDown;
-  state.isDown = event.bPressed;
-
-  if (!wasDown && state.isDown) {  // Press
-    state.pressTimestamp = std::chrono::steady_clock::now();
-    state.longPressTriggered = false;
-
-    // --- Chord Reset Logic ---
-    const auto* bestShort = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-    const auto* bestLong = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Long);
-    const auto* bestChord = (bestShort && dynamic_cast<const Modules::ChordInput*>(bestShort->Input.get())) ? bestShort : 
-                           ((bestLong && dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) ? bestLong : nullptr);
-
-    if (bestChord) {
-        if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestChord->Input.get())) {
-            for (uint32_t hardwareCode : chord->GetConstituentHardwareCodes()) {
-                ResetStateForCode(hardwareCode);
-            }
-        }
-    }
-
-    const auto* binding = Modules::KeyBindsManager::GetInstance().GetBindingForInput(button, PressType::Short);
-    if (binding && binding->Behavior == Modules::ActivationBehavior::Hold) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(button, PressType::Short);
-      m_heldMouseButtons[button] = PressType::Short;
-    }
-
-    MouseButtonEvent shortPressEvent = {event.iButton, event.bPressed, PressType::Short};
-    auto policy = Modules::KeyBindsManager::GetInstance().GetPolicyForEvent(shortPressEvent, PressType::Short);
-
-    bool shouldBlock = false;
-    switch (policy) {
-      case Config::ConsumptionPolicy::Always:
-        shouldBlock = true;
-        break;
-      case Config::ConsumptionPolicy::OnUIFocus:
-        shouldBlock = !m_gameControlsMouseButtons;
-        break;
-      default:
-        shouldBlock = false;
-        break;
-    }
-    state.blockInput = shouldBlock;
-  } else if (wasDown && !state.isDown) {  // Release
-    state.blockInput = false;
-  }
-
-  // --- Retroactive Blocking Logic ---
-  if (state.blockInput && event.bPressed) {
-      m_keysLeakedToGame.erase(hardwareCode); // We are blocking this one
-
-      const auto* bestBinding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-      if (bestBinding) {
-          if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestBinding->Input.get())) {
-              for (uint32_t constituentCode : chord->GetConstituentHardwareCodes()) {
-                  if (m_keysLeakedToGame.count(constituentCode)) {
-                      HandleRetroactiveBlocking(constituentCode, true);
-                  }
-              }
-          }
-      }
-  } else if (state.blockInput) {
-      m_keysLeakedToGame.erase(hardwareCode);
-  }
-
-  return state.blockInput;
+  return HandleInputState(hardwareCode, event.bPressed, event.bPressed ? 1.0f : 0.0f, m_inputStates[hardwareCode]);
 }
 
 bool InputManager::ProcessAndDecide(const JoystickEvent& event) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto buttonIndex = event.buttonIndex;
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
-
-  if (m_capturedJoystickButtonThisFrame.has_value() && m_capturedJoystickButtonThisFrame.value() == buttonIndex) {
-    return true;  // Consume event from a potential second hook
-  }
 
   if (m_captureState == InputCaptureState::Capturing) {
     if (event.pressed) {
@@ -1060,139 +638,31 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event) {
 
     UpdateCaptureUI();
 
-    // Reset state
-    m_joystickButtonStates[buttonIndex].isDown = false;
-    m_joystickButtonStates[buttonIndex].wasDown = false;
-    m_joystickButtonStates[buttonIndex].longPressTriggered = false;
+    // Reset state in unified map
+    auto& state = m_inputStates[hardwareCode];
+    state.isDown = false;
+    state.wasDown = false;
+    state.longPressTriggered = false;
 
     // Always consume joystick events in capture mode (press and release)
     return true;
   }
 
   // --- Regular (Non-Capture) Logic ---
-
-  auto& state = m_joystickButtonStates[buttonIndex];
-  bool wasDown = state.isDown;
-  state.isDown = event.pressed;
-
-  if (!wasDown && state.isDown) {  // Press
-    state.pressTimestamp = std::chrono::steady_clock::now();
-    state.longPressTriggered = false;
-
-    // --- Chord Reset Logic ---
-    const auto* bestShort = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-    const auto* bestLong = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Long);
-    const auto* bestChord = (bestShort && dynamic_cast<const Modules::ChordInput*>(bestShort->Input.get())) ? bestShort : 
-                           ((bestLong && dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) ? bestLong : nullptr);
-
-    if (bestChord) {
-        if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestChord->Input.get())) {
-            for (uint32_t code : chord->GetConstituentHardwareCodes()) {
-                ResetStateForCode(code);
-            }
-        }
-    }
-
-    const auto* binding = Modules::KeyBindsManager::GetInstance().GetBindingForInput(buttonIndex, PressType::Short);
-    if (binding && binding->Behavior == Modules::ActivationBehavior::Hold) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(buttonIndex, PressType::Short);
-      m_heldJoystickButtons[buttonIndex] = PressType::Short;
-    }
-
-    JoystickEvent shortPressEvent = {buttonIndex, event.pressed, PressType::Short};
-    auto policy = Modules::KeyBindsManager::GetInstance().GetPolicyForEvent(shortPressEvent, PressType::Short);
-
-    bool shouldBlock = false;
-    switch (policy) {
-      case Config::ConsumptionPolicy::Always:
-        shouldBlock = true;
-        break;
-      case Config::ConsumptionPolicy::OnUIFocus:
-        shouldBlock = !m_gameControlsMouseButtons;  // Assuming joystick buttons might need similar blocking
-        break;
-      default:
-        shouldBlock = false;
-        break;
-    }
-    
-    // Always reset block state to the current policy on a new physical press.
-    // This prevents the button from being "stuck" in a blocked state from a previous interaction.
-    // if (state.blockInput != shouldBlock) {
-    //     logger->Trace("Joystick button {} block state changed: {} -> {} (Press)", buttonIndex, state.blockInput, shouldBlock);
-    // }
-    state.blockInput = shouldBlock;
-
-    if (!state.blockInput) {
-        m_keysLeakedToGame.insert(hardwareCode);
-    }
-  } else if (wasDown && !state.isDown) {  // Release
-    m_keysLeakedToGame.erase(hardwareCode);
-    m_pendingJoystickReleases.erase(buttonIndex);
-    m_pendingVirtualReleases.erase(hardwareCode);
-    
-    bool finalBlockDecision = state.blockInput;
-    
-    // Always clear the block state on physical release, because the button is now up.
-    // if (state.blockInput) {
-    //     logger->Trace("Joystick button {} block state reset to false (Release)", buttonIndex);
-    // }
-    state.blockInput = false;
-    
-    return finalBlockDecision;
+  bool block = HandleInputState(hardwareCode, event.pressed, event.pressed ? 1.0f : 0.0f, m_inputStates[hardwareCode]);
+  
+  // Specific fix for Joystick release cleanup:
+  if (!event.pressed) {
+      m_pendingJoystickReleases.erase(buttonIndex);
+      m_pendingVirtualReleases.erase(hardwareCode);
   }
-
-  // --- Retroactive Blocking Logic ---
-  if (state.blockInput && event.pressed) {
-      // Immediate retroactive block if we are pressed but still marked as leaked
-      if (m_keysLeakedToGame.count(hardwareCode)) {
-          HandleRetroactiveBlocking(hardwareCode, true);
-      }
-
-      const auto* bestBinding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-      if (bestBinding) {
-          if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestBinding->Input.get())) {
-              for (uint32_t constituentCode : chord->GetConstituentHardwareCodes()) {
-                  if (m_keysLeakedToGame.count(constituentCode)) {
-                      HandleRetroactiveBlocking(constituentCode, true);
-                  }
-              }
-          }
-      }
-  } else if (!event.pressed) {
-      m_keysLeakedToGame.erase(hardwareCode);
-      state.blockInput = false; // Ensure block is cleared for any non-press event
-  }
-
-  return state.blockInput;
+  return block;
 }
 
 void InputManager::ResetStateForCode(uint32_t code) {
-    uint8_t type = (code >> 24) & 0xFF;
-    uint32_t raw = code & 0x00FFFFFF;
-    if (type == 0x01) {
-        auto it = m_keyboardStates.find(static_cast<System::Keyboard>(raw));
-        if (it != m_keyboardStates.end()) {
-            it->second.longPressTriggered = false;
-            it->second.blockInput = false;
-        }
-    } else if (type == 0x02) {
-        auto it = m_buttonStates.find(static_cast<System::GamepadButton>(raw));
-        if (it != m_buttonStates.end()) {
-            it->second.longPressTriggered = false;
-            it->second.blockInput = false;
-        }
-    } else if (type == 0x03) {
-        auto it = m_mouseButtonStates.find(static_cast<System::MouseButton>(raw));
-        if (it != m_mouseButtonStates.end()) {
-            it->second.longPressTriggered = false;
-            it->second.blockInput = false;
-        }
-    } else if (type == 0x04) {
-        auto it = m_joystickButtonStates.find(static_cast<int>(raw));
-        if (it != m_joystickButtonStates.end()) {
-            it->second.longPressTriggered = false;
-            it->second.blockInput = false;
-        }
+    auto it = m_inputStates.find(code);
+    if (it != m_inputStates.end()) {
+        it->second.longPressTriggered = false;
     }
 }
 
@@ -1201,97 +671,9 @@ bool InputManager::ProcessAndDecide(const KeyboardEvent& event) {
   // logger->Trace("ProcessAndDecide (Keyboard): key={}, pressed={}", (int)event.key, event.pressed);
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(event.key);
 
-  // Track keys leaked to game
-  if (event.pressed) {
-     m_keysLeakedToGame.insert(hardwareCode);
-  } else {
-     m_keysLeakedToGame.erase(hardwareCode);
-  }
-
-  auto& state = m_keyboardStates[event.key];
-  bool wasDown = state.isDown;
-  state.isDown = event.pressed;
-
-  // On new press (Up -> Down transition)
-  if (!wasDown && state.isDown) {
-    state.pressTimestamp = std::chrono::steady_clock::now();
-    state.longPressTriggered = false;
-
-    // --- Chord Reset Logic ---
-    // If this press forms an active chord, reset the 'longPressTriggered' status 
-    // for all constituent keys to allow the chord to have a fresh timing window.
-    const auto* bestShort = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-    const auto* bestLong = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Long);
-    const auto* bestChord = (bestShort && dynamic_cast<const Modules::ChordInput*>(bestShort->Input.get())) ? bestShort : 
-                           ((bestLong && dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) ? bestLong : nullptr);
-
-    if (bestChord) {
-        if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestChord->Input.get())) {
-            for (uint32_t code : chord->GetConstituentHardwareCodes()) {
-                ResetStateForCode(code);
-            }
-        }
-    }
-
-    // Check for "Hold" behavior first
-    const auto* binding = Modules::KeyBindsManager::GetInstance().GetBindingForInput(event.key, PressType::Short);  // Hold is based on short press
-    if (binding && binding->Behavior == Modules::ActivationBehavior::Hold) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(event.key, PressType::Short);
-      m_heldKeyboardKeys[event.key] = PressType::Short;
-    }
-
-    // Determine initial block policy based on the short press action.
-    KeyboardEvent shortPressEvent = event;
-    shortPressEvent.pressType = PressType::Short;
-    auto policy = Modules::KeyBindsManager::GetInstance().GetPolicyForEvent(shortPressEvent, PressType::Short);
-
-    bool shouldBlock = false;
-    switch (policy) {
-      case Config::ConsumptionPolicy::Always:
-        shouldBlock = true;
-        break;
-      case Config::ConsumptionPolicy::OnUIFocus:
-        // Block if any interactive UI is visible.
-        shouldBlock = !m_gameControlsMouseButtons;
-        break;
-      default:
-        shouldBlock = false;
-        break;
-    }
-    state.blockInput = shouldBlock;
-  }
-  // On release (Down -> Up transition)
-  else if (wasDown && !state.isDown) {
-    // When a key is released, we never need to block the release event itself.
-    // The action is triggered in ProcessKeyboardActions.
-    state.blockInput = false;
-  }
-
-  // --- Retroactive Blocking Logic ---
-  // If we decided to block this key press, we should check if it's part of a chord
-  // and if other parts of that chord have already leaked to the game.
-  if (state.blockInput && event.pressed) {
-      m_keysLeakedToGame.erase(hardwareCode); // We are blocking this one, so it's not leaked.
-
-      // Find the binding that caused this block (likely a chord)
-      const auto* bestBinding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short);
-      if (bestBinding) {
-          if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestBinding->Input.get())) {
-              for (uint32_t constituentCode : chord->GetConstituentHardwareCodes()) {
-                  // If a constituent key was previously leaked to the game
-                  if (m_keysLeakedToGame.count(constituentCode)) {
-                      HandleRetroactiveBlocking(constituentCode, true);
-                  }
-              }
-          }
-      }
-  } else if (state.blockInput) {
-      // If blocked but not a press (e.g. held state), ensure it's not in leaked set
-      m_keysLeakedToGame.erase(hardwareCode);
-  }
-
-  // For held keys or releases, return the stored blocking decision.
-  return state.blockInput;
+  // Keyboard has no analog value, so passing 0.0f/1.0f
+  // Logic for capture is handled in PublishKeyboardEvent, so here we only do State/Blocking
+  return HandleInputState(hardwareCode, event.pressed, event.pressed ? 1.0f : 0.0f, m_inputStates[hardwareCode]);
 }
 
 bool InputManager::ShouldGameControlMouseAxes() const { return m_gameControlsMouseAxes; }
@@ -1333,27 +715,21 @@ void InputManager::CancelInputCapture() {
 }
 
 bool InputManager::IsKeyBlocked(System::Keyboard key) const {
-  auto it = m_keyboardStates.find(key);
-  if (it != m_keyboardStates.end()) {
-    return it->second.blockInput;
-  }
-  return false;
+  uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(key);
+  auto it = m_inputStates.find(hardwareCode);
+  return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::IsMouseButtonBlocked(System::MouseButton button) const {
-  auto it = m_mouseButtonStates.find(button);
-  if (it != m_mouseButtonStates.end()) {
-    return it->second.blockInput;
-  }
-  return false;
+  uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
+  auto it = m_inputStates.find(hardwareCode);
+  return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::IsJoystickButtonBlocked(int buttonIndex) const {
-  auto it = m_joystickButtonStates.find(buttonIndex);
-  if (it != m_joystickButtonStates.end()) {
-    return it->second.blockInput;
-  }
-  return false;
+  uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
+  auto it = m_inputStates.find(hardwareCode);
+  return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::ConsumeMouseReleaseRequest(System::MouseButton button) {
@@ -1401,44 +777,107 @@ bool InputManager::IsPendingVirtualRelease(uint32_t hardwareCode) {
 }
 
 void InputManager::SetHoldState(uint32_t hardwareCode, PressType type) {
-    uint8_t deviceType = (hardwareCode >> 24) & 0xFF;
-    uint32_t rawCode = hardwareCode & 0x00FFFFFF;
-
-    if (deviceType == 0x01) { // Keyboard
-        m_heldKeyboardKeys[static_cast<System::Keyboard>(rawCode)] = type;
-    } else if (deviceType == 0x02) { // Gamepad
-        m_heldGamepadButtons[static_cast<System::GamepadButton>(rawCode)] = type;
-    } else if (deviceType == 0x03) { // Mouse
-        m_heldMouseButtons[static_cast<System::MouseButton>(rawCode)] = type;
-    } else if (deviceType == 0x04) { // Joystick
-        m_heldJoystickButtons[static_cast<int>(rawCode)] = type;
-    }
+    m_heldInputs[hardwareCode] = type;
 }
 
 std::chrono::steady_clock::time_point InputManager::GetChordPressTimestamp(const std::vector<uint32_t>& codes) const {
     auto maxTs = (std::chrono::steady_clock::time_point::min)();
     for (uint32_t code : codes) {
-        std::chrono::steady_clock::time_point ts;
-        uint8_t type = (code >> 24) & 0xFF;
-        uint32_t rawCode = code & 0x00FFFFFF;
-
-        if (type == 0x01) { // Keyboard
-            auto it = m_keyboardStates.find(static_cast<System::Keyboard>(rawCode));
-            if (it != m_keyboardStates.end()) ts = it->second.pressTimestamp;
-        } else if (type == 0x02) { // Gamepad
-            auto it = m_buttonStates.find(static_cast<System::GamepadButton>(rawCode));
-            if (it != m_buttonStates.end()) ts = it->second.pressTimestamp;
-        } else if (type == 0x03) { // Mouse
-            auto it = m_mouseButtonStates.find(static_cast<System::MouseButton>(rawCode));
-            if (it != m_mouseButtonStates.end()) ts = it->second.pressTimestamp;
-        } else if (type == 0x04) { // Joystick
-            auto it = m_joystickButtonStates.find(static_cast<int>(rawCode));
-            if (it != m_joystickButtonStates.end()) ts = it->second.pressTimestamp;
+        auto it = m_inputStates.find(code);
+        if (it != m_inputStates.end()) {
+            if (it->second.pressTimestamp > maxTs) {
+                maxTs = it->second.pressTimestamp;
+            }
         }
-
-        if (ts > maxTs) maxTs = ts;
     }
     return maxTs;
+}
+
+void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state) {
+    // auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
+    auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
+    auto now = std::chrono::steady_clock::now();
+
+    // --- Detect and Handle Release (for Short Press) ---
+    if (!state.isDown && state.wasDown) {
+        auto it = m_heldInputs.find(hardwareCode);
+        if (it != m_heldInputs.end()) {
+            PressType originalPressType = it->second;
+            keyBindsManager.TriggerAction(hardwareCode, originalPressType);
+            m_heldInputs.erase(it);
+        } else if (!state.longPressTriggered) {
+            keyBindsManager.TriggerAction(hardwareCode, PressType::Short);
+        }
+    }
+    // --- Detect and Handle Hold (for Long Press) ---
+    else if (state.isDown && state.wasDown) {
+        if (!state.longPressTriggered) {
+            const auto* longPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Long);
+            const auto* shortPressBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
+
+            auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
+            auto pressTs = state.pressTimestamp;
+
+            const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
+            if (dominantBinding) {
+                if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
+                    pressTs = GetChordPressTimestamp(chord->GetConstituentHardwareCodes());
+                }
+            }
+
+            if (longPressBinding && longPressBinding->PressThreshold.has_value()) {
+                longPressThreshold = longPressBinding->PressThreshold.value();
+            } else if (shortPressBinding && shortPressBinding->PressThreshold.has_value()) {
+                longPressThreshold = shortPressBinding->PressThreshold.value();
+            }
+
+            auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
+
+            if (pressedDuration >= longPressThreshold) {
+                state.longPressTriggered = true;
+
+                if (longPressBinding) {
+                    bool isLead = true;
+                    std::vector<uint32_t> keysToBlock;
+                    keysToBlock.push_back(hardwareCode);
+
+                    if (auto* chord = dynamic_cast<const Modules::ChordInput*>(longPressBinding->Input.get())) {
+                        auto codes = chord->GetConstituentHardwareCodes();
+                        uint32_t maxCode = 0;
+                        for (uint32_t c : codes) if (c > maxCode) maxCode = c;
+                        if (hardwareCode != maxCode) isLead = false;
+                        if (isLead) keysToBlock = codes;
+                    }
+
+                    if (isLead) {
+                        if (longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
+                            for (uint32_t code : keysToBlock) {
+                                SetHoldState(code, PressType::Long);
+                            }
+                        }
+
+                        keyBindsManager.TriggerAction(hardwareCode, PressType::Long);
+
+                        // Update block policy based on long press action
+                        // We need the policy. Since we have the binding, use it directly.
+                        auto policy = longPressBinding->Policy;
+                        
+                        bool shouldBlock = false;
+                        switch (policy) {
+                        case Config::ConsumptionPolicy::Always: shouldBlock = true; break;
+                        case Config::ConsumptionPolicy::OnUIFocus: shouldBlock = !m_gameControlsMouseButtons; break;
+                        case Config::ConsumptionPolicy::Manual: shouldBlock = longPressBinding->programmaticallyBlocked; break;
+                        default: shouldBlock = false; break;
+                        }
+
+                        for (uint32_t code : keysToBlock) {
+                            HandleRetroactiveBlocking(code, shouldBlock);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // --- Device Detection Implementations ---

@@ -135,6 +135,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   void TriggerAction(System::Keyboard key, Input::PressType pressType);
   void TriggerAction(System::MouseButton button, Input::PressType pressType);
   void TriggerAction(int buttonIndex, Input::PressType pressType);
+  void TriggerAction(uint32_t hardwareCode, Input::PressType pressType);
 
   // IInputConsumer implementation
   bool OnKeyPress(const Input::KeyboardEvent& event) override;

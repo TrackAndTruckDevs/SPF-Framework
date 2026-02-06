@@ -24,6 +24,37 @@ static GetKeyboardState_t oGetKeyboardState = nullptr;
 static GetAsyncKeyState_t oGetAsyncKeyState = nullptr;
 static GetKeyState_t oGetKeyState = nullptr;
 
+// --- Internal Helper Functions ---
+
+static bool ProcessSingleKey(int vkCode, bool isDownWinAPI, bool isDownPhysical) {
+    auto& inputManager = SPF::Input::InputManager::GetInstance();
+    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
+    SPF::System::Keyboard key = keyMapper.FromWinAPI(vkCode);
+    
+    // The framework follows physical state to maintain chords even if keys are blocked for the game.
+    bool isDownForFramework = isDownWinAPI || isDownPhysical;
+    bool wasDown = (g_previousKeyboardState[vkCode] & 0x80) != 0;
+
+    if (key != SPF::System::Keyboard::Unknown && isDownForFramework != wasDown) {
+        inputManager.PublishKeyboardEvent(SPF::Input::KeyboardEvent{key, isDownForFramework});
+    }
+
+    // Update state tracker
+    if (isDownForFramework) g_previousKeyboardState[vkCode] |= 0x80;
+    else g_previousKeyboardState[vkCode] &= ~0x80;
+
+    // Determine if the key or mouse button (represented by VK) should be blocked for the game.
+    bool blocked = inputManager.IsKeyBlocked(key);
+    if (!blocked) {
+        auto mouseBtn = SPF::System::MouseButtonMapping::GetInstance().FromWinAPI(vkCode);
+        if (mouseBtn != SPF::System::MouseButton::Unknown) {
+            blocked = inputManager.IsMouseButtonBlocked(mouseBtn);
+        }
+    }
+
+    return blocked;
+}
+
 // Our hook functions
 BOOL WINAPI hkSetCursorPos(int X, int Y) {
   if (!SPF::Input::InputManager::GetInstance().ShouldGameControlMouseAxes()) {
@@ -35,72 +66,26 @@ BOOL WINAPI hkSetCursorPos(int X, int Y) {
 BOOL WINAPI hkGetKeyboardState(PBYTE lpKeyState) {
   BOOL result = oGetKeyboardState(lpKeyState);
   if (result && lpKeyState != nullptr) {
-    auto& inputManager = SPF::Input::InputManager::GetInstance();
-    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
-    // Create a copy of the real key state before potential modification for blocking.
-    BYTE realKeyState[256];
-    memcpy(realKeyState, lpKeyState, 256);
-
     for (int i = 0; i < 256; ++i) {
-      // The high-order bit of each byte indicates if the key is down.
-      bool isPressedWinAPI = (lpKeyState[i] & 0x80) != 0;
-      bool isPressedPhysical = (GetAsyncKeyState(i) & 0x8000) != 0;
+      bool winDown = (lpKeyState[i] & 0x80) != 0;
+      bool physDown = (GetAsyncKeyState(i) & 0x8000) != 0;
       
-      // The framework should follow the physical state to maintain chords even if we fake-release keys to the game.
-      bool isPressedForFramework = isPressedWinAPI || isPressedPhysical;
-      
-      bool wasPressed = (g_previousKeyboardState[i] & 0x80) != 0;
-
-      if (isPressedForFramework != wasPressed) {
-        inputManager.PublishKeyboardEvent({keyMapper.FromWinAPI(i), isPressedForFramework});
+      if (ProcessSingleKey(i, winDown, physDown)) {
+        lpKeyState[i] &= ~0x80; // Block for game
       }
-
-      // After processing the event, check if the key should be blocked.
-      if (inputManager.IsKeyBlocked(keyMapper.FromWinAPI(i))) {
-        // If so, clear the bit to make the game think the key is up.
-        lpKeyState[i] &= ~0x80;
-      }
-      
-      // Update our state tracker with the PHYSICAL state (or mixed) so we don't lose the "Down" event
-      if (isPressedForFramework)
-        g_previousKeyboardState[i] |= 0x80;
-      else
-        g_previousKeyboardState[i] &= ~0x80;
     }
-    // We update g_previousKeyboardState inside the loop now.
   }
   return result;
 }
 
 SHORT WINAPI hkGetAsyncKeyState(int vKey) {
   SHORT result = oGetAsyncKeyState(vKey);
+  if (vKey < 0 || vKey >= 256) return result;
 
-  // For GetAsyncKeyState, the high-order bit indicates the down state.
-  bool isPressed = (result & 0x8000) != 0;
-  bool wasPressed = (g_previousKeyboardState[vKey] & 0x80) != 0;
-
-  if (isPressed != wasPressed) {
-    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
-    SPF::Input::InputManager::GetInstance().PublishKeyboardEvent({keyMapper.FromWinAPI(vKey), isPressed});
-  }
-
-  // Update our state tracker
-  if (isPressed)
-    g_previousKeyboardState[vKey] |= 0x80;
-  else
-    g_previousKeyboardState[vKey] &= ~0x80;
-
-  if (SPF::Input::InputManager::GetInstance().IsKeyBlocked(SPF::System::VirtualKeyMapping::GetInstance().FromWinAPI(vKey))) {
-    // To block, we must clear the "is pressed" bit AND the "was pressed since last call" bit.
-    return 0;
-  }
-
-  // Check for mouse button blocking
-  auto mouseButton = SPF::System::MouseButtonMapping::GetInstance().FromWinAPI(vKey);
-  if (mouseButton != SPF::System::MouseButton::Unknown) {
-    if (SPF::Input::InputManager::GetInstance().IsMouseButtonBlocked(mouseButton)) {
-      return 0;
-    }
+  bool winDown = (result & 0x8000) != 0;
+  // GetAsyncKeyState is the physical state itself
+  if (ProcessSingleKey(vKey, winDown, winDown)) {
+    return 0; // Block for game
   }
 
   return result;
@@ -108,35 +93,13 @@ SHORT WINAPI hkGetAsyncKeyState(int vKey) {
 
 SHORT WINAPI hkGetKeyState(int nVirtKey) {
   SHORT result = oGetKeyState(nVirtKey);
+  if (nVirtKey < 0 || nVirtKey >= 256) return result;
 
-  // For GetKeyState, the high-order bit of the return value indicates the down state.
-  bool isPressedWinAPI = (result & 0x8000) != 0;
-  bool isPressedPhysical = (GetAsyncKeyState(nVirtKey) & 0x8000) != 0;
-  
-  bool isPressedForFramework = isPressedWinAPI || isPressedPhysical;
-  bool wasPressed = (g_previousKeyboardState[nVirtKey] & 0x80) != 0;
+  bool winDown = (result & 0x8000) != 0;
+  bool physDown = (GetAsyncKeyState(nVirtKey) & 0x8000) != 0;
 
-  if (isPressedForFramework != wasPressed) {
-    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
-    SPF::Input::InputManager::GetInstance().PublishKeyboardEvent({keyMapper.FromWinAPI(nVirtKey), isPressedForFramework});
-  }
-
-  // Update our state tracker
-  if (isPressedForFramework)
-    g_previousKeyboardState[nVirtKey] |= 0x80;
-  else
-    g_previousKeyboardState[nVirtKey] &= ~0x80;
-
-  if (SPF::Input::InputManager::GetInstance().IsKeyBlocked(SPF::System::VirtualKeyMapping::GetInstance().FromWinAPI(nVirtKey))) {
-    return 0;  // Return 0 to indicate the key is up.
-  }
-
-  // Check for mouse button blocking
-  auto mouseButton = SPF::System::MouseButtonMapping::GetInstance().FromWinAPI(nVirtKey);
-  if (mouseButton != SPF::System::MouseButton::Unknown) {
-    if (SPF::Input::InputManager::GetInstance().IsMouseButtonBlocked(mouseButton)) {
-      return 0;
-    }
+  if (ProcessSingleKey(nVirtKey, winDown, physDown)) {
+    return 0; // Block for game
   }
 
   return result;

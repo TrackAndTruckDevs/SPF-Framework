@@ -31,6 +31,7 @@ class WndProcEventProxy : public EventProxyBase {
 
  private:
   void OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  void SetBlockWndProc(bool block);
 
   std::shared_ptr<Logging::Logger> m_logger;
   Rendering::Renderer& m_renderer;

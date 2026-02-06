@@ -10,6 +10,7 @@
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/Icons.hpp"
 #include "SPF/Modules/InputFactory.hpp"
+#include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 
@@ -668,20 +669,42 @@ void SettingsWindow::RenderKeybindsSettings() {
                                     auto input = Modules::InputFactory::CreateFromJson(bindingJson);
                                     if (!input || !input->IsValid()) continue;
 
-                                    std::string displayName = input->GetDisplayName();
-                                    if (displayName.empty() || displayName == "Unknown") continue;
+                                    auto getIconForInput = [](Modules::InputType type) -> const char* {
+                                        switch (type) {
+                                            case Modules::InputType::Keyboard: return ICON_FA_KEYBOARD;
+                                            case Modules::InputType::Gamepad:  return ICON_FA_GAMEPAD;
+                                            case Modules::InputType::Mouse:    return ICON_FA_MOUSE;
+                                            case Modules::InputType::Joystick: return ICON_FA_GAMEPAD;
+                                            default: return "";
+                                        }
+                                    };
 
-                                    const char* bindingIcon = "";
-                                    switch (input->GetType()) {
-                                        case Modules::InputType::Keyboard: bindingIcon = ICON_FA_KEYBOARD; break;
-                                        case Modules::InputType::Gamepad: bindingIcon = ICON_FA_GAMEPAD; break;
-                                        case Modules::InputType::Mouse: bindingIcon = ICON_FA_MOUSE; break;
-                                        case Modules::InputType::Joystick: bindingIcon = ICON_FA_GAMEPAD; break;
-                                        default: break;
+                                    std::string buttonText;
+                                    if (input->GetType() == Modules::InputType::Chord) {
+                                        auto chord = dynamic_cast<SPF::Modules::ChordInput*>(input.get());
+                                        if (chord) {
+                                            const auto& constituents = chord->GetInputs();
+                                            Modules::InputType lastType = Modules::InputType::Chord; // Dummy value
+                                            for (size_t i = 0; i < constituents.size(); ++i) {
+                                                Modules::InputType currentType = constituents[i]->GetType();
+                                                
+                                                if (currentType != lastType) {
+                                                    // Add icon only when type changes
+                                                    buttonText += fmt::format("{} ", getIconForInput(currentType));
+                                                    lastType = currentType;
+                                                }
+                                                
+                                                buttonText += constituents[i]->GetDisplayName();
+                                                if (i < constituents.size() - 1) buttonText += " + ";
+                                            }
+                                        }
+                                    } else {
+                                        buttonText = fmt::format("{} {}", getIconForInput(input->GetType()), input->GetDisplayName());
                                     }
 
-                                    std::string buttonText = fmt::format("{} {}", bindingIcon, displayName);
-                                    std::string uniqueId = fullActionName + ":" + displayName;
+                                    if (buttonText.empty() || buttonText.find("Unknown") != std::string::npos) continue;
+
+                                    std::string uniqueId = fullActionName + ":" + buttonText;
 
                                     ImGui::PushID(uniqueId.c_str());
                                     if (ImGui::Button(buttonText.c_str())) {
@@ -1178,20 +1201,34 @@ void SettingsWindow::RenderContent() {
       ImGui::Spacing();
       // --- Rich Chord Display ---
       if (!m_currentChordInputs.empty()) {
-          ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+          auto getIconForInput = [](Modules::InputType type) -> const char* {
+              switch (type) {
+                  case Modules::InputType::Keyboard: return ICON_FA_KEYBOARD;
+                  case Modules::InputType::Gamepad:  return ICON_FA_GAMEPAD;
+                  case Modules::InputType::Mouse:    return ICON_FA_MOUSE;
+                  case Modules::InputType::Joystick: return ICON_FA_GAMEPAD;
+                  default: return "";
+              }
+          };
+
+          float totalWidth = 0;
+          float spacing = 4.0f;
+          for (size_t i = 0; i < m_currentChordInputs.size(); ++i) {
+              const char* icon = getIconForInput(m_currentChordInputs[i]->GetType());
+              std::string label = fmt::format("{} {}", icon, m_currentChordInputs[i]->GetDisplayName());
+              totalWidth += ImGui::CalcTextSize(label.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+              if (i < m_currentChordInputs.size() - 1) {
+                  totalWidth += spacing + ImGui::CalcTextSize("+").x + spacing;
+              }
+          }
+
+          float startX = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+          if (startX > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + startX);
+
+          ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(spacing, spacing));
           for (size_t i = 0; i < m_currentChordInputs.size(); ++i) {
               const auto& input = m_currentChordInputs[i];
-
-              const char* icon = "";
-              switch (input->GetType()) {
-                  case Modules::InputType::Keyboard: icon = ICON_FA_KEYBOARD; break;
-                  case Modules::InputType::Gamepad:  icon = ICON_FA_GAMEPAD;  break;
-                  case Modules::InputType::Mouse:    icon = ICON_FA_MOUSE;    break;
-                  case Modules::InputType::Joystick: icon = ICON_FA_GAMEPAD;  break;
-                  default: break;
-              }
-
-              std::string label = fmt::format("{} {}", icon, input->GetDisplayName());
+              std::string label = fmt::format("{} {}", getIconForInput(input->GetType()), input->GetDisplayName());
 
               // Render as a button frame to match settings UI, but inactive
               ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);

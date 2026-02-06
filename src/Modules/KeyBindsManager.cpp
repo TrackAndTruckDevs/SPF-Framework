@@ -464,6 +464,18 @@ bool KeyBindsManager::OnGamepadButtonPress(const GamepadEvent& event) {
 
 bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) { return false; }
 
+void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pressType) {
+    uint8_t type = (hardwareCode >> 24) & 0xFF;
+    uint32_t raw = hardwareCode & 0x00FFFFFF;
+
+    switch (type) {
+    case 0x01: TriggerAction(static_cast<System::Keyboard>(raw), pressType); break;
+    case 0x02: TriggerAction(static_cast<System::GamepadButton>(raw), pressType); break;
+    case 0x03: TriggerAction(static_cast<System::MouseButton>(raw), pressType); break;
+    case 0x04: TriggerAction(static_cast<int>(raw), pressType); break;
+    }
+}
+
 void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) {
   uint32_t code = 0x02000000 | static_cast<uint32_t>(button);
   const Binding* best = FindBestBinding(code, pressType);

@@ -194,16 +194,10 @@ class InputManager {
   bool m_isWaitingForCaptureFinalize = false;
 
   // The central state machine for all inputs
-  std::map<System::GamepadButton, ButtonState> m_buttonStates;
-  std::map<System::Keyboard, ButtonState> m_keyboardStates;
-  std::map<System::MouseButton, ButtonState> m_mouseButtonStates;
-  std::map<int, ButtonState> m_joystickButtonStates;  // Using int for generic button index
+  std::map<uint32_t, ButtonState> m_inputStates;
 
-  // State for tracking keys/buttons that are in a "hold" behavior state
-  std::map<System::GamepadButton, PressType> m_heldGamepadButtons;
-  std::map<System::Keyboard, PressType> m_heldKeyboardKeys;
-  std::map<System::MouseButton, PressType> m_heldMouseButtons;
-  std::map<int, PressType> m_heldJoystickButtons;  // Using int for generic button index
+  // Unified state for tracking inputs that are in a "hold" behavior state
+  std::map<uint32_t, PressType> m_heldInputs;
 
   // State for XInputHook (legacy, might be removed later)
   std::unique_ptr<Utils::Sink<void(DWORD, XINPUT_STATE*)>> m_xinputSink;
@@ -218,10 +212,7 @@ class InputManager {
   nlohmann::ordered_json m_capturingOriginalBinding;
 
   // Frame-specific blacklist to prevent input processing from multiple hooks
-  std::optional<System::GamepadButton> m_capturedButtonThisFrame;
-  std::optional<System::Keyboard> m_capturedKeyThisFrame;
-  std::optional<System::MouseButton> m_capturedMouseButtonThisFrame;
-  std::optional<int> m_capturedJoystickButtonThisFrame;  // Using int for generic button index
+  std::set<uint32_t> m_capturedHardwareCodesThisFrame;
 
   // Keys that were passed to the game (not blocked)
   // Used to send retroactive "Key Up" events if a blocking chord activates later.
@@ -239,6 +230,23 @@ class InputManager {
 
   // Gamepad buttons that need a virtual release event injected into the DirectInput8 buffer.
   std::set<System::GamepadButton> m_pendingGamepadReleases;
+
+  /**
+   * @brief Unified helper method to handle input state updates and blocking logic.
+   * Replaces the duplicated logic in ProcessAndDecide for different device types.
+   * @param hardwareCode The unique 32-bit hardware code for the input.
+   * @param isDown Whether the button/key is currently pressed.
+   * @param value The analog value (0.0f-1.0f) or digital value (0.0f/1.0f).
+   * @param state Reference to the persistent state for this specific input.
+   * @return True if the input should be blocked, false otherwise.
+   */
+  bool HandleInputState(uint32_t hardwareCode, bool isDown, float value, ButtonState& state);
+
+  /**
+   * @brief Evaluates action logic (Short Press, Long Press, Chords) for a specific input.
+   * Replaces the duplicated loop logic in Process...Actions methods.
+   */
+  void EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state);
 
   void HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldBlock);
   void SetHoldState(uint32_t hardwareCode, PressType type);
