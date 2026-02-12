@@ -93,7 +93,7 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
       // Publish the event to our InputManager. If it returns true, it means the event
       // was consumed (e.g., by a keybind) and should be blocked from the game.
-      if (SPF::Input::InputManager::GetInstance().PublishKeyboardEvent(event)) {
+      if (SPF::Input::InputManager::GetInstance().PublishKeyboardEvent(event, 3)) {
         blockMessage = true;
       }
       break;
@@ -117,7 +117,7 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
       if (button != -1) {
         bool isPressed = (uMsg == WM_LBUTTONDOWN || uMsg == WM_RBUTTONDOWN || uMsg == WM_MBUTTONDOWN || uMsg == WM_XBUTTONDOWN);
-        if (inputManager.PublishMouseButton({button, isPressed})) {
+        if (inputManager.PublishMouseButton({button, isPressed}, 3)) {
           blockMessage = true;
         }
       }
@@ -127,11 +127,29 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     // --- Mouse Wheel Message ---
     case WM_MOUSEWHEEL: {
       auto& inputManager = SPF::Input::InputManager::GetInstance();
-      float wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-      if (inputManager.PublishMouseWheel({wheelDelta})) {
+      float wheelDelta = (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
+      if (inputManager.PublishAxisMove(0x03, 2, wheelDelta, 3)) {
         blockMessage = true;
       }
       break;
+    }
+
+    // --- Mouse Move (Delta) ---
+    case WM_MOUSEMOVE: {
+        auto& inputManager = SPF::Input::InputManager::GetInstance();
+        static int lastX = -1, lastY = -1;
+        int curX = LOWORD(lParam), curY = HIWORD(lParam);
+
+        if (lastX != -1) {
+            float dx = (float)(curX - lastX);
+            float dy = (float)(curY - lastY);
+            if (std::abs(dx) > 0.0f) inputManager.PublishAxisMove(0x03, 0, dx, 3);
+            if (std::abs(dy) > 0.0f) inputManager.PublishAxisMove(0x03, 1, dy, 3);
+        }
+        lastX = curX; lastY = curY;
+        
+        if (!inputManager.ShouldGameControlMouseAxes()) blockMessage = true;
+        break;
     }
 
     // Handle non-input messages we care about.

@@ -143,15 +143,12 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // --- Action 0: A sample keybind to toggle a window ---
         // `groupName`: Logical grouping for actions, used to avoid name collisions.
         // Best practice: "{PluginName}.{Feature}".
-        // `actionName`: Specific action (e.g., "toggle", "activate").
+        // `actionName`: (e.g., "toggle", "activate").
         // Define one or more default key combinations for this action.
-        // `type`: "keyboard" or "gamepad".
+        // `type`: "keyboard", "gamepad", "gamepad_axis", "joystick", "joystick_axis", "mouse", "mouse_axis".
         // `key`: Key name (see VirtualKeyMapping.cpp or GamepadButtonMapping.cpp).
-        // `pressType`: "short" (tap) or "long" (hold).
-        // `pressThresholdMs`: For "long" press, time in ms to hold.
         // `consume`: When to consume input: "never", "on_ui_focus", "always", "manual".
-        // `behavior`: How action behaves. Valid values: "toggle" (on/off), "hold" (while pressed).
-        api->Defaults_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
+        api->Defaults_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "always");
     }
     */
 

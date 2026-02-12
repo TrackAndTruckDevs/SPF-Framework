@@ -133,17 +133,13 @@ static void Defaults_SetLocalization(SPF_Manifest_Builder_Handle* h, const char*
 }
 
 static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, 
-                                const char* type, const char* key, const char* pressType, 
-                                int thresholdMs, const char* consume, const char* behavior) {
+                                const char* type, const char* key, const char* consume) {
     if (!h || !group || !action || *group == '\0' || *action == '\0') return;
     
     KeybindDefinition def;
     if (type && *type) def.type = type;
     if (key && *key) def.key = key;
-    if (pressType && *pressType) def.pressType = pressType;
-    if (thresholdMs > 0) def.pressThresholdMs = thresholdMs;
     if (consume && *consume) def.consume = consume;
-    if (behavior && *behavior) def.behavior = behavior;
 
     Cast(h)->keybinds.actions[group][action].push_back(std::move(def));
 }

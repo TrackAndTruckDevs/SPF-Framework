@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <unordered_set>
+#include <mutex>
 
 // Explicitly define DirectInput version before including the header.
 #define DIRECTINPUT_VERSION 0x0800
@@ -117,11 +118,15 @@ static void* g_hookCallbacksState[MAX_DINPUT_HOOKS] = {
 static std::unordered_set<void*> g_hookedTargets;
 static std::map<IDirectInputDevice8W*, DWORD> g_deviceSequenceNumbers; // Track sequence numbers per device
 
+static std::mutex g_dinputStateMutex;
+
 struct PerDeviceState {
     bool buttonStates[128] = {};
     bool virtualUpSent[128] = {};
-    int previousPov = -1;
-    LONG axes[6] = {0}; // X, Y, Z, RX, RY, RZ
+    int previousPov[4] = {-1, -1, -1, -1};
+    LONG axes[8] = {0}; // X, Y, Z, RX, RY, RZ, SL0, SL1
+    LONG axisMin[8] = {0};
+    LONG axisMax[8] = {0};
 };
 static std::map<IDirectInputDevice8W*, PerDeviceState> g_perDeviceStates;
 
@@ -164,12 +169,14 @@ static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID l
     BYTE* pButtons = (BYTE*)lpvData + DIJOFS_BUTTON0;
     auto& mapping = SPF::System::GamepadButtonMapping::GetInstance();
     auto type = inputManager.GetDeviceType((UINT_PTR)self);
+    bool isGamepad = (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation);
+    uint8_t typeNum = isGamepad ? 0x02 : 0x04;
 
     for (int i = 0; i < maxButtons; ++i) {
         if (DIJOFS_BUTTON0 + i >= (int)cbData) break;
 
         bool blocked = inputManager.IsJoystickButtonBlocked(i);
-        if (!blocked && (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation)) {
+        if (!blocked && isGamepad) {
             auto gamepadBtn = mapping.FromDInput(DIJOFS_BUTTON0 + i);
             if (gamepadBtn != SPF::System::GamepadButton::Unknown) {
                 blocked = inputManager.IsGamepadButtonBlocked(gamepadBtn);
@@ -177,6 +184,45 @@ static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID l
         }
 
         if (blocked) pButtons[i] = 0;
+    }
+
+    // Mask Axes
+    LONG* pAxes = (LONG*)lpvData; // DIJOYSTATE starts with axes
+    auto deviceType = inputManager.GetDeviceType((UINT_PTR)self);
+
+    for (int axisIdx = 0; axisIdx < 8; ++axisIdx) {
+        int mappedIdx = axisIdx;
+        bool consumed = false;
+
+        if (isGamepad && deviceType == SPF::System::DeviceType::Xbox) {
+            if (axisIdx == 0) mappedIdx = 0;
+            else if (axisIdx == 1) mappedIdx = 1;
+            else if (axisIdx == 2) mappedIdx = 4; // Z -> LT
+            else if (axisIdx == 3) mappedIdx = 2; // Rx -> RS X
+            else if (axisIdx == 4) mappedIdx = 3; // Ry -> RS Y
+            else if (axisIdx == 5) mappedIdx = 5; // Rz -> RT
+            else if (axisIdx == 6) mappedIdx = 6; // Slider 0
+            else if (axisIdx == 7) mappedIdx = 7; // Slider 1
+            else mappedIdx = -1;
+            
+            if (mappedIdx != -1) consumed = inputManager.IsAxisConsumed(0x02, mappedIdx);
+        }
+        else if (isGamepad) {
+            if (axisIdx == 2) mappedIdx = 2;
+            else if (axisIdx == 3) mappedIdx = 3;
+            else if (axisIdx == 4) mappedIdx = 4;
+            else if (axisIdx == 5) mappedIdx = 5;
+            else if (axisIdx == 6) mappedIdx = 6;
+            else if (axisIdx == 7) mappedIdx = 7;
+            consumed = inputManager.IsAxisConsumed(typeNum, mappedIdx);
+        }
+        else {
+            consumed = inputManager.IsAxisConsumed(typeNum, axisIdx);
+        }
+
+        if (consumed) {
+            pAxes[axisIdx] = 0;
+        }
     }
 }
 
@@ -225,49 +271,76 @@ static void HandleMouseData(IDirectInputDevice8W* self, DIDEVICEOBJECTDATA* rgdo
 }
 
 static void ProcessPovData(IDirectInputDevice8W* self, PerDeviceState& state, DIDEVICEOBJECTDATA& data, SPF::System::DeviceType type) {
+    int povIdx = -1;
+    if (data.dwOfs == DIJOFS_POV(0)) povIdx = 0;
+    else if (data.dwOfs == DIJOFS_POV(1)) povIdx = 1;
+    else if (data.dwOfs == DIJOFS_POV(2)) povIdx = 2;
+    else if (data.dwOfs == DIJOFS_POV(3)) povIdx = 3;
+
+    if (povIdx == -1) return;
+
     int currentPov = (int)data.dwData;
-    if (currentPov == state.previousPov) return;
+    int prevPov = state.previousPov[povIdx];
+    if (currentPov == prevPov) return;
 
-    if (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation) {
-        auto& inputManager = SPF::Input::InputManager::GetInstance();
-        auto isDir = [](int pov, int dir) {
-            if (pov == -1) return false;
-            switch (dir) {
-                case 0: return pov == 31500 || pov == 0 || pov == 4500;
-                case 9000: return pov == 4500 || pov == 9000 || pov == 13500;
-                case 18000: return pov == 13500 || pov == 18000 || pov == 22500;
-                case 27000: return pov == 22500 || pov == 27000 || pov == 31500;
-                default: return false;
-            }
-        };
-
-        const SPF::System::GamepadButton dirs[] = {SPF::System::GamepadButton::DPadUp, SPF::System::GamepadButton::DPadRight, SPF::System::GamepadButton::DPadDown, SPF::System::GamepadButton::DPadLeft};
-        const int vals[] = {0, 9000, 18000, 27000};
-        bool activeToGame[4] = {false, false, false, false};
-
-        for (int j = 0; j < 4; ++j) {
-            bool curActive = isDir(currentPov, vals[j]);
-            bool prevActive = isDir(state.previousPov, vals[j]);
-            bool blocked = false;
-
-            if (curActive != prevActive) blocked = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, dirs[j], curActive, curActive ? 1.0f : 0.0f});
-            else if (curActive) blocked = inputManager.ProcessAndDecide(SPF::Input::GamepadEvent{0, dirs[j], true, 1.0f});
-
-            if (curActive && !blocked) activeToGame[j] = true;
+    auto& inputManager = SPF::Input::InputManager::GetInstance();
+    auto isDir = [](int pov, int dir) {
+        if (pov == -1 || pov == 0xFFFFFFFF) return false;
+        switch (dir) {
+            case 0: return pov == 31500 || pov == 0 || pov == 4500;
+            case 9000: return pov == 4500 || pov == 9000 || pov == 13500;
+            case 18000: return pov == 13500 || pov == 18000 || pov == 22500;
+            case 27000: return pov == 22500 || pov == 27000 || pov == 31500;
+            default: return false;
         }
+    };
 
-        int reconstructed = -1;
-        if (activeToGame[0] && activeToGame[1]) reconstructed = 4500;
-        else if (activeToGame[2] && activeToGame[1]) reconstructed = 13500;
-        else if (activeToGame[2] && activeToGame[3]) reconstructed = 22500;
-        else if (activeToGame[0] && activeToGame[3]) reconstructed = 31500;
-        else if (activeToGame[0]) reconstructed = 0;
-        else if (activeToGame[1]) reconstructed = 9000;
-        else if (activeToGame[2]) reconstructed = 18000;
-        else if (activeToGame[3]) reconstructed = 27000;
-        data.dwData = (DWORD)reconstructed;
+    // Mapping based on POV index
+    SPF::System::GamepadButton dirs[4];
+    if (povIdx == 0 && (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation)) {
+        dirs[0] = SPF::System::GamepadButton::DPadUp;
+        dirs[1] = SPF::System::GamepadButton::DPadRight;
+        dirs[2] = SPF::System::GamepadButton::DPadDown;
+        dirs[3] = SPF::System::GamepadButton::DPadLeft;
+    } else {
+        // Generic POV to extended button mapping
+        static const SPF::System::GamepadButton genericMap[4][4] = {
+            {SPF::System::GamepadButton::DPadUp, SPF::System::GamepadButton::DPadRight, SPF::System::GamepadButton::DPadDown, SPF::System::GamepadButton::DPadLeft}, // POV0
+            {SPF::System::GamepadButton::POV1Up, SPF::System::GamepadButton::POV1Right, SPF::System::GamepadButton::POV1Down, SPF::System::GamepadButton::POV1Left}, // POV1
+            {SPF::System::GamepadButton::POV2Up, SPF::System::GamepadButton::POV2Right, SPF::System::GamepadButton::POV2Down, SPF::System::GamepadButton::POV2Left}, // POV2
+            {SPF::System::GamepadButton::POV3Up, SPF::System::GamepadButton::POV3Right, SPF::System::GamepadButton::POV3Down, SPF::System::GamepadButton::POV3Left}  // POV3
+        };
+        for (int k = 0; k < 4; ++k) dirs[k] = genericMap[povIdx][k];
     }
-    state.previousPov = currentPov;
+
+    // Process each direction
+    const int vals[] = {0, 9000, 18000, 27000};
+    bool activeToGame[4] = {false, false, false, false};
+
+    for (int j = 0; j < 4; ++j) {
+        bool curActive = isDir(currentPov, vals[j]);
+        bool prevActive = isDir(prevPov, vals[j]);
+        bool blocked = false;
+
+        if (curActive != prevActive) blocked = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, dirs[j], curActive, curActive ? 1.0f : 0.0f}, 2);
+        else if (curActive) blocked = inputManager.ProcessAndDecide(SPF::Input::GamepadEvent{0, dirs[j], true, 1.0f}, 2);
+
+        if (curActive && !blocked) activeToGame[j] = true;
+    }
+
+    // Reconstruct POV value for the game
+    int reconstructed = -1;
+    if (activeToGame[0] && activeToGame[1]) reconstructed = 4500;
+    else if (activeToGame[2] && activeToGame[1]) reconstructed = 13500;
+    else if (activeToGame[2] && activeToGame[3]) reconstructed = 22500;
+    else if (activeToGame[0] && activeToGame[3]) reconstructed = 31500;
+    else if (activeToGame[0]) reconstructed = 0;
+    else if (activeToGame[1]) reconstructed = 9000;
+    else if (activeToGame[2]) reconstructed = 18000;
+    else if (activeToGame[3]) reconstructed = 27000;
+    data.dwData = (DWORD)reconstructed;
+
+    state.previousPov[povIdx] = currentPov;
 }
 
 static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANCEW& instance, DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut, DWORD capacity, DWORD& sequence) {
@@ -292,6 +365,8 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
         if (sequence > g_lastSeenSequence) g_lastSeenSequence = sequence;
 
         bool block = false;
+        int axisIdx = -1;
+
         // 1. Buttons
         if (rgdod[i].dwOfs >= DIJOFS_BUTTON0 && rgdod[i].dwOfs < DIJOFS_BUTTON0 + 128) {
             int btnIdx = rgdod[i].dwOfs - DIJOFS_BUTTON0;
@@ -307,35 +382,113 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
                 state.buttonStates[btnIdx] = pressed;
                 state.virtualUpSent[btnIdx] = false;
                 bool managerBlock = false;
-                if (gamepadBtn != SPF::System::GamepadButton::Unknown) managerBlock = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, gamepadBtn, pressed, pressed ? 1.0f : 0.0f});
-                else managerBlock = inputManager.PublishJoystickEvent(SPF::Input::JoystickEvent{btnIdx, pressed});
+                if (gamepadBtn != SPF::System::GamepadButton::Unknown) managerBlock = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, gamepadBtn, pressed, pressed ? 1.0f : 0.0f}, 2);
+                else managerBlock = inputManager.PublishJoystickEvent(SPF::Input::JoystickEvent{btnIdx, pressed}, 2);
                 if (managerBlock && pressed) block = true;
             }
         }
         // 2. POV
-        else if (rgdod[i].dwOfs == DIJOFS_POV(0)) {
+        else if (rgdod[i].dwOfs >= DIJOFS_POV(0) && rgdod[i].dwOfs <= DIJOFS_POV(3)) {
             ProcessPovData(self, state, rgdod[i], type);
         }
         // 3. Axes
-        else if (rgdod[i].dwOfs >= DIJOFS_X && rgdod[i].dwOfs <= DIJOFS_RZ) {
-            if (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation) {
-                LONG* pPrev = nullptr; SPF::System::GamepadButton axisId = SPF::System::GamepadButton::Unknown;
-                if (rgdod[i].dwOfs == DIJOFS_X) { pPrev = &state.axes[0]; axisId = SPF::System::GamepadButton::LeftStickX; }
-                else if (rgdod[i].dwOfs == DIJOFS_Y) { pPrev = &state.axes[1]; axisId = SPF::System::GamepadButton::LeftStickY; }
-                else if (rgdod[i].dwOfs == DIJOFS_Z) { pPrev = &state.axes[2]; axisId = SPF::System::GamepadButton::RightTrigger; }
-                else if (rgdod[i].dwOfs == DIJOFS_RX) { pPrev = &state.axes[3]; axisId = SPF::System::GamepadButton::RightStickX; }
-                else if (rgdod[i].dwOfs == DIJOFS_RY) { pPrev = &state.axes[4]; axisId = SPF::System::GamepadButton::RightStickY; }
-                else if (rgdod[i].dwOfs == DIJOFS_RZ) { pPrev = &state.axes[5]; axisId = SPF::System::GamepadButton::LeftTrigger; }
+        else if (rgdod[i].dwOfs >= DIJOFS_X && rgdod[i].dwOfs <= DIJOFS_SLIDER(1)) {
+            if (rgdod[i].dwOfs == DIJOFS_X) axisIdx = 0;
+            else if (rgdod[i].dwOfs == DIJOFS_Y) axisIdx = 1;
+            else if (rgdod[i].dwOfs == DIJOFS_Z) axisIdx = 2;
+            else if (rgdod[i].dwOfs == DIJOFS_RX) axisIdx = 3;
+            else if (rgdod[i].dwOfs == DIJOFS_RY) axisIdx = 4;
+            else if (rgdod[i].dwOfs == DIJOFS_RZ) axisIdx = 5;
+            else if (rgdod[i].dwOfs == DIJOFS_SLIDER(0)) axisIdx = 6;
+            else if (rgdod[i].dwOfs == DIJOFS_SLIDER(1)) axisIdx = 7;
 
-                if (pPrev) {
-                    float norm = static_cast<float>((LONG)rgdod[i].dwData) / 32767.0f;
-                    float oldNorm = static_cast<float>(*pPrev) / 32767.0f;
-                    if (std::abs(norm - oldNorm) > 0.01f) {
-                        inputManager.ProcessAndDecide(SPF::Input::GamepadEvent{0, axisId, false, norm});
-                        *pPrev = (LONG)rgdod[i].dwData;
+            if (axisIdx != -1) {
+                std::lock_guard<std::mutex> lock(g_dinputStateMutex);
+                
+                // Fetch and cache range if not already present
+                if (state.axisMax[axisIdx] == 0 && state.axisMin[axisIdx] == 0) {
+                    DIPROPRANGE diprg;
+                    diprg.diph.dwSize = sizeof(DIPROPRANGE);
+                    diprg.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+                    diprg.diph.dwHow = DIPH_BYOFFSET;
+                    diprg.diph.dwObj = rgdod[i].dwOfs;
+                    if (SUCCEEDED(IDirectInputDevice8_GetProperty(self, DIPROP_RANGE, &diprg.diph))) {
+                        state.axisMin[axisIdx] = diprg.lMin;
+                        state.axisMax[axisIdx] = diprg.lMax;
+                    } else {
+                        state.axisMin[axisIdx] = -32768;
+                        state.axisMax[axisIdx] = 32767;
                     }
                 }
+
+                LONG rawData = (LONG)rgdod[i].dwData;
+                LONG rangeMin = state.axisMin[axisIdx];
+                LONG rangeMax = state.axisMax[axisIdx];
+                LONG rangeLen = rangeMax - rangeMin;
+
+                float normalized01 = 0.0f;
+                if (rangeLen != 0) {
+                    normalized01 = (float)(rawData - rangeMin) / (float)rangeLen;
+                }
+
+                float rawVal = 0.0f;
+                bool isCentered = (rangeMin < -100);
+
+                // Architectural fix: Triggers on Xbox controllers in DInput.
+                // Axis 2 (Z) is combined LT/RT and MUST be centered to split them.
+                // Axis 5 (Rz) is sometimes an independent RT and should be 0..1.
+                if (type == SPF::System::DeviceType::Xbox && axisIdx == 5) {
+                    isCentered = false;
+                }
+
+                if (isCentered) {
+                    rawVal = normalized01 * 2.0f - 1.0f;
+                } else {
+                    rawVal = normalized01;
+                }
+
+                bool isGamepad = (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation);
+                uint8_t finalType = isGamepad ? 0x02 : 0x04;
+                
+                int mappedIdx = axisIdx;
+                float finalNormValue = rawVal;
+
+                if (isGamepad && type == SPF::System::DeviceType::Xbox) {
+                    if (axisIdx == 0) mappedIdx = 0;      // LS X
+                    else if (axisIdx == 1) mappedIdx = 1; // LS Y
+                    else if (axisIdx == 2) { 
+                        // Split combined Z axis: rawVal is -1..1 (0 at rest)
+                        float lt = (rawVal > 0.01f) ? rawVal : 0.0f;
+                        float rt = (rawVal < -0.01f) ? -rawVal : 0.0f;
+                        inputManager.PublishAxisMove(0x02, 4, lt, 2);
+                        inputManager.PublishAxisMove(0x02, 5, rt, 2);
+                        block = inputManager.IsAxisConsumed(0x02, 4) || inputManager.IsAxisConsumed(0x02, 5);
+                        goto next_object;
+                    }
+                    else if (axisIdx == 3) mappedIdx = 2; // Rx -> RS X
+                    else if (axisIdx == 4) mappedIdx = 3; // Ry -> RS Y
+                    else if (axisIdx == 5) mappedIdx = 5; // Independent Rz -> RT
+                    else if (axisIdx == 6) mappedIdx = 6;
+                    else if (axisIdx == 7) mappedIdx = 7;
+                    else mappedIdx = -1;
+                } 
+                else if (isGamepad) {
+                    if (axisIdx == 2) mappedIdx = 2;      
+                    else if (axisIdx == 3) mappedIdx = 3; 
+                    else if (axisIdx == 4) mappedIdx = 4; 
+                    else if (axisIdx == 5) mappedIdx = 5; 
+                    else if (axisIdx == 6) mappedIdx = 6;
+                    else if (axisIdx == 7) mappedIdx = 7;
+                }
+
+                if (mappedIdx != -1 && inputManager.PublishAxisMove(finalType, mappedIdx, finalNormValue, 2)) {
+                    block = true;
+                }
             }
+
+            next_object:
+            // Sync previous values for capture logic delta detection
+            if (axisIdx >= 0 && axisIdx < 8) state.axes[axisIdx] = (LONG)rgdod[i].dwData;
         }
 
         if (!block) {

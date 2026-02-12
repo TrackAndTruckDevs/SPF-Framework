@@ -20,6 +20,9 @@ class EventManager;
 namespace UI {
 struct FocusComponentInSettingsWindow;
 }
+namespace Config {
+struct OnKeybindsModified;
+}
 }  // namespace Events
 namespace Utils {
 template <typename>
@@ -45,6 +48,7 @@ class SettingsWindow : public BaseWindow {
  private:
   void OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e);
   void PopulateConfigurableComponents();
+  void UpdateHardwareCodeUsageCount(const Events::Config::OnKeybindsModified& e);
   void RenderSettingsNode(const std::string& key, const nlohmann::ordered_json& node, const std::string& systemName, const std::string& currentPath, int depth);
   void RenderKeybindsSettings();
   void DrawSettingsRows(const nlohmann::ordered_json& settingsNode, const std::string& systemName, const std::string& parentPath);
@@ -56,6 +60,7 @@ class SettingsWindow : public BaseWindow {
 
   std::unique_ptr<Utils::Sink<void(const Events::UI::FocusComponentInSettingsWindow&)>> m_onFocusComponentSink;
   std::unique_ptr<Utils::Sink<void(const Input::InputCaptureUpdate&)>> m_onInputCaptureUpdateSink;
+  std::unique_ptr<Utils::Sink<void(const Events::Config::OnKeybindsModified&)>> m_onKeybindsModifiedSink;
 
   // State for keybinding editor
   std::optional<std::string> m_actionBeingEdited;
@@ -67,6 +72,7 @@ class SettingsWindow : public BaseWindow {
   int m_currentPressThreshold = 500;                      // Buffer for the slider
   std::optional<Input::InputCaptured> m_bufferedInputInfo;
   std::optional<Input::InputCaptureConflict> m_conflictInfo;
+  std::map<uint32_t, int> m_hardwareCodeUsageCount;
 
   // For press-type swap conflict resolution in the details popup
   std::optional<std::pair<std::string, nlohmann::ordered_json>> m_pressTypeSwapConflict;
@@ -90,8 +96,13 @@ class SettingsWindow : public BaseWindow {
   std::string m_keyCaptureConflictTextDetailedKey;
   std::string m_keyCaptureReassignShortPressButtonKey;
   std::string m_keyCaptureReassignLongPressButtonKey;
+  std::string m_keyCaptureReassignPositiveSideButtonKey;
+  std::string m_keyCaptureReassignNegativeSideButtonKey;
   std::string m_keyCaptureAddShortPressButtonKey;
   std::string m_keyCaptureAddLongPressButtonKey;
+  std::string m_keyCaptureAddPositiveSideButtonKey;
+  std::string m_keyCaptureAddNegativeSideButtonKey;
+  std::string m_keyCaptureReassignEntireAxisButtonKey;
   std::string m_keyCaptureActionListFormatKey;
 
   // Binding details popup
@@ -104,6 +115,23 @@ class SettingsWindow : public BaseWindow {
   std::string m_bindingDetailsThresholdLabelKey;
   std::string m_bindingDetailsCloseButtonKey;
 
+  std::string m_bindingDetailsModeLabelKey;
+  std::string m_bindingDetailsModeAnalogKey;
+  std::string m_bindingDetailsModeDigitalKey;
+  std::string m_bindingDetailsDeadzoneLabelKey;
+  std::string m_bindingDetailsSaturationLabelKey;
+  std::string m_bindingDetailsSensitivityLabelKey;
+  std::string m_bindingDetailsCurveLabelKey;
+  std::string m_bindingDetailsSmoothingLabelKey;
+  std::string m_bindingDetailsSideLabelKey;
+  std::string m_bindingDetailsSideBothKey;
+  std::string m_bindingDetailsSidePositiveKey;
+  std::string m_bindingDetailsSideNegativeKey;
+  std::string m_bindingDetailsRangeMinLabelKey;
+  std::string m_bindingDetailsRangeMaxLabelKey;
+  std::string m_bindingDetailsAccumulatorModeLabelKey;
+  std::string m_bindingDetailsInvertLabelKey;
+
   // Cached localization strings for inline conflict resolution
   std::string m_conflictPressTypeMessage;
   std::string m_conflictSwapQuestion;
@@ -113,6 +141,9 @@ class SettingsWindow : public BaseWindow {
   // Cached localization strings for enums
   std::string m_enumPressTypeShortKey;
   std::string m_enumPressTypeLongKey;
+  std::string m_enumSideBothKey;
+  std::string m_enumSidePositiveKey;
+  std::string m_enumSideNegativeKey;
 
   std::string m_keybindsUnassignedTextKey;
 

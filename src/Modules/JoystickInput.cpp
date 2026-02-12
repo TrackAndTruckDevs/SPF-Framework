@@ -51,5 +51,9 @@ bool JoystickInput::IsSameAs(const IBindableInput& other) const {
     return this->m_buttonIndex == otherJoystickInput.m_buttonIndex;
 }
 
+float JoystickInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const {
+    return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f;
+}
+
 } // namespace Modules
 SPF_NS_END

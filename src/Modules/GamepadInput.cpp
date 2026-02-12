@@ -10,7 +10,7 @@ namespace Modules {
 using namespace SPF::System;
 
 GamepadInput::GamepadInput(const nlohmann::ordered_json& config) {
-  std::string buttonName = config.value("button", "UNKNOWN_BUTTON");
+  std::string buttonName = config.value("key", config.value("button", "UNKNOWN_BUTTON"));
   m_button = GamepadButtonMapping::GetInstance().GetButton(buttonName);
 }
 
@@ -21,7 +21,7 @@ bool GamepadInput::IsTriggeredBy(const Input::GamepadEvent& event) const {
 
 nlohmann::ordered_json GamepadInput::ToJson() const {
   return {{"type", "gamepad"},
-          {"button", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}};
+          {"key", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}};
 }
 
 std::string GamepadInput::GetDisplayName() const {
@@ -55,6 +55,10 @@ bool GamepadInput::IsSameAs(const IBindableInput& other) const {
 
   const auto& otherGamepadInput = static_cast<const GamepadInput&>(other);
   return this->m_button == otherGamepadInput.m_button;
+}
+
+float GamepadInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const {
+    return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f;
 }
 
 }  // namespace Modules

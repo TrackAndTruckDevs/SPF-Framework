@@ -35,8 +35,8 @@ bool IsAxis(GamepadButton button) {
     case GamepadButton::LeftStickY:
     case GamepadButton::RightStickX:
     case GamepadButton::RightStickY:
-    case GamepadButton::LeftTrigger:
-    case GamepadButton::RightTrigger:
+    case GamepadButton::LeftTriggerAxis:
+    case GamepadButton::RightTriggerAxis:
       return true;
     default:
       return false;
@@ -56,7 +56,40 @@ InputManager::InputManager(Events::EventManager& eventManager) : m_eventManager(
 
 InputManager::~InputManager() { s_instance = nullptr; }
 
+static std::mutex s_axisConfigMutex;
+
+void InputManager::SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold, float sensitivity, float rMin, float rMax) {
+    std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+    auto& state = m_axisStates[hardwareCode];
+    state.policy = policy;
+    state.emulationEnabled = emulationEnabled;
+    state.isAccumulator = isAccumulator;
+    state.invert = invert;
+    state.side = side;
+    state.threshold = threshold;
+    state.sensitivity = sensitivity;
+    state.rangeMin = rMin;
+    state.rangeMax = rMax;
+
+    // If emulation is disabled, remove the axis from the digital state machine
+    if (!emulationEnabled) {
+        m_inputStates.erase(hardwareCode);
+        m_currentlyPressedHardwareCodes.erase(hardwareCode);
+    }
+}
+
+void InputManager::ResetAxisProperties() {
+    std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+    for (auto const& [code, state] : m_axisStates) {
+        m_inputStates.erase(code);
+        m_currentlyPressedHardwareCodes.erase(code);
+    }
+    m_axisStates.clear();
+    m_accumulatorTargets.clear();
+}
+
 void InputManager::Initialize() {
+  m_lastFrameTimestamp = std::chrono::steady_clock::now();
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   logger->Info("InputManager initialized.");
 }
@@ -84,9 +117,14 @@ void InputManager::PublishMouseMove(const MouseMoveEvent& event) {
   }
 }
 
-bool InputManager::PublishMouseButton(const MouseButtonEvent& event) {
+bool InputManager::PublishMouseButton(const MouseButtonEvent& event, uint8_t priority) {
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(event.iButton);
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) return state.blockInput;
+  state.lastPriority = priority; state.lastTimestamp = now;
+
   if (event.bPressed) {
       m_currentlyPressedHardwareCodes.insert(hardwareCode);
   } else {
@@ -97,7 +135,7 @@ bool InputManager::PublishMouseButton(const MouseButtonEvent& event) {
       return true;
   }
 
-  bool shouldBlock = ProcessAndDecide(event);
+  bool shouldBlock = ProcessAndDecide(event, priority);
 
   if (shouldBlock) {
     // If the event should be blocked, do not propagate to consumers and inform the caller to block it.
@@ -113,7 +151,12 @@ bool InputManager::PublishMouseButton(const MouseButtonEvent& event) {
   return false;
 }
 
-bool InputManager::PublishMouseWheel(const MouseWheelEvent& event) {
+bool InputManager::PublishMouseWheel(const MouseWheelEvent& event, uint8_t priority) {
+  // New logic: Mouse wheel is now treated as an axis
+  bool blocked = PublishAxisMove(0x03, 2, event.delta, priority);
+
+  if (blocked) return true;
+
   for (auto it = m_consumers.rbegin(); it != m_consumers.rend(); ++it) {
     if ((*it)->OnMouseWheel(event)) {
       // Event was consumed, stop propagation
@@ -123,9 +166,163 @@ bool InputManager::PublishMouseWheel(const MouseWheelEvent& event) {
   return false;
 }
 
-bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
+bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority) {
+    uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
+    
+    auto& state = m_axisStates[hardwareCode];
+    uint64_t now = GetTickCount64();
+    
+    // Priority and Anti-Bounce Logic:
+    // 1. If a higher priority source (lower number) is active, ignore this lower priority update.
+    // 2. If it's the same priority, allow update but apply 100ms anti-bounce if needed.
+    bool isLowerPriority = (priority > state.lastPriority);
+    bool isRecentlyUpdated = (now - state.lastTimestamp < 500); // 500ms window for priority lock
+
+    if (isLowerPriority && isRecentlyUpdated) {
+        return IsAxisConsumed(deviceType, axisIndex);
+    }
+
+    state.lastPriority = priority;
+    state.lastTimestamp = now;
+
+    if (state.isAccumulator) {
+        if (deviceType == 0x03) { // Mouse (Relative)
+            if (m_activeAxisValues.find(hardwareCode) == m_activeAxisValues.end()) {
+                state.value = (state.rangeMin + state.rangeMax) * 0.5f;
+            }
+            state.value += (value * state.sensitivity);
+            state.value = std::clamp(state.value, state.rangeMin, state.rangeMax);
+            m_activeAxisValues[hardwareCode] = state.value;
+        } else { // Gamepad/Joystick (Absolute) in Accumulator mode
+            // Apply noise deadzone (0.05) before storing as target speed
+            float speedToStore = value;
+            if (std::abs(speedToStore) < 0.05f) speedToStore = 0.0f;
+            m_accumulatorTargets[hardwareCode] = speedToStore;
+        }
+    } else {
+        state.value = value;
+        m_activeAxisValues[hardwareCode] = state.value;
+    }
+
+    // --- Capture Logic ---
+    if (m_captureState == InputCaptureState::Capturing) {
+        float startValue = 0.0f;
+        if (m_captureInitialAxisValues.count(hardwareCode)) {
+            startValue = m_captureInitialAxisValues[hardwareCode];
+        }
+
+        // Capture only if the axis has moved significantly from its starting position
+        if (std::abs(value - startValue) > 0.5f) {
+            bool captured = false;
+            std::shared_ptr<Modules::IBindableInput> inputObj;
+
+            if (deviceType == 0x02) { // Gamepad
+                GamepadButton btn = GamepadButton::Unknown;
+                switch (axisIndex) {
+                    case 0: btn = GamepadButton::LeftStickX; break;
+                    case 1: btn = GamepadButton::LeftStickY; break;
+                    case 2: btn = GamepadButton::RightStickX; break;
+                    case 3: btn = GamepadButton::RightStickY; break;
+                    case 4: btn = GamepadButton::LeftTriggerAxis; break;
+                    case 5: btn = GamepadButton::RightTriggerAxis; break;
+                }
+                
+                inputObj = std::make_shared<Modules::GamepadAxisInput>(nlohmann::ordered_json{{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(btn)}});
+                captured = true;
+            } else if (deviceType == 0x03) { // Mouse
+                if (axisIndex == 2) { // ONLY Scroll Wheel
+                    inputObj = std::make_shared<Modules::MouseAxisInput>(nlohmann::ordered_json{{"type", "mouse_axis"}, {"key", std::to_string(axisIndex)}});
+                    captured = true;
+                }
+            } else if (deviceType == 0x04) { // Joystick
+                inputObj = std::make_shared<Modules::JoystickAxisInput>(nlohmann::ordered_json{{"type", "joystick_axis"}, {"key", std::to_string(axisIndex)}});
+                captured = true;
+            }
+            
+            if (captured) {               
+                // FOR AXES: We finalize IMMEDIATELY. No chords allowed.
+                m_captureState = InputCaptureState::Idle;
+                InputCaptured captured_data{inputObj, m_capturingActionFullName, m_capturingOriginalBinding};
+                m_eventManager.System.OnInputCaptured.Call(captured_data);
+                
+                // Determine if we should block this specific event even during capture
+                return (state.policy == Config::ConsumptionPolicy::Always);
+            }
+        }
+    }
+
+    // --- Digital Emulation ---
+    if (m_captureState != InputCaptureState::Capturing && state.emulationEnabled && deviceType != 0x03) {
+        float absVal = std::abs(value);
+        bool wasPressed = m_currentlyPressedHardwareCodes.count(hardwareCode) > 0;
+        
+        // Relative Hysteresis logic
+        bool isPressed = wasPressed ? (absVal >= (state.threshold * 0.5f)) : (absVal >= state.threshold);       
+
+        if (isPressed) m_currentlyPressedHardwareCodes.insert(hardwareCode);
+        else m_currentlyPressedHardwareCodes.erase(hardwareCode);
+
+        HandleInputState(hardwareCode, isPressed, value, m_inputStates[hardwareCode]);
+    }
+
+    // --- Autonomous Blocking Logic ---
+    bool shouldBlock = false;
+    if (state.policy == Config::ConsumptionPolicy::Always) {
+        shouldBlock = true;
+    } else if (state.policy == Config::ConsumptionPolicy::OnUIFocus) {
+        // Block if UI has control
+        if (deviceType == 0x03) { // Mouse
+            if (axisIndex == 2) shouldBlock = !ShouldGameControlMouseWheel();
+            else shouldBlock = !ShouldGameControlMouseAxes();
+        } else {
+            // For others (gamepad), block if any UI is focusing buttons
+            shouldBlock = !ShouldGameControlMouseButtons(); 
+        }
+    } else if (state.policy == Config::ConsumptionPolicy::Manual) {
+        // Manual policy uses the pre-existing blockInput flag in m_inputStates
+        shouldBlock = m_inputStates[hardwareCode].blockInput;
+    }
+
+    return shouldBlock;
+}
+
+bool InputManager::IsAxisConsumed(uint8_t deviceType, int axisIndex) const {
+    uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
+    
+    auto it = m_axisStates.find(hardwareCode);
+    if (it == m_axisStates.end()) return false;
+
+    const auto& state = it->second;
+
+    if (state.policy == Config::ConsumptionPolicy::Always) return true;
+    if (state.policy == Config::ConsumptionPolicy::OnUIFocus) {
+        if (deviceType == 0x03) {
+            if (axisIndex == 2) return !ShouldGameControlMouseWheel();
+            return !ShouldGameControlMouseAxes();
+        }
+        return !ShouldGameControlMouseButtons();
+    }
+    if (state.policy == Config::ConsumptionPolicy::Manual) {
+        auto itState = m_inputStates.find(hardwareCode);
+        return (itState != m_inputStates.end()) ? itState->second.blockInput : false;
+    }
+
+    return false;
+}
+
+bool InputManager::IsAxisAccumulator(uint32_t hardwareCode) const {
+    auto it = m_axisStates.find(hardwareCode);
+    return (it != m_axisStates.end()) ? it->second.isAccumulator : false;
+}
+
+bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t priority) {
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(event.key);
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) return state.blockInput;
+  state.lastPriority = priority; state.lastTimestamp = now;
+
   if (event.pressed) {
       m_currentlyPressedHardwareCodes.insert(hardwareCode);
   } else {
@@ -189,7 +386,7 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
   }
 
   // If not consumed by UI, then process for keybinds and decide on blocking.
-  bool shouldBlock = ProcessAndDecide(event);
+  bool shouldBlock = ProcessAndDecide(event, priority);
 
   if (shouldBlock) {
     return true;
@@ -198,10 +395,19 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event) {
   return false;  // Not blocked, not consumed
 }
 
-bool InputManager::PublishGamepadEvent(const GamepadEvent& event) {
+bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priority) {
   // Update currently pressed hardware codes for chords (only for digital buttons)
   if (!IsAxis(event.button)) {
       uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
+      
+      auto& state = m_inputStates[hardwareCode];
+      uint64_t now = GetTickCount64();
+      if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) {
+          return state.blockInput;
+      }
+      state.lastPriority = priority;
+      state.lastTimestamp = now;
+
       if (event.pressed) {
           m_currentlyPressedHardwareCodes.insert(hardwareCode);
       } else {
@@ -218,7 +424,7 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event) {
   }
 
   // First, process the event through the state machine to determine if it should be blocked from the game.
-  bool shouldBlock = ProcessAndDecide(event);
+  bool shouldBlock = ProcessAndDecide(event, priority);
 
   // In capture mode, the decision from ProcessAndDecide is final.
   if (m_captureState == InputCaptureState::Capturing && event.pressed && !IsAxis(event.button)) {
@@ -252,9 +458,18 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event) {
   return shouldBlock;
 }
 
-bool InputManager::PublishJoystickEvent(const JoystickEvent& event) {
+bool InputManager::PublishJoystickEvent(const JoystickEvent& event, uint8_t priority) {
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
+  
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) {
+      return state.blockInput;
+  }
+  state.lastPriority = priority;
+  state.lastTimestamp = now;
+
   if (event.pressed) {
       m_currentlyPressedHardwareCodes.insert(hardwareCode);
   } else {
@@ -267,7 +482,7 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event) {
 
   // This function now mirrors PublishKeyboardEvent.
   // Process the event through the state machine to determine blocking
-  bool shouldBlock = ProcessAndDecide(event);
+  bool shouldBlock = ProcessAndDecide(event, priority);
 
   if (m_captureState == InputCaptureState::Capturing && event.pressed) {
     return shouldBlock;
@@ -292,9 +507,44 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event) {
 }
 
 void InputManager::ProcessButtonActions() {
+  auto now = std::chrono::steady_clock::now();
+  float dt = std::chrono::duration<float>(now - m_lastFrameTimestamp).count();
+  m_lastFrameTimestamp = now;
+
   if (!m_inPostCaptureCooldown) {
+    // --- Accumulator Integration ---
+    for (auto& [code, rawSpeed] : m_accumulatorTargets) {
+        auto& state = m_axisStates[code];
+        if (state.isAccumulator) {
+            float speed = rawSpeed;
+            
+            // 1. Noise Deadzone (0.01) - ignore tiny stick drift
+            if (std::abs(speed) < 0.01f) speed = 0.0f;
+            
+            // 2. Invert (apply to speed direction)
+            if (state.invert) speed *= -1.0f;
+
+            // Integration: value += speed * sensitivity * deltaTime
+            state.value += (speed * state.sensitivity * dt);
+            
+            // 3. Side-aware Clamping
+            float effectiveMin = state.rangeMin;
+            float effectiveMax = state.rangeMax;
+            
+            if (state.side == "positive") {
+                effectiveMin = (state.rangeMin < 0.0f) ? 0.0f : state.rangeMin;
+            } else if (state.side == "negative") {
+                effectiveMax = (state.rangeMax > 0.0f) ? 0.0f : state.rangeMax;
+            }
+
+            state.value = std::clamp(state.value, effectiveMin, effectiveMax);
+            m_activeAxisValues[code] = state.value;
+        }
+    }
+
     for (auto& pair : m_inputStates) {
-      if ((pair.first >> 24) == 0x02) { // Gamepad
+      uint8_t type = (pair.first >> 24) & 0xFF;
+      if (type == 0x02) { // Gamepad (Button or Axis)
           EvaluateActionLogic(pair.first, pair.second);
       }
     }
@@ -302,13 +552,14 @@ void InputManager::ProcessButtonActions() {
 
   // Sync states for the next frame's logic
   for (auto& pair : m_inputStates) {
-    if ((pair.first >> 24) == 0x02) pair.second.wasDown = pair.second.isDown;
+    uint8_t type = (pair.first >> 24) & 0xFF;
+    if (type == 0x02) pair.second.wasDown = pair.second.isDown;
   }
 }
 
 void InputManager::HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldBlock) {
     uint8_t type = (hardwareCode >> 24) & 0xFF;
-    uint32_t rawCode = hardwareCode & 0x00FFFFFF;
+    uint32_t rawCode = hardwareCode & 0x0000FFFF; // Index is in lower 16 bits
     
     // 1. Update internal block state
     auto it = m_inputStates.find(hardwareCode);
@@ -352,23 +603,25 @@ void InputManager::ProcessKeyboardActions() {
                       result = m_captureCodeToInputMap[*m_captureRecordedCodes.begin()];
                   } else {
                       // True chord
+                      logger->Info("[Capture] Finalizing chord with {} keys", m_captureRecordedCodes.size());
                       auto chord = std::make_shared<Modules::ChordInput>();
                       for (uint32_t c : m_captureRecordedCodes) {
-                          // We need to clone or create a new unique_ptr here since ChordInput takes ownership
-                          // but for simplicity in this flow, we'll re-parse the JSON of the input
                           chord->AddInput(Modules::InputFactory::CreateFromJson(m_captureCodeToInputMap[c]->ToJson()));
                       }
                       result = chord;
                   }
 
-                  logger->Info("Chord capture finalized: {}", result->GetDisplayName());
+                  logger->Info("[Capture] SUCCESS: Finalized capture: {}", result->GetDisplayName());
                   InputCaptured captured_data{result, m_capturingActionFullName, m_capturingOriginalBinding};
                   m_eventManager.System.OnInputCaptured.Call(captured_data);
                   m_captureState = InputCaptureState::Idle;
+              } else {
+                  logger->Warn("[Capture] Timer expired but no keys were ever recorded!");
+                  m_captureState = InputCaptureState::Idle;
               }
           } else {
-              // Some keys still held - TRIMMING (Example 4 logic)
-              // We reset Recorded keys to only those currently being Held.
+              // Some keys still held - TRIMMING
+              logger->Info("[Capture] Some keys still held, trimming recorded chord to current state.");
               m_captureRecordedCodes = m_captureHeldCodes;
               
               // Inform UI about the trimmed chord
@@ -387,7 +640,8 @@ void InputManager::ProcessKeyboardActions() {
 
   if (!m_inPostCaptureCooldown) {
     for (auto& pair : m_inputStates) {
-      if ((pair.first >> 24) == 0x01) { // Keyboard
+      uint8_t type = (pair.first >> 24) & 0xFF;
+      if (type == 0x01) { // Keyboard
           EvaluateActionLogic(pair.first, pair.second);
       }
     }
@@ -395,7 +649,8 @@ void InputManager::ProcessKeyboardActions() {
 
   // Sync states for the next frame's logic
   for (auto& pair : m_inputStates) {
-    if ((pair.first >> 24) == 0x01) pair.second.wasDown = pair.second.isDown;
+    uint8_t type = (pair.first >> 24) & 0xFF;
+    if (type == 0x01) pair.second.wasDown = pair.second.isDown;
   }
 
   // Reset the cooldown flag at the very end of all processing
@@ -405,12 +660,15 @@ void InputManager::ProcessKeyboardActions() {
 
   // Reset frame-specific blacklists at the end of all processing.
   m_capturedHardwareCodesThisFrame.clear();
+  m_minPriorityCapturedThisFrame = 255;
+  m_lastCaptureTimestamp = 0;
 }
 
 void InputManager::ProcessMouseActions() {
   if (!m_inPostCaptureCooldown) {
     for (auto& pair : m_inputStates) {
-      if ((pair.first >> 24) == 0x03) { // Mouse
+      uint8_t type = (pair.first >> 24) & 0xFF;
+      if (type == 0x03) { // Mouse
           EvaluateActionLogic(pair.first, pair.second);
       }
     }
@@ -418,14 +676,16 @@ void InputManager::ProcessMouseActions() {
 
   // Sync states for the next frame's logic
   for (auto& pair : m_inputStates) {
-    if ((pair.first >> 24) == 0x03) pair.second.wasDown = pair.second.isDown;
+    uint8_t type = (pair.first >> 24) & 0xFF;
+    if (type == 0x03) pair.second.wasDown = pair.second.isDown;
   }
 }
 
 void InputManager::ProcessJoystickActions() {
   if (!m_inPostCaptureCooldown) {
     for (auto& pair : m_inputStates) {
-      if ((pair.first >> 24) == 0x04) { // Joystick
+      uint8_t type = (pair.first >> 24) & 0xFF;
+      if (type == 0x04) { // Joystick
           EvaluateActionLogic(pair.first, pair.second);
       }
     }
@@ -433,27 +693,68 @@ void InputManager::ProcessJoystickActions() {
 
   // Sync states for the next frame's logic
   for (auto& pair : m_inputStates) {
-    if ((pair.first >> 24) == 0x04) pair.second.wasDown = pair.second.isDown;
+    uint8_t type = (pair.first >> 24) & 0xFF;
+    if (type == 0x04) pair.second.wasDown = pair.second.isDown;
   }
 }
 
-bool InputManager::ProcessAndDecide(const GamepadEvent& event) {
+bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority) {
   uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
-
-  // Handle axes separately from buttons (always pass through for now, as requested)
-  if (IsAxis(event.button)) {
-      return false; 
+  
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) {
+      return state.blockInput;
   }
+  state.lastPriority = priority;
+  state.lastTimestamp = now;
+
+  bool isAxis = IsAxis(event.button);
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing) {
-    if (event.pressed) {
-        logger->Info("Captured gamepad button for action: {}", m_capturingActionFullName);
+    uint64_t now_ms = GetTickCount64();
+    
+    // Cross-API Filtering: If we already captured a higher priority event very recently, ignore this one.
+    // This handles emulated controllers that spam both XInput and DInput.
+    if (priority > m_minPriorityCapturedThisFrame && (now_ms - m_lastCaptureTimestamp < 50)) {
+        return true; // Consume but ignore for recording
+    }
+
+    bool isTriggered = false;
+    if (isAxis) {
+        // For axes during capture, we require a significant displacement (threshold)
+        // to avoid accidental capture from stick drift.
+        isTriggered = std::abs(event.value) > 0.5f;
+    } else {
+        isTriggered = event.pressed;
+    }
+
+    if (isTriggered) {
+        // Architectural fix: During capture, we prefer axes for triggers.
+        // If this is a digital "button" event for a trigger, ignore it to let axis capture win.
+        if (!isAxis && (event.button == System::GamepadButton::LeftTrigger || event.button == System::GamepadButton::RightTrigger)) {
+            return true;
+        }
+
+        // Optimization: If this code is already held, ignore repeated polling events
+        // during capture to avoid resetting the chord finalization timer.
+        if (m_captureHeldCodes.count(hardwareCode)) {
+            return true;
+        }
+        
         m_captureHeldCodes.insert(hardwareCode);
         m_captureRecordedCodes.insert(hardwareCode);
-        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"button", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        m_minPriorityCapturedThisFrame = priority;
+        m_lastCaptureTimestamp = now_ms;
+        
+        if (isAxis) {
+            m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadAxisInput>(nlohmann::ordered_json{{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        } else {
+            m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        }
         m_isWaitingForCaptureFinalize = false; 
-    } else {
+    } else if (m_captureHeldCodes.count(hardwareCode)) {
         m_captureHeldCodes.erase(hardwareCode);
         m_lastCaptureReleaseTime = std::chrono::steady_clock::now();
         m_isWaitingForCaptureFinalize = true; 
@@ -461,15 +762,20 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event) {
 
     UpdateCaptureUI();
 
-    // Reset the state in the unified map
+    // Reset the state in the unified map to prevent actions during capture
     auto& state = m_inputStates[hardwareCode];
     state.isDown = false;
     state.wasDown = false;
     state.longPressTriggered = false;
-    return true;  // Consume the event
+    return true;  // Consume the event during capture
   }
 
-  // Delegate to unified handler
+  // Handle axes separately from buttons for normal gameplay (pass through)
+  if (isAxis) {
+      return false; 
+  }
+
+  // Delegate to unified handler for buttons
   return HandleInputState(hardwareCode, event.pressed, event.value, m_inputStates[hardwareCode]);
 }
 
@@ -489,6 +795,12 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
 
     bool wasDown = state.isDown;
     state.isDown = isDown;
+
+    // if (wasDown != state.isDown) {
+    //     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
+    //     logger->Info("[HandleInputState] Code {:#010x} transition: {} -> {}", 
+    //         hardwareCode, wasDown ? "Down" : "Up", state.isDown ? "Down" : "Up");
+    // }
 
     // On new press (Up -> Down transition)
     if (!wasDown && state.isDown) {
@@ -516,11 +828,24 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
              }
         }
 
-        // Determine initial block policy based on the short press action.
+        // Determine initial block policy.
         Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
         
         if (bestShort) {
              policy = bestShort->Policy;
+        }
+
+        // If there's a long press binding for a single key (not a chord) that requires blocking,
+        // we should block immediately.
+        if (bestLong && bestLong->Policy > policy) {
+            bool isLongPressChord = false;
+            if (auto* chord = dynamic_cast<const Modules::ChordInput*>(bestLong->Input.get())) {
+                isLongPressChord = true;
+            }
+            
+            if (!isLongPressChord) {
+                policy = bestLong->Policy;
+            }
         }
 
         bool shouldBlock = false;
@@ -575,10 +900,15 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
     return state.blockInput;
 }
 
-bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
+bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t priority) {
   auto button = static_cast<MouseButton>(event.iButton);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
+
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) return state.blockInput;
+  state.lastPriority = priority; state.lastTimestamp = now;
 
   if (m_captureState == InputCaptureState::Capturing) {
     // In capture mode, we handle input differently.
@@ -590,7 +920,6 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
     }
 
     if (event.bPressed) {
-        logger->Info("Captured mouse button for action: {}", m_capturingActionFullName);
         m_captureHeldCodes.insert(hardwareCode);
         m_captureRecordedCodes.insert(hardwareCode);
         m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::MouseInput>(nlohmann::ordered_json{{"type", "mouse"}, {"key", MouseButtonMapping::GetInstance().ToString(button)}});
@@ -618,14 +947,18 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event) {
   return HandleInputState(hardwareCode, event.bPressed, event.bPressed ? 1.0f : 0.0f, m_inputStates[hardwareCode]);
 }
 
-bool InputManager::ProcessAndDecide(const JoystickEvent& event) {
+bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto buttonIndex = event.buttonIndex;
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
 
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) return state.blockInput;
+  state.lastPriority = priority; state.lastTimestamp = now;
+
   if (m_captureState == InputCaptureState::Capturing) {
     if (event.pressed) {
-        logger->Info("Captured joystick button for action: {}", m_capturingActionFullName);
         m_captureHeldCodes.insert(hardwareCode);
         m_captureRecordedCodes.insert(hardwareCode);
         m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::JoystickInput>(nlohmann::ordered_json{{"type", "joystick"}, {"key", JoystickButtonMapping::GetInstance().ToString(buttonIndex)}});
@@ -666,14 +999,16 @@ void InputManager::ResetStateForCode(uint32_t code) {
     }
 }
 
-bool InputManager::ProcessAndDecide(const KeyboardEvent& event) {
-  // auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
-  // logger->Trace("ProcessAndDecide (Keyboard): key={}, pressed={}", (int)event.key, event.pressed);
+bool InputManager::ProcessAndDecide(const KeyboardEvent& event, uint8_t priority) {
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(event.key);
+  auto& state = m_inputStates[hardwareCode];
+  uint64_t now = GetTickCount64();
+  if (priority > state.lastPriority && (now - state.lastTimestamp < 100)) return state.blockInput;
+  state.lastPriority = priority; state.lastTimestamp = now;
 
   // Keyboard has no analog value, so passing 0.0f/1.0f
   // Logic for capture is handled in PublishKeyboardEvent, so here we only do State/Blocking
-  return HandleInputState(hardwareCode, event.pressed, event.pressed ? 1.0f : 0.0f, m_inputStates[hardwareCode]);
+  return HandleInputState(hardwareCode, event.pressed, event.pressed ? 1.0f : 0.0f, state);
 }
 
 bool InputManager::ShouldGameControlMouseAxes() const { return m_gameControlsMouseAxes; }
@@ -700,6 +1035,7 @@ void InputManager::StartInputCapture(const std::string& actionFullName, const nl
   // Reset chord capture state
   m_captureHeldCodes.clear();
   m_captureRecordedCodes.clear();
+  m_captureInitialAxisValues = m_activeAxisValues; // Snapshot!
   m_captureCodeToInputMap.clear();
   m_isWaitingForCaptureFinalize = false;
 }
@@ -817,7 +1153,7 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
 
             auto longPressThreshold = keyBindsManager.GetLongPressThreshold();
             auto pressTs = state.pressTimestamp;
-
+            
             const auto* dominantBinding = longPressBinding ? longPressBinding : shortPressBinding;
             if (dominantBinding) {
                 if (auto* chord = dynamic_cast<const Modules::ChordInput*>(dominantBinding->Input.get())) {
@@ -832,11 +1168,12 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
             }
 
             auto pressedDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - pressTs);
+            long long thresholdMs = (long long)longPressThreshold.count();
 
-            if (pressedDuration >= longPressThreshold) {
-                state.longPressTriggered = true;
 
+            if (pressedDuration.count() >= thresholdMs) {
                 if (longPressBinding) {
+                    state.longPressTriggered = true;
                     bool isLead = true;
                     std::vector<uint32_t> keysToBlock;
                     keysToBlock.push_back(hardwareCode);
@@ -859,7 +1196,6 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
                         keyBindsManager.TriggerAction(hardwareCode, PressType::Long);
 
                         // Update block policy based on long press action
-                        // We need the policy. Since we have the binding, use it directly.
                         auto policy = longPressBinding->Policy;
                         
                         bool shouldBlock = false;
@@ -872,6 +1208,12 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
 
                         for (uint32_t code : keysToBlock) {
                             HandleRetroactiveBlocking(code, shouldBlock);
+                            
+                            // For axes, we must also update the policy in m_axisStates
+                            if ((code >> 16) & 0x01) {
+                                std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+                                m_axisStates[code].policy = policy;
+                            }
                         }
                     }
                 }

@@ -275,8 +275,11 @@ add_library(SPF SHARED
     "src/Modules/KeyBindsManager.cpp"
     "src/Modules/KeyboardInput.cpp"
     "src/Modules/GamepadInput.cpp"
+    "src/Modules/GamepadAxisInput.cpp"
     "src/Modules/MouseInput.cpp"
+    "src/Modules/MouseAxisInput.cpp"
     "src/Modules/JoystickInput.cpp"
+    "src/Modules/JoystickAxisInput.cpp"
     "src/Modules/ChordInput.cpp"
     
     "src/Localization/LocalizationManager.cpp"

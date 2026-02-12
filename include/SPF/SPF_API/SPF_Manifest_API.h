@@ -47,10 +47,17 @@
  *     // Logging: Level ("trace", "debug", "info", "warn", "error", "critical"), FileSink (bool)
  *     api->Defaults_SetLogging(h, "info", true);
  *
- *     // Keybinds: Group, Action, Device ("keyboard", "gamepad"), Key (e.g. "KEY_F5"), 
- *     // PressType ("short", "long"), Threshold (ms), Consume ("always", "never", "on_ui_focus"),
- *     // Behavior ("press", "toggle", "hold")
- *     api->Defaults_AddKeybind(h, "MyPlugin.Main", "toggle", "keyboard", "KEY_F5", "short", 0, "always", "toggle");
+ *     // Keybinds (Universal): Group, Action, Type, Key, Consume
+ *
+ *     // Example 1: Digital keyboard binding (F5 to toggle menu)
+ *     api->Defaults_AddKeybind(h, "MyPlugin.Main", "toggle", "keyboard", "KEY_F5", "always");
+ *
+ *     // Example 2: Analog gamepad binding (Right Trigger for throttle)
+ *     // Note: Use "_AXIS" suffix for gamepad triggers and sticks to enable analog mode.
+ *     api->Defaults_AddKeybind(h, "MyPlugin.Vehicle", "throttle", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
+ *
+ *     // Example 3: Mouse wheel binding (Axis index 2)
+ *     api->Defaults_AddKeybind(h, "MyPlugin.UI", "zoom", "mouse_axis", "2", "on_ui_focus");
  *
  *     // Windows: Name, Visible (bool), Interactive (bool), X, Y, W, H, Collapsed (bool), AutoScroll (bool)
  *     api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
@@ -270,26 +277,69 @@ typedef struct SPF_Manifest_Builder_API {
     void (*Defaults_SetLocalization)(SPF_Manifest_Builder_Handle* h, const char* langCode);
 
     /**
-     * @brief Adds a default keybind definition for an action.
-     * @param h The builder handle.
-     * @param groupName The group name (e.g., "MyPlugin.Main").
-     * @param actionName The action name (e.g., "toggle_window").
-     * @param type Input device type. Valid values: "keyboard", "gamepad", "mouse".
-     * @param key The key/button name (e.g., "KEY_F5", "BTN_A"). See `VirtualKeyMapping` for list.
-     * @param pressType Type of press. Valid values: "short", "long".
-     * @param thresholdMs Time in milliseconds required for a "long" press. (0 for short press).
-     * @param consume Input consumption policy. Valid values: "always", "never", "on_ui_focus".
-     * @param behavior Action behavior. Valid values: "press", "toggle", "hold".
+     * @brief Registers a default binding (key, button, or axis) for a logical action.
+     * 
+     * @details This is a high-level, universal function used to define default input assignments 
+     *          in the plugin's manifest. The framework handles all low-level configuration and 
+     *          initialization based on the 'type' parameter.
+     * 
+     *          ### 1. Automatic Defaulting & Internal Logic
+     * 
+     *          When this function is called, the framework populates a complex internal binding 
+     *          structure with standard defaults. These defaults vary significantly between 
+     *          Digital (buttons) and Analog (axes) inputs:
+     * 
+     *          #### A. Digital Inputs ("keyboard", "gamepad")
+     *          Optimized for binary on/off actions (e.g., "Open Menu", "Honk").
+     *          - @b press_type: Defaults to "short" (triggers immediately on press).
+     *          - @b press_threshold_ms: Defaults to 500ms (relevant if user later switches to "long" press in UI).
+     *          - @b behavior: Defaults to "toggle" (standard one-time trigger).
+     *          - @b value: Internally produces 0.0 (released) or 1.0 (pressed).
+     * 
+     *          #### B. Analog Inputs ("gamepad_axis", "mouse_axis", "joystick_axis")
+     *          Optimized for continuous movement (e.g., "Throttle", "Steering", "Scroll").
+     *          - @b mode: Defaults to "analog" (provides a smooth float value).
+     *          - @b deadzone: Defaults to 0.0 (raw input passed initially).
+     *          - @b saturation: Defaults to 1.0 (reaches max value at full physical deflection).
+     *          - @b sensitivity: Defaults to 1.0 (linear scale multiplier).
+     *          - @b curve: Defaults to "linear" (no transformation applied).
+     *          - @b side: Defaults to "both" (uses the full range of the axis [-1, 1]). Can also be "positive" (0 to 1) or "negative" (0 to -1, normalized to positive).
+     *          - @b smoothing: Defaults to 0.0 (no temporal interpolation).
+     *          - @b invert: Defaults to false.
+     *          - @b range_min/max: Defaults to -1.0 and 1.0 (standard for sticks/joysticks).
+     *          - @b threshold: Defaults to 0.5 (used if the user later switches mode to "digital" in UI).
+     * 
+     * @param h          The manifest builder handle.
+     * @param groupName  Action group identifier (e.g., "MyPlugin.Movement"). Used for UI grouping.
+     * @param actionName The logical action name (e.g., "forward"). 
+     *                   The full logical action key is formed as "groupName.actionName".
+     * @param type       Input category. Supported values:
+     *                   - "keyboard"      : Standard physical keys.
+     *                   - "mouse"         : Mouse buttons.
+     *                   - "gamepad"       : Digital gamepad buttons (FACE_DOWN, FACE_RIGHT, SPECIAL_RIGHT...).
+     *                   - "gamepad_axis"  : Analog sticks and triggers (LEFT_STICK_X, RIGHT_TRIGGER_AXIS...).
+     *                   - "mouse_axis"    : Mouse wheel (Index 2).
+     *                   - "joystick_axis" : Generic joystick/pedal axes (Index 0, 1, 2...).
+     * @param key        Physical input identifier:
+     *                   - For @b keyboard: Use Virtual Key names ("KEY_W", "KEY_SPACE", "KEY_ESCAPE", "KEY_F1"...).
+     *                   - For @b mouse: Use Button names ("MOUSE_LEFT", "MOUSE_RIGHT", "MOUSE_MIDDLE", "MOUSE_X1"...).
+     *                   - For @b gamepad: Use Button names ("FACE_DOWN", "FACE_RIGHT", "SPECIAL_RIGHT", "LEFT_SHOULDER"...).
+     *                   - For @b gamepad_axis: Use Axis names ("LEFT_STICK_X", "LEFT_STICK_Y", "RIGHT_TRIGGER_AXIS"...).
+     *                   - For @b mouse_axis: Use "2" for the vertical scroll wheel.
+     *                   - For @b joystick: Use "BUTTON_" prefix with 1-based index (e.g., "BUTTON_1", "BUTTON_12").
+     *                   - For @b joystick_axis: Use the 0-based index of the axis as a string (e.g., "0", "5").
+     * @param consume    Input consumption policy:
+     *                   - "never"       : The game always receives the input.
+     *                   - "always"      : Input is captured by the framework and completely hidden from the game.
+     *                   - "on_ui_focus" : Input is blocked only when a framework window is focused.
+     *                   - "manual"      : The plugin controls the blocking state via Kbind_SetBlockState().
      */
     void (*Defaults_AddKeybind)(SPF_Manifest_Builder_Handle* h, 
                                 const char* groupName, 
                                 const char* actionName, 
                                 const char* type, 
                                 const char* key, 
-                                const char* pressType, 
-                                int thresholdMs, 
-                                const char* consume, 
-                                const char* behavior);
+                                const char* consume);
 
     /**
      * @brief Adds a default UI window configuration.

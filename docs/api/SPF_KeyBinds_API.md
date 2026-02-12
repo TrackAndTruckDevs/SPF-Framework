@@ -45,6 +45,48 @@ void MyPlugin_OnActivated(const SPF_Core_API* api) {
 }
 ```
 
+## Data Types (Enums)
+
+### `SPF_BindingType`
+Identifies the physical source of an input binding.
+- `SPF_BINDING_UNKNOWN`: Unknown or invalid type.
+- `SPF_BINDING_KEYBOARD`: Standard keyboard key.
+- `SPF_BINDING_GAMEPAD`: Digital button on a gamepad.
+- `SPF_BINDING_MOUSE`: Digital button on a mouse.
+- `SPF_BINDING_JOYSTICK`: Digital button on a flight stick/joystick.
+- `SPF_BINDING_CHORD`: Key combination (e.g., Shift+G).
+- `SPF_BINDING_GAMEPAD_AXIS`: Analog stick or trigger on a gamepad.
+- `SPF_BINDING_MOUSE_AXIS`: Mouse wheel or cursor movement.
+- `SPF_BINDING_JOYSTICK_AXIS`: Analog axis on a joystick.
+
+### `SPF_ActivationBehavior`
+Describes how a digital action responds to user interaction (affects callbacks only).
+- `SPF_BEHAVIOR_HOLD`: Action is active as long as the button is physically held.
+- `SPF_BEHAVIOR_TOGGLE`: Action toggles state (ON/OFF) with each press.
+- `SPF_BEHAVIOR_NA`: Not applicable (e.g., for raw analog axes).
+
+### `SPF_PressType`
+Distinguishes between short and long presses.
+- `SPF_PRESS_SHORT`: Standard quick press.
+- `SPF_PRESS_LONG`: Button must be held for a specific duration.
+- `SPF_PRESS_NA`: Not applicable.
+
+### `SPF_InputMode`
+- `SPF_MODE_ANALOG`: Axis returns smooth range values.
+- `SPF_MODE_DIGITAL`: Axis acts like a button (triggers at threshold).
+- `SPF_MODE_NA`: Not applicable.
+
+### `SPF_AxisSide`
+- `SPF_SIDE_POSITIVE`: Only positive values (0.0 to 1.0).
+- `SPF_SIDE_NEGATIVE`: Only negative values (0.0 to -1.0).
+- `SPF_SIDE_BOTH`: Full range used.
+- `SPF_SIDE_NA`: Not applicable.
+
+### `SPF_AccumulatorMode`
+- `SPF_ACCUMULATOR_OFF`: Normal absolute input.
+- `SPF_ACCUMULATOR_ON`: Virtual Knob (accumulates deltas).
+- `SPF_ACCUMULATOR_NA`: Not applicable.
+
 ## Function Reference
 
 ---
@@ -59,6 +101,62 @@ Registers a callback function for a specific action defined in the manifest.
 *   **h:** The context handle obtained from `Kbind_GetContext`.
 *   **actionName:** The name of the action. This **must** exactly match an `actionName` you defined in your manifest.
 *   **callback:** A pointer to a `void(void)` function that will be called when the action is triggered.
+
+---
+**`float Kbind_GetActionValue(SPF_KeyBinds_Handle* h, const char* actionName)`**
+Gets the current value of the input bound to the specified action. This function provides a unified way to read both digital and analog inputs.
+
+> **IMPORTANT FOR DIGITAL ACTIONS:**
+> For actions bound to buttons, this method returns the **immediate physical state** (1.0 = pressed, 0.0 = released). It **ignores** logical behaviors such as 'toggle', 'hold', or 'press_type'. If you need to react to these logical events, use `Kbind_Register` instead.
+
+*   **h:** The context handle obtained from `Kbind_GetContext`.
+*   **actionName:** The full name of the action (e.g., "MyPlugin.Controls.Throttle").
+*   **Returns:** A `float` value representing the current processed state:
+    *   **Digital Buttons (Keyboard/Gamepad):** Returns `1.0` if pressed, `0.0` otherwise.
+    *   **Analog Triggers:** Returns `0.0` to `1.0`.
+    *   **Analog Sticks (Standard):**
+        *   Bound to **Both** sides: returns raw value `-1.0` to `1.0`.
+        *   Bound to **Positive Side**: returns `0.0` to `1.0`.
+        *   Bound to **Negative Side**: returns `0.0` to `1.0` (Normalized absolute magnitude). This is useful for splitting one axis into two logical actions (e.g., Brake/Throttle) without manual math.
+    *   **Accumulator Mode (Knobs/Mouse Wheel):** Returns the current persistent state of the virtual controller. By default, this is clamped to `[-1.0, 1.0]`, but the limits can be customized by the user in the Settings UI.
+
+**Normalization Logic for Sides:**
+To simplify plugin development, when an action is mapped to a specific side of an axis, the framework treats it as a 0..1 scale representing "how much" the action is active:
+- **Positive Side:** Physical `0.5` -> Returns `0.5`; Physical `-0.5` -> Returns `0.0`.
+- **Negative Side:** Physical `-0.8` -> Returns `0.8`.
+- **Both Sides:** Physical `-0.8` -> Returns `-0.8`.
+
+---
+**`int Kbind_GetBindingCount(SPF_KeyBinds_Handle* h, const char* actionName)`**
+Returns the number of physical bindings (keys/axes) assigned to a logical action.
+
+---
+**`SPF_BindingType Kbind_GetBindingType(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Gets the source type of a specific binding (Keyboard, Gamepad, etc.).
+
+---
+**`SPF_ActivationBehavior Kbind_GetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Gets the behavior (Hold/Toggle) for a binding.
+
+---
+**`SPF_PressType Kbind_GetBindingPressType(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Gets the press type (Short/Long) for a binding.
+
+---
+**`SPF_InputMode Kbind_GetBindingMode(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Gets the input mode (Analog/Digital) for an axis.
+
+---
+**`SPF_AxisSide Kbind_GetBindingSide(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Identifies which side of the axis range is monitored.
+
+---
+**`SPF_AccumulatorMode Kbind_GetBindingAccumulatorMode(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Gets the accumulator mode for an axis.
+
+---
+**`int Kbind_GetBindingName(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size)`**
+Gets the human-readable display name of the input (e.g., "Space", "Cross").
 
 ---
 **`void Kbind_SetBlockState(SPF_KeyBinds_Handle* h, const char* actionName, bool block)`**
@@ -128,3 +226,27 @@ void MyPlugin_OnActivated(const SPF_Core_API* api) {
 }
 ```
 Now, when the user presses F5 (or whatever key they rebind it to), the `ToggleMainWindow` function will be called.
+
+## Advanced Usage Example: Inspecting Bindings
+
+This example shows how to inspect all physical bindings assigned to an action.
+
+```cpp
+void OnActivated(const SPF_Core_API* api) {
+    SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
+    const char* action = "MyPlugin.General.Jump";
+
+    int count = api->keybinds->Kbind_GetBindingCount(h, action);
+    for (int i = 0; i < count; i++) {
+        SPF_BindingType type = api->keybinds->Kbind_GetBindingType(h, action, i);
+        
+        char name[64];
+        api->keybinds->Kbind_GetBindingName(h, action, i, name, sizeof(name));
+        
+        if (type == SPF_BINDING_GAMEPAD_AXIS) {
+            SPF_InputMode mode = api->keybinds->Kbind_GetBindingMode(h, action, i);
+            // Adapt logic if user is using a trigger as a digital button
+        }
+    }
+}
+```

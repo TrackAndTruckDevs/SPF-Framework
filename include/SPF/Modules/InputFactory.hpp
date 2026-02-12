@@ -2,8 +2,11 @@
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/Modules/KeyboardInput.hpp"
 #include "SPF/Modules/GamepadInput.hpp"
+#include "SPF/Modules/GamepadAxisInput.hpp"
 #include "SPF/Modules/MouseInput.hpp"
+#include "SPF/Modules/MouseAxisInput.hpp"
 #include "SPF/Modules/JoystickInput.hpp"
+#include "SPF/Modules/JoystickAxisInput.hpp"
 #include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include <nlohmann/json.hpp>
@@ -38,6 +41,14 @@ class InputFactory {
         logger->Warn("Validation failed for gamepad input: {}", configJson.dump());
         return nullptr;
       }
+    } else if (type == "gamepad_axis") {
+        auto input = std::make_unique<GamepadAxisInput>(configJson);
+        if (input && input->IsValid()) {
+            return input;
+        } else {
+            logger->Warn("Validation failed for gamepad axis input: {}", configJson.dump());
+            return nullptr;
+        }
     } else if (type == "mouse") {
         auto input = std::make_unique<MouseInput>(configJson);
         if (input && input->IsValid()) {
@@ -46,12 +57,28 @@ class InputFactory {
             logger->Warn("Validation failed for mouse input: {}. Note: Left mouse button cannot be bound.", configJson.dump());
             return nullptr;
         }
+    } else if (type == "mouse_axis") {
+        auto input = std::make_unique<MouseAxisInput>(configJson);
+        if (input && input->IsValid()) {
+            return input;
+        } else {
+            logger->Warn("Validation failed for mouse axis input: {}", configJson.dump());
+            return nullptr;
+        }
     } else if (type == "joystick") {
         auto input = std::make_unique<JoystickInput>(configJson);
         if (input && input->IsValid()) {
             return input;
         } else {
             logger->Warn("Validation failed for joystick input: {}", configJson.dump());
+            return nullptr;
+        }
+    } else if (type == "joystick_axis") {
+        auto input = std::make_unique<JoystickAxisInput>(configJson);
+        if (input && input->IsValid()) {
+            return input;
+        } else {
+            logger->Warn("Validation failed for joystick axis input: {}", configJson.dump());
             return nullptr;
         }
     } else if (type == "chord") {

@@ -231,6 +231,11 @@ struct PluginContext {
    * will automatically unregister the callback.
    */
   SPF_GameLog_Callback_Handle* gameLogCallbackHandle = nullptr;
+
+  /**
+   * @brief Handle to our Keybinds API context.
+   */
+  SPF_KeyBinds_Handle* keybindsHandle = nullptr;
 };
 
 /**
@@ -403,6 +408,11 @@ void RenderEventsTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Virtual Input" tab.
  */
 void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Input Test" tab for analog axis testing.
+ */
+void RenderInputTestTab(SPF_UI_API* ui, void* user_data);
 
 // --- Helper Functions ---
 // These are internal functions that encapsulate specific logic for better organization.

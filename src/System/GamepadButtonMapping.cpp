@@ -108,6 +108,31 @@ void GamepadButtonMapping::InitializeMapping() {
   addMapping(GamepadButton::LeftStickY, "LEFT_STICK_Y");
   addMapping(GamepadButton::RightStickX, "RIGHT_STICK_X");
   addMapping(GamepadButton::RightStickY, "RIGHT_STICK_Y");
+  addMapping(GamepadButton::LeftTriggerAxis, "LEFT_TRIGGER_AXIS");
+  addMapping(GamepadButton::RightTriggerAxis, "RIGHT_TRIGGER_AXIS");
+
+  // Additional Axes
+  addMapping(GamepadButton::AxisRx, "AXIS_RX");
+  addMapping(GamepadButton::AxisRy, "AXIS_RY");
+  addMapping(GamepadButton::AxisRz, "AXIS_RZ");
+  addMapping(GamepadButton::Slider0, "SLIDER_0");
+  addMapping(GamepadButton::Slider1, "SLIDER_1");
+
+  // Additional POVs
+  addMapping(GamepadButton::POV1Up, "POV1_UP");
+  addMapping(GamepadButton::POV1Down, "POV1_DOWN");
+  addMapping(GamepadButton::POV1Left, "POV1_LEFT");
+  addMapping(GamepadButton::POV1Right, "POV1_RIGHT");
+
+  addMapping(GamepadButton::POV2Up, "POV2_UP");
+  addMapping(GamepadButton::POV2Down, "POV2_DOWN");
+  addMapping(GamepadButton::POV2Left, "POV2_LEFT");
+  addMapping(GamepadButton::POV2Right, "POV2_RIGHT");
+
+  addMapping(GamepadButton::POV3Up, "POV3_UP");
+  addMapping(GamepadButton::POV3Down, "POV3_DOWN");
+  addMapping(GamepadButton::POV3Left, "POV3_LEFT");
+  addMapping(GamepadButton::POV3Right, "POV3_RIGHT");
 
   // Initialize Xbox Display Names
   m_xboxNames[GamepadButton::FaceDown] = "A";
@@ -126,6 +151,33 @@ void GamepadButtonMapping::InitializeMapping() {
   m_xboxNames[GamepadButton::SpecialRight] = "Menu";
   m_xboxNames[GamepadButton::LeftStick] = "LS";
   m_xboxNames[GamepadButton::RightStick] = "RS";
+  m_xboxNames[GamepadButton::LeftStickX] = "LS X";
+  m_xboxNames[GamepadButton::LeftStickY] = "LS Y";
+  m_xboxNames[GamepadButton::RightStickX] = "RS X";
+  m_xboxNames[GamepadButton::RightStickY] = "RS Y";
+  m_xboxNames[GamepadButton::LeftTriggerAxis] = "LT Axis";
+  m_xboxNames[GamepadButton::RightTriggerAxis] = "RT Axis";
+
+  m_xboxNames[GamepadButton::AxisRx] = "Axis Rx";
+  m_xboxNames[GamepadButton::AxisRy] = "Axis Ry";
+  m_xboxNames[GamepadButton::AxisRz] = "Axis Rz";
+  m_xboxNames[GamepadButton::Slider0] = "Slider 0";
+  m_xboxNames[GamepadButton::Slider1] = "Slider 1";
+
+  m_xboxNames[GamepadButton::POV1Up] = "POV 1 Up";
+  m_xboxNames[GamepadButton::POV1Down] = "POV 1 Down";
+  m_xboxNames[GamepadButton::POV1Left] = "POV 1 Left";
+  m_xboxNames[GamepadButton::POV1Right] = "POV 1 Right";
+
+  m_xboxNames[GamepadButton::POV2Up] = "POV 2 Up";
+  m_xboxNames[GamepadButton::POV2Down] = "POV 2 Down";
+  m_xboxNames[GamepadButton::POV2Left] = "POV 2 Left";
+  m_xboxNames[GamepadButton::POV2Right] = "POV 2 Right";
+
+  m_xboxNames[GamepadButton::POV3Up] = "POV 3 Up";
+  m_xboxNames[GamepadButton::POV3Down] = "POV 3 Down";
+  m_xboxNames[GamepadButton::POV3Left] = "POV 3 Left";
+  m_xboxNames[GamepadButton::POV3Right] = "POV 3 Right";
 
   // Initialize PlayStation Display Names
   m_playstationNames[GamepadButton::FaceDown] = "Cross";
@@ -144,6 +196,33 @@ void GamepadButtonMapping::InitializeMapping() {
   m_playstationNames[GamepadButton::SpecialRight] = "Options";
   m_playstationNames[GamepadButton::LeftStick] = "L3";
   m_playstationNames[GamepadButton::RightStick] = "R3";
+  m_playstationNames[GamepadButton::LeftStickX] = "L3 X";
+  m_playstationNames[GamepadButton::LeftStickY] = "L3 Y";
+  m_playstationNames[GamepadButton::RightStickX] = "R3 X";
+  m_playstationNames[GamepadButton::RightStickY] = "R3 Y";
+  m_playstationNames[GamepadButton::LeftTriggerAxis] = "L2 Axis";
+  m_playstationNames[GamepadButton::RightTriggerAxis] = "R2 Axis";
+
+  m_playstationNames[GamepadButton::AxisRx] = "Axis Rx";
+  m_playstationNames[GamepadButton::AxisRy] = "Axis Ry";
+  m_playstationNames[GamepadButton::AxisRz] = "Axis Rz";
+  m_playstationNames[GamepadButton::Slider0] = "Slider 0";
+  m_playstationNames[GamepadButton::Slider1] = "Slider 1";
+
+  m_playstationNames[GamepadButton::POV1Up] = "POV 1 Up";
+  m_playstationNames[GamepadButton::POV1Down] = "POV 1 Down";
+  m_playstationNames[GamepadButton::POV1Left] = "POV 1 Left";
+  m_playstationNames[GamepadButton::POV1Right] = "POV 1 Right";
+
+  m_playstationNames[GamepadButton::POV2Up] = "POV 2 Up";
+  m_playstationNames[GamepadButton::POV2Down] = "POV 2 Down";
+  m_playstationNames[GamepadButton::POV2Left] = "POV 2 Left";
+  m_playstationNames[GamepadButton::POV2Right] = "POV 2 Right";
+
+  m_playstationNames[GamepadButton::POV3Up] = "POV 3 Up";
+  m_playstationNames[GamepadButton::POV3Down] = "POV 3 Down";
+  m_playstationNames[GamepadButton::POV3Left] = "POV 3 Left";
+  m_playstationNames[GamepadButton::POV3Right] = "POV 3 Right";
 }
 }  // namespace System
 

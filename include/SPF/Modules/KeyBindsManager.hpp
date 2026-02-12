@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <chrono>
+#include <mutex>
 
 #include "SPF/Namespace.hpp"
 
@@ -86,8 +87,18 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   struct PressTypeConflictAnalysis {
     bool isShortPressAvailable = true;
     bool isLongPressAvailable = true;
+    
+    // Axis specific analysis
+    bool isPositiveAvailable = true;
+    bool isNegativeAvailable = true;
+
     std::optional<std::pair<std::string, nlohmann::ordered_json>> shortPressConflict;
     std::optional<std::pair<std::string, nlohmann::ordered_json>> longPressConflict;
+
+    // Detailed axis conflicts
+    std::optional<std::pair<std::string, nlohmann::ordered_json>> positiveConflict;
+    std::optional<std::pair<std::string, nlohmann::ordered_json>> negativeConflict;
+    std::optional<std::pair<std::string, nlohmann::ordered_json>> bothConflict;
   };
 
   /**
@@ -129,6 +140,17 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   Config::ConsumptionPolicy GetPolicyForEvent(const Input::MouseButtonEvent& event, Input::PressType pressType) const;
   Config::ConsumptionPolicy GetPolicyForEvent(const Input::JoystickEvent& event, Input::PressType pressType) const;
 
+  /**
+   * @brief Gets the effective consumption policy for a specific hardware code.
+   * This is useful for axes which need to know their blocking state continuously.
+   */
+  Config::ConsumptionPolicy GetPolicyForHardwareCode(uint32_t hardwareCode) const;
+
+  /**
+   * @brief Gets the user-defined threshold for an analog axis.
+   */
+  float GetThresholdForHardwareCode(uint32_t hardwareCode) const;
+
   std::chrono::milliseconds GetLongPressThreshold() const;
 
   void TriggerAction(System::GamepadButton button, Input::PressType pressType);
@@ -136,6 +158,22 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   void TriggerAction(System::MouseButton button, Input::PressType pressType);
   void TriggerAction(int buttonIndex, Input::PressType pressType);
   void TriggerAction(uint32_t hardwareCode, Input::PressType pressType);
+
+  /**
+   * @brief Gets the current normalized value (0.0 to 1.0 or -1.0 to 1.0) for an action.
+   * This aggregates all active bindings for the action and returns the one with the highest absolute value.
+   */
+  float GetActionValue(const std::string& actionName) const;
+
+  /**
+   * @brief Gets the number of bindings assigned to an action.
+   */
+  size_t GetBindingCount(const std::string& actionName) const;
+
+  /**
+   * @brief Gets a pointer to a specific binding by index.
+   */
+  const Binding* GetBinding(const std::string& actionName, size_t index) const;
 
   // IInputConsumer implementation
   bool OnKeyPress(const Input::KeyboardEvent& event) override;
@@ -148,6 +186,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
  private:
+  void ApplyAxisPropertiesToInputManager();
   void OnPluginLoaded(const Events::OnPluginDidLoad& e);
   void OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e);
 
@@ -157,6 +196,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   Events::EventManager& m_eventManager;
   std::map<std::string, Action> m_actions;                                 // Key: "Owner.Name"
   std::map<std::string, std::map<std::string, Action>> m_inactiveActions;  // Key: Owner, Key: ActionName
+  mutable std::recursive_mutex m_actionsMutex;
 
   Utils::Sink<void(const Events::OnPluginDidLoad&)> m_onPluginDidLoadSink;
   Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)> m_onPluginWillBeUnloadedSink;

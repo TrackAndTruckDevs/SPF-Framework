@@ -13,6 +13,7 @@
 #include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Input/InputManager.hpp"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -34,7 +35,8 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
       m_logLevels(logLevels),
       m_eventManager(eventManager),
       m_onFocusComponentSink(std::make_unique<Utils::Sink<void(const Events::UI::FocusComponentInSettingsWindow&)>>(eventManager.System.OnFocusComponentInSettingsWindow)),
-      m_onInputCaptureUpdateSink(std::make_unique<Utils::Sink<void(const Input::InputCaptureUpdate&)>>(eventManager.System.OnInputCaptureUpdate)) {
+      m_onInputCaptureUpdateSink(std::make_unique<Utils::Sink<void(const Input::InputCaptureUpdate&)>>(eventManager.System.OnInputCaptureUpdate)),
+      m_onKeybindsModifiedSink(std::make_unique<Utils::Sink<void(const Events::Config::OnKeybindsModified&)>>(eventManager.System.OnKeybindsModified)) {
   m_defaultTitle = "Settings";
   m_titleLocalizationKey = "settings_window.title";
   m_keybindsDrawerHeight = m_keybindsDrawerMinHeight;
@@ -50,8 +52,13 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
   m_keyCaptureConflictTextDetailedKey = "settings_window.key_capture_popup.conflict_text_detailed";
   m_keyCaptureReassignShortPressButtonKey = "settings_window.key_capture_popup.reassign_short_press_button";
   m_keyCaptureReassignLongPressButtonKey = "settings_window.key_capture_popup.reassign_long_press_button";
+  m_keyCaptureReassignPositiveSideButtonKey = "settings_window.key_capture_popup.reassign_positive_side_button";
+  m_keyCaptureReassignNegativeSideButtonKey = "settings_window.key_capture_popup.reassign_negative_side_button";
   m_keyCaptureAddShortPressButtonKey = "settings_window.key_capture_popup.add_short_press_button";
   m_keyCaptureAddLongPressButtonKey = "settings_window.key_capture_popup.add_long_press_button";
+  m_keyCaptureAddPositiveSideButtonKey = "settings_window.key_capture_popup.add_positive_side_button";
+  m_keyCaptureAddNegativeSideButtonKey = "settings_window.key_capture_popup.add_negative_side_button";
+  m_keyCaptureReassignEntireAxisButtonKey = "settings_window.key_capture_popup.reassign_entire_axis_button";
   m_keyCaptureActionListFormatKey = "settings_window.key_capture_popup.action_list_format";
 
   m_bindingDetailsPopupTitleKey = "settings_window.binding_details_popup.title";
@@ -60,16 +67,35 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
   m_bindingDetailsBehaviorToggleKey = "settings_window.binding_details_popup.behavior_toggle";
   m_bindingDetailsBehaviorHoldKey = "settings_window.binding_details_popup.behavior_hold";
   m_bindingDetailsConsumeLabelKey = "settings_window.binding_details_popup.consume_label";
-  m_bindingDetailsThresholdLabelKey = "settings_window.binding_details_popup.threshold_label";
-      m_bindingDetailsCloseButtonKey = "settings_window.binding_details_popup.close_button";
-    
-      m_conflictPressTypeMessage = "settings_window.conflict.press_type_message";
-      m_conflictSwapQuestion = "settings_window.conflict.swap_question";
+    m_bindingDetailsThresholdLabelKey = "settings_window.binding_details_popup.threshold_label";
+    m_bindingDetailsCloseButtonKey = "settings_window.binding_details_popup.close_button";
+  
+    m_bindingDetailsModeLabelKey = "settings_window.binding_details_popup.mode_label";
+    m_bindingDetailsModeAnalogKey = "settings_window.binding_details_popup.mode_analog";
+    m_bindingDetailsModeDigitalKey = "settings_window.binding_details_popup.mode_digital";
+    m_bindingDetailsDeadzoneLabelKey = "settings_window.binding_details_popup.deadzone_label";
+    m_bindingDetailsSaturationLabelKey = "settings_window.binding_details_popup.saturation_label";
+    m_bindingDetailsSensitivityLabelKey = "settings_window.binding_details_popup.sensitivity_label";
+    m_bindingDetailsCurveLabelKey = "settings_window.binding_details_popup.curve_label";
+    m_bindingDetailsSmoothingLabelKey = "settings_window.binding_details_popup.smoothing_label";
+    m_bindingDetailsSideLabelKey = "settings_window.binding_details_popup.side_label";
+    m_bindingDetailsSideBothKey = "settings_window.binding_details_popup.side_both";
+    m_bindingDetailsSidePositiveKey = "settings_window.binding_details_popup.side_positive";
+    m_bindingDetailsSideNegativeKey = "settings_window.binding_details_popup.side_negative";
+    m_bindingDetailsRangeMinLabelKey = "settings_window.binding_details_popup.range_min_label";
+    m_bindingDetailsRangeMaxLabelKey = "settings_window.binding_details_popup.range_max_label";
+    m_bindingDetailsAccumulatorModeLabelKey = "settings_window.binding_details_popup.accumulator_mode_label";
+    m_bindingDetailsInvertLabelKey = "settings_window.binding_details_popup.invert_label";      
+    m_conflictPressTypeMessage = "settings_window.conflict.press_type_message";
+    m_conflictSwapQuestion = "settings_window.conflict.swap_question";
       m_conflictYesSwapButton = "settings_window.conflict.yes_swap_button";
         m_conflictCancelButton = "settings_window.conflict.cancel_button";
       
         m_enumPressTypeShortKey = "enums.press_type.short";
         m_enumPressTypeLongKey = "enums.press_type.long";
+        m_enumSideBothKey = "enums.side.both";
+        m_enumSidePositiveKey = "enums.side.positive";
+        m_enumSideNegativeKey = "enums.side.negative";
         
         m_keybindsUnassignedTextKey = "settings_window.keybinds_drawer.unassigned_text";    
 
@@ -81,6 +107,9 @@ SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std:
 
       m_onFocusComponentSink->Connect<&SettingsWindow::OnFocusComponent>(this);
   m_onInputCaptureUpdateSink->Connect<&SettingsWindow::OnInputCaptureUpdate>(this);
+  m_onKeybindsModifiedSink->Connect<&SettingsWindow::UpdateHardwareCodeUsageCount>(this);
+
+  UpdateHardwareCodeUsageCount({});
     }
 const char* SettingsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
 
@@ -92,6 +121,25 @@ void SettingsWindow::OnFocusComponent(const Events::UI::FocusComponentInSettings
 
 void SettingsWindow::PopulateConfigurableComponents() {
   // This function is now obsolete and replaced by dynamic logic in RenderContent.
+}
+
+void SettingsWindow::UpdateHardwareCodeUsageCount(const Events::Config::OnKeybindsModified& e) {
+    m_hardwareCodeUsageCount.clear();
+    auto config = m_configService.GetMergedConfig("keybinds");
+    if (!config) return;
+
+    for (const auto& [group, actions] : config->items()) {
+        for (const auto& [actionName, actionObject] : actions.items()) {
+            if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
+                for (const auto& binding : actionObject["bindings"]) {
+                    auto input = Modules::InputFactory::CreateFromJson(binding);
+                    if (input && input->IsValid()) {
+                        m_hardwareCodeUsageCount[input->GetHardwareCode()]++;
+                    }
+                }
+            }
+        }
+    }
 }
 
 std::string SettingsWindow::GetTranslatedActionName(const std::string& fullActionName) const {
@@ -671,10 +719,13 @@ void SettingsWindow::RenderKeybindsSettings() {
 
                                     auto getIconForInput = [](Modules::InputType type) -> const char* {
                                         switch (type) {
-                                            case Modules::InputType::Keyboard: return ICON_FA_KEYBOARD;
-                                            case Modules::InputType::Gamepad:  return ICON_FA_GAMEPAD;
-                                            case Modules::InputType::Mouse:    return ICON_FA_MOUSE;
-                                            case Modules::InputType::Joystick: return ICON_FA_GAMEPAD;
+                                            case Modules::InputType::Keyboard:     return ICON_FA_KEYBOARD;
+                                            case Modules::InputType::Gamepad:      return ICON_FA_GAMEPAD;
+                                            case Modules::InputType::GamepadAxis:  return ICON_FA_GAMEPAD;
+                                            case Modules::InputType::Mouse:        return ICON_FA_MOUSE;
+                                            case Modules::InputType::MouseAxis:    return ICON_FA_MOUSE;
+                                            case Modules::InputType::Joystick:     return ICON_FA_GAMEPAD;
+                                            case Modules::InputType::JoystickAxis: return ICON_FA_GAMEPAD;
                                             default: return "";
                                         }
                                     };
@@ -700,6 +751,25 @@ void SettingsWindow::RenderKeybindsSettings() {
                                         }
                                     } else {
                                         buttonText = fmt::format("{} {}", getIconForInput(input->GetType()), input->GetDisplayName());
+                                    }
+
+                                    // --- DISAMBIGUATION (CONFLICT LABELS) ---
+                                    uint32_t code = input->GetHardwareCode();
+                                    if (m_hardwareCodeUsageCount.count(code) && m_hardwareCodeUsageCount[code] > 1) {
+                                        std::string typeSuffix;
+                                        Modules::InputType inputType = input->GetType();
+                                        bool isAxisType = (inputType == Modules::InputType::GamepadAxis || 
+                                                           inputType == Modules::InputType::MouseAxis || 
+                                                           inputType == Modules::InputType::JoystickAxis);
+                                        
+                                        if (isAxisType) {
+                                            std::string side = bindingJson.value("side", "both");
+                                            typeSuffix = loc.Get("enums.side." + side);
+                                        } else {
+                                            std::string pressType = bindingJson.value("press_type", "short");
+                                            typeSuffix = loc.Get("enums.press_type." + pressType);
+                                        }
+                                        buttonText += fmt::format(" ({})", typeSuffix);
                                     }
 
                                     if (buttonText.empty() || buttonText.find("Unknown") != std::string::npos) continue;
@@ -1057,7 +1127,7 @@ void SettingsWindow::RenderContent() {
 
       // --- List all conflicts ---
       // Helper to render conflict details, now including the plugin name
-      auto renderConflictInfo = [&](const auto& conflict, const std::string& pressTypeKey) {
+      auto renderConflictInfo = [&](const auto& conflict, const std::string& typeKey, bool isSide = false) {
           if (!conflict) return;
 
           const std::string& fullActionName = conflict->first;
@@ -1078,25 +1148,42 @@ void SettingsWindow::RenderContent() {
           // 2. Get Translated Action Name
           std::string actionName = this->GetTranslatedActionName(fullActionName);
 
-          // 3. Get Press Type
-          std::string pressType = loc.Get(pressTypeKey);
+          // 3. Get Translated Type (Press Type or Side)
+          std::string translatedType = loc.Get(typeKey);
 
           // 4. Format and Render
-          std::string markdownText = loc.GetFormatted("framework", m_keyCaptureActionListFormatKey, ownerDisplayName, actionName, pressType);
+          // We use the same format key, but it will now say "Side: Positive" instead of "Press type: Short" if we pass the right strings
+          std::string markdownText = loc.GetFormatted("framework", m_keyCaptureActionListFormatKey, ownerDisplayName, actionName, translatedType);
           Typography::RenderMarkdownText(markdownText, TextStyle::Regular().Wrapped().Padding({0.0f, 10.0f}));
       };
 
-      renderConflictInfo(analysis.shortPressConflict, m_enumPressTypeShortKey);
-      renderConflictInfo(analysis.longPressConflict, m_enumPressTypeLongKey);
+      bool isAxis = (m_conflictInfo->capturedInput->GetType() == Modules::InputType::GamepadAxis ||
+                     m_conflictInfo->capturedInput->GetType() == Modules::InputType::MouseAxis ||
+                     m_conflictInfo->capturedInput->GetType() == Modules::InputType::JoystickAxis);
+
+      if (isAxis) {
+          renderConflictInfo(analysis.bothConflict, m_enumSideBothKey, true);
+          renderConflictInfo(analysis.positiveConflict, m_enumSidePositiveKey, true);
+          renderConflictInfo(analysis.negativeConflict, m_enumSideNegativeKey, true);
+      } else {
+          renderConflictInfo(analysis.shortPressConflict, m_enumPressTypeShortKey);
+          renderConflictInfo(analysis.longPressConflict, m_enumPressTypeLongKey);
+      }
       ImGui::Separator();
 
       // --- Helper lambda to add a binding ---
-      auto addBinding = [&](const std::string& pressType) {
+      auto addBinding = [&](const std::string& pressType, const std::string& side = "") {
           m_eventManager.System.OnRequestInputCaptureCancel.Call({});
-          logger->Info("User chose to add a new binding for action '{}' with press type '{}'.", m_conflictInfo->actionFullName, pressType);
+          logger->Info("User chose to add a new binding for action '{}' with press type '{}' and side '{}'.", m_conflictInfo->actionFullName, pressType, side);
           
           nlohmann::ordered_json newBinding = m_conflictInfo->capturedInput->ToJson();
-          newBinding["press_type"] = pressType;
+          
+          if (isAxis && !side.empty()) {
+              newBinding["side"] = side;
+              newBinding["mode"] = "analog"; // Default to analog when specifying side
+          } else {
+              newBinding["press_type"] = pressType;
+          }
 
           m_eventManager.System.OnRequestBindingUpdate.Call({m_conflictInfo->actionFullName, m_conflictInfo->originalBinding, newBinding, std::nullopt});
 
@@ -1113,8 +1200,16 @@ void SettingsWindow::RenderContent() {
 
           nlohmann::ordered_json newBindingJson = m_conflictInfo->capturedInput->ToJson();
           const auto& conflictingBindingJson = conflict->second;
+          
+          // Copy relevant properties from the conflicting binding
           if (conflictingBindingJson.contains("press_type")) {
             newBindingJson["press_type"] = conflictingBindingJson["press_type"];
+          }
+          if (conflictingBindingJson.contains("side")) {
+            newBindingJson["side"] = conflictingBindingJson["side"];
+          }
+          if (conflictingBindingJson.contains("mode")) {
+            newBindingJson["mode"] = conflictingBindingJson["mode"];
           }
           if (conflictingBindingJson.contains("press_threshold_ms")) {
             newBindingJson["press_threshold_ms"] = conflictingBindingJson["press_threshold_ms"];
@@ -1131,18 +1226,68 @@ void SettingsWindow::RenderContent() {
       };
 
       // --- Dynamic Buttons ---
-      if (analysis.isShortPressAvailable) {
-          if (ImGui::Button(loc.Get(m_keyCaptureAddShortPressButtonKey).c_str())) {
-              addBinding("short");
+      if (isAxis) {
+          // --- SPLIT LOGIC FOR AXES ---
+          // Rule: No two bindings can have 'Both'. If adding a side to 'Both', 'Both' becomes 'Opposite'.
+
+          // 1. Add Positive Side Button
+          if (analysis.isPositiveAvailable || analysis.bothConflict) {
+              if (ImGui::Button(loc.Get(m_keyCaptureAddPositiveSideButtonKey).c_str())) {
+                  if (analysis.bothConflict) {
+                      // SPLIT: Update existing Both -> Negative
+                      m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "negative"});
+                  }
+                  addBinding("short", "positive");
+              }
+              ImGui::SameLine();
           }
-          ImGui::SameLine();
-      }
-      
-      if (analysis.isLongPressAvailable) {
-          if (ImGui::Button(loc.Get(m_keyCaptureAddLongPressButtonKey).c_str())) {
-              addBinding("long");
+
+          // 2. Add Negative Side Button
+          if (analysis.isNegativeAvailable || analysis.bothConflict) {
+              if (ImGui::Button(loc.Get(m_keyCaptureAddNegativeSideButtonKey).c_str())) {
+                  if (analysis.bothConflict) {
+                      // SPLIT: Update existing Both -> Positive
+                      m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "positive"});
+                  }
+                  addBinding("short", "negative");
+              }
+              ImGui::SameLine();
           }
-          ImGui::SameLine();
+
+          // 3. Reassign Axis Buttons
+          if (analysis.bothConflict) {
+              if (ImGui::Button(loc.Get(m_keyCaptureReassignEntireAxisButtonKey).c_str())) { 
+                  reassignBinding(analysis.bothConflict);
+              }
+              ImGui::SameLine();
+          } else {
+              if (analysis.positiveConflict) {
+                  if (ImGui::Button(loc.Get(m_keyCaptureReassignPositiveSideButtonKey).c_str())) {
+                      reassignBinding(analysis.positiveConflict);
+                  }
+                  ImGui::SameLine();
+              }
+              if (analysis.negativeConflict) {
+                  if (ImGui::Button(loc.Get(m_keyCaptureReassignNegativeSideButtonKey).c_str())) {
+                      reassignBinding(analysis.negativeConflict);
+                  }
+                  ImGui::SameLine();
+              }
+          }
+      } else {
+          if (analysis.isShortPressAvailable) {
+              if (ImGui::Button(loc.Get(m_keyCaptureAddShortPressButtonKey).c_str())) {
+                  addBinding("short");
+              }
+              ImGui::SameLine();
+          }
+
+          if (analysis.isLongPressAvailable) {
+              if (ImGui::Button(loc.Get(m_keyCaptureAddLongPressButtonKey).c_str())) {
+                  addBinding("long");
+              }
+              ImGui::SameLine();
+          }
       }
 
       if (analysis.shortPressConflict) {
@@ -1203,10 +1348,13 @@ void SettingsWindow::RenderContent() {
       if (!m_currentChordInputs.empty()) {
           auto getIconForInput = [](Modules::InputType type) -> const char* {
               switch (type) {
-                  case Modules::InputType::Keyboard: return ICON_FA_KEYBOARD;
-                  case Modules::InputType::Gamepad:  return ICON_FA_GAMEPAD;
-                  case Modules::InputType::Mouse:    return ICON_FA_MOUSE;
-                  case Modules::InputType::Joystick: return ICON_FA_GAMEPAD;
+                  case Modules::InputType::Keyboard:     return ICON_FA_KEYBOARD;
+                  case Modules::InputType::Gamepad:      return ICON_FA_GAMEPAD;
+                  case Modules::InputType::GamepadAxis:  return ICON_FA_GAMEPAD;
+                  case Modules::InputType::Mouse:        return ICON_FA_MOUSE;
+                  case Modules::InputType::MouseAxis:    return ICON_FA_MOUSE;
+                  case Modules::InputType::Joystick:     return ICON_FA_GAMEPAD;
+                  case Modules::InputType::JoystickAxis: return ICON_FA_GAMEPAD;
                   default: return "";
               }
           };
@@ -1299,8 +1447,402 @@ void SettingsWindow::RenderContent() {
       auto& bindingJson = m_editingBindingDetails.value();
       const auto& actionFullName = m_editingBindingAction.value();
 
-      // --- Press Type Setting with Radio Buttons ---
-      ImGui::TextUnformatted(loc.Get(m_bindingDetailsPressTypeLabelKey).c_str());
+      auto addTooltip = [&](const std::string& key) {
+          std::string descKey = key + "_description";
+          std::string description = loc.Get(descKey);
+          if (description != descKey) {
+              if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+                  ImGui::BeginTooltip();
+                  ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                  ImGui::TextUnformatted(description.c_str());
+                  ImGui::PopTextWrapPos();
+                  ImGui::EndTooltip();
+              }
+          }
+      };
+
+      std::string type = bindingJson.value("type", "");
+      bool isAxis = (type == "gamepad_axis" || type == "mouse_axis" || type == "joystick_axis");
+      bool isMouse = (type == "mouse_axis");
+      std::string mode = bindingJson.value("mode", isAxis ? "analog" : "digital");
+
+      if (isAxis) {
+          ImGui::TextUnformatted(loc.Get(m_bindingDetailsModeLabelKey).c_str());
+          addTooltip(m_bindingDetailsModeLabelKey);
+          ImGui::SameLine();
+          
+          if (isMouse) ImGui::BeginDisabled();
+          
+          if (ImGui::RadioButton(loc.Get(m_bindingDetailsModeAnalogKey).c_str(), mode == "analog")) {
+              bindingJson["mode"] = "analog";
+              m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "mode", "analog"});
+              m_originalBindingCopy = bindingJson;
+          }
+          ImGui::SameLine();
+          if (ImGui::RadioButton(loc.Get(m_bindingDetailsModeDigitalKey).c_str(), mode == "digital")) {
+              bindingJson["mode"] = "digital";
+              m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "mode", "digital"});
+              m_originalBindingCopy = bindingJson;
+          }
+          
+          if (isMouse) ImGui::EndDisabled();
+          
+          ImGui::Separator();
+      }
+
+      if (mode == "analog") {
+          // --- Analog Axis Specific Settings ---
+          std::string keyName = bindingJson.value("key", "");
+          bool isTrigger = (keyName == "LEFT_TRIGGER_AXIS" || keyName == "RIGHT_TRIGGER_AXIS");
+          float rMin = bindingJson.value("range_min", isTrigger ? 0.0f : -1.0f);
+          float rMax = bindingJson.value("range_max", 1.0f);
+          bool isCentered = (rMin < -0.1f);
+
+          // We need a stable input object to maintain smoothing state and get hardware codes
+          static nlohmann::ordered_json cachedJson;
+          static std::shared_ptr<Modules::IBindableInput> liveInput;
+          if (cachedJson != bindingJson) {
+              liveInput = Modules::InputFactory::CreateFromJson(bindingJson);
+              cachedJson = bindingJson;
+          }
+
+          // Pre-fetch values for graph logic
+          float deadzone = isMouse ? 0.0f : bindingJson.value("deadzone", 0.0f);
+          float saturation = isMouse ? 1.0f : bindingJson.value("saturation", 1.0f);
+          float sensitivity = bindingJson.value("sensitivity", 1.0f);
+          std::string curve = isMouse ? "linear" : bindingJson.value("curve", "linear");
+          float smoothing = isMouse ? 0.0f : bindingJson.value("smoothing", 0.0f);
+          bool accumulator = bindingJson.value("accumulator", isMouse); // Mouse is always accumulator
+
+          if (isCentered && !isMouse) {
+              if (ImGui::Checkbox(loc.Get(m_bindingDetailsAccumulatorModeLabelKey).c_str(), &accumulator)) {
+                  bindingJson["accumulator"] = accumulator;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "accumulator", accumulator});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsAccumulatorModeLabelKey);
+          }
+              
+              if (!isMouse && !accumulator) {
+                  // Deadzone
+                  if (ImGui::SliderFloat(loc.Get(m_bindingDetailsDeadzoneLabelKey).c_str(), &deadzone, 0.0f, 0.5f, "%.2f")) {
+                      bindingJson["deadzone"] = deadzone;
+                      m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "deadzone", deadzone});
+                      m_originalBindingCopy = bindingJson;
+                  }
+                  addTooltip(m_bindingDetailsDeadzoneLabelKey);
+
+                  // Saturation
+                  if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSaturationLabelKey).c_str(), &saturation, 0.5f, 1.0f, "%.2f")) {
+                      bindingJson["saturation"] = saturation;
+                      m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "saturation", saturation});
+                      m_originalBindingCopy = bindingJson;
+                  }
+                  addTooltip(m_bindingDetailsSaturationLabelKey);
+              }
+
+              // Sensitivity
+              if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSensitivityLabelKey).c_str(), &sensitivity, 0.1f, 5.0f, "%.1f")) {
+                  bindingJson["sensitivity"] = sensitivity;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "sensitivity", sensitivity});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsSensitivityLabelKey);
+
+              if (!isMouse && !accumulator) {
+                  // Curve
+                  if (ImGui::BeginCombo(loc.Get(m_bindingDetailsCurveLabelKey).c_str(), curve.c_str())) {
+                      const char* curves[] = {"linear", "exponential", "logarithmic", "s-curve"};
+                      for (auto c : curves) {
+                          if (ImGui::Selectable(c, curve == c)) {
+                              curve = c;
+                              bindingJson["curve"] = c;
+                              m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "curve", c});
+                              m_originalBindingCopy = bindingJson;
+                          }
+                      }
+                      ImGui::EndCombo();
+                  }
+                  addTooltip(m_bindingDetailsCurveLabelKey);
+
+                  // Smoothing
+                  if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSmoothingLabelKey).c_str(), &smoothing, 0.0f, 0.95f, "%.2f")) {
+                      bindingJson["smoothing"] = smoothing;
+                      m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "smoothing", smoothing});
+                      m_originalBindingCopy = bindingJson;
+                  }
+                  addTooltip(m_bindingDetailsSmoothingLabelKey);
+              }
+
+              // Range settings based on Side
+              std::string side = bindingJson.value("side", "both");
+              float rMinLimit = isMouse ? -100.0f : (isTrigger ? 0.0f : -1.0f);
+              float rMaxLimit = isMouse ? 100.0f : 1.0f;
+
+              if (side == "positive") {
+                  if (rMinLimit < 0.0f) rMinLimit = 0.0f;
+              } else if (side == "negative") {
+                  if (rMaxLimit > 0.0f) rMaxLimit = 0.0f;
+              }
+
+              // Range Min
+              rMin = bindingJson.value("range_min", rMinLimit);
+              if (ImGui::SliderFloat(loc.Get(m_bindingDetailsRangeMinLabelKey).c_str(), &rMin, rMinLimit, rMaxLimit, "%.2f")) {
+                  bindingJson["range_min"] = rMin;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "range_min", rMin});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsRangeMinLabelKey);
+
+              // Range Max
+              rMax = bindingJson.value("range_max", rMaxLimit);
+              if (ImGui::SliderFloat(loc.Get(m_bindingDetailsRangeMaxLabelKey).c_str(), &rMax, rMinLimit, rMaxLimit, "%.2f")) {
+                  bindingJson["range_max"] = rMax;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "range_max", rMax});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsRangeMaxLabelKey);
+
+              // Invert
+              bool invert = bindingJson.value("invert", false);
+              if (ImGui::Checkbox(loc.Get(m_bindingDetailsInvertLabelKey).c_str(), &invert)) {
+                  bindingJson["invert"] = invert;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "invert", invert});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsInvertLabelKey);
+
+              // Side
+              ImGui::TextUnformatted(loc.Get(m_bindingDetailsSideLabelKey).c_str());
+              addTooltip(m_bindingDetailsSideLabelKey);
+              ImGui::SameLine();
+
+              if (isTrigger) ImGui::BeginDisabled();
+              
+              if (ImGui::RadioButton(loc.Get(m_bindingDetailsSideBothKey).c_str(), side == "both")) {
+                  bindingJson["side"] = "both";
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "both"});
+                  m_originalBindingCopy = bindingJson;
+              }
+              ImGui::SameLine();
+              if (ImGui::RadioButton(loc.Get(m_bindingDetailsSidePositiveKey).c_str(), side == "positive")) {
+                  bindingJson["side"] = "positive";
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "positive"});
+                  m_originalBindingCopy = bindingJson;
+              }
+              ImGui::SameLine();
+              if (ImGui::RadioButton(loc.Get(m_bindingDetailsSideNegativeKey).c_str(), side == "negative")) {
+                  bindingJson["side"] = "negative";
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "negative"});
+                  m_originalBindingCopy = bindingJson;
+              }
+
+              if (isTrigger) ImGui::EndDisabled();
+
+              ImGui::Separator();
+
+          // --- DIAGNOSTICS & GRAPH ---
+          auto& inputMgr = Input::InputManager::GetInstance();
+          if (liveInput) {
+              // Create physical space for the floating labels above the canvas
+              ImGui::Dummy(ImVec2(0, 40.0f));
+          }
+
+          ImVec2 canvas_p = ImGui::GetCursorScreenPos();
+          ImVec2 canvas_sz = ImVec2(ImGui::GetContentRegionAvail().x, 150.0f);
+          if (canvas_sz.x < 50.0f) canvas_sz.x = 50.0f;
+
+          ImDrawList* draw_list = ImGui::GetWindowDrawList();
+          draw_list->AddRectFilled(canvas_p, ImVec2(canvas_p.x + canvas_sz.x, canvas_p.y + canvas_sz.y), ImColor(20, 20, 20, 255));
+          draw_list->AddRect(canvas_p, ImVec2(canvas_p.x + canvas_sz.x, canvas_p.y + canvas_sz.y), ImColor(80, 80, 80, 255));
+
+          // Helper to map normalized function value to screen coordinates
+          auto to_canvas = [&](float fx, float fy) -> ImVec2 {
+              float x_pct, y_pct;
+              if (isCentered) {
+                  x_pct = (fx + 1.0f) * 0.5f;
+                  y_pct = 1.0f - (fy + 1.0f) * 0.5f;
+              } else {
+                  x_pct = fx;
+                  y_pct = 1.0f - fy;
+              }
+              return ImVec2(canvas_p.x + x_pct * canvas_sz.x, canvas_p.y + y_pct * canvas_sz.y);
+          };
+
+          // Draw Grid Lines
+          if (isCentered) {
+              draw_list->AddLine(to_canvas(0, -1), to_canvas(0, 1), ImColor(60, 60, 60, 255)); // Center X
+              draw_list->AddLine(to_canvas(-1, 0), to_canvas(1, 0), ImColor(60, 60, 60, 255)); // Center Y
+          }
+
+          // Function to calculate curve
+          auto get_mapped_magnitude = [&](float magnitude) -> float {
+              if (isMouse || accumulator) return std::clamp(magnitude, 0.0f, 1.0f);
+
+              float processed = 0.0f;
+              float safeSaturation = (saturation > deadzone + 0.01f) ? saturation : deadzone + 0.01f;
+              if (magnitude > deadzone) {
+                  processed = (magnitude - deadzone) / (safeSaturation - deadzone);
+                  processed = (processed > 1.0f) ? 1.0f : processed;
+              }
+              processed *= sensitivity;
+              if (curve == "exponential") processed = processed * processed;
+              else if (curve == "logarithmic") processed = std::sqrt(processed);
+              else if (curve == "s-curve") processed = processed * processed * (3.0f - 2.0f * processed);
+              return std::clamp(processed, 0.0f, 1.0f);
+          };
+
+          // Draw the Curve
+          const int segments = 100;
+          float step = isCentered ? 2.0f / segments : 1.0f / segments;
+          float startX = isCentered ? -1.0f : 0.0f;
+
+          for (int i = 0; i < segments; i++) {
+              float x1 = startX + i * step;
+              float x2 = startX + (i + 1) * step;
+              float fy1, fy2;
+              
+              if (isCentered) {
+                  auto get_side_val = [&](float x) {
+                      if (side == "positive" && x < 0) return 0.0f;
+                      if (side == "negative" && x > 0) return 0.0f;
+                      float val = get_mapped_magnitude(std::abs(x));
+                      return (x < 0) ? -val : val;
+                  };
+                  fy1 = get_side_val(x1);
+                  fy2 = get_side_val(x2);
+              } else {
+                  fy1 = get_mapped_magnitude(x1);
+                  fy2 = get_mapped_magnitude(x2);
+              }
+              
+              if (invert) { fy1 = isCentered ? -fy1 : 1.0f - fy1; fy2 = isCentered ? -fy2 : 1.0f - fy2; }
+              draw_list->AddLine(to_canvas(x1, fy1), to_canvas(x2, fy2), ImColor(255, 255, 0, 255), 2.0f);
+          }
+
+          // Labels for the graph axis (taking inversion into account)
+          std::string lMin, lMax, lMid;
+          if (isCentered) {
+              lMin = fmt::format("{:.1f}", invert ? 1.0f : -1.0f);
+              lMax = fmt::format("{:.1f}", invert ? -1.0f : 1.0f);
+              lMid = "0.0";
+          } else {
+              lMin = fmt::format("{:.1f}", invert ? 1.0f : 0.0f);
+              lMax = fmt::format("{:.1f}", invert ? 0.0f : 1.0f);
+          }
+
+          draw_list->AddText(ImVec2(canvas_p.x + 5, canvas_p.y + canvas_sz.y - 20), ImColor(180, 180, 180, 255), lMin.c_str());
+          draw_list->AddText(ImVec2(canvas_p.x + canvas_sz.x - 35, canvas_p.y + canvas_sz.y - 20), ImColor(180, 180, 180, 255), lMax.c_str());
+          if (isCentered) {
+              draw_list->AddText(ImVec2(canvas_p.x + canvas_sz.x * 0.5f - 10, canvas_p.y + canvas_sz.y - 20), ImColor(180, 180, 180, 255), lMid.c_str());
+          }
+
+          // Live Indicator
+          static float uiSmoothedInput = 0.0f;
+          static uint32_t currentHwCode = 0;
+
+          if (liveInput && liveInput->GetHardwareCode() != currentHwCode) {
+              uiSmoothedInput = 0.0f;
+              currentHwCode = liveInput->GetHardwareCode();
+          }
+          
+          if (liveInput) {
+              auto const& activeAxes = inputMgr.GetCurrentlyActiveAxisValues();
+              uint32_t hwCode = liveInput->GetHardwareCode();
+              float rawInput = 0.0f;
+              if (activeAxes.count(hwCode)) rawInput = activeAxes.at(hwCode);
+
+              // 1. Normalize physical input to [-1, 1] or [0, 1]
+              float normRaw = 0.0f;
+              if (std::abs(rMax - rMin) > 0.001f) normRaw = (rawInput - rMin) / (rMax - rMin);
+              normRaw = std::clamp(normRaw, 0.0f, 1.0f);
+              float physicalPos = isCentered ? (normRaw * 2.0f - 1.0f) : normRaw;
+
+              // 2. Draw Vertical Raw Line (Blue)
+              ImVec2 rawTop = to_canvas(physicalPos, 1.0f);
+              ImVec2 rawBottom = to_canvas(physicalPos, isCentered ? -1.0f : 0.0f);
+              draw_list->AddLine(rawTop, rawBottom, ImColor(0, 120, 255, 200), 1.5f);
+
+              // 3. Draw Raw Value Label (Top)
+              std::string rawValStr = fmt::format("In: {:.4f}", rawInput);
+              ImVec2 rawTxtSz = ImGui::CalcTextSize(rawValStr.c_str());
+              
+              // Edge-aware X positioning
+              float labelX = rawTop.x - rawTxtSz.x * 0.5f;
+              if (labelX < canvas_p.x) {
+                  labelX = rawTop.x + 4; // Flip to right of line
+              } else if (labelX + rawTxtSz.x > canvas_p.x + canvas_sz.x) {
+                  labelX = rawTop.x - rawTxtSz.x - 4; // Flip to left of line
+              }
+              
+              ImVec2 rawLabelPos = ImVec2(labelX, canvas_p.y - 35);
+              
+              draw_list->AddRectFilled(ImVec2(rawLabelPos.x - 4, rawLabelPos.y - 2), 
+                                       ImVec2(rawLabelPos.x + rawTxtSz.x + 4, rawLabelPos.y + rawTxtSz.y + 2), 
+                                       ImColor(255, 255, 255, 230), 3.0f);
+              draw_list->AddText(rawLabelPos, ImColor(0, 0, 0, 255), rawValStr.c_str());
+
+              // 4. Apply visual smoothing to the indicator position
+              float alpha = 1.0f - std::clamp(smoothing, 0.0f, 0.99f);
+              uiSmoothedInput = uiSmoothedInput + alpha * (physicalPos - uiSmoothedInput);
+
+              float dotX = uiSmoothedInput;
+              float dotY = 0.0f;
+              float finalOutVal = liveInput->GetValue(inputMgr.GetCurrentlyPressedHardwareCodes(), activeAxes);
+
+              if (accumulator && !isMouse) {
+                  dotX = physicalPos; 
+                  dotY = finalOutVal;
+              } else {
+                  bool isSideDisabled = false;
+                  if (isCentered) {
+                      if (side == "positive" && dotX < 0) isSideDisabled = true;
+                      else if (side == "negative" && dotX > 0) isSideDisabled = true;
+                  }
+                  if (!isSideDisabled) {
+                      float magY = get_mapped_magnitude(std::abs(dotX));
+                      dotY = (isCentered && dotX < 0) ? -magY : magY;
+                  }
+                  if (invert) dotY = isCentered ? -dotY : 1.0f - dotY;
+              }
+
+              ImVec2 indicatorPos = to_canvas(dotX, dotY);
+              
+              // 5. Numerical Value Display (Out)
+              std::string valStr = fmt::format("Out: {:.4f}", finalOutVal);
+              ImVec2 txtSz = ImGui::CalcTextSize(valStr.c_str());
+              float offX = (indicatorPos.x + 12 + txtSz.x > canvas_p.x + canvas_sz.x) ? (-12 - txtSz.x) : 12;
+              ImVec2 bgPos = ImVec2(indicatorPos.x + offX, indicatorPos.y - 10);
+
+              ImGui::Dummy(canvas_sz); // Reserve space for graph
+
+              // Draw indicator
+              draw_list->AddCircleFilled(indicatorPos, 6.0f, ImColor(255, 0, 0, 255));
+              draw_list->AddCircle(indicatorPos, 7.5f, ImColor(255, 255, 255, 200), 12, 1.5f);
+              draw_list->AddRectFilled(ImVec2(bgPos.x - 4, bgPos.y - 2), ImVec2(bgPos.x + txtSz.x + 4, bgPos.y + txtSz.y + 2), ImColor(255, 255, 255, 230), 3.0f);
+              draw_list->AddText(bgPos, ImColor(0, 0, 0, 255), valStr.c_str());
+          } else {
+              ImGui::Dummy(canvas_sz);
+          }
+
+          ImGui::Separator();
+      } else {
+          // --- Digital Mode Settings (Buttons or Axis-as-Button) ---
+          
+          if (isAxis) {
+              float threshold = bindingJson.value("threshold", 0.5f);
+              if (ImGui::SliderFloat(loc.Get(m_bindingDetailsThresholdLabelKey).c_str(), &threshold, 0.05f, 0.95f, "%.2f")) {
+                  bindingJson["threshold"] = threshold;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "threshold", threshold});
+                  m_originalBindingCopy = bindingJson;
+              }
+              addTooltip(m_bindingDetailsThresholdLabelKey);
+              ImGui::Separator();
+          }
+
+          // --- Press Type Setting with Radio Buttons ---
+          ImGui::TextUnformatted(loc.Get(m_bindingDetailsPressTypeLabelKey).c_str());
+          addTooltip(m_bindingDetailsPressTypeLabelKey);
       ImGui::SameLine();
       ImGui::PushID("details_press_type_radios");
 
@@ -1417,35 +1959,39 @@ void SettingsWindow::RenderContent() {
           ImGui::Separator();
         }
       }
+    }
 
       // --- Behavior Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();
-      ImGui::TextUnformatted(loc.Get(m_bindingDetailsBehaviorLabelKey).c_str());
-      ImGui::SameLine();
-      ImGui::PushID("details_behavior");
-      std::string currentBehavior = bindingJson.value("behavior", "toggle");
-      if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorToggleKey).c_str(), currentBehavior == "toggle")) {
-        bindingJson["behavior"] = "toggle";
-        m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "toggle"});
-        m_originalBindingCopy = bindingJson;
-      }
-      ImGui::SameLine();
-      if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorHoldKey).c_str(), currentBehavior == "hold")) {
-        bindingJson["behavior"] = "hold";
-        m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "hold"});
-        m_originalBindingCopy = bindingJson;
-      }
-      ImGui::PopID();
-
-      // --- Consume Policy Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();      
-      ImGui::TextUnformatted(loc.Get(m_bindingDetailsConsumeLabelKey).c_str());
-      ImGui::SameLine();
-      ImGui::PushID("details_consume");
+      if (mode == "digital") {
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
+                    ImGui::TextUnformatted(loc.Get(m_bindingDetailsBehaviorLabelKey).c_str());
+                    addTooltip(m_bindingDetailsBehaviorLabelKey);
+                    ImGui::SameLine();
+                    ImGui::PushID("details_behavior");
+                    std::string currentBehavior = bindingJson.value("behavior", "toggle");
+                    if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorToggleKey).c_str(), currentBehavior == "toggle")) {
+                        bindingJson["behavior"] = "toggle";
+                        m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "toggle"});
+                        m_originalBindingCopy = bindingJson;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorHoldKey).c_str(), currentBehavior == "hold")) {
+                        bindingJson["behavior"] = "hold";
+                        m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "hold"});
+                        m_originalBindingCopy = bindingJson;
+                    }
+                    ImGui::PopID();
+                }
+          
+                // --- Consume Policy Setting ---
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                ImGui::TextUnformatted(loc.Get(m_bindingDetailsConsumeLabelKey).c_str());
+                addTooltip(m_bindingDetailsConsumeLabelKey);
+                ImGui::SameLine();      ImGui::PushID("details_consume");
       std::string currentConsume = bindingJson.value("consume", "never");
       std::string currentConsumeDisplay = currentConsume;  // Default to string_id
       for (const auto& pair : Config::ConsumptionPolicyMap) {
@@ -1471,62 +2017,64 @@ void SettingsWindow::RenderContent() {
       ImGui::PopID();
 
       // --- Press Threshold Setting ---
-      ImGui::Spacing();
-      ImGui::Separator();
-      ImGui::Spacing();      
-      ImGui::TextUnformatted(loc.Get(m_bindingDetailsThresholdLabelKey).c_str());
-      ImGui::SameLine();
-      ImGui::PushID("details_press_threshold");
+      if (mode == "digital") {
+          ImGui::Spacing();
+          ImGui::Separator();
+          ImGui::Spacing();
+          ImGui::TextUnformatted(loc.Get(m_bindingDetailsThresholdLabelKey).c_str());
+          ImGui::SameLine();
+          ImGui::PushID("details_press_threshold");
 
-      // The slider and buttons will modify m_currentPressThreshold, which persists across frames.
-      bool valueChanged = false;
+          // The slider and buttons will modify m_currentPressThreshold, which persists across frames.
+          bool valueChanged = false;
 
-      ImGui::PushButtonRepeat(true);
-      if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
-        m_currentPressThreshold -= 5;
-        valueChanged = true;
+          ImGui::PushButtonRepeat(true);
+          if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
+              m_currentPressThreshold -= 5;
+              valueChanged = true;
+          }
+          ImGui::PopButtonRepeat();
+
+          ImGui::SameLine();
+          ImGui::SetNextItemWidth(150);
+          // Use the return value of SliderInt to detect changes made by dragging.
+          if (ImGui::SliderInt("##pressthreshold", &m_currentPressThreshold, 50, 5000, "%d ms")) {
+              valueChanged = true;
+          }
+          // IsItemDeactivatedAfterEdit captures the moment the user releases the mouse.
+          bool isSliderDeactivated = ImGui::IsItemDeactivatedAfterEdit();
+
+          ImGui::SameLine();
+
+          ImGui::PushButtonRepeat(true);
+          if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
+              m_currentPressThreshold += 5;
+              valueChanged = true;
+          }
+          ImGui::PopButtonRepeat();
+
+          // Clamp the value on every frame to provide immediate feedback.
+          m_currentPressThreshold = std::clamp(m_currentPressThreshold, 50, 5000);
+
+          // Update happens when a button is clicked, or when the user stops dragging the slider.
+          if (valueChanged || isSliderDeactivated) {
+              // Round the value to the nearest 5 before saving.
+              int finalThreshold = static_cast<int>(roundf(m_currentPressThreshold / 5.0f)) * 5;
+              finalThreshold = std::clamp(finalThreshold, 50, 5000);
+
+              // Update the UI state immediately to the rounded value.
+              m_currentPressThreshold = finalThreshold;
+
+              if (m_originalBindingCopy.value("press_threshold_ms", 500) != finalThreshold) {
+                  nlohmann::ordered_json oldBinding = m_originalBindingCopy;
+                  m_originalBindingCopy["press_threshold_ms"] = finalThreshold;
+                  m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, oldBinding, "press_threshold_ms", finalThreshold});
+
+                  bindingJson["press_threshold_ms"] = finalThreshold;
+              }
+          }
+          ImGui::PopID();
       }
-      ImGui::PopButtonRepeat();
-
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(150);
-      // Use the return value of SliderInt to detect changes made by dragging.
-      if (ImGui::SliderInt("##pressthreshold", &m_currentPressThreshold, 50, 5000, "%d ms")) {
-        valueChanged = true;
-      }
-      // IsItemDeactivatedAfterEdit captures the moment the user releases the mouse.
-      bool isSliderDeactivated = ImGui::IsItemDeactivatedAfterEdit();
-
-      ImGui::SameLine();
-
-      ImGui::PushButtonRepeat(true);
-      if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
-        m_currentPressThreshold += 5;
-        valueChanged = true;
-      }
-      ImGui::PopButtonRepeat();
-
-      // Clamp the value on every frame to provide immediate feedback.
-      m_currentPressThreshold = std::clamp(m_currentPressThreshold, 50, 5000);
-
-      // Update happens when a button is clicked, or when the user stops dragging the slider.
-      if (valueChanged || isSliderDeactivated) {
-        // Round the value to the nearest 5 before saving.
-        int finalThreshold = static_cast<int>(roundf(m_currentPressThreshold / 5.0f)) * 5;
-        finalThreshold = std::clamp(finalThreshold, 50, 5000);
-
-        // Update the UI state immediately to the rounded value.
-        m_currentPressThreshold = finalThreshold;
-
-        if (m_originalBindingCopy.value("press_threshold_ms", 500) != finalThreshold) {
-          nlohmann::ordered_json oldBinding = m_originalBindingCopy;
-          m_originalBindingCopy["press_threshold_ms"] = finalThreshold;
-          m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, oldBinding, "press_threshold_ms", finalThreshold});
-
-          bindingJson["press_threshold_ms"] = finalThreshold;
-        }
-      }
-      ImGui::PopID();
 
       ImGui::Separator();
 

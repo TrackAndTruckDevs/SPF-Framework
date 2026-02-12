@@ -41,7 +41,32 @@ enum class GamepadButton {
   LeftStickX,
   LeftStickY,
   RightStickX,
-  RightStickY
+  RightStickY,
+  LeftTriggerAxis,
+  RightTriggerAxis,
+
+  // Additional Axes (DirectInput / Extended)
+  AxisRx,
+  AxisRy,
+  AxisRz,
+  Slider0,
+  Slider1,
+
+  // Additional POVs (DirectInput supports up to 4, POV0 is DPad)
+  POV1Up,
+  POV1Down,
+  POV1Left,
+  POV1Right,
+  
+  POV2Up,
+  POV2Down,
+  POV2Left,
+  POV2Right,
+
+  POV3Up,
+  POV3Down,
+  POV3Left,
+  POV3Right
 };
 }  // namespace System
 

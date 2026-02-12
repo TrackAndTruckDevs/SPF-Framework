@@ -232,14 +232,63 @@ nlohmann::ordered_json SerializeKeybinds(const ManifestData& manifest) {
         for (const auto& [name, defs] : actions) {
             nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
             for (const auto& def : defs) {
-                nlohmann::ordered_json def_j;
-                if (def.type.has_value()) def_j["type"] = def.type.value();
-                if (def.key.has_value()) def_j["key"] = def.key.value();
-                if (def.pressType.has_value()) def_j["press_type"] = def.pressType.value();
-                if (def.pressThresholdMs.has_value()) def_j["press_threshold_ms"] = def.pressThresholdMs.value();
-                if (def.consume.has_value()) def_j["consume"] = def.consume.value();
-                if (def.behavior.has_value()) def_j["behavior"] = def.behavior.value();
-                if (!def_j.empty()) bindingsArray.push_back(def_j);
+                nlohmann::ordered_json temp;
+                if (def.type.has_value()) temp["type"] = def.type.value();
+                if (def.key.has_value()) temp["key"] = def.key.value();
+
+                auto input = Modules::InputFactory::CreateFromJson(temp);
+                nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
+
+                std::string typeStr = def.type.value_or("");
+                bool isAxis = (typeStr.find("_axis") != std::string::npos);
+                std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
+
+                nlohmann::ordered_json final_j;
+                final_j["type"] = input_j.value("type", typeStr);
+                
+                if (final_j["type"] == "chord") {
+                    final_j["bindings"] = input_j["bindings"];
+                } else {
+                    final_j["key"] = input_j["key"];
+                }
+
+                final_j["consume"] = def.consume.value_or("never");
+
+                if (isAxis) {
+                    final_j["mode"] = mode;
+                    if (mode == "analog") {
+                        final_j["curve"] = input_j.value("curve", "linear");
+                        final_j["invert"] = input_j.value("invert", false);
+                        final_j["deadzone"] = input_j.value("deadzone", 0.0);
+                        final_j["saturation"] = input_j.value("saturation", 1.0);
+                        final_j["sensitivity"] = input_j.value("sensitivity", 1.0);
+                        final_j["smoothing"] = input_j.value("smoothing", 0.0);
+                        
+                        bool isMouse = (final_j["type"] == "mouse_axis");
+                        bool accumulator = input_j.value("accumulator", isMouse);
+                        final_j["accumulator"] = accumulator;
+
+                        bool isTrigger = false;
+                        if (final_j["key"].is_string()) {
+                            std::string k = final_j["key"].get<std::string>();
+                            isTrigger = (k.find("TRIGGER") != std::string::npos);
+                        }
+
+                        final_j["range_min"] = input_j.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+                        final_j["range_max"] = input_j.value("range_max", isMouse ? 100.0 : 1.0);
+                    } else {
+                        final_j["threshold"] = input_j.value("threshold", 0.5);
+                        final_j["behavior"] = def.behavior.value_or("toggle");
+                        final_j["press_type"] = def.pressType.value_or("short");
+                        final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+                    }
+                } else {
+                    final_j["behavior"] = def.behavior.value_or("toggle");
+                    final_j["press_type"] = def.pressType.value_or("short");
+                    final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+                }
+
+                if (!final_j.empty()) bindingsArray.push_back(final_j);
             }
             
             if (!bindingsArray.empty()) {
@@ -1168,24 +1217,72 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const  nloh
     auto& bindingsArray = actionObject["bindings"];
 
     // 4. Create a complete binding object by merging UI changes with manifest defaults
-     nlohmann::ordered_json finalNewBinding = newBinding;
+    nlohmann::ordered_json mergedData = newBinding;
     const auto& ownerManifest = m_manifests.at(componentName);
     if (ownerManifest.keybinds.actions.count(groupName) && ownerManifest.keybinds.actions.at(groupName).count(actionName)) {
         const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName);
         if (!defaultBindings.empty()) {
-            // Assume the first default binding is the template for defaults.
-            const auto& defaultBindingDef = defaultBindings[0];
-             nlohmann::ordered_json defaultJson;
-            if (defaultBindingDef.behavior.has_value()) defaultJson["behavior"] = defaultBindingDef.behavior.value();
-            if (defaultBindingDef.consume.has_value()) defaultJson["consume"] = defaultBindingDef.consume.value();
-            if (defaultBindingDef.pressThresholdMs.has_value()) defaultJson["press_threshold_ms"] = defaultBindingDef.pressThresholdMs.value();
-            // etc. for other defaultable fields...
-
-            // Start with the defaults, then overwrite them with the values from the UI.
-             nlohmann::ordered_json completeBinding = defaultJson;
-            completeBinding.merge_patch(newBinding);
-            finalNewBinding = completeBinding;
+            const auto& def = defaultBindings[0];
+            nlohmann::ordered_json manifestDefaults;
+            manifestDefaults["consume"] = def.consume.value_or("never");
+            if (newBinding.value("type", "").find("_axis") == std::string::npos) {
+                manifestDefaults["press_type"] = def.pressType.value_or("short");
+                manifestDefaults["behavior"] = def.behavior.value_or("toggle");
+                manifestDefaults["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+            }
+            manifestDefaults.merge_patch(newBinding);
+            mergedData = manifestDefaults;
         }
+    }
+
+    // --- RECONSTRUCT WITH FIXED ORDER ---
+    std::string type = mergedData.value("type", "");
+    bool isAxis = (type.find("_axis") != std::string::npos);
+    bool isMouse = (type == "mouse_axis");
+    std::string mode = mergedData.value("mode", isAxis ? "analog" : "digital");
+
+    nlohmann::ordered_json finalNewBinding;
+    finalNewBinding["type"] = type;
+    
+    if (type == "chord") {
+        finalNewBinding["bindings"] = mergedData["bindings"];
+    } else {
+        finalNewBinding["key"] = mergedData["key"];
+    }
+
+    finalNewBinding["consume"] = mergedData.value("consume", "never");
+
+    if (isAxis) {
+        finalNewBinding["mode"] = mode;
+        if (mode == "analog") {
+            finalNewBinding["curve"] = mergedData.value("curve", "linear");
+            finalNewBinding["side"] = mergedData.value("side", "both");
+            finalNewBinding["invert"] = mergedData.value("invert", false);
+            finalNewBinding["deadzone"] = mergedData.value("deadzone", 0.0);
+            finalNewBinding["saturation"] = mergedData.value("saturation", 1.0);
+            finalNewBinding["sensitivity"] = mergedData.value("sensitivity", 1.0);
+            finalNewBinding["smoothing"] = mergedData.value("smoothing", 0.0);
+            bool accumulator = mergedData.value("accumulator", isMouse);
+            finalNewBinding["accumulator"] = accumulator;
+            
+            bool isTrigger = false;
+            if (finalNewBinding["key"].is_string()) {
+                std::string k = finalNewBinding["key"].get<std::string>();
+                isTrigger = (k.find("TRIGGER") != std::string::npos);
+            }
+
+            finalNewBinding["range_min"] = mergedData.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+            finalNewBinding["range_max"] = mergedData.value("range_max", isMouse ? 100.0 : 1.0);
+        } else {
+            finalNewBinding["threshold"] = mergedData.value("threshold", 0.5);
+            finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
+            finalNewBinding["press_type"] = mergedData.value("press_type", "short");
+            finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
+        }
+    } else {
+        finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
+        finalNewBinding["press_type"] = mergedData.value("press_type", "short");
+        finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
     }
 
     // 5. Add or Update the binding in the target array
@@ -1287,12 +1384,94 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
             auto& bindingsArray = actionObject["bindings"];
 
             if (originalBinding.is_object()) {
+                std::string origType = originalBinding.value("type", "");
+                std::string origKey = originalBinding.value("key", "");
+                std::string origPressType = originalBinding.value("press_type", "short");
+                std::string origSide = originalBinding.value("side", "both");
+                auto const& origBindings = originalBinding.contains("bindings") ? originalBinding["bindings"] : nlohmann::ordered_json();
+
                 for (auto& binding : bindingsArray) {
-                    if (binding == originalBinding) { // Exact JSON comparison
+                    bool match = false;
+                    if (binding.is_object()) {
+                        // 1. Compare basic identity fields
+                        bool typeMatch = (binding.value("type", "") == origType);
+                        bool pressTypeMatch = (binding.value("press_type", "short") == origPressType);
+                        
+                        // 2. Compare key or chord constituents
+                        bool keyOrChordMatch = false;
+                        if (origType == "chord") {
+                            keyOrChordMatch = (binding.contains("bindings") && binding["bindings"] == origBindings);
+                        } else {
+                            keyOrChordMatch = (binding.value("key", "") == origKey);
+                        }
+
+                        // 3. Compare side (only relevant for axes)
+                        bool sideMatch = true;
+                        if (origType.find("_axis") != std::string::npos) {
+                            sideMatch = (binding.value("side", "both") == origSide);
+                        }
+
+                        if (typeMatch && pressTypeMatch && keyOrChordMatch && sideMatch) {
+                            match = true;
+                        }
+                    }
+
+                    if (match) {
                         binding[propertyName] = newValue;
+                        
+                        // --- RECONSTRUCT TO CLEAN UP WHILE PRESERVING USER VALUES ---
+                        nlohmann::ordered_json current = binding;
+                        std::string type = current.value("type", "");
+                        bool isAxis = (type.find("_axis") != std::string::npos);
+                        bool isMouse = (type == "mouse_axis");
+                        std::string mode = current.value("mode", isAxis ? "analog" : "digital");
+
+                        bool isTrigger = false;
+                        if (current.contains("key") && current["key"].is_string()) {
+                            std::string k = current["key"].get<std::string>();
+                            isTrigger = (k.find("TRIGGER") != std::string::npos);
+                        }
+
+                        nlohmann::ordered_json clean;
+                        clean["type"] = type;
+                        if (type == "chord") {
+                            clean["bindings"] = current["bindings"];
+                        } else {
+                            clean["key"] = current["key"];
+                        }
+                        clean["consume"] = current.value("consume", "never");
+
+                        if (isAxis) {
+                            clean["mode"] = mode;
+                            if (mode == "analog") {
+                                clean["curve"] = current.value("curve", "linear");
+                                clean["side"] = current.value("side", "both");
+                                clean["invert"] = current.value("invert", false);
+                                clean["deadzone"] = current.value("deadzone", 0.0);
+                                clean["saturation"] = current.value("saturation", 1.0);
+                                clean["sensitivity"] = current.value("sensitivity", 1.0);
+                                clean["smoothing"] = current.value("smoothing", 0.0);
+                                bool accumulator = current.value("accumulator", isMouse);
+                                clean["accumulator"] = accumulator;
+                                clean["range_min"] = current.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+                                clean["range_max"] = current.value("range_max", isMouse ? 100.0 : 1.0);
+                            } else {
+                                clean["threshold"] = current.value("threshold", 0.5);
+                                clean["behavior"] = current.value("behavior", "toggle");
+                                clean["press_type"] = current.value("press_type", "short");
+                                clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
+                            }
+                        } else {
+                            clean["behavior"] = current.value("behavior", "toggle");
+                            clean["press_type"] = current.value("press_type", "short");
+                            clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
+                        }
+
+                        binding = clean; // Swap dirty with clean
+                        
                         m_dirtyComponents.insert(componentName);
                         m_eventManager.System.OnKeybindsModified.Call({});
-                        if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' for binding in action '{}'.", propertyName, actionFullName);
+                        if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' and filtered stale fields.", propertyName);
                         return;
                     }
                 }

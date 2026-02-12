@@ -86,11 +86,31 @@ api->Settings_SetJson(h, defaults);
     *   `fileSink`: `true` to enable a dedicated log file for the plugin.
 *   **Localization**: `Defaults_SetLocalization(h, "en")`
     *   Sets the default initial language.
-*   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, pressType, threshold, consume, behavior)`
-    *   `type`: `"keyboard"`, `"gamepad"`, `"mouse"`.
-    *   `pressType`: `"short"`, `"long"`.
-    *   `consume`: `"always"`, `"never"`, `"on_ui_focus"`.
-    *   `behavior`: `"press"` (one-shot), `"toggle"` (on/off), `"hold"` (active while pressed).
+*   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, consume)`
+    *   **Universal Signature**: Since version 1.0.7, this function only takes the identity of the bind. All processing parameters are set to sensible framework defaults and can be further tuned by the user in the UI.
+    *   `type`: The hardware device type.
+        *   Digital: `"keyboard"`, `"gamepad"`, `"mouse"`.
+        *   Analog (Optimized for continuous movement): `"gamepad_axis"`, `"mouse_axis"`, `"joystick_axis"`.
+    *   `key`: The specific button or axis name (e.g., `"v"`, `"LEFT_STICK_X"`, `"LEFT_TRIGGER_AXIS"`).
+    *   `consume`: Input consumption policy (`"always"`, `"never"`, `"on_ui_focus"`, `"manual"`).
+    
+    **Default Axis Parameters (Internal):**
+    When an action is bound to an axis type, the framework automatically applies the following defaults:
+    *   `mode`: `"analog"` (provides smooth float value).
+    *   `deadzone`: `0.0` (raw input passed initially).
+    *   `saturation`: `1.0` (max value at full physical deflection).
+    *   `sensitivity`: `1.0` (linear scale).
+    *   `curve`: `"linear"`.
+    *   `side`: `"both"` (full axis range [-1, 1]).
+    *   `invert`: `false`.
+    *   `range_min/max`: `-1.0` and `1.0` (standard for sticks).
+    
+    **Default Button Parameters (Internal):**
+    For digital buttons, the following defaults are used:
+    *   `press_type`: `"short"`.
+    *   `behavior`: `"toggle"`.
+    *   `press_threshold_ms`: `500`.
+
 *   **Windows**: `Defaults_AddWindow(h, name, visible, interactive, x, y, w, h, collapsed, autoScroll)`
     *   Defines the initial state of your plugin's ImGui windows.
 
@@ -138,7 +158,7 @@ void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_B
                                "slider", "{ \"min\": 0.0, \"max\": 1.0, \"format\": \"%.2f\" }", false);
 
     // 5. Default Keybind
-    api->Defaults_AddKeybind(h, "Main", "Open", "keyboard", "KEY_F10", "short", 0, "always", "toggle");
+    api->Defaults_AddKeybind(h, "Main", "Open", "keyboard", "KEY_F10", "always");
     api->Meta_AddKeybind(h, "Main", "Open", "Open Menu", "Press F10 to enter settings.");
 }
 ```

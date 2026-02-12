@@ -22,6 +22,7 @@ class KeyboardInput : public IBindableInput {
   bool InvolvesHardwareCode(uint32_t code) const override;
 
   bool IsSameAs(const IBindableInput& other) const override;
+  float GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const override;
 
  private:
   System::Keyboard m_key;

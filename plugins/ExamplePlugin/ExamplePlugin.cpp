@@ -145,17 +145,22 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // `groupName`: A category for the action. Best practice is "{PluginName}.{Feature}".
         // `actionName`: The specific action, usually a verb.
         // The full action name becomes "ExamplePlugin.MainWindow.toggle".
-        // `type`: "keyboard", "gamepad". `key`: "KEY_F5". `pressType`: "short", "long".
-        // `thresholdMs`: For "long" press. `consume`: "never", "on_ui_focus", "always", "manual".
-        // `behavior`: "toggle" (on/off), "hold" (while pressed).
-        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "short", 300, "always", "toggle");
+        // `type`: "keyboard", "gamepad", "gamepad_axis", etc. 
+        // `key`: "KEY_F5", "BTN_A", "LEFT_STICK_X".
+        // `consume`: "never", "on_ui_focus", "always", "manual".
+        // Note: press_type, behavior, and axis settings are defaulted automatically.
+        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "always");
 
         // Second action: Cycle through camera views.
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "short", 300, "always", "press");
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "always");
 
         // Third action: Demonstrate programmatic blocking (using 'manual' consume policy).
-        // By default, it uses the 'H' key (standard for Horn in ATS/ETS2).
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Demo", "honk", "keyboard", "KEY_H", "short", 0, "manual", "press");
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Demo", "honk", "keyboard", "KEY_H", "manual");
+
+        // --- NEW: Analog Test Action ---
+        // This action can be triggered by either Space key or Right Trigger.
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Test", "Axis", "keyboard", "KEY_SPACE", "never");
+        api->Defaults_AddKeybind(h, "ExamplePlugin.Test", "Axis", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
     }
 
     // --- UI ---
@@ -316,10 +321,10 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     // Register callbacks for systems that require the core API.
     if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
-        auto keybinds = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
-        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
-        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
-        g_ctx.coreAPI->keybinds->Kbind_Register(keybinds, "ExamplePlugin.Demo.honk", []() {
+        g_ctx.keybindsHandle = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.Demo.honk", []() {
             auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "BEEP! (Honk action triggered in plugin)");
         });
@@ -1009,6 +1014,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         if (ui->UI_BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Input Test")) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
         ui->UI_EndTabBar();
     }
 }
@@ -1174,6 +1180,107 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
     if (ui->UI_SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f")) {
         // When the slider value changes, update the virtual axis value.
         g_ctx.coreAPI->input->Virt_SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
+    }
+}
+
+void RenderInputTestTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->keybinds || !g_ctx.keybindsHandle || !ui) {
+        ui->UI_Text("Keybinds API not available.");
+        return;
+    }
+
+    ui->UI_Text("Use this tab to test analog axis bindings and view detailed binding info.");
+    ui->UI_Text("Assign any axis to 'ExamplePlugin.Test.Axis' in settings.");
+    ui->UI_Separator();
+
+    const char* actionName = "ExamplePlugin.Test.Axis";
+    auto keybinds = g_ctx.coreAPI->keybinds;
+    auto format = g_ctx.coreAPI->formatting;
+
+    float val = keybinds->Kbind_GetActionValue(g_ctx.keybindsHandle, actionName);
+
+    char val_buf[64];
+    format->Fmt_Format(val_buf, sizeof(val_buf), "Raw Action Value: %.4f", val);
+    ui->UI_Text(val_buf);
+
+    // Visualize 0.0 to 1.0 (e.g. Triggers)
+    ui->UI_Text("Unipolar (0..1):");
+    float uni_fraction = (val < 0.0f) ? 0.0f : val;
+    ui->UI_ProgressBar(uni_fraction, -1, 0, "");
+
+    ui->UI_Spacing();
+
+    // Visualize -1.0 to 1.0 (e.g. Sticks)
+    ui->UI_Text("Bipolar (-1..1):");
+    float bi_fraction = (val + 1.0f) / 2.0f;
+    ui->UI_ProgressBar(bi_fraction, -1, 0, "");
+    
+    ui->UI_Separator();
+    ui->UI_Text("Active Bindings Information:");
+
+    int bindingCount = keybinds->Kbind_GetBindingCount(g_ctx.keybindsHandle, actionName);
+    if (bindingCount == 0) {
+        ui->UI_TextColored(1.0f, 0.5f, 0.5f, 1.0f, "No bindings assigned to this action.");
+    } else {
+        for (int i = 0; i < bindingCount; ++i) {
+            char line_buf[256];
+            char name_buf[128];
+            keybinds->Kbind_GetBindingName(g_ctx.keybindsHandle, actionName, i, name_buf, sizeof(name_buf));
+
+            format->Fmt_Format(line_buf, sizeof(line_buf), "[Binding %d] Name: %s", i + 1, name_buf);
+            if (ui->UI_TreeNode(line_buf)) {
+                // 1. Type
+                SPF_BindingType type = keybinds->Kbind_GetBindingType(g_ctx.keybindsHandle, actionName, i);
+                const char* typeStr = (type == SPF_BINDING_KEYBOARD) ? "Keyboard" :
+                                      (type == SPF_BINDING_GAMEPAD) ? "Gamepad Button" :
+                                      (type == SPF_BINDING_MOUSE) ? "Mouse Button" :
+                                      (type == SPF_BINDING_JOYSTICK) ? "Joystick Button" :
+                                      (type == SPF_BINDING_CHORD) ? "Chord" :
+                                      (type == SPF_BINDING_GAMEPAD_AXIS) ? "Gamepad Axis" :
+                                      (type == SPF_BINDING_MOUSE_AXIS) ? "Mouse Axis" :
+                                      (type == SPF_BINDING_JOYSTICK_AXIS) ? "Joystick Axis" : "Unknown";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Type: %s", typeStr);
+                ui->UI_BulletText(line_buf);
+
+                // 2. Behavior
+                SPF_ActivationBehavior behavior = keybinds->Kbind_GetBindingBehavior(g_ctx.keybindsHandle, actionName, i);
+                const char* behaviorStr = (behavior == SPF_BEHAVIOR_HOLD) ? "Hold" :
+                                          (behavior == SPF_BEHAVIOR_TOGGLE) ? "Toggle" : "N/A";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Behavior: %s", behaviorStr);
+                ui->UI_BulletText(line_buf);
+
+                // 3. Press Type
+                SPF_PressType press = keybinds->Kbind_GetBindingPressType(g_ctx.keybindsHandle, actionName, i);
+                const char* pressStr = (press == SPF_PRESS_SHORT) ? "Short" :
+                                       (press == SPF_PRESS_LONG) ? "Long" : "N/A";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Press Type: %s", pressStr);
+                ui->UI_BulletText(line_buf);
+
+                // 4. Mode
+                SPF_InputMode mode = keybinds->Kbind_GetBindingMode(g_ctx.keybindsHandle, actionName, i);
+                const char* modeStr = (mode == SPF_MODE_ANALOG) ? "Analog" :
+                                      (mode == SPF_MODE_DIGITAL) ? "Digital" : "N/A";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Mode: %s", modeStr);
+                ui->UI_BulletText(line_buf);
+
+                // 5. Side
+                SPF_AxisSide side = keybinds->Kbind_GetBindingSide(g_ctx.keybindsHandle, actionName, i);
+                const char* sideStr = (side == SPF_SIDE_POSITIVE) ? "Positive" :
+                                      (side == SPF_SIDE_NEGATIVE) ? "Negative" :
+                                      (side == SPF_SIDE_BOTH) ? "Both" : "N/A";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Side: %s", sideStr);
+                ui->UI_BulletText(line_buf);
+
+                // 6. Accumulator
+                SPF_AccumulatorMode acc = keybinds->Kbind_GetBindingAccumulatorMode(g_ctx.keybindsHandle, actionName, i);
+                const char* accStr = (acc == SPF_ACCUMULATOR_ON) ? "ON" :
+                                     (acc == SPF_ACCUMULATOR_OFF) ? "OFF" : "N/A";
+                format->Fmt_Format(line_buf, sizeof(line_buf), "Accumulator: %s", accStr);
+                ui->UI_BulletText(line_buf);
+
+                ui->UI_TreePop();
+            }
+        }
     }
 }
 

@@ -6,6 +6,7 @@
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Utils/Signal.hpp"
 #include "SPF/System/GamepadButtonMapping.hpp"  // For DeviceType
+#include "SPF/Config/EnumMappings.hpp"
 
 #include <set>    // For frame-based deduplication
 #include <mutex>  // For thread-safe deduplication
@@ -54,6 +55,23 @@ struct ButtonState {
   bool blockInput = false;
   bool longPressTriggered = false;
   std::chrono::steady_clock::time_point pressTimestamp;
+  uint8_t lastPriority = 255; // Lower is higher priority
+  uint64_t lastTimestamp = 0;
+};
+
+struct AxisState {
+    float value = 0.0f;
+    Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
+    bool emulationEnabled = false;
+    bool isAccumulator = false;
+    bool invert = false;
+    std::string side = "both";
+    float threshold = 0.5f;
+    float sensitivity = 1.0f;
+    float rangeMin = -1.0f;
+    float rangeMax = 1.0f;
+    uint8_t lastPriority = 255;
+    uint64_t lastTimestamp = 0;
 };
 
 class InputManager {
@@ -69,16 +87,21 @@ class InputManager {
   void Initialize();
   void Shutdown();
 
+  // --- Axis Configuration (Called by KeyBindsManager when config changes) ---
+  void SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold, float sensitivity = 1.0f, float rMin = -1.0f, float rMax = 1.0f);
+  void ResetAxisProperties();
+
   /**
    * @brief Processes state changes from hooks and determines if input should be blocked.
    * This is called synchronously from the hooks.
    * @param event A struct containing the button and its current pressed state.
+   * @param priority Priority of the source (1 = Highest, e.g. XInput).
    * @return True if the input should be blocked from the game, false otherwise.
    */
-  bool ProcessAndDecide(const GamepadEvent& event);
-  bool ProcessAndDecide(const KeyboardEvent& event);
-  bool ProcessAndDecide(const MouseButtonEvent& event);
-  bool ProcessAndDecide(const JoystickEvent& event);
+  bool ProcessAndDecide(const GamepadEvent& event, uint8_t priority = 2);
+  bool ProcessAndDecide(const KeyboardEvent& event, uint8_t priority = 2);
+  bool ProcessAndDecide(const MouseButtonEvent& event, uint8_t priority = 2);
+  bool ProcessAndDecide(const JoystickEvent& event, uint8_t priority = 2);
 
   /**
    * @brief Processes actions based on the current state of all buttons.
@@ -90,8 +113,10 @@ class InputManager {
   void ProcessJoystickActions();
 
   // --- Key Capture ---
+  enum class InputCaptureState { Idle, Capturing };
   void StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding);
   void CancelInputCapture();
+  InputCaptureState GetCaptureState() const { return m_captureState; }
 
   // --- Consumer Management ---
   void RegisterConsumer(IInputConsumer* consumer);
@@ -99,11 +124,17 @@ class InputManager {
 
   // --- Event Publishing (from hooks) ---
   void PublishMouseMove(const MouseMoveEvent& event);
-  bool PublishMouseButton(const MouseButtonEvent& event);
-  bool PublishMouseWheel(const MouseWheelEvent& event);
-  bool PublishKeyboardEvent(const KeyboardEvent& event);
-  bool PublishGamepadEvent(const GamepadEvent& event);
-  bool PublishJoystickEvent(const JoystickEvent& event);
+  bool PublishMouseButton(const MouseButtonEvent& event, uint8_t priority = 2);
+  bool PublishMouseWheel(const MouseWheelEvent& event, uint8_t priority = 2);
+  
+  // New: Generic Axis Event Publishing
+  // deviceType: 0x02 (Gamepad), 0x03 (Mouse), 0x04 (Joystick)
+  // axisIndex: For Mouse (0=X, 1=Y, 2=WheelY). For Gamepad/Joystick (0..N)
+  bool PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority = 2);
+
+  bool PublishKeyboardEvent(const KeyboardEvent& event, uint8_t priority = 2);
+  bool PublishGamepadEvent(const GamepadEvent& event, uint8_t priority = 2);
+  bool PublishJoystickEvent(const JoystickEvent& event, uint8_t priority = 2);
 
   // --- Cursor Control ---
   void SetMouseAxesControl(bool gameHasControl);
@@ -112,11 +143,13 @@ class InputManager {
 
   // --- Programmatic (Plugin) Mouse Blocking ---
   void SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel);
+  bool IsAxisAccumulator(uint32_t hardwareCode) const;
   bool IsProgrammaticMouseAxesBlockRequested() const { return m_pluginRequestedMouseAxesBlock; }
   bool IsProgrammaticMouseButtonsBlockRequested() const { return m_pluginRequestedMouseButtonsBlock; }
   bool IsProgrammaticMouseWheelBlockRequested() const { return m_pluginRequestedMouseWheelBlock; }
 
   const std::set<uint32_t>& GetCurrentlyPressedHardwareCodes() const { return m_currentlyPressedHardwareCodes; }
+  const std::map<uint32_t, float>& GetCurrentlyActiveAxisValues() const { return m_activeAxisValues; }
 
   bool ShouldGameControlMouseAxes() const;
   bool ShouldGameControlMouseButtons() const;
@@ -127,6 +160,9 @@ class InputManager {
   bool IsJoystickButtonBlocked(int buttonIndex) const;
   bool IsGamepadButtonBlocked(System::GamepadButton button) const;
   
+  // New: Check if an axis is consumed by the framework
+  bool IsAxisConsumed(uint8_t deviceType, int axisIndex) const;
+
   /**
    * @brief Consumes a virtual mouse release request. Used by DInput8Hook to inject fake Up events.
    */
@@ -185,16 +221,23 @@ class InputManager {
   bool m_pluginRequestedMouseWheelBlock = false;
 
   std::set<uint32_t> m_currentlyPressedHardwareCodes;
+  std::map<uint32_t, float> m_activeAxisValues;
+  std::map<uint32_t, float> m_accumulatorTargets; // Raw values for integration
+  std::chrono::steady_clock::time_point m_lastFrameTimestamp;
 
   // --- Chord Capture State ---
   std::set<uint32_t> m_captureHeldCodes;      // Keys currently physically held
   std::set<uint32_t> m_captureRecordedCodes;  // All keys that were part of this chord attempt
+  std::map<uint32_t, float> m_captureInitialAxisValues; // Snapshot of axes when capture starts
   std::map<uint32_t, std::shared_ptr<Modules::IBindableInput>> m_captureCodeToInputMap; // To reconstruct inputs
   std::chrono::steady_clock::time_point m_lastCaptureReleaseTime;
   bool m_isWaitingForCaptureFinalize = false;
 
   // The central state machine for all inputs
   std::map<uint32_t, ButtonState> m_inputStates;
+  
+  // State machine for analog axes (hardwareCode -> AxisState)
+  std::map<uint32_t, AxisState> m_axisStates;
 
   // Unified state for tracking inputs that are in a "hold" behavior state
   std::map<uint32_t, PressType> m_heldInputs;
@@ -204,8 +247,6 @@ class InputManager {
   std::array<XINPUT_STATE, XUSER_MAX_COUNT> m_previousGamepadStates{};
 
   // --- Key Capture State ---
-  enum class InputCaptureState { Idle, Capturing };
-
   InputCaptureState m_captureState = InputCaptureState::Idle;
   bool m_inPostCaptureCooldown = false;
   std::string m_capturingActionFullName;
@@ -213,6 +254,8 @@ class InputManager {
 
   // Frame-specific blacklist to prevent input processing from multiple hooks
   std::set<uint32_t> m_capturedHardwareCodesThisFrame;
+  uint8_t m_minPriorityCapturedThisFrame = 255;
+  uint64_t m_lastCaptureTimestamp = 0;
 
   // Keys that were passed to the game (not blocked)
   // Used to send retroactive "Key Up" events if a blocking chord activates later.

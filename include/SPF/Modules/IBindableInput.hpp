@@ -4,11 +4,17 @@
 #include "SPF/Input/InputEvents.hpp"
 #include <nlohmann/json.hpp>
 #include <set>
+#include <map>
 #include <cstdint>
 
 SPF_NS_BEGIN
+
+namespace Input {
+    struct ButtonState;
+}
+
 namespace Modules {
-enum class InputType { Keyboard, Gamepad, Mouse, Joystick, Chord, Unknown };
+enum class InputType { Keyboard, Gamepad, Mouse, Joystick, Chord, GamepadAxis, MouseAxis, JoystickAxis, Unknown };
 
 /**
  * @brief An interface for a specific input that can be bound to an action.
@@ -45,6 +51,16 @@ struct IBindableInput {
    * For single inputs, checks if its code is in the set. For chords, checks if ALL its codes are in the set.
    */
   virtual bool IsActive(const std::set<uint32_t>& pressedCodes) const = 0;
+
+  /**
+   * @brief Returns the current processed value of this input (0.0 to 1.0 or -1.0 to 1.0).
+   * For digital inputs, returns 1.0 if active, 0.0 otherwise.
+   * For analog inputs, applies deadzones, curves, and sensitivity.
+   * @param pressedHardwareCodes Set of currently active hardware codes.
+   * @param axisValues Map of current raw axis values from InputManager.
+   */
+  virtual float GetValue(const std::set<uint32_t>& pressedHardwareCodes, 
+                         const std::map<uint32_t, float>& axisValues) const = 0;
 
   /**
    * @brief Checks if this input involves a specific physical key/button.
