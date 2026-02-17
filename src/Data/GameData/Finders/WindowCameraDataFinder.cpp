@@ -10,116 +10,136 @@ namespace Data::GameData::Finders {
 namespace {
 /*
  * Signature for the UpdateInteriorCamera function.
- * This function is responsible for updating head position, mouse limits, etc.
- * for interior-like cameras (window, cabin).
+ * Shared by Interior and Window cameras.
  */
 const char* UPDATE_INTERIOR_CAMERA_SIG = "48 83 EC 38 F3 0F 10 2D ?? ?? ?? ?? 4C 8B C2 0F 29";
 
 /*
  * Signature for the UpdateInteriorCameraOrientation function.
- * This function is responsible for updating the live yaw/pitch of the camera.
+ * Shared by Interior and Window cameras.
  */
 const char* UPDATE_INTERIOR_CAMERA_ORIENTATION_SIG = "40 53 48 81 EC 80 00 00 00 80 B9 3C 01 00 00 00 48 8B D9";
 }  // namespace
+
 bool WindowCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for Window Camera offsets...");
+  logger->Info("Searching for Window Camera offsets (Dynamic Search)...");
 
   uintptr_t pfnUpdateInteriorCamera = Utils::PatternFinder::Find(UPDATE_INTERIOR_CAMERA_SIG);
   if (!pfnUpdateInteriorCamera) {
-    logger->Error("CRITICAL: Failed to find signature for UpdateInteriorCamera function. Cannot proceed.");
+    logger->Error("CRITICAL: Failed to find signature for UpdateInteriorCamera function.");
     return false;
   }
-  logger->Info("Found UpdateInteriorCamera function at: {:#x}", pfnUpdateInteriorCamera);
 
-  bool all_found = true;
-
-  // --- Find offsets within UpdateInteriorCamera ---
-  {
-    const unsigned char p_head_x[] = {0xF2, 0x0F, 0x10, 0x81, 0x88, 0x04, 0x00, 0x00};      // MOVSD xmm0, [rcx+488h]
-    const unsigned char p_head_z[] = {0x8B, 0x81, 0x90, 0x04, 0x00, 0x00};                  // MOV eax, [rcx+490h]
-    const unsigned char p_limit_l[] = {0xF3, 0x0F, 0x10, 0x89, 0x7C, 0x05, 0x00, 0x00};     // MOVSS xmm1, [rcx+57Ch]
-    const unsigned char p_limit_r[] = {0xF3, 0x0F, 0x10, 0x81, 0x80, 0x05, 0x00, 0x00};     // MOVSS xmm0, [rcx+580h]
-    const unsigned char p_default_lr[] = {0xF3, 0x0F, 0x10, 0x81, 0x84, 0x05, 0x00, 0x00};  // MOVSS xmm0, [rcx+584h]
-    const unsigned char p_limit_u[] = {0xF3, 0x0F, 0x10, 0x91, 0x8C, 0x05, 0x00, 0x00};     // MOVSS xmm2, [rcx+58Ch]
-    const unsigned char p_limit_d[] = {0xF3, 0x0F, 0x10, 0xA1, 0x90, 0x05, 0x00, 0x00};     // MOVSS xmm4, [rcx+590h]
-    const unsigned char p_default_ud[] = {0x8B, 0x81, 0x94, 0x05, 0x00, 0x00};              // MOV eax, [rcx+594h]
-
-    bool f[8] = {false};
-
-    for (int i = 0; i < 2048; ++i) {
-      uintptr_t addr = pfnUpdateInteriorCamera + i;
-      if (!f[0] && memcmp((void*)addr, p_head_x, sizeof(p_head_x)) == 0) {
-        owner.SetWindowHeadOffsetXOffset(*(int32_t*)(addr + 4));
-        owner.SetWindowHeadOffsetYOffset(*(int32_t*)(addr + 4) + 4);
-        f[0] = true;
-      }
-      if (!f[1] && memcmp((void*)addr, p_head_z, sizeof(p_head_z)) == 0) {
-        owner.SetWindowHeadOffsetZOffset(*(int32_t*)(addr + 2));
-        f[1] = true;
-      }
-      if (!f[2] && memcmp((void*)addr, p_limit_l, sizeof(p_limit_l)) == 0) {
-        owner.SetWindowMouseLeftLimitOffset(*(int32_t*)(addr + 4));
-        f[2] = true;
-      }
-      if (!f[3] && memcmp((void*)addr, p_limit_r, sizeof(p_limit_r)) == 0) {
-        owner.SetWindowMouseRightLimitOffset(*(int32_t*)(addr + 4));
-        f[3] = true;
-      }
-      if (!f[4] && memcmp((void*)addr, p_default_lr, sizeof(p_default_lr)) == 0) {
-        owner.SetWindowMouseLRDefaultOffset(*(int32_t*)(addr + 4));
-        f[4] = true;
-      }
-      if (!f[5] && memcmp((void*)addr, p_limit_u, sizeof(p_limit_u)) == 0) {
-        owner.SetWindowMouseUpLimitOffset(*(int32_t*)(addr + 4));
-        f[5] = true;
-      }
-      if (!f[6] && memcmp((void*)addr, p_limit_d, sizeof(p_limit_d)) == 0) {
-        owner.SetWindowMouseDownLimitOffset(*(int32_t*)(addr + 4));
-        f[6] = true;
-      }
-      if (!f[7] && memcmp((void*)addr, p_default_ud, sizeof(p_default_ud)) == 0) {
-        owner.SetWindowMouseUDDefaultOffset(*(int32_t*)(addr + 2));
-        f[7] = true;
-      }
-      if (f[0] && f[1] && f[2] && f[3] && f[4] && f[5] && f[6] && f[7]) break;
-    }
-    if (!(f[0] && f[1] && f[2] && f[3] && f[4] && f[5] && f[6] && f[7])) {
-      logger->Warn("-> FAILED to find one or more offsets in UpdateInteriorCamera");
-      all_found = false;
-    }
-  }
-
-  // --- Find offsets within UpdateInteriorCameraOrientation ---
   uintptr_t pfnUpdateInteriorCameraOrientation = Utils::PatternFinder::Find(UPDATE_INTERIOR_CAMERA_ORIENTATION_SIG);
   if (!pfnUpdateInteriorCameraOrientation) {
     logger->Error("CRITICAL: Failed to find signature for UpdateInteriorCameraOrientation function.");
-    all_found = false;
+    return false;
+  }
+
+  bool all_found = true;
+  const size_t SEARCH_RANGE = 4096;
+
+  /*
+   * ANCHOR #1: Initialization Block
+   * Extracts: HeadX (490), LimitUp (594), LimitDown (598), HeadZ (498), DefHoriz (58C), DefVert (59C)
+   */
+  const char* p_init_block = "0F B6 81 ?? ?? ?? ?? F2 0F 10 81 ?? ?? ?? ?? F3 0F 10 91 ?? ?? ?? ?? F3 0F 10 A1 ?? ?? ?? ?? 88 81 ?? ?? ?? ?? 8B 81 ?? ?? ?? ?? F2 0F 11 81 ?? ?? ?? ?? F3 0F 10 81 ?? ?? ?? ?? 89 81 ?? ?? ?? ?? 8B 81 ?? ?? ?? ??";
+  uintptr_t addr = Utils::PatternFinder::Find(pfnUpdateInteriorCamera, SEARCH_RANGE, p_init_block);
+  if (addr) {
+    int32_t headX = Utils::PatternFinder::ReadInt32(addr + 11);
+    int32_t limitUp = Utils::PatternFinder::ReadInt32(addr + 19);
+    int32_t limitDown = Utils::PatternFinder::ReadInt32(addr + 27);
+    int32_t headZ = Utils::PatternFinder::ReadInt32(addr + 39);
+    int32_t defHoriz = Utils::PatternFinder::ReadInt32(addr + 55);
+    int32_t defVert = Utils::PatternFinder::ReadInt32(addr + 67);
+
+    if (Utils::PatternFinder::IsSaneOffset(headX)) {
+      owner.SetWindowHeadOffsetXOffset(headX);
+      owner.SetWindowHeadOffsetYOffset(headX + 4);
+      logger->Debug("Anchor #1: WindowHeadX=0x{:X}, WindowHeadY=0x{:X}", headX, headX + 4);
+    } else { logger->Error("Anchor #1: WindowHeadX INVALID (0x{:X})", headX); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(limitUp)) {
+      owner.SetWindowMouseUpLimitOffset(limitUp);
+      logger->Debug("Anchor #1: WindowLimitUp=0x{:X}", limitUp);
+    } else { logger->Error("Anchor #1: WindowLimitUp INVALID (0x{:X})", limitUp); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(limitDown)) {
+      owner.SetWindowMouseDownLimitOffset(limitDown);
+      logger->Debug("Anchor #1: WindowLimitDown=0x{:X}", limitDown);
+    } else { logger->Error("Anchor #1: WindowLimitDown INVALID (0x{:X})", limitDown); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(headZ)) {
+      owner.SetWindowHeadOffsetZOffset(headZ);
+      logger->Debug("Anchor #1: WindowHeadZ=0x{:X}", headZ);
+    } else { logger->Error("Anchor #1: WindowHeadZ INVALID (0x{:X})", headZ); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(defHoriz)) {
+      owner.SetWindowMouseLRDefaultOffset(defHoriz);
+      logger->Debug("Anchor #1: WindowDefHoriz=0x{:X}", defHoriz);
+    } else { logger->Error("Anchor #1: WindowDefHoriz INVALID (0x{:X})", defHoriz); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(defVert)) {
+      owner.SetWindowMouseUDDefaultOffset(defVert);
+      logger->Debug("Anchor #1: WindowDefVert=0x{:X}", defVert);
+    } else { logger->Error("Anchor #1: WindowDefVert INVALID (0x{:X})", defVert); all_found = false; }
   } else {
-    const unsigned char yaw_pattern[] = {0xF3, 0x0F, 0x11, 0x83, 0x70, 0x05, 0x00, 0x00};    // MOVSS [RBX+570h], XMM0
-    const unsigned char pitch_pattern[] = {0xF3, 0x0F, 0x11, 0x8B, 0x74, 0x05, 0x00, 0x00};  // MOVSS [RBX+574h], XMM1
-    bool found_yaw = false, found_pitch = false;
-    for (int i = 0; i < 2048; ++i) {
-      uintptr_t addr = pfnUpdateInteriorCameraOrientation + i;
-      if (!found_yaw && memcmp((void*)addr, yaw_pattern, sizeof(yaw_pattern)) == 0) {
-        owner.SetWindowLiveYawOffset(*(int32_t*)(addr + 4));
-        found_yaw = true;
-      }
-      if (!found_pitch && memcmp((void*)addr, pitch_pattern, sizeof(pitch_pattern)) == 0) {
-        owner.SetWindowLivePitchOffset(*(int32_t*)(addr + 4));
-        found_pitch = true;
-      }
-      if (found_yaw && found_pitch) break;
-    }
-    if (!found_yaw || !found_pitch) {
-      logger->Warn("-> FAILED to find LiveYaw/LivePitch offsets.");
-      all_found = false;
-    }
+    logger->Error("FAILED to find Anchor #1 in UpdateInteriorCamera");
+    all_found = false;
+  }
+
+  /*
+   * ANCHOR #2: Limits Left/Right
+   * Extracts: LimitRight (588), LimitLeft (584)
+   */
+  const char* p_limits_lr = "F3 0F 10 89 ?? ?? ?? ?? 0F 57 CD EB 08 F3 0F 10 89 ?? ?? ?? ??";
+  addr = Utils::PatternFinder::Find(pfnUpdateInteriorCamera, SEARCH_RANGE, p_limits_lr);
+  if (addr) {
+    int32_t limitRight = Utils::PatternFinder::ReadInt32(addr + 4);
+    int32_t limitLeft = Utils::PatternFinder::ReadInt32(addr + 17);
+
+    if (Utils::PatternFinder::IsSaneOffset(limitRight)) {
+      owner.SetWindowMouseRightLimitOffset(limitRight);
+      logger->Debug("Anchor #2: WindowLimitRight=0x{:X}", limitRight);
+    } else { logger->Error("Anchor #2: WindowLimitRight INVALID (0x{:X})", limitRight); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(limitLeft)) {
+      owner.SetWindowMouseLeftLimitOffset(limitLeft);
+      logger->Debug("Anchor #2: WindowLimitLeft=0x{:X}", limitLeft);
+    } else { logger->Error("Anchor #2: WindowLimitLeft INVALID (0x{:X})", limitLeft); all_found = false; }
+  } else {
+    logger->Error("FAILED to find Anchor #2 in UpdateInteriorCamera");
+    all_found = false;
+  }
+
+  /*
+   * ANCHOR #3: Live Yaw/Pitch
+   * Extracts: LiveYaw (578), LivePitch (57C)
+   */
+  const char* p_yaw_pitch = "F3 0F 59 D3 F3 0F 11 83 ?? ?? ?? ?? 0F 2F D1 ?? ?? 0F 28 CC F3 0F 5D CA 48 8D 8B ?? ?? ?? ?? F3 0F 11 8B ?? ?? ?? ??";
+  addr = Utils::PatternFinder::Find(pfnUpdateInteriorCameraOrientation, SEARCH_RANGE, p_yaw_pitch);
+  if (addr) {
+    int32_t liveYaw = Utils::PatternFinder::ReadInt32(addr + 8);
+    int32_t livePitch = Utils::PatternFinder::ReadInt32(addr + 35);
+
+    if (Utils::PatternFinder::IsSaneOffset(liveYaw)) {
+      owner.SetWindowLiveYawOffset(liveYaw);
+      logger->Debug("Anchor #3: WindowLiveYaw=0x{:X}", liveYaw);
+    } else { logger->Error("Anchor #3: WindowLiveYaw INVALID (0x{:X})", liveYaw); all_found = false; }
+
+    if (Utils::PatternFinder::IsSaneOffset(livePitch)) {
+      owner.SetWindowLivePitchOffset(livePitch);
+      logger->Debug("Anchor #3: WindowLivePitch=0x{:X}", livePitch);
+    } else { logger->Error("Anchor #3: WindowLivePitch INVALID (0x{:X})", livePitch); all_found = false; }
+  } else {
+    logger->Error("FAILED to find Anchor #3 in UpdateInteriorCameraOrientation");
+    all_found = false;
   }
 
   m_isReady = all_found;
   if (all_found) {
-    logger->Info("Successfully found all Window Camera offsets.");
+    logger->Info("Successfully found all 11 Window Camera offsets dynamically.");
   } else {
     logger->Error("Failed to find one or more Window Camera offsets.");
   }

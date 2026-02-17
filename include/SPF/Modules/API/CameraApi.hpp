@@ -127,6 +127,19 @@ class CameraApi {
   static void T_Camera_SetDebugGameUiVisible(bool visible);
   static bool T_Camera_GetDebugGameUiVisible(bool* out_isVisible);
 
+  // --- New Debug Camera Control Trampolines ---
+  static void T_Camera_SetDebugPosLock(bool locked);
+  static bool T_Camera_GetDebugPosLock(bool* out_locked);
+  static void T_Camera_SetDebugRotLock(bool locked);
+  static bool T_Camera_GetDebugRotLock(bool* out_locked);
+  static void T_Camera_SetDebugOrbitMode(bool enabled);
+  static bool T_Camera_GetDebugOrbitMode(bool* out_enabled);
+  static void T_Camera_SetDebugOrbitSpeed(float speed);
+  static bool T_Camera_GetDebugOrbitSpeed(float* out_speed);
+  static void* T_Camera_GetDebugSelectedObject();
+  static void T_Camera_SetDebugSelectedObject(void* ptr);
+  static void* T_Camera_GetDebugHoveredObject();
+
   // --- Debug Camera State Trampolines ---
   static int T_Camera_GetStateCount();
   static int T_Camera_GetCurrentStateIndex();

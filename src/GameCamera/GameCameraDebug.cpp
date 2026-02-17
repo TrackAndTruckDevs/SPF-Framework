@@ -200,5 +200,175 @@ bool GameCameraDebug::GetGameUiVisible(bool* out_isVisible) const {
   }
   return false;
 }
+
+void GameCameraDebug::SetPosLock(bool locked) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  auto pfnSetPosLock = reinterpret_cast<void(__fastcall*)(uintptr_t, bool)>(gameData.GetSetPositionLockFunc());
+
+  if (context && pfnSetPosLock) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+      logger->Info("Calling DebugCamera_SetPositionLock(0x{:X}, {})", pDebugCamera, locked);
+      pfnSetPosLock(pDebugCamera, locked);
+    }
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+    logger->Warn("Cannot set position lock: DebugCameraContextPtr or SetPositionLockFunc is null.");
+  }
+}
+
+bool GameCameraDebug::GetPosLock(bool* out_locked) const {
+  if (!out_locked) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugPosLockOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      *out_locked = (*reinterpret_cast<uint8_t*>(pDebugCamera + offset) != 0);
+      return true;
+    }
+  }
+  return false;
+}
+
+void GameCameraDebug::SetRotLock(bool locked) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  auto pfnSetRotLock = reinterpret_cast<void(__fastcall*)(uintptr_t, bool)>(gameData.GetSetRotationLockFunc());
+
+  if (context && pfnSetRotLock) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+      logger->Info("Calling DebugCamera_SetRotationLock(0x{:X}, {})", pDebugCamera, locked);
+      pfnSetRotLock(pDebugCamera, locked);
+    }
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+    logger->Warn("Cannot set rotation lock: DebugCameraContextPtr or SetRotationLockFunc is null.");
+  }
+}
+
+bool GameCameraDebug::GetRotLock(bool* out_locked) const {
+  if (!out_locked) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugRotLockOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      *out_locked = (*reinterpret_cast<uint8_t*>(pDebugCamera + offset) != 0);
+      return true;
+    }
+  }
+  return false;
+}
+
+void GameCameraDebug::SetOrbitMode(bool enabled) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  auto pfnSetOrbit = reinterpret_cast<void(__fastcall*)(uintptr_t, bool)>(gameData.GetSetOrbitModeFunc());
+
+  if (context && pfnSetOrbit) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+      logger->Info("Calling DebugCamera_SetOrbitMode(0x{:X}, {})", pDebugCamera, enabled);
+      pfnSetOrbit(pDebugCamera, enabled);
+    }
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+    logger->Warn("Cannot set orbit mode: DebugCameraContextPtr or SetOrbitModeFunc is null.");
+  }
+}
+
+bool GameCameraDebug::GetOrbitMode(bool* out_enabled) const {
+  if (!out_enabled) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugOrbitOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      *out_enabled = (*reinterpret_cast<uint8_t*>(pDebugCamera + offset) != 0);
+      return true;
+    }
+  }
+  return false;
+}
+
+void GameCameraDebug::SetOrbitSpeed(float speed) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugOrbitSpeedOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      *reinterpret_cast<float*>(pDebugCamera + offset) = speed;
+    }
+  }
+}
+
+bool GameCameraDebug::GetOrbitSpeed(float* out_speed) const {
+  if (!out_speed) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugOrbitSpeedOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      *out_speed = *reinterpret_cast<float*>(pDebugCamera + offset);
+      return true;
+    }
+  }
+  return false;
+}
+
+uintptr_t GameCameraDebug::GetSelectedObjectPtr() const {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugSelectedObjectPtrOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      return *reinterpret_cast<uintptr_t*>(pDebugCamera + offset);
+    }
+  }
+  return 0;
+}
+
+void GameCameraDebug::SetSelectedObjectPtr(uintptr_t ptr) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  auto pfnSetSelected = reinterpret_cast<void(__fastcall*)(uintptr_t, uintptr_t)>(gameData.GetSetSelectedActorFunc());
+
+  if (context && pfnSetSelected) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+      logger->Info("Calling DebugCamera_SetSelectedActor(0x{:X}, 0x{:X})", pDebugCamera, ptr);
+      pfnSetSelected(pDebugCamera, ptr);
+    }
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
+    logger->Warn("Cannot set selected object: DebugCameraContextPtr or SetSelectedActorFunc is null.");
+  }
+}
+
+uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t context = gameData.GetDebugCameraContextPtr();
+  intptr_t offset = gameData.GetDebugHoveredObjectPtrOffset();
+  if (context && offset) {
+    uintptr_t pDebugCamera = *(uintptr_t*)(context + 0);
+    if (pDebugCamera) {
+      return *reinterpret_cast<uintptr_t*>(pDebugCamera + offset);
+    }
+  }
+  return 0;
+}
 }  // namespace GameCamera
 SPF_NS_END

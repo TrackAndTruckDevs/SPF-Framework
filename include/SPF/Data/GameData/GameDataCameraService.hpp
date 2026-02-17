@@ -141,6 +141,10 @@ class GameDataCameraService {
   // --- Debug Camera Getters ---
   uintptr_t GetDebugCameraContextPtr() const { return m_pDebugCameraContext; }
   void* GetDebugCameraModeFunc() const { return m_pfnSetDebugCameraMode; }
+  void* GetSetSelectedActorFunc() const { return m_pfnSetSelectedActor; }
+  void* GetSetPositionLockFunc() const { return m_pfnSetPositionLock; }
+  void* GetSetRotationLockFunc() const { return m_pfnSetRotationLock; }
+  void* GetSetOrbitModeFunc() const { return m_pfnSetOrbitMode; }
   uintptr_t GetCacheableCvarObjectPtr() const { return m_pCacheableCvarObject; }
   void SetCacheableCvarObjectPtr(uintptr_t ptr) { m_pCacheableCvarObject = ptr; }
 
@@ -148,6 +152,12 @@ class GameDataCameraService {
   void SetCvarValueOffset(intptr_t offset) { m_cvarValueOffset = offset; }
 
   intptr_t GetDebugCameraModeOffset() const { return m_debugCameraModeOffset; }
+  intptr_t GetDebugPosLockOffset() const { return m_debugPosLockOffset; }
+  intptr_t GetDebugRotLockOffset() const { return m_debugRotLockOffset; }
+  intptr_t GetDebugOrbitOffset() const { return m_debugOrbitOffset; }
+  intptr_t GetDebugSelectedObjectPtrOffset() const { return m_debugSelectedObjectPtrOffset; }
+  intptr_t GetDebugOrbitSpeedOffset() const { return m_debugOrbitSpeedOffset; }
+  intptr_t GetDebugHoveredObjectPtrOffset() const { return m_debugHoveredObjectPtrOffset; }
 
   // --- Debug Camera HUD Getters ---
   void* GetSetHudVisibilityFunc() const { return m_pfnSetHudVisibility; }
@@ -283,8 +293,18 @@ class GameDataCameraService {
   // --- Debug Camera Setters ---
   void SetDebugCameraContextPtr(uintptr_t val) { m_pDebugCameraContext = val; }
   void SetDebugCameraModeFunc(void* val) { m_pfnSetDebugCameraMode = val; }
+  void SetSetSelectedActorFunc(void* val) { m_pfnSetSelectedActor = val; }
+  void SetSetPositionLockFunc(void* val) { m_pfnSetPositionLock = val; }
+  void SetSetRotationLockFunc(void* val) { m_pfnSetRotationLock = val; }
+  void SetSetOrbitModeFunc(void* val) { m_pfnSetOrbitMode = val; }
 
   void SetDebugCameraModeOffset(intptr_t val) { m_debugCameraModeOffset = val; }
+  void SetDebugPosLockOffset(intptr_t val) { m_debugPosLockOffset = val; }
+  void SetDebugRotLockOffset(intptr_t val) { m_debugRotLockOffset = val; }
+  void SetDebugOrbitOffset(intptr_t val) { m_debugOrbitOffset = val; }
+  void SetDebugSelectedObjectPtrOffset(intptr_t val) { m_debugSelectedObjectPtrOffset = val; }
+  void SetDebugOrbitSpeedOffset(intptr_t val) { m_debugOrbitSpeedOffset = val; }
+  void SetDebugHoveredObjectPtrOffset(intptr_t val) { m_debugHoveredObjectPtrOffset = val; }
 
   // --- Debug Camera HUD Setters ---
   void SetSetHudVisibilityFunc(void* val) { m_pfnSetHudVisibility = val; }
@@ -434,9 +454,19 @@ class GameDataCameraService {
   // --- Debug Camera Data ---
   uintptr_t m_pDebugCameraContext = 0;
   void* m_pfnSetDebugCameraMode = nullptr;
+  void* m_pfnSetSelectedActor = nullptr;
+  void* m_pfnSetPositionLock = nullptr;
+  void* m_pfnSetRotationLock = nullptr;
+  void* m_pfnSetOrbitMode = nullptr;
   uintptr_t m_pCacheableCvarObject = 0;
   intptr_t m_cvarValueOffset = 0;
   intptr_t m_debugCameraModeOffset = 0;
+  intptr_t m_debugPosLockOffset = 0;
+  intptr_t m_debugRotLockOffset = 0;
+  intptr_t m_debugOrbitOffset = 0;
+  intptr_t m_debugSelectedObjectPtrOffset = 0;
+  intptr_t m_debugOrbitSpeedOffset = 0;
+  intptr_t m_debugHoveredObjectPtrOffset = 0;
 
   // --- Debug Camera HUD Data ---
   void* m_pfnSetHudVisibility = nullptr;

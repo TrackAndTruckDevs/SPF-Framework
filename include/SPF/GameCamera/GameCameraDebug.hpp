@@ -26,6 +26,21 @@ class GameCameraDebug {
   void SetGameUiVisible(bool visible);
   bool GetGameUiVisible(bool* out_isVisible) const;
 
+  // --- New Debug Controls ---
+  void SetPosLock(bool locked);
+  bool GetPosLock(bool* out_locked) const;
+  void SetRotLock(bool locked);
+  bool GetRotLock(bool* out_locked) const;
+  void SetOrbitMode(bool enabled);
+  bool GetOrbitMode(bool* out_enabled) const;
+  void SetOrbitSpeed(float speed);
+  bool GetOrbitSpeed(float* out_speed) const;
+
+  // --- Object Selection ---
+  uintptr_t GetSelectedObjectPtr() const;
+  void SetSelectedObjectPtr(uintptr_t ptr);
+  uintptr_t GetHoveredObjectPtr() const;
+
  private:
   mutable DebugCameraMode m_currentMode = DebugCameraMode::SIMPLE;
 };

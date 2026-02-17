@@ -110,35 +110,27 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
         info.speed_limit = *reinterpret_cast<float*>(pVehicleObject + m_speedLimitOffset);
         info.lane_speed_input = *reinterpret_cast<float*>(pVehicleObject + m_laneSpeedInputOffset);
 
-        // --- Read properties (Final Corrected Logic from User's Analysis) ---
         info.acceleration = 0.0f;
         info.current_speed = 0.0f;
 
-        if (pVehicleObject) {
-            // As per user's detailed memory layout:
-            // 1. Get the address of the component's v-table, which is the value at pVehicleObject + 16.
-            uintptr_t component_vtable_addr = *(uintptr_t*)(pVehicleObject + 16);
-
-            if (component_vtable_addr) {
-                uintptr_t* vtable = (uintptr_t*)component_vtable_addr;
+        // Physical properties like speed and acceleration are managed by a specific sub-component within the vehicle actor.
+        if (pVehicleObject && m_vehicleSubObjectOffset) {
+            uintptr_t vtable_addr = *reinterpret_cast<uintptr_t*>(pVehicleObject + m_vehicleSubObjectOffset);
+            if (vtable_addr) {
+                uintptr_t* vtable = reinterpret_cast<uintptr_t*>(vtable_addr);
                 using GetFloatFn = float (*)(void*);
+                
+                // The virtual methods expect the address of the sub-component itself as the 'this' pointer (RCX).
+                void* this_ptr = reinterpret_cast<void*>(pVehicleObject + m_vehicleSubObjectOffset);
 
-                // The 'this' pointer for these calls is unconventional, as per `LEA RCX,[RSI + 0x10]`.
-                // It's the address of the v-table member itself within the main object.
-                void* this_for_call = (void*)(pVehicleObject + 16);
-
-                // 2. The second entry in this v-table (offset +8) is GetCurrentSpeed.
-                uintptr_t pfnGetCurrentSpeedAddr = vtable[1];
-                if (pfnGetCurrentSpeedAddr) {
-                    GetFloatFn GetCurrentSpeed = (GetFloatFn)pfnGetCurrentSpeedAddr;
-                    info.current_speed = GetCurrentSpeed(this_for_call); 
+                if (m_vtableGetCurrentSpeedOffset) {
+                    auto pfn = reinterpret_cast<GetFloatFn>(vtable[m_vtableGetCurrentSpeedOffset / 8]);
+                    if (pfn) info.current_speed = pfn(this_ptr);
                 }
 
-                // 3. The third entry in this v-table (offset +16) is GetAcceleration.
-                uintptr_t pfnGetAccelerationAddr = vtable[2];
-                if (pfnGetAccelerationAddr) {
-                    GetFloatFn GetAcceleration = (GetFloatFn)pfnGetAccelerationAddr;
-                    info.acceleration = GetAcceleration(this_for_call); 
+                if (m_vtableGetAccelerationOffset) {
+                    auto pfn = reinterpret_cast<GetFloatFn>(vtable[m_vtableGetAccelerationOffset / 8]);
+                    if (pfn) info.acceleration = pfn(this_ptr);
                 }
             }
         }
@@ -147,6 +139,41 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
     }
 
     return vehicleInfo;
+}
+
+uintptr_t GameObjectVehicleService::GetPlayerVehiclePtr() const {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameObjectVehicleService");
+
+    if (m_pTrafficManagerAddr == 0 || m_localPlayerControllerOffset == 0 || m_playerVehicleInControllerOffset == 0) {
+        return 0;
+    }
+
+    // Use the Traffic Manager address directly (it's already the object address)
+    uintptr_t trafficManager = m_pTrafficManagerAddr;
+
+    // 1. Get the local player controller pointer
+    uintptr_t pControllerAddr = trafficManager + m_localPlayerControllerOffset;
+    uintptr_t pController = *reinterpret_cast<uintptr_t*>(pControllerAddr);
+    if (!pController) {
+        logger->Warn("GetPlayerVehiclePtr: Player Controller is NULL at 0x{:X}", pControllerAddr);
+        return 0;
+    }
+
+    // 2. Get the player's vehicle (Actor) pointer from the controller
+    uintptr_t pVehicleAddr = pController + m_playerVehicleInControllerOffset;
+    uintptr_t pVehicle = *reinterpret_cast<uintptr_t*>(pVehicleAddr);
+    
+    static uintptr_t lastLoggedVehicle = 0;
+    if (pVehicle != lastLoggedVehicle) {
+        if (pVehicle) {
+            logger->Info("GetPlayerVehiclePtr: Resolved player truck at 0x{:X}", pVehicle);
+        } else {
+            logger->Warn("GetPlayerVehiclePtr: Player truck became NULL");
+        }
+        lastLoggedVehicle = pVehicle;
+    }
+
+    return pVehicle;
 }
 
 } // namespace Data::GameData

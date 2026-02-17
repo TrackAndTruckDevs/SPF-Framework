@@ -50,7 +50,7 @@ const char* CYCLE_SAVED_STATE_SIG = "48 89 5C 24 08 57 48 83 EC 40 48 83 B9 C0";
 void LogFoundAddress(const char* name, uintptr_t address, bool error = false) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("DebugCameraStateDataFinder");
   if (address == 0 || error) {
-    logger->Error("!!! FAILED to find '{}'", name);
+    logger->Error("FAILED to find '{}'", name);
   } else {
     logger->Info("--- Found '{}' at: 0x{:X}", name, address);
   }
@@ -59,29 +59,40 @@ void LogFoundAddress(const char* name, uintptr_t address, bool error = false) {
 
 bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for Debug Camera State data...");
+  logger->Info("Searching for Debug Camera State data (Dynamic Search)...");
 
-  // --- Find AddCameraState function and StateContextOffset ---
-  uintptr_t call_site_anchor = Utils::PatternFinder::Find(SAVE_STATE_CALL_SITE_SIG);
+  bool all_found = true;
+
+  // --- 1. Find AddCameraState function and StateContextOffset ---
+  /*
+   * Ghidra: 1404b145d
+   * Anchor: LEA RCX, [RSI + 0xDB0]; ...; CALL AddAnimatedCameraState; LEA RCX, [rip + "Camera state saved"]
+   */
+  const char* p_save_anchor = "48 8D 8E ?? ?? ?? ?? 48 8D 54 24 ?? E8 ?? ?? ?? ?? 48 8D 0D";
+  uintptr_t call_site_anchor = Utils::PatternFinder::Find(p_save_anchor);
 
   if (call_site_anchor) {
-    // The signature points to the first LEA. Extract the context offset from it.
-    int32_t context_offset = *(int32_t*)(call_site_anchor + 3);
-    owner.SetStateContextOffset(context_offset);
-    logger->Info("--- Found StateContextOffset: 0x{:X}", context_offset);
+    int32_t ctxOff = Utils::PatternFinder::ReadInt32(call_site_anchor + 3);
+    if (Utils::PatternFinder::IsSaneOffset(ctxOff)) {
+      owner.SetStateContextOffset(ctxOff);
+      owner.SetStateManagerOffset(ctxOff); // Context and Manager share the same offset
+      logger->Info("--- Found StateContextOffset: 0x{:X}", ctxOff);
+    } else {
+      logger->Error("StateContextOffset INVALID (0x{:X})", ctxOff);
+      all_found = false;
+    }
 
-    // The CALL instruction is at a fixed offset from the start of the signature pattern.
-    // 7 bytes for first LEA + 5 bytes for skipped volatile LEA = 12 bytes.
-    uintptr_t call_instruction_address = call_site_anchor + 12;
-    uintptr_t next_instruction_address = call_instruction_address + 5;
-    int32_t relative_offset = *(int32_t*)(call_instruction_address + 1);
-    uintptr_t function_address = next_instruction_address + relative_offset;
-    LogFoundAddress("AddCameraState", function_address);
-    owner.SetAddCameraStateFunc((void*)function_address);
+    uintptr_t pAddState = Utils::PatternFinder::GetRipAddress(call_site_anchor + 12, 1, 5);
+    if (pAddState) {
+      owner.SetAddCameraStateFunc((void*)pAddState);
+      logger->Info("--- Found 'AddCameraState' at: 0x{:X}", pAddState);
+    } else {
+      logger->Error("FAILED to resolve AddCameraState address");
+      all_found = false;
+    }
   } else {
-    LogFoundAddress("Save State call site", 0, true);
-    owner.SetStateContextOffset(0);
-    owner.SetAddCameraStateFunc(nullptr);
+    logger->Error("FAILED to find Save State call site anchor");
+    all_found = false;
   }
 
   // --- Find OpenFileForCameraState ---
@@ -110,115 +121,84 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
   // --- Find StateArrayOffset (within CycleSavedState func) ---
   if (pfnCycleState && owner.GetStateArrayOffset() == 0) {
-    // Find the instruction that loads the base address of the states array.
-    // Expected offset: 0xdb8
-    // Signature: JNC loc_short; MOV RAX, qword ptr [RBX + offset]
-    const unsigned char pattern[] = {0x73, 0x3F, 0x48, 0x8B, 0x83};
-    uintptr_t instruction_addr = Utils::PatternFinder::Find(pfnCycleState, 256, pattern, sizeof(pattern));
-    if (instruction_addr) {
-      // The offset is 5 bytes after the start of the signature
-      int32_t offset = *(int32_t*)(instruction_addr + 5);
-      owner.SetStateArrayOffset(offset);
-      logger->Info("--- Found StateArrayOffset (states array ptr): 0x{:X}", offset);
-    } else {
-      LogFoundAddress("StateArrayOffset", 0, true);
-    }
+    // Anchor: MOV [RBX+index], RDX; CMP RDX, RCX; JNC ...; MOV RAX, [RBX+array]
+    const char* p_arr = "48 89 93 ?? ?? ?? ?? 48 3B D1 ?? ?? 48 8B 83";
+    uintptr_t addr = Utils::PatternFinder::Find(pfnCycleState, 512, p_arr);
+    if (addr) {
+      int32_t off = Utils::PatternFinder::ReadInt32(addr + 15);
+      if (Utils::PatternFinder::IsSaneOffset(off)) {
+        owner.SetStateArrayOffset(off);
+        logger->Info("--- Found StateArrayOffset: 0x{:X}", off);
+      } else { logger->Error("StateArrayOffset INVALID (0x{:X})", off); all_found = false; }
+    } else { logger->Error("FAILED to find StateArrayOffset anchor"); all_found = false; }
   }
 
   // --- Find StateCountOffset (within CycleSavedState func) ---
   if (pfnCycleState && owner.GetStateCountOffset() == 0) {
-    // Find the instruction that compares the state count to zero at the start of the function.
-    // Expected offset: 0xdc0
-    // Signature: PUSH RDI; SUB RSP, ?; CMP qword ptr [RCX + offset], 0
-    const unsigned char pattern[] = {0x57, 0x48, 0x83, 0xEC, '?', 0x48, 0x83, 0xB9};
-    uintptr_t instruction_addr = Utils::PatternFinder::Find(pfnCycleState, 256, pattern, sizeof(pattern));
-    if (instruction_addr) {
-      // The offset is 8 bytes after the start of the signature
-      int32_t offset = *(int32_t*)(instruction_addr + 8);
-      owner.SetStateCountOffset(offset);
-      logger->Info("--- Found StateCountOffset (states count): 0x{:X}", offset);
-    } else {
-      LogFoundAddress("StateCountOffset", 0, true);
-    }
+    // Anchor: CMP qword ptr [RCX + offset], 0; MOVZX EDI, DL
+    const char* p_count = "48 83 B9 ?? ?? ?? ?? ?? 0F B6 FA";
+    uintptr_t addr = Utils::PatternFinder::Find(pfnCycleState, 256, p_count);
+    if (addr) {
+      int32_t off = Utils::PatternFinder::ReadInt32(addr + 3);
+      if (Utils::PatternFinder::IsSaneOffset(off)) {
+        owner.SetStateCountOffset(off);
+        logger->Info("--- Found StateCountOffset: 0x{:X}", off);
+      } else { logger->Error("StateCountOffset INVALID (0x{:X})", off); all_found = false; }
+    } else { logger->Error("FAILED to find StateCountOffset anchor"); all_found = false; }
   }
 
   // --- Find StateCurrentIndexOffset (within CycleSavedState func) ---
   if (pfnCycleState && owner.GetStateCurrentIndexOffset() == 0) {
-    // Find the instruction that loads the current state index.
-    // Expected offset: 0xda8
-    // Signature: XOR EDX,EDX; MOV RAX,[RBX+offset]
-    const unsigned char pattern[] = {0x33, 0xD2, 0x48, 0x8B, 0x83};
-    uintptr_t instruction_addr = Utils::PatternFinder::Find(pfnCycleState, 256, pattern, sizeof(pattern));
-    if (instruction_addr) {
-      // The offset is 5 bytes after the start of the signature
-      int32_t offset = *(int32_t*)(instruction_addr + 5);
-      owner.SetStateCurrentIndexOffset(offset);
-      logger->Info("--- Found StateCurrentIndexOffset (current index): 0x{:X}", offset);
-    } else {
-      LogFoundAddress("StateCurrentIndexOffset", 0, true);
-    }
+    // Anchor: XOR EDX, EDX; MOV RAX, [RBX + offset]; TEST DIL, DIL
+    const char* p_idx = "33 D2 48 8B 83 ?? ?? ?? ?? 40 84 FF";
+    uintptr_t addr = Utils::PatternFinder::Find(pfnCycleState, 256, p_idx);
+    if (addr) {
+      int32_t off = Utils::PatternFinder::ReadInt32(addr + 5);
+      if (Utils::PatternFinder::IsSaneOffset(off)) {
+        owner.SetStateCurrentIndexOffset(off);
+        logger->Info("--- Found StateCurrentIndexOffset: 0x{:X}", off);
+      } else { logger->Error("StateCurrentIndexOffset INVALID (0x{:X})", off); all_found = false; }
+    } else { logger->Error("FAILED to find StateCurrentIndexOffset anchor"); all_found = false; }
   }
 
-  // --- Find ApplyState (relative to a known anchor within CycleSavedState) ---
+  // --- Find ApplyState (within CycleSavedState) ---
   if (pfnCycleState && owner.GetApplyStateFunc() == nullptr) {
-    // 1. Find the anchor point (the MOV instruction for the array offset) again.
-    const unsigned char anchor_pattern[] = {0x73, 0x3F, 0x48, 0x8B, 0x83};
-    uintptr_t anchor_addr = Utils::PatternFinder::Find(pfnCycleState, 256, anchor_pattern, sizeof(anchor_pattern));
-
-    if (anchor_addr) {
-      // 2. From the anchor, scan forward for the CALL instruction, preceded by its argument setup.
-      // This is more robust than a fixed offset.
-      // Signature: MOV RCX, RBX; CALL rel32
-      const unsigned char call_pattern[] = {0x48, 0x8B, 0xCB, 0xE8};
-      uintptr_t call_anchor_addr = Utils::PatternFinder::Find(anchor_addr, 64, call_pattern, sizeof(call_pattern));
-
-      if (call_anchor_addr) {
-        // 3. Calculate the final address from the relative CALL.
-        uintptr_t call_instruction_addr = call_anchor_addr + 3;  // Move to the E8 opcode
-        uintptr_t next_instruction_addr = call_instruction_addr + 5;
-        int32_t relative_offset = *(int32_t*)(call_instruction_addr + 1);
-        uintptr_t function_address = next_instruction_addr + relative_offset;
-        owner.SetApplyStateFunc((void*)function_address);
-        LogFoundAddress("ApplyState", function_address);
-      } else {
-        LogFoundAddress("ApplyState (call pattern)", 0, true);
-      }
-    } else {
-      LogFoundAddress("ApplyState (anchor pattern)", 0, true);
-    }
+    // Anchor: MOV RCX, RBX; CALL rel32; MOV RDX, [RBX + index]
+    const char* p_apply = "48 8B CB E8 ?? ?? ?? ?? 48 8B 93";
+    uintptr_t addr = Utils::PatternFinder::Find(pfnCycleState, 512, p_apply);
+    if (addr) {
+      uintptr_t pFunc = Utils::PatternFinder::GetRipAddress(addr + 3, 1, 5);
+      if (pFunc) {
+        owner.SetApplyStateFunc((void*)pFunc);
+        logger->Info("--- Found 'ApplyState' at: 0x{:X}", pFunc);
+      } else { logger->Error("FAILED to resolve ApplyState address"); all_found = false; }
+    } else { logger->Error("FAILED to find ApplyState anchor"); all_found = false; }
   }
 
   // --- Find LoadStatesFromFile (within CycleSavedState func) ---
   if (pfnCycleState && (owner.GetLoadStatesFromFileFunc() == nullptr || owner.GetStateManagerOffset() == 0)) {
-    // Find the ADD RCX, offset; CALL rel32 sequence
-    uintptr_t instruction_addr = Utils::PatternFinder::Find(pfnCycleState, 256, "48 81 C1 ? ? ? ? E8");
-    if (instruction_addr) {
-      // Extract the manager offset from the ADD instruction
-      int32_t managerOffset = *(int32_t*)(instruction_addr + 3);
-      owner.SetStateManagerOffset(managerOffset);
-      logger->Info("--- Found StateManagerOffset: 0x{:X}", managerOffset);
+    // Anchor: ADD RCX, offset; CALL rel32; TEST AL, AL
+    const char* p_load = "48 81 C1 ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0";
+    uintptr_t addr = Utils::PatternFinder::Find(pfnCycleState, 256, p_load);
+    if (addr) {
+      int32_t off = Utils::PatternFinder::ReadInt32(addr + 3);
+      uintptr_t pFunc = Utils::PatternFinder::GetRipAddress(addr + 7, 1, 5);
 
-      // Calculate the function address from the CALL instruction
-      uintptr_t call_instruction_addr = instruction_addr + 7;  // Move to the E8 opcode
-      uintptr_t next_instruction_addr = call_instruction_addr + 5;
-      int32_t relative_offset = *(int32_t*)(call_instruction_addr + 1);
-      uintptr_t function_address = next_instruction_addr + relative_offset;
-      owner.SetLoadStatesFromFileFunc((void*)function_address);
-      LogFoundAddress("LoadStatesFromFile", function_address);
-    } else {
-      LogFoundAddress("LoadStatesFromFile call site", 0, true);
-    }
+      if (Utils::PatternFinder::IsSaneOffset(off)) {
+        owner.SetStateManagerOffset(off);
+        logger->Info("--- Found StateManagerOffset: 0x{:X}", off);
+      } else { logger->Error("StateManagerOffset INVALID (0x{:X})", off); all_found = false; }
+
+      if (pFunc) {
+        owner.SetLoadStatesFromFileFunc((void*)pFunc);
+        logger->Info("--- Found 'LoadStatesFromFile' at: 0x{:X}", pFunc);
+      } else { logger->Error("FAILED to resolve LoadStatesFromFile address"); all_found = false; }
+    } else { logger->Error("FAILED to find LoadStatesFromFile anchor"); all_found = false; }
   }
 
-  // TODO: Find ApplyStateFunc when approved
-
-  m_isReady = owner.GetAddCameraStateFunc() != nullptr && owner.GetStateContextOffset() != 0 && owner.GetOpenFileForCameraStateFunc() != nullptr &&
-              owner.GetFormatAndWriteCameraStateFunc() != nullptr && owner.GetCycleSavedStateFunc() != nullptr && owner.GetStateArrayOffset() != 0 &&
-              owner.GetStateCountOffset() != 0 && owner.GetStateCurrentIndexOffset() != 0 && owner.GetApplyStateFunc() != nullptr && owner.GetLoadStatesFromFileFunc() != nullptr &&
-              owner.GetStateManagerOffset() != 0;
-
+  m_isReady = all_found;
   if (m_isReady) {
-    logger->Info("Successfully found all required Debug State data.");
+    logger->Info("Successfully found all required Debug State data dynamically.");
   } else {
     logger->Error("Failed to find one or more required Debug State data.");
   }

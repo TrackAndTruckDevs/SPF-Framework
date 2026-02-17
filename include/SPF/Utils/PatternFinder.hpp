@@ -42,6 +42,38 @@ class PatternFinder {
    */
   static uintptr_t Find(uintptr_t base, size_t size, const unsigned char* signature, size_t signatureSize);
 
+  /**
+   * @brief Reads a 32-bit integer from the specified address.
+   *
+   * @param address The memory address to read from.
+   * @return The 32-bit integer value.
+   */
+  static int32_t ReadInt32(uintptr_t address);
+
+  /**
+   * @brief Reads an 8-bit integer from the specified address.
+   *
+   * @param address The memory address to read from.
+   * @return The 8-bit integer value.
+   */
+  static int8_t ReadInt8(uintptr_t address);
+
+  /**
+   * @brief Calculates an absolute address from a RIP-relative instruction.
+   *
+   * @param instructionAddr The starting address of the instruction.
+   * @param offsetPos The position of the 32-bit displacement relative to instructionAddr.
+   * @param instructionSize The total size of the instruction in bytes.
+   * @return The calculated absolute address.
+   */
+  static uintptr_t GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
+
+  /**
+   * @brief Checks if an offset value is within a reasonable range for game objects.
+   * Prevents using "garbage" values extracted from incorrect pattern matches.
+   */
+  static bool IsSaneOffset(int32_t offset);
+
  private:
   static std::vector<int> SignatureToVector(const std::string& signature);
   static uintptr_t Find(const char* moduleName, const std::vector<int>& signature);

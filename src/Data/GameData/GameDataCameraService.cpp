@@ -184,6 +184,10 @@ void GameDataCameraService::Shutdown() {
 
     m_pDebugCameraContext = 0;
     m_pfnSetDebugCameraMode = nullptr;
+    m_pfnSetSelectedActor = nullptr;
+    m_pfnSetPositionLock = nullptr;
+    m_pfnSetRotationLock = nullptr;
+    m_pfnSetOrbitMode = nullptr;
 
     m_pfnSetHudVisibility = nullptr;
     m_pfnSetDebugHudPosition = nullptr;

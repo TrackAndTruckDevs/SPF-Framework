@@ -20,7 +20,7 @@ void GameCameraFree::OnActivate() {
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
     if (m_pCameraObject) {
-      logger->Info("!!! GameCameraFree object base address successfully obtained: {:#x}", (uintptr_t)m_pCameraObject);
+      logger->Info("GameCameraFree object base address successfully obtained: {:#x}", (uintptr_t)m_pCameraObject);
     }
   }
 }

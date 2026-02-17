@@ -40,16 +40,33 @@ public:
     uintptr_t GetVehicleCountOffset() const { return m_vehicleCountOffset; }
     uintptr_t GetSpawnedVehicleStructSize() const { return m_spawnedVehicleStructSize; }
     uintptr_t GetVehicleIdOffset() const { return m_vehicleIdOffset; }
+    uintptr_t GetLocalPlayerControllerOffset() const { return m_localPlayerControllerOffset; }
+    uintptr_t GetPlayerVehicleInControllerOffset() const { return m_playerVehicleInControllerOffset; }
     uintptr_t GetPatienceOffset() const { return m_patienceOffset; }
     uintptr_t GetSafetyOffset() const { return m_safetyOffset; }
     uintptr_t GetTargetSpeedOffset() const { return m_targetSpeedOffset; }
     uintptr_t GetSpeedLimitOffset() const { return m_speedLimitOffset; }
     uintptr_t GetLaneSpeedInputOffset() const { return m_laneSpeedInputOffset; }
+    uintptr_t GetVehicleSubObjectOffset() const { return m_vehicleSubObjectOffset; }
+    uintptr_t GetVtableGetCurrentSpeedOffset() const { return m_vtableGetCurrentSpeedOffset; }
+    uintptr_t GetVtableGetAccelerationOffset() const { return m_vtableGetAccelerationOffset; }
+    
+    /** @brief Follows the chain [[TrafficManager] + Off1] + Off2 to get the player's truck. */
+    uintptr_t GetPlayerVehiclePtr() const;
+
     std::vector<VehicleFullInfo> GetAllVehiclesFullInfo() const;
 
     // --- Public Setters (for use by finder implementations) ---
     void SetTrafficManagerAddr(uintptr_t ptr) {
         m_pTrafficManagerAddr = ptr;
+    }
+
+    void SetLocalPlayerControllerOffset(uintptr_t offset) {
+        m_localPlayerControllerOffset = offset;
+    }
+
+    void SetPlayerVehicleInControllerOffset(uintptr_t offset) {
+        m_playerVehicleInControllerOffset = offset;
     }
 
     void SetPArrayObjectOffset(uintptr_t offset) {
@@ -88,6 +105,18 @@ public:
         m_laneSpeedInputOffset = offset;
     }
 
+    void SetVehicleSubObjectOffset(uintptr_t offset) {
+        m_vehicleSubObjectOffset = offset;
+    }
+
+    void SetVtableGetCurrentSpeedOffset(uintptr_t offset) {
+        m_vtableGetCurrentSpeedOffset = offset;
+    }
+
+    void SetVtableGetAccelerationOffset(uintptr_t offset) {
+        m_vtableGetAccelerationOffset = offset;
+    }
+
 private:
     GameObjectVehicleService() = default;
     ~GameObjectVehicleService() = default;
@@ -96,6 +125,8 @@ private:
 
     bool m_isInitialized = false;
     uintptr_t m_pTrafficManagerAddr = 0;
+    uintptr_t m_localPlayerControllerOffset = 0;
+    uintptr_t m_playerVehicleInControllerOffset = 0;
     uintptr_t m_pArrayObjectOffset = 0;
     uintptr_t m_vehicleCountOffset = 0;
     uintptr_t m_spawnedVehicleStructSize = 0;
@@ -105,6 +136,9 @@ private:
     uintptr_t m_targetSpeedOffset = 0;
     uintptr_t m_speedLimitOffset = 0;
     uintptr_t m_laneSpeedInputOffset = 0;
+    uintptr_t m_vehicleSubObjectOffset = 0;
+    uintptr_t m_vtableGetCurrentSpeedOffset = 0;
+    uintptr_t m_vtableGetAccelerationOffset = 0;
     std::vector<std::unique_ptr<IObjectDataFinder>> m_dataFinders;
 };
 

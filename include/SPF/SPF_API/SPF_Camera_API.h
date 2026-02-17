@@ -869,6 +869,79 @@ typedef void (*SPF_Camera_SetDebugGameUiVisible_t)(bool visible);
 typedef bool (*SPF_Camera_GetDebugGameUiVisible_t)(bool* out_isVisible);
 
 
+// --- New Debug Camera Control Functions ---
+
+/**
+ * @brief Sets the position lock for the debug camera.
+ * @param locked True to lock the camera in place, false to allow movement.
+ */
+typedef void (*SPF_Camera_SetDebugPosLock_t)(bool locked);
+
+/**
+ * @brief Checks if the debug camera's position is currently locked.
+ * @param[out] out_locked Pointer to store the boolean result.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetDebugPosLock_t)(bool* out_locked);
+
+/**
+ * @brief Sets the rotation lock for the debug camera.
+ * @param locked True to lock the camera's orientation, false to allow rotation.
+ */
+typedef void (*SPF_Camera_SetDebugRotLock_t)(bool locked);
+
+/**
+ * @brief Checks if the debug camera's rotation is currently locked.
+ * @param[out] out_locked Pointer to store the boolean result.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetDebugRotLock_t)(bool* out_locked);
+
+/**
+ * @brief Enables or disables orbit mode for the debug camera.
+ * @param enabled True to enable orbit mode around the selected object.
+ */
+typedef void (*SPF_Camera_SetDebugOrbitMode_t)(bool enabled);
+
+/**
+ * @brief Checks if orbit mode is currently enabled.
+ * @param[out] out_enabled Pointer to store the boolean result.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetDebugOrbitMode_t)(bool* out_enabled);
+
+/**
+ * @brief Sets the zoom/movement speed when in orbit or position lock mode.
+ * @param speed The new speed value.
+ */
+typedef void (*SPF_Camera_SetDebugOrbitSpeed_t)(float speed);
+
+/**
+ * @brief Gets the current zoom/movement speed for orbit mode.
+ * @param[out] out_speed Pointer to store the speed value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetDebugOrbitSpeed_t)(float* out_speed);
+
+/**
+ * @brief Gets the pointer to the currently selected game object (Actor).
+ * @return A pointer to the selected object, or NULL if nothing is selected.
+ */
+typedef void* (*SPF_Camera_GetDebugSelectedObject_t)();
+
+/**
+ * @brief Programmatically selects a game object (Actor) for the debug camera.
+ * @param ptr The pointer to the game object to select.
+ */
+typedef void (*SPF_Camera_SetDebugSelectedObject_t)(void* ptr);
+
+/**
+ * @brief Gets the pointer to the game object currently under the mouse cursor.
+ * @return A pointer to the hovered object, or NULL.
+ */
+typedef void* (*SPF_Camera_GetDebugHoveredObject_t)();
+
+
 // --- Debug Camera State Functions ---
 
 /**
@@ -1247,6 +1320,30 @@ typedef struct SPF_Camera_API {
     SPF_Camera_SetDebugGameUiVisible_t Cam_SetDebugGameUiVisible;
     /** @brief Checks if the main game UI is visible. See `SPF_Camera_GetDebugGameUiVisible_t`. */
     SPF_Camera_GetDebugGameUiVisible_t Cam_GetDebugGameUiVisible;
+
+    // --- New Debug Camera Controls ---
+    /** @brief Controls/Queries the position lock. See `SPF_Camera_SetDebugPosLock_t`. */
+    SPF_Camera_SetDebugPosLock_t Cam_SetDebugPosLock;
+    SPF_Camera_GetDebugPosLock_t Cam_GetDebugPosLock;
+    
+    /** @brief Controls/Queries the rotation lock. See `SPF_Camera_SetDebugRotLock_t`. */
+    SPF_Camera_SetDebugRotLock_t Cam_SetDebugRotLock;
+    SPF_Camera_GetDebugRotLock_t Cam_GetDebugRotLock;
+    
+    /** @brief Controls/Queries Orbit Mode. See `SPF_Camera_SetDebugOrbitMode_t`. */
+    SPF_Camera_SetDebugOrbitMode_t Cam_SetDebugOrbitMode;
+    SPF_Camera_GetDebugOrbitMode_t Cam_GetDebugOrbitMode;
+    
+    /** @brief Controls/Queries Orbit Zoom Speed. See `SPF_Camera_SetDebugOrbitSpeed_t`. */
+    SPF_Camera_SetDebugOrbitSpeed_t Cam_SetDebugOrbitSpeed;
+    SPF_Camera_GetDebugOrbitSpeed_t Cam_GetDebugOrbitSpeed;
+    
+    /** @brief Gets or sets the Selected Actor (target). See `SPF_Camera_GetDebugSelectedObject_t`. */
+    SPF_Camera_GetDebugSelectedObject_t Cam_GetDebugSelectedObject;
+    SPF_Camera_SetDebugSelectedObject_t Cam_SetDebugSelectedObject;
+    
+    /** @brief Gets the Actor currently under the cursor. See `SPF_Camera_GetDebugHoveredObject_t`. */
+    SPF_Camera_GetDebugHoveredObject_t Cam_GetDebugHoveredObject;
 
     // --- Debug Camera State Management ---
     /** @brief Gets the number of saved camera states. See `SPF_Camera_GetStateCount_t`. */

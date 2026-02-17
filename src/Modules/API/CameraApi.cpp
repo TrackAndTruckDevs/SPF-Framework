@@ -644,6 +644,80 @@ bool CameraApi::T_Camera_GetDebugGameUiVisible(bool* out_isVisible) {
   return false;
 }
 
+// --- New Debug Camera Control Trampolines ---
+
+void CameraApi::T_Camera_SetDebugPosLock(bool locked) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    debugCam->SetPosLock(locked);
+  }
+}
+
+bool CameraApi::T_Camera_GetDebugPosLock(bool* out_locked) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return debugCam->GetPosLock(out_locked);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetDebugRotLock(bool locked) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    debugCam->SetRotLock(locked);
+  }
+}
+
+bool CameraApi::T_Camera_GetDebugRotLock(bool* out_locked) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return debugCam->GetRotLock(out_locked);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetDebugOrbitMode(bool enabled) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    debugCam->SetOrbitMode(enabled);
+  }
+}
+
+bool CameraApi::T_Camera_GetDebugOrbitMode(bool* out_enabled) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return debugCam->GetOrbitMode(out_enabled);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetDebugOrbitSpeed(float speed) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    debugCam->SetOrbitSpeed(speed);
+  }
+}
+
+bool CameraApi::T_Camera_GetDebugOrbitSpeed(float* out_speed) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return debugCam->GetOrbitSpeed(out_speed);
+  }
+  return false;
+}
+
+void* CameraApi::T_Camera_GetDebugSelectedObject() {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return reinterpret_cast<void*>(debugCam->GetSelectedObjectPtr());
+  }
+  return nullptr;
+}
+
+void CameraApi::T_Camera_SetDebugSelectedObject(void* ptr) {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    debugCam->SetSelectedObjectPtr(reinterpret_cast<uintptr_t>(ptr));
+  }
+}
+
+void* CameraApi::T_Camera_GetDebugHoveredObject() {
+  if (auto* debugCam = GameCameraManager::GetInstance().GetDebugCamera()) {
+    return reinterpret_cast<void*>(debugCam->GetHoveredObjectPtr());
+  }
+  return nullptr;
+}
+
 // --- Debug Camera State Trampolines ---
 int CameraApi::T_Camera_GetStateCount() {
   if (auto* stateCam = GameCameraManager::GetInstance().GetDebugStateCamera()) {
@@ -979,6 +1053,19 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetDebugHudPosition = &T_Camera_GetDebugHudPosition;
   camera_api->Cam_SetDebugGameUiVisible = &T_Camera_SetDebugGameUiVisible;
   camera_api->Cam_GetDebugGameUiVisible = &T_Camera_GetDebugGameUiVisible;
+
+  // New Debug Controls
+  camera_api->Cam_SetDebugPosLock = &T_Camera_SetDebugPosLock;
+  camera_api->Cam_GetDebugPosLock = &T_Camera_GetDebugPosLock;
+  camera_api->Cam_SetDebugRotLock = &T_Camera_SetDebugRotLock;
+  camera_api->Cam_GetDebugRotLock = &T_Camera_GetDebugRotLock;
+  camera_api->Cam_SetDebugOrbitMode = &T_Camera_SetDebugOrbitMode;
+  camera_api->Cam_GetDebugOrbitMode = &T_Camera_GetDebugOrbitMode;
+  camera_api->Cam_SetDebugOrbitSpeed = &T_Camera_SetDebugOrbitSpeed;
+  camera_api->Cam_GetDebugOrbitSpeed = &T_Camera_GetDebugOrbitSpeed;
+  camera_api->Cam_GetDebugSelectedObject = &T_Camera_GetDebugSelectedObject;
+  camera_api->Cam_SetDebugSelectedObject = &T_Camera_SetDebugSelectedObject;
+  camera_api->Cam_GetDebugHoveredObject = &T_Camera_GetDebugHoveredObject;
 
   // Debug Camera State Management
   camera_api->Cam_GetStateCount = &T_Camera_GetStateCount;

@@ -497,7 +497,7 @@ void CameraWindow::RenderContent() {
         float mouse_lr_default, mouse_ud_default;
         if (interiorCam->GetRotationDefaults(&mouse_lr_default, &mouse_ud_default)) {
           bool defaultsChanged = false;
-          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultLr).c_str(), &mouse_lr_default, 0.0f, 360.0f, "%.1f");
+          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultLr).c_str(), &mouse_lr_default, -360.0f, 360.0f, "%.1f");
           defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultUd).c_str(), &mouse_ud_default, -90.0f, 90.0f, "%.1f");
           if (defaultsChanged) {
             interiorCam->SetRotationDefaults(mouse_lr_default, mouse_ud_default);
@@ -1149,6 +1149,78 @@ void CameraWindow::RenderContent() {
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::VIDEO) {
                 debugCam->SetMode(DebugCameraMode::VIDEO);
               }
+
+              ImGui::Text("Selection & Locks:");
+              bool posLock, rotLock, orbit;
+              if (debugCam->GetPosLock(&posLock)) {
+                if (ImGui::Checkbox("Position Lock", &posLock)) debugCam->SetPosLock(posLock);
+              }
+              ImGui::SameLine();
+              if (debugCam->GetRotLock(&rotLock)) {
+                if (ImGui::Checkbox("Rotation Lock", &rotLock)) debugCam->SetRotLock(rotLock);
+              }
+              ImGui::SameLine();
+              if (debugCam->GetOrbitMode(&orbit)) {
+                if (ImGui::Checkbox("Orbit Mode", &orbit)) debugCam->SetOrbitMode(orbit);
+              }
+
+              float orbitSpeed;
+              if (debugCam->GetOrbitSpeed(&orbitSpeed)) {
+                if (ImGui::SliderFloat("Orbit Zoom Speed", &orbitSpeed, -100.0f, 100.0f, "%.2f")) {
+                  debugCam->SetOrbitSpeed(orbitSpeed);
+                }
+              }
+
+              ImGui::Separator();
+              uintptr_t selectedObj = debugCam->GetSelectedObjectPtr();
+              uintptr_t hoveredObj = debugCam->GetHoveredObjectPtr();
+
+              ImGui::Text("Hovered Actor:  0x%p", (void*)hoveredObj);
+              ImGui::Text("Selected Actor: 0x%p", (void*)selectedObj);
+
+              ImGui::Spacing();
+              
+              // Simple list selection
+              auto& objectService = SPF::Data::GameData::GameObjectVehicleService::GetInstance();
+              const auto vehicles = objectService.GetAllVehiclesFullInfo();
+              static int listIdx = -1;
+              
+              std::string comboLabel = (listIdx != -1 && listIdx < vehicles.size()) ? "ID: " + std::to_string(vehicles[listIdx].id) : "Select from list";
+              if (ImGui::BeginCombo("Traffic Vehicles", comboLabel.c_str())) {
+                for (int i = 0; i < vehicles.size(); ++i) {
+                  if (ImGui::Selectable(("ID: " + std::to_string(vehicles[i].id)).c_str(), listIdx == i)) {
+                    listIdx = i;
+                  }
+                }
+                ImGui::EndCombo();
+              }
+
+              uintptr_t toCapture = (hoveredObj != 0) ? hoveredObj : ((listIdx != -1 && listIdx < vehicles.size()) ? vehicles[listIdx].pointer : 0);
+
+              if (toCapture != 0) {
+                const char* btnText = (hoveredObj != 0) ? "Capture Hovered Actor" : "Capture Selected Actor";
+                if (ImGui::Button(btnText, ImVec2(-1, 0))) {
+                  debugCam->SetSelectedObjectPtr(toCapture);
+                }
+              } else {
+                ImGui::BeginDisabled();
+                ImGui::Button("No Actor to capture", ImVec2(-1, 0));
+                ImGui::EndDisabled();
+              }
+
+              ImGui::Spacing();
+              uintptr_t myTruck = objectService.GetPlayerVehiclePtr();
+              if (myTruck != 0) {
+                if (ImGui::Button("Capture My Truck", ImVec2(-1, 0))) {
+                  debugCam->SetSelectedObjectPtr(myTruck);
+                }
+              } else {
+                ImGui::BeginDisabled();
+                ImGui::Button("My Truck not found", ImVec2(-1, 0));
+                ImGui::EndDisabled();
+              }
+
+              ImGui::Separator();
               ImGui::Text("%s", loc.Get(m_locHUDPositionDebug).c_str());
               if (ImGui::Button(loc.Get(m_locTopLeftDebug).c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::TopLeft);
@@ -1183,56 +1255,88 @@ void CameraWindow::RenderContent() {
               ImGui::Text("%s", loc.Get(m_locCameraFocusesTraffic).c_str());
               ImGui::Separator();
 
-              // Get vehicle data once per frame
+              // 1. Prepare data (My Truck + Traffic)
               auto& objectService = SPF::Data::GameData::GameObjectVehicleService::GetInstance();
-              const auto vehicles = objectService.GetAllVehiclesFullInfo();
+              uintptr_t myTruckPtr = objectService.GetPlayerVehiclePtr();
+              auto trafficVehicles = objectService.GetAllVehiclesFullInfo();
+              
+              // Sort traffic by ID
+              std::sort(trafficVehicles.begin(), trafficVehicles.end(), [](const auto& a, const auto& b) {
+                return a.id < b.id;
+              });
 
-              // UI state for the dropdown
-              static int selectedVehicleIndex = -1;
-              static std::string selectedVehicleLabel; // Changed to static std::string to persist its memory.
-
-              // Ensure index is valid if the number of vehicles changes
-              if (selectedVehicleIndex != -1 && selectedVehicleIndex < vehicles.size()) {
-                selectedVehicleLabel = "ID: " + std::to_string(vehicles[selectedVehicleIndex].id);
-              } else {
-                selectedVehicleLabel = "None"; // Default value when nothing is selected or index is invalid.
-                selectedVehicleIndex = -1; // Reset index if invalid
+              struct Entry { int id; uintptr_t ptr; std::string label; bool is_mine; };
+              std::vector<Entry> allEntries;
+              if (myTruckPtr) allEntries.push_back({ -1, myTruckPtr, "ID: [MY TRUCK]", true });
+              for (const auto& v : trafficVehicles) {
+                allEntries.push_back({ v.id, v.pointer, "ID: " + std::to_string(v.id), false });
               }
 
-              // Create the dropdown
-              if (ImGui::BeginCombo("Select Vehicle", selectedVehicleLabel.c_str())) {
-                for (int i = 0; i < vehicles.size(); ++i) {
-                  const bool is_selected = (selectedVehicleIndex == i);
-                  std::string label = "ID: " + std::to_string(vehicles[i].id);
-                  if (ImGui::Selectable(label.c_str(), is_selected)) {
-                    selectedVehicleIndex = i;
-                  }
-                  if (is_selected) {
-                    ImGui::SetItemDefaultFocus();
+              // UI state for selection
+              static uintptr_t selectedPtr = 0;
+              std::string preview = "None";
+              int selectedIdx = -1;
+
+              for (int i = 0; i < allEntries.size(); ++i) {
+                if (allEntries[i].ptr == selectedPtr) {
+                  preview = allEntries[i].label;
+                  selectedIdx = i;
+                  break;
+                }
+              }
+
+              // 2. Render Selection Combo
+              if (ImGui::BeginCombo("Select Vehicle", preview.c_str())) {
+                for (int i = 0; i < allEntries.size(); ++i) {
+                  if (ImGui::Selectable(allEntries[i].label.c_str(), selectedIdx == i)) {
+                    selectedPtr = allEntries[i].ptr;
                   }
                 }
                 ImGui::EndCombo();
               }
 
-              // Display details for the selected vehicle
-              if (selectedVehicleIndex != -1) {
-                const auto& vehicle = vehicles[selectedVehicleIndex];
+              // 3. Display details and Capture button
+              if (selectedPtr != 0) {
                 ImGui::Separator();
-                ImGui::Text("Selected Vehicle Details:");
-                ImGui::Text("  ID: %d", vehicle.id);
-                ImGui::Text("  Pointer: 0x%p", (void*)vehicle.pointer);
-                ImGui::Text("  Patience: %.2f", vehicle.patience);
-                ImGui::Text("  Safety: %.2f", vehicle.safety);
-                ImGui::Text("  Target Speed: %.2f mph", vehicle.target_speed * 2.23694f);
-                ImGui::Text("  Speed Limit: %.2f mph", vehicle.speed_limit * 2.23694f);
-                ImGui::Text("  Current Speed: %.2f mph", vehicle.current_speed * 2.23694f);
-                ImGui::Text("  Acceleration: %.2f", vehicle.acceleration);
+                
+                // Find if it's a traffic vehicle to show details
+                const SPF::Data::GameData::GameObjectVehicleService::VehicleFullInfo* vInfo = nullptr;
+                for (const auto& v : trafficVehicles) { if (v.pointer == selectedPtr) { vInfo = &v; break; } }
+
+                if (vInfo) {
+                  ImGui::Text("Selected Vehicle Details (Traffic ID: %d):", vInfo->id);
+                  ImGui::Text("  Pointer: 0x%p", (void*)vInfo->pointer);
+                  ImGui::Text("  Patience: %.2f", vInfo->patience);
+                  ImGui::Text("  Safety: %.2f", vInfo->safety);
+                  ImGui::Text("  Target Speed: %.2f mph", vInfo->target_speed * 2.23694f);
+                  ImGui::Text("  Speed Limit: %.2f mph", vInfo->speed_limit * 2.23694f);
+                  ImGui::Text("  Current Speed: %.2f mph", vInfo->current_speed * 2.23694f);
+                  ImGui::Text("  Acceleration: %.2f", vInfo->acceleration);
+                } else if (selectedPtr == myTruckPtr) {
+                  ImGui::Text("Selected Vehicle Details (MY TRUCK):");
+                  ImGui::Text("  Pointer: 0x%p", (void*)myTruckPtr);
+                  
+                  // Try to read speed/acceleration for player truck using VTable logic
+                  float mySpeed = 0.0f;
+                  float myAccel = 0.0f;
+                  uintptr_t vtable_ptr = *(uintptr_t*)(myTruckPtr + 16);
+                  if (vtable_ptr) {
+                    uintptr_t* vtable = (uintptr_t*)vtable_ptr;
+                    auto GetFloatFn = reinterpret_cast<float (*)(void*)>(vtable[1]);
+                    auto GetAccelFn = reinterpret_cast<float (*)(void*)>(vtable[2]);
+                    if (GetFloatFn) mySpeed = GetFloatFn((void*)(myTruckPtr + 16));
+                    if (GetAccelFn) myAccel = GetAccelFn((void*)(myTruckPtr + 16));
+                  }
+                  
+                  ImGui::Text("  Current Speed: %.2f mph", mySpeed * 2.23694f);
+                  ImGui::Text("  Acceleration: %.2f", myAccel);
+                  ImGui::Text("  Status: User Controlled");
+                }
                 
                 ImGui::Spacing();
                 
-                if (ImGui::Button("Select this Vehicle")) {
-                    // TODO: Implement the call to DebugCamera_SetSelectedActor.
-                    // We need to find the DebugCamera object pointer and the function pointer first.
+                if (ImGui::Button("Capture Selected Vehicle", ImVec2(-1, 0))) {
+                  debugCam->SetSelectedObjectPtr(selectedPtr);
                 }
               }
               ImGui::EndTabItem();

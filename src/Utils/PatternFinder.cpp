@@ -61,6 +61,28 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const unsigned char* 
   return 0;
 }
 
+int32_t PatternFinder::ReadInt32(uintptr_t address) {
+  if (address == 0) return 0;
+  return *reinterpret_cast<int32_t*>(address);
+}
+
+int8_t PatternFinder::ReadInt8(uintptr_t address) {
+  if (address == 0) return 0;
+  return *reinterpret_cast<int8_t*>(address);
+}
+
+uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
+  if (instructionAddr == 0) return 0;
+  int32_t displacement = ReadInt32(instructionAddr + offsetPos);
+  return instructionAddr + instructionSize + displacement;
+}
+
+bool PatternFinder::IsSaneOffset(int32_t offset) {
+  // Most game camera objects and structures are well within 12KB (0x3000).
+  // This check prevents the use of garbage values from incorrect pattern matches.
+  return offset > 0 && offset < 0x3000;
+}
+
 std::vector<int> PatternFinder::SignatureToVector(const std::string& signature) {
   std::vector<int> bytes;
   std::stringstream ss(signature);
