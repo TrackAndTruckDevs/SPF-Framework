@@ -857,7 +857,7 @@
             "animation_controls": "Animation Controls",
             "add_edit_state": "Add/Edit State",
             "position_xyz": "Position (X,Y,Z)",
-            "mystery_float": "Mystery Float",
+            "internal_value": "Internal Value",
             "quaternion_xyzw": "Quaternion (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Add State (Memory)",
@@ -867,7 +867,7 @@
             "next_state": "Next State",
             "active_state_label": "Active State [%d]:",
             "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Mystery: %.4f",
+            "internal_label": "  Value: %.4f",
             "quat_label": "  Quat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Active State: [None]",
@@ -877,7 +877,37 @@
             "no_states_saved": "No States Saved",
             "oversize_debug": "Oversize",
             "camera_oversized_trailers": "Camera for oversized trailers.",
-            "vehicle_list": "Vehicle List"
+            "vehicle_list": "Vehicle List",
+            "video": {
+                "selection_locks": "Selection & Locks:",
+                "pos_lock": "Position Lock",
+                "rot_lock": "Rotation Lock",
+                "orbit_mode": "Orbit Mode",
+                "orbit_zoom_speed": "Orbit Zoom Speed",
+                "hovered_actor": "Hovered Actor:",
+                "selected_actor": "Selected Actor:",
+                "traffic_vehicles": "Traffic Vehicles",
+                "select_from_list": "Select from list",
+                "capture_hovered": "Capture Hovered Actor",
+                "capture_selected": "Capture Selected Actor",
+                "no_actor_to_capture": "No Actor to capture",
+                "capture_my_truck": "Capture My Truck",
+                "my_truck_not_found": "My Truck not found"
+            },
+            "traffic": {
+                "select_vehicle": "Select Vehicle",
+                "vehicle_details_traffic": "Selected Vehicle Details (Traffic ID: %d):",
+                "vehicle_details_mine": "Selected Vehicle Details (MY TRUCK):",
+                "pointer_label": "  Pointer:",
+                "patience_label": "  Patience:",
+                "safety_label": "  Safety:",
+                "target_speed_label": "  Target Speed:",
+                "speed_limit_label": "  Speed Limit:",
+                "current_speed_label": "  Current Speed:",
+                "acceleration_label": "  Acceleration:",
+                "status_user_controlled": "  Status: User Controlled",
+                "capture_selected_vehicle": "Capture Selected Vehicle"
+            }
         }
     },
     "description": {

@@ -17,7 +17,7 @@ class GameCameraDebugState {
     // The structure of data the native AddCameraState function expects.
     // This is based on reverse-engineering and corresponds to 9 floats.
     float pos_x, pos_y, pos_z;
-    float mystery_float;  // Unknown value at offset 0x4C from camera object base
+    float internal_value;  // Unknown value at offset 0x4C from camera object base
     float q_x, q_y, q_z, q_w;
     float fov;
     // Pad to 48 bytes (12 floats) to satisfy alignas(16) requirement.

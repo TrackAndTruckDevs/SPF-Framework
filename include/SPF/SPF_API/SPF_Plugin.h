@@ -90,6 +90,7 @@ typedef struct SPF_GameConsole_API SPF_GameConsole_API;
 typedef struct SPF_Formatting_API SPF_Formatting_API;
 typedef struct SPF_GameLog_API SPF_GameLog_API;
 typedef struct SPF_JsonReader_API SPF_JsonReader_API;
+typedef struct SPF_Vehicle_API SPF_Vehicle_API;
 
 
 // =================================================================================================
@@ -369,8 +370,13 @@ struct SPF_Core_API {
    *          and then uses the functions within this API (e.g., `GetType`, `GetString`)
    *          to navigate and extract information from that JSON structure.
    */
-  SPF_JsonReader_API* json_reader;
-};
+     SPF_JsonReader_API* json_reader;
+   
+   /**
+    * @brief Vehicle API. For inspecting vehicles and traffic.
+    */
+     SPF_Vehicle_API* vehicle;
+   };
 
 // =================================================================================================
 // 3. THE PLUGIN'S MAIN EXPORTED FUNCTION

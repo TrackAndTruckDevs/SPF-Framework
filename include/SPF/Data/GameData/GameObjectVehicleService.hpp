@@ -33,9 +33,11 @@ public:
     bool TryFindAllOffsets();
     void Reset();
     bool AreAllFindersReady() const;
+    bool IsFinderReady(const char* finderName) const;
 
     // --- Public Getters ---
     uintptr_t GetTrafficManagerAddr() const { return m_pTrafficManagerAddr; }
+    uintptr_t GetLocalPlayerControllerAddr() const;
     uintptr_t GetPArrayObjectOffset() const { return m_pArrayObjectOffset; }
     uintptr_t GetVehicleCountOffset() const { return m_vehicleCountOffset; }
     uintptr_t GetSpawnedVehicleStructSize() const { return m_spawnedVehicleStructSize; }

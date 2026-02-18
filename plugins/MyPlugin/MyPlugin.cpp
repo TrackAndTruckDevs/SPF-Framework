@@ -336,6 +336,14 @@ void OnActivated(const SPF_Core_API* core_api) {
     // Camera API
     // Requires: SPF_Camera_API.h
     */
+
+    /*
+    // Vehicle API
+    // Requires: SPF_Vehicle_API.h
+    if (g_ctx.coreAPI) {
+        g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
+    }
+    */
 }
 
 void OnUpdate() {
@@ -388,6 +396,7 @@ void OnUnload() {
     // g_ctx.gameConsoleAPI = nullptr;
     // g_ctx.virtualDeviceHandle = nullptr;
     // g_ctx.cameraAPI = nullptr;
+    // g_ctx.vehicleAPI = nullptr;
     // g_ctx.gameLogCallbackHandle = nullptr;
     //
     // // Telemetry Subscriptions (Nullify if used)

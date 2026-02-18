@@ -68,6 +68,23 @@ bool GameObjectVehicleService::AreAllFindersReady() const {
     return true;
 }
 
+bool GameObjectVehicleService::IsFinderReady(const char* finderName) const {
+    if (!finderName) return false;
+    for (const auto& finder : m_dataFinders) {
+        if (finder->GetName() == finderName) {
+            return finder->IsReady();
+        }
+    }
+    return false;
+}
+
+uintptr_t GameObjectVehicleService::GetLocalPlayerControllerAddr() const {
+    if (m_pTrafficManagerAddr == 0 || m_localPlayerControllerOffset == 0) {
+        return 0;
+    }
+    return *reinterpret_cast<uintptr_t*>(m_pTrafficManagerAddr + m_localPlayerControllerOffset);
+}
+
 std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService::GetAllVehiclesFullInfo() const {
     std::vector<VehicleFullInfo> vehicleInfo;
 

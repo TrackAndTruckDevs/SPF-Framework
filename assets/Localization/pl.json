@@ -857,7 +857,7 @@
             "animation_controls": "Sterowanie animacją",
             "add_edit_state": "Dodaj/Edytuj stan",
             "position_xyz": "Pozycja (X,Y,Z)",
-            "mystery_float": "Tajemniczy float",
+            "internal_value": "Wartość wewnętrzna",
             "quaternion_xyzw": "Kwaternion (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Dodaj stan (pamięć)",
@@ -867,7 +867,7 @@
             "next_state": "Następny stan",
             "active_state_label": "Aktywny stan [%d]:",
             "pos_label": "  Poz: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Tajemnica: %.4f",
+            "internal_label": "  Wartość: %.4f",
             "quat_label": "  Kwat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Aktywny stan: [Brak]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Brak zapisanych stanów",
             "oversize_debug": "Ponadgabarytowy",
             "camera_oversized_trailers": "Kamera dla naczep ponadgabarytowych.",
-            "vehicle_list": "Lista pojazdów"
+            "vehicle_list": "Lista pojazdów",
+            "video": {
+                "selection_locks": "Zaznaczenie i blokady:",
+                "pos_lock": "Blokada pozycji",
+                "rot_lock": "Blokada obrotu",
+                "orbit_mode": "Tryb orbity",
+                "orbit_zoom_speed": "Prędkość zoomu orbity",
+                "hovered_actor": "Najeżdżający aktor:",
+                "selected_actor": "Wybrany aktor:",
+                "traffic_vehicles": "Pojazdy drogowe",
+                "select_from_list": "Wybierz z listy",
+                "capture_hovered": "Przechwyć najeżdżającego aktora",
+                "capture_selected": "Przechwyć wybranego aktora",
+                "no_actor_to_capture": "Brak aktora do przechwycenia",
+                "capture_my_truck": "Przechwyć moją ciężarówkę",
+                "my_truck_not_found": "Moja ciężarówka nie znaleziona"
+            },
+            "traffic": {
+                "select_vehicle": "Wybierz pojazd",
+                "vehicle_details_traffic": "Szczegóły wybranego pojazdu (ID ruchu: %d):",
+                "vehicle_details_mine": "Szczegóły wybranego pojazdu (MOJA CIĘŻARÓWKA):",
+                "pointer_label": "  Wskaźnik:",
+                "patience_label": "  Cierpliwość:",
+                "safety_label": "  Bezpieczeństwo:",
+                "target_speed_label": "  Prędkość docelowa:",
+                "speed_limit_label": "  Limit prędkości:",
+                "current_speed_label": "  Aktualna prędkość:",
+                "acceleration_label": "  Przyspieszenie:",
+                "status_user_controlled": "  Status: Kontrolowany przez użytkownika",
+                "capture_selected_vehicle": "Przechwyć wybrany pojazd"
+            }
         }
     },
     "description": {

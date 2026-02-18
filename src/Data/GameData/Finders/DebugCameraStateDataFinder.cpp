@@ -30,16 +30,16 @@ namespace {
 const char* SAVE_STATE_CALL_SITE_SIG = "48 8D 8E ? ? ? ? ?? ?? ?? ?? ?? E8 ? ? ? ? 48 8D 0D";
 
 // Signature for the function that opens the camera state file.
-const char* OPEN_FILE_SIG = "48 89 5C 24 10 56 48 83 EC 20 48 8B F2 48 8B D9 48 8B CE BA 01 00 00";
+const char* OPEN_FILE_SIG = "48 89 5C 24 10 56 48 83 ? ? 48 8B F2 48 8B D9 48 8B CE BA";
 
 // Signature for the function that formats the state and writes it to the file.
-const char* FORMAT_AND_WRITE_SIG = "48 8B C4 53 48 81 EC 90 02 00 00 F3 0F 10 01 48 8B DA F3 0F 10 49 1C";
+const char* FORMAT_AND_WRITE_SIG = "48 8B C4 53 48 81 EC ? ? ? ? F3 0F 10 01 48 8B DA F3 0F 10";
 
 /**
  * @brief Signature for the function that cycles to the next/previous saved camera state.
  * TO BE IMPLEMENTED.
  */
-const char* CYCLE_SAVED_STATE_SIG = "48 89 5C 24 08 57 48 83 EC 40 48 83 B9 C0";
+const char* CYCLE_SAVED_STATE_SIG = "48 89 5C 24 08 57 48 83 EC ? 48 83 B9 ? ? ? ? ? ? ? fa 48 8b d9 75 10";
 
 /**
  * @brief Signature for the function that applies a specific saved camera state by index.

@@ -139,22 +139,49 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     logger->Info("--- Found SetDebugHudPosition at: 0x{:X}", pfnSetHudPos);
   } else { logger->Warn("FAILED to find SetDebugHudPosition signature"); all_found = false; }
 
-  // --- 3. Find the pDebugCamera context pointer ---
+  // --- 3. Find the pDebugCamera context pointer dynamically ---
   uintptr_t pStandardManagerAddr = owner.GetStandardManagerPtrAddr();
-  if (pStandardManagerAddr) {
+  auto& cameraHooks = Hooks::CameraHooks::GetInstance();
+  uintptr_t pfnGetCamObj = reinterpret_cast<uintptr_t>(cameraHooks.GetGetCameraObjectFunc());
+
+  if (pStandardManagerAddr && pfnGetCamObj) {
     uintptr_t pStandardManager = *reinterpret_cast<uintptr_t*>(pStandardManagerAddr);
     if (pStandardManager) {
-      // StandardManager + 0x38 is the pDebugCameraContext in both v1.57 and v1.58
-      uintptr_t pDebugCameraContext = *reinterpret_cast<uintptr_t*>(pStandardManager + 0x38);
+      /*
+       * HOW-TO-FIND Camera Array Offset:
+       * We look inside GetCameraObjectByID function.
+       * It adds a base offset to RCX (StandardManager) and then reads the array pointer.
+       * 
+       * Assembly (v1.58):
+       * 48 83 C1 30       - ADD RCX, 0x30
+       * 4C 3B 41 10       - CMP R8, [RCX + 0x10]
+       * ...
+       * 48 8B 41 08       - MOV RAX, [RCX + 0x08]
+       * 
+       * Combined offset = 0x30 + 0x08 = 0x38.
+       */
+      const char* p_array_logic = "48 83 C1 ?? ?? ?? ?? ?? 73 ?? 48 8B 41 ??";
+      uintptr_t addr = Utils::PatternFinder::Find(pfnGetCamObj, 128, p_array_logic);
+      
+      int32_t finalOffset = 0x38; // Default fallback for v1.58
+      if (addr) {
+        int8_t baseOff = Utils::PatternFinder::ReadInt8(addr + 3);
+        int8_t subOff = Utils::PatternFinder::ReadInt8(addr + 13);
+        finalOffset = static_cast<int32_t>(baseOff) + static_cast<int32_t>(subOff);
+        logger->Info("--- Dynamically found Camera Array Offset: 0x{:X} (0x{:X} + 0x{:X})", finalOffset, baseOff, subOff);
+      } else {
+        logger->Warn("Could not find Camera Array Offset logic in GetCameraObjectByID. Using fallback 0x38.");
+      }
+
+      uintptr_t pDebugCameraContext = *reinterpret_cast<uintptr_t*>(pStandardManager + finalOffset);
       if (pDebugCameraContext) {
         owner.SetDebugCameraContextPtr(pDebugCameraContext);
-        logger->Info("--- Found pDebugCameraContext at: 0x{:X}", pDebugCameraContext);
-      } else { logger->Error("pDebugCameraContext is NULL"); all_found = false; }
+        logger->Info("--- Found pDebugCameraContext (Array Base) at: 0x{:X}", pDebugCameraContext);
+      } else { logger->Error("pDebugCameraContext is NULL at 0x{:X}", pStandardManager + finalOffset); all_found = false; }
     } else { logger->Error("StandardManager is NULL"); all_found = false; }
-  } else { logger->Error("StandardManager address is NULL"); all_found = false; }
+  } else { logger->Error("StandardManager address or GetCameraObjectByID function is NULL"); all_found = false; }
 
   // --- 4. Find internal offsets within DebugCamera_HandleInput and RenderInfoOverlay ---
-  auto& cameraHooks = Hooks::CameraHooks::GetInstance();
   uintptr_t pfnHandleInput = cameraHooks.GetDebugCameraHandleInputFunc();
 
   if (pfnHandleInput) {

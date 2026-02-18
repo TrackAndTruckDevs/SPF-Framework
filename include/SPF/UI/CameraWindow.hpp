@@ -277,7 +277,7 @@ class CameraWindow : public BaseWindow {
     std::string m_locAnimationControls;
     std::string m_locAddEditState;
     std::string m_locPositionXYZ;
-    std::string m_locMysteryFloat;
+    std::string m_locInternalValue;
     std::string m_locQuaternionXYZW;
     std::string m_locFOVLabel;
     std::string m_locAddStateMemory;
@@ -287,7 +287,7 @@ class CameraWindow : public BaseWindow {
     std::string m_locNextState;
     std::string m_locActiveStateLabel;
     std::string m_locPosLabel;
-    std::string m_locMysteryLabel;
+    std::string m_locInternalLabel;
     std::string m_locQuatLabel;
     std::string m_locFOVValueLabel;
     std::string m_locActiveStateNone;
@@ -298,6 +298,36 @@ class CameraWindow : public BaseWindow {
     std::string m_locOversizeDebug;
     std::string m_locCameraOversizedTrailers;
     std::string m_locDebugCameraNotAvailable;
+
+    // Video Debug Tab
+    std::string m_locSelectionLocks;
+    std::string m_locPosLock;
+    std::string m_locRotLock;
+    std::string m_locOrbitMode;
+    std::string m_locOrbitZoomSpeed;
+    std::string m_locHoveredActor;
+    std::string m_locSelectedActor;
+    std::string m_locTrafficVehicles;
+    std::string m_locSelectFromList;
+    std::string m_locCaptureHovered;
+    std::string m_locCaptureSelected;
+    std::string m_locNoActorToCapture;
+    std::string m_locCaptureMyTruck;
+    std::string m_locMyTruckNotFound;
+
+    // Traffic Debug Tab
+    std::string m_locSelectVehicle;
+    std::string m_locVehicleDetailsTraffic;
+    std::string m_locVehicleDetailsMine;
+    std::string m_locPointerLabel;
+    std::string m_locPatienceLabel;
+    std::string m_locSafetyLabel;
+    std::string m_locTargetSpeedLabel;
+    std::string m_locSpeedLimitLabel;
+    std::string m_locCurrentSpeedLabel;
+    std::string m_locAccelerationLabel;
+    std::string m_locStatusUserControlled;
+    std::string m_locCaptureSelectedVehicle;
 };
 }  // namespace UI
 SPF_NS_END

@@ -861,6 +861,39 @@ bool CameraApi::T_Anim_IsReversed() {
   return false;
 }
 
+// --- Framework & Service Status Trampolines ---
+bool CameraApi::T_Camera_IsServiceReady() { return GameCameraManager::GetInstance().IsInstalled(); }
+bool CameraApi::T_Camera_AreAllOffsetsFound() { return GameDataCameraService::GetInstance().AreAllFindersReady(); }
+bool CameraApi::T_Camera_IsFinderReady(const char* finderName) { return GameDataCameraService::GetInstance().IsFinderReady(finderName); }
+bool CameraApi::T_Camera_RefreshOffsets() { return GameDataCameraService::GetInstance().TryFindAllOffsets(); }
+
+// --- Viewport & Projection Trampolines ---
+bool CameraApi::T_Camera_GetViewport(float* x1, float* x2, float* y1, float* y2) {
+  if (!x1 || !x2 || !y1 || !y2) return false;
+  auto& data = GameDataCameraService::GetInstance();
+  uintptr_t pParams = data.GetCameraParamsObjectPtr();
+  if (!pParams) return false;
+
+  *x1 = *reinterpret_cast<float*>(pParams + data.GetViewportX1Offset());
+  *x2 = *reinterpret_cast<float*>(pParams + data.GetViewportX2Offset());
+  *y1 = *reinterpret_cast<float*>(pParams + data.GetViewportY1Offset());
+  *y2 = *reinterpret_cast<float*>(pParams + data.GetViewportY2Offset());
+  return true;
+}
+
+uintptr_t CameraApi::T_Camera_GetCameraParamsObjectPtr() { return GameDataCameraService::GetInstance().GetCameraParamsObjectPtr(); }
+
+// --- Animation Preparation Trampolines ---
+bool CameraApi::T_Camera_Anim_Prepare() {
+  if (auto* anim = GameCameraManager::GetInstance().GetDebugAnimationController()) {
+    return anim->PrepareForPlayback();
+  }
+  return false;
+}
+
+// --- Object Targeting & Inspection Trampolines ---
+uintptr_t CameraApi::T_Camera_GetDebugObjectAddress(void* ptr) { return reinterpret_cast<uintptr_t>(ptr); }
+
 // --- FinalFOV Trampolines ---
 bool CameraApi::T_Camera_GetInteriorFinalFov(float* out_horiz, float* out_vert) {
   auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
@@ -1093,6 +1126,22 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_Anim_GetCurrentFrame = &T_Anim_GetCurrentFrame;
   camera_api->Cam_Anim_GetCurrentFrameProgress = &T_Anim_GetCurrentFrameProgress;
   camera_api->Cam_Anim_IsReversed = &T_Anim_IsReversed;
+
+  // Framework & Status
+  camera_api->Cam_IsServiceReady = &T_Camera_IsServiceReady;
+  camera_api->Cam_AreAllOffsetsFound = &T_Camera_AreAllOffsetsFound;
+  camera_api->Cam_IsFinderReady = &T_Camera_IsFinderReady;
+  camera_api->Cam_RefreshOffsets = &T_Camera_RefreshOffsets;
+
+  // Viewport
+  camera_api->Cam_GetViewport = &T_Camera_GetViewport;
+  camera_api->Cam_GetCameraParamsObjectPtr = &T_Camera_GetCameraParamsObjectPtr;
+
+  // Animation Prep
+  camera_api->Cam_Anim_Prepare = &T_Camera_Anim_Prepare;
+
+  // Object Targeting
+  camera_api->Cam_GetDebugObjectAddress = &T_Camera_GetDebugObjectAddress;
 }
 
 }  // namespace Modules::API

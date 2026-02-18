@@ -25,6 +25,7 @@
 #include <SPF/SPF_API/SPF_GameConsole_API.h>   // For executing commands in the in-game developer console.
 #include <SPF/SPF_API/SPF_VirtInput_API.h>     // For creating virtual input devices (like a virtual gamepad) to simulate input.
 #include <SPF/SPF_API/SPF_Camera_API.h>        // For interacting with and controlling the various in-game cameras.
+#include <SPF/SPF_API/SPF_Vehicle_API.h>       // For inspecting vehicles and traffic.
 #include <SPF/SPF_API/SPF_GameLog_API.h>       // For subscribing to the game's internal log output.
 #include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
 #include <SPF/SPF_API/SPF_JsonReader_API.h>    // For safely reading JSON data provided by the framework in callbacks.
@@ -101,6 +102,11 @@ struct PluginContext {
    * moment `OnActivated` is called until `OnUnload` completes.
    */
   const SPF_Core_API* coreAPI = nullptr;
+
+  /**
+   * @brief Pointer to the Vehicle API, received in the `OnActivated` lifecycle function.
+   */
+  SPF_Vehicle_API* vehicleAPI = nullptr;
 
   // --- Cached Handles & Pointers ---
   // Pointers and handles that are frequently used can be cached here for convenience and performance.
@@ -236,6 +242,16 @@ struct PluginContext {
    * @brief Handle to our Keybinds API context.
    */
   SPF_KeyBinds_Handle* keybindsHandle = nullptr;
+
+  /**
+   * @brief Currently selected vehicle in the UI.
+   */
+  SPF_VehicleHandle selectedVehicle = nullptr;
+
+  /**
+   * @brief List of discovered vehicle handles to show in the dropdown.
+   */
+  std::vector<SPF_VehicleHandle> vehicleHandles;
 };
 
 /**
@@ -393,6 +409,11 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Camera" tab within the main window.
  */
 void RenderCameraTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Traffic Inspector" tab.
+ */
+void RenderVehicleTab(SPF_UI_API* ui, void* user_data);
 
 /**
  * @brief Renders the content of the "Telemetry" tab.

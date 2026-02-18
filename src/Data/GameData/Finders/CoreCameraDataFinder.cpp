@@ -3,103 +3,109 @@
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Utils/Vec3.hpp"
 
 #include <Windows.h>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
-using namespace Utils;
+
 namespace {
-// Signature for the start of the InitializeCamera function, used to find the standard manager pointer.
-// const char* INITIALIZE_CAMERA_SIG = "48 81 EC 90 00 00 00 48 8B 1D ? ? ? ? 8B FA 48 8B F1";
-// Signature for the world coordinates pointer.
-const char* CAMERA_WORLD_COORDINATES_PTR_SIG = "F2 0F 11 05 ?? ?? ?? ?? 89 05 ?? ?? ?? ?? 83 BF";
+/*
+ * Anchor #1: Standard Manager Pointer
+ * Inside InitializeCamera: MOV RBX, qword ptr [StandardManagerPtr]; MOV EDI, EDX
+ * Signature targets the RIP-relative MOV and the subsequent MOV EDI, EDX.
+ */
+const char* STANDARD_MANAGER_SIG = "48 8B 1D ?? ?? ?? ?? 8B FA";
+
+/*
+ * Anchor #2: Active Camera ID Offset
+ * Inside InitializeCamera: CMP dword ptr [RBX + offset], imm8; MOV dword ptr [RBX + offset+4], EDX
+ * Signature targets the structure of the check while masking volatile values.
+ */
+const char* ACTIVE_CAMERA_ID_SIG = "83 7B ?? ?? 89 53 ??";
+
+/*
+ * Anchor #3: World Coordinates Pointer
+ * Global search for the MOVSD instruction that writes camera world coordinates.
+ */
+const char* WORLD_COORDINATES_SIG = "F2 0F 11 05 ?? ?? ?? ?? 89 05 ?? ?? ?? ?? 83 BF";
 }  // namespace
 
 bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  bool success = true;
+  logger->Info("Searching for Core Camera offsets (Dynamic Pattern Search)...");
 
-  // 1. Find StandardManagerPtrAddr
-  {
-    auto& cameraHooks = Hooks::CameraHooks::GetInstance();
-    uintptr_t initCamAddr = reinterpret_cast<uintptr_t>(cameraHooks.GetInitializeCameraFunc());
+  auto& cameraHooks = Hooks::CameraHooks::GetInstance();
+  uintptr_t pfnInitializeCamera = reinterpret_cast<uintptr_t>(cameraHooks.GetInitializeCameraFunc());
 
-    if (!initCamAddr) {
-      logger->Error("Cannot find StandardManagerPtrAddr: InitializeCamera function pointer is null.");
-      success = false;
-    } else {
-      // The full signature from CameraHooks finds the start of the function.
-      // The MOV RBX, [rip+offset] instruction is at a fixed offset from there.
-      const int mov_rbx_offset = 18;  // 5+5+1+7 bytes from the function start
-      uintptr_t mov_instruction_address = initCamAddr + mov_rbx_offset;
-
-      // Perform the RIP-relative calculation to find the pointer's address
-      int32_t rip_offset = *(int32_t*)(mov_instruction_address + 3);
-      uintptr_t rip_base = mov_instruction_address + 7;
-      uintptr_t pStandardManagerPtrAddr = rip_base + rip_offset;
-
-      if (pStandardManagerPtrAddr) {
-        owner.SetStandardManagerPtrAddr(pStandardManagerPtrAddr);
-        logger->Info("Found 'standardManagerPtr' address: {:#x}", pStandardManagerPtrAddr);
-      } else {
-        logger->Error("Failed to calculate 'standardManagerPtr' address.");
-        success = false;
-      }
-    }
+  if (!pfnInitializeCamera) {
+    logger->Error("CRITICAL: InitializeCamera function pointer is NULL. Core offsets cannot be found.");
+    return false;
   }
 
-  // 2. Find ActiveCameraIdOffset
-  {
-    auto& cameraHooks = Hooks::CameraHooks::GetInstance();
-    uintptr_t initCamAddr = reinterpret_cast<uintptr_t>(cameraHooks.GetInitializeCameraFunc());
+  bool all_found = true;
+  const size_t SEARCH_RANGE = 512;
 
-    if (!initCamAddr) {
-      logger->Error("Cannot find ActiveCameraIdOffset: InitializeCamera function pointer is null.");
-      success = false;
+  // --- 1. Find StandardManagerPtrAddr ---
+  uintptr_t addrManager = Utils::PatternFinder::Find(pfnInitializeCamera, SEARCH_RANGE, STANDARD_MANAGER_SIG);
+  if (addrManager) {
+    uintptr_t pStandardManagerPtrAddr = Utils::PatternFinder::GetRipAddress(addrManager, 3, 7);
+    if (pStandardManagerPtrAddr) {
+      owner.SetStandardManagerPtrAddr(pStandardManagerPtrAddr);
+      logger->Info("Anchor #1: StandardManagerPtrAddr = 0x{:X}", pStandardManagerPtrAddr);
     } else {
-      // Scan for `CMP dword ptr [RBX + ??], 0x0E` (opcode 83 7B ?? 0E)
-      const unsigned char pattern[] = {0x83, 0x7B};  // CMP [RBX+disp8], imm8
-      const uint8_t immediate_value = 0x0E;
-      bool found = false;
-      for (int i = 0; i < 200; ++i) {
-        uintptr_t instr_ptr = initCamAddr + i;
-        if (memcmp((void*)instr_ptr, pattern, sizeof(pattern)) == 0 && *(uint8_t*)(instr_ptr + 3) == immediate_value) {
-          intptr_t activeCameraIdOffset = *(int8_t*)(instr_ptr + 2);
-          owner.SetActiveCameraIdOffset(activeCameraIdOffset);
-          logger->Info("Dynamically found camera ID offset via CMP instruction: {:#x}", activeCameraIdOffset);
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        logger->Error("Failed to find camera ID offset pattern (CMP [RBX+??]).");
-        success = false;
-      }
+      logger->Error("Anchor #1: FAILED to resolve RIP address for StandardManagerPtrAddr");
+      all_found = false;
     }
+  } else {
+    logger->Error("Anchor #1: FAILED to find StandardManager signature in InitializeCamera");
+    all_found = false;
   }
 
-  // 3. Find World Coordinates Pointer
-  {
-    uintptr_t movsd_instruction_address = Utils::PatternFinder::Find(CAMERA_WORLD_COORDINATES_PTR_SIG);
-    if (movsd_instruction_address) {
-      uintptr_t rip = movsd_instruction_address + 8;                // Address of the next instruction
-      int32_t offset = *(int32_t*)(movsd_instruction_address + 4);  // Read 4-byte offset
-      owner.SetCameraWorldCoordinatesPtr(reinterpret_cast<uintptr_t*>(rip + offset));
-      logger->Info("Found Camera World Coordinates pointer at: {:#x}", (uintptr_t)owner.GetCameraWorldCoordinatesPtr());
+  // --- 2. Find ActiveCameraIdOffset ---
+  uintptr_t addrId = Utils::PatternFinder::Find(pfnInitializeCamera, SEARCH_RANGE, ACTIVE_CAMERA_ID_SIG);
+  if (addrId) {
+    // Offset is at byte 2 of the instruction: 83 7B [OFFSET]
+    int8_t offset = Utils::PatternFinder::ReadInt8(addrId + 2);
+    if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(offset))) {
+      owner.SetActiveCameraIdOffset(static_cast<intptr_t>(offset));
+      logger->Info("Anchor #2: ActiveCameraIdOffset = 0x{:X}", (uint8_t)offset);
     } else {
-      logger->Error("FAILED to find signature for World Coordinates pointer.");
-      success = false;
+      logger->Error("Anchor #2: ActiveCameraIdOffset INVALID (0x{:X})", (uint8_t)offset);
+      all_found = false;
     }
+  } else {
+    logger->Error("Anchor #2: FAILED to find ActiveCameraId signature in InitializeCamera");
+    all_found = false;
   }
 
-  if (success) {
-    m_isReady = true;
+  // --- 3. Find World Coordinates Pointer ---
+  uintptr_t addrWorld = Utils::PatternFinder::Find(WORLD_COORDINATES_SIG);
+  if (addrWorld) {
+    // Instruction: F2 0F 11 05 [RIP_OFFSET] (MOVSD [RIP+...], XMM0)
+    // Opcode is F2 0F 11 05 (4 bytes), then 4 bytes of RIP displacement. Total 8 bytes.
+    uintptr_t pWorldCoords = Utils::PatternFinder::GetRipAddress(addrWorld, 4, 8);
+    if (pWorldCoords) {
+      owner.SetCameraWorldCoordinatesPtr(reinterpret_cast<uintptr_t*>(pWorldCoords));
+      logger->Info("Anchor #3: WorldCoordinatesPtr = 0x{:X}", pWorldCoords);
+    } else {
+      logger->Error("Anchor #3: FAILED to resolve RIP address for WorldCoordinatesPtr");
+      all_found = false;
+    }
+  } else {
+    logger->Error("Anchor #3: FAILED to find WorldCoordinates signature globally");
+    all_found = false;
+  }
+
+  m_isReady = all_found;
+  if (all_found) {
     owner.SetCoreOffsetsFound(true);
-    logger->Info("Successfully found all core camera data.");
+    logger->Info("Successfully found all Core Camera offsets dynamically.");
+  } else {
+    logger->Error("Failed to find one or more Core Camera offsets. Plugin stability is compromised.");
   }
-  return success;
+
+  return all_found;
 }
 
 }  // namespace Data::GameData::Finders

@@ -57,6 +57,13 @@ class GameCameraDebugAnimation {
    */
   void SetReverse(bool isReversed);
 
+  /**
+   * @brief Performs the one-time setup to take control of the animation system.
+   * This hides the HUD and resets camera modes.
+   * @return True on success, false if essential pointers are missing.
+   */
+  bool PrepareForPlayback();
+
   // --- Getters for UI/API consumers ---
   PlaybackState GetPlaybackState() const;
   int GetCurrentFrame() const;
@@ -71,12 +78,6 @@ class GameCameraDebugAnimation {
   // --- State ---
   PlaybackState m_state = PlaybackState::Stopped;
   bool m_isReversed = false;
-
-  /**
-   * @brief Performs the one-time setup to take control of the animation system.
-   * @return True on success, false if essential pointers are missing.
-   */
-  bool PrepareForPlayback();
 
   /**
    * @brief Gets the pointer to the main debug camera object from the game's context.

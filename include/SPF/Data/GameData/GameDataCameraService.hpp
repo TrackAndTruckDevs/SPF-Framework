@@ -131,7 +131,7 @@ class GameDataCameraService {
   intptr_t GetFreecamQuatYOffset() const { return m_freecam_quat_y_offset; }
   intptr_t GetFreecamQuatZOffset() const { return m_freecam_quat_z_offset; }
   intptr_t GetFreecamQuatWOffset() const { return m_freecam_quat_w_offset; }
-  intptr_t GetFreecamMysteryFloatOffset() const { return m_freecam_mystery_float_offset; }
+  intptr_t GetFreecamMysteryFloatOffset() const { return m_freecam_internal_value_offset; }
   intptr_t GetFreecamMouseXOffset() const { return m_freecam_mouse_x_offset; }
   intptr_t GetFreecamMouseYOffset() const { return m_freecam_mouse_y_offset; }
   intptr_t GetFreecamRollOffset() const { return m_freecam_roll_offset; }
@@ -283,7 +283,7 @@ class GameDataCameraService {
   void SetFreecamQuatYOffset(intptr_t val) { m_freecam_quat_y_offset = val; }
   void SetFreecamQuatZOffset(intptr_t val) { m_freecam_quat_z_offset = val; }
   void SetFreecamQuatWOffset(intptr_t val) { m_freecam_quat_w_offset = val; }
-  void SetFreecamMysteryFloatOffset(intptr_t val) { m_freecam_mystery_float_offset = val; }
+  void SetFreecamMysteryFloatOffset(intptr_t val) { m_freecam_internal_value_offset = val; }
   void SetFreecamMouseXOffset(intptr_t val) { m_freecam_mouse_x_offset = val; }
   void SetFreecamMouseYOffset(intptr_t val) { m_freecam_mouse_y_offset = val; }
   void SetFreecamRollOffset(intptr_t val) { m_freecam_roll_offset = val; }
@@ -371,7 +371,7 @@ class GameDataCameraService {
   intptr_t m_freecam_quat_y_offset = 0;
   intptr_t m_freecam_quat_z_offset = 0;
   intptr_t m_freecam_quat_w_offset = 0;
-  intptr_t m_freecam_mystery_float_offset = 0;
+  intptr_t m_freecam_internal_value_offset = 0;
   intptr_t m_freecam_mouse_x_offset = 0;
   intptr_t m_freecam_mouse_y_offset = 0;
   intptr_t m_freecam_roll_offset = 0;

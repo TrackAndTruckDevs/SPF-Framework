@@ -857,7 +857,7 @@
             "animation_controls": "Animasyon Kontrolleri",
             "add_edit_state": "Durum Ekle/Düzenle",
             "position_xyz": "Konum (X,Y,Z)",
-            "mystery_float": "Gizemli Kayan Nokta",
+            "internal_value": "Dahili Değer",
             "quaternion_xyzw": "Kuaterniyon (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Durum Ekle (Bellek)",
@@ -867,7 +867,7 @@
             "next_state": "Sonraki Durum",
             "active_state_label": "Aktif Durum [%d]:",
             "pos_label": "  Konum: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Gizem: %.4f",
+            "internal_label": "  Değer: %.4f",
             "quat_label": "  Kuater: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Aktif Durum: [Yok]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Kaydedilen Durum Yok",
             "oversize_debug": "Büyük Boyut",
             "camera_oversized_trailers": "Büyük boyutlu dorseler için kamera.",
-            "vehicle_list": "Araç Listesi"
+            "vehicle_list": "Araç Listesi",
+            "video": {
+                "selection_locks": "Seçim ve Kilitlemeler:",
+                "pos_lock": "Konum Kilidi",
+                "rot_lock": "Dönüş Kilidi",
+                "orbit_mode": "Yörünge Modu",
+                "orbit_zoom_speed": "Yörünge Yakınlaştırma Hızı",
+                "hovered_actor": "Üzerinde Gezinilen Aktör:",
+                "selected_actor": "Seçili Aktör:",
+                "traffic_vehicles": "Trafik Araçları",
+                "select_from_list": "Listeden Seç",
+                "capture_hovered": "Üzerinde Gezinilen Aktörü Yakala",
+                "capture_selected": "Seçili Aktörü Yakala",
+                "no_actor_to_capture": "Yakalanacak Aktör Yok",
+                "capture_my_truck": "Kamyonumu Yakala",
+                "my_truck_not_found": "Kamyonum bulunamadı"
+            },
+            "traffic": {
+                "select_vehicle": "Araç Seç",
+                "vehicle_details_traffic": "Seçili Araç Detayları (Trafik Kimliği: %d):",
+                "vehicle_details_mine": "Seçili Araç Detayları (BENİM KAMYONUM):",
+                "pointer_label": "  İşaretçi:",
+                "patience_label": "  Sabır:",
+                "safety_label": "  Güvenlik:",
+                "target_speed_label": "  Hedef Hız:",
+                "speed_limit_label": "  Hız Sınırı:",
+                "current_speed_label": "  Mevcut Hız:",
+                "acceleration_label": "  İvme:",
+                "status_user_controlled": "  Durum: Kullanıcı Kontrollü",
+                "capture_selected_vehicle": "Seçili Aracı Yakala"
+            }
         }
     },
     "description": {

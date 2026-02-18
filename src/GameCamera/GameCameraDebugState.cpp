@@ -25,7 +25,7 @@ void GameCameraDebugState::SaveState() {
   CameraState state_snapshot = {};
 
   bool pos_ok = freeCam->GetPosition(&state_snapshot.pos_x, &state_snapshot.pos_y, &state_snapshot.pos_z);
-  bool mystery_ok = freeCam->GetFreecamMysteryFloat(&state_snapshot.mystery_float);
+  bool mystery_ok = freeCam->GetFreecamMysteryFloat(&state_snapshot.internal_value);
   bool quat_ok = freeCam->GetQuaternion(&state_snapshot.q_x, &state_snapshot.q_y, &state_snapshot.q_z, &state_snapshot.q_w);
   bool fov_ok = freeCam->GetFov(&state_snapshot.fov);
 
@@ -155,7 +155,7 @@ void GameCameraDebugState::AddStateToMemory(const CameraState& state) {
                state.pos_x,
                state.pos_y,
                state.pos_z,
-               state.mystery_float,
+               state.internal_value,
                state.q_x,
                state.q_y,
                state.q_z,

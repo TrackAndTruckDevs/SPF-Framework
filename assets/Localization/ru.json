@@ -857,7 +857,7 @@
             "animation_controls": "Управление анимацией",
             "add_edit_state": "Добавить/редактировать состояние",
             "position_xyz": "Позиция (X,Y,Z)",
-            "mystery_float": "Загадочное число",
+            "internal_value": "Внутреннее значение",
             "quaternion_xyzw": "Кватернион (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Добавить состояние (память)",
@@ -867,7 +867,7 @@
             "next_state": "Следующее состояние",
             "active_state_label": "Активное состояние [%d]:",
             "pos_label": "  Поз: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Загадка: %.4f",
+            "internal_label": "  Значение: %.4f",
             "quat_label": "  Кват: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Активное состояние: [Нет]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Нет сохраненных состояний",
             "oversize_debug": "Негабарит",
             "camera_oversized_trailers": "Камера для негабаритных прицепов.",
-            "vehicle_list": "Список транспортных средств"
+            "vehicle_list": "Список транспортных средств",
+            "video": {
+                "selection_locks": "Выбор и блокировки:",
+                "pos_lock": "Блокировка позиции",
+                "rot_lock": "Блокировка вращения",
+                "orbit_mode": "Режим орбиты",
+                "orbit_zoom_speed": "Скорость зума орбиты",
+                "hovered_actor": "Объект под мышью:",
+                "selected_actor": "Выбранный объект:",
+                "traffic_vehicles": "Транспортные средства трафика",
+                "select_from_list": "Выбрать из списка",
+                "capture_hovered": "Захватить объект под мышью",
+                "capture_selected": "Захватить выбранный объект",
+                "no_actor_to_capture": "Нет объекта для захвата",
+                "capture_my_truck": "Захватить мой грузовик",
+                "my_truck_not_found": "Мой грузовик не найден"
+            },
+            "traffic": {
+                "select_vehicle": "Выбрать транспортное средство",
+                "vehicle_details_traffic": "Детали выбранного ТС (ID трафика: %d):",
+                "vehicle_details_mine": "Детали выбранного ТС (МОЙ ГРУЗОВИК):",
+                "pointer_label": "  Указатель:",
+                "patience_label": "  Терпение:",
+                "safety_label": "  Безопасность:",
+                "target_speed_label": "  Целевая скорость:",
+                "speed_limit_label": "  Ограничение скорости:",
+                "current_speed_label": "  Текущая скорость:",
+                "acceleration_label": "  Ускорение:",
+                "status_user_controlled": "  Статус: Управляется пользователем",
+                "capture_selected_vehicle": "Захватить выбранное ТС"
+            }
         }
     },
     "description": {

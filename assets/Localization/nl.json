@@ -857,7 +857,7 @@
             "animation_controls": "Animatiecontroles",
             "add_edit_state": "Status Toevoegen/Bewerken",
             "position_xyz": "Positie (X,Y,Z)",
-            "mystery_float": "Mysterieuze Float",
+            "internal_value": "Interne waarde",
             "quaternion_xyzw": "Quaternion (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Status Toevoegen (Geheugen)",
@@ -867,7 +867,7 @@
             "next_state": "Volgende Status",
             "active_state_label": "Actieve Status [%d]:",
             "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Mysterie: %.4f",
+            "internal_label": "  Waarde: %.4f",
             "quat_label": "  Quat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Actieve Status: [Geen]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Geen Statussen Opgeslagen",
             "oversize_debug": "Buitengewoon",
             "camera_oversized_trailers": "Camera voor buitengewone opleggers.",
-            "vehicle_list": "Voertuigenlijst"
+            "vehicle_list": "Voertuigenlijst",
+            "video": {
+                "selection_locks": "Selectie & Vergrendelingen:",
+                "pos_lock": "Positievergrendeling",
+                "rot_lock": "Rotatievergrendeling",
+                "orbit_mode": "Orbit Modus",
+                "orbit_zoom_speed": "Orbit Zoom Snelheid",
+                "hovered_actor": "Overheen Bewogen Actor:",
+                "selected_actor": "Geselecteerde Actor:",
+                "traffic_vehicles": "Verkeersvoertuigen",
+                "select_from_list": "Selecteer uit lijst",
+                "capture_hovered": "Overheen Bewogen Actor Vangen",
+                "capture_selected": "Geselecteerde Actor Vangen",
+                "no_actor_to_capture": "Geen Actor om te vangen",
+                "capture_my_truck": "Mijn Vrachtwagen Vangen",
+                "my_truck_not_found": "Mijn Vrachtwagen niet gevonden"
+            },
+            "traffic": {
+                "select_vehicle": "Voertuig Selecteren",
+                "vehicle_details_traffic": "Geselecteerde Voertuig Details (Verkeer ID: %d):",
+                "vehicle_details_mine": "Geselecteerde Voertuig Details (MIJN VRACHTWAGEN):",
+                "pointer_label": "  Aanwijzer:",
+                "patience_label": "  Geduld:",
+                "safety_label": "  Veiligheid:",
+                "target_speed_label": "  Doelsnelheid:",
+                "speed_limit_label": "  Snelheidslimiet:",
+                "current_speed_label": "  Huidige Snelheid:",
+                "acceleration_label": "  Acceleratie:",
+                "status_user_controlled": "  Status: Gebruikersgestuurd",
+                "capture_selected_vehicle": "Geselecteerde Voertuig Vangen"
+            }
         }
     },
     "description": {

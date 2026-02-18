@@ -923,24 +923,6 @@ typedef void (*SPF_Camera_SetDebugOrbitSpeed_t)(float speed);
  */
 typedef bool (*SPF_Camera_GetDebugOrbitSpeed_t)(float* out_speed);
 
-/**
- * @brief Gets the pointer to the currently selected game object (Actor).
- * @return A pointer to the selected object, or NULL if nothing is selected.
- */
-typedef void* (*SPF_Camera_GetDebugSelectedObject_t)();
-
-/**
- * @brief Programmatically selects a game object (Actor) for the debug camera.
- * @param ptr The pointer to the game object to select.
- */
-typedef void (*SPF_Camera_SetDebugSelectedObject_t)(void* ptr);
-
-/**
- * @brief Gets the pointer to the game object currently under the mouse cursor.
- * @return A pointer to the hovered object, or NULL.
- */
-typedef void* (*SPF_Camera_GetDebugHoveredObject_t)();
-
 
 // --- Debug Camera State Functions ---
 
@@ -950,7 +932,7 @@ typedef void* (*SPF_Camera_GetDebugHoveredObject_t)();
  */
 typedef struct {
     float pos_x, pos_y, pos_z;
-    float mystery_float; // An unknown value used by the game's internal state
+    float internal_value; // An unknown value used by the game's internal state
     float q_x, q_y, q_z, q_w; // Quaternion for orientation
     float fov;
 } SPF_CameraState_t;
@@ -1093,6 +1075,64 @@ typedef float (*SPF_Anim_GetCurrentFrameProgress_t)();
  * @return True if reversed, false otherwise.
  */
 typedef bool (*SPF_Anim_IsReversed_t)();
+
+
+// --- Object Targeting & Inspection Types ---
+
+/**
+ * @brief Gets the pointer to the currently selected game object (Actor).
+ * @return A pointer to the selected object, or NULL if nothing is selected.
+ */
+typedef void* (*SPF_Camera_GetDebugSelectedObject_t)();
+
+/**
+ * @brief Programmatically selects a game object (Actor) for the debug camera.
+ * @param ptr The pointer to the game object to select.
+ */
+typedef void (*SPF_Camera_SetDebugSelectedObject_t)(void* ptr);
+
+/**
+ * @brief Gets the pointer to the game object currently under the mouse cursor.
+ * @return A pointer to the hovered object, or NULL.
+ */
+typedef void* (*SPF_Camera_GetDebugHoveredObject_t)();
+
+/**
+ * @brief Function type for resolving a generic pointer to its raw memory address.
+ * @param ptr The generic object pointer.
+ * @return The uintptr_t memory address.
+ */
+typedef uintptr_t (*SPF_Camera_GetDebugObjectAddress_t)(void* ptr);
+
+
+// --- Framework & Service Status Types ---
+
+/** @brief Function type for checking general service initialization. */
+typedef bool (*SPF_Camera_IsServiceReady_t)();
+
+/** @brief Function type for checking if all memory patterns were resolved. */
+typedef bool (*SPF_Camera_AreAllOffsetsFound_t)();
+
+/** @brief Function type for checking readiness of a specific camera system. */
+typedef bool (*SPF_Camera_IsFinderReady_t)(const char* finderName);
+
+/** @brief Function type for forcing a re-scan of game memory patterns. */
+typedef bool (*SPF_Camera_RefreshOffsets_t)();
+
+
+// --- Viewport & Projection Types ---
+
+/** @brief Function type for retrieving viewport boundaries. */
+typedef bool (*SPF_Camera_GetViewport_t)(float* x1, float* x2, float* y1, float* y2);
+
+/** @brief Function type for getting the global Camera Parameters object address. */
+typedef uintptr_t (*SPF_Camera_GetCameraParamsObjectPtr_t)();
+
+
+// --- Animation Preparation Types ---
+
+/** @brief Function type for preparing the engine for animation playback. */
+typedef bool (*SPF_Camera_Anim_Prepare_t)();
 
 
 
@@ -1338,11 +1378,28 @@ typedef struct SPF_Camera_API {
     SPF_Camera_SetDebugOrbitSpeed_t Cam_SetDebugOrbitSpeed;
     SPF_Camera_GetDebugOrbitSpeed_t Cam_GetDebugOrbitSpeed;
     
-    /** @brief Gets or sets the Selected Actor (target). See `SPF_Camera_GetDebugSelectedObject_t`. */
+    /**
+     * @brief Gets the pointer to the currently selected game object (Actor).
+     * The selected object is the primary target for the debug camera when in
+     * 'Orbit' or 'Follow' modes.
+     * @return A pointer to the selected Actor, or NULL if no object is selected.
+     */
     SPF_Camera_GetDebugSelectedObject_t Cam_GetDebugSelectedObject;
+
+    /**
+     * @brief Programmatically selects a game object (Actor) for the debug camera.
+     * This allows a plugin to force the camera to lock onto a specific vehicle
+     * or world object.
+     * @param ptr The pointer to the game object (Actor) to select.
+     */
     SPF_Camera_SetDebugSelectedObject_t Cam_SetDebugSelectedObject;
     
-    /** @brief Gets the Actor currently under the cursor. See `SPF_Camera_GetDebugHoveredObject_t`. */
+    /**
+     * @brief Gets the pointer to the game object (Actor) currently under the mouse cursor.
+     * This is useful for building 'Point-and-Click' interaction tools or custom
+     * object inspection overlays.
+     * @return A pointer to the hovered Actor, or NULL if the cursor is not over an object.
+     */
     SPF_Camera_GetDebugHoveredObject_t Cam_GetDebugHoveredObject;
 
     // --- Debug Camera State Management ---
@@ -1393,6 +1450,86 @@ typedef struct SPF_Camera_API {
     /** @brief Checks if the animation is playing in reverse. See `SPF_Anim_IsReversed_t`. */
     SPF_Anim_IsReversed_t Cam_Anim_IsReversed;
 
+    // --- Framework & Service Status ---
+
+    /**
+     * @brief Checks if the Camera Service is fully initialized and operational.
+     * This is the primary check to see if the camera manager system is active.
+     * @return True if the service is initialized and ready to handle requests.
+     */
+    SPF_Camera_IsServiceReady_t Cam_IsServiceReady;
+
+    /**
+     * @brief Checks if all memory offsets for all camera types have been successfully found.
+     * The framework uses dynamic pattern searching to find game offsets. If this returns false,
+     * it means one or more patterns could not be found, and some camera features may be
+     * unavailable or unstable in the current game version.
+     * @return True if all dynamic patterns were successfully resolved.
+     */
+    SPF_Camera_AreAllOffsetsFound_t Cam_AreAllOffsetsFound;
+
+    /**
+     * @brief Checks if a specific camera data finder is ready.
+     * Allows checking readiness for individual camera systems without requiring all of them to be found.
+     * @param finderName The name of the finder to check (e.g., "InteriorCamera", "BehindCamera", "FreeCamera").
+     * @return True if the specific offsets for the requested camera system are found and valid.
+     */
+    SPF_Camera_IsFinderReady_t Cam_IsFinderReady;
+
+    /**
+     * @brief Forces the framework to re-scan game memory for all camera-related offsets.
+     * This can be useful if the game module was reloaded or if you suspect that pointers
+     * have become invalid. Note that this is a heavy operation and should not be called every frame.
+     * @return True if all offsets were successfully found after the refresh operation.
+     */
+    SPF_Camera_RefreshOffsets_t Cam_RefreshOffsets;
+
+    // --- Viewport & Projection ---
+
+    /**
+     * @brief Gets the current viewport boundaries used by the game's rendering engine.
+     * These values define the normalized screen area (usually 0.0 to 1.0) where the camera
+     * view is projected. These offsets are crucial for aligning custom UI elements with
+     * the 3D world view.
+     * @param[out] x1 Pointer to store the left boundary (X-start).
+     * @param[out] x2 Pointer to store the right boundary (X-end).
+     * @param[out] y1 Pointer to store the top boundary (Y-start).
+     * @param[out] y2 Pointer to store the bottom boundary (Y-end).
+     * @return True if the values were successfully retrieved from the game memory.
+     */
+    SPF_Camera_GetViewport_t Cam_GetViewport;
+
+    /**
+     * @brief Gets the raw memory address of the global Camera Parameters Object.
+     * This object contains high-level projection and rendering state.
+     * @warning Advanced usage only. Incorrectly modifying this object's memory can
+     * lead to immediate game crashes or visual corruption.
+     * @return A uintptr_t representing the absolute memory address of the params object.
+     */
+    SPF_Camera_GetCameraParamsObjectPtr_t Cam_GetCameraParamsObjectPtr;
+
+    // --- Animation Preparation ---
+
+    /**
+     * @brief Manually prepares the camera system for an upcoming animation playback.
+     * This operation performs several tasks: it hides the standard game debug HUD,
+     * ensures the camera mode is compatible with external control, and prepares 
+     * internal buffers. While `Cam_Anim_Play` calls this automatically, you can call it 
+     * earlier to ensure a seamless transition.
+     * @return True if the system was successfully prepared and is ready for playback.
+     */
+    SPF_Camera_Anim_Prepare_t Cam_Anim_Prepare;
+
+    // --- Object Targeting & Inspection ---
+
+    /**
+     * @brief Gets the absolute memory address of a game object (Actor).
+     * This function translates a generic object pointer into its raw memory address
+     * for debugging or low-level inspection.
+     * @param ptr The pointer to the game object (Actor).
+     * @return The uintptr_t memory address, or 0 if the pointer is invalid.
+     */
+    SPF_Camera_GetDebugObjectAddress_t Cam_GetDebugObjectAddress;
 
 } SPF_Camera_API;
 

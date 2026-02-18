@@ -857,7 +857,7 @@
             "animation_controls": "Елементи керування анімацією",
             "add_edit_state": "Додати/Редагувати стан",
             "position_xyz": "Позиція (X,Y,Z)",
-            "mystery_float": "Загадкове число з плаваючою комою",
+            "internal_value": "Внутрішнє значення",
             "quaternion_xyzw": "Кватерніон (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Додати стан (пам'ять)",
@@ -867,7 +867,7 @@
             "next_state": "Наступний стан",
             "active_state_label": "Активний стан [%d]:",
             "pos_label": "  Поз: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Загадка: %.4f",
+            "internal_label": "  Значення: %.4f",
             "quat_label": "  Кват: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Активний стан: [Немає]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Стани не збережено",
             "oversize_debug": "Надгабаритний",
             "camera_oversized_trailers": "Камера для надгабаритних причепів.",
-            "vehicle_list": "Список автомобілів"
+            "vehicle_list": "Список автомобілів",
+            "video": {
+                "selection_locks": "Вибір та блокування:",
+                "pos_lock": "Блокувати позицію",
+                "rot_lock": "Блокувати обертання",
+                "orbit_mode": "Режим орбіти",
+                "orbit_zoom_speed": "Швидкість зуму орбіти",
+                "hovered_actor": "Об'єкт під мишкою:",
+                "selected_actor": "Вибраний об'єкт:",
+                "traffic_vehicles": "Транспорт у трафіку",
+                "select_from_list": "Виберіть зі списку",
+                "capture_hovered": "Захопити об'єкт під мишкою",
+                "capture_selected": "Захопити вибраний об'єкт",
+                "no_actor_to_capture": "Немає об'єкта для захоплення",
+                "capture_my_truck": "Захопити мою вантажівку",
+                "my_truck_not_found": "Вантажівку не знайдено"
+            },
+            "traffic": {
+                "select_vehicle": "Вибрати транспорт",
+                "vehicle_details_traffic": "Деталі вибраного авто (ID трафіку: %d):",
+                "vehicle_details_mine": "Деталі вибраного авто (МОЯ ВАНТАЖІВКА):",
+                "pointer_label": "  Вказівник:",
+                "patience_label": "  Терпіння:",
+                "safety_label": "  Безпека:",
+                "target_speed_label": "  Цільова швидкість:",
+                "speed_limit_label": "  Обмеження швидкості:",
+                "current_speed_label": "  Поточна швидкість:",
+                "acceleration_label": "  Прискорення:",
+                "status_user_controlled": "  Статус: Керується користувачем",
+                "capture_selected_vehicle": "Захопити вибраний транспорт"
+            }
         }
     },
     "description": {

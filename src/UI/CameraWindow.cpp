@@ -320,7 +320,7 @@ CameraWindow::CameraWindow(GameCameraManager& gameCameraService, const std::stri
     m_locAnimationControls = "camera_window.debug.animation_controls";
     m_locAddEditState = "camera_window.debug.add_edit_state";
     m_locPositionXYZ = "camera_window.debug.position_xyz";
-    m_locMysteryFloat = "camera_window.debug.mystery_float";
+    m_locInternalValue = "camera_window.debug.internal_value";
     m_locQuaternionXYZW = "camera_window.debug.quaternion_xyzw";
     m_locFOVLabel = "camera_window.debug.fov_label";
     m_locAddStateMemory = "camera_window.debug.add_state_memory";
@@ -330,7 +330,7 @@ CameraWindow::CameraWindow(GameCameraManager& gameCameraService, const std::stri
     m_locNextState = "camera_window.debug.next_state";
     m_locActiveStateLabel = "camera_window.debug.active_state_label";
     m_locPosLabel = "camera_window.debug.pos_label";
-    m_locMysteryLabel = "camera_window.debug.mystery_label";
+    m_locInternalLabel = "camera_window.debug.internal_label";
     m_locQuatLabel = "camera_window.debug.quat_label";
     m_locFOVValueLabel = "camera_window.debug.fov_value_label";
     m_locActiveStateNone = "camera_window.debug.active_state_none";
@@ -341,6 +341,36 @@ CameraWindow::CameraWindow(GameCameraManager& gameCameraService, const std::stri
     m_locOversizeDebug = "camera_window.debug.oversize_debug";
     m_locCameraOversizedTrailers = "camera_window.debug.camera_oversized_trailers";
     m_locDebugCameraNotAvailable = "camera_window.debug.debug_camera_not_available";
+
+    // Video Debug Tab
+    m_locSelectionLocks = "camera_window.debug.video.selection_locks";
+    m_locPosLock = "camera_window.debug.video.pos_lock";
+    m_locRotLock = "camera_window.debug.video.rot_lock";
+    m_locOrbitMode = "camera_window.debug.video.orbit_mode";
+    m_locOrbitZoomSpeed = "camera_window.debug.video.orbit_zoom_speed";
+    m_locHoveredActor = "camera_window.debug.video.hovered_actor";
+    m_locSelectedActor = "camera_window.debug.video.selected_actor";
+    m_locTrafficVehicles = "camera_window.debug.video.traffic_vehicles";
+    m_locSelectFromList = "camera_window.debug.video.select_from_list";
+    m_locCaptureHovered = "camera_window.debug.video.capture_hovered";
+    m_locCaptureSelected = "camera_window.debug.video.capture_selected";
+    m_locNoActorToCapture = "camera_window.debug.video.no_actor_to_capture";
+    m_locCaptureMyTruck = "camera_window.debug.video.capture_my_truck";
+    m_locMyTruckNotFound = "camera_window.debug.video.my_truck_not_found";
+
+    // Traffic Debug Tab
+    m_locSelectVehicle = "camera_window.debug.traffic.select_vehicle";
+    m_locVehicleDetailsTraffic = "camera_window.debug.traffic.vehicle_details_traffic";
+    m_locVehicleDetailsMine = "camera_window.debug.traffic.vehicle_details_mine";
+    m_locPointerLabel = "camera_window.debug.traffic.pointer_label";
+    m_locPatienceLabel = "camera_window.debug.traffic.patience_label";
+    m_locSafetyLabel = "camera_window.debug.traffic.safety_label";
+    m_locTargetSpeedLabel = "camera_window.debug.traffic.target_speed_label";
+    m_locSpeedLimitLabel = "camera_window.debug.traffic.speed_limit_label";
+    m_locCurrentSpeedLabel = "camera_window.debug.traffic.current_speed_label";
+    m_locAccelerationLabel = "camera_window.debug.traffic.acceleration_label";
+    m_locStatusUserControlled = "camera_window.debug.traffic.status_user_controlled";
+    m_locCaptureSelectedVehicle = "camera_window.debug.traffic.capture_selected_vehicle";
 }
 
 const char* CameraWindow::GetWindowTitle() const {
@@ -454,7 +484,7 @@ void CameraWindow::RenderContent() {
         float seat_x, seat_y, seat_z;
         if (interiorCam->GetSeatPosition(&seat_x, &seat_y, &seat_z)) {
           bool seatChanged = false;
-          seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatLr).c_str(), &seat_x, -0.5f, 0.5f, "%.3f");
+          seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatLr).c_str(), &seat_x, -1.5f, 1.5f, "%.3f");
           seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatUd).c_str(), &seat_y, -0.2f, 0.2f, "%.3f");
           seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatFb).c_str(), &seat_z, -0.5f, 0.5f, "%.3f");
           if (seatChanged) {
@@ -1030,8 +1060,8 @@ void CameraWindow::RenderContent() {
         if (freeCam->GetOrientation(&mouse_x, &mouse_y, &roll)) {
           bool rotChanged = false;
           rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseHorizontalFreeCam).c_str(), &mouse_x, 0.0f, 6.28318f, "%.4f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseVerticalFreeCam).c_str(), &mouse_y, 0.0f, 6.28318f, "%.4f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locRollFreeCam).c_str(), &roll, -3.14159f, 3.14159f, "%.4f");
+          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseVerticalFreeCam).c_str(), &mouse_y, -1.57079f, 1.57079f, "%.4f");
+          rotChanged |= ImGui::SliderFloat(loc.Get(m_locRollFreeCam).c_str(), &roll, -1.57079f, 1.57079f, "%.4f");
           if (rotChanged) {
             freeCam->SetOrientation(mouse_x, mouse_y, roll);
           }
@@ -1150,23 +1180,23 @@ void CameraWindow::RenderContent() {
                 debugCam->SetMode(DebugCameraMode::VIDEO);
               }
 
-              ImGui::Text("Selection & Locks:");
+              ImGui::Text("%s", loc.Get(m_locSelectionLocks).c_str());
               bool posLock, rotLock, orbit;
               if (debugCam->GetPosLock(&posLock)) {
-                if (ImGui::Checkbox("Position Lock", &posLock)) debugCam->SetPosLock(posLock);
+                if (ImGui::Checkbox(loc.Get(m_locPosLock).c_str(), &posLock)) debugCam->SetPosLock(posLock);
               }
               ImGui::SameLine();
               if (debugCam->GetRotLock(&rotLock)) {
-                if (ImGui::Checkbox("Rotation Lock", &rotLock)) debugCam->SetRotLock(rotLock);
+                if (ImGui::Checkbox(loc.Get(m_locRotLock).c_str(), &rotLock)) debugCam->SetRotLock(rotLock);
               }
               ImGui::SameLine();
               if (debugCam->GetOrbitMode(&orbit)) {
-                if (ImGui::Checkbox("Orbit Mode", &orbit)) debugCam->SetOrbitMode(orbit);
+                if (ImGui::Checkbox(loc.Get(m_locOrbitMode).c_str(), &orbit)) debugCam->SetOrbitMode(orbit);
               }
 
               float orbitSpeed;
               if (debugCam->GetOrbitSpeed(&orbitSpeed)) {
-                if (ImGui::SliderFloat("Orbit Zoom Speed", &orbitSpeed, -100.0f, 100.0f, "%.2f")) {
+                if (ImGui::SliderFloat(loc.Get(m_locOrbitZoomSpeed).c_str(), &orbitSpeed, -100.0f, 100.0f, "%.2f")) {
                   debugCam->SetOrbitSpeed(orbitSpeed);
                 }
               }
@@ -1175,8 +1205,8 @@ void CameraWindow::RenderContent() {
               uintptr_t selectedObj = debugCam->GetSelectedObjectPtr();
               uintptr_t hoveredObj = debugCam->GetHoveredObjectPtr();
 
-              ImGui::Text("Hovered Actor:  0x%p", (void*)hoveredObj);
-              ImGui::Text("Selected Actor: 0x%p", (void*)selectedObj);
+              ImGui::Text((loc.Get(m_locHoveredActor) + "  0x%p").c_str(), (void*)hoveredObj);
+              ImGui::Text((loc.Get(m_locSelectedActor) + " 0x%p").c_str(), (void*)selectedObj);
 
               ImGui::Spacing();
               
@@ -1185,10 +1215,10 @@ void CameraWindow::RenderContent() {
               const auto vehicles = objectService.GetAllVehiclesFullInfo();
               static int listIdx = -1;
               
-              std::string comboLabel = (listIdx != -1 && listIdx < vehicles.size()) ? "ID: " + std::to_string(vehicles[listIdx].id) : "Select from list";
-              if (ImGui::BeginCombo("Traffic Vehicles", comboLabel.c_str())) {
+              std::string comboLabel = (listIdx != -1 && listIdx < vehicles.size()) ? loc.Get(m_locTabWheelCamera).c_str() + std::to_string(vehicles[listIdx].id) : loc.Get(m_locSelectFromList).c_str();
+              if (ImGui::BeginCombo(loc.Get(m_locTrafficVehicles).c_str(), comboLabel.c_str())) {
                 for (int i = 0; i < vehicles.size(); ++i) {
-                  if (ImGui::Selectable(("ID: " + std::to_string(vehicles[i].id)).c_str(), listIdx == i)) {
+                  if (ImGui::Selectable((loc.Get(m_locTabWheelCamera).c_str() + std::to_string(vehicles[i].id)).c_str(), listIdx == i)) {
                     listIdx = i;
                   }
                 }
@@ -1198,25 +1228,25 @@ void CameraWindow::RenderContent() {
               uintptr_t toCapture = (hoveredObj != 0) ? hoveredObj : ((listIdx != -1 && listIdx < vehicles.size()) ? vehicles[listIdx].pointer : 0);
 
               if (toCapture != 0) {
-                const char* btnText = (hoveredObj != 0) ? "Capture Hovered Actor" : "Capture Selected Actor";
+                const char* btnText = (hoveredObj != 0) ? loc.Get(m_locCaptureHovered).c_str() : loc.Get(m_locCaptureSelected).c_str();
                 if (ImGui::Button(btnText, ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(toCapture);
                 }
               } else {
                 ImGui::BeginDisabled();
-                ImGui::Button("No Actor to capture", ImVec2(-1, 0));
+                ImGui::Button(loc.Get(m_locNoActorToCapture).c_str(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
               ImGui::Spacing();
               uintptr_t myTruck = objectService.GetPlayerVehiclePtr();
               if (myTruck != 0) {
-                if (ImGui::Button("Capture My Truck", ImVec2(-1, 0))) {
+                if (ImGui::Button(loc.Get(m_locCaptureMyTruck).c_str(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(myTruck);
                 }
               } else {
                 ImGui::BeginDisabled();
-                ImGui::Button("My Truck not found", ImVec2(-1, 0));
+                ImGui::Button(loc.Get(m_locMyTruckNotFound).c_str(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
@@ -1286,7 +1316,7 @@ void CameraWindow::RenderContent() {
               }
 
               // 2. Render Selection Combo
-              if (ImGui::BeginCombo("Select Vehicle", preview.c_str())) {
+              if (ImGui::BeginCombo(loc.Get(m_locSelectVehicle).c_str(), preview.c_str())) {
                 for (int i = 0; i < allEntries.size(); ++i) {
                   if (ImGui::Selectable(allEntries[i].label.c_str(), selectedIdx == i)) {
                     selectedPtr = allEntries[i].ptr;
@@ -1304,17 +1334,17 @@ void CameraWindow::RenderContent() {
                 for (const auto& v : trafficVehicles) { if (v.pointer == selectedPtr) { vInfo = &v; break; } }
 
                 if (vInfo) {
-                  ImGui::Text("Selected Vehicle Details (Traffic ID: %d):", vInfo->id);
-                  ImGui::Text("  Pointer: 0x%p", (void*)vInfo->pointer);
-                  ImGui::Text("  Patience: %.2f", vInfo->patience);
-                  ImGui::Text("  Safety: %.2f", vInfo->safety);
-                  ImGui::Text("  Target Speed: %.2f mph", vInfo->target_speed * 2.23694f);
-                  ImGui::Text("  Speed Limit: %.2f mph", vInfo->speed_limit * 2.23694f);
-                  ImGui::Text("  Current Speed: %.2f mph", vInfo->current_speed * 2.23694f);
-                  ImGui::Text("  Acceleration: %.2f", vInfo->acceleration);
+                  ImGui::Text(loc.Get(m_locVehicleDetailsTraffic).c_str(), vInfo->id);
+                  ImGui::Text((loc.Get(m_locPointerLabel) + " 0x%p").c_str(), (void*)vInfo->pointer);
+                  ImGui::Text((loc.Get(m_locPatienceLabel) + " %.2f").c_str(), vInfo->patience);
+                  ImGui::Text((loc.Get(m_locSafetyLabel) + " %.2f").c_str(), vInfo->safety);
+                  ImGui::Text((loc.Get(m_locTargetSpeedLabel) + " %.2f mph").c_str(), vInfo->target_speed * 2.23694f);
+                  ImGui::Text((loc.Get(m_locSpeedLimitLabel) + " %.2f mph").c_str(), vInfo->speed_limit * 2.23694f);
+                  ImGui::Text((loc.Get(m_locCurrentSpeedLabel) + " %.2f mph").c_str(), vInfo->current_speed * 2.23694f);
+                  ImGui::Text((loc.Get(m_locAccelerationLabel) + " %.2f").c_str(), vInfo->acceleration);
                 } else if (selectedPtr == myTruckPtr) {
-                  ImGui::Text("Selected Vehicle Details (MY TRUCK):");
-                  ImGui::Text("  Pointer: 0x%p", (void*)myTruckPtr);
+                  ImGui::Text("%s", loc.Get(m_locVehicleDetailsMine).c_str());
+                  ImGui::Text((loc.Get(m_locPointerLabel) + " 0x%p").c_str(), (void*)myTruckPtr);
                   
                   // Try to read speed/acceleration for player truck using VTable logic
                   float mySpeed = 0.0f;
@@ -1328,14 +1358,14 @@ void CameraWindow::RenderContent() {
                     if (GetAccelFn) myAccel = GetAccelFn((void*)(myTruckPtr + 16));
                   }
                   
-                  ImGui::Text("  Current Speed: %.2f mph", mySpeed * 2.23694f);
-                  ImGui::Text("  Acceleration: %.2f", myAccel);
-                  ImGui::Text("  Status: User Controlled");
+                  ImGui::Text((loc.Get(m_locCurrentSpeedLabel) + " %.2f mph").c_str(), mySpeed * 2.23694f);
+                  ImGui::Text((loc.Get(m_locAccelerationLabel) + " %.2f").c_str(), myAccel);
+                  ImGui::Text("%s", loc.Get(m_locStatusUserControlled).c_str());
                 }
                 
                 ImGui::Spacing();
                 
-                if (ImGui::Button("Capture Selected Vehicle", ImVec2(-1, 0))) {
+                if (ImGui::Button(loc.Get(m_locCaptureSelectedVehicle).c_str(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(selectedPtr);
                 }
               }
@@ -1457,14 +1487,14 @@ void CameraWindow::RenderContent() {
               // Continuously update the editor fields with live data from the free camera
               if (auto* freeCam = dynamic_cast<GameCameraFree*>(m_gameCameraService.GetCamera(GameCameraType::DeveloperFreeCamera))) {
                 freeCam->GetPosition(&newState.pos_x, &newState.pos_y, &newState.pos_z);
-                freeCam->GetFreecamMysteryFloat(&newState.mystery_float);
+                freeCam->GetFreecamMysteryFloat(&newState.internal_value);
                 freeCam->GetQuaternion(&newState.q_x, &newState.q_y, &newState.q_z, &newState.q_w);
                 freeCam->GetFov(&newState.fov);
               }
 
               ImGui::TextUnformatted(loc.Get(m_locAddEditState).c_str());
               ImGui::InputFloat3(loc.Get(m_locPositionXYZ).c_str(), &newState.pos_x);
-              ImGui::InputFloat(loc.Get(m_locMysteryFloat).c_str(), &newState.mystery_float);
+              ImGui::InputFloat(loc.Get(m_locInternalValue).c_str(), &newState.internal_value);
               ImGui::InputFloat4(loc.Get(m_locQuaternionXYZW).c_str(), &newState.q_x);
               ImGui::InputFloat(loc.Get(m_locFOVLabel).c_str(), &newState.fov);
               if (ImGui::Button(loc.Get(m_locAddStateMemory).c_str())) {
@@ -1517,7 +1547,7 @@ void CameraWindow::RenderContent() {
                     if (stateCam->GetState(currentIndex, state_data)) {
                       ImGui::Text(loc.Get(m_locActiveStateLabel).c_str(), currentIndex);
                       ImGui::Text(loc.Get(m_locPosLabel).c_str(), state_data.pos_x, state_data.pos_y, state_data.pos_z);
-                      ImGui::Text(loc.Get(m_locMysteryLabel).c_str(), state_data.mystery_float);
+                      ImGui::Text(loc.Get(m_locInternalLabel).c_str(), state_data.internal_value);
                       ImGui::Text(loc.Get(m_locQuatLabel).c_str(), state_data.q_x, state_data.q_y, state_data.q_z, state_data.q_w);
                       ImGui::Text(loc.Get(m_locFOVValueLabel).c_str(), state_data.fov);
                     }

@@ -857,7 +857,7 @@
             "animation_controls": "アニメーションコントロール",
             "add_edit_state": "ステートの追加/編集",
             "position_xyz": "位置 (X,Y,Z)",
-            "mystery_float": "ミステリーフロート",
+            "internal_value": "内部値",
             "quaternion_xyzw": "クォータニオン (X,Y,Z,W)",
             "fov_label": "視野角",
             "add_state_memory": "ステートを追加 (メモリ)",
@@ -867,7 +867,7 @@
             "next_state": "次のステート",
             "active_state_label": "アクティブなステート [%d]:",
             "pos_label": "  位置: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  ミステリー: %.4f",
+            "internal_label": "  値: %.4f",
             "quat_label": "  クォート: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  視野角: %.2f",
             "active_state_none": "アクティブなステート: [なし]",
@@ -877,7 +877,37 @@
             "no_states_saved": "保存済みステートなし",
             "oversize_debug": "オーバーサイズ",
             "camera_oversized_trailers": "オーバーサイズトレーラー用カメラ。",
-            "vehicle_list": "車両リスト"
+            "vehicle_list": "車両リスト",
+            "video": {
+                "selection_locks": "選択とロック:",
+                "pos_lock": "位置ロック",
+                "rot_lock": "回転ロック",
+                "orbit_mode": "オービットモード",
+                "orbit_zoom_speed": "オービットズーム速度",
+                "hovered_actor": "ホバー中のアクター:",
+                "selected_actor": "選択中のアクター:",
+                "traffic_vehicles": "交通車両",
+                "select_from_list": "リストから選択",
+                "capture_hovered": "ホバー中のアクターをキャプチャ",
+                "capture_selected": "選択中のアクターをキャプチャ",
+                "no_actor_to_capture": "キャプチャするアクターなし",
+                "capture_my_truck": "私のトラックをキャプチャ",
+                "my_truck_not_found": "私のトラックは見つかりません"
+            },
+            "traffic": {
+                "select_vehicle": "車両を選択",
+                "vehicle_details_traffic": "選択中の車両の詳細 (トラフィックID: %d):",
+                "vehicle_details_mine": "選択中の車両の詳細 (私のトラック):",
+                "pointer_label": "  ポインタ:",
+                "patience_label": "  忍耐度:",
+                "safety_label": "  安全性:",
+                "target_speed_label": "  目標速度:",
+                "speed_limit_label": "  制限速度:",
+                "current_speed_label": "  現在の速度:",
+                "acceleration_label": "  加速度:",
+                "status_user_controlled": "  ステータス: ユーザー制御",
+                "capture_selected_vehicle": "選択中の車両をキャプチャ"
+            }
         }
     },
     "description": {

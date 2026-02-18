@@ -8,6 +8,7 @@
 #include "SPF/SPF_API/SPF_KeyBinds_API.h"
 #include "SPF/SPF_API/SPF_Hooks_API.h"
 #include "SPF/SPF_API/SPF_Camera_API.h"
+#include "SPF/SPF_API/SPF_Vehicle_API.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/SPF_API/SPF_Telemetry_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
@@ -164,6 +165,7 @@ class PluginManager {
   SPF_JsonReader_API m_jsonReaderAPI{};
   SPF_Formatting_API m_formattingAPI{};
   SPF_GameLog_API m_gameLogAPI{};
+  SPF_Vehicle_API m_vehicleAPI{};
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;

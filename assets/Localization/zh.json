@@ -857,7 +857,7 @@
             "animation_controls": "动画控制",
             "add_edit_state": "添加/编辑状态",
             "position_xyz": "位置 (X,Y,Z)",
-            "mystery_float": "神秘浮点数",
+            "internal_value": "内部值",
             "quaternion_xyzw": "四元数 (X,Y,Z,W)",
             "fov_label": "视野",
             "add_state_memory": "添加状态 (内存)",
@@ -867,7 +867,7 @@
             "next_state": "下一个状态",
             "active_state_label": "活动状态 [%d]:",
             "pos_label": "  位置: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  神秘: %.4f",
+            "internal_label": "  值: %.4f",
             "quat_label": "  四元数: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  视野: %.2f",
             "active_state_none": "活动状态: [无]",
@@ -877,7 +877,37 @@
             "no_states_saved": "没有保存的状态",
             "oversize_debug": "超大",
             "camera_oversized_trailers": "超大拖车摄像头。",
-            "vehicle_list": "车辆列表"
+            "vehicle_list": "车辆列表",
+            "video": {
+                "selection_locks": "选择与锁定:",
+                "pos_lock": "位置锁定",
+                "rot_lock": "旋转锁定",
+                "orbit_mode": "轨道模式",
+                "orbit_zoom_speed": "轨道缩放速度",
+                "hovered_actor": "悬停演员:",
+                "selected_actor": "选中演员:",
+                "traffic_vehicles": "交通车辆",
+                "select_from_list": "从列表中选择",
+                "capture_hovered": "捕获悬停演员",
+                "capture_selected": "捕获选中演员",
+                "no_actor_to_capture": "没有可捕获的演员",
+                "capture_my_truck": "捕获我的卡车",
+                "my_truck_not_found": "未找到我的卡车"
+            },
+            "traffic": {
+                "select_vehicle": "选择车辆",
+                "vehicle_details_traffic": "选中车辆详情 (交通 ID: %d):",
+                "vehicle_details_mine": "选中车辆详情 (我的卡车):",
+                "pointer_label": "  指针:",
+                "patience_label": "  耐心:",
+                "safety_label": "  安全:",
+                "target_speed_label": "  目标速度:",
+                "speed_limit_label": "  速度限制:",
+                "current_speed_label": "  当前速度:",
+                "acceleration_label": "  加速度:",
+                "status_user_controlled": "  状态: 用户控制",
+                "capture_selected_vehicle": "捕获选中车辆"
+            }
         }
     },
     "description": {

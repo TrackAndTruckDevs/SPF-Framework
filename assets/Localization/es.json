@@ -857,7 +857,7 @@
             "animation_controls": "Controles de animación",
             "add_edit_state": "Añadir/Editar estado",
             "position_xyz": "Posición (X,Y,Z)",
-            "mystery_float": "Flotante misterioso",
+            "internal_value": "Valor interno",
             "quaternion_xyzw": "Cuaternión (X,Y,Z,W)",
             "fov_label": "CDV",
             "add_state_memory": "Añadir estado (Memoria)",
@@ -867,7 +867,7 @@
             "next_state": "Estado siguiente",
             "active_state_label": "Estado activo [%d]:",
             "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Misterio: %.4f",
+            "internal_label": "  Valor: %.4f",
             "quat_label": "  Cuat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  CDV: %.2f",
             "active_state_none": "Estado activo: [Ninguno]",
@@ -877,7 +877,37 @@
             "no_states_saved": "No hay estados guardados",
             "oversize_debug": "Sobredimensionado",
             "camera_oversized_trailers": "Cámara para remolques sobredimensionados.",
-            "vehicle_list": "Lista de vehículos"
+            "vehicle_list": "Lista de vehículos",
+            "video": {
+                "selection_locks": "Bloqueos de selección:",
+                "pos_lock": "Bloqueo de posición",
+                "rot_lock": "Bloqueo de rotación",
+                "orbit_mode": "Modo órbita",
+                "orbit_zoom_speed": "Velocidad de zoom en órbita",
+                "hovered_actor": "Actor sobre el que se pasa el ratón:",
+                "selected_actor": "Actor seleccionado:",
+                "traffic_vehicles": "Vehículos de tráfico",
+                "select_from_list": "Seleccionar de la lista",
+                "capture_hovered": "Capturar Actor sobre el que se pasa el ratón",
+                "capture_selected": "Capturar Actor seleccionado",
+                "no_actor_to_capture": "Ningún Actor para capturar",
+                "capture_my_truck": "Capturar mi camión",
+                "my_truck_not_found": "Mi camión no encontrado"
+            },
+            "traffic": {
+                "select_vehicle": "Seleccionar vehículo",
+                "vehicle_details_traffic": "Detalles del vehículo seleccionado (ID de tráfico: %d):",
+                "vehicle_details_mine": "Detalles del vehículo seleccionado (MI CAMIÓN):",
+                "pointer_label": "  Puntero:",
+                "patience_label": "  Paciencia:",
+                "safety_label": "  Seguridad:",
+                "target_speed_label": "  Velocidad objetivo:",
+                "speed_limit_label": "  Límite de velocidad:",
+                "current_speed_label": "  Velocidad actual:",
+                "acceleration_label": "  Aceleración:",
+                "status_user_controlled": "  Estado: Controlado por el usuario",
+                "capture_selected_vehicle": "Capturar vehículo seleccionado"
+            }
         }
     },
     "description": {

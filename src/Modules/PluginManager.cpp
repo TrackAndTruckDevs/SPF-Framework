@@ -19,6 +19,7 @@
 #include "SPF/GameCamera/GameCameraTV.hpp"
 #include "SPF/GameCamera/GameCameraFree.hpp"
 #include "SPF/Modules/API/CameraApi.hpp"
+#include "SPF/Modules/API/VehicleApi.hpp"
 #include "SPF/Modules/API/UIApi.hpp"
 #include "SPF/Modules/API/LoggerApi.hpp"
 #include "SPF/Modules/API/LocalizationApi.hpp"
@@ -564,6 +565,7 @@ void PluginManager::FillAPIs() {
   API::VirtualInputApi::FillVirtualInputApi(&m_inputAPI);
   API::HooksApi::FillHooksApi(&m_hooksAPI, &PluginManager::T_Hooks_Register);
   API::CameraApi::FillCameraAPI(&m_cameraAPI);
+  API::VehicleApi::FillVehicleApi(&m_vehicleAPI);
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
@@ -589,6 +591,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.formatting = &m_formattingAPI;
   m_coreAPI.gamelog = &m_gameLogAPI;
   m_coreAPI.json_reader = &m_jsonReaderAPI;
+  m_coreAPI.vehicle = &m_vehicleAPI;
 }
 }  // namespace Modules
 SPF_NS_END  // namespace Modules

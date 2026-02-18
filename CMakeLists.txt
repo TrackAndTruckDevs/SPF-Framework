@@ -256,6 +256,7 @@ add_library(SPF SHARED
     "src/Modules/GameLogEventManager.cpp"
     "src/Modules/PluginManager.cpp"
     "src/Modules/API/CameraApi.cpp"
+    "src/Modules/API/VehicleApi.cpp"
     "src/Modules/API/UIApi.cpp"
     "src/Modules/API/LocalizationApi.cpp"
     "src/Modules/API/LoggerApi.cpp"

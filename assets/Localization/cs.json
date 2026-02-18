@@ -857,7 +857,7 @@
             "animation_controls": "Ovládání animace",
             "add_edit_state": "Přidat/Upravit stav",
             "position_xyz": "Pozice (X,Y,Z)",
-            "mystery_float": "Záhadný float",
+            "internal_value": "Vnitřní hodnota",
             "quaternion_xyzw": "Kvaternion (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Přidat stav (paměť)",
@@ -867,7 +867,7 @@
             "next_state": "Další stav",
             "active_state_label": "Aktivní stav [%d]:",
             "pos_label": "  Poz: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Záhada: %.4f",
+            "internal_label": "  Hodnota: %.4f",
             "quat_label": "  Kvat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Aktivní stav: [Žádný]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Žádné uložené stavy",
             "oversize_debug": "Nadměrný náklad",
             "camera_oversized_trailers": "Kamera pro nadměrné náklady.",
-            "vehicle_list": "Seznam vozidel"
+            "vehicle_list": "Seznam vozidel",
+            "video": {
+                "selection_locks": "Výběr a zámky:",
+                "pos_lock": "Zámek pozice",
+                "rot_lock": "Zámek rotace",
+                "orbit_mode": "Režim oběžné dráhy",
+                "orbit_zoom_speed": "Rychlost zoomu oběžné dráhy",
+                "hovered_actor": "Pohyblivý objekt:",
+                "selected_actor": "Vybraný objekt:",
+                "traffic_vehicles": "Vozidla v provozu",
+                "select_from_list": "Vybrat ze seznamu",
+                "capture_hovered": "Zachyťte vznášející se objekt",
+                "capture_selected": "Zachyťte vybraný objekt",
+                "no_actor_to_capture": "Žádný objekt k zachycení",
+                "capture_my_truck": "Zachyťte můj tahač",
+                "my_truck_not_found": "Můj tahač nenalezen"
+            },
+            "traffic": {
+                "select_vehicle": "Vybrat vozidlo",
+                "vehicle_details_traffic": "Detaily vybraného vozidla (ID provozu: %d):",
+                "vehicle_details_mine": "Detaily vybraného vozidla (MŮJ NÁKLAĎÁK):",
+                "pointer_label": "  Ukazatel:",
+                "patience_label": "  Trpělivost:",
+                "safety_label": "  Bezpečnost:",
+                "target_speed_label": "  Cílová rychlost:",
+                "speed_limit_label": "  Rychlostní limit:",
+                "current_speed_label": "  Aktuální rychlost:",
+                "acceleration_label": "  Zrychlení:",
+                "status_user_controlled": "  Stav: Ovládáno uživatelem",
+                "capture_selected_vehicle": "Zachyťte vybrané vozidlo"
+            }
         }
     },
     "description": {

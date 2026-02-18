@@ -166,6 +166,22 @@ class CameraApi {
   static int T_Anim_GetCurrentFrame();
   static float T_Anim_GetCurrentFrameProgress();
   static bool T_Anim_IsReversed();
+
+  // --- Framework & Service Status Trampolines ---
+  static bool T_Camera_IsServiceReady();
+  static bool T_Camera_AreAllOffsetsFound();
+  static bool T_Camera_IsFinderReady(const char* finderName);
+  static bool T_Camera_RefreshOffsets();
+
+  // --- Viewport & Projection Trampolines ---
+  static bool T_Camera_GetViewport(float* x1, float* x2, float* y1, float* y2);
+  static uintptr_t T_Camera_GetCameraParamsObjectPtr();
+
+  // --- Animation Preparation Trampolines ---
+  static bool T_Camera_Anim_Prepare();
+
+  // --- Object Targeting & Inspection Trampolines ---
+  static uintptr_t T_Camera_GetDebugObjectAddress(void* ptr);
 };
 }  // namespace Modules::API
 SPF_NS_END

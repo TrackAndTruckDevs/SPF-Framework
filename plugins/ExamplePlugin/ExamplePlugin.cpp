@@ -319,6 +319,11 @@ void OnActivated(const SPF_Core_API* core_api) {
     g_ctx.coreAPI = core_api;
     auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
 
+    // Get pointers to additional framework services.
+    if (g_ctx.coreAPI) {
+        g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
+    }
+
     // Register callbacks for systems that require the core API.
     if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
         g_ctx.keybindsHandle = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
@@ -554,7 +559,8 @@ void OnUnload() {
     // It's good practice to null out all cached pointers on unload. This helps prevent
     // accidental use-after-free if another part of the code attempts to access them
     // after the plugin has been told to shut down.
-    g_ctx.telemetryHandle = nullptr;
+
+    // 1. Unregister callbacks & Subscriptions (Handles managed by framework will auto-cleanup)
     g_ctx.gameStateCallback = nullptr;
     g_ctx.timestampsCallback = nullptr;
     g_ctx.commonDataCallback = nullptr;
@@ -569,10 +575,22 @@ void OnUnload() {
     g_ctx.specialEventsCallback = nullptr;
     g_ctx.gameplayEventsCallback = nullptr;
     g_ctx.gearboxConstantsCallback = nullptr;
+    g_ctx.gameLogCallbackHandle = nullptr;
 
+    // 2. Clear API Context Handles
+    g_ctx.telemetryHandle = nullptr;
+    g_ctx.keybindsHandle = nullptr;
     g_ctx.mainWindowHandle = nullptr;
     g_ctx.virtualDevice = nullptr;
+
+    // 3. Clear Internal Plugin State
+    g_ctx.selectedVehicle = nullptr;
+    g_ctx.vehicleHandles.clear();
+    g_ctx.o_GameStringFormatting = nullptr;
+
+    // 4. Null out core API pointers
     g_ctx.uiAPI = nullptr;
+    g_ctx.vehicleAPI = nullptr;
     g_ctx.coreAPI = nullptr;
     g_ctx.loadAPI = nullptr;
 }
@@ -1009,6 +1027,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->UI_EndTabItem();
         }
         // Render the content of other tabs by calling their respective functions.
+        if (ui->UI_BeginTabItem("Traffic Inspector")) { RenderVehicleTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Camera")) { RenderCameraTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
@@ -1060,6 +1079,109 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
         ui->UI_Text(buffer);
     } else {
         ui->UI_Text("Could not get camera world coordinates.");
+    }
+}
+
+/**
+ * @brief Renders the content for the "Vehicle" tab in the main window.
+ */
+void RenderVehicleTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.vehicleAPI) {
+        ui->UI_Text("Vehicle API is not available.");
+        return;
+    }
+
+    // 1. Update vehicle list
+    uint32_t count = g_ctx.vehicleAPI->Veh_GetCount();
+    
+    // Resize vector if needed (with buffer)
+    if (g_ctx.vehicleHandles.size() < count + 10) {
+        g_ctx.vehicleHandles.resize(count + 50);
+    }
+
+    // Get handles
+    uint32_t actualCount = g_ctx.vehicleAPI->Veh_GetAllHandles(g_ctx.vehicleHandles.data(), (uint32_t)g_ctx.vehicleHandles.size());
+
+    // 2. Prepare preview for combo box
+    char previewText[64] = "Select Vehicle...";
+    if (g_ctx.selectedVehicle) {
+        // Check if selected vehicle still exists
+        bool stillExists = false;
+        for (uint32_t i = 0; i < actualCount; ++i) {
+            if (g_ctx.vehicleHandles[i] == g_ctx.selectedVehicle) {
+                stillExists = true;
+                break;
+            }
+        }
+
+        if (stillExists) {
+            int32_t id = g_ctx.vehicleAPI->Veh_GetId(g_ctx.selectedVehicle);
+            g_ctx.coreAPI->formatting->Fmt_Format(previewText, sizeof(previewText), "Vehicle ID: %d", id);
+        } else {
+            g_ctx.selectedVehicle = nullptr; // Vehicle disappeared
+            g_ctx.coreAPI->formatting->Fmt_Format(previewText, sizeof(previewText), "Select Vehicle...");
+        }
+    }
+
+    // 3. Draw Combo Box
+    if (ui->UI_BeginCombo("Target Vehicle", previewText)) {
+        for (uint32_t i = 0; i < actualCount; ++i) {
+            SPF_VehicleHandle h = g_ctx.vehicleHandles[i];
+            int32_t id = g_ctx.vehicleAPI->Veh_GetId(h);
+            
+            char itemLabel[64];
+            g_ctx.coreAPI->formatting->Fmt_Format(itemLabel, sizeof(itemLabel), "Vehicle #%d", id);
+
+            bool isSelected = (g_ctx.selectedVehicle == h);
+            if (ui->UI_Selectable(itemLabel, isSelected)) {
+                g_ctx.selectedVehicle = h;
+            }
+        }
+        ui->UI_EndCombo();
+    }
+
+    ui->UI_Separator();
+
+    // 4. Display info for selected vehicle
+    if (g_ctx.selectedVehicle) {
+        SPF_VehicleHandle h = g_ctx.selectedVehicle;
+        
+        // Retrieve data
+        float speed = g_ctx.vehicleAPI->Veh_GetCurrentSpeed(h);
+        float accel = g_ctx.vehicleAPI->Veh_GetAcceleration(h);
+        float targetSpeed = g_ctx.vehicleAPI->Veh_GetTargetSpeed(h);
+        float speedLimit = g_ctx.vehicleAPI->Veh_GetSpeedLimit(h);
+        float patience = g_ctx.vehicleAPI->Veh_GetPatience(h);
+        float safety = g_ctx.vehicleAPI->Veh_GetSafety(h);
+        
+        char buffer[64];
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f m/s (%.0f km/h)", speed, speed * 3.6f);
+        ui->UI_LabelText("Speed", buffer);
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f m/s^2", accel);
+        ui->UI_LabelText("Acceleration", buffer);
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f m/s", targetSpeed);
+        ui->UI_LabelText("Target Speed", buffer);
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f m/s", speedLimit);
+        ui->UI_LabelText("Speed Limit", buffer);
+
+        ui->UI_Separator();
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f", patience);
+        ui->UI_LabelText("AI Patience", buffer);
+
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "%.2f", safety);
+        ui->UI_LabelText("AI Safety", buffer);
+        
+        uintptr_t addr = g_ctx.vehicleAPI->Veh_GetRawAddress(h);
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "0x%llX", (unsigned long long)addr);
+        ui->UI_LabelText("Address", buffer);
+    } else {
+        ui->UI_Text("Please select a vehicle to inspect.");
+        ui->UI_Text("Note: Use the 'Traffic' debug camera mode to see vehicle IDs.");
     }
 }
 

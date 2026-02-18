@@ -5,11 +5,21 @@
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
+
 namespace {
-// Signature to find the UpdateAnimatedFlight function.
-// This signature looks for a unique string referenced inside the function,
-// then finds the function prologue by scanning backwards.
-const char* ANIMATED_FLIGHT_FUNC_SIG = "48 89 5C 24 10 57 48 81 EC ? ? ? ? ? ? B4 24 ? ? ? ? 33 FF ? ? F6";
+/*
+ * Anchor #1: Animation Timer Offset
+ * Found inside SetDebugCameraMode:
+ * MOV dword ptr [RBX + offset], -1.0f (C7 83 ...)
+ * MOV qword ptr [RBX + offset], RDI   (48 89 BB ...)
+ */
+const char* ANIMATION_TIMER_SIG = "C7 83 ?? ?? ?? ?? ?? ?? ?? ?? 48 89 BB ?? ?? ?? ??";
+
+/*
+ * Anchor #2: UpdateAnimatedFlight function
+ * Signature for the function prologue and initial register setup.
+ */
+const char* ANIMATED_FLIGHT_FUNC_SIG = "48 89 5C ?? ?? 57 48 81 EC ?? ?? ?? ?? ?? ?? B4 24 ?? ?? ?? ?? 33 FF ?? ?? F6";
 }  // namespace
 
 bool DebugCameraAnimationDataFinder::TryFindOffsets(GameDataCameraService& owner) {
@@ -18,67 +28,50 @@ bool DebugCameraAnimationDataFinder::TryFindOffsets(GameDataCameraService& owner
   }
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for Debug Camera Animation data...");
+  logger->Info("Searching for Debug Camera Animation data (Dynamic Search)...");
 
   bool timerOffsetFound = (owner.GetAnimationTimerOffset() != 0);
   if (!timerOffsetFound) {
-    // Find the animation timer offset within the SetDebugCameraMode function.
     uintptr_t pfnSetDebugCameraMode = reinterpret_cast<uintptr_t>(owner.GetDebugCameraModeFunc());
     if (pfnSetDebugCameraMode) {
-      // Signature targets the sequence of MOV [RBX + ?], -1.0f followed by the opcode for MOV [RBX+?], RDI
-      // This is unique and does not hardcode the second offset.
-      // Expected offset: 0xdd0
-      const unsigned char pattern[] = {
-          0xC7,
-          0x83,
-          '?',
-          '?',
-          '?',
-          '?',
-          0x00,
-          0x00,
-          0x80,
-          0xBF,  // MOV [rbx+????], -1.0f
-          0x48,
-          0x89,
-          0xBB  // MOV [rbx+????], RDI opcode
-      };
-      uintptr_t sig_addr = Utils::PatternFinder::Find(pfnSetDebugCameraMode, 512, pattern, sizeof(pattern));
+      uintptr_t sig_addr = Utils::PatternFinder::Find(pfnSetDebugCameraMode, 512, ANIMATION_TIMER_SIG);
       if (sig_addr) {
-        // The offset is 2 bytes after the start of the signature (after C7 83)
-        int32_t offset = *(int32_t*)(sig_addr + 2);
-        owner.SetAnimationTimerOffset(offset);
-        logger->Info("--- Found AnimationTimerOffset dynamically: 0x{:X}", offset);
-        timerOffsetFound = true;
+        // Offset is at byte 2 of the instruction: C7 83 [OFFSET]
+        int32_t offset = Utils::PatternFinder::ReadInt32(sig_addr + 2);
+        if (Utils::PatternFinder::IsSaneOffset(offset)) {
+          owner.SetAnimationTimerOffset(offset);
+          logger->Info("Anchor #1: AnimationTimerOffset = 0x{:X}", offset);
+          timerOffsetFound = true;
+        } else {
+          logger->Error("Anchor #1: AnimationTimerOffset INVALID (0x{:X})", offset);
+        }
       } else {
-        logger->Warn("Signature for AnimationTimerOffset not found within SetDebugCameraMode. Will retry...");
+        logger->Warn("Anchor #1: FAILED to find AnimationTimer signature in SetDebugCameraMode");
       }
     } else {
-      logger->Warn("SetDebugCameraMode function not found. Cannot find AnimationTimerOffset. Will retry...");
+      logger->Warn("SetDebugCameraMode function not found in owner. Cannot search for timer offset.");
     }
   }
 
   bool funcFound = (owner.GetUpdateAnimatedFlightFunc() != nullptr);
   if (!funcFound) {
-    // The user provided the decompiled code for UpdateAnimatedFlight.
-    // We can find it by searching for a unique pattern at its start.
     uintptr_t pfnUpdateAnimatedFlight = Utils::PatternFinder::Find(ANIMATED_FLIGHT_FUNC_SIG);
     if (pfnUpdateAnimatedFlight) {
       owner.SetUpdateAnimatedFlightFunc(reinterpret_cast<void*>(pfnUpdateAnimatedFlight));
-      logger->Info("--- Found UpdateAnimatedFlight function at: {:#x}", pfnUpdateAnimatedFlight);
+      logger->Info("Anchor #2: UpdateAnimatedFlight found at 0x{:X}", pfnUpdateAnimatedFlight);
       funcFound = true;
     } else {
-      logger->Warn("Signature for UpdateAnimatedFlight function not found. Will retry...");
+      logger->Warn("Anchor #2: FAILED to find UpdateAnimatedFlight function signature globally");
     }
   }
 
   m_isReady = timerOffsetFound && funcFound;
-
   if (m_isReady) {
-    logger->Info("Successfully found all debug camera animation data.");
+    logger->Info("Successfully found all Debug Camera Animation data.");
   }
 
   return m_isReady;
 }
+
 }  // namespace Data::GameData::Finders
 SPF_NS_END

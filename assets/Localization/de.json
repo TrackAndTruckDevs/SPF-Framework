@@ -857,7 +857,7 @@
             "animation_controls": "Animationssteuerung",
             "add_edit_state": "Zustand hinzufügen/bearbeiten",
             "position_xyz": "Position (X,Y,Z)",
-            "mystery_float": "Geheimnisvoller Float",
+            "internal_value": "Interner Wert",
             "quaternion_xyzw": "Quaternion (X,Y,Z,W)",
             "fov_label": "FOV",
             "add_state_memory": "Zustand hinzufügen (Speicher)",
@@ -867,7 +867,7 @@
             "next_state": "Nächster Zustand",
             "active_state_label": "Aktiver Zustand [%d]:",
             "pos_label": "  Pos: (%.2f, %.2f, %.2f)",
-            "mystery_label": "  Geheimnis: %.4f",
+            "internal_label": "  Wert: %.4f",
             "quat_label": "  Quat: (%.3f, %.3f, %.3f, %.3f)",
             "fov_value_label": "  FOV: %.2f",
             "active_state_none": "Aktiver Zustand: [Keiner]",
@@ -877,7 +877,37 @@
             "no_states_saved": "Keine Zustände gespeichert",
             "oversize_debug": "Übergröße",
             "camera_oversized_trailers": "Kamera für übergroße Anhänger.",
-            "vehicle_list": "Fahrzeugliste"
+            "vehicle_list": "Fahrzeugliste",
+            "video": {
+                "selection_locks": "Auswahl & Sperren:",
+                "pos_lock": "Positionssperre",
+                "rot_lock": "Rotationssperre",
+                "orbit_mode": "Orbit-Modus",
+                "orbit_zoom_speed": "Orbit-Zoom-Geschwindigkeit",
+                "hovered_actor": "Hover-Aktor:",
+                "selected_actor": "Ausgewählter Aktor:",
+                "traffic_vehicles": "Verkehrsfahrzeuge",
+                "select_from_list": "Aus Liste wählen",
+                "capture_hovered": "Hover-Aktor erfassen",
+                "capture_selected": "Ausgewählten Aktor erfassen",
+                "no_actor_to_capture": "Kein Aktor zum Erfassen",
+                "capture_my_truck": "Meinen LKW erfassen",
+                "my_truck_not_found": "Meinen LKW nicht gefunden"
+            },
+            "traffic": {
+                "select_vehicle": "Fahrzeug auswählen",
+                "vehicle_details_traffic": "Details zum ausgewählten Fahrzeug (Verkehrs-ID: %d):",
+                "vehicle_details_mine": "Details zum ausgewählten Fahrzeug (MEIN LKW):",
+                "pointer_label": "  Zeiger:",
+                "patience_label": "  Geduld:",
+                "safety_label": "  Sicherheit:",
+                "target_speed_label": "  Zielgeschwindigkeit:",
+                "speed_limit_label": "  Geschwindigkeitsbegrenzung:",
+                "current_speed_label": "  Aktuelle Geschwindigkeit:",
+                "acceleration_label": "  Beschleunigung:",
+                "status_user_controlled": "  Status: Benutzergesteuert",
+                "capture_selected_vehicle": "Ausgewähltes Fahrzeug erfassen"
+            }
         }
     },
     "description": {

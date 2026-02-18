@@ -52,12 +52,13 @@ Represents a snapshot of a camera's state, used by the debug camera system for s
 ```c
 typedef struct {
     float pos_x, pos_y, pos_z;
-    float mystery_float; // An unknown value used by the game's internal state
-    float q_x, q_y, q_z, q_w; // Quaternion for orientation
-    float fov;
+    float internal_value; /**< Internal engine state value (formerly mystery float) */
+    float q_x, q_y, q_z, q_w; /**< Orientation as a Quaternion */
+    float fov; /**< Field of View in degrees */
 } SPF_CameraState_t;
 ```
 *   `pos_x, pos_y, pos_z`: The world-space coordinates of the camera.
+*   `internal_value`: An internal engine value used for state consistency (e.g., smoothing flags).
 *   `q_x, q_y, q_z, q_w`: The orientation of the camera represented as a quaternion.
 *   `fov`: The base Field of View at the time the state was saved.
 
@@ -406,4 +407,63 @@ Returns the interpolation progress (0.0 to 1.0) between the current frame and th
 ---
 **`Cam_Anim_IsReversed()`**
 Checks if the animation is currently set to play in reverse.
+
+<br>
+
+### Framework Readiness & Lifecycle
+
+These functions allow plugins to check if the SPF framework has successfully found all required camera data in the game's memory.
+
+---
+**`bool Cam_IsServiceReady()`**
+Checks if the Camera Service is fully initialized and operational.
+
+---
+**`bool Cam_AreAllOffsetsFound()`**
+Checks if all memory offsets for all camera types have been successfully found via dynamic pattern searching.
+
+---
+**`bool Cam_IsFinderReady(const char* finderName)`**
+Checks if a specific camera data finder (e.g., "BehindCamera") is ready.
+
+---
+**`bool Cam_RefreshOffsets()`**
+Forces the framework to re-scan game memory for all camera patterns. Returns `true` if all offsets were found.
+
+<br>
+
+### Viewport & Projection
+
+Access to the rendering engine's projection boundaries.
+
+---
+**`bool Cam_GetViewport(float* x1, float* x2, float* y1, float* y2)`**
+Gets the normalized viewport boundaries (usually 0.0 to 1.0).
+
+---
+**`uintptr_t Cam_GetCameraParamsObjectPtr()`**
+Gets the absolute memory address of the global Camera Parameters Object.
+
+<br>
+
+### Object Targeting & Inspection
+
+Functions for interacting with game objects (Actors) through the debug camera.
+
+---
+**`void* Cam_GetDebugSelectedObject()`**
+Gets the pointer to the Actor currently selected as the camera's target.
+
+---
+**`void Cam_SetDebugSelectedObject(void* ptr)`**
+Programmatically selects an Actor for the camera to follow or orbit.
+
+---
+**`void* Cam_GetDebugHoveredObject()`**
+Gets the pointer to the Actor currently under the mouse cursor.
+
+---
+**`uintptr_t Cam_GetDebugObjectAddress(void* ptr)`**
+Resolves a generic object pointer to its raw memory address.
+
 
