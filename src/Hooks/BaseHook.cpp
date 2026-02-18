@@ -28,14 +28,16 @@ void BaseHook::SetEnabled(bool enabled) {
     }
 
     if (enabled) {
-        if (MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddress)) != MH_OK) {
-            logger->Error("Failed to enable hook '{}'.", m_displayName);
+        auto status = MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddress));
+        if (status != MH_OK && status != MH_ERROR_ENABLED) {
+            logger->Error("Failed to enable hook '{}', status: {}", m_displayName, MH_StatusToString(status));
             return;
         }
         logger->Info("Hook '{}' enabled.", m_displayName);
     } else {
-        if (MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddress)) != MH_OK) {
-            logger->Error("Failed to disable hook '{}'.", m_displayName);
+        auto status = MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddress));
+        if (status != MH_OK && status != MH_ERROR_DISABLED) {
+            logger->Error("Failed to disable hook '{}', status: {}", m_displayName, MH_StatusToString(status));
             return;
         }
         logger->Info("Hook '{}' disabled.", m_displayName);
@@ -60,7 +62,7 @@ bool BaseHook::Install() {
     }
     logger->Info("Found signature for hook '{}' at address: {:#x}", m_name, address);
 
-    logger->Info("Found '{}' signature at address: {:#x}", m_displayName, address);
+    // logger->Info("Found '{}' signature at address: {:#x}", m_displayName, address);
 
     if (MH_CreateHook(reinterpret_cast<LPVOID>(address), GetDetourFunc(), GetOriginalFuncPtr()) != MH_OK) {
         logger->Error("Failed to create hook for '{}'.", m_displayName);

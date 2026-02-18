@@ -525,6 +525,14 @@ SPF_Hook_Handle* PluginManager::T_Hooks_Register(const char* pluginName, const c
 
   logger->Info("Plugin '{}' is registering a new hook: '{}'", pluginName, hookName);
 
+  // Check if a hook with this name from this plugin already exists to prevent duplication
+  for (const auto& existingHook : self.m_pluginHooks) {
+    if (existingHook->GetName() == hookName && existingHook->GetOwnerName() == pluginName) {
+      logger->Warn("  -> Hook '{}' is already registered for plugin '{}'. Returning existing handle.", hookName, pluginName);
+      return reinterpret_cast<SPF_Hook_Handle*>(existingHook.get());
+    }
+  }
+
   // Create the proxy object
   auto hook = std::make_unique<PluginHook>(pluginName, hookName, displayName, pDetour, ppOriginal, signature, isEnabled);
 

@@ -21,9 +21,6 @@ using namespace SPF::Data::GameData;
 SPF_NS_BEGIN
 namespace GameCamera {
 GameCameraManager::GameCameraManager() {
-  m_debugCamera = std::make_unique<GameCameraDebug>();
-  m_debugStateCamera = std::make_unique<GameCameraDebugState>();
-  m_debugAnimationController = std::make_unique<GameCameraDebugAnimation>();
 }
 
 GameCameraManager& GameCameraManager::GetInstance() {
@@ -238,6 +235,11 @@ void GameCameraManager::Update(float dt) {
 void GameCameraManager::RegisterCameras() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
   logger->Info("Registering camera implementations...");
+
+  // Re-create standalone debug services
+  m_debugCamera = std::make_unique<GameCameraDebug>();
+  m_debugStateCamera = std::make_unique<GameCameraDebugState>();
+  m_debugAnimationController = std::make_unique<GameCameraDebugAnimation>();
 
   auto interiorCam = std::make_unique<GameCameraInterior>();
   m_cameras[interiorCam->GetType()] = std::move(interiorCam);
