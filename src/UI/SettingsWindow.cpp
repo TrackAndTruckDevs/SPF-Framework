@@ -722,8 +722,8 @@ void SettingsWindow::RenderKeybindsSettings() {
                                             case Modules::InputType::Keyboard:     return ICON_FA_KEYBOARD;
                                             case Modules::InputType::Gamepad:      return ICON_FA_GAMEPAD;
                                             case Modules::InputType::GamepadAxis:  return ICON_FA_GAMEPAD;
-                                            case Modules::InputType::Mouse:        return ICON_FA_MOUSE;
-                                            case Modules::InputType::MouseAxis:    return ICON_FA_MOUSE;
+                                            case Modules::InputType::Mouse:        return ICON_FA_COMPUTER_MOUSE;
+                                            case Modules::InputType::MouseAxis:    return ICON_FA_COMPUTER_MOUSE;
                                             case Modules::InputType::Joystick:     return ICON_FA_GAMEPAD;
                                             case Modules::InputType::JoystickAxis: return ICON_FA_GAMEPAD;
                                             default: return "";
@@ -789,7 +789,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                                     ImGui::SameLine();
 
                                     ImGui::PushID(("details_" + uniqueId).c_str());
-                                    if (ImGui::SmallButton(ICON_FA_COG)) {
+                                    if (ImGui::SmallButton(ICON_FA_GEAR)) {
                                         m_editingBindingAction = fullActionName;
                                         m_editingBindingDetails = bindingJson;
                                         m_currentPressThreshold = bindingJson.value("press_threshold_ms", 500);
@@ -1351,8 +1351,8 @@ void SettingsWindow::RenderContent() {
                   case Modules::InputType::Keyboard:     return ICON_FA_KEYBOARD;
                   case Modules::InputType::Gamepad:      return ICON_FA_GAMEPAD;
                   case Modules::InputType::GamepadAxis:  return ICON_FA_GAMEPAD;
-                  case Modules::InputType::Mouse:        return ICON_FA_MOUSE;
-                  case Modules::InputType::MouseAxis:    return ICON_FA_MOUSE;
+                  case Modules::InputType::Mouse:        return ICON_FA_COMPUTER_MOUSE;
+                  case Modules::InputType::MouseAxis:    return ICON_FA_COMPUTER_MOUSE;
                   case Modules::InputType::Joystick:     return ICON_FA_GAMEPAD;
                   case Modules::InputType::JoystickAxis: return ICON_FA_GAMEPAD;
                   default: return "";

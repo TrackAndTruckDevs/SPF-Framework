@@ -37,6 +37,7 @@
 // #include <SPF/SPF_API/SPF_Localization_API.h>   // For SPF_Localization_Handle
 // #include <SPF/SPF_API/SPF_KeyBinds_API.h>       // For SPF_KeyBinds_Handle
 // #include <SPF/SPF_API/SPF_UI_API.h>             // For SPF_UI_API, SPF_Window_Handle
+// #include <SPF/SPF_API/SPF_Icons.h>             // For Font Awesome 7 icon macros.
 // #include <SPF/SPF_API/SPF_Telemetry_API.h>      // For SPF_Telemetry_Handle
 // #include <SPF/SPF_API/SPF_Hooks_API.h>          // For SPF_Hooks_API, SPF_Hook_Handle
 // #include <SPF/SPF_API/SPF_GameConsole_API.h>    // For SPF_GameConsole_API

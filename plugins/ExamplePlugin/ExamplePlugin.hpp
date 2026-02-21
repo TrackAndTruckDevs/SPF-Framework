@@ -20,6 +20,7 @@
 #include <SPF/SPF_API/SPF_Localization_API.h>  // For handling multi-language strings from translation files.
 #include <SPF/SPF_API/SPF_KeyBinds_API.h>      // For registering custom actions and binding them to keyboard/gamepad inputs.
 #include <SPF/SPF_API/SPF_UI_API.h>            // For creating and managing user interface windows and widgets.
+#include <SPF/SPF_API/SPF_Icons.h>             // For Font Awesome 7 icon macros.
 #include <SPF/SPF_API/SPF_Telemetry_API.h>     // For reading live game data (speed, RPM, job info, etc.).
 #include <SPF/SPF_API/SPF_Hooks_API.h>         // For intercepting and modifying native game functions.
 #include <SPF/SPF_API/SPF_GameConsole_API.h>   // For executing commands in the in-game developer console.

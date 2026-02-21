@@ -588,9 +588,18 @@ void UIManager::InitializeImGui() {
 
   // 4. Heading Fonts (Medium)
   m_fonts["h1"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 24.0f, nullptr, glyph_ranges_cyrillic);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 20.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 20.0f, &icon_config_fab, icon_ranges_fab);
+
   m_fonts["h2"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 22.0f, nullptr, glyph_ranges_cyrillic);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 18.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 18.0f, &icon_config_fab, icon_ranges_fab);
+
   m_fonts["h3"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 20.0f, nullptr, glyph_ranges_cyrillic);
-  logger->Info("Successfully loaded heading fonts (h1, h2, h3) from memory.");
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  
+  logger->Info("Successfully loaded heading fonts (h1, h2, h3) and merged icons from memory.");
 
   // 5. Monospaced Font
   m_fonts["monospace"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_RobotoMonoRegular_compressed_data, Font_RobotoMonoRegular_compressed_size, 17.0f, nullptr, io.Fonts->GetGlyphRangesDefault());

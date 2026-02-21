@@ -61,7 +61,7 @@ void PluginsWindow::RenderContent() {
 
       // --- Status Column ---
       ImGui::TableSetColumnIndex(0);
-      const char* statusIcon = isLoaded ? ICON_FA_CHECK : ICON_FA_TIMES;
+      const char* statusIcon = isLoaded ? ICON_FA_CHECK : ICON_FA_XMARK;
       float iconWidth = ImGui::CalcTextSize(statusIcon).x;
       float columnWidth = ImGui::GetColumnWidth(0);
 
@@ -103,7 +103,7 @@ void PluginsWindow::RenderContent() {
           const std::string warningText = loc.Get(m_locVirtInputRestartRequired);
           
           // Calculate total width for right-alignment: icon + spacing + text + spacing + reload_icon
-          float warningIconWidth = Typography::CalcTextSize(ICON_FA_EXCLAMATION_TRIANGLE).x;
+          float warningIconWidth = Typography::CalcTextSize(ICON_FA_TRIANGLE_EXCLAMATION).x;
           float textWidth = Typography::CalcTextSize(warningText.c_str()).x;
           float reloadIconWidth = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
           float spacing = ImGui::GetStyle().ItemSpacing.x;
@@ -116,7 +116,7 @@ void PluginsWindow::RenderContent() {
           ImGui::SetCursorPosX(currentPosX + availWidth - totalWidth - 10.0f);
 
           // 1. Yellow Warning Icon
-          Typography::Text(TextStyle::Regular().Color(Colors::YELLOW), ICON_FA_EXCLAMATION_TRIANGLE);
+          Typography::Text(TextStyle::Regular().Color(Colors::YELLOW), ICON_FA_TRIANGLE_EXCLAMATION);
           
           // 2. Localized Text
           ImGui::SameLine();
@@ -160,7 +160,7 @@ void PluginsWindow::RenderContent() {
       // --- "Info" button and modal window ---
       std::string infoTitle = loc.Get(m_locTooltipInfo) + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasInfo);
-      if (ImGui::Button(ICON_FA_INFO_CIRCLE)) {
+      if (ImGui::Button(ICON_FA_CIRCLE_INFO)) {
         ImGui::OpenPopup(infoTitle.c_str());
       }
       ImGui::EndDisabled();
@@ -215,7 +215,7 @@ void PluginsWindow::RenderContent() {
       ImGui::SameLine();
       std::string descriptionTitle = loc.Get(m_locTooltipDesc) + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasDescription);
-      if (ImGui::Button(ICON_FA_FILE_ALT)) {
+      if (ImGui::Button(ICON_FA_FILE_LINES)) {
         ImGui::OpenPopup(descriptionTitle.c_str());
       }
       ImGui::EndDisabled();
@@ -241,7 +241,7 @@ void PluginsWindow::RenderContent() {
       // --- "Settings" button ---
       ImGui::SameLine();
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasSettings);
-      if (ImGui::Button(ICON_FA_COG)) {
+      if (ImGui::Button(ICON_FA_GEAR)) {
         m_eventManager.System.OnFocusComponentInSettingsWindow.Call(Events::UI::FocusComponentInSettingsWindow{.componentName = componentId});
       }
       ImGui::EndDisabled();

@@ -1434,9 +1434,25 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_Style_SetColor(separator_style, 0.6f, 0.6f, 0.6f, 1.0f); // Gray
 
     // 3. Use the styles to render UI
-    ui->UI_TextStyled(h1_style, "Welcome to the Styling API!");
+    ui->UI_TextStyled(h1_style, ICON_FA_FONT_AWESOME " Welcome to the Styling API! " ICON_FA_FONT_AWESOME);
 
     ui->UI_TextStyled(centered_text_style, "This text is centered and will wrap if it becomes too long to fit in the available space. This demonstrates alignment, wrapping, and vertical padding.");
+
+    ui->UI_Spacing();
+
+    // Demonstrate Icons with Styling
+    ui->UI_TextStyled(separator_style, ICON_FA_ICONS " Icon Integration Demo");
+    ui->UI_Text("You can now use FontAwesome 7 icons directly in your UI!");
+    
+    // Example row of icons
+    ui->UI_Text(ICON_FA_PLAY " Play  " ICON_FA_PAUSE " Pause  " ICON_FA_STOP " Stop  " ICON_FA_FORWARD " Forward");
+    
+    // Example colored brand icons
+    ui->UI_TextColored(0.35f, 0.39f, 0.98f, 1.0f, ICON_FA_DISCORD " Discord");
+    ui->UI_SameLine(0, 10);
+    ui->UI_TextColored(1.0f, 0.0f, 0.0f, 1.0f, ICON_FA_YOUTUBE " YouTube");
+    ui->UI_SameLine(0, 10);
+    ui->UI_TextColored(0.1f, 1.0f, 0.1f, 1.0f, ICON_FA_GITHUB " GitHub");
 
     ui->UI_Spacing();
 
