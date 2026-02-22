@@ -1,5 +1,22 @@
-#  ⭐ SPF-Framework
-##	C++ Framework & Plugin Manager for ATS / ETS2
+<p align="center">
+    <a href=""><img src="https://trucksimhub.top/assets/img/Logo_SPF-Framework_290x200.svg" alt="Logo SPF Framework" height="200px" /></a>
+</p>
+
+<h1 align="center">SPF Framework</h1>
+
+<p align="center">
+    <a href="/releases/latest/" title="SPF Framework releas"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/TrackAndTruckDevs/SPF-Framework"></a>
+    <a href="/tree/main/docs/api" title="Documentation API"><img alt="" src="https://img.shields.io/badge/documentation-API-ffdd00.svg" /></a>
+    <a href="/blob/main/LICENSE" title="SPF Framework license"><img alt="GitHub License" src="https://img.shields.io/github/license/TrackAndTruckDevs/SPF-Framework"></a>
+</p>
+
+<p align="center">
+    <a href="https://www.patreon.com/TrackAndTruckDevs" title="Support us on Patreon"><img alt="Patreon" src="https://img.shields.io/badge/patreon-Becoming a patron-3404021712?style=flat&logo=patreon"></a>
+    <a href="/stargazers" title="Liked it? Starred"><img src="https://img.shields.io/github/stars/TrackAndTruckDevs/SPF-Framework?style=flat&logo=github" alt="Stars" /></a>
+    <a href="www.youtube.com/@TrackAndTruck" title="Subscribe to our channel"><img alt="Youtube" src="https://img.shields.io/badge/youtube-subscribe-orange?logo=youtube&style=flat"></a>
+</p>
+
+<h2 align="center">C++ Framework & Plugin Manager for ATS / ETS2</h2>
 
   SPF is an advanced C++ based framework that revolutionizes plugin development for SCS Software games, such as American Truck Simulator (ATS) and
   Euro Truck Simulator 2 (ETS2). It acts as a robust middleware layer between the game and plugins, providing a stable C-API that abstracts the
@@ -20,7 +37,7 @@
   By joining a growing platform, you ensure your plugin's compatibility with others in the ecosystem and provide users with a familiar, reliable
   interface. We provide the tools—you create incredible functionality.
 
-##  🚀 Key Features
+<h2 align="center">🚀 Key Features</h2>
 
 * #### **✔ Graphics Support:**
   * Automatically detects and integrates with DirectX 11, DirectX 12, and OpenGL, allowing UI to be rendered seamlessly regardless of the game's chosen renderer.
@@ -54,7 +71,7 @@
 * #### **✔ Built-in Utility Modules:**
   * Provides ready-to-use and safe modules for working with configuration files (JSON), localization, logging, and string formatting.
 
-## 🛠️ Architecture & Core Technologies
+<h2 align="center">🛠️ Architecture & Core Technologies</h2>
 
  SPF is built upon industry-standard libraries, providing safe and convenient high-level APIs that abstract away the complexity. You can focus on your plugin's logic instead of boilerplate code.
 
@@ -81,13 +98,13 @@
 
 
 
-## ❤️ Support the Project
+<h2 align="center">❤️ Support the Project</h2>
 
 The SPF-Framework is a passion project, developed with the goal of empowering the entire SCS plugin development community. It is, and always will be, free to use. However, its continued development, maintenance, and support require a significant investment of time and effort.
 
 If you find this framework useful and believe in our vision, please consider supporting its development through our Patreon. Your support allows us to dedicate more time to the project, ensuring a steady stream of updates, new features, and a healthy future for the entire ecosystem.
 
-### Become a Patron
+**Become a Patron**
 
 By becoming a Patron, you not only support the further development of the project, but also gain access to a number of exclusive benefits. Join our Patreon with a free subscription to access the community chat, or choose a higher subscription to get early access to testing, direct interaction with the developers, influence future features, and even directly implement your ideas into the framework. Discover the rewards and be part of our journey!
 
@@ -95,7 +112,7 @@ Ready to support the project? You can find our page here: **[patreon.com/TrackAn
 
 
 
-## 🚀 Quick Start for Developers
+<h2 align="center">🚀 Quick Start for Developers</h2>
 
 There are three main ways to start developing a plugin with SPF. Choose the one that best fits your needs.
 
@@ -192,7 +209,7 @@ Clone the entire repository. Create a new sub-directory for your plugin inside t
 
 
 
-## ⚙️ Build Instructions
+<h2 align="center">⚙️ Build Instructions</h2>
 
 This project uses a modern CMake setup with `FetchContent` to automatically download and manage all dependencies (ImGui, MinHook, etc.). You do not need to install them manually.
 
@@ -241,7 +258,7 @@ After a successful build, the compiled framework DLL, named `spf-framework.dll`,
 
 
 
-## 🎮 Usage (For Users)
+<h2 align="center">🎮 Usage (For Users)</h2>
 
 This section guides you on how to install and use the SPF-Framework and SPF-compatible plugins.
 
@@ -283,7 +300,7 @@ For example, a typical plugin installation structure within your game's director
 ```
 
 
-## 🎓 Examples & Documentation
+<h2 align="center">🎓 Examples & Documentation</h2>
 
 To see a complete, working example of a plugin that uses many of the framework's features, check out the **ExamplePlugin** located in the `/plugins/ExamplePlugin` directory of this repository.
 
@@ -292,7 +309,7 @@ For detailed documentation on each specific API (Camera, UI, Telemetry, etc.), p
 
 
 
-## 🧩 Plugins Built with SPF
+<h2 align="center">🧩 Plugins Built with SPF</h2>
 
 This section features community-developed plugins that are built on the SPF-Framework.
 
@@ -307,7 +324,7 @@ This section features community-developed plugins that are built on the SPF-Fram
 
 
 
-## 🤝 Contributing
+<h2 align="center">🤝 Contributing</h2>
 
 We welcome contributions from the community! Whether it's reporting a bug, suggesting a new feature, or writing code, your help is appreciated.
 
@@ -329,7 +346,7 @@ We will review your contribution as soon as possible. Thank you for helping us i
 
 
 
-## 📞 Community & Support
+<h2 align="center">📞 Community & Support</h2>
 
 We love to connect with our community! Find plugin demonstrations, tutorials, and project updates on our YouTube Channel at [Track'n'Truck](https://www.youtube.com/@TrackAndTruck).
 
@@ -341,13 +358,13 @@ For technical issues, bug reports, and feature requests, please use our [GitHub 
 
 
 
-## 📝 License
+<h2 align="center">📝 License</h2>
 
 This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for the full license text and details.
 
 
 
-## 🙏 Acknowledgements
+<h2 align="center">🙏 Acknowledgements</h2>
 
 This project would not be possible without the incredible work of the open-source community. We extend our heartfelt thanks to the creators and maintainers of the following essential libraries, which are at the core of the SPF-Framework:
 
