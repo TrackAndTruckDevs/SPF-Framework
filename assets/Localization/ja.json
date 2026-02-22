@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "カメラ"
+                    },
+                    "info_window": {
+                        "title": "環境情報"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  ステータス: ユーザー制御",
                 "capture_selected_vehicle": "選択中の車両をキャプチャ"
             }
+        }
+    },
+    "info_window": {
+        "title": "環境情報",
+        "tabs": {
+            "framework": "フレームワーク",
+            "game": "ゲーム",
+            "paths": "パス",
+            "system": "システム",
+            "status": "ステータス"
+        },
+        "framework": {
+            "version": "SPFバージョン:",
+            "build_type": "ビルドタイプ:",
+            "configuration": "構成:",
+            "loader_path": "ローダーパス:"
+        },
+        "game": {
+            "full_name": "正式名称:",
+            "code": "ゲームコード:",
+            "version": "ゲームバージョン:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Steam版:",
+            "active_profile": "有効なプロファイル:",
+            "exe_path": "EXEパス:",
+            "root_path": "ルートパス:",
+            "command_line": "コマンドライン"
+        },
+        "paths": {
+            "scs_user": "SCSユーザーディレクトリ",
+            "scs_mods": "SCS Modディレクトリ",
+            "scs_music": "SCS音楽ディレクトリ",
+            "scs_screenshots": "SCSスクリーンショットディレクトリ",
+            "current_profile": "現在のプロファイルパス",
+            "global_assets": "グローバルアセット",
+            "plugins_root": "プラグインルート",
+            "global_config": "グローバル設定",
+            "not_found": "見つかりません"
+        },
+        "system": {
+            "os": "OSバージョン:",
+            "locale": "システムロケール:",
+            "architecture": "アーキテクチャ:"
+        },
+        "status": {
+            "renderer": "レンダラーAPI:",
+            "vr_active": "VR有効:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "マルチプレイヤー:",
+            "steam_overlay": "SteamオーバーレイDLL:",
+            "active": "有効",
+            "inactive": "無効",
+            "dll_loaded": "ロード済み",
+            "dll_not_loaded": "未ロード"
         }
     },
     "description": {

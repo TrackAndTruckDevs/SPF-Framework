@@ -33,6 +33,7 @@
 #include "SPF/Modules/API/HooksApi.hpp"
 #include "SPF/Modules/API/FormattingApi.hpp"
 #include "SPF/Modules/API/GameLogApi.hpp"
+#include "SPF/Modules/API/EnvironmentApi.hpp"
 #include "SPF/Hooks/IHook.hpp"
 
 #include "SPF/Modules/HandleManager.hpp"
@@ -577,6 +578,9 @@ void PluginManager::FillAPIs() {
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
+  
+  // Fill Environment API
+  API::EnvironmentApi::FillEnvironmentApi(&m_environmentAPI);
 
   // --- Fill Load-Time API ---
   m_loadAPI.logger = &m_loggerAPI;
@@ -584,6 +588,7 @@ void PluginManager::FillAPIs() {
   m_loadAPI.config = &m_configAPI;
   m_loadAPI.input = &m_inputAPI;
   m_loadAPI.formatting = &m_formattingAPI;
+  m_loadAPI.environment = &m_environmentAPI;
 
   // --- Fill Core API (all services) ---
   m_coreAPI.logger = &m_loggerAPI;
@@ -600,6 +605,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.gamelog = &m_gameLogAPI;
   m_coreAPI.json_reader = &m_jsonReaderAPI;
   m_coreAPI.vehicle = &m_vehicleAPI;
+  m_coreAPI.environment = &m_environmentAPI;
 }
 }  // namespace Modules
 SPF_NS_END  // namespace Modules

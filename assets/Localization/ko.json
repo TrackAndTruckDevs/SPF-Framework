@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "카메라"
+                    },
+                    "info_window": {
+                        "title": "환경 정보"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  상태: 사용자 제어",
                 "capture_selected_vehicle": "선택된 차량 캡처"
             }
+        }
+    },
+    "info_window": {
+        "title": "환경 정보",
+        "tabs": {
+            "framework": "프레임워크",
+            "game": "게임",
+            "paths": "경로",
+            "system": "시스템",
+            "status": "상태"
+        },
+        "framework": {
+            "version": "SPF 버전:",
+            "build_type": "빌드 유형:",
+            "configuration": "구성:",
+            "loader_path": "로더 경로:"
+        },
+        "game": {
+            "full_name": "전체 이름:",
+            "code": "게임 코드:",
+            "version": "게임 버전:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Steam 버전:",
+            "active_profile": "활성 프로필:",
+            "exe_path": "EXE 경로:",
+            "root_path": "루트 경로:",
+            "command_line": "명령줄"
+        },
+        "paths": {
+            "scs_user": "SCS 사용자 디렉토리",
+            "scs_mods": "SCS 모드 디렉토리",
+            "scs_music": "SCS 음악 디렉토리",
+            "scs_screenshots": "SCS 스크린샷 디렉토리",
+            "current_profile": "현재 프로필 경로",
+            "global_assets": "글로벌 에셋",
+            "plugins_root": "플러그인 루트",
+            "global_config": "글로벌 설정",
+            "not_found": "찾을 수 없음"
+        },
+        "system": {
+            "os": "OS 버전:",
+            "locale": "시스템 로케일:",
+            "architecture": "아키텍처:"
+        },
+        "status": {
+            "renderer": "렌더러 API:",
+            "vr_active": "VR 활성:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "멀티플레이어:",
+            "steam_overlay": "Steam 오버레이 DLL:",
+            "active": "활성",
+            "inactive": "비활성",
+            "dll_loaded": "로드됨",
+            "dll_not_loaded": "로드되지 않음"
         }
     },
     "description": {

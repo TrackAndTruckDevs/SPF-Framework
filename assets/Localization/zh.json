@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "摄像头"
+                    },
+                    "info_window": {
+                        "title": "环境信息"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  状态: 用户控制",
                 "capture_selected_vehicle": "捕获选中车辆"
             }
+        }
+    },
+    "info_window": {
+        "title": "环境信息",
+        "tabs": {
+            "framework": "框架",
+            "game": "游戏",
+            "paths": "路径",
+            "system": "系统",
+            "status": "状态"
+        },
+        "framework": {
+            "version": "SPF 版本:",
+            "build_type": "构建类型:",
+            "configuration": "配置:",
+            "loader_path": "加载器路径:"
+        },
+        "game": {
+            "full_name": "全名:",
+            "code": "游戏代码:",
+            "version": "游戏版本:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Steam 版本:",
+            "active_profile": "当前个人资料:",
+            "exe_path": "EXE 路径:",
+            "root_path": "根路径:",
+            "command_line": "命令行"
+        },
+        "paths": {
+            "scs_user": "SCS 用户目录",
+            "scs_mods": "SCS Mod 目录",
+            "scs_music": "SCS 音乐目录",
+            "scs_screenshots": "SCS 截图目录",
+            "current_profile": "当前个人资料路径",
+            "global_assets": "全局资源",
+            "plugins_root": "插件根目录",
+            "global_config": "全局配置",
+            "not_found": "未找到"
+        },
+        "system": {
+            "os": "OS 版本:",
+            "locale": "系统区域:",
+            "architecture": "架构:"
+        },
+        "status": {
+            "renderer": "渲染器 API:",
+            "vr_active": "VR 已启用:",
+            "tobii_active": "Tobii 眼动追踪 DLL:",
+            "multiplayer": "多人游戏:",
+            "steam_overlay": "Steam 覆盖 DLL:",
+            "active": "已启用",
+            "inactive": "未启用",
+            "dll_loaded": "已加载",
+            "dll_not_loaded": "未加载"
         }
     },
     "description": {

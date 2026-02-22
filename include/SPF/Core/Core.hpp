@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <thread>
 
 #include "SPF/Namespace.hpp"
 #include "SPF/Core/InitializationReport.hpp"
@@ -204,6 +205,7 @@ class Core {
   void InitManagersAndPlugins();
   void InitUI();
   void InitHooks();
+  void PerformDeferredInitialization();
   void ShutdownUI();
   void ShutdownManagers();
   void ShutdownServices();
@@ -268,6 +270,7 @@ class Core {
 
   // --- Low-level Systems ---
   std::unique_ptr<Rendering::Renderer> m_renderer;
+  std::thread m_deferredInitThread;
 };
 
 }  // namespace Core

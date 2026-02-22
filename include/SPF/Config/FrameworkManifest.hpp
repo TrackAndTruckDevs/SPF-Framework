@@ -201,6 +201,20 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 7,
                               .allowUndocking = false,
                               .autoScroll = false,
+                          }},
+                         {"info_window",
+                          {
+                              .isVisible = true,
+                              .isInteractive = false,
+                              .posX = 0,
+                              .posY = 0,
+                              .sizeW = 0,
+                              .sizeH = 0,
+                              .isCollapsed = false,
+                              .isDocked = true,
+                              .dockPriority = 8,
+                              .allowUndocking = false,
+                              .autoScroll = false,
                           }}}},
         
         // --- Metadata for framework's own settings ---
@@ -236,6 +250,7 @@ inline const ManifestData& GetFrameworkManifestData() {
             {"hooks_window", "settings_window.setting_names.ui.windows.hooks_window.title", ""},
             {"game_console_window", "settings_window.setting_names.ui.windows.game_console_window.title", ""},
             {"camera_window", "settings_window.setting_names.ui.windows.camera_window.title", ""},
+            {"info_window", "settings_window.setting_names.ui.windows.info_window.title", ""},
 
             // Generic metadata for window properties
             {"is_visible", "settings_window.setting_names.ui.properties.is_visible.title", "settings_window.setting_names.ui.properties.is_visible.description"},

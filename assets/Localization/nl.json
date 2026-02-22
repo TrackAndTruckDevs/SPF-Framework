@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Camera"
+                    },
+                    "info_window": {
+                        "title": "Omgevingsinformatie"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Status: Gebruikersgestuurd",
                 "capture_selected_vehicle": "Geselecteerde Voertuig Vangen"
             }
+        }
+    },
+    "info_window": {
+        "title": "Omgevingsinformatie",
+        "tabs": {
+            "framework": "Framework",
+            "game": "Spel",
+            "paths": "Paden",
+            "system": "Systeem",
+            "status": "Status"
+        },
+        "framework": {
+            "version": "SPF-versie:",
+            "build_type": "Build-type:",
+            "configuration": "Configuratie:",
+            "loader_path": "Laderpad:"
+        },
+        "game": {
+            "full_name": "Volledige naam:",
+            "code": "Spelcode:",
+            "version": "Spelversie:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Steam-versie:",
+            "active_profile": "Actief profiel:",
+            "exe_path": "EXE-pad:",
+            "root_path": "Rootpad:",
+            "command_line": "Opdrachtregel"
+        },
+        "paths": {
+            "scs_user": "SCS-gebruikersmap",
+            "scs_mods": "SCS-mods-map",
+            "scs_music": "SCS-muziekmap",
+            "scs_screenshots": "SCS-screenshots-map",
+            "current_profile": "Pad naar huidig profiel",
+            "global_assets": "Globale assets",
+            "plugins_root": "Plugin-root",
+            "global_config": "Globale configuratie",
+            "not_found": "Niet gevonden"
+        },
+        "system": {
+            "os": "OS-versie:",
+            "locale": "Systeemlocale:",
+            "architecture": "Architectuur:"
+        },
+        "status": {
+            "renderer": "Renderer-API:",
+            "vr_active": "VR actief:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Multiplayer:",
+            "steam_overlay": "Steam Overlay DLL:",
+            "active": "Actief",
+            "inactive": "Inaktiv",
+            "dll_loaded": "Geladen",
+            "dll_not_loaded": "Niet geladen"
         }
     },
     "description": {

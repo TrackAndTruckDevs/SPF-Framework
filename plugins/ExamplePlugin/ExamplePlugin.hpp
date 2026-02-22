@@ -30,6 +30,7 @@
 #include <SPF/SPF_API/SPF_GameLog_API.h>       // For subscribing to the game's internal log output.
 #include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
 #include <SPF/SPF_API/SPF_JsonReader_API.h>    // For safely reading JSON data provided by the framework in callbacks.
+#include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
 
 // =================================================================================================
 // 2. Standard Library Includes
@@ -108,6 +109,16 @@ struct PluginContext {
    * @brief Pointer to the Vehicle API, received in the `OnActivated` lifecycle function.
    */
   SPF_Vehicle_API* vehicleAPI = nullptr;
+
+  /**
+   * @brief Pointer to the Environment API, for retrieving game and system info.
+   */
+  SPF_Environment_API* environmentAPI = nullptr;
+
+  /**
+   * @brief Handle to our Environment API context.
+   */
+  SPF_Environment_Handle* environmentHandle = nullptr;
 
   // --- Cached Handles & Pointers ---
   // Pointers and handles that are frequently used can be cached here for convenience and performance.
@@ -405,6 +416,11 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Styling API" tab, demonstrating the new text styling features.
  */
 void RenderStylingTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Environment" tab, demonstrating the Environment API.
+ */
+void RenderEnvironmentTab(SPF_UI_API* ui, void* user_data);
 
 /**
  * @brief Renders the content of the "Camera" tab within the main window.

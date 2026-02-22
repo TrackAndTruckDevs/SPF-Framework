@@ -93,6 +93,46 @@ class PathManager {
    */
   static std::filesystem::path GetPluginLogsDir(const std::string& pluginName);
 
+  /**
+   * @brief Returns the path to the data directory of the specified plugin.
+   * @param pluginName The name of the plugin.
+   * @return The full path to the plugin's data directory.
+   */
+  static std::filesystem::path GetPluginDataDir(const std::string& pluginName);
+
+  /**
+   * @brief Returns the SCS Home directory (usually in Documents/Euro Truck Simulator 2).
+   * @details This path is retrieved directly from the game's UFS memory structures.
+   * @return The absolute path to the game's user directory.
+   */
+  static std::filesystem::path GetSCSUserDir();
+
+  /**
+   * @brief Returns the directory where game mods are located.
+   * @return The path to the 'mod' folder inside the SCS User Directory.
+   */
+  static std::filesystem::path GetSCSModsDir();
+
+  /**
+   * @brief Returns the absolute path to the currently active profile directory.
+   * @details Navigates the game's internal mount points list to find the '/home/profile' mapping.
+   * @return The path to the active profile, or an empty path if not loaded.
+   */
+  static std::filesystem::path GetCurrentProfilePath();
+
+  /**
+   * @brief Returns the human-readable name of the currently active profile.
+   * @return The profile display name (e.g., 'SPF_Test').
+   */
+  static std::string GetCurrentProfileName();
+
+  /**
+   * @brief Internal helper to resolve a virtual UFS path to a physical disk path.
+   * @param virtualPath The virtual path string (e.g., "/home/profile").
+   * @return The physical path string from the game's memory.
+   */
+  static std::string ResolveVirtualPath(const char* virtualPath);
+
  private:
   static std::filesystem::path m_basePath;
 
@@ -101,6 +141,11 @@ class PathManager {
   static std::filesystem::path m_configPath;
   static std::filesystem::path m_fontsPath;
   static std::filesystem::path m_localizationPath;
+
+  // Profile Cache
+  static uintptr_t m_lastProfileAddr;
+  static std::string m_cachedProfileName;
+  static std::filesystem::path m_cachedProfilePath;
 };
 }  // namespace System
 SPF_NS_END

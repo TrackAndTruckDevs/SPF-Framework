@@ -117,7 +117,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (pfnSetRotLock) {
     owner.SetSetRotationLockFunc(reinterpret_cast<void*>(pfnSetRotLock));
     logger->Info("--- Found SetRotationLock at: 0x{:X}", pfnSetRotLock);
-  } else { logger->Warn("!!! FAILED to find SetRotationLock signature"); all_found = false; }
+  } else { logger->Warn("FAILED to find SetRotationLock signature"); all_found = false; }
 
   // 2.4 Find SetOrbitMode function
   // Signature based on disassembly start: MOV RAX, RSP; MOV [RAX+18], RBX; MOV [RAX+20], RDI; PUSH RBP; ...
@@ -125,7 +125,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (pfnSetOrbit) {
     owner.SetSetOrbitModeFunc(reinterpret_cast<void*>(pfnSetOrbit));
     logger->Info("--- Found SetOrbitMode at: 0x{:X}", pfnSetOrbit);
-  } else { logger->Warn("!!! FAILED to find SetOrbitMode signature"); all_found = false; }
+  } else { logger->Warn("FAILED to find SetOrbitMode signature"); all_found = false; }
 
   uintptr_t pfnSetHudVis = Utils::PatternFinder::Find(SET_HUD_VISIBILITY_SIG);
   if (pfnSetHudVis) {

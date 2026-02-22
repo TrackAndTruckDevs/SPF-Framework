@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Caméra"
+                    },
+                    "info_window": {
+                        "title": "Informations sur l'environnement"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Statut : Contrôlé par l'utilisateur",
                 "capture_selected_vehicle": "Capturer le véhicule sélectionné"
             }
+        }
+    },
+    "info_window": {
+        "title": "Informations sur l'environnement",
+        "tabs": {
+            "framework": "Framework",
+            "game": "Jeu",
+            "paths": "Chemins",
+            "system": "Système",
+            "status": "État"
+        },
+        "framework": {
+            "version": "Version SPF:",
+            "build_type": "Type de build:",
+            "configuration": "Configuration:",
+            "loader_path": "Chemin du chargeur:"
+        },
+        "game": {
+            "full_name": "Nom complet:",
+            "code": "Code du jeu:",
+            "version": "Version du jeu:",
+            "steam_id": "ID Steam:",
+            "is_steam": "Version Steam:",
+            "active_profile": "Profil actif:",
+            "exe_path": "Chemin EXE:",
+            "root_path": "Chemin racine:",
+            "command_line": "Ligne de commande"
+        },
+        "paths": {
+            "scs_user": "Répertoire utilisateur SCS",
+            "scs_mods": "Répertoire mods SCS",
+            "scs_music": "Répertoire musique SCS",
+            "scs_screenshots": "Répertoire captures SCS",
+            "current_profile": "Chemin du profil actuel",
+            "global_assets": "Assets globaux",
+            "plugins_root": "Racine des plugins",
+            "global_config": "Configuration globale",
+            "not_found": "Non trouvé"
+        },
+        "system": {
+            "os": "Version de l'OS:",
+            "locale": "Langue du système:",
+            "architecture": "Architecture:"
+        },
+        "status": {
+            "renderer": "API de rendu:",
+            "vr_active": "VR Actif:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Multijoueur:",
+            "steam_overlay": "Steam Overlay DLL:",
+            "active": "Actif",
+            "inactive": "Inactif",
+            "dll_loaded": "Chargé",
+            "dll_not_loaded": "Non chargé"
         }
     },
     "description": {

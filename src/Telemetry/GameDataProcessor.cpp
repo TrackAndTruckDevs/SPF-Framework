@@ -1,5 +1,5 @@
 #include "SPF/Telemetry/GameDataProcessor.hpp"
-
+#include "SPF/System/EnvironmentManager.hpp"
 #include <cstring>
 
 #include "SPF/Logging/Logger.hpp"
@@ -17,6 +17,9 @@ GameDataProcessor::GameDataProcessor(Logger& logger, GameContext& context, Event
 void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const scs_params) {
   m_gameState.game_id = m_context.GetGame();
   m_gameState.game_name = scs_params->common.game_name;
+
+  // Store game data in EnvironmentManager
+  System::EnvironmentManager::GetInstance().SetGameData(m_gameState.game_name, m_gameState.game_id);
 
   // SCS Game Version
   m_gameState.scs_game_version_major = SCS_GET_MAJOR_VERSION(scs_params->common.game_version);

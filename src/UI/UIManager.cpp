@@ -5,6 +5,7 @@
 #include "SPF/UI/SettingsWindow.hpp"    // Added for SettingsWindow creation
 #include "SPF/UI/LoggerWindow.hpp"      // Added for LoggerWindow creation
 #include "SPF/UI/CameraWindow.hpp"      // Added for CameraWindow creation
+#include "SPF/UI/InfoWindow.hpp"        // Added for InfoWindow creation
 #include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
 #include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"   // Added for TelemetryWindow creation
@@ -777,6 +778,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Camera Window
   auto cameraWindow = std::make_shared<CameraWindow>(GameCamera::GameCameraManager::GetInstance(), "framework", "camera_window");
   RegisterWindow(cameraWindow);
+
+  // Info Window
+  auto infoWindow = std::make_shared<InfoWindow>("framework", "info_window");
+  RegisterWindow(infoWindow);
 }
 
 }  // namespace UI

@@ -91,6 +91,7 @@ typedef struct SPF_Formatting_API SPF_Formatting_API;
 typedef struct SPF_GameLog_API SPF_GameLog_API;
 typedef struct SPF_JsonReader_API SPF_JsonReader_API;
 typedef struct SPF_Vehicle_API SPF_Vehicle_API;
+typedef struct SPF_Environment_API SPF_Environment_API;
 
 
 // =================================================================================================
@@ -280,6 +281,11 @@ struct SPF_Load_API {
    * @brief Formatting API. Provides safe, cross-DLL string formatting.
    */
   SPF_Formatting_API* formatting;
+
+  /**
+   * @brief Environment API. Provides information about game, framework and system.
+   */
+  SPF_Environment_API* environment;
 };
 
 /**
@@ -376,6 +382,11 @@ struct SPF_Core_API {
     * @brief Vehicle API. For inspecting vehicles and traffic.
     */
      SPF_Vehicle_API* vehicle;
+
+   /**
+    * @brief Environment API. For retrieving game, system, and framework info.
+    */
+     SPF_Environment_API* environment;
    };
 
 // =================================================================================================

@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Камера"
+                    },
+                    "info_window": {
+                        "title": "Інформація про оточення"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Статус: Керується користувачем",
                 "capture_selected_vehicle": "Захопити вибраний транспорт"
             }
+        }
+    },
+    "info_window": {
+        "title": "Інформація про оточення",
+        "tabs": {
+            "framework": "Фреймворк",
+            "game": "Гра",
+            "paths": "Шляхи",
+            "system": "Система",
+            "status": "Статус"
+        },
+        "framework": {
+            "version": "Версія SPF:",
+            "build_type": "Тип збірки:",
+            "configuration": "Конфігурація:",
+            "loader_path": "Шлях завантажувача:"
+        },
+        "game": {
+            "full_name": "Повна назва:",
+            "code": "Код гри:",
+            "version": "Версія гри:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Версія Steam:",
+            "active_profile": "Активний профіль:",
+            "exe_path": "Шлях до EXE:",
+            "root_path": "Кореневий шлях:",
+            "command_line": "Командний рядок"
+        },
+        "paths": {
+            "scs_user": "Папка користувача SCS",
+            "scs_mods": "Папка модів SCS",
+            "scs_music": "Папка музики SCS",
+            "scs_screenshots": "Папка скріншотів SCS",
+            "current_profile": "Шлях до поточного профілю",
+            "global_assets": "Глобальні ресурси",
+            "plugins_root": "Корінь плагінів",
+            "global_config": "Глобальна конфігурація",
+            "not_found": "Не знайдено"
+        },
+        "system": {
+            "os": "Версія ОС:",
+            "locale": "Локаль системи:",
+            "architecture": "Архітектура:"
+        },
+        "status": {
+            "renderer": "Графічне API:",
+            "vr_active": "VR активний:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Мультиплеєр:",
+            "steam_overlay": "Steam Overlay DLL:",
+            "active": "Активний",
+            "inactive": "Неактивний",
+            "dll_loaded": "Завантажено",
+            "dll_not_loaded": "Не завантажено"
         }
     },
     "description": {

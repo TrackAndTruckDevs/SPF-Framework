@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Kamera"
+                    },
+                    "info_window": {
+                        "title": "Ortam Bilgileri"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Durum: Kullanıcı Kontrollü",
                 "capture_selected_vehicle": "Seçili Aracı Yakala"
             }
+        }
+    },
+    "info_window": {
+        "title": "Ortam Bilgileri",
+        "tabs": {
+            "framework": "Framework",
+            "game": "Oyun",
+            "paths": "Yollar",
+            "system": "Sistem",
+            "status": "Durum"
+        },
+        "framework": {
+            "version": "SPF Sürümü:",
+            "build_type": "Yapı Türü:",
+            "configuration": "Yapılandırma:",
+            "loader_path": "Yükleyici Yolu:"
+        },
+        "game": {
+            "full_name": "Tam Adı:",
+            "code": "Oyun Kodu:",
+            "version": "Oyun Sürümü:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Steam Sürümü:",
+            "active_profile": "Aktif Profil:",
+            "exe_path": "EXE Yolu:",
+            "root_path": "Kök Yol:",
+            "command_line": "Komut Satırı"
+        },
+        "paths": {
+            "scs_user": "SCS Kullanıcı Dizini",
+            "scs_mods": "SCS Mod Dizini",
+            "scs_music": "SCS Müzik Dizini",
+            "scs_screenshots": "SCS Ekran Görüntüsü Dizini",
+            "current_profile": "Mevcut Profil Yolu",
+            "global_assets": "Global Varlıklar",
+            "plugins_root": "Eklenti Kökü",
+            "global_config": "Global Yapılandırma",
+            "not_found": "Bulunamadı"
+        },
+        "system": {
+            "os": "OS Sürümü:",
+            "locale": "Sistem Yerel Ayarı:",
+            "architecture": "Mimari:"
+        },
+        "status": {
+            "renderer": "Renderer API:",
+            "vr_active": "VR Etkin:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Çok Oyunculu:",
+            "steam_overlay": "Steam Arayüzü DLL:",
+            "active": "Etkin",
+            "inactive": "Etkin Değil",
+            "dll_loaded": "Yüklendi",
+            "dll_not_loaded": "Yüklenmedi"
         }
     },
     "description": {

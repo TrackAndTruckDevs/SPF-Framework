@@ -46,6 +46,7 @@
 // #include <SPF/SPF_API/SPF_Vehicle_API.h>        // For SPF_Vehicle_API, SPF_VehicleHandle
 // #include <SPF/SPF_API/SPF_GameLog_API.h>        // For SPF_GameLog_Callback_Handle
 // #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged). Functions: Json_GetType, Json_GetString, etc.
+// #include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
 
 // =================================================================================================
 // 2. Standard Library Includes

@@ -16,6 +16,7 @@
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
 #include "SPF/SPF_API/SPF_Formatting_API.h"
 #include "SPF/SPF_API/SPF_GameLog_API.h"
+#include "SPF/SPF_API/SPF_Environment_API.h"
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/Namespace.hpp"
 #include "SPF/Utils/Signal.hpp"
@@ -166,6 +167,7 @@ class PluginManager {
   SPF_Formatting_API m_formattingAPI{};
   SPF_GameLog_API m_gameLogAPI{};
   SPF_Vehicle_API m_vehicleAPI{};
+  SPF_Environment_API m_environmentAPI{};
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;

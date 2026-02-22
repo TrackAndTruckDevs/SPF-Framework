@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Kamera"
+                    },
+                    "info_window": {
+                        "title": "Informace o prostředí"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Stav: Ovládáno uživatelem",
                 "capture_selected_vehicle": "Zachyťte vybrané vozidlo"
             }
+        }
+    },
+    "info_window": {
+        "title": "Informace o prostředí",
+        "tabs": {
+            "framework": "Framework",
+            "game": "Hra",
+            "paths": "Cesty",
+            "system": "Systém",
+            "status": "Stav"
+        },
+        "framework": {
+            "version": "Verze SPF:",
+            "build_type": "Typ buildu:",
+            "configuration": "Konfigurace:",
+            "loader_path": "Cesta zavaděče:"
+        },
+        "game": {
+            "full_name": "Celé jméno:",
+            "code": "Kód hry:",
+            "version": "Verze hry:",
+            "steam_id": "Steam ID:",
+            "is_steam": "Steam verze:",
+            "active_profile": "Aktivní profil:",
+            "exe_path": "Cesta k EXE:",
+            "root_path": "Kořenový adresář:",
+            "command_line": "Příkazový řádek"
+        },
+        "paths": {
+            "scs_user": "Uživatelský adresář SCS",
+            "scs_mods": "Adresář modů SCS",
+            "scs_music": "Adresář hudby SCS",
+            "scs_screenshots": "Adresář snímků obrazovky SCS",
+            "current_profile": "Cesta k aktuálnímu profilu",
+            "global_assets": "Globální assety",
+            "plugins_root": "Kořen pluginů",
+            "global_config": "Globální konfigurace",
+            "not_found": "Nenalezeno"
+        },
+        "system": {
+            "os": "Verze OS:",
+            "locale": "Jazyk systému:",
+            "architecture": "Architektura:"
+        },
+        "status": {
+            "renderer": "Grafické API:",
+            "vr_active": "VR Aktivní:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Multiplayer:",
+            "steam_overlay": "Steam Overlay DLL:",
+            "active": "Aktivní",
+            "inactive": "Neaktivní",
+            "dll_loaded": "Načteno",
+            "dll_not_loaded": "Nenačteno"
         }
     },
     "description": {

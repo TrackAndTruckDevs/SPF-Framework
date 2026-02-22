@@ -286,6 +286,12 @@ void OnLoad(const SPF_Load_API* load_api) {
     // It's crucial to check if the API pointers are valid before using them. This prevents
     // crashes if the framework fails to provide them for some reason.
     if (g_ctx.loadAPI && g_ctx.loadAPI->logger && g_ctx.loadAPI->config && g_ctx.loadAPI->input) {
+        // Cache environment API and get context
+        g_ctx.environmentAPI = g_ctx.loadAPI->environment;
+        if (g_ctx.environmentAPI) {
+            g_ctx.environmentHandle = g_ctx.environmentAPI->Env_GetContext(PLUGIN_NAME);
+        }
+
         // Get a handle to our plugin's dedicated logger instance.
         auto logger = g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME);
         g_ctx.loadAPI->logger->Log(logger, SPF_LOG_INFO, "ExamplePlugin has been loaded!");
@@ -322,6 +328,7 @@ void OnActivated(const SPF_Core_API* core_api) {
     // Get pointers to additional framework services.
     if (g_ctx.coreAPI) {
         g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
+        g_ctx.environmentAPI = g_ctx.coreAPI->environment;
     }
 
     // Register callbacks for systems that require the core API.
@@ -1033,8 +1040,77 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         if (ui->UI_BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Environment")) { RenderEnvironmentTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Input Test")) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
         ui->UI_EndTabBar();
+    }
+}
+
+void RenderEnvironmentTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.environmentAPI || !g_ctx.environmentHandle) {
+        ui->UI_Text("Environment API is not available.");
+        return;
+    }
+
+    auto env = g_ctx.environmentAPI;
+    auto h = g_ctx.environmentHandle;
+    char buffer[512];
+
+    ui->UI_TextWrapped("This tab demonstrates the Environment API, which provides details about the game, framework, and system.");
+    ui->UI_Separator();
+
+    // --- Section 1: Game & Profile ---
+    if (ui->UI_TreeNode(ICON_FA_TRUCK " Game & Profile")) {
+        env->Env_GetGameName(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Game Name", buffer);
+
+        env->Env_GetGameVersion(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Game Version", buffer);
+
+        env->Env_GetActiveProfileName(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Active Profile", buffer);
+
+        ui->UI_TreePop();
+    }
+
+    // --- Section 2: Filesystem Paths ---
+    if (ui->UI_TreeNode(ICON_FA_FOLDER_OPEN " Resolved Paths")) {
+        env->Env_GetSCSUserDir(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("User Dir (/home)", buffer);
+
+        env->Env_GetCurrentProfilePath(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Profile Path", buffer);
+
+        env->Env_GetSCSMusicDir(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Music Dir", buffer);
+
+        ui->UI_TreePop();
+    }
+
+    // --- Section 3: Runtime Status ---
+    if (ui->UI_TreeNode(ICON_FA_CHART_LINE " Runtime Status")) {
+        ui->UI_LabelText("VR Active", env->Env_IsVRActive(h) ? "Yes" : "No");
+        ui->UI_LabelText("Tobii DLL", env->Env_IsTobiiDllLoaded(h) ? "Loaded" : "Not Loaded");
+        ui->UI_LabelText("Steam Overlay", env->Env_IsSteamOverlayDllLoaded(h) ? "Loaded" : "Not Loaded");
+
+        env->Env_GetMultiplayerStatus(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Multiplayer", buffer);
+
+        env->Env_GetRendererName(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Renderer", buffer);
+
+        ui->UI_TreePop();
+    }
+
+    // --- Section 4: System Info ---
+    if (ui->UI_TreeNode(ICON_FA_GEAR " System Info")) {
+        env->Env_GetOSName(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("OS Version", buffer);
+
+        env->Env_GetSystemLocale(h, buffer, sizeof(buffer));
+        ui->UI_LabelText("Locale", buffer);
+
+        ui->UI_TreePop();
     }
 }
 

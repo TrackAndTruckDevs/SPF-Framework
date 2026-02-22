@@ -28,6 +28,7 @@
 #include <SPF/Modules/PluginManager.hpp>
 #include <SPF/Renderer/Renderer.hpp>
 #include <SPF/System/PathManager.hpp>
+#include <SPF/System/EnvironmentManager.hpp>
 #include <SPF/UI/ImGuiInputConsumer.hpp>
 #include <SPF/UI/UIManager.hpp>
 #include <SPF/Modules/IBindableInput.hpp>  // Added to get full definition for event handlers
@@ -46,6 +47,8 @@
 #include <SPF/GameCamera/GameCameraManager.hpp>
 #include <SPF/Data/GameData/GameDataCameraService.hpp>
 #include <SPF/Data/GameData/GameObjectVehicleService.hpp>
+#include <SPF/Data/GameData/GameObjectFileSystemService.hpp>
+#include <SPF/Data/GameData/GameObjectSessionService.hpp>
 
 using namespace SPF::Logging;
 using namespace SPF::Events;
@@ -305,6 +308,11 @@ void Core::FullShutdown() {
   m_lifecycleState = LifecycleState::Stopped;
   m_logger->Info("--- Core Full Shutdown sequence finished. ---");
 
+  // Ensure background thread is finished before exiting
+  if (m_deferredInitThread.joinable()) {
+    m_deferredInitThread.join();
+  }
+
   // Step 7: The logger factory is the very last thing to be shut down.
   // This is called last because all previous steps may want to log messages.
   LoggerFactory::GetInstance().Shutdown();
@@ -495,8 +503,11 @@ void Core::InitHooks() {
 
   // 3. Initialize standalone services that don't depend on hooks.
   m_logger->Info("-> [Init] Initializing standalone services...");
+  EnvironmentManager::GetInstance().Initialize(m_module);
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
+  GameObjectSessionService::GetInstance().Initialize();
+  GameObjectFileSystemService::GetInstance().Initialize();
 
   // 4. Initialize core systems that may be used by hooks.
   m_logger->Info("-> [Init] Initializing EventManager and InputManager...");
@@ -612,6 +623,32 @@ void Core::LateInit() {
   }
 
   PluginManager::GetInstance().RegisterPluginUIs();
+
+  // Start heavy background initialization
+  m_logger->Info("-> [LateInit] Starting deferred background initialization thread...");
+  m_deferredInitThread = std::thread(&Core::PerformDeferredInitialization, this);
+}
+
+void Core::PerformDeferredInitialization() {
+  /**
+   * BACKGROUND THREAD: Heavy tasks like memory pattern scanning.
+   */
+  auto logger = LoggerFactory::GetInstance().GetLogger("DeferredInit");
+  logger->Info("Background initialization thread started.");
+
+  // 1. Resolve Session and Profile offsets
+  auto& sessionService = GameObjectSessionService::GetInstance();
+  if (sessionService.TryFindAllOffsets()) {
+    logger->Info("GameObjectSessionService ready.");
+  }
+
+  // 2. Resolve FileSystem (UFS) offsets
+  auto& fileSystemService = GameObjectFileSystemService::GetInstance();
+  if (fileSystemService.TryFindAllOffsets()) {
+    logger->Info("GameObjectFileSystemService ready.");
+  }
+
+  logger->Info("Background initialization thread finished.");
 }
 
 void Core::Update() {

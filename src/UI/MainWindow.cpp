@@ -17,6 +17,7 @@
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/System/PathManager.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
 
 #include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UIStyle.hpp"
@@ -308,22 +309,14 @@ void MainWindow::RenderContent() {
     ImGui::Spacing();
     ImGui::Spacing();
 
-    const auto& gameState = m_telemetryService.GetGameState();
-    if (!gameState.game_name.empty()) {
-        const std::string& full_game_name = gameState.game_name;
-        size_t last_space_pos = full_game_name.find_last_of(' ');
-
-        if (last_space_pos != std::string::npos) {
-            std::string game_name_only = full_game_name.substr(0, last_space_pos);
-            std::string game_version = full_game_name.substr(last_space_pos + 1);
-
-            Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusRunningGame).c_str());
-            ImGui::SameLine();
-            Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game_name_only.c_str());
-            Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusCurrentVersion).c_str());
-            ImGui::SameLine();
-            Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game_version.c_str());
-        }
+    const auto& game = System::EnvironmentManager::GetInstance().GetGameInfo();
+    if (!game.name.empty()) {
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusRunningGame).c_str());
+        ImGui::SameLine();
+        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.name.c_str());
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusCurrentVersion).c_str());
+        ImGui::SameLine();
+        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.version.c_str());
     }
 
     // --- Performance Stats ---
@@ -332,20 +325,12 @@ void MainWindow::RenderContent() {
     ImGui::Spacing();
 
     auto& perf = PerformanceMonitor::GetInstance();
-    auto* renderer = UIManager::GetInstance().GetRenderer();
+    const auto& status = System::EnvironmentManager::GetInstance().GetStatus();
 
-    if (renderer) {
-        const char* apiString = "Unknown";
-        switch (renderer->GetDetectedAPI()) {
-            case RenderAPI::D3D11:   apiString = "DirectX 11"; break;
-            case RenderAPI::D3D12:   apiString = "DirectX 12"; break;
-            case RenderAPI::OpenGL:  apiString = "OpenGL";     break;
-            default:                 apiString = "Unknown";    break;
-        }
-
+    if (!status.renderer.empty()) {
         Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfGraphicsApiLabel).c_str());
         ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", apiString);
+        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", status.renderer.c_str());
         ImGui::SameLine();
         ImGui::Dummy(ImVec2(10.0f, 0.0f)); // Spacer
         ImGui::SameLine();

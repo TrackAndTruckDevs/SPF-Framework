@@ -162,6 +162,9 @@
                     },
                     "camera_window": {
                         "title": "Камера"
+                    },
+                    "info_window": {
+                        "title": "Информация об окружении"
                     }
                 },
                 "properties": {
@@ -908,6 +911,60 @@
                 "status_user_controlled": "  Статус: Управляется пользователем",
                 "capture_selected_vehicle": "Захватить выбранное ТС"
             }
+        }
+    },
+    "info_window": {
+        "title": "Информация об окружении",
+        "tabs": {
+            "framework": "Фреймворк",
+            "game": "Игра",
+            "paths": "Пути",
+            "system": "Система",
+            "status": "Статус"
+        },
+        "framework": {
+            "version": "Версия SPF:",
+            "build_type": "Тип сборки:",
+            "configuration": "Конфигурация:",
+            "loader_path": "Путь загрузчика:"
+        },
+        "game": {
+            "full_name": "Полное название:",
+            "code": "Код игры:",
+            "version": "Версия игры:",
+            "steam_id": "Steam AppID:",
+            "is_steam": "Версия Steam:",
+            "active_profile": "Активный профиль:",
+            "exe_path": "Путь к EXE:",
+            "root_path": "Корневой путь:",
+            "command_line": "Командная строка"
+        },
+        "paths": {
+            "scs_user": "Пользовательская папка SCS",
+            "scs_mods": "Папка модов SCS",
+            "scs_music": "Папка музыки SCS",
+            "scs_screenshots": "Папка скриншотов SCS",
+            "current_profile": "Путь к текущему профилю",
+            "global_assets": "Глобальные ресурсы",
+            "plugins_root": "Корень плагинов",
+            "global_config": "Глобальная конфигурация",
+            "not_found": "Не найдено"
+        },
+        "system": {
+            "os": "Версия ОС:",
+            "locale": "Локаль системы:",
+            "architecture": "Архитектура:"
+        },
+        "status": {
+            "renderer": "Графическое API:",
+            "vr_active": "VR активен:",
+            "tobii_active": "Tobii Eye Tracker DLL:",
+            "multiplayer": "Мультиплеер:",
+            "steam_overlay": "Steam Overlay DLL:",
+            "active": "Активен",
+            "inactive": "Неактивен",
+            "dll_loaded": "Загружено",
+            "dll_not_loaded": "Не загружено"
         }
     },
     "description": {
