@@ -13,7 +13,7 @@
 <p align="center">
     <a href="https://www.patreon.com/TrackAndTruckDevs" title="Support us on Patreon"><img alt="Patreon" src="https://img.shields.io/badge/patreon-Becoming a patron-3404021712?style=flat&logo=patreon"></a>
     <a href="https://github.com/TrackAndTruckDevs/SPF-Framework/stargazers" title="Liked it? Starred"><img src="https://img.shields.io/github/stars/TrackAndTruckDevs/SPF-Framework?style=flat&logo=github" alt="Stars" /></a>
-    <a href="www.youtube.com/@TrackAndTruck" title="Subscribe to our channel"><img alt="Youtube" src="https://img.shields.io/badge/youtube-subscribe-orange?logo=youtube&style=flat"></a>
+    <a href="https://youtube.com/@TrackAndTruck" title="Subscribe to our channel"><img alt="Youtube" src="https://img.shields.io/badge/youtube-subscribe-orange?logo=youtube&style=flat"></a>
 </p>
 
 <h2 align="center">C++ Framework & Plugin Manager for ATS / ETS2</h2>
