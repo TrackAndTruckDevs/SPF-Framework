@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Define our project.
-project(SPF VERSION 1.1.3 LANGUAGES CXX)
+project(SPF VERSION 1.1.4 LANGUAGES CXX)
 
 # Enable generation of compile_commands.json, which is necessary for IWYU.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
