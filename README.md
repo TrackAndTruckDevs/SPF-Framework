@@ -5,15 +5,15 @@
 <h1 align="center">SPF Framework</h1>
 
 <p align="center">
-    <a href="https://github.com/TrackAndTruckDevs/SPF-Framework/releases/latest/" title="SPF Framework releas"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/TrackAndTruckDevs/SPF-Framework"></a>
+    <a href="https://github.com/TrackAndTruckDevs/SPF-Framework/releases/latest/" target="_blank" title="SPF Framework releas"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/TrackAndTruckDevs/SPF-Framework"></a>
     <a href="/docs/api" title="Documentation API"><img alt="" src="https://img.shields.io/badge/documentation-API-ffdd00.svg" /></a>
     <a href="/LICENSE" title="SPF Framework license"><img alt="GitHub License" src="https://img.shields.io/github/license/TrackAndTruckDevs/SPF-Framework"></a>
 </p>
 
 <p align="center">
-    <a href="https://www.patreon.com/TrackAndTruckDevs" title="Support us on Patreon"><img alt="Patreon" src="https://img.shields.io/badge/patreon-Becoming a patron-3404021712?style=flat&logo=patreon"></a>
+    <a href="https://www.patreon.com/TrackAndTruckDevs" target="_blank" title="Support us on Patreon"><img alt="Patreon" src="https://img.shields.io/badge/patreon-Becoming a patron-3404021712?style=flat&logo=patreon"></a>
     <a href="https://github.com/TrackAndTruckDevs/SPF-Framework/stargazers" title="Liked it? Starred"><img src="https://img.shields.io/github/stars/TrackAndTruckDevs/SPF-Framework?style=flat&logo=github" alt="Stars" /></a>
-    <a href="https://youtube.com/@TrackAndTruck" title="Subscribe to our channel"><img alt="Youtube" src="https://img.shields.io/badge/youtube-subscribe-orange?logo=youtube&style=flat"></a>
+    <a href="https://youtube.com/@TrackAndTruck" target="_blank" title="Subscribe to our channel"><img alt="Youtube" src="https://img.shields.io/badge/youtube-subscribe-orange?logo=youtube&style=flat"></a>
 </p>
 
 <h2 align="center">C++ Framework & Plugin Manager for ATS / ETS2</h2>
