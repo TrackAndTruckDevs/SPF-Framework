@@ -1,0 +1,21 @@
+name: CMake Build Matrix
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      # We use -A x64 for 64-bit build (SCS games are 64-bit)
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -A x64
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release

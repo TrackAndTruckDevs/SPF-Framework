@@ -28,6 +28,9 @@
 
 !.gitignore
 
+!/.github/
+!/.github/**
+
 !/CMakeLists.txt
 
 !/README.md
