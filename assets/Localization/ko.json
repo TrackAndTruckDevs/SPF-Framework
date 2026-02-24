@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "후크 상태",
                     "description": "후크의 활성화/비활성화 상태를 관리합니다."
+                },
+                "notification_duration": {
+                    "title": "알림 지속 시간",
+                    "description": "임시 팝업 알림이 화면에 머무는 시간(초)을 설정합니다."
                 }
             }
         },

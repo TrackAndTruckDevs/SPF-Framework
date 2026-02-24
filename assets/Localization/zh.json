@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "钩子状态",
                     "description": "管理钩子的启用/禁用状态。"
+                },
+                "notification_duration": {
+                    "title": "通知持续时间",
+                    "description": "设置临时弹出通知在屏幕上停留的时间（以秒为单位）。"
                 }
             }
         },

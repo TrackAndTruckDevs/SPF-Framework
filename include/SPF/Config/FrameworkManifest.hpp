@@ -39,7 +39,7 @@ inline const ManifestData& GetFrameworkManifestData() {
       .configPolicy =
           {
               .allowUserConfig = true,                                                   // allow creating a configuration file
-              .userConfigurableSystems = {"localization"},  // which settings to show in the UI. "keybinds" if present, will always be displayed
+              .userConfigurableSystems = {"localization", "settings"},  // which settings to show in the UI. "keybinds" if present, will always be displayed
               .requiredHooks = {}                                                        // Framework doesn't require hooks in its own manifest
                                                                                         //"ui",  "settings", "logging"
           },
@@ -47,7 +47,9 @@ inline const ManifestData& GetFrameworkManifestData() {
       .settings = nlohmann::json::parse(R"json(
             {
               "plugin_states": {},
-              "hook_states": {}
+              "hook_states": {},
+              "framework": {},
+              "notification_duration": 3.0
             }
         )json"),
       // .logging
@@ -219,8 +221,10 @@ inline const ManifestData& GetFrameworkManifestData() {
         
         // --- Metadata for framework's own settings ---
         .customSettingsMetadata = {
-            {"plugin_states", "settings_window.setting_names.settings.plugin_states.title", "settings_window.setting_names.settings.plugin_states.description"},
-            {"hook_states", "settings_window.setting_names.settings.hook_states.title", "settings_window.setting_names.settings.hook_states.description"}
+            {"plugin_states", "settings_window.setting_names.settings.plugin_states.title", "settings_window.setting_names.settings.plugin_states.description", true},
+            {"hook_states", "settings_window.setting_names.settings.hook_states.title", "settings_window.setting_names.settings.hook_states.description", true},
+            {"framework", std::nullopt, std::nullopt, true},
+            {"notification_duration", "settings_window.setting_names.settings.notification_duration.title", "settings_window.setting_names.settings.notification_duration.description", false, "slider", nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")}
         },
         .keybindsMetadata = {
             {"framework.ui.main_window", "toggle", "keybind_actions.ui.main_window.toggle.title", "keybind_actions.ui.main_window.toggle.description"},

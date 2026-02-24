@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Estados dos Hooks",
                     "description": "Gerencia o estado habilitado/desabilitado dos hooks."
+                },
+                "notification_duration": {
+                    "title": "Duração da Notificação",
+                    "description": "Define por quanto tempo (em segundos) as notificações pop-up temporárias permanecem na tela."
                 }
             }
         },

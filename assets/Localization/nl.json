@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Hook Staten",
                     "description": "Beheert de ingeschakelde/uitgeschakelde staat van hooks."
+                },
+                "notification_duration": {
+                    "title": "Meldingsduur",
+                    "description": "Stelt in hoe lang (in seconden) de tijdelijke pop-upmeldingen op het scherm blijven staan."
                 }
             }
         },

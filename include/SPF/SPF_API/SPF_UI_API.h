@@ -98,6 +98,18 @@ typedef enum
     SPF_STYLE_VAR_COUNT
 } SPF_StyleVar;
 
+/**
+ * @enum SPF_NotificationType
+ * @brief Categorizes framework notifications to determine their visual style (icon and color).
+ */
+typedef enum {
+    SPF_NOTIFICATION_INFO,     /**< Blue. General information or neutral status updates. */
+    SPF_NOTIFICATION_SUCCESS,  /**< Green. Confirmation of a successfully completed operation. */
+    SPF_NOTIFICATION_WARNING,  /**< Yellow. Important notice that doesn't block execution. */
+    SPF_NOTIFICATION_ERROR,    /**< Red. Notification of a failed operation or non-critical error. */
+    SPF_NOTIFICATION_CRITICAL, /**< Deep Red. Critical system failure or severe error. */
+    SPF_NOTIFICATION_HINT      /**< Purple/Violet. Helpful tips or "Did you know?" style suggestions. */
+} SPF_NotificationType;
 
 /**
  * @enum SPF_Font
@@ -1333,5 +1345,21 @@ typedef struct SPF_UI_API {
      * @details Must be called after `UI_BeginDragDropTarget`.
      */
     void (*UI_EndDragDropTarget)();
+
+    /**
+     * @brief Displays a temporary notification popup at the top of the screen.
+     * 
+     * @details This function triggers a non-interactive message that automatically 
+     *          fades out after a pre-defined period. The popup includes an icon 
+     *          corresponding to the type and supports formatted text.
+     * 
+     * @param type The visual category of the message (influences color and icon).
+     * @param message The content to display. Supports Markdown syntax (**bold**, *italic*) 
+     *                and Font Awesome icon macros (e.g., ICON_FA_TRUCK).
+     * 
+     * @note The display duration is controlled globally by the framework's configuration 
+     *       and cannot be overridden by individual plugins to ensure a consistent UX.
+     */
+    void (*UI_ShowNotification)(SPF_NotificationType type, const char* message);
 
 } SPF_UI_API;

@@ -39,6 +39,9 @@ class Renderer;
 }
 
 namespace UI {
+class IWindow;
+class NotificationWindow; // Forward declaration
+
 class UIManager : public Config::IConfigurable {
  private:  // Private constructor for Singleton pattern
   UIManager();
@@ -85,6 +88,11 @@ class UIManager : public Config::IConfigurable {
 
   void ToggleMouseOverridden();
 
+  /**
+   * @brief Shows a framework-level notification.
+   */
+  void ShowNotification(const std::string& message, int type);
+
   // --- IConfigurable Implementation ---
   bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
@@ -118,6 +126,7 @@ class UIManager : public Config::IConfigurable {
   bool m_wasShellVisibleLastFrame = false;
   bool m_isMouseControlOverridden = false;
 
+  std::shared_ptr<NotificationWindow> m_notificationWindow;
 
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginDidLoad&)>> m_onPluginDidLoadSink;
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>> m_onPluginWillBeUnloadedSink;

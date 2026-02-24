@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "États des hooks",
                     "description": "Gère l'état activé/désactivé des hooks."
+                },
+                "notification_duration": {
+                    "title": "Durée des notifications",
+                    "description": "Définit la durée (en secondes) pendant laquelle les notifications contextuelles temporaires restent à l'écran."
                 }
             }
         },

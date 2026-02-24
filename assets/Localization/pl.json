@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Stany haków",
                     "description": "Zarządza stanem włączonych/wyłączonych haków."
+                },
+                "notification_duration": {
+                    "title": "Czas trwania powiadomień",
+                    "description": "Określa, jak długo (w sekundach) tymczasowe powiadomienia pozostają na ekranie."
                 }
             }
         },

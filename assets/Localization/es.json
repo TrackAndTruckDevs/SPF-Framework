@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Estados de los hooks",
                     "description": "Gestiona el estado de activación/desactivación de los hooks."
+                },
+                "notification_duration": {
+                    "title": "Duración de las notificaciones",
+                    "description": "Establece cuánto tiempo (en segundos) permanecen en pantalla las notificaciones emergentes temporales."
                 }
             }
         },

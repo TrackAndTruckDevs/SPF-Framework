@@ -150,6 +150,9 @@ class UIApi {
   static const SPF_Payload_Handle* UI_AcceptDragDropPayload(const char* type);
   static void UI_EndDragDropTarget();
 
+  // --- Notifications ---
+  static void UI_ShowNotification(SPF_NotificationType type, const char* message);
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);

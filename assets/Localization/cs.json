@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Stavy hooků",
                     "description": "Spravuje povolený/zakázaný stav hooků."
+                },
+                "notification_duration": {
+                    "title": "Doba trvání oznámení",
+                    "description": "Nastavuje, jak dlouho (v sekundách) zůstanou dočasná vyskakovací oznámení na obrazovce."
                 }
             }
         },

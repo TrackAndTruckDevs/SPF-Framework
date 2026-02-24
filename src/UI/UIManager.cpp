@@ -9,6 +9,7 @@
 #include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
 #include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"   // Added for TelemetryWindow creation
+#include "SPF/UI/NotificationWindow.hpp" // Added for Notifications
 
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -234,6 +235,13 @@ std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() 
     allSettings[window->GetComponentName()]["windows"][window->GetWindowId()] = window->GetCurrentSettings();
   }
   return allSettings;
+}
+
+void UIManager::ShowNotification(const std::string& message, int type) {
+  if (m_notificationWindow) {
+    float duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
+    m_notificationWindow->Show(message, type, duration);
+  }
 }
 
 void UIManager::ToggleMouseOverridden() {
@@ -782,6 +790,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Info Window
   auto infoWindow = std::make_shared<InfoWindow>("framework", "info_window");
   RegisterWindow(infoWindow);
+
+  // Notifications (Global)
+  m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
+  RegisterWindow(m_notificationWindow);
 }
 
 }  // namespace UI

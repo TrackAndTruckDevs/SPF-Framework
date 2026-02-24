@@ -546,6 +546,11 @@ void UIApi::UI_EndDragDropTarget() {
     ImGui::EndDragDropTarget();
 }
 
+void UIApi::UI_ShowNotification(SPF_NotificationType type, const char* message) {
+    if (!message) return;
+    UIManager::GetInstance().ShowNotification(message, static_cast<int>(type));
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -693,6 +698,9 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_BeginDragDropTarget = &UIApi::UI_BeginDragDropTarget;
   ui_api->UI_AcceptDragDropPayload = &UIApi::UI_AcceptDragDropPayload;
   ui_api->UI_EndDragDropTarget = &UIApi::UI_EndDragDropTarget;
+
+  // Notifications
+  ui_api->UI_ShowNotification = &UIApi::UI_ShowNotification;
 }
 }  // namespace Modules::API
 SPF_NS_END

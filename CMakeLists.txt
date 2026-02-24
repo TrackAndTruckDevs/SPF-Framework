@@ -304,6 +304,7 @@ add_library(SPF SHARED
     "src/UI/CameraWindow.cpp"
     "src/UI/InfoWindow.cpp"
     "src/UI/MainWindow.cpp"
+    "src/UI/NotificationWindow.cpp"
     "src/UI/UIManager.cpp"
     "src/UI/MarkdownRenderer.cpp"
     "src/UI/UIStyle.cpp"

@@ -212,6 +212,32 @@ These functions provide information about the current window and layout state, a
 *   `UI_SetCursorScreenPos(...)`: Manually sets the absolute screen position for the next widget.
 *   `UI_GetItemRectMin(...)` / `UI_GetItemRectMax(...)` / `UI_GetItemRectSize(...)`: Return the bounding box (top-left corner, bottom-right corner) and size of the previously drawn widget.
 
+# Notification System
+The framework provides a global notification system for displaying temporary, non-interactive messages at the top of the screen. These are ideal for status updates, success confirmations, or warnings.
+
+## API Reference
+
+---
+**`void UI_ShowNotification(SPF_NotificationType type, const char* message)`**
+Triggers a notification popup. The message stays on screen for a duration defined in the framework's global settings and then automatically fades out.
+
+*   `type`: The visual style of the notification (icon and color). Available types:
+    *   `SPF_NOTIFICATION_INFO`: Blue info icon.
+    *   `SPF_NOTIFICATION_SUCCESS`: Green checkmark.
+    *   `SPF_NOTIFICATION_WARNING`: Yellow exclamation triangle.
+    *   `SPF_NOTIFICATION_ERROR`: Red X-mark.
+    *   `SPF_NOTIFICATION_CRITICAL`: Deep red radiation/skull icon.
+    *   `SPF_NOTIFICATION_HINT`: Purple lightbulb for tips.
+*   `message`: The text to display. Supports **Markdown** and **FontAwesome icons**.
+
+### Example
+```c
+if (ui->UI_Button("Save Project", 0, 0)) {
+    // ... save logic ...
+    ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Project **'Cinematic_01'** has been saved!");
+}
+```
+
 # Miscellaneous Utilities
 
 ### ID Management

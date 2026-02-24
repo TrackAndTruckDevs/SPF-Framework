@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "Kanca Durumları",
                     "description": "Kancaların etkin/devre dışı durumunu yönetir."
+                },
+                "notification_duration": {
+                    "title": "Bildirim Süresi",
+                    "description": "Geçici açılır bildirimlerin ekranda ne kadar süreyle (saniye cinsinden) kalacağını ayarlar."
                 }
             }
         },

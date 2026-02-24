@@ -222,6 +222,10 @@
                 "hook_states": {
                     "title": "フックの状態",
                     "description": "フックの有効/無効の状態を管理します。"
+                },
+                "notification_duration": {
+                    "title": "通知の表示時間",
+                    "description": "一時的なポップアップ通知が画面に表示される時間（秒単位）を設定します。"
                 }
             }
         },

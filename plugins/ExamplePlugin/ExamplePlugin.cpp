@@ -1555,6 +1555,43 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     // The base style for markdown can have padding, but the renderer will handle fonts/colors.
     ui->UI_Style_SetPadding(markdown_base_style, 10.0f, 5.0f);
     ui->UI_RenderMarkdown(markdown, markdown_base_style);
+
+    ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, "Notification System Test");
+    ui->UI_TextWrapped("Click the buttons below to test different notification types and content lengths.");
+
+    if (ui->UI_Button(ICON_FA_CIRCLE_INFO " Info Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, "This is a **standard information** message. It is blue and informative.");
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_CIRCLE_CHECK " Success Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Operation completed! " ICON_FA_THUMBS_UP "\nYour changes have been saved successfully.");
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_TRIANGLE_EXCLAMATION " Warning Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_WARNING, "Attention!\nVehicle speed is too high. Please slow down before engaging the cinematic camera.");
+    }
+
+    if (ui->UI_Button(ICON_FA_CIRCLE_XMARK " Error Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_ERROR, "Failed to load scene file. The file might be corrupted or missing. Check the logs for details.");
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_RADIATION " Critical Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_CRITICAL, "**CRITICAL SYSTEM FAILURE**\n" ICON_FA_SKULL " Memory access violation detected in plugin module. Re-initializing...");
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_LIGHTBULB " Hint Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_HINT, "*Did you know?*\nYou can use **Ctrl + Scroll** to adjust the camera FOV in real-time while in free mode!");
+    }
+
+    ui->UI_Spacing();
+    if (ui->UI_Button("Long Text Test", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, 
+            "This is a very long notification message designed to test the **automatic text wrapping** and **dynamic height** adjustment of the notification window. "
+            "It should handle multiple lines of text gracefully without cutting off the content or expanding beyond reasonable bounds. "
+            "The progress bar at the bottom should still be visible and correctly timed. "
+            "Markdown elements like `code blocks` or **bold headers** should also be rendered correctly within this space.");
+    }
     
     // 4. Clean up the style handles
     ui->UI_Style_Destroy(h1_style);
