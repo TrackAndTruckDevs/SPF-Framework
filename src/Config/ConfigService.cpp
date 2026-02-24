@@ -5,21 +5,20 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/System/PathManager.hpp"
-#include "SPF/Config/FrameworkManifest.hpp" // Provides the in-code framework manifest
+#include "SPF/Config/FrameworkManifest.hpp"
+#include "SPF/Config/ManifestData.hpp"
 
 #include <fstream>
 #include <filesystem>
 #include <regex>
 #include <set>
 #include <algorithm>
-#include <objbase.h> // For CoCreateGuid
-#include <cstdio>    // For snprintf
-
+#include <objbase.h>
+#include <cstdio>
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Hooks/IHook.hpp"
 
 
-#include "SPF/Config/ManifestData.hpp" // Include the new C++ structure definitions
 
 SPF_NS_BEGIN
 
@@ -61,7 +60,7 @@ nlohmann::ordered_json SerializeSettings(const ManifestData& manifest, const Man
             nlohmann::ordered_json& node = j[ptr];
             if (node.is_object() && node.contains("_value")) {
                 InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            } else if (node.is_primitive() || node.is_string() || node.is_array()) { // Added is_array() here
+            } else if (node.is_primitive() || node.is_string() || node.is_array()) {
                 auto value = node;
                 node = nlohmann::ordered_json::object();
                 node["_value"] = value;
@@ -233,13 +232,25 @@ nlohmann::ordered_json SerializeKeybinds(const ManifestData& manifest) {
             nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
             for (const auto& def : defs) {
                 nlohmann::ordered_json temp;
-                if (def.type.has_value()) temp["type"] = def.type.value();
-                if (def.key.has_value()) temp["key"] = def.key.value();
+                std::string typeStr = def.type.value_or("");
+                if (!typeStr.empty()) temp["type"] = typeStr;
+                
+                if (typeStr == "chord" && !def.bindings.empty()) {
+                    nlohmann::ordered_json subArray = nlohmann::ordered_json::array();
+                    for (const auto& subDef : def.bindings) {
+                        nlohmann::ordered_json subJ;
+                        if (subDef.type.has_value()) subJ["type"] = *subDef.type;
+                        if (subDef.key.has_value()) subJ["key"] = *subDef.key;
+                        subArray.push_back(subJ);
+                    }
+                    temp["bindings"] = subArray;
+                } else {
+                    if (def.key.has_value()) temp["key"] = def.key.value();
+                }
 
                 auto input = Modules::InputFactory::CreateFromJson(temp);
                 nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
 
-                std::string typeStr = def.type.value_or("");
                 bool isAxis = (typeStr.find("_axis") != std::string::npos);
                 std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
 

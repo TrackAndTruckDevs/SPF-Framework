@@ -59,6 +59,10 @@
  *     // Example 3: Mouse wheel binding (Axis index 2)
  *     api->Defaults_AddKeybind(h, "MyPlugin.UI", "zoom", "mouse_axis", "2", "on_ui_focus");
  *
+ *     // Example 4: Key chord binding (Ctrl+K)
+ *     // Format for chord 'key' parameter: "device:key+device:key"
+ *     api->Defaults_AddKeybind(h, "MyPlugin.Admin", "secret", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_K", "always");
+ *
  *     // Windows: Name, Visible (bool), Interactive (bool), X, Y, W, H, Collapsed (bool), AutoScroll (bool)
  *     api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
  *
@@ -320,6 +324,7 @@ typedef struct SPF_Manifest_Builder_API {
      *                   - "gamepad_axis"  : Analog sticks and triggers (LEFT_STICK_X, RIGHT_TRIGGER_AXIS...).
      *                   - "mouse_axis"    : Mouse wheel (Index 2).
      *                   - "joystick_axis" : Generic joystick/pedal axes (Index 0, 1, 2...).
+     *                   - "chord"         : Combinations of multiple inputs (e.g., Ctrl+S).
      * @param key        Physical input identifier:
      *                   - For @b keyboard: Use Virtual Key names ("KEY_W", "KEY_SPACE", "KEY_ESCAPE", "KEY_F1"...).
      *                   - For @b mouse: Use Button names ("MOUSE_LEFT", "MOUSE_RIGHT", "MOUSE_MIDDLE", "MOUSE_X1"...).
@@ -328,6 +333,8 @@ typedef struct SPF_Manifest_Builder_API {
      *                   - For @b mouse_axis: Use "2" for the vertical scroll wheel.
      *                   - For @b joystick: Use "BUTTON_" prefix with 1-based index (e.g., "BUTTON_1", "BUTTON_12").
      *                   - For @b joystick_axis: Use the 0-based index of the axis as a string (e.g., "0", "5").
+     *                   - For @b chord: Use "device:key+device:key" format (e.g., "keyboard:KEY_LCONTROL+keyboard:KEY_S").
+     *                     If device is omitted, "keyboard" is assumed.
      * @param consume    Input consumption policy:
      *                   - "never"       : The game always receives the input.
      *                   - "always"      : Input is captured by the framework and completely hidden from the game.

@@ -3,6 +3,7 @@
 #include "SPF/SPF_API/SPF_Manifest_API.h" // Builder definitions
 
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -137,9 +138,36 @@ static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* grou
     if (!h || !group || !action || *group == '\0' || *action == '\0') return;
     
     KeybindDefinition def;
-    if (type && *type) def.type = type;
-    if (key && *key) def.key = key;
+    std::string typeStr = type ? type : "";
+    def.type = typeStr;
     if (consume && *consume) def.consume = consume;
+
+    if (typeStr == "chord" && key) {
+        std::string fullChord(key);
+        std::stringstream ss(fullChord);
+        std::string part;
+
+        while (std::getline(ss, part, '+')) {
+            // Trim whitespace
+            part.erase(0, part.find_first_not_of(" "));
+            part.erase(part.find_last_not_of(" ") + 1);
+
+            size_t colonPos = part.find(':');
+            if (colonPos != std::string::npos) {
+                KeybindDefinition sub;
+                sub.type = part.substr(0, colonPos);
+                sub.key = part.substr(colonPos + 1);
+                def.bindings.push_back(std::move(sub));
+            } else {
+                KeybindDefinition sub;
+                sub.type = "keyboard";
+                sub.key = part;
+                def.bindings.push_back(std::move(sub));
+            }
+        }
+    } else {
+        if (key && *key) def.key = key;
+    }
 
     Cast(h)->keybinds.actions[group][action].push_back(std::move(def));
 }

@@ -82,6 +82,9 @@ struct KeybindDefinition {
     std::optional<int> pressThresholdMs; ///< @brief Time in milliseconds to qualify as a long press.
     std::optional<std::string> consume; ///< @brief Input consumption policy (e.g., "never", "on_ui_focus", "always", "manual").
     std::optional<std::string> behavior; ///< @brief Reserved for future use (e.g., for toggle/hold behavior).
+
+    /// @brief Nested bindings for "chord" type.
+    std::vector<KeybindDefinition> bindings;
 };
 
 /**

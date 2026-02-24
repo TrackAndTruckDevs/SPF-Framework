@@ -150,6 +150,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // `consume`: "never", "on_ui_focus", "always", "manual".
         // Note: press_type, behavior, and axis settings are defaulted automatically.
         api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "always");
+        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_F5", "always");
 
         // Second action: Cycle through camera views.
         api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "always");

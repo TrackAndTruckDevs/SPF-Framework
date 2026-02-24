@@ -86,14 +86,15 @@ api->Settings_SetJson(h, defaults);
     *   `fileSink`: `true` to enable a dedicated log file for the plugin.
 *   **Localization**: `Defaults_SetLocalization(h, "en")`
     *   Sets the default initial language.
-*   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, consume)`
+    *   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, consume)`
     *   **Universal Signature**: Since version 1.0.7, this function only takes the identity of the bind. All processing parameters are set to sensible framework defaults and can be further tuned by the user in the UI.
     *   `type`: The hardware device type.
         *   Digital: `"keyboard"`, `"gamepad"`, `"mouse"`.
         *   Analog (Optimized for continuous movement): `"gamepad_axis"`, `"mouse_axis"`, `"joystick_axis"`.
+        *   Combinations: `"chord"` (Multiple keys/buttons).
     *   `key`: The specific button or axis name (e.g., `"v"`, `"LEFT_STICK_X"`, `"LEFT_TRIGGER_AXIS"`).
-    *   `consume`: Input consumption policy (`"always"`, `"never"`, `"on_ui_focus"`, `"manual"`).
-    
+        *   For **"chord"**: Use `"device:key+device:key"` format (e.g., `"keyboard:KEY_LCONTROL+keyboard:KEY_S"`). If `device:` is omitted, `"keyboard"` is assumed.
+    *   `consume`: Input consumption policy (`"always"`, `"never"`, `"on_ui_focus"`, `"manual"`).    
     **Default Axis Parameters (Internal):**
     When an action is bound to an axis type, the framework automatically applies the following defaults:
     *   `mode`: `"analog"` (provides smooth float value).
