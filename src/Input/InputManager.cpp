@@ -334,6 +334,8 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
   }
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   if (m_captureState == InputCaptureState::Capturing) {
+    if (event.key == System::Keyboard::Unknown) return true; // Ignore unknown keys during capture
+
     uint32_t code = 0x01000000 | static_cast<uint32_t>(event.key);
     
     if (event.pressed) {
@@ -606,7 +608,13 @@ void InputManager::ProcessKeyboardActions() {
                       logger->Info("[Capture] Finalizing chord with {} keys", m_captureRecordedCodes.size());
                       auto chord = std::make_shared<Modules::ChordInput>();
                       for (uint32_t c : m_captureRecordedCodes) {
-                          chord->AddInput(Modules::InputFactory::CreateFromJson(m_captureCodeToInputMap[c]->ToJson()));
+                          auto input = m_captureCodeToInputMap[c];
+                          if (input && input->IsValid()) {
+                              std::string dn = input->GetDisplayName();
+                              if (dn.find("Unknown") == std::string::npos && dn.find("UNKNOWN") == std::string::npos) {
+                                  chord->AddInput(Modules::InputFactory::CreateFromJson(input->ToJson()));
+                              }
+                          }
                       }
                       result = chord;
                   }
@@ -699,6 +707,8 @@ void InputManager::ProcessJoystickActions() {
 }
 
 bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority) {
+  if (event.button == System::GamepadButton::Unknown) return true; // Ignore unknown gamepad buttons
+
   uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
   
   auto& state = m_inputStates[hardwareCode];
@@ -903,6 +913,9 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
 bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t priority) {
   auto button = static_cast<MouseButton>(event.iButton);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
+  
+  if (event.iButton < 0 || event.iButton > 7 || button == MouseButton::Unknown) return true; // Ignore invalid button indices
+
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
 
   auto& state = m_inputStates[hardwareCode];
@@ -950,6 +963,9 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t prior
 bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto buttonIndex = event.buttonIndex;
+
+  if (buttonIndex < 0 || buttonIndex >= 128) return true; // Ignore invalid joystick buttons
+
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
 
   auto& state = m_inputStates[hardwareCode];
@@ -1310,7 +1326,15 @@ void InputManager::UpdateCaptureUI() {
     update.actionFullName = m_capturingActionFullName;
     for (uint32_t c : m_captureRecordedCodes) {
         if (m_captureCodeToInputMap.count(c)) {
-            update.currentChordInputs.push_back(m_captureCodeToInputMap[c]);
+            auto input = m_captureCodeToInputMap[c];
+            if (input && input->IsValid()) {
+                std::string displayName = input->GetDisplayName();
+                // Filter out any "Unknown" display names that might have leaked through
+                if (displayName.find("Unknown") == std::string::npos && 
+                    displayName.find("UNKNOWN") == std::string::npos) {
+                    update.currentChordInputs.push_back(input);
+                }
+            }
         }
     }
     m_eventManager.System.OnInputCaptureUpdate.Call(update);
