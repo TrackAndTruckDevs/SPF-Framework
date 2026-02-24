@@ -1,5 +1,5 @@
 <p align="center">
-    <a href=""><img src="https://trucksimhub.top/assets/img/Logo_SPF-Framework_420x263_t.svg" alt="Logo SPF Framework" height="263px" /></a>
+    <a href=""><img src="https://trucksimhub.top/assets/img/SPF-Framework_Logo.svg" alt="Logo SPF Framework" height="263px" /></a>
 </p>
 
 <h1 align="center">SPF Framework</h1>
