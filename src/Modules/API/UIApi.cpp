@@ -103,6 +103,35 @@ void UIApi::UI_Spacing() { ImGui::Spacing(); }
 void UIApi::UI_Indent(float indent_w) { ImGui::Indent(indent_w); }
 void UIApi::UI_Unindent(float indent_w) { ImGui::Unindent(indent_w); }
 void UIApi::UI_SameLine(float offset_from_start_x, float spacing) { ImGui::SameLine(offset_from_start_x, spacing); }
+
+bool UIApi::UI_BeginChild(const char* str_id, float size_x, float size_y, bool border, SPF_Window_Flags flags) {
+    return str_id ? ImGui::BeginChild(str_id, ImVec2(size_x, size_y), border, static_cast<ImGuiWindowFlags>(flags)) : false;
+}
+
+void UIApi::UI_EndChild() {
+    ImGui::EndChild();
+}
+
+void UIApi::UI_SetCursorPos(float x, float y) {
+    ImGui::SetCursorPos(ImVec2(x, y));
+}
+
+void UIApi::UI_GetCursorPos(float* out_x, float* out_y) {
+    if (out_x && out_y) {
+        ImVec2 pos = ImGui::GetCursorPos();
+        *out_x = pos.x;
+        *out_y = pos.y;
+    }
+}
+
+bool UIApi::UI_IsWindowHovered() {
+    return ImGui::IsWindowHovered();
+}
+
+float UIApi::UI_GetIO_DeltaTime() {
+    return ImGui::GetIO().DeltaTime;
+}
+
 bool UIApi::UI_InputText(const char* label, char* buf, size_t buf_size) { return label && buf ? ImGui::InputText(label, buf, buf_size) : false; }
 bool UIApi::UI_InputInt(const char* label, int* v, int step, int step_fast, int flags) { return label && v ? ImGui::InputInt(label, v, step, step_fast, flags) : false; }
 bool UIApi::UI_InputFloat(const char* label, float* v, float step, float step_fast, const char* format, int flags) {
@@ -288,6 +317,22 @@ void UIApi::UI_DrawList_AddRectFilled(SPF_DrawList_Handle dl, float p_min_x, flo
 
 void UIApi::UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments) {
     if (dl) reinterpret_cast<ImDrawList*>(dl)->AddCircleFilled({center_x, center_y}, radius, col, num_segments);
+}
+
+void UIApi::UI_DrawList_AddCircle(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddCircle({center_x, center_y}, radius, col, num_segments, thickness);
+}
+
+void UIApi::UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->AddRectFilledMultiColor({p_min_x, p_min_y}, {p_max_x, p_max_y}, col_upr_left, col_upr_right, col_bot_right, col_bot_left);
+}
+
+void UIApi::UI_DrawList_PushClipRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, bool intersect_with_current_clip_rect) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PushClipRect({p_min_x, p_min_y}, {p_max_x, p_max_y}, intersect_with_current_clip_rect);
+}
+
+void UIApi::UI_DrawList_PopClipRect(SPF_DrawList_Handle dl) {
+    if (dl) reinterpret_cast<ImDrawList*>(dl)->PopClipRect();
 }
 
 void UIApi::UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text) {
@@ -588,6 +633,12 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_Indent = &UIApi::UI_Indent;
   ui_api->UI_Unindent = &UIApi::UI_Unindent;
   ui_api->UI_SameLine = &UIApi::UI_SameLine;
+  ui_api->UI_BeginChild = &UIApi::UI_BeginChild;
+  ui_api->UI_EndChild = &UIApi::UI_EndChild;
+  ui_api->UI_SetCursorPos = &UIApi::UI_SetCursorPos;
+  ui_api->UI_GetCursorPos = &UIApi::UI_GetCursorPos;
+  ui_api->UI_IsWindowHovered = &UIApi::UI_IsWindowHovered;
+  ui_api->UI_GetIO_DeltaTime = &UIApi::UI_GetIO_DeltaTime;
   ui_api->UI_InputText = &UIApi::UI_InputText;
   ui_api->UI_InputInt = &UIApi::UI_InputInt;
   ui_api->UI_InputFloat = &UIApi::UI_InputFloat;
@@ -654,6 +705,10 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_DrawList_AddLine = &UIApi::UI_DrawList_AddLine;
   ui_api->UI_DrawList_AddRectFilled = &UIApi::UI_DrawList_AddRectFilled;
   ui_api->UI_DrawList_AddCircleFilled = &UIApi::UI_DrawList_AddCircleFilled;
+  ui_api->UI_DrawList_AddCircle = &UIApi::UI_DrawList_AddCircle;
+  ui_api->UI_DrawList_AddRectFilledMultiColor = &UIApi::UI_DrawList_AddRectFilledMultiColor;
+  ui_api->UI_DrawList_PushClipRect = &UIApi::UI_DrawList_PushClipRect;
+  ui_api->UI_DrawList_PopClipRect = &UIApi::UI_DrawList_PopClipRect;
   ui_api->UI_DrawList_AddText = &UIApi::UI_DrawList_AddText;
   ui_api->UI_DrawList_AddRect = &UIApi::UI_DrawList_AddRect;
   ui_api->UI_DrawList_AddQuadFilled = &UIApi::UI_DrawList_AddQuadFilled;

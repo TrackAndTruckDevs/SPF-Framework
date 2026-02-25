@@ -1407,4 +1407,90 @@ typedef struct SPF_UI_API {
      */
     bool (*UI_IsTransitionActive)();
 
+
+    // --- Layout & Interaction --- NEW v1.1.5 ---
+
+    /**
+     * @brief Begins a self-contained child window with its own scrolling and layout.
+     * @param str_id Unique string identifier for the child region.
+     * @param size_x, size_y Size of the child region. Use 0 for "fill available".
+     * @param border If true, draws a border around the child.
+     * @param flags Additional window flags.
+     * @return True if the child is visible.
+     */
+    bool (*UI_BeginChild)(const char* str_id, float size_x, float size_y, bool border, SPF_Window_Flags flags);
+
+    /**
+     * @brief Ends a child window. 
+     * @details Must be called after a successful call to `UI_BeginChild` to pop the window from the stack.
+     */
+    void (*UI_EndChild)();
+
+    /**
+     * @brief Sets the layout cursor position relative to the current window or child.
+     * @param x The new horizontal cursor position in pixels.
+     * @param y The new vertical cursor position in pixels.
+     */
+    void (*UI_SetCursorPos)(float x, float y);
+
+    /**
+     * @brief Gets the current layout cursor position relative to the current window or child.
+     * @param[out] out_x Pointer to a float to store the current horizontal cursor position.
+     * @param[out] out_y Pointer to a float to store the current vertical cursor position.
+     */
+    void (*UI_GetCursorPos)(float* out_x, float* out_y);
+
+    /**
+     * @brief Checks if the current window or child is hovered by the mouse.
+     * @return True if the mouse is currently over the window/child area and no other window is blocking it.
+     */
+    bool (*UI_IsWindowHovered)();
+
+
+    // --- DrawList Drawing Functions --- NEW v1.1.5 ---
+
+    /**
+     * @brief Adds an outlined circle to the draw list.
+     * @param dl The draw list handle.
+     * @param center_x, center_y The center of the circle.
+     * @param radius The radius of the circle.
+     * @param col The color of the outline.
+     * @param num_segments Number of segments to approximate the circle.
+     * @param thickness Thickness of the outline.
+     */
+    void (*UI_DrawList_AddCircle)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
+
+    /**
+     * @brief Adds a multi-color filled rectangle (gradient) to the draw list.
+     * @param dl The draw list handle.
+     * @param p_min_x, p_min_y Top-left corner.
+     * @param p_max_x, p_max_y Bottom-right corner.
+     * @param col_upr_left, col_upr_right, col_bot_right, col_bot_left Corner colors (packed U32).
+     */
+    void (*UI_DrawList_AddRectFilledMultiColor)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left);
+
+    /**
+     * @brief Pushes a clipping rectangle onto the draw list stack.
+     * @param dl The draw list handle.
+     * @param p_min_x, p_min_y Top-left corner.
+     * @param p_max_x, p_max_y Bottom-right corner.
+     * @param intersect_with_current_clip_rect If true, clips to the intersection of new and current area.
+     */
+    void (*UI_DrawList_PushClipRect)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, bool intersect_with_current_clip_rect);
+
+    /**
+     * @brief Pops the last clipping rectangle from the stack.
+     * @param dl The draw list handle.
+     */
+    void (*UI_DrawList_PopClipRect)(SPF_DrawList_Handle dl);
+
+
+    // --- Utilities --- NEW v1.1.5 ---
+
+    /**
+     * @brief Gets the time elapsed since the last frame in seconds.
+     * @return Delta time value.
+     */
+    float (*UI_GetIO_DeltaTime)();
+
 } SPF_UI_API;

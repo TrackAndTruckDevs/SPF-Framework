@@ -182,6 +182,8 @@ A helper function to convert an RGBA color from four floats (0.0-1.0) to a packe
 *   `UI_DrawList_AddQuadFilled(...)`: Adds a filled quadrilateral.
 *   `UI_DrawList_AddTriangleFilled(...)`: Adds a filled triangle.
 *   `UI_DrawList_AddCircleFilled(...)`: Adds a filled circle.
+*   `UI_DrawList_AddCircle(...)`: Adds an outlined circle (v1.1.5).
+*   `UI_DrawList_AddRectFilledMultiColor(...)`: Adds a rectangle with a multi-color gradient (v1.1.5).
 *   `UI_DrawList_AddBezierCubic(...)`: Adds a smooth cubic Bezier curve.
 *   `UI_DrawList_AddText(...)`: Draws text at a specific screen position, ignoring layout.
 
@@ -193,6 +195,10 @@ These functions allow you to build complex shapes.
 *   `UI_DrawList_PathStroke(...)`: Draws an outline of the constructed path.
 *   `UI_DrawList_PathFillConvex(...)`: Fills the constructed path (must be a convex shape).
 
+### Clipping (v1.1.5)
+*   `UI_DrawList_PushClipRect(...)`: Restricts subsequent drawing to a specific rectangular area.
+*   `UI_DrawList_PopClipRect(...)`: Restores the previous drawing area.
+
 ### Advanced Interaction
 *   `UI_GetMousePos(...)`: Gets the absolute screen coordinates of the mouse cursor.
 *   `UI_GetMouseDragDelta(...)`: Gets how far the mouse has been dragged since the button was clicked.
@@ -201,7 +207,23 @@ These functions allow you to build complex shapes.
 *   `UI_IsMouseReleased(...)`: Checks if a mouse button was released this frame.
 *   `UI_IsMouseDoubleClicked(...)`: Checks for a double-click.
 *   `UI_GetMouseWheel()`: Gets the mouse wheel's vertical scroll value for this frame.
+*   `UI_IsWindowHovered()`: Checks if the current window or child is hovered by the mouse (v1.1.5).
 *   `UI_SetMouseBlockState(bool axes, bool buttons, bool wheel)`: Programmatically blocks physical mouse input from reaching the game. This is useful for custom animations or interaction modes where you want to prevent the game camera or controls from reacting to the mouse.
+
+# Layout & Containers (v1.1.5)
+These functions allow for creating nested regions and managing the layout flow.
+
+---
+**`bool UI_BeginChild(const char* str_id, float size_x, float size_y, bool border, SPF_Window_Flags flags)`**
+Begins a self-contained child region with its own scrolling and layout.
+* `str_id`: Unique identifier for the region.
+* `size_x`, `size_y`: Size of the region. Use `0` to fill available space.
+* `border`: If `true`, a border is drawn around the area.
+* `flags`: Optional window flags.
+
+---
+**`void UI_EndChild()`**
+Ends the current child region.
 
 # Layout & Positioning API
 These functions provide information about the current window and layout state, allowing for precise placement of custom elements.
@@ -210,6 +232,7 @@ These functions provide information about the current window and layout state, a
 *   `UI_GetWindowPos(...)` / `UI_GetWindowSize(...)`: Return the position and size of the current window.
 *   `UI_GetCursorScreenPos()`: Returns the absolute screen position where the next widget will be drawn.
 *   `UI_SetCursorScreenPos(...)`: Manually sets the absolute screen position for the next widget.
+*   `UI_GetCursorPos(...)` / `UI_SetCursorPos(...)`: Get or set the layout cursor position relative to the current window/child (v1.1.5).
 *   `UI_GetItemRectMin(...)` / `UI_GetItemRectMax(...)` / `UI_GetItemRectSize(...)`: Return the bounding box (top-left corner, bottom-right corner) and size of the previously drawn widget.
 
 # Notification System
@@ -289,6 +312,9 @@ Essential for creating complex widgets or widgets in loops to avoid ID conflicts
 ### Clipboard Management
 *   `UI_GetClipboardText()`: Returns the contents of the system clipboard as a string.
 *   `UI_SetClipboardText(const char* text)`: Sets the system clipboard to the given string.
+
+### Frame Timing (v1.1.5)
+*   `UI_GetIO_DeltaTime()`: Returns the time elapsed since the last frame in seconds. Essential for frame-rate independent animations.
 
 ### Font Management
 *   `UI_GetFont(const char* font_key)`: Retrieves an opaque handle to a font loaded by the framework (e.g., "bold", "h1").

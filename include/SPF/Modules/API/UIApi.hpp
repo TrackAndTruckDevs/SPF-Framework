@@ -30,6 +30,12 @@ class UIApi {
   static void UI_Indent(float indent_w);
   static void UI_Unindent(float indent_w);
   static void UI_SameLine(float offset_from_start_x, float spacing);
+  static bool UI_BeginChild(const char* str_id, float size_x, float size_y, bool border, SPF_Window_Flags flags);
+  static void UI_EndChild();
+  static void UI_SetCursorPos(float x, float y);
+  static void UI_GetCursorPos(float* out_x, float* out_y);
+  static bool UI_IsWindowHovered();
+  static float UI_GetIO_DeltaTime();
   static bool UI_InputText(const char* label, char* buf, size_t buf_size);
   static bool UI_InputInt(const char* label, int* v, int step, int step_fast, int flags);
   static bool UI_InputFloat(const char* label, float* v, float step, float step_fast, const char* format, int flags);
@@ -96,6 +102,10 @@ class UIApi {
   static void UI_DrawList_AddLine(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
   static void UI_DrawList_AddRectFilled(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding);
   static void UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+  static void UI_DrawList_AddCircle(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
+  static void UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left);
+  static void UI_DrawList_PushClipRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, bool intersect_with_current_clip_rect);
+  static void UI_DrawList_PopClipRect(SPF_DrawList_Handle dl);
   static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
   static void UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness);
   static void UI_DrawList_AddQuadFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
