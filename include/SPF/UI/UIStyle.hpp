@@ -24,6 +24,7 @@ namespace UI
         constexpr ImVec4 DARK_RED     = ImVec4(0.80f, 0.00f, 0.00f, 1.00f);
         constexpr ImVec4 PURPLE       = ImVec4(0.60f, 0.40f, 1.00f, 1.00f);
         constexpr ImVec4 LIGHT_BLUE   = ImVec4(0.20f, 0.60f, 1.00f, 1.00f);
+        constexpr ImVec4 SEPIA        = ImVec4(0.62f, 0.39f, 0.20f, 1.00f);
     }
 
     class Style

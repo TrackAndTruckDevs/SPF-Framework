@@ -153,6 +153,10 @@ class UIApi {
   // --- Notifications ---
   static void UI_ShowNotification(SPF_NotificationType type, const char* message);
 
+  // --- Transitions ---
+  static void UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color);
+  static bool UI_IsTransitionActive();
+
   // --- UI Window Management Trampolines (from PluginManager) ---
   static void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible);
   static bool UI_IsVisible(SPF_Window_Handle* handle);

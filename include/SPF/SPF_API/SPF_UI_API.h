@@ -112,6 +112,35 @@ typedef enum {
 } SPF_NotificationType;
 
 /**
+ * @enum SPF_TransitionType
+ * @brief Defines types of cinematic screen transitions.
+ */
+typedef enum {
+    SPF_TRANS_FADE,             /**< Simple fade in/out. */
+    SPF_TRANS_CROSS,            /**< Automatic 0-100-0 transition. */
+    SPF_TRANS_FLASH,            /**< Quick entry, slow fade out. */
+    SPF_TRANS_LETTERBOX,        /**< Cinematic black bars top/bottom. */
+    SPF_TRANS_WIPE_LEFT,        /**< Slide from right to left. */
+    SPF_TRANS_WIPE_RIGHT,       /**< Slide from left to right. */
+    SPF_TRANS_WIPE_TOP,         /**< Slide from bottom to top. */
+    SPF_TRANS_WIPE_BOTTOM,      /**< Slide from top to bottom. */
+    SPF_TRANS_SHUTTER_H,        /**< Two horizontal curtains closing to center. */
+    SPF_TRANS_SHUTTER_V,        /**< Two vertical curtains closing to center. */
+    SPF_TRANS_RADIAL            /**< Expanding/shrinking circle from center. */
+} SPF_TransitionType;
+
+/**
+ * @enum SPF_TransitionColor
+ * @brief Defines preset colors for transitions.
+ */
+typedef enum {
+    SPF_TRANS_COLOR_BLACK,      /**< Solid black (default). */
+    SPF_TRANS_COLOR_WHITE,      /**< Pure white (flash/dream). */
+    SPF_TRANS_COLOR_SEPIA,      /**< Old cinema / nostalgia. */
+    SPF_TRANS_COLOR_GRAY        /**< Neutral gray. */
+} SPF_TransitionColor;
+
+/**
  * @enum SPF_Font
  * @brief Available font styles for SPF UI elements.
  */
@@ -1361,5 +1390,21 @@ typedef struct SPF_UI_API {
      *       and cannot be overridden by individual plugins to ensure a consistent UX.
      */
     void (*UI_ShowNotification)(SPF_NotificationType type, const char* message);
+
+    /**
+     * @brief Plays a cinematic screen transition.
+     * 
+     * @param type The visual effect to use (Fade, Wipe, etc.).
+     * @param duration Total duration of the effect in seconds.
+     * @param reverse If true, plays the effect backwards (e.g. Fade From Black instead of To Black).
+     * @param color The color preset for the effect.
+     */
+    void (*UI_PlayTransition)(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color);
+
+    /**
+     * @brief Checks if a cinematic transition is currently playing.
+     * @return True if a transition is active.
+     */
+    bool (*UI_IsTransitionActive)();
 
 } SPF_UI_API;

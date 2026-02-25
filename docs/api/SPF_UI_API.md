@@ -238,6 +238,46 @@ if (ui->UI_Button("Save Project", 0, 0)) {
 }
 ```
 
+# Cinematic Transitions
+The framework includes a built-in system for playing professional, cinematic screen transitions. These are ideal for smoothing out camera switches, scene changes, or creating dramatic effects. Transitions are "fire-and-forget" and are rendered on top of all windows and the game itself.
+
+## API Reference
+
+---
+**`void UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color)`**
+Starts a cinematic screen transition.
+
+*   `type`: The visual effect to play. Available types:
+    *   `SPF_TRANS_FADE`: Simple opacity fade (0% to 100%).
+    *   `SPF_TRANS_CROSS`: Automatic transition that goes 0% -> 100% -> 0% (ideal for changing scenes).
+    *   `SPF_TRANS_FLASH`: Quick entry (20% of time) and slow fade out (80% of time).
+    *   `SPF_TRANS_LETTERBOX`: Cinematic black bars at the top and bottom.
+    *   `SPF_TRANS_WIPE_LEFT` / `RIGHT` / `TOP` / `BOTTOM`: A solid color "curtain" that slides across the screen.
+    *   `SPF_TRANS_SHUTTER_H` / `V`: Two curtains meeting in the center (horizontal or vertical).
+    *   `SPF_TRANS_RADIAL`: An expanding/shrinking circle from the center.
+*   `duration`: Total duration of the effect in seconds.
+*   `reverse`: If `true`, the effect is played backwards (e.g., Fade *From* color instead of *To* color).
+*   `color`: The color preset for the effect:
+    *   `SPF_TRANS_COLOR_BLACK`: Standard cinematic black.
+    *   `SPF_TRANS_COLOR_WHITE`: Bright flash or dream-like white.
+    *   `SPF_TRANS_COLOR_SEPIA`: Warm, nostalgic cinematic tone.
+    *   `SPF_TRANS_COLOR_GRAY`: Neutral gray.
+
+---
+**`bool UI_IsTransitionActive()`**
+Returns `true` if a transition is currently playing.
+
+### Example: Smooth Camera Switch
+```c
+if (ui->UI_Button("Switch Camera", 0, 0)) {
+    // Start a 1-second cross-fade through black
+    ui->UI_PlayTransition(SPF_TRANS_CROSS, 1.0f, false, SPF_TRANS_COLOR_BLACK);
+    
+    // The framework handles the animation automatically. 
+    // You would typically switch the camera logic here.
+}
+```
+
 # Miscellaneous Utilities
 
 ### ID Management

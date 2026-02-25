@@ -93,6 +93,16 @@ class UIManager : public Config::IConfigurable {
    */
   void ShowNotification(const std::string& message, int type);
 
+  /**
+   * @brief Starts a cinematic screen transition.
+   */
+  void PlayTransition(int type, float duration, bool reverse, int color);
+
+  /**
+   * @brief Checks if a transition is currently playing.
+   */
+  bool IsTransitionActive() const { return m_activeTransition.active; }
+
   // --- IConfigurable Implementation ---
   bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;
 
@@ -108,7 +118,20 @@ class UIManager : public Config::IConfigurable {
   void ShutdownImGui();
   void DestroyWindowsForOwner(const std::string& owner);
 
+  void ProcessTransitions();
+
  private:
+  struct TransitionState {
+    int type = 0;
+    int colorPreset = 0;
+    float duration = 0.0f;
+    float startTime = 0.0f;
+    bool reverse = false;
+    bool active = false;
+  };
+
+  TransitionState m_activeTransition;
+
   Events::EventManager* m_eventManager = nullptr;
   Input::InputManager* m_inputManager = nullptr;
   Config::IConfigService* m_configService = nullptr;

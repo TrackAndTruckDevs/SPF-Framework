@@ -1593,6 +1593,62 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
             "The progress bar at the bottom should still be visible and correctly timed. "
             "Markdown elements like `code blocks` or **bold headers** should also be rendered correctly within this space.");
     }
+
+    ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, "Screen Transition API Test");
+    ui->UI_TextWrapped("Test the cinematic screen transitions implemented in the framework.");
+
+    if (ui->UI_Button("Fade To Black (2s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_FADE, 2.0f, false, SPF_TRANS_COLOR_BLACK);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Fade From Black (2s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_FADE, 2.0f, true, SPF_TRANS_COLOR_BLACK);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Cross Black (3s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_CROSS, 3.0f, false, SPF_TRANS_COLOR_BLACK);
+    }
+
+    if (ui->UI_Button("Fade To White (1s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_FADE, 1.0f, false, SPF_TRANS_COLOR_WHITE);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Flash White (0.5s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_FLASH, 0.5f, false, SPF_TRANS_COLOR_WHITE);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Cross White (2s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_CROSS, 2.0f, false, SPF_TRANS_COLOR_WHITE);
+    }
+
+    if (ui->UI_Button("Letterbox IN (1.5s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_LETTERBOX, 1.5f, false, SPF_TRANS_COLOR_BLACK);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Letterbox OUT (1.5s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_LETTERBOX, 1.5f, true, SPF_TRANS_COLOR_BLACK);
+    }
+
+    if (ui->UI_Button("Wipe Right (Gray, 1s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_WIPE_RIGHT, 1.0f, false, SPF_TRANS_COLOR_GRAY);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Wipe Down (Sepia, 1s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_WIPE_BOTTOM, 1.0f, false, SPF_TRANS_COLOR_SEPIA);
+    }
+
+    if (ui->UI_Button("Shutter H (2s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_SHUTTER_H, 2.0f, false, SPF_TRANS_COLOR_BLACK);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Shutter V (2s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_SHUTTER_V, 2.0f, false, SPF_TRANS_COLOR_BLACK);
+    }
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button("Radial (3s)", 0, 0)) {
+        ui->UI_PlayTransition(SPF_TRANS_RADIAL, 3.0f, false, SPF_TRANS_COLOR_BLACK);
+    }
     
     // 4. Clean up the style handles
     ui->UI_Style_Destroy(h1_style);

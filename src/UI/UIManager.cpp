@@ -244,6 +244,117 @@ void UIManager::ShowNotification(const std::string& message, int type) {
   }
 }
 
+void UIManager::PlayTransition(int type, float duration, bool reverse, int color) {
+    m_activeTransition.type = type;
+    m_activeTransition.duration = (duration > 0.0f) ? duration : 0.001f;
+    m_activeTransition.reverse = reverse;
+    m_activeTransition.colorPreset = color;
+    m_activeTransition.startTime = static_cast<float>(ImGui::GetTime());
+    m_activeTransition.active = true;
+}
+
+void UIManager::ProcessTransitions() {
+    if (!m_activeTransition.active) return;
+
+    float currentTime = static_cast<float>(ImGui::GetTime());
+    float elapsed = currentTime - m_activeTransition.startTime;
+    float progress = elapsed / m_activeTransition.duration;
+
+    if (progress >= 1.0f) {
+        m_activeTransition.active = false;
+        // Even if finished, we might want to stay at 100% for one frame 
+        // but usually fire-and-forget ends here.
+        return; 
+    }
+
+    ImDrawList* drawList = ImGui::GetForegroundDrawList();
+    if (!drawList) return;
+
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImVec2 p_min = viewport->Pos;
+    ImVec2 p_max = { viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y };
+    float w = viewport->Size.x;
+    float h = viewport->Size.y;
+
+    // Determine Base Color using style presets
+    ImVec4 col = Colors::BLACK; 
+    switch (m_activeTransition.colorPreset) {
+        case 1: col = Colors::WHITE; break; // SPF_TRANS_COLOR_WHITE
+        case 2: col = Colors::SEPIA; break; // SPF_TRANS_COLOR_SEPIA
+        case 3: col = Colors::GRAY;  break; // SPF_TRANS_COLOR_GRAY
+    }
+
+    float alpha = 1.0f;
+    
+    // Adjust progress if reversed
+    float t = m_activeTransition.reverse ? (1.0f - progress) : progress;
+
+    switch (m_activeTransition.type) {
+        case 0: // SPF_TRANS_FADE
+            alpha = t;
+            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+            break;
+
+        case 1: // SPF_TRANS_CROSS (0 -> 100 -> 0)
+            alpha = (progress < 0.5f) ? (progress * 2.0f) : (1.0f - (progress - 0.5f) * 2.0f);
+            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+            break;
+
+        case 2: // SPF_TRANS_FLASH (Fast in, slow out)
+            if (progress < 0.2f) alpha = progress / 0.2f;
+            else alpha = 1.0f - (progress - 0.2f) / 0.8f;
+            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+            break;
+
+        case 3: // SPF_TRANS_LETTERBOX
+        {
+            float barHeight = (h * 0.12f) * t;
+            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + barHeight}, ImGui::ColorConvertFloat4ToU32(col));
+            drawList->AddRectFilled({p_min.x, p_max.y - barHeight}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+        }
+
+        case 4: // SPF_TRANS_WIPE_LEFT (Right to Left)
+            drawList->AddRectFilled({p_max.x - w * t, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+
+        case 5: // SPF_TRANS_WIPE_RIGHT (Left to Right)
+            drawList->AddRectFilled(p_min, {p_min.x + w * t, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+
+        case 6: // SPF_TRANS_WIPE_TOP (Bottom to Top)
+            drawList->AddRectFilled({p_min.x, p_max.y - h * t}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+
+        case 7: // SPF_TRANS_WIPE_BOTTOM (Top to Bottom)
+            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + h * t}, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+
+        case 8: // SPF_TRANS_SHUTTER_H
+        {
+            float halfW = (w / 2.0f) * t;
+            drawList->AddRectFilled(p_min, {p_min.x + halfW, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
+            drawList->AddRectFilled({p_max.x - halfW, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+        }
+
+        case 9: // SPF_TRANS_SHUTTER_V
+        {
+            float halfH = (h / 2.0f) * t;
+            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + halfH}, ImGui::ColorConvertFloat4ToU32(col));
+            drawList->AddRectFilled({p_min.x, p_max.y - halfH}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+            break;
+        }
+
+        case 10: // SPF_TRANS_RADIAL
+        {
+            float maxRadius = sqrtf(w*w + h*h) / 2.0f;
+            drawList->AddCircleFilled({p_min.x + w/2.0f, p_min.y + h/2.0f}, maxRadius * t, ImGui::ColorConvertFloat4ToU32(col), 64);
+            break;
+        }
+    }
+}
+
 void UIManager::ToggleMouseOverridden() {
   auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"));
   const bool isShellVisible = mainWindow && mainWindow->IsVisible();
@@ -516,6 +627,8 @@ void UIManager::RenderAll() {
       }
     }
   }
+
+  ProcessTransitions();
 
   m_wasShellVisibleLastFrame = isShellVisible;
 }

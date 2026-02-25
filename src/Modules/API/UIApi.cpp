@@ -551,6 +551,14 @@ void UIApi::UI_ShowNotification(SPF_NotificationType type, const char* message) 
     UIManager::GetInstance().ShowNotification(message, static_cast<int>(type));
 }
 
+void UIApi::UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color) {
+    UIManager::GetInstance().PlayTransition(static_cast<int>(type), duration, reverse, static_cast<int>(color));
+}
+
+bool UIApi::UI_IsTransitionActive() {
+    return UIManager::GetInstance().IsTransitionActive();
+}
+
 void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   if (!ui_api) return;
 
@@ -701,6 +709,10 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
 
   // Notifications
   ui_api->UI_ShowNotification = &UIApi::UI_ShowNotification;
+
+  // Transitions
+  ui_api->UI_PlayTransition = &UIApi::UI_PlayTransition;
+  ui_api->UI_IsTransitionActive = &UIApi::UI_IsTransitionActive;
 }
 }  // namespace Modules::API
 SPF_NS_END
