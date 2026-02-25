@@ -1611,4 +1611,14 @@ typedef struct SPF_UI_API {
      */
     void (*UI_DrawList_AddTextWithFont)(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text);
 
+    /**
+     * @brief Calculates the size of a text string with a specific font and size (v1.1.5).
+     * @param font The font style to use.
+     * @param font_size The font size in pixels.
+     * @param text The text string to measure.
+     * @param[out] out_w Pointer to store the calculated width.
+     * @param[out] out_h Pointer to store the calculated height.
+     */
+    void (*UI_CalcTextSizeWithFont)(SPF_Font font, float font_size, const char* text, float* out_w, float* out_h);
+
 } SPF_UI_API;

@@ -240,6 +240,7 @@ A helper function to convert an RGBA color from four floats (0.0-1.0) to a packe
 *   `UI_DrawList_AddBezierCubic(...)`: Adds a smooth cubic Bezier curve.
 *   `UI_DrawList_AddText(...)`: Draws text at a specific screen position using the default font, ignoring layout.
 *   `UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text)`: Draws text at a specific screen position using a chosen font style and size (v1.1.5). Ideal for custom widgets and icons.
+*   `UI_CalcTextSizeWithFont(SPF_Font font, float font_size, const char* text, float* out_w, float* out_h)`: Calculates the dimensions of a text string using a specific font style and size (v1.1.5). Essential for precise layout and centering.
 *   `UI_Dummy(float width, float height)`: Adds an empty invisible element of a specific size. Useful for reserving space or expanding window boundaries (v1.1.5).
 
 ### Path & Polyline Functions

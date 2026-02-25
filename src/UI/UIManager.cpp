@@ -697,16 +697,28 @@ void UIManager::InitializeImGui() {
   logger->Info("Successfully merged CJK font into the bold font.");
 
   m_fonts["italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansItalic_compressed_data, Font_NotoSansItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
-  logger->Info("Successfully loaded italic font (NotoSans-Italic) from memory.");
+  // Merge Font Awesome icons
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  logger->Info("Successfully loaded italic font (NotoSans-Italic) and merged icons.");
 
   m_fonts["bold_italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansBoldItalic_compressed_data, Font_NotoSansBoldItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
-  logger->Info("Successfully loaded bold-italic font (NotoSans-BoldItalic) from memory.");
+  // Merge Font Awesome icons
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  logger->Info("Successfully loaded bold-italic font (NotoSans-BoldItalic) and merged icons.");
 
   m_fonts["medium"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
-  logger->Info("Successfully loaded medium font (NotoSans-Medium) from memory.");
+  // Merge Font Awesome icons into the medium font
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  logger->Info("Successfully loaded medium font (NotoSans-Medium) and merged icons from memory.");
 
   m_fonts["medium_italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMediumItalic_compressed_data, Font_NotoSansMediumItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
-  logger->Info("Successfully loaded medium-italic font (NotoSans-MediumItalic) from memory.");
+  // Merge Font Awesome icons
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  logger->Info("Successfully loaded medium-italic font (NotoSans-MediumItalic) and merged icons.");
 
   // 4. Heading Fonts (Medium)
   m_fonts["h1"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 24.0f, nullptr, glyph_ranges_cyrillic);
@@ -725,7 +737,10 @@ void UIManager::InitializeImGui() {
 
   // 5. Monospaced Font
   m_fonts["monospace"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_RobotoMonoRegular_compressed_data, Font_RobotoMonoRegular_compressed_size, 17.0f, nullptr, io.Fonts->GetGlyphRangesDefault());
-  logger->Info("Successfully loaded monospaced font (RobotoMono-Regular) from memory.");
+  // Merge Font Awesome icons
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 15.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 15.0f, &icon_config_fab, icon_ranges_fab);
+  logger->Info("Successfully loaded monospaced font (RobotoMono-Regular) and merged icons.");
 }
 
 void UIManager::ShutdownImGui() {
