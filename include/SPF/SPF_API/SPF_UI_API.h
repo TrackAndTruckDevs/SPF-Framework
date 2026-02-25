@@ -73,9 +73,11 @@ typedef struct ImGuiPayload* SPF_Payload_Handle;
 typedef enum
 {
     SPF_STYLE_VAR_ALPHA,                // float,     Alpha
+    SPF_STYLE_VAR_DISABLED_ALPHA,       // float,     DisabledAlpha
     SPF_STYLE_VAR_WINDOW_PADDING,       // ImVec2,    WindowPadding
     SPF_STYLE_VAR_WINDOW_ROUNDING,      // float,     WindowRounding
     SPF_STYLE_VAR_WINDOW_BORDERSIZE,    // float,     WindowBorderSize
+    SPF_STYLE_VAR_WINDOW_MIN_SIZE,      // ImVec2,    WindowMinSize
     SPF_STYLE_VAR_WINDOW_TITLE_ALIGN,   // ImVec2,    WindowTitleAlign
     SPF_STYLE_VAR_CHILD_ROUNDING,       // float,     ChildRounding
     SPF_STYLE_VAR_CHILD_BORDERSIZE,     // float,     ChildBorderSize
@@ -87,15 +89,31 @@ typedef enum
     SPF_STYLE_VAR_ITEM_SPACING,         // ImVec2,    ItemSpacing
     SPF_STYLE_VAR_ITEM_INNER_SPACING,   // ImVec2,    ItemInnerSpacing
     SPF_STYLE_VAR_INDENT_SPACING,       // float,     IndentSpacing
+    SPF_STYLE_VAR_CELL_PADDING,         // ImVec2,    CellPadding
     SPF_STYLE_VAR_SCROLLBAR_SIZE,       // float,     ScrollbarSize
     SPF_STYLE_VAR_SCROLLBAR_ROUNDING,   // float,     ScrollbarRounding
+    SPF_STYLE_VAR_SCROLLBAR_PADDING,    // float,     ScrollbarPadding
     SPF_STYLE_VAR_GRAB_MINSIZE,         // float,     GrabMinSize
     SPF_STYLE_VAR_GRAB_ROUNDING,        // float,     GrabRounding
+    SPF_STYLE_VAR_IMAGE_ROUNDING,       // float,     ImageRounding
+    SPF_STYLE_VAR_IMAGE_BORDERSIZE,     // float,     ImageBorderSize
     SPF_STYLE_VAR_TAB_ROUNDING,         // float,     TabRounding
     SPF_STYLE_VAR_TAB_BORDERSIZE,       // float,     TabBorderSize
+    SPF_STYLE_VAR_TAB_MIN_WIDTH_BASE,   // float,     TabMinWidthBase
+    SPF_STYLE_VAR_TAB_MIN_WIDTH_SHRINK, // float,     TabMinWidthShrink
+    SPF_STYLE_VAR_TAB_BAR_BORDERSIZE,   // float,     TabBarBorderSize
+    SPF_STYLE_VAR_TAB_BAR_OVERLINE_SIZE,// float,     TabBarOverlineSize
+    SPF_STYLE_VAR_TABLE_ANGLED_HEADERS_ANGLE, // float TableAngledHeadersAngle
+    SPF_STYLE_VAR_TABLE_ANGLED_HEADERS_TEXT_ALIGN, // ImVec2 TableAngledHeadersTextAlign
+    SPF_STYLE_VAR_TREE_LINES_SIZE,      // float,     TreeLinesSize
+    SPF_STYLE_VAR_TREE_LINES_ROUNDING,  // float,     TreeLinesRounding
     SPF_STYLE_VAR_BUTTON_TEXT_ALIGN,    // ImVec2,    ButtonTextAlign
     SPF_STYLE_VAR_SELECTABLE_TEXT_ALIGN,// ImVec2,    SelectableTextAlign
-    SPF_STYLE_VAR_COUNT
+    SPF_STYLE_VAR_SEPARATOR_TEXT_BORDERSIZE, // float, SeparatorTextBorderSize
+    SPF_STYLE_VAR_SEPARATOR_TEXT_ALIGN, // ImVec2,    SeparatorTextAlign
+    SPF_STYLE_VAR_SEPARATOR_TEXT_PADDING, // ImVec2,  SeparatorTextPadding
+    SPF_STYLE_VAR_DOCKING_SEPARATOR_SIZE, // float,   DockingSeparatorSize
+    SPF_STYLE_VAR_COUNT                 // Total number of style variables.
 } SPF_StyleVar;
 
 /**
@@ -245,6 +263,7 @@ typedef enum {
     SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE = 1 << 5, // Auto-resize window to fit contents every frame.
     SPF_WINDOW_FLAG_MENU_BAR = 1 << 6,           // The window has a menu bar.
     SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR = 1 << 7, // Allow horizontal scrollbar.
+    SPF_WINDOW_FLAG_NO_BACKGROUND = 1 << 8,      // Disable the window background.
 } SPF_Window_Flags;
 
 /**

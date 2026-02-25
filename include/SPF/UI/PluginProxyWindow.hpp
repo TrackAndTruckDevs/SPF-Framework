@@ -54,6 +54,7 @@ class PluginProxyWindow : public BaseWindow {
     if (m_spfFlags & SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE) imFlags |= ImGuiWindowFlags_AlwaysAutoResize;
     if (m_spfFlags & SPF_WINDOW_FLAG_MENU_BAR) imFlags |= ImGuiWindowFlags_MenuBar;
     if (m_spfFlags & SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR) imFlags |= ImGuiWindowFlags_HorizontalScrollbar;
+    if (m_spfFlags & SPF_WINDOW_FLAG_NO_BACKGROUND) imFlags |= ImGuiWindowFlags_NoBackground;
 
     return imFlags;
   }

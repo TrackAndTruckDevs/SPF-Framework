@@ -197,6 +197,18 @@ Retrieves a handle to one of your windows, which can be used to control it progr
 **`void UI_SetVisibility(SPF_Window_Handle* handle, bool isVisible)`** and **`bool UI_IsVisible(SPF_Window_Handle* handle)`**
 Gets or sets the visibility of a window using its handle.
 
+### Window Flags
+The following flags can be used with `UI_RegisterDrawCallbackWithFlags` to customize window behavior:
+* `SPF_WINDOW_FLAG_NO_TITLE`: Disables the title bar.
+* `SPF_WINDOW_FLAG_NO_RESIZE`: Disables user resizing.
+* `SPF_WINDOW_FLAG_NO_MOVE`: Disables user moving the window.
+* `SPF_WINDOW_FLAG_NO_SCROLLBAR`: Disables the scrollbar.
+* `SPF_WINDOW_FLAG_NO_COLLAPSE`: Disables the collapse button.
+* `SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE`: Window resizes to fit its content every frame.
+* `SPF_WINDOW_FLAG_MENU_BAR`: Enables a menu bar area.
+* `SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR`: Enables horizontal scrolling.
+* `SPF_WINDOW_FLAG_NO_BACKGROUND`: Completely disables the window background and borders, creating a transparent canvas (v1.1.5).
+
 # Custom Drawing & Interaction API
 To create fully custom interactive widgets, you need access to low-level drawing primitives and detailed input state. This section of the API provides that functionality.
 
