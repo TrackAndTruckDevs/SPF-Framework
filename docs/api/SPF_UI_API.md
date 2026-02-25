@@ -227,6 +227,7 @@ A helper function to convert an RGBA color from four floats (0.0-1.0) to a packe
 *   `UI_DrawList_AddRectFilledMultiColor(...)`: Adds a rectangle with a multi-color gradient (v1.1.5).
 *   `UI_DrawList_AddBezierCubic(...)`: Adds a smooth cubic Bezier curve.
 *   `UI_DrawList_AddText(...)`: Draws text at a specific screen position, ignoring layout.
+*   `UI_Dummy(float width, float height)`: Adds an empty invisible element of a specific size. Useful for reserving space or expanding window boundaries (v1.1.5).
 
 ### Path & Polyline Functions
 These functions allow you to build complex shapes.

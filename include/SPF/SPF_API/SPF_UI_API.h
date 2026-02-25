@@ -1573,4 +1573,11 @@ typedef struct SPF_UI_API {
      */
     bool (*UI_IsMouseOverridden)();
 
+    /**
+     * @brief Adds an empty invisible element of a specific size.
+     * @details Used to reserve space or expand window boundaries.
+     * @param width, height Size of the dummy element.
+     */
+    void (*UI_Dummy)(float width, float height);
+
 } SPF_UI_API;
