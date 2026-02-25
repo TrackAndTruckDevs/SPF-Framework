@@ -351,6 +351,32 @@ void UIApi::UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y
     if (dl && text) reinterpret_cast<ImDrawList*>(dl)->AddText({pos_x, pos_y}, col, text);
 }
 
+void UIApi::UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text) {
+    if (!dl || !text) return;
+
+    const char* fontName = "regular";
+    switch (font) {
+        case SPF_FONT_BOLD: fontName = "bold"; break;
+        case SPF_FONT_ITALIC: fontName = "italic"; break;
+        case SPF_FONT_BOLD_ITALIC: fontName = "bold_italic"; break;
+        case SPF_FONT_MEDIUM: fontName = "medium"; break;
+        case SPF_FONT_MEDIUM_ITALIC: fontName = "medium_italic"; break;
+        case SPF_FONT_MONOSPACE: fontName = "monospace"; break;
+        case SPF_FONT_H1: fontName = "h1"; break;
+        case SPF_FONT_H2: fontName = "h2"; break;
+        case SPF_FONT_H3: fontName = "h3"; break;
+        default: fontName = "regular"; break;
+    }
+
+    ImFont* imFont = UI::UIManager::GetInstance().GetFont(fontName);
+    if (imFont) {
+        reinterpret_cast<ImDrawList*>(dl)->AddText(imFont, font_size, {pos_x, pos_y}, col, text);
+    } else {
+        // Fallback to default
+        reinterpret_cast<ImDrawList*>(dl)->AddText({pos_x, pos_y}, col, text);
+    }
+}
+
 void UIApi::UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, float thickness) {
     if (dl) reinterpret_cast<ImDrawList*>(dl)->AddRect({p_min_x, p_min_y}, {p_max_x, p_max_y}, col, rounding, 0, thickness);
 }
@@ -654,6 +680,7 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_SetMouseOverride = &UIApi::UI_SetMouseOverride;
   ui_api->UI_IsMouseOverridden = &UIApi::UI_IsMouseOverridden;
   ui_api->UI_Dummy = &UIApi::UI_Dummy;
+  ui_api->UI_DrawList_AddTextWithFont = &UIApi::UI_DrawList_AddTextWithFont;
   ui_api->UI_InputText = &UIApi::UI_InputText;
   ui_api->UI_InputInt = &UIApi::UI_InputInt;
   ui_api->UI_InputFloat = &UIApi::UI_InputFloat;

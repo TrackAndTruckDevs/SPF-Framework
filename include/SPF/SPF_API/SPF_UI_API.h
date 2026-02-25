@@ -1595,8 +1595,20 @@ typedef struct SPF_UI_API {
     /**
      * @brief Adds an empty invisible element of a specific size.
      * @details Used to reserve space or expand window boundaries.
-     * @param width, height Size of the dummy element.
+     * @param width The width of the dummy area.
+     * @param height The height of the dummy area.
      */
     void (*UI_Dummy)(float width, float height);
+
+    /**
+     * @brief Adds text to the draw list using a specific font and size (v1.1.5).
+     * @param dl The draw list handle.
+     * @param font The font style to use (e.g., SPF_FONT_MEDIUM).
+     * @param font_size The font size in pixels.
+     * @param pos_x, pos_y The top-left screen position.
+     * @param col The color as a packed 32-bit integer.
+     * @param text The text to draw.
+     */
+    void (*UI_DrawList_AddTextWithFont)(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text);
 
 } SPF_UI_API;
