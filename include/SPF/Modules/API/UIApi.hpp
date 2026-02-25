@@ -36,6 +36,8 @@ class UIApi {
   static void UI_GetCursorPos(float* out_x, float* out_y);
   static bool UI_IsWindowHovered();
   static float UI_GetIO_DeltaTime();
+  static void UI_SetMouseOverride(bool overridden);
+  static bool UI_IsMouseOverridden();
   static bool UI_InputText(const char* label, char* buf, size_t buf_size);
   static bool UI_InputInt(const char* label, int* v, int step, int step_fast, int flags);
   static bool UI_InputFloat(const char* label, float* v, float step, float step_fast, const char* format, int flags);

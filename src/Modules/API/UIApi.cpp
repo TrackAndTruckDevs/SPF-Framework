@@ -132,6 +132,14 @@ float UIApi::UI_GetIO_DeltaTime() {
     return ImGui::GetIO().DeltaTime;
 }
 
+void UIApi::UI_SetMouseOverride(bool overridden) {
+    UI::UIManager::GetInstance().SetMouseOverride(overridden);
+}
+
+bool UIApi::UI_IsMouseOverridden() {
+    return UI::UIManager::GetInstance().IsMouseOverridden();
+}
+
 bool UIApi::UI_InputText(const char* label, char* buf, size_t buf_size) { return label && buf ? ImGui::InputText(label, buf, buf_size) : false; }
 bool UIApi::UI_InputInt(const char* label, int* v, int step, int step_fast, int flags) { return label && v ? ImGui::InputInt(label, v, step, step_fast, flags) : false; }
 bool UIApi::UI_InputFloat(const char* label, float* v, float step, float step_fast, const char* format, int flags) {
@@ -639,6 +647,8 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_GetCursorPos = &UIApi::UI_GetCursorPos;
   ui_api->UI_IsWindowHovered = &UIApi::UI_IsWindowHovered;
   ui_api->UI_GetIO_DeltaTime = &UIApi::UI_GetIO_DeltaTime;
+  ui_api->UI_SetMouseOverride = &UIApi::UI_SetMouseOverride;
+  ui_api->UI_IsMouseOverridden = &UIApi::UI_IsMouseOverridden;
   ui_api->UI_InputText = &UIApi::UI_InputText;
   ui_api->UI_InputInt = &UIApi::UI_InputInt;
   ui_api->UI_InputFloat = &UIApi::UI_InputFloat;

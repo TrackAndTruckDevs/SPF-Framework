@@ -208,6 +208,8 @@ These functions allow you to build complex shapes.
 *   `UI_IsMouseDoubleClicked(...)`: Checks for a double-click.
 *   `UI_GetMouseWheel()`: Gets the mouse wheel's vertical scroll value for this frame.
 *   `UI_IsWindowHovered()`: Checks if the current window or child is hovered by the mouse (v1.1.5).
+*   `UI_SetMouseOverride(bool overridden)`: Programmatically enables or disables the mouse control override (v1.1.5). Useful for temporarily releasing mouse control to the game (e.g., during camera movement).
+*   `UI_IsMouseOverridden()`: Returns true if the mouse control is currently overridden (v1.1.5).
 *   `UI_SetMouseBlockState(bool axes, bool buttons, bool wheel)`: Programmatically blocks physical mouse input from reaching the game. This is useful for custom animations or interaction modes where you want to prevent the game camera or controls from reacting to the mouse.
 
 # Layout & Containers (v1.1.5)

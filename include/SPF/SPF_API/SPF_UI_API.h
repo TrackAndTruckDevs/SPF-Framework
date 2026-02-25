@@ -1493,4 +1493,17 @@ typedef struct SPF_UI_API {
      */
     float (*UI_GetIO_DeltaTime)();
 
+    /**
+     * @brief Programmatically overrides mouse control (v1.1.5).
+     * @details If set to true, it reverses the current mouse capture logic (e.g. gives mouse back to game even if UI is open).
+     * @param overridden True to enable override, false to disable.
+     */
+    void (*UI_SetMouseOverride)(bool overridden);
+
+    /**
+     * @brief Checks if mouse control is currently overridden (v1.1.5).
+     * @return True if overridden.
+     */
+    bool (*UI_IsMouseOverridden)();
+
 } SPF_UI_API;

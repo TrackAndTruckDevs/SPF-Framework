@@ -87,6 +87,8 @@ class UIManager : public Config::IConfigurable {
   void NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
 
   void ToggleMouseOverridden();
+  void SetMouseOverride(bool overridden) { m_isMouseControlOverridden = overridden; }
+  bool IsMouseOverridden() const { return m_isMouseControlOverridden; }
 
   /**
    * @brief Shows a framework-level notification.
