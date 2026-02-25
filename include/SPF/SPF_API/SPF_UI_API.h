@@ -99,6 +99,70 @@ typedef enum
 } SPF_StyleVar;
 
 /**
+ * @enum SPF_StyleColor
+ * @brief C-style enum mirroring ImGui's ImGuiCol_ enum for style colors.
+ */
+typedef enum
+{
+    SPF_COLOR_TEXT,
+    SPF_COLOR_TEXT_DISABLED,
+    SPF_COLOR_WINDOW_BG,              // Background of normal windows
+    SPF_COLOR_CHILD_BG,               // Background of child windows
+    SPF_COLOR_POPUP_BG,               // Background of popups, menus, tooltips windows
+    SPF_COLOR_BORDER,
+    SPF_COLOR_BORDER_SHADOW,
+    SPF_COLOR_FRAME_BG,               // Background of checkbox, radio button, plot, slider, text input
+    SPF_COLOR_FRAME_BG_HOVERED,
+    SPF_COLOR_FRAME_BG_ACTIVE,
+    SPF_COLOR_TITLE_BG,
+    SPF_COLOR_TITLE_BG_ACTIVE,
+    SPF_COLOR_TITLE_BG_COLLAPSED,
+    SPF_COLOR_MENU_BAR_BG,
+    SPF_COLOR_SCROLLBAR_BG,
+    SPF_COLOR_SCROLLBAR_GRAB,
+    SPF_COLOR_SCROLLBAR_GRAB_HOVERED,
+    SPF_COLOR_SCROLLBAR_GRAB_ACTIVE,
+    SPF_COLOR_CHECK_MARK,
+    SPF_COLOR_SLIDER_GRAB,
+    SPF_COLOR_SLIDER_GRAB_ACTIVE,
+    SPF_COLOR_BUTTON,
+    SPF_COLOR_BUTTON_HOVERED,
+    SPF_COLOR_BUTTON_ACTIVE,
+    SPF_COLOR_HEADER,                // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
+    SPF_COLOR_HEADER_HOVERED,
+    SPF_COLOR_HEADER_ACTIVE,
+    SPF_COLOR_SEPARATOR,
+    SPF_COLOR_SEPARATOR_HOVERED,
+    SPF_COLOR_SEPARATOR_ACTIVE,
+    SPF_COLOR_RESIZE_GRIP,           // Resize grip in lower-right corner of windows
+    SPF_COLOR_RESIZE_GRIP_HOVERED,
+    SPF_COLOR_RESIZE_GRIP_ACTIVE,
+    SPF_COLOR_TAB,                   // Tab* colors are used by the docking system
+    SPF_COLOR_TAB_HOVERED,
+    SPF_COLOR_TAB_ACTIVE,
+    SPF_COLOR_TAB_UNFOCUSED,
+    SPF_COLOR_TAB_UNFOCUSED_ACTIVE,
+    SPF_COLOR_DOCKING_PREVIEW,       // Preview overlay color when about to docking something
+    SPF_COLOR_DOCKING_EMPTY_BG,      // Background color for empty node (all tabs closed)
+    SPF_COLOR_PLOT_LINES,
+    SPF_COLOR_PLOT_LINES_HOVERED,
+    SPF_COLOR_PLOT_HISTOGRAM,
+    SPF_COLOR_PLOT_HISTOGRAM_HOVERED,
+    SPF_COLOR_TABLE_HEADER_BG,       // Table header background
+    SPF_COLOR_TABLE_BORDER_STRONG,   // Table outer and header borders (prefer using Alpha=1.0 here)
+    SPF_COLOR_TABLE_BORDER_LIGHT,    // Table inner borders (prefer using Alpha=1.0 here)
+    SPF_COLOR_TABLE_ROW_BG,          // Table row background (even rows)
+    SPF_COLOR_TABLE_ROW_BG_ALT,      // Table row background (odd rows)
+    SPF_COLOR_TEXT_SELECTED_BG,
+    SPF_COLOR_DRAG_DROP_TARGET,      // Video gameComp lingo: Desaturation
+    SPF_COLOR_NAV_HIGHLIGHT,         // Gamepad/Keyboard keyboard proximal display
+    SPF_COLOR_NAV_WINDOWING_HIGHLIGHT,
+    SPF_COLOR_NAV_WINDOWING_DIM_BG,  // Darken/clobber entire screen behind the windowing list
+    SPF_COLOR_MODAL_WINDOW_DIM_BG,   // Darken/clobber entire screen behind a modal window
+    SPF_COLOR_COUNT
+} SPF_StyleColor;
+
+/**
  * @enum SPF_NotificationType
  * @brief Categorizes framework notifications to determine their visual style (icon and color).
  */
@@ -771,10 +835,11 @@ typedef struct SPF_UI_API {
      * @brief Pushes a color onto the style stack.
      * @details Changes the color of subsequent widgets until `UI_PopStyleColor` is called.
      *          Each `UI_PushStyleColor` must be matched with a `UI_PopStyleColor`.
-     * @param im_gui_color_idx The index of the color variable to change (e.g., `ImGuiCol_Text`).
+     *          Prefer using the `SPF_StyleColor` enum for the `idx` parameter.
+     * @param idx The index of the color variable to change (from SPF_StyleColor).
      * @param r, g, b, a The new color components (0.0f to 1.0f).
      */
-    void (*UI_PushStyleColor)(int im_gui_color_idx, float r, float g, float b, float a);
+    void (*UI_PushStyleColor)(int idx, float r, float g, float b, float a);
 
     /**
      * @brief Pops `count` colors from the style stack.
@@ -787,20 +852,22 @@ typedef struct SPF_UI_API {
      * @brief Pushes a float style variable onto the style stack.
      * @details Changes a float-type style variable until `PopStyleVar` is called.
      *          Each `UI_PushStyleVarFloat` must be matched with a `PopStyleVar`.
-     * @param im_gui_stylevar_idx The index of the style variable to change (e.g., `ImGuiStyleVar_Alpha`).
+     *          Prefer using the `SPF_StyleVar` enum for the `idx` parameter.
+     * @param idx The index of the style variable to change (from SPF_StyleVar).
      * @param val The new float value.
      */
-    void (*UI_PushStyleVarFloat)(int im_gui_stylevar_idx, float val);
+    void (*UI_PushStyleVarFloat)(int idx, float val);
 
     /**
      * @brief Pushes a 2-element vector style variable onto the style stack.
      * @details Changes an ImVec2-type style variable until `UI_PopStyleVar` is called.
      *          Each `UI_PushStyleVarVec2` must be matched with a `UI_PopStyleVar`.
-     * @param im_gui_stylevar_idx The index of the style variable to change (e.g., `ImGuiStyleVar_WindowPadding`).
+     *          Prefer using the `SPF_StyleVar` enum for the `idx` parameter.
+     * @param idx The index of the style variable to change (from SPF_StyleVar).
      * @param val_x The X component of the new vector value.
      * @param val_y The Y component of the new vector value.
      */
-    void (*UI_PushStyleVarVec2)(int im_gui_stylevar_idx, float val_x, float val_y);
+    void (*UI_PushStyleVarVec2)(int idx, float val_x, float val_y);
 
     /**
      * @brief Pops `count` style variables from the style stack.

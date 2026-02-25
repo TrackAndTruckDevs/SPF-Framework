@@ -137,6 +137,47 @@ void DrawStylingExample(SPF_UI_API* ui, void* user_data) {
 }
 ```
 
+# Global Style Management (v1.1.5)
+In addition to individual text styling, the API allows for modifying global UI styles using a stack-based approach.
+
+## Style Enums
+The framework provides strongly-typed enums that mirror ImGui's internal style indices.
+
+### `SPF_StyleColor`
+Used with `UI_PushStyleColor`. Common values:
+* `SPF_COLOR_TEXT`: Main text color.
+* `SPF_COLOR_WINDOW_BG`: Window background (set Alpha to 0 for transparency).
+* `SPF_COLOR_BUTTON`: Default button background.
+* `SPF_COLOR_BUTTON_HOVERED` / `SPF_COLOR_BUTTON_ACTIVE`: Interactive states.
+
+### `SPF_StyleVar`
+Used with `UI_PushStyleVar...` functions. Common values:
+* `SPF_STYLE_VAR_ALPHA`: Global opacity.
+* `SPF_STYLE_VAR_WINDOW_ROUNDING`: Corner radius for windows.
+* `SPF_STYLE_VAR_FRAME_PADDING`: Internal padding for widgets.
+
+## API Reference (Style)
+
+---
+**`void UI_PushStyleColor(int idx, float r, float g, float b, float a)`**
+Pushes a color onto the style stack. Changes the color of subsequent widgets until `UI_PopStyleColor` is called. Prefer using `SPF_StyleColor` for the `idx`.
+
+---
+**`void UI_PopStyleColor(int count)`**
+Pops the specified number of colors from the stack, restoring previous values.
+
+---
+**`void UI_PushStyleVarFloat(int idx, float val)`**
+Pushes a float-type style variable (e.g., `SPF_STYLE_VAR_ALPHA`).
+
+---
+**`void UI_PushStyleVarVec2(int idx, float x, float y)`**
+Pushes a 2D vector style variable (e.g., `SPF_STYLE_VAR_WINDOW_PADDING`).
+
+---
+**`void UI_PopStyleVar(int count)`**
+Pops the specified number of style variables from the stack.
+
 ## Main Functions
 
 ---
