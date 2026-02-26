@@ -107,6 +107,8 @@ class UIApi {
   static void UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
   static void UI_DrawList_AddCircle(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
   static void UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left);
+  static void UI_DrawList_AddTriangleFilledMultiColor(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2, uint32_t col3);
+  static void UI_DrawList_AddCircleFilledMultiColor(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col_inner, uint32_t col_outer, int num_segments);
   static void UI_DrawList_PushClipRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, bool intersect_with_current_clip_rect);
   static void UI_DrawList_PopClipRect(SPF_DrawList_Handle dl);
   static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);

@@ -1595,6 +1595,34 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     }
 
     ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, "Custom Gradient API Test (v1.1.5)");
+    ui->UI_TextWrapped("Demonstrating multi-color primitives for advanced custom widgets.");
+
+    float canvas_x, canvas_y;
+    ui->UI_GetCursorScreenPos(&canvas_x, &canvas_y);
+    SPF_DrawList_Handle dl = ui->UI_GetWindowDrawList();
+
+    // 1. Multi-Color Triangle
+    uint32_t col_r = ui->UI_ColorConvertFloat4ToU32(1.0f, 0.0f, 0.0f, 1.0f);
+    uint32_t col_g = ui->UI_ColorConvertFloat4ToU32(0.0f, 1.0f, 0.0f, 1.0f);
+    uint32_t col_b = ui->UI_ColorConvertFloat4ToU32(0.0f, 0.0f, 1.0f, 1.0f);
+    ui->UI_DrawList_AddTriangleFilledMultiColor(dl, canvas_x + 50, canvas_y + 10, canvas_x + 10, canvas_y + 90, canvas_x + 90, canvas_y + 90, col_r, col_g, col_b);
+
+    // 2. Radial Gradient Circle
+    uint32_t col_white = ui->UI_ColorConvertFloat4ToU32(1.0f, 1.0f, 1.0f, 1.0f);
+    uint32_t col_gold = ui->UI_ColorConvertFloat4ToU32(1.0f, 0.84f, 0.0f, 1.0f);
+    ui->UI_DrawList_AddCircleFilledMultiColor(dl, canvas_x + 150, canvas_y + 50, 40.0f, col_white, col_gold, 32);
+
+    // 3. Multi-Color Rect (Linear Gradient)
+    uint32_t col_tl = ui->UI_ColorConvertFloat4ToU32(1.0f, 0.0f, 1.0f, 1.0f); // Magenta
+    uint32_t col_tr = ui->UI_ColorConvertFloat4ToU32(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
+    uint32_t col_br = ui->UI_ColorConvertFloat4ToU32(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
+    uint32_t col_bl = ui->UI_ColorConvertFloat4ToU32(0.0f, 0.0f, 0.0f, 1.0f); // Black
+    ui->UI_DrawList_AddRectFilledMultiColor(dl, canvas_x + 220, canvas_y + 10, canvas_x + 350, canvas_y + 90, col_tl, col_tr, col_br, col_bl);
+
+    ui->UI_Dummy(360, 100); // Reserve space for custom drawing
+
+    ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, "Screen Transition API Test");
     ui->UI_TextWrapped("Test the cinematic screen transitions implemented in the framework.");
 

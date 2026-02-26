@@ -1556,6 +1556,28 @@ typedef struct SPF_UI_API {
     void (*UI_DrawList_AddRectFilledMultiColor)(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left);
 
     /**
+     * @brief Adds a multi-color filled triangle (gradient) to the draw list.
+     * @param dl The draw list handle.
+     * @param p1_x, p1_y First vertex.
+     * @param p2_x, p2_y Second vertex.
+     * @param p3_x, p3_y Third vertex.
+     * @param col1, col2, col3 Colors at each vertex (packed U32).
+     */
+    void (*UI_DrawList_AddTriangleFilledMultiColor)(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2, uint32_t col3);
+
+    /**
+     * @brief Adds a multi-color filled circle (radial gradient) to the draw list.
+     * @details Renders a "fan" of triangles from the center to the edge.
+     * @param dl The draw list handle.
+     * @param center_x, center_y The center of the circle.
+     * @param radius The radius of the circle.
+     * @param col_inner The color at the center.
+     * @param col_outer The color at the edge.
+     * @param num_segments Number of segments (0 for auto-calculation).
+     */
+    void (*UI_DrawList_AddCircleFilledMultiColor)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col_inner, uint32_t col_outer, int num_segments);
+
+    /**
      * @brief Pushes a clipping rectangle onto the draw list stack.
      * @param dl The draw list handle.
      * @param p_min_x, p_min_y Top-left corner.

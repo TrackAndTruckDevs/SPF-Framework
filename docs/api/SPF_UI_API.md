@@ -234,7 +234,9 @@ A helper function to convert an RGBA color from four floats (0.0-1.0) to a packe
 *   `UI_DrawList_AddRectFilled(...)`: Adds a filled rectangle.
 *   `UI_DrawList_AddQuadFilled(...)`: Adds a filled quadrilateral.
 *   `UI_DrawList_AddTriangleFilled(...)`: Adds a filled triangle.
+*   `UI_DrawList_AddTriangleFilledMultiColor(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2, uint32_t col3)`: Adds a filled triangle with a different color at each vertex, creating a smooth linear gradient (v1.1.6).
 *   `UI_DrawList_AddCircleFilled(...)`: Adds a filled circle.
+*   `UI_DrawList_AddCircleFilledMultiColor(SPF_DrawList_Handle dl, float cx, float cy, float radius, uint32_t col_inner, uint32_t col_outer, int num_segments)`: Adds a filled circle with a radial gradient, transitioning from `col_inner` at the center to `col_outer` at the edge (v1.1.6).
 *   `UI_DrawList_AddCircle(...)`: Adds an outlined circle (v1.1.5).
 *   `UI_DrawList_AddRectFilledMultiColor(...)`: Adds a rectangle with a multi-color gradient (v1.1.5).
 *   `UI_DrawList_AddBezierCubic(...)`: Adds a smooth cubic Bezier curve.

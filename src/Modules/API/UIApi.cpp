@@ -12,6 +12,7 @@
 
 #include "imgui.h"
 
+
 // Define the concrete type for the opaque handle.
 struct SPF_TextStyle_Handle_t {
     SPF::UI::TextStyle style;
@@ -337,6 +338,120 @@ void UIApi::UI_DrawList_AddCircle(SPF_DrawList_Handle dl, float center_x, float 
 
 void UIApi::UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left) {
     if (dl) reinterpret_cast<ImDrawList*>(dl)->AddRectFilledMultiColor({p_min_x, p_min_y}, {p_max_x, p_max_y}, col_upr_left, col_upr_right, col_bot_right, col_bot_left);
+}
+
+void UIApi::UI_DrawList_AddTriangleFilledMultiColor(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2, uint32_t col3) {
+    if (!dl) return;
+    ImDrawList* drawList = reinterpret_cast<ImDrawList*>(dl);
+    if (((col1 | col2 | col3) & IM_COL32_A_MASK) == 0) return;
+
+    // Safety check for vertex count (6 vertices, 21 indices)
+    if (drawList->_VtxCurrentIdx + 6 >= 65535) return;
+
+    ImVec2 p[3] = { {p1_x, p1_y}, {p2_x, p2_y}, {p3_x, p3_y} };
+    uint32_t c[3] = { col1, col2, col3 };
+    uint32_t ct[3] = { col1 & ~IM_COL32_A_MASK, col2 & ~IM_COL32_A_MASK, col3 & ~IM_COL32_A_MASK };
+
+    ImVec2 n[3];
+    for (int i = 0; i < 3; i++) {
+        ImVec2 d = { p[(i + 1) % 3].x - p[i].x, p[(i + 1) % 3].y - p[i].y };
+        float m2 = d.x * d.x + d.y * d.y;
+        if (m2 > 0.000001f) { 
+            float inv_m = 1.0f / sqrtf(m2); 
+            n[i] = { d.y * inv_m, -d.x * inv_m }; 
+        } else {
+            n[i] = { 0, 0 };
+        }
+    }
+
+    ImVec2 center = { (p[0].x + p[1].x + p[2].x) / 3.0f, (p[0].y + p[1].y + p[2].y) / 3.0f };
+    if ((p[0].x - center.x) * n[0].x + (p[0].y - center.y) * n[0].y < 0) {
+        for (int i = 0; i < 3; i++) { n[i].x = -n[i].x; n[i].y = -n[i].y; }
+    }
+
+    ImVec2 vn[3];
+    for (int i = 0; i < 3; i++) {
+        vn[i] = { n[i].x + n[(i + 2) % 3].x, n[i].y + n[(i + 2) % 3].y };
+        float m2 = vn[i].x * vn[i].x + vn[i].y * vn[i].y;
+        if (m2 > 0.000001f) { 
+            float inv_m = 1.0f / sqrtf(m2); 
+            vn[i].x *= inv_m; vn[i].y *= inv_m; 
+        }
+    }
+
+    const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
+    drawList->PrimReserve(21, 6);
+    ImDrawIdx base_idx = (ImDrawIdx)drawList->_VtxCurrentIdx;
+
+    drawList->PrimWriteIdx(base_idx); 
+    drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1)); 
+    drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 2));
+    
+    for (int i = 0; i < 3; i++) {
+        int j = (i + 1) % 3;
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + i)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + j)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 3 + j));
+        
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + i)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 3 + j)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 3 + i));
+    }
+
+    for (int i = 0; i < 3; i++) drawList->PrimVtx(p[i], uv, c[i]);
+    for (int i = 0; i < 3; i++) drawList->PrimVtx({ p[i].x + vn[i].x, p[i].y + vn[i].y }, uv, ct[i]);
+}
+
+void UIApi::UI_DrawList_AddCircleFilledMultiColor(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col_inner, uint32_t col_outer, int num_segments) {
+    if (!dl || radius <= 0.0f) return;
+    ImDrawList* drawList = reinterpret_cast<ImDrawList*>(dl);
+    if (((col_inner | col_outer) & IM_COL32_A_MASK) == 0) return;
+
+    if (num_segments <= 0) {
+        num_segments = (int)(radius * 3.0f);
+        if (num_segments < 16) num_segments = 16;
+        if (num_segments > 64) num_segments = 64;
+    }
+
+    int vtx_count = num_segments * 2 + 1;
+    int idx_count = num_segments * 9;
+
+    // 16-bit index safety check (ImGui default is 16-bit indices)
+    if (drawList->_VtxCurrentIdx + vtx_count >= 65535) return;
+
+    drawList->PrimReserve(idx_count, vtx_count);
+    ImDrawIdx base_idx = (ImDrawIdx)drawList->_VtxCurrentIdx;
+    const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
+    uint32_t col_outer_trans = col_outer & ~IM_COL32_A_MASK;
+
+    for (int i = 0; i < num_segments; i++) {
+        int j = (i + 1) % num_segments;
+        drawList->PrimWriteIdx(base_idx); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + i)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + j));
+
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + i)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + j)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + num_segments + j));
+
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + i)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + num_segments + j)); 
+        drawList->PrimWriteIdx((ImDrawIdx)(base_idx + 1 + num_segments + i));
+    }
+
+    drawList->PrimVtx({ center_x, center_y }, uv, col_inner);
+    
+    float angle_step = (2.0f * 3.1415926535f) / (float)num_segments;
+    for (int i = 0; i < num_segments; i++) {
+        float a = (float)i * angle_step;
+        float c = cosf(a), s = sinf(a);
+        drawList->PrimVtx({ center_x + c * radius, center_y + s * radius }, uv, col_outer);
+    }
+    for (int i = 0; i < num_segments; i++) {
+        float a = (float)i * angle_step;
+        float c = cosf(a), s = sinf(a);
+        drawList->PrimVtx({ center_x + c * (radius + 1.0f), center_y + s * (radius + 1.0f) }, uv, col_outer_trans);
+    }
 }
 
 void UIApi::UI_DrawList_PushClipRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, bool intersect_with_current_clip_rect) {
@@ -784,6 +899,8 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   ui_api->UI_DrawList_AddCircleFilled = &UIApi::UI_DrawList_AddCircleFilled;
   ui_api->UI_DrawList_AddCircle = &UIApi::UI_DrawList_AddCircle;
   ui_api->UI_DrawList_AddRectFilledMultiColor = &UIApi::UI_DrawList_AddRectFilledMultiColor;
+  ui_api->UI_DrawList_AddTriangleFilledMultiColor = &UIApi::UI_DrawList_AddTriangleFilledMultiColor;
+  ui_api->UI_DrawList_AddCircleFilledMultiColor = &UIApi::UI_DrawList_AddCircleFilledMultiColor;
   ui_api->UI_DrawList_PushClipRect = &UIApi::UI_DrawList_PushClipRect;
   ui_api->UI_DrawList_PopClipRect = &UIApi::UI_DrawList_PopClipRect;
   ui_api->UI_DrawList_AddText = &UIApi::UI_DrawList_AddText;
