@@ -776,6 +776,14 @@ void UIManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) {
 }
 
 void UIManager::DestroyWindowsForOwner(const std::string& owner) {
+  // Save settings for all windows belonging to this owner before removing them.
+  // This ensures positions, sizes, and visibility are persisted to the config service.
+  for (const auto& window : m_windows) {
+    if (window && window->GetComponentName() == owner) {
+      m_configService->SetValue(owner, "ui.windows." + window->GetWindowId(), window->GetCurrentSettings());
+    }
+  }
+
   std::erase_if(m_windows, [&](const std::shared_ptr<IWindow>& window) { return window->GetComponentName() == owner; });
 }
 

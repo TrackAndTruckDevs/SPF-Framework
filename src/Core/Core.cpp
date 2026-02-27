@@ -222,10 +222,6 @@ void Core::Reset() {
     return;
   }
 
-  // Save any pending configuration changes before we start shutting things down.
-  m_logger->Info("-> [Reset] Saving dirty configurations before reset...");
-  m_configService->SaveAllDirty();
-
   m_lifecycleState = LifecycleState::ShuttingDown;
   m_logger->Info("--- Core Reset sequence started (partial shutdown) ---");
 
@@ -246,6 +242,10 @@ void Core::Reset() {
   m_renderer.reset();
   ShutdownUI();
 
+  // Save any pending configuration changes after subsystems are shut down (including UI window states).
+  m_logger->Info("-> [Reset] Saving dirty configurations before managers shutdown...");
+  m_configService->SaveAllDirty();
+
   // Step 4: Shutdown session-based managers.
   m_logger->Info("-> [Reset] Step 4/5: Shutting down session managers...");
   ShutdownManagers();
@@ -265,6 +265,11 @@ void Core::Reset() {
   // The framework is now in a clean state, ready to be re-initialized by new SDK callbacks.
   m_lifecycleState = LifecycleState::Preloaded;
   m_logger->Info("--- Core Reset sequence finished. Framework is now in Preloaded state. ---");
+
+  // Ensure background thread is finished before allowing a reload
+  if (m_deferredInitThread.joinable()) {
+    m_deferredInitThread.join();
+  }
 }
 
 void Core::FullShutdown() {
