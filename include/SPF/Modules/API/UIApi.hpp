@@ -170,7 +170,7 @@ class UIApi {
   static void UI_EndDragDropTarget();
 
   // --- Notifications ---
-  static void UI_ShowNotification(SPF_NotificationType type, const char* message);
+  static void UI_ShowNotification(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode);
 
   // --- Transitions ---
   static void UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color);

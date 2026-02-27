@@ -194,6 +194,16 @@ typedef enum {
 } SPF_NotificationType;
 
 /**
+ * @enum SPF_Notification_DisplayMode
+ * @brief Defines how and where a notification is displayed on the screen.
+ */
+typedef enum {
+    SPF_NOTIF_MODE_TOP,    /**< Default. Shows at the top center, newer replaces older. */
+    SPF_NOTIF_MODE_STACK,  /**< Shows at bottom-right, stacks upwards when multiple notifications exist. */
+    SPF_NOTIF_MODE_STICKY  /**< Appears at current mouse cursor position, stays until clicked outside or toggled. */
+} SPF_Notification_DisplayMode;
+
+/**
  * @enum SPF_TransitionType
  * @brief Defines types of cinematic screen transitions.
  */
@@ -1475,7 +1485,7 @@ typedef struct SPF_UI_API {
     void (*UI_EndDragDropTarget)();
 
     /**
-     * @brief Displays a temporary notification popup at the top of the screen.
+     * @brief Displays a temporary notification popup on the screen.
      * 
      * @details This function triggers a non-interactive message that automatically 
      *          fades out after a pre-defined period. The popup includes an icon 
@@ -1484,11 +1494,12 @@ typedef struct SPF_UI_API {
      * @param type The visual category of the message (influences color and icon).
      * @param message The content to display. Supports Markdown syntax (**bold**, *italic*) 
      *                and Font Awesome icon macros (e.g., ICON_FA_TRUCK).
+     * @param mode The display mode (TOP, STACK, STICKY).
      * 
      * @note The display duration is controlled globally by the framework's configuration 
      *       and cannot be overridden by individual plugins to ensure a consistent UX.
      */
-    void (*UI_ShowNotification)(SPF_NotificationType type, const char* message);
+    void (*UI_ShowNotification)(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode);
 
     /**
      * @brief Plays a cinematic screen transition.

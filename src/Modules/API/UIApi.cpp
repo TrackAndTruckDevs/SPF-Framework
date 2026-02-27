@@ -786,9 +786,9 @@ void UIApi::UI_EndDragDropTarget() {
     ImGui::EndDragDropTarget();
 }
 
-void UIApi::UI_ShowNotification(SPF_NotificationType type, const char* message) {
+void UIApi::UI_ShowNotification(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode) {
     if (!message) return;
-    UIManager::GetInstance().ShowNotification(message, static_cast<int>(type));
+    UIManager::GetInstance().ShowNotification(message, static_cast<int>(type), mode);
 }
 
 void UIApi::UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color) {

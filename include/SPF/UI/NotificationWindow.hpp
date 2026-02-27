@@ -2,7 +2,9 @@
 
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Namespace.hpp"
+#include "SPF/SPF_API/SPF_UI_API.h" // For SPF_Notification_DisplayMode
 #include <string>
+#include <vector>
 #include <chrono>
 
 SPF_NS_BEGIN
@@ -10,10 +12,11 @@ SPF_NS_BEGIN
 namespace UI {
 
 /**
- * @brief Framework-owned window for displaying temporary, non-interactive notifications.
- * @details This window is automatically positioned at the top-center of the viewport.
- *          It supports Markdown rendering and displays a progress bar indicating
- *          the remaining time before it disappears.
+ * @brief Framework-owned window for displaying temporary notifications.
+ * @details Supports multiple display modes:
+ *          - TOP: Single notification at the top-center (newer replaces older).
+ *          - STACK: Multiple notifications stacked from the bottom-right upwards.
+ *          - STICKY: Sticky notification at call position, until clicked outside.
  */
 class NotificationWindow : public BaseWindow {
 public:
@@ -21,42 +24,38 @@ public:
     virtual ~NotificationWindow() = default;
 
     /**
-     * @brief Triggers the notification to show.
-     * @param message The text to display (Markdown supported).
-     * @param type The category of the notification.
-     * @param duration The time in seconds to stay visible.
+     * @brief Triggers a new notification.
      */
-    void Show(const std::string& message, int type, float duration);
+    void Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode);
 
-    /**
-     * @brief Internal render loop for the content. Called by BaseWindow::Render().
-     */
     void RenderContent() override;
-
-    /**
-     * @brief Custom flags to make the window transparent and non-interactive.
-     */
     ImGuiWindowFlags GetExtraWindowFlags() const override;
 
     /**
-     * @brief Notifications are always non-interactive (mouse clicks pass through).
+     * @brief STICKY popups need interaction.
      */
-    bool IsInteractive() const override { return false; }
+    bool IsInteractive() const override;
 
-    // Disable configuration persistence
     void ApplySettings(const nlohmann::ordered_json& settings) override {}
     nlohmann::ordered_json GetCurrentSettings() const override { return nlohmann::ordered_json::object(); }
 
 private:
-    std::string m_message;
-    int m_type = 0; // Maps to SPF_NotificationType
-    
-    std::chrono::steady_clock::time_point m_startTime;
-    float m_duration = 3.0f;
-    bool m_active = false;
+    struct NotificationData {
+        std::string message;
+        int type = 0;
+        SPF_Notification_DisplayMode mode = SPF_NOTIF_MODE_TOP;
+        std::chrono::steady_clock::time_point startTime;
+        float duration = 3.0f;
+        float currentYOffset = 0.0f; // Used for smooth stacking animations
+        ImVec2 popupPos;             // Used for STICKY mode
+        bool isClosing = false;
+    };
+
+    std::vector<NotificationData> m_notifications;
 
     // Internal styling helpers
-    void GetTypeStyle(const char** out_icon, ImVec4& out_color);
+    void GetTypeStyle(int type, const char** out_icon, ImVec4& out_color);
+    void RenderSingleNotification(NotificationData& notif, int index);
 };
 
 } // namespace UI

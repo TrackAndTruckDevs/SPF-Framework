@@ -93,7 +93,7 @@ class UIManager : public Config::IConfigurable {
   /**
    * @brief Shows a framework-level notification.
    */
-  void ShowNotification(const std::string& message, int type);
+  void ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode);
 
   /**
    * @brief Starts a cinematic screen transition.

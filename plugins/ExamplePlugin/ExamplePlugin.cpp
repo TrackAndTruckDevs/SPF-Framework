@@ -1558,40 +1558,56 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_RenderMarkdown(markdown, markdown_base_style);
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Notification System Test");
-    ui->UI_TextWrapped("Click the buttons below to test different notification types and content lengths.");
+    ui->UI_TextStyled(separator_style, "Notification System Test (v1.1.5)");
+    ui->UI_TextWrapped("Testing different display modes and categories.");
 
-    if (ui->UI_Button(ICON_FA_CIRCLE_INFO " Info Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, "This is a **standard information** message. It is blue and informative.");
+    // --- TOP Mode (Standard) ---
+    ui->UI_TextDisabled("Top Mode (Replaces existing)");
+    if (ui->UI_Button(ICON_FA_CIRCLE_INFO " Info", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, "This is a **top** notification. It replaces any other top notification.", SPF_NOTIF_MODE_TOP);
     }
     ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_CIRCLE_CHECK " Success Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Operation completed! " ICON_FA_THUMBS_UP "\nYour changes have been saved successfully.");
+    if (ui->UI_Button(ICON_FA_CIRCLE_CHECK " Success", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Operation completed! " ICON_FA_THUMBS_UP, SPF_NOTIF_MODE_TOP);
     }
     ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_TRIANGLE_EXCLAMATION " Warning Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_WARNING, "Attention!\nVehicle speed is too high. Please slow down before engaging the cinematic camera.");
+    if (ui->UI_Button(ICON_FA_TRIANGLE_EXCLAMATION " Warning", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_WARNING, "Attention! High speed detected.", SPF_NOTIF_MODE_TOP);
     }
 
-    if (ui->UI_Button(ICON_FA_CIRCLE_XMARK " Error Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_ERROR, "Failed to load scene file. The file might be corrupted or missing. Check the logs for details.");
+    // --- STACK Mode (Bottom Right) ---
+    ui->UI_Spacing();
+    ui->UI_TextDisabled("Stack Mode (Bottom-Right, Stacks upwards)");
+    if (ui->UI_Button(ICON_FA_LAYER_GROUP " Add Stacked Notif", 0, 0)) {
+        static int notif_count = 0;
+        char buf[128];
+        sprintf(buf, "Stacked message #%d\nThis will push older ones up.", ++notif_count);
+        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, buf, SPF_NOTIF_MODE_STACK);
     }
     ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_RADIATION " Critical Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_CRITICAL, "**CRITICAL SYSTEM FAILURE**\n" ICON_FA_SKULL " Memory access violation detected in plugin module. Re-initializing...");
+    if (ui->UI_Button(ICON_FA_CIRCLE_XMARK " Stack Error", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_ERROR, "A stacked error occurred!", SPF_NOTIF_MODE_STACK);
     }
-    ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_LIGHTBULB " Hint Test", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_HINT, "*Did you know?*\nYou can use **Ctrl + Scroll** to adjust the camera FOV in real-time while in free mode!");
+
+    // --- STICKY Mode ---
+    ui->UI_Spacing();
+    ui->UI_TextDisabled("Sticky Mode (At cursor, no timeout)");
+    if (ui->UI_Button(ICON_FA_THUMBTACK " Toggle Sticky Help", 0, 0)) {
+        ui->UI_ShowNotification(SPF_NOTIFICATION_HINT, 
+            "**Sticky Help Tip**\n\n"
+            "This window has no timeout. It will stay here until:\n"
+            "1. You click the button again (Toggle).\n"
+            "2. You click anywhere outside this notification.\n\n"
+            "Useful for explaining complex UI elements!", 
+            SPF_NOTIF_MODE_STICKY);
     }
 
     ui->UI_Spacing();
-    if (ui->UI_Button("Long Text Test", 0, 0)) {
+    if (ui->UI_Button("Test Long Text (Top)", 0, 0)) {
         ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, 
-            "This is a very long notification message designed to test the **automatic text wrapping** and **dynamic height** adjustment of the notification window. "
-            "It should handle multiple lines of text gracefully without cutting off the content or expanding beyond reasonable bounds. "
-            "The progress bar at the bottom should still be visible and correctly timed. "
-            "Markdown elements like `code blocks` or **bold headers** should also be rendered correctly within this space.");
+            "This is a very long notification message designed to test the \n*automatic text wrapping* and **dynamic height** \nadjustment of the ***notification window***. "
+            "It should handle multiple lines of text gracefully without cutting off the content or expanding beyond reasonable bounds.", 
+            SPF_NOTIF_MODE_TOP);
     }
 
     ui->UI_Spacing();
@@ -1632,7 +1648,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         ui->UI_SetWindowPos(pos_x, pos_y, SPF_COND_ALWAYS);
         ui->UI_SetWindowSize(total_width, win_h, SPF_COND_ALWAYS);
         
-        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Window centered and resized to fit all tabs!");
+        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Window centered and resized to fit all tabs!", SPF_NOTIF_MODE_TOP);
     }
 
     ui->UI_Spacing();

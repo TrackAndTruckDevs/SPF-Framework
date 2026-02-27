@@ -237,10 +237,10 @@ std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() 
   return allSettings;
 }
 
-void UIManager::ShowNotification(const std::string& message, int type) {
+void UIManager::ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode) {
   if (m_notificationWindow) {
     float duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
-    m_notificationWindow->Show(message, type, duration);
+    m_notificationWindow->Show(message, type, duration, mode);
   }
 }
 
