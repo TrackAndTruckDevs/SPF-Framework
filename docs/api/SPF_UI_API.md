@@ -288,8 +288,19 @@ Ends the current child region.
 # Layout & Positioning API
 These functions provide information about the current window and layout state, allowing for precise placement of custom elements.
 
+### `SPF_Cond` (v1.1.5)
+Used with `UI_SetWindowPos` and `UI_SetWindowSize` to define the condition under which the transformation is applied:
+* `SPF_COND_NONE`: No condition.
+* `SPF_COND_ALWAYS`: Set the variable every frame.
+* `SPF_COND_ONCE`: Set the variable once per runtime session (only the first call succeeds).
+* `SPF_COND_FIRST_USE_EVER`: Set the variable if the window has no session data (no entry in `.ini` file).
+* `SPF_COND_APPEARING`: Set the variable if the window is appearing after being hidden/inactive.
+
+### Functions
 *   `UI_GetContentRegionAvail(...)`: Returns the remaining available space in the current window.
 *   `UI_GetWindowPos(...)` / `UI_GetWindowSize(...)`: Return the position and size of the current window.
+*   `UI_SetWindowPos(float x, float y, SPF_Cond cond)`: Sets the screen-space position of the current window (v1.1.5).
+*   `UI_SetWindowSize(float x, float y, SPF_Cond cond)`: Sets the size of the current window's content region (v1.1.5).
 *   `UI_GetCursorScreenPos()`: Returns the absolute screen position where the next widget will be drawn.
 *   `UI_SetCursorScreenPos(...)`: Manually sets the absolute screen position for the next widget.
 *   `UI_GetCursorPos(...)` / `UI_SetCursorPos(...)`: Get or set the layout cursor position relative to the current window/child (v1.1.5).

@@ -267,6 +267,19 @@ typedef enum {
 } SPF_Window_Flags;
 
 /**
+ * @enum SPF_Cond
+ * @brief Conditions for setting window position, size, etc.
+ * @details Mirrors ImGuiCond_.
+ */
+typedef enum {
+    SPF_COND_NONE = 0,
+    SPF_COND_ALWAYS = 1 << 0,       // Set the variable
+    SPF_COND_ONCE = 1 << 1,         // Set the variable once per runtime session (only the first call will succeed)
+    SPF_COND_FIRST_USE_EVER = 1 << 2, // Set the variable if the object/window has no session data (no entry in .ini file)
+    SPF_COND_APPEARING = 1 << 3      // Set the variable if the object/window is appearing after being hidden/inactive (or the first time)
+} SPF_Cond;
+
+/**
  * @brief A callback function that a plugin provides to draw the content of its window.
  * @param builder A pointer to the UI builder API, used to construct widgets.
  * @param user_data A pointer to user-defined data, passed during registration.
@@ -1642,5 +1655,23 @@ typedef struct SPF_UI_API {
      * @param[out] out_h Pointer to store the calculated height.
      */
     void (*UI_CalcTextSizeWithFont)(SPF_Font font, float font_size, const char* text, float* out_w, float* out_h);
+
+    // --- Window Position & Size --- NEW v1.1.5 ---
+
+    /**
+     * @brief Sets the position of the current window.
+     * @param x The new x-coordinate for the window.
+     * @param y The new y-coordinate for the window.
+     * @param cond The condition for setting the position (from SPF_Cond).
+     */
+    void (*UI_SetWindowPos)(float x, float y, SPF_Cond cond);
+
+    /**
+     * @brief Sets the size of the current window's content region.
+     * @param x The new width for the window.
+     * @param y The new height for the window.
+     * @param cond The condition for setting the size (from SPF_Cond).
+     */
+    void (*UI_SetWindowSize)(float x, float y, SPF_Cond cond);
 
 } SPF_UI_API;

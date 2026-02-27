@@ -137,6 +137,8 @@ class UIApi {
   static void UI_GetContentRegionAvail(float* out_x, float* out_y);
   static void UI_GetWindowPos(float* out_x, float* out_y);
   static void UI_GetWindowSize(float* out_x, float* out_y);
+  static void UI_SetWindowPos(float x, float y, SPF_Cond cond);
+  static void UI_SetWindowSize(float x, float y, SPF_Cond cond);
   static void UI_GetCursorScreenPos(float* out_x, float* out_y);
   static void UI_SetCursorScreenPos(float x, float y);
   static void UI_GetItemRectMin(float* out_x, float* out_y);

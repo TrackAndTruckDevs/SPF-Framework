@@ -1595,6 +1595,47 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     }
 
     ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, "Window Management Test (v1.1.5)");
+    ui->UI_TextWrapped("Use the button below to center the window and resize it to fit all tabs.");
+    if (ui->UI_Button("Center and Fit Window", 0, 0)) {
+        const char* tabs[] = {
+            "General", "Traffic Inspector", "Camera", "Telemetry", 
+            "Events", "Virtual Input", "Styling API", "Environment", "Input Test"
+        };
+        
+        float total_width = 0;
+        SPF_Style_Handle* style = ui->UI_GetStyle();
+        float frame_padding_x, frame_padding_y;
+        ui->UI_Style_GetFramePadding(style, &frame_padding_x, &frame_padding_y);
+        
+        // Tab bars in ImGui have specific spacing. We'll approximate.
+        // Usually it's text_width + frame_padding.x * 2 for each tab.
+        for (const char* tab : tabs) {
+            float w, h;
+            // Using a typical default font size of 18.0f for the framework
+            ui->UI_CalcTextSizeWithFont(SPF_FONT_REGULAR, 18.0f, tab, &w, &h);
+            total_width += w + (frame_padding_x * 2.0f) + 4.0f; // 4.0f is a small extra margin between tabs
+        }
+        
+        // Add window padding and some extra space for the close button/decorations
+        float win_padding_x, win_padding_y;
+        ui->UI_Style_GetWindowPadding(style, &win_padding_x, &win_padding_y);
+        total_width += (win_padding_x * 2.0f) + 20.0f; 
+
+        float v_w, v_h;
+        ui->UI_GetViewportSize(&v_w, &v_h);
+        
+        float win_h = 450.0f; // Desired height
+        float pos_x = (v_w - total_width) * 0.5f;
+        float pos_y = (v_h - win_h) * 0.5f;
+
+        ui->UI_SetWindowPos(pos_x, pos_y, SPF_COND_ALWAYS);
+        ui->UI_SetWindowSize(total_width, win_h, SPF_COND_ALWAYS);
+        
+        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Window centered and resized to fit all tabs!");
+    }
+
+    ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, "Custom Gradient API Test (v1.1.5)");
     ui->UI_TextWrapped("Demonstrating multi-color primitives for advanced custom widgets.");
 

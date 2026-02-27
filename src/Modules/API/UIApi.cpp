@@ -641,6 +641,14 @@ void UIApi::UI_GetWindowSize(float* out_x, float* out_y) {
     }
 }
 
+void UIApi::UI_SetWindowPos(float x, float y, SPF_Cond cond) {
+    ImGui::SetWindowPos(ImVec2(x, y), static_cast<ImGuiCond>(cond));
+}
+
+void UIApi::UI_SetWindowSize(float x, float y, SPF_Cond cond) {
+    ImGui::SetWindowSize(ImVec2(x, y), static_cast<ImGuiCond>(cond));
+}
+
 void UIApi::UI_GetCursorScreenPos(float* out_x, float* out_y) {
     if (out_x && out_y) {
         const ImVec2 pos = ImGui::GetCursorScreenPos();
@@ -962,6 +970,10 @@ void UIApi::FillUIApi(SPF_UI_API* ui_api) {
   // Transitions
   ui_api->UI_PlayTransition = &UIApi::UI_PlayTransition;
   ui_api->UI_IsTransitionActive = &UIApi::UI_IsTransitionActive;
+
+  // --- Window Position & Size --- NEW v1.1.5 ---
+  ui_api->UI_SetWindowPos = &UIApi::UI_SetWindowPos;
+  ui_api->UI_SetWindowSize = &UIApi::UI_SetWindowSize;
 }
 }  // namespace Modules::API
 SPF_NS_END
