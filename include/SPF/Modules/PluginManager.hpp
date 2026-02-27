@@ -126,7 +126,15 @@ class PluginManager {
 
   void OnGameWorldReady();
 
-
+  // --- Safe Invocation Helpers (SEH-wrapped) ---
+  bool SafeCallOnLoad(LoadedPlugin& plugin, SPF_Load_API* api);
+  bool SafeCallOnActivated(LoadedPlugin& plugin, SPF_Core_API* api);
+  bool SafeCallOnRegisterUI(LoadedPlugin& plugin, SPF_UI_API* api);
+  bool SafeCallOnUnload(LoadedPlugin& plugin);
+  bool SafeCallOnUpdate(LoadedPlugin& plugin);
+  bool SafeCallOnGameWorldReady(LoadedPlugin& plugin);
+  bool SafeCallOnSettingChanged(LoadedPlugin& plugin, SPF_Config_Handle* handle, const char* keyPath);
+  bool SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* langCode);
 
   // --- Member Variables ---
   Events::EventManager* m_eventManager = nullptr;
