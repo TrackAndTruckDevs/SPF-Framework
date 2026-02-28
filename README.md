@@ -93,8 +93,8 @@
    ✔ HTTP & API Communication (cpr):
     All external web requests, such as for update checks and statistics, are handled by the modern **C++ Requests (cpr)** library, which provides a simple and powerful interface for HTTP communication.
 
-   ✔ Markdown Rendering (imgui_md & md4c):
-    To provide rich text formatting in UI elements, SPF uses the `imgui_md` library, which is a lightweight Markdown renderer for Dear ImGui. This, in turn, relies on the `md4c` (Markdown for C) parser for fast and compliant Markdown processing.
+   ✔ Markdown Rendering (MD4C):
+    To provide rich text formatting, SPF uses a proprietary Markdown renderer built directly on the **md4c (Markdown for C) parser**. This custom engine ensures perfect layout flow across different styles, supporting GFM tables, custom inline colors, and integrated clipboard support for code blocks.
 
 
 
@@ -373,7 +373,7 @@ This project would not be possible without the incredible work of the open-sourc
 *   **[{fmt}](https://github.com/fmtlib/fmt)**: For modern, safe, and efficient string formatting.
 *   **[nlohmann/json](https://github.com/nlohmann/json)**: For easy and powerful JSON manipulation.
 *   **[cpr (C++ Requests)](https://github.com/libcpr/cpr)**: For handling all external web requests with a clean, modern interface.
-*   **[md4c](https://github.com/mity/md4c)** & **[imgui_md](https://github.com/mekhontsev/imgui_md)**: For providing fast and lightweight Markdown rendering within the UI.
+*   **[md4c](https://github.com/mity/md4c)**: For providing fast and lightweight Markdown rendering within the UI.
 *   **[zlib](https://github.com/madler/zlib)**: For data compression, used as a dependency by other core components.
 *   **[SCS SDK](https://modding.scssoft.com/wiki/Documentation/Engine/SDK/Telemetry)**: For providing the official telemetry interface that makes this all possible.
 

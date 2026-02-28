@@ -172,23 +172,29 @@ void NotificationWindow::RenderSingleNotification(NotificationData& notif, int i
     ImGui::PushStyleColor(ImGuiCol_Border, color);
 
     if (ImGui::Begin(windowName.c_str(), nullptr, flags)) {
-        ImGui::BeginGroup();
-        {
+        if (ImGui::BeginTable("##notif_layout", 2, ImGuiTableFlags_None)) {
+            ImGui::TableSetupColumn("icon", ImGuiTableColumnFlags_WidthFixed, 12.0f);
+            ImGui::TableSetupColumn("text", ImGuiTableColumnFlags_WidthStretch);
+            
+            ImGui::TableNextRow();
+            
+            // Icon Column
+            ImGui::TableNextColumn();
             TextStyle iconStyle = TextStyle::H2().Color(color);
             Typography::Text(iconStyle, "%s", icon);
-        }
-        ImGui::EndGroup();
-        
-        ImGui::SameLine(40.0f);
-        
-        ImGui::BeginGroup();
-        {
-            ImGui::PushTextWrapPos(ImGui::GetContentRegionAvail().x);
+
+            // Text Column
+            ImGui::TableNextColumn();
+            float textWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + textWidth);
+            
             TextStyle msgStyle = TextStyle::Regular().Color(Colors::SILVER);
             Typography::RenderMarkdownText(notif.message, msgStyle);
+            
             ImGui::PopTextWrapPos();
+            
+            ImGui::EndTable();
         }
-        ImGui::EndGroup();
 
         // Progress bar (only for auto-fading notifications)
         if (notif.mode != SPF_NOTIF_MODE_STICKY) {

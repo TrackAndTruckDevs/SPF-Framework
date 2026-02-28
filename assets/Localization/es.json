@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "¿Cómo instalar y activar un plugin?",
-        "q1_answer": "Copia tu plugin compatible con SPF en el directorio ```{}``` Asegúrate de que el `.dll` del plugin esté dentro de un directorio que coincida con su nombre,\npor ejemplo `...\\MiPlugin\\MiPlugin.dll`\nEl framework encontrará y cargará automáticamente este plugin. Solo necesitas activarlo en la pestaña `Gestor de plugins`.",
+        "q1_answer": "Copia tu plugin compatible con SPF en el directorio ```{}``` Asegúrate de que el `.dll` del plugin esté dentro de un directorio que coincida con su nombre, por ejemplo `...\\MiPlugin\\MiPlugin.dll`\nEl framework encontrará y cargará automáticamente este plugin. Solo necesitas activarlo en la pestaña `Gestor de plugins`.",
         "q2_question": "¿Cómo crear tu propio plugin?",
         "q2_answer": "Para desarrollar un plugin, necesitas descargar el paquete de archivos de cabecera `SPF_-_API.h` de la sección \"Releases\" en nuestra página de [GitHub]({}) e incluirlo en tu proyecto.",
         "q3_question": "¿Cómo añadir una nueva traducción?",
@@ -1001,7 +1001,7 @@
         "q4_question": "¿Y si necesito una nueva funcionalidad?",
         "q4_answer": "Si eres desarrollador, puedes implementar la funcionalidad requerida tú mismo usando nuestro `SPF_-_API.h`.\\nDe lo contrario, puedes crear una sugerencia en [GitHub]({}) o en nuestra página de [Patreon]({}).",
         "q5_question": "¿Dónde se guardan los ajustes?",
-        "q5_answer": "Los ajustes del framework se encuentran en ```{}```. Los ajustes de los plugins están en sus propias carpetas de configuración, por ejemplo: ```{}```. **Se recomienda cambiar los ajustes solo a través de la interfaz del juego.**",
+        "q5_answer": "Los ajustes del framework se encuentran en ```{}``` Los ajustes de los plugins están en sus propias carpetas de configuración, por ejemplo: ```{}``` **Se recomienda cambiar los ajustes solo a través de la interfaz del juego.**",
         "q6_question": "El framework o un plugin está bloqueando el juego. ¿Qué hago?",
         "q6_answer": " * Revisa los archivos de registro en la carpeta `\\spfAssets\\logs`.\\n * Intenta desactivar los plugins uno por one para encontrar la fuente del problema.\\n * Si el problema es con el framework, por favor crea un `issue` en nuestro [GitHub]({}), describiendo el problema en detalle y adjuntando el archivo de registro."
     },

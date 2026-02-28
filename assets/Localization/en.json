@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "How to install and activate a plugin?",
-        "q1_answer": "Copy your SPF-compatible plugin into the directory ```{}``` Make sure the plugin's `.dll` is inside a directory that matches its name,\nfor example `...\\MyPlugin\\MyPlugin.dll`\nThe framework will automatically find this plugin and load it. You just need to enable it in the `Plugin Manager` tab.",
+        "q1_answer": "Copy your SPF-compatible plugin into the directory ```{}``` Make sure the plugin's `.dll` is inside a directory that matches its name, for example `...\\MyPlugin\\MyPlugin.dll`\nThe framework will automatically find this plugin and load it. You just need to enable it in the `Plugin Manager` tab.",
         "q2_question": "How to create your own plugin?",
         "q2_answer": "To develop a plugin, you need to download the header file package `SPF_-_API.h` from the \"Releases\" section on our [GitHub]({}) page and include it in your project.",
         "q3_question": "How to add a new translation?",
@@ -1001,7 +1001,7 @@
         "q4_question": "What if I need new functionality?",
         "q4_answer": "If you are a developer, you can implement the required functionality yourself using our `SPF_-_API.h`.\n Otherwise, you can create a suggestion on [GitHub]({}) or on our [Patreon]({}) page.",
         "q5_question": "Where are the settings stored?",
-        "q5_answer": "Framework settings are located in ```{}```. Plugin settings are in their own configuration folders, for example: ```{}```. **It is recommended to change settings only through the in-game interface.**",
+        "q5_answer": "Framework settings are located in ```{}``` Plugin settings are in their own configuration folders, for example: ```{}``` **It is recommended to change settings only through the in-game interface.**",
         "q6_question": "The framework or a plugin is crashing the game. What to do?",
         "q6_answer": " * Check the log files in the `\\spfAssets\\logs` folder.\n * Try disabling plugins one by one to find the source of the problem.\n * If the problem is with the framework, please create an `issue` on our [GitHub]({}), describing the problem in detail and attaching the log file."
     },

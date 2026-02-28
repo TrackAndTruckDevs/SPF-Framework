@@ -169,7 +169,7 @@ void PluginsWindow::RenderContent() {
       }
 
       if (ImGui::BeginPopupModal(infoTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
-        ImGui::BeginChild("info_scroll_region", ImVec2(425, 75), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("info_scroll_region", ImVec2(425, 90), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locInfoPopupAuthor).c_str());
         ImGui::SameLine();
@@ -184,24 +184,52 @@ void PluginsWindow::RenderContent() {
         ImGui::Separator();
 
         ImGui::Spacing();
-        auto renderSocialLink = [](const std::optional<std::string>& url, const char* icon, const char* name) {
-          if (url && !url->empty()) {
-            ImGui::SameLine();
-            std::string markdown = std::string("[") + icon + "](" + *url + ")";
-            Typography::RenderMarkdownText(markdown, TextStyle::Regular());
+        struct SocialLink { const char* icon; std::string url; const char* name; ImVec4 color; };
+        std::vector<SocialLink> links;
+        auto addLink = [&](const std::optional<std::string>& url, const char* icon, const char* name, ImVec4 color) {
+          if (url && !url->empty()) links.push_back({icon, *url, name, color});
+        };
+
+        addLink(componentInfo.websiteUrl, ICON_FA_GLOBE, "Website", Colors::GOLD);
+        addLink(componentInfo.email, ICON_FA_ENVELOPE, "Email", Colors::GRAY);
+        addLink(componentInfo.discordUrl, ICON_FA_DISCORD, "Discord", ImVec4(0.35f, 0.40f, 0.95f, 1.0f));
+        addLink(componentInfo.steamProfileUrl, ICON_FA_STEAM, "Steam", ImVec4(0.40f, 0.60f, 0.80f, 1.0f));
+        addLink(componentInfo.githubUrl, ICON_FA_GITHUB, "GitHub", Colors::WHITE);
+        addLink(componentInfo.youtubeUrl, ICON_FA_YOUTUBE, "YouTube", ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+        addLink(componentInfo.scsForumUrl, ICON_FA_COMMENTS, "SCS Forum", ImVec4(0.0f, 0.70f, 0.90f, 1.0f));
+        addLink(componentInfo.patreonUrl, ICON_FA_PATREON, "Patreon", ImVec4(0.98f, 0.41f, 0.33f, 1.0f));
+
+        if (!links.empty()) {
+          // Total width of the child window minus horizontal padding
+          float contentWidth = 425.0f - ImGui::GetStyle().WindowPadding.x * 2.0f;
+          float totalIconsWidth = 0;
+          float buttonPaddingX = ImGui::GetStyle().FramePadding.x * 2.0f;
+
+          for (const auto& link : links) {
+            totalIconsWidth += ImGui::CalcTextSize(link.icon).x + buttonPaddingX;
+          }
+          
+          // Calculate spacing to distribute icons evenly
+          float spacing = (contentWidth - totalIconsWidth) / (float)(links.size() + 1);
+          
+          // Ensure spacing is not negative and has a minimum
+          spacing = (std::max)(spacing, ImGui::GetStyle().ItemSpacing.x);
+
+          // Initial offset from the left
+          ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x + spacing);
+
+          for (size_t i = 0; i < links.size(); ++i) {
+            if (i > 0) ImGui::SameLine(0, spacing);
+            
+            if (HyperlinkButton(links[i].icon, TextStyle::Regular().Color(links[i].color))) {
+                ShellExecute(NULL, "open", links[i].url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            }
+            
             if (ImGui::IsItemHovered()) {
-              ImGui::SetTooltip("%s", name);
+              ImGui::SetTooltip("%s", links[i].name);
             }
           }
-        };
-        renderSocialLink(componentInfo.websiteUrl, ICON_FA_GLOBE, "Website");
-        renderSocialLink(componentInfo.email, ICON_FA_ENVELOPE, "Email");
-        renderSocialLink(componentInfo.discordUrl, ICON_FA_DISCORD, "Discord");
-        renderSocialLink(componentInfo.steamProfileUrl, ICON_FA_STEAM, "Steam");
-        renderSocialLink(componentInfo.githubUrl, ICON_FA_GITHUB, "GitHub");
-        renderSocialLink(componentInfo.youtubeUrl, ICON_FA_YOUTUBE, "YouTube");
-        renderSocialLink(componentInfo.scsForumUrl, ICON_FA_COMMENTS, "SCS Forum");
-        renderSocialLink(componentInfo.patreonUrl, ICON_FA_PATREON, "Patreon");
+        }
 
         ImGui::EndChild();
         ImGui::Separator();
@@ -224,12 +252,19 @@ void PluginsWindow::RenderContent() {
       }
 
       if (ImGui::BeginPopupModal(descriptionTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
-        ImGui::BeginChild("description_scroll_region", ImVec2(400, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("description_scroll_region", ImVec2(500, 250), false, ImGuiWindowFlags_HorizontalScrollbar);
+        
+        std::string description;
         if (componentInfo.descriptionLiteral.has_value()) {
-          ImGui::TextWrapped("%s", componentInfo.descriptionLiteral.value().c_str());
+          description = componentInfo.descriptionLiteral.value();
         } else if (componentInfo.descriptionKey.has_value()) {
-          ImGui::TextWrapped("%s", loc.Get(componentId, componentInfo.descriptionKey.value()).c_str());
+          description = loc.Get(componentId, componentInfo.descriptionKey.value());
         }
+
+        if (!description.empty()) {
+            Typography::RenderMarkdownText(description, TextStyle::Regular().Wrapped(true));
+        }
+
         ImGui::EndChild();
         ImGui::Separator();
         if (ImGui::Button("OK")) {

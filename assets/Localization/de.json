@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "Wie installiere und aktiviere ich ein Plugin?",
-        "q1_answer": "Kopieren Sie Ihr SPF-kompatibles Plugin in das Verzeichnis ```{}``` Stellen Sie sicher, dass die `.dll` des Plugins in einem Verzeichnis liegt, das mit seinem Namen übereinstimmt,\nzum Beispiel `...\\MyPlugin\\MyPlugin.dll`\nDas Framework findet dieses Plugin automatisch und lädt es. Sie müssen es nur noch im Tab `Plugin-Manager` aktivieren.",
+        "q1_answer": "Kopieren Sie Ihr SPF-kompatibles Plugin in das Verzeichnis ```{}``` Stellen Sie sicher, dass die `.dll` des Plugins in einem Verzeichnis liegt, das mit seinem Namen übereinstimmt, zum Beispiel `...\\MyPlugin\\MyPlugin.dll`\nDas Framework findet dieses Plugin automatisch und lädt es. Sie müssen es nur noch im Tab `Plugin-Manager` aktivieren.",
         "q2_question": "Wie erstelle ich mein eigenes Plugin?",
         "q2_answer": "Um ein Plugin zu entwickeln, müssen Sie das Header-Dateipaket `SPF_-_API.h` aus dem Bereich \"Releases\" auf unserer [GitHub]({})-Seite herunterladen und in Ihr Projekt einbinden.",
         "q3_question": "Wie füge ich eine neue Übersetzung hinzu?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Was ist, wenn ich neue Funktionalität benötige?",
         "q4_answer": "Wenn Sie Entwickler sind, können Sie die benötigte Funktionalität mit unserem `SPF_-_API.h` selbst implementieren.\n Andernfalls können Sie einen Vorschlag auf [GitHub]({}) oder auf unserer [Patreon]({})-Seite erstellen.",
         "q5_question": "Wo werden die Einstellungen gespeichert?",
-        "q5_answer": "Die Framework-Einstellungen befinden sich in ```{}```. Plugin-Einstellungen befinden sich in ihren eigenen Konfigurationsordnern, zum Beispiel: ```{}```. **Es wird empfohlen, Einstellungen nur über die Benutzeroberfläche im Spiel zu ändern.**",
+        "q5_answer": "Die Framework-Einstellungen befinden sich in ```{}``` Plugin-Einstellungen befinden sich in ihren eigenen Konfigurationsordnern, zum Beispiel: ```{}``` **Es wird empfohlen, Einstellungen nur über die Benutzeroberfläche im Spiel zu ändern.**",
         "q6_question": "Das Framework oder ein Plugin bringt das Spiel zum Absturz. Was tun?",
         "q6_answer": " * Überprüfen Sie die Protokolldateien im Ordner `\\spfAssets\\logs`.\n * Versuchen Sie, Plugins einzeln zu deaktivieren, um die Fehlerquelle zu finden.\n * Wenn das Problem beim Framework liegt, erstellen Sie bitte ein `issue` auf unserem [GitHub]({}), beschreiben Sie das Problem detailliert und fügen Sie die Protokolldatei hinzu."
     },

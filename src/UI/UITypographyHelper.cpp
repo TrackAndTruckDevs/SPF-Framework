@@ -2,6 +2,7 @@
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <stdarg.h>
 #include "SPF/UI/MarkdownRenderer.hpp"
 #include <algorithm> // For std::min, std::max
@@ -187,6 +188,13 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
         ImGui::SetCursorPos(ImVec2(cursorPos.x + style.padding.x, cursorPos.y + style.padding.y));
     }
 
+    // Handle Text Wrapping for Markdown
+    if (style.wrap) {
+        // Use a more robust way to calculate wrap position that works in child windows and tree nodes
+        float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x;
+        ImGui::PushTextWrapPos(wrapPosX);
+    }
+
     // Apply a base text color if specified, but allow the renderer to override it
     if (style.color) {
         ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
@@ -198,6 +206,10 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
 
     if (style.color) {
         ImGui::PopStyleColor();
+    }
+
+    if (style.wrap) {
+        ImGui::PopTextWrapPos();
     }
 }
 

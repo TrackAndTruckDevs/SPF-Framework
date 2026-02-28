@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "Hoe installeer en activeer ik een plugin?",
-        "q1_answer": "Kopieer je SPF-compatibele plugin naar de map ```{}``` Zorg ervoor dat de `.dll` van de plugin in een map staat die overeenkomt met zijn naam,\nbijvoorbeeld `...\\MyPlugin\\MyPlugin.dll`\nHet framework zal deze plugin automatisch vinden en laden. Je hoeft hem alleen nog maar in te schakelen in het tabblad `Plugin Beheerder`.",
+        "q1_answer": "Kopieer je SPF-compatibele plugin naar de map ```{}``` Zorg ervoor dat de `.dll` van de plugin in een map staat die overeenkomt met zijn naam, bijvoorbeeld `...\\MyPlugin\\MyPlugin.dll`\nHet framework zal deze plugin automatisch vinden en laden. Je hoeft hem alleen nog maar in te schakelen in het tabblad `Plugin Beheerder`.",
         "q2_question": "Hoe maak ik mijn eigen plugin?",
         "q2_answer": "Om een plugin te ontwikkelen, moet je het header-bestandspakket `SPF_-_API.h` downloaden van de sectie \"Releases\" op onze [GitHub]({}) pagina en het in je project opnemen.",
         "q3_question": "Hoe voeg ik een nieuwe vertaling toe?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Wat als ik nieuwe functionaliteit nodig heb?",
         "q4_answer": "Als je een ontwikkelaar bent, kun je de vereiste functionaliteit zelf implementeren met onze `SPF_-_API.h`.\n Anders kun je een suggestie doen op [GitHub]({}) of op onze [Patreon]({}) pagina.",
         "q5_question": "Waar worden de instellingen opgeslagen?",
-        "q5_answer": "Framework-instellingen bevinden zich in ```{}```. Plugin-instellingen staan in hun eigen configuratiemappen, bijvoorbeeld: ```{}```. **Het wordt aanbevolen om instellingen alleen via de in-game interface te wijzigen.**",
+        "q5_answer": "Framework-instellingen bevinden zich in ```{}``` Plugin-instellingen staan in hun eigen configuratiemappen, bijvoorbeeld: ```{}``` **Het wordt aanbevolen om instellingen alleen via de in-game interface te wijzigen.**",
         "q6_question": "Het framework of een plugin crasht het spel. Wat te doen?",
         "q6_answer": " * Controleer de logbestanden in de map `\\spfAssets\\logs`.\n * Probeer plugins een voor een uit te schakelen om de bron van het probleem te vinden.\n * Als het probleem bij het framework ligt, maak dan een `issue` aan op onze [GitHub]({}), beschrijf het probleem in detail en voeg het logbestand bij."
     },

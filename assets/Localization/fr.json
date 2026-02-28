@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "Comment installer et activer un plugin ?",
-        "q1_answer": "Copiez votre plugin compatible SPF dans le répertoire ```{}``` Assurez-vous que le `.dll` du plugin se trouve dans un répertoire qui correspond à son nom,\npar exemple `...\\MonPlugin\\MonPlugin.dll`\nLe framework trouvera et chargera automatiquement ce plugin. Il vous suffit de l'activer dans l'onglet `Gestionnaire de plugins`.",
+        "q1_answer": "Copiez votre plugin compatible SPF dans le répertoire ```{}``` Assurez-vous que le `.dll` du plugin se trouve dans un répertoire qui correspond à son nom, par exemple `...\\MonPlugin\\MonPlugin.dll`\nLe framework trouvera et chargera automatiquement ce plugin. Il vous suffit de l'activer dans l'onglet `Gestionnaire de plugins`.",
         "q2_question": "Comment créer son propre plugin ?",
         "q2_answer": "Pour développer un plugin, vous devez télécharger le package de fichiers d'en-tête `SPF_-_API.h` depuis la section \"Releases\" de notre page [GitHub]({}) et l'inclure dans votre projet.",
         "q3_question": "Comment ajouter une nouvelle traduction ?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Et si j'ai besoin d'une nouvelle fonctionnalité ?",
         "q4_answer": "Si vous êtes développeur, vous pouvez implémenter vous-même la fonctionnalité requise en utilisant notre `SPF_-_API.h`.\\nSinon, vous pouvez créer une suggestion sur [GitHub]({}) ou sur notre page [Patreon]({}).",
         "q5_question": "Où sont stockés les paramètres ?",
-        "q5_answer": "Les paramètres du framework se trouvent dans ```{}```. Les paramètres des plugins sont dans leurs propres dossiers de configuration, par exemple : ```{}```. **Il est recommandé de ne modifier les paramètres que via l'interface en jeu.**",
+        "q5_answer": "Les paramètres du framework se trouvent dans ```{}``` Les paramètres des plugins sont dans leurs propres dossiers de configuration, par exemple : ```{}``` **Il est recommandé de ne modifier les paramètres que via l'interface en jeu.**",
         "q6_question": "Le framework ou un plugin fait planter le jeu. Que faire ?",
         "q6_answer": " * Vérifiez les fichiers journaux dans le dossier `\\spfAssets\\logs`.\\n * Essayez de désactiver les plugins un par un pour trouver la source du problème.\\n * Si le problème vient du framework, veuillez créer un `problème` sur notre [GitHub]({}), en décrivant le problème en détail et en joignant le fichier journal."
     },

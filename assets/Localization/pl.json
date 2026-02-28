@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "Jak zainstalować i aktywować wtyczkę?",
-        "q1_answer": "Skopiuj swoją wtyczkę kompatybilną z SPF do katalogu ```{}``` Upewnij się, że plik `.dll` wtyczki znajduje się w katalogu o tej samej nazwie,\nna przykład `...\\MyPlugin\\MyPlugin.dll`\nFramework automatycznie znajdzie tę wtyczkę i ją załaduje. Wystarczy ją włączyć w zakładce `Menedżer wtyczek`.",
+        "q1_answer": "Skopiuj swoją wtyczkę kompatybilną z SPF do katalogu ```{}``` Upewnij się, że plik `.dll` wtyczki znajduje się w katalogu o tej samej nazwie, na przykład `...\\MyPlugin\\MyPlugin.dll`\nFramework automatycznie znajdzie tę wtyczkę i ją załaduje. Wystarczy ją włączyć w zakładce `Menedżer wtyczek`.",
         "q2_question": "Jak stworzyć własną wtyczkę?",
         "q2_answer": "Aby stworzyć wtyczkę, musisz pobrać pakiet plików nagłówkowych `SPF_-_API.h` z sekcji \"Releases\" na naszej stronie [GitHub]({}) i dołączyć go do swojego projektu.",
         "q3_question": "Jak dodać nowe tłumaczenie?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Co jeśli potrzebuję nowej funkcjonalności?",
         "q4_answer": "Jeśli jesteś deweloperem, możesz samodzielnie zaimplementować wymaganą funkcjonalność za pomocą naszego `SPF_-_API.h`.\n W przeciwnym razie możesz utworzyć sugestię na [GitHub]({}) lub na naszej stronie [Patreon]({}).",
         "q5_question": "Gdzie są przechowywane ustawienia?",
-        "q5_answer": "Ustawienia frameworka znajdują się w ```{}```. Ustawienia wtyczek znajdują się w ich własnych folderach konfiguracyjnych, na przykład: ```{}```. **Zaleca się zmianę ustawień tylko poprzez interfejs w grze.**",
+        "q5_answer": "Ustawienia frameworka znajdują się w ```{}``` Ustawienia wtyczek znajdują się w ich własnych folderach konfiguracyjnych, na przykład: ```{}``` **Zaleca się zmianę ustawień tylko poprzez interfejs w grze.**",
         "q6_question": "Framework lub wtyczka powoduje awarię gry. Co robić?",
         "q6_answer": " * Sprawdź pliki logów w folderze `\\spfAssets\\logs`.\n * Spróbuj wyłączać wtyczki jedna po drugiej, aby znaleźć źródło problemu.\n * Jeśli problem dotyczy frameworka, utwórz `issue` na naszym [GitHub]({}), szczegółowo opisując problem i załączając plik logu."
     },

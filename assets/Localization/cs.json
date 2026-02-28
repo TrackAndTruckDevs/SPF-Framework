@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "FAQ",
         "q1_question": "Jak nainstalovat a aktivovat plugin?",
-        "q1_answer": "Zkopírujte váš SPF-kompatibilní plugin do adresáře ```{}``` Ujistěte se, že `.dll` soubor pluginu je uvnitř adresáře, který odpovídá jeho názvu,\n\t\tnapříklad `...\\MyPlugin\\MyPlugin.dll`\n\t\tFramework tento plugin automaticky najde a načte. Stačí ho povolit v záložce `Správce pluginů`.",
+        "q1_answer": "Zkopírujte váš SPF-kompatibilní plugin do adresáře ```{}``` Ujistěte se, že `.dll` soubor pluginu je uvnitř adresáře, který odpovídá jeho názvu, například `...\\MyPlugin\\MyPlugin.dll`\n Framework tento plugin automaticky najde a načte. Stačí ho povolit v záložce `Správce pluginů`.",
         "q2_question": "Jak vytvořit vlastní plugin?",
         "q2_answer": "Pro vývoj pluginu si musíte stáhnout balíček hlavičkových souborů `SPF_-_API.h` z sekce \"Releases\" na naší [GitHub]({}) stránce a zahrnout ho do vašeho projektu.",
         "q3_question": "Jak přidat nový překlad?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Co když potřebuji novou funkcionalitu?",
         "q4_answer": "Pokud jste vývojář, můžete si požadovanou funkcionalitu implementovat sami pomocí našeho `SPF_-_API.h`.\n V opačném případě můžete vytvořit návrh na [GitHub]({}) nebo na naší [Patreon]({}) stránce.",
         "q5_question": "Kde jsou uložena nastavení?",
-        "q5_answer": "Nastavení frameworku se nacházejí v ```{}```. Nastavení pluginů jsou v jejich vlastních konfiguračních složkách, například: ```{}```. **Doporučuje se měnit nastavení pouze prostřednictvím herního rozhraní.**",
+        "q5_answer": "Nastavení frameworku se nacházejí v ```{}``` Nastavení pluginů jsou v jejich vlastních konfiguračních složkách, například: ```{}``` **Doporučuje se měnit nastavení pouze prostřednictvím herního rozhraní.**",
         "q6_question": "Framework nebo plugin způsobuje pád hry. Co dělat?",
         "q6_answer": " * Zkontrolujte logovací soubory ve složce `\\spfAssets\\logs`.\n * Zkuste zakázat pluginy jeden po druhém, abyste našli zdroj problému.\n * Pokud je problém ve frameworku, vytvořte prosím `issue` na našem [GitHub]({}), kde podrobně popíšete problém a přiložíte logovací soubor."
     },

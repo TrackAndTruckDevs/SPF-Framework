@@ -993,7 +993,7 @@
     "manual_popup": {
         "title": "SSS",
         "q1_question": "Eklenti nasıl kurulur ve etkinleştirilir?",
-        "q1_answer": "SPF uyumlu eklentinizi ```{}``` dizinine kopyalayın. Eklentinin `.dll` dosyasının adıyla eşleşen bir dizin içinde olduğundan emin olun,\nörneğin `...\\MyPlugin\\MyPlugin.dll`\nÇatı, bu eklentiyi otomatik olarak bulacak ve yükleyecektir. Sadece `Eklenti Yöneticisi` sekmesinde etkinleştirmeniz yeterlidir.",
+        "q1_answer": "SPF uyumlu eklentinizi ```{}``` dizinine kopyalayın. Eklentinin `.dll` dosyasının adıyla eşleşen bir dizin içinde olduğundan emin olun, örneğin `...\\MyPlugin\\MyPlugin.dll`\nÇatı, bu eklentiyi otomatik olarak bulacak ve yükleyecektir. Sadece `Eklenti Yöneticisi` sekmesinde etkinleştirmeniz yeterlidir.",
         "q2_question": "Kendi eklentinizi nasıl oluşturursunuz?",
         "q2_answer": "Bir eklenti geliştirmek için, `SPF_-_API.h` başlık dosyası paketini [GitHub]({}) sayfamızdaki \"Releases\" bölümünden indirmeniz ve projenize dahil etmeniz gerekir.",
         "q3_question": "Yeni bir çeviri nasıl eklenir?",
@@ -1001,7 +1001,7 @@
         "q4_question": "Yeni bir işlevselliğe ihtiyacım olursa ne olur?",
         "q4_answer": "Eğer bir geliştiriciyseniz, gerekli işlevselliği kendi başınıza `SPF_-_API.h` dosyamızı kullanarak uygulayabilirsiniz.\nAksi takdirde, [GitHub]({}) veya [Patreon]({}) sayfamızda bir öneri oluşturabilirsiniz.",
         "q5_question": "Ayarlar nerede saklanır?",
-        "q5_answer": "Çatı ayarları ```{}``` konumunda bulunur. Eklenti ayarları kendi yapılandırma klasörlerinde bulunur, örneğin: ```{}```. **Ayarları yalnızca oyun içi arayüz aracılığıyla değiştirmeniz önerilir.**",
+        "q5_answer": "Çatı ayarları ```{}``` konumunda bulunur. Eklenti ayarları kendi yapılandırma klasörlerinde bulunur, örneğin: ```{}``` **Ayarları yalnızca oyun içi arayüz aracılığıyla değiştirmeniz önerilir.**",
         "q6_question": "Çatı veya bir eklenti oyunu çökertiyor. Ne yapmalıyım?",
         "q6_answer": " * `\\spfAssets\\logs` klasöründeki günlük dosyalarını kontrol edin.\n * Sorunun kaynağını bulmak için eklentileri tek tek devre dışı bırakmayı deneyin.\n * Sorun çatıdaysa, lütfen [GitHub]({}) sayfamızda sorunu ayrıntılı olarak açıklayan ve günlük dosyasını ekleyen bir `issue` oluşturun."
     },

@@ -851,7 +851,7 @@ void MainWindow::RenderManualPopup() {
     std::string githubUrl = m_configService.GetValue("framework", "info.githubUrl", "").get<std::string>();
     std::string patreonUrl = m_configService.GetValue("framework", "info.patreonUrl", "").get<std::string>();
 
-    ImGui::BeginChild("ManualAnswer", ImVec2(575, 325), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("ManualAnswer", ImVec2(575, 325), false);
     //  Question 1
     if (ImGui::TreeNode(loc.Get(m_locFaqQ1).c_str())) {
       const std::string pluginsPath = PathManager::GetPluginsPath().string();
@@ -924,7 +924,7 @@ void MainWindow::RenderAboutPopup() {
 
   // About Popup
   if (ImGui::BeginPopupModal(loc.Get(m_locAboutPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::BeginChild("AboutPopupContent", ImVec2(575, 325), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("AboutPopupContent", ImVec2(575, 325), false);
 
     // --- About Us Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));

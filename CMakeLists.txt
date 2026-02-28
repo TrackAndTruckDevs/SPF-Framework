@@ -68,7 +68,7 @@ FetchContent_Declare(
     GIT_TAG 1.14.1 # Latest stable version
 )
 
-# Declare md4c dependency (parser for imgui_md)
+# Declare md4c dependency
 FetchContent_Declare(
     md4c
     GIT_REPOSITORY https://github.com/mity/md4c.git
@@ -76,14 +76,6 @@ FetchContent_Declare(
     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/md4c.CMakeLists.txt"
         "<SOURCE_DIR>/CMakeLists.txt"
-)
-
-# Declare imgui_md dependency
-FetchContent_Declare(
-    imgui_md
-    GIT_REPOSITORY https://github.com/mekhontsev/imgui_md.git
-    GIT_TAG main # Use main branch, as we will patch it
-    PATCH_COMMAND ${CMAKE_COMMAND} -D SOURCE_DIR=<SOURCE_DIR> -D PATCH_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/imgui_md.cpp.patch -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/apply_patch_if_needed.cmake
 )
 
 # --- Global Dependency Options ---
@@ -127,10 +119,6 @@ set(CURL_DISABLE_SMB ON CACHE BOOL "" FORCE)
 set(CURL_DISABLE_MQTT ON CACHE BOOL "" FORCE)
 # --- End of CPR/libcurl Configuration ---
 
-# Disable md4c utility and imgui_md examples
-set(MD4C_BUILD_MD2HTML OFF CACHE BOOL "" FORCE)
-set(IMGUI_MD_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
 # Configure ImGui options before making it available
 # We need backends for Win32 and DirectX 11
 set(IMGUI_BUILD_WIN32_BACKEND ON CACHE BOOL "" FORCE)
@@ -142,7 +130,7 @@ set(IMGUI_BUILD_VULKAN_BACKEND OFF CACHE BOOL "" FORCE)
 set(IMGUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # Do not build examples
 
 # Make dependencies available for compilation
-FetchContent_MakeAvailable(imgui minhook fmt json cpr md4c imgui_md)
+FetchContent_MakeAvailable(imgui minhook fmt json cpr md4c)
 
 # --- Creating targets for dependencies ---
 # ImGui does not have its own CMakeLists that creates a library, so we define it here.
@@ -166,16 +154,6 @@ target_include_directories(imgui PUBLIC
 )
 
 # md4c has its own CMakeLists.txt and creates the 'md4c' target.
-
-# Create a library target for imgui_md
-add_library(imgui_md STATIC
-    ${imgui_md_SOURCE_DIR}/imgui_md.cpp
-)
-target_include_directories(imgui_md PUBLIC 
-    ${imgui_md_SOURCE_DIR}
-    ${md4c_SOURCE_DIR}/src # Add md4c's include directory
-)
-target_link_libraries(imgui_md PRIVATE md4c imgui)
 
 # main framework library.
 # Generate Windows resource file for DLL metadata (version, description, etc.)
@@ -354,6 +332,7 @@ target_include_directories(SPF
     # Internal SDK dependency, needed for compilation
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/vendor/scs-sdk/include"
+        "${md4c_SOURCE_DIR}/src" # Added for md4c.h
 )
 
 # --- Linking Dependencies ---
@@ -364,7 +343,7 @@ target_include_directories(SPF
 # nlohmann_json::nlohmann_json - nlohmann/json library
 # d3d11, dxgi - Windows system libraries for DirectX
 # dinput8, dxguid - system libraries for DirectInput
-target_link_libraries(SPF PRIVATE imgui_md imgui minhook fmt::fmt nlohmann_json::nlohmann_json cpr::cpr d3d11 d3d12 dxgi dinput8 dxguid opengl32.lib Psapi.lib xinput.lib)
+target_link_libraries(SPF PRIVATE md4c imgui minhook fmt::fmt nlohmann_json::nlohmann_json cpr::cpr d3d11 d3d12 dxgi dinput8 dxguid opengl32.lib Psapi.lib xinput.lib)
 
 # --- PLUGINS INCLUSION ---
 # Add the plugins directory to the build.
