@@ -981,8 +981,8 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
     // to the window name itself.
 
     // A tab bar is a good way to organize a complex UI.
-    if (ui->UI_BeginTabBar("##MainWindowTabs")) {
-        if (ui->UI_BeginTabItem("General")) {
+    if (ui->UI_BeginTabBar("##MainWindowTabs", SPF_TAB_BAR_FLAG_NONE)) {
+        if (ui->UI_BeginTabItem("General", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
             ui->UI_Text("Hello from the ExamplePlugin window!");
 
             // Example of getting and displaying a translated string.
@@ -993,7 +993,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
 
             // --- Config UI Example ---
             ui->UI_Text("This slider modifies a value in settings.json.");
-            if (ui->UI_SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d")) {
+            if (ui->UI_SliderInt("Some Number", &g_ctx.someNumber, 0, 100, "%d", SPF_SLIDER_FLAG_NONE)) {
                 // If the slider is moved, update the configuration file.
                 g_ctx.loadAPI->config->Cfg_SetInt32(g_ctx.loadAPI->config->Cfg_GetContext(PLUGIN_NAME), "settings.a_simple_number", g_ctx.someNumber);
                 g_ctx.loadAPI->logger->Log(g_ctx.loadAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "User changed 'a_simple_number' via UI.");
@@ -1002,7 +1002,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
 
             // --- Game Console Example ---
             ui->UI_Text("Enter a command to execute in the in-game console:");
-            ui->UI_InputText("##ConsoleCommand", g_ctx.consoleCommand, sizeof(g_ctx.consoleCommand));
+            ui->UI_InputText("##ConsoleCommand", g_ctx.consoleCommand, sizeof(g_ctx.consoleCommand), SPF_INPUT_TEXT_FLAG_NONE);
             ui->UI_SameLine(0, 0);
             if (ui->UI_Button("Execute", 0, 0)) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->console && g_ctx.consoleCommand[0] != '\0') {
@@ -1035,14 +1035,14 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->UI_EndTabItem();
         }
         // Render the content of other tabs by calling their respective functions.
-        if (ui->UI_BeginTabItem("Traffic Inspector")) { RenderVehicleTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Camera")) { RenderCameraTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Telemetry")) { RenderTelemetryTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Events")) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Virtual Input")) { RenderVirtInputTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Styling API")) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Environment")) { RenderEnvironmentTab(ui, user_data); ui->UI_EndTabItem(); }
-        if (ui->UI_BeginTabItem("Input Test")) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Traffic Inspector", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderVehicleTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Camera", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderCameraTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Telemetry", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderTelemetryTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Events", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderEventsTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Virtual Input", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderVirtInputTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Styling API", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Environment", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderEnvironmentTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Input Test", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
         ui->UI_EndTabBar();
     }
 }
@@ -1201,7 +1201,7 @@ void RenderVehicleTab(SPF_UI_API* ui, void* user_data) {
     }
 
     // 3. Draw Combo Box
-    if (ui->UI_BeginCombo("Target Vehicle", previewText)) {
+    if (ui->UI_BeginCombo("Target Vehicle", previewText, SPF_COMBO_FLAG_NONE)) {
         for (uint32_t i = 0; i < actualCount; ++i) {
             SPF_VehicleHandle h = g_ctx.vehicleHandles[i];
             int32_t id = g_ctx.vehicleAPI->Veh_GetId(h);
@@ -1210,7 +1210,7 @@ void RenderVehicleTab(SPF_UI_API* ui, void* user_data) {
             g_ctx.coreAPI->formatting->Fmt_Format(itemLabel, sizeof(itemLabel), "Vehicle #%d", id);
 
             bool isSelected = (g_ctx.selectedVehicle == h);
-            if (ui->UI_Selectable(itemLabel, isSelected)) {
+            if (ui->UI_Selectable(itemLabel, isSelected, SPF_SELECTABLE_FLAG_NONE, 0.0f, 0.0f)) {
                 g_ctx.selectedVehicle = h;
             }
         }
@@ -1376,7 +1376,7 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data) {
     // Example of a virtual axis.
     static float throttle_value = 0.0f;
     ui->UI_Text("Virtual Throttle Axis:");
-    if (ui->UI_SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f")) {
+    if (ui->UI_SliderFloat("Throttle", &throttle_value, 0.0f, 1.0f, "%.2f", SPF_SLIDER_FLAG_NONE)) {
         // When the slider value changes, update the virtual axis value.
         g_ctx.coreAPI->input->Virt_SetAxisValue(g_ctx.virtualDevice, "virt_throttle", throttle_value);
     }
@@ -1652,7 +1652,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         total_width += (win_padding_x * 2.0f) + 20.0f; 
 
         float v_w, v_h;
-        ui->UI_GetViewportSize(&v_w, &v_h);
+        ui->UI_GetMainViewportSize(&v_w, &v_h);
         
         float win_h = 450.0f; // Desired height
         float pos_x = (v_w - total_width) * 0.5f;

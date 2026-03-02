@@ -33,9 +33,9 @@ class PluginProxyWindow : public BaseWindow {
 
   /**
    * @brief Sets the behavior flags for this window.
-   * @param flags A bitmask of SPF_Window_Flags.
+   * @param flags A bitmask of SPF_WindowFlags.
    */
-  void SetWindowFlags(SPF_Window_Flags flags) {
+  void SetWindowFlags(SPF_WindowFlags flags) {
     m_spfFlags = flags;
   }
 
@@ -51,51 +51,70 @@ class PluginProxyWindow : public BaseWindow {
          return;
      }
  
-         if (m_drawCallback) {
-           SPF_UI_API* builder = Modules::PluginManager::GetInstance().GetUIApi();
-           
-           DWORD exceptionCode = 0;
-           if (!InvokeSafe(builder, &exceptionCode)) {
-               auto logger = Logging::LoggerFactory::GetInstance().GetLogger("UIManager");
-               if (logger) {
-                   logger->Error("Plugin '{}' crashed during UI rendering (Exception: 0x{:08X}). The framework intercepted the crash to prevent game instability.", 
-                                  m_componentName, exceptionCode);
-               }
-               m_hasCrashed = true;
+     if (m_drawCallback) {
+       SPF_UI_API* builder = Modules::PluginManager::GetInstance().GetUIApi();
+       
+       DWORD exceptionCode = 0;
+       if (!InvokeSafe(builder, &exceptionCode)) {
+           auto logger = Logging::LoggerFactory::GetInstance().GetLogger("UIManager");
+           if (logger) {
+               logger->Error("Plugin '{}' crashed during UI rendering (Exception: 0x{:08X}). The framework intercepted the crash to prevent game instability.", 
+                              m_componentName, exceptionCode);
            }
-         }
+           m_hasCrashed = true;
        }
-     
-       ImGuiWindowFlags GetExtraWindowFlags() const override {
-         ImGuiWindowFlags imFlags = BaseWindow::GetExtraWindowFlags(); // Call base implementation
-     
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_TITLE) imFlags |= ImGuiWindowFlags_NoTitleBar;
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_RESIZE) imFlags |= ImGuiWindowFlags_NoResize;
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_MOVE) imFlags |= ImGuiWindowFlags_NoMove;
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_SCROLLBAR) imFlags |= ImGuiWindowFlags_NoScrollbar;
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_COLLAPSE) imFlags |= ImGuiWindowFlags_NoCollapse;
-         if (m_spfFlags & SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE) imFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-         if (m_spfFlags & SPF_WINDOW_FLAG_MENU_BAR) imFlags |= ImGuiWindowFlags_MenuBar;
-         if (m_spfFlags & SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR) imFlags |= ImGuiWindowFlags_HorizontalScrollbar;
-         if (m_spfFlags & SPF_WINDOW_FLAG_NO_BACKGROUND) imFlags |= ImGuiWindowFlags_NoBackground;
-     
-         return imFlags;
-       }
-     
-      private:
-       bool InvokeSafe(SPF_UI_API* builder, DWORD* outExceptionCode) {
-         __try {
-             m_drawCallback(builder, m_userData);
-             return true;
-         }
-         __except (EXCEPTION_EXECUTE_HANDLER) {
-             if (outExceptionCode) *outExceptionCode = GetExceptionCode();
-             return false;
-         }
-       }
-     
-       SPF_DrawCallback m_drawCallback = nullptr;   void* m_userData = nullptr;
-   SPF_Window_Flags m_spfFlags = SPF_WINDOW_FLAG_NONE;
+     }
+   }
+ 
+   ImGuiWindowFlags GetExtraWindowFlags() const override {
+     ImGuiWindowFlags imFlags = BaseWindow::GetExtraWindowFlags();
+
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_TITLE_BAR) imFlags |= ImGuiWindowFlags_NoTitleBar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_RESIZE) imFlags |= ImGuiWindowFlags_NoResize;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_MOVE) imFlags |= ImGuiWindowFlags_NoMove;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_SCROLLBAR) imFlags |= ImGuiWindowFlags_NoScrollbar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_SCROLL_WITH_MOUSE) imFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_COLLAPSE) imFlags |= ImGuiWindowFlags_NoCollapse;
+     if (m_spfFlags & SPF_WINDOW_FLAG_ALWAYS_AUTO_RESIZE) imFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_BACKGROUND) imFlags |= ImGuiWindowFlags_NoBackground;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_SAVED_SETTINGS) imFlags |= ImGuiWindowFlags_NoSavedSettings;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_MOUSE_INPUTS) imFlags |= ImGuiWindowFlags_NoMouseInputs;
+     if (m_spfFlags & SPF_WINDOW_FLAG_MENU_BAR) imFlags |= ImGuiWindowFlags_MenuBar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_HORIZONTAL_SCROLLBAR) imFlags |= ImGuiWindowFlags_HorizontalScrollbar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_FOCUS_ON_APPEARING) imFlags |= ImGuiWindowFlags_NoFocusOnAppearing;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_BRING_TO_FRONT_ON_FOCUS) imFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+     if (m_spfFlags & SPF_WINDOW_FLAG_ALWAYS_VERTICAL_SCROLLBAR) imFlags |= ImGuiWindowFlags_AlwaysVerticalScrollbar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_ALWAYS_HORIZONTAL_SCROLLBAR) imFlags |= ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_NAV_INPUTS) imFlags |= ImGuiWindowFlags_NoNavInputs;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_NAV_FOCUS) imFlags |= ImGuiWindowFlags_NoNavFocus;
+     if (m_spfFlags & SPF_WINDOW_FLAG_UNSAVED_DOCUMENT) imFlags |= ImGuiWindowFlags_UnsavedDocument;
+     if (m_spfFlags & SPF_WINDOW_FLAG_NO_DOCKING) imFlags |= ImGuiWindowFlags_NoDocking;
+
+     // Internal flags mapping
+     if (m_spfFlags & SPF_WINDOW_FLAG_CHILD_WINDOW) imFlags |= ImGuiWindowFlags_ChildWindow;
+     if (m_spfFlags & SPF_WINDOW_FLAG_TOOLTIP) imFlags |= ImGuiWindowFlags_Tooltip;
+     if (m_spfFlags & SPF_WINDOW_FLAG_POPUP) imFlags |= ImGuiWindowFlags_Popup;
+     if (m_spfFlags & SPF_WINDOW_FLAG_MODAL) imFlags |= ImGuiWindowFlags_Modal;
+     if (m_spfFlags & SPF_WINDOW_FLAG_CHILD_MENU) imFlags |= ImGuiWindowFlags_ChildMenu;
+
+     return imFlags;
+   }
+ 
+  private:
+   bool InvokeSafe(SPF_UI_API* builder, DWORD* outExceptionCode) {
+     __try {
+         m_drawCallback(builder, m_userData);
+         return true;
+     }
+     __except (EXCEPTION_EXECUTE_HANDLER) {
+         if (outExceptionCode) *outExceptionCode = GetExceptionCode();
+         return false;
+     }
+   }
+ 
+   SPF_DrawCallback m_drawCallback = nullptr;
+   void* m_userData = nullptr;
+   SPF_WindowFlags m_spfFlags = SPF_WINDOW_FLAG_NONE;
    bool m_hasCrashed = false;
  };
  }  // namespace UI
