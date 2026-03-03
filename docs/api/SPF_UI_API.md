@@ -65,6 +65,88 @@ Flags for `UI_RegisterDrawCallbackWithFlags`, `UI_BeginChild`, `UI_BeginPopup`.
 | `SPF_WINDOW_FLAG_UNSAVED_DOCUMENT` | `1 << 18` | Appends a `(*)` to the title, indicating unsaved changes. |
 | `SPF_WINDOW_FLAG_NO_DOCKING` | `1 << 19` | Prevents the window from being docked into other windows/nodes. |
 
+### SPF_MultiSelectFlags
+Flags for `UI_BeginMultiSelect`. Controls how multiple items can be selected, ranged, and cleared.
+
+| Flag | Description |
+| :--- | :--- |
+| `SPF_MULTI_SELECT_FLAG_NONE` | Default behavior. |
+| `SPF_MULTI_SELECT_FLAG_SINGLE_SELECT` | Only one item can be selected at a time. |
+| `SPF_MULTI_SELECT_FLAG_NO_SELECT_ALL` | Disable 'Select All' shortcut (Ctrl+A). |
+| `SPF_MULTI_SELECT_FLAG_NO_RANGE_SELECT` | Disable range selection (Shift+Click). |
+| `SPF_MULTI_SELECT_FLAG_NO_AUTO_SELECT` | Disable automatic selection on navigation or click. |
+| `SPF_MULTI_SELECT_FLAG_NO_AUTO_CLEAR` | Disable automatic clearing of selection. |
+| `SPF_MULTI_SELECT_FLAG_NO_AUTO_CLEAR_ON_CLICK_OUTSIDE` | Do not clear selection when clicking on empty space. |
+| `SPF_MULTI_SELECT_FLAG_NAV_WRAPPING` | Enable keyboard navigation wrapping within the selection scope. |
+| `SPF_MULTI_SELECT_FLAG_LOOP` | Selection loops around when reaching boundaries. |
+| `SPF_MULTI_SELECT_FLAG_BOX_SELECT_1D` | Enable 1D box-selection (marquee). |
+| `SPF_MULTI_SELECT_FLAG_BOX_SELECT_2D` | Enable 2D box-selection (marquee). |
+| `SPF_MULTI_SELECT_FLAG_BOX_SELECT_NO_SCROLL` | Disable scrolling during box-selection. |
+| `SPF_MULTI_SELECT_FLAG_CLEAR_ON_ESCAPE` | Clear selection when the Escape key is pressed. |
+| `SPF_MULTI_SELECT_FLAG_CLEAR_ON_CLICK_VOID` | Clear selection when clicking on the window background. |
+| `SPF_MULTI_SELECT_FLAG_SCOPE_WINDOW` | The selection scope is limited to the current window. |
+| `SPF_MULTI_SELECT_FLAG_SCOPE_RECT` | The selection scope is defined by a specific rectangle. |
+| `SPF_MULTI_SELECT_FLAG_SELECT_ON_CLICK` | Select items immediately on mouse down. |
+| `SPF_MULTI_SELECT_FLAG_SELECT_ON_DEFAULT_PURPOSE` | Use default interaction rules for selection. |
+
+### SPF_InputFlags
+Flags for `UI_Shortcut` and `UI_SetNextItemShortcut`. Defines how input is routed.
+
+| Flag | Description |
+| :--- | :--- |
+| `SPF_INPUT_FLAG_NONE` | Default behavior. |
+| `SPF_INPUT_FLAG_REPEAT` | Enable key repeat for the shortcut. |
+| `SPF_INPUT_FLAG_ROUTE_ACTIVE` | Route to active item only. |
+| `SPF_INPUT_FLAG_ROUTE_FOCUSED` | Route to the focused window stack (Default). |
+| `SPF_INPUT_FLAG_ROUTE_GLOBAL` | Global shortcut, processed regardless of focus. |
+| `SPF_INPUT_FLAG_ROUTE_ALWAYS` | Always process, do not participate in routing logic. |
+| `SPF_INPUT_FLAG_ROUTE_OVER_FOCUSED` | Overrides focused route even if not in the focus stack. |
+| `SPF_INPUT_FLAG_ROUTE_OVER_ACTIVE` | Overrides active item route. |
+| `SPF_INPUT_FLAG_ROUTE_UNLESS_BG_FOCUSED` | Process only if no ImGui window is focused. |
+| `SPF_INPUT_FLAG_ROUTE_FROM_ROOT_WINDOW` | Evaluate route from the root window's perspective. |
+| `SPF_INPUT_FLAG_TOOLTIP` | Automatically display a tooltip for the shortcut. |
+
+### SPF_SelectionRequestType
+Defines the type of selection modification being requested by the system.
+
+| Enum | Description |
+| :--- | :--- |
+| `SPF_SELECTION_REQUEST_NONE` | No request. |
+| `SPF_SELECTION_REQUEST_SET_ALL` | Request to set the selection state for all items in the scope. |
+| `SPF_SELECTION_REQUEST_SET_RANGE` | Request to set the selection state for a specific range of items. |
+
+### SPF_Storage_Handle
+`SPF_Storage_Handle` is an opaque pointer to the internal ImGuiStorage system.
+It allows for direct manipulation of persisted UI states.
+
+### SPF_PlotGetter
+`SPF_PlotGetter` is a callback function pointer for dynamic data retrieval in plot widgets.
+
+```c
+typedef float (*SPF_PlotGetter)(void* data, int idx);
+```
+
+### SPF_SelectionRequest
+Represents a single request to update the selection state from the Multi-Select API.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `type` | `SPF_SelectionRequestType` | The type of modification (SetAll or SetRange). |
+| `selected` | `bool` | The target selection state (true = selected, false = unselected). |
+| `range_direction` | `int64_t` | Direction of the range selection (-1 or +1). |
+| `first_item_user_data` | `int64_t` | User data ID of the first item in the range. |
+| `last_item_user_data` | `int64_t` | User data ID of the last item in the range. |
+
+### SPF_MultiSelectIO
+Data exchange structure for the Multi-Select API.
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `requests` | `SPF_SelectionRequest*` | Array of selection requests to be executed. |
+| `requests_count` | `int` | Number of valid requests in the array. |
+| `range_src_item_user_data` | `int64_t` | User data ID of the item where range selection started. |
+| `range_dst_item_user_data` | `int64_t` | User data ID of the item where range selection ended. |
+
 ### SPF_InputTextFlags
 Flags for `UI_InputText`, `UI_InputTextMultiline`.
 
@@ -952,6 +1034,26 @@ Creates a standard scrolling list.
     *   `current_item`: Pointer to the index of the selected item.
     *   `items`: Array of strings.
     *   `height_in_items`: The visible height of the box (e.g., 5 rows).
+
+### Multi-Select API
+
+Allows for complex item selection (Shift+Click, Ctrl+A, Marquee).
+
+---
+**`SPF_MultiSelectIO* UI_BeginMultiSelect(SPF_MultiSelectFlags flags, int selection_size, int items_count)`**
+Starts a multi-selection scope. Returns a pointer to an IO object containing an array of `SPF_SelectionRequest` that your plugin must process to update its selection state.
+
+---
+**`SPF_MultiSelectIO* UI_EndMultiSelect()`**
+Ends the scope and returns the final interaction state.
+
+---
+**`void UI_SetNextItemSelectionUserData(int64_t user_data)`**
+Associates a unique ID (index or pointer) with the next item for selection tracking.
+
+---
+**`bool UI_IsItemToggledSelection()`**
+Returns `true` if the last item's selection state was toggled by the Multi-Select system this frame.
 
 ### Plots and Histograms
 

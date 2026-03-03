@@ -124,8 +124,9 @@ void UIApi::UI_GetMousePosOnOpeningCurrentPopup(float* out_x, float* out_y) {
 float UIApi::UI_GetMouseWheel() { return ImGui::GetIO().MouseWheel; }
 float UIApi::UI_GetMouseWheelH() { return ImGui::GetIO().MouseWheelH; }
 
-bool UIApi::UI_Shortcut(int key_chord, int flags) { return ImGui::Shortcut((ImGuiKeyChord)key_chord, (ImGuiInputFlags)flags); }
-void UIApi::UI_SetNextItemShortcut(int key_chord, int flags) { ImGui::SetNextItemShortcut((ImGuiKeyChord)key_chord, (ImGuiInputFlags)flags); }
+bool UIApi::UI_Shortcut(int key_chord, SPF_InputFlags flags) { return ImGui::Shortcut((ImGuiKeyChord)key_chord, (ImGuiInputFlags)flags); }
+void UIApi::UI_SetNextItemShortcut(int key_chord, SPF_InputFlags flags) { ImGui::SetNextItemShortcut((ImGuiKeyChord)key_chord, (ImGuiInputFlags)flags); }
+void UIApi::UI_SetItemKeyOwner(SPF_Key key) { ImGui::SetItemKeyOwner((ImGuiKey)key); }
 
 bool UIApi::UI_IsMouseDragging(SPF_MouseButton button) { return ImGui::IsMouseDragging((ImGuiMouseButton)button); }
 
@@ -142,6 +143,8 @@ SPF_MouseCursor UIApi::UI_GetMouseCursor() { return (SPF_MouseCursor)ImGui::GetM
 bool UIApi::UI_IsKeyDown(int key_index) { return ImGui::IsKeyDown((ImGuiKey)key_index); }
 bool UIApi::UI_IsKeyPressed(int key_index) { return ImGui::IsKeyPressed((ImGuiKey)key_index); }
 bool UIApi::UI_IsKeyReleased(int key_index) { return ImGui::IsKeyReleased((ImGuiKey)key_index); }
+int UIApi::UI_GetKeyPressedAmount(int key_index, float repeat_delay, float rate) { return ImGui::GetKeyPressedAmount((ImGuiKey)key_index, repeat_delay, rate); }
+bool UIApi::UI_IsMouseReleasedWithDelay(SPF_MouseButton button, float delay) { return ImGui::IsMouseReleasedWithDelay((ImGuiMouseButton)button, delay); }
 const char* UIApi::UI_GetKeyName(int key_index) { return ImGui::GetKeyName((ImGuiKey)key_index); }
 
 const char* UIApi::UI_GetClipboardText() { return ImGui::GetClipboardText(); }
@@ -153,6 +156,9 @@ bool UIApi::UI_IsWindowAppearing() { return ImGui::IsWindowAppearing(); }
 bool UIApi::UI_IsWindowCollapsed() { return ImGui::IsWindowCollapsed(); }
 bool UIApi::UI_IsWindowFocused(SPF_FocusedFlags flags) { return ImGui::IsWindowFocused((ImGuiFocusedFlags)flags); }
 bool UIApi::UI_IsWindowHovered(SPF_HoveredFlags flags) { return ImGui::IsWindowHovered((ImGuiHoveredFlags)flags); }
+
+SPF_Storage_Handle UIApi::UI_GetStateStorage() { return (SPF_Storage_Handle)ImGui::GetStateStorage(); }
+void UIApi::UI_SetStateStorage(SPF_Storage_Handle storage) { ImGui::SetStateStorage((ImGuiStorage*)storage); }
 void* UIApi::UI_GetWindowViewport() { return (void*)ImGui::GetWindowViewport(); }
 
 SPF_DrawList_Handle UIApi::UI_GetWindowDrawList() { return (SPF_DrawList_Handle)ImGui::GetWindowDrawList(); }
@@ -411,8 +417,32 @@ bool UIApi::UI_BeginListBox(const char* label, float size_x, float size_y) { ret
 void UIApi::UI_EndListBox() { ImGui::EndListBox(); }
 bool UIApi::UI_ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items) { return ImGui::ListBox(label, current_item, items, items_count, height_in_items); }
 
+SPF_MultiSelectIO* UIApi::UI_BeginMultiSelect(SPF_MultiSelectFlags flags, int selection_size, int items_count) {
+    return (SPF_MultiSelectIO*)ImGui::BeginMultiSelect((ImGuiMultiSelectFlags)flags, selection_size, items_count);
+}
+
+SPF_MultiSelectIO* UIApi::UI_EndMultiSelect() {
+    return (SPF_MultiSelectIO*)ImGui::EndMultiSelect();
+}
+
+void UIApi::UI_SetNextItemSelectionUserData(int64_t selection_user_data) {
+    ImGui::SetNextItemSelectionUserData((ImGuiSelectionUserData)selection_user_data);
+}
+
+bool UIApi::UI_IsItemToggledSelection() {
+    return ImGui::IsItemToggledSelection();
+}
+
 void UIApi::UI_PlotLines(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride) { ImGui::PlotLines(label, values, values_count, values_offset, overlay_text, scale_min, scale_max, {graph_size_x, graph_size_y}, stride); }
 void UIApi::UI_PlotHistogram(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride) { ImGui::PlotHistogram(label, values, values_count, values_offset, overlay_text, scale_min, scale_max, {graph_size_x, graph_size_y}, stride); }
+
+void UIApi::UI_PlotLinesCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y) {
+    ImGui::PlotLines(label, values_getter, data, values_count, values_offset, overlay_text, scale_min, scale_max, {graph_size_x, graph_size_y});
+}
+
+void UIApi::UI_PlotHistogramCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y) {
+    ImGui::PlotHistogram(label, values_getter, data, values_count, values_offset, overlay_text, scale_min, scale_max, {graph_size_x, graph_size_y});
+}
 
 void UIApi::UI_Value_Bool(const char* prefix, bool b) { ImGui::Value(prefix, b); }
 void UIApi::UI_Value_Int(const char* prefix, int v) { ImGui::Value(prefix, v); }
@@ -729,6 +759,9 @@ void UIApi::UI_AddRectFilled(float x1, float y1, float x2, float y2, float r, fl
 
 void UIApi::UI_DrawList_AddNgon(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness) { if (dl) ((ImDrawList*)dl)->AddNgon({center_x, center_y}, radius, col, num_segments, thickness); }
 void UIApi::UI_DrawList_AddNgonFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments) { if (dl) ((ImDrawList*)dl)->AddNgonFilled({center_x, center_y}, radius, col, num_segments); }
+void UIApi::UI_DrawList_AddNgonContour(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness) {
+    if (dl) ((ImDrawList*)dl)->AddNgon({center_x, center_y}, radius, col, num_segments, thickness);
+}
 void UIApi::UI_DrawList_AddEllipse(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments, float thickness) {
     if (dl) ((ImDrawList*)dl)->AddEllipse({center_x, center_y}, {radius_x, radius_y}, col, rot, num_segments, thickness);
 }
@@ -752,8 +785,6 @@ void UIApi::UI_DrawList_AddConvexPolyFilled(SPF_DrawList_Handle dl, const float*
     ((ImDrawList*)dl)->AddConvexPolyFilled(pts.data(), num_points, col);
 }
 void UIApi::UI_DrawList_AddConcavePolyFilled(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col) {
-    // ImGui does not have AddConcavePolyFilled directly, we usually decompose or use AddConvex if possible.
-    // For now, fallback to convex as ImGui expects convex.
     UI_DrawList_AddConvexPolyFilled(dl, points_x, points_y, num_points, col);
 }
 
@@ -926,6 +957,7 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_GetMouseWheelH = &UIApi::UI_GetMouseWheelH;
     api->UI_Shortcut = &UIApi::UI_Shortcut;
     api->UI_SetNextItemShortcut = &UIApi::UI_SetNextItemShortcut;
+    api->UI_SetItemKeyOwner = &UIApi::UI_SetItemKeyOwner;
     api->UI_IsMouseDragging = &UIApi::UI_IsMouseDragging;
     api->UI_GetMouseDragDelta = &UIApi::UI_GetMouseDragDelta;
     api->UI_ResetMouseDragDelta = &UIApi::UI_ResetMouseDragDelta;
@@ -934,6 +966,8 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_IsKeyDown = &UIApi::UI_IsKeyDown;
     api->UI_IsKeyPressed = &UIApi::UI_IsKeyPressed;
     api->UI_IsKeyReleased = &UIApi::UI_IsKeyReleased;
+    api->UI_GetKeyPressedAmount = &UIApi::UI_GetKeyPressedAmount;
+    api->UI_IsMouseReleasedWithDelay = &UIApi::UI_IsMouseReleasedWithDelay;
     api->UI_GetKeyName = &UIApi::UI_GetKeyName;
     api->UI_GetClipboardText = &UIApi::UI_GetClipboardText;
     api->UI_SetClipboardText = &UIApi::UI_SetClipboardText;
@@ -941,6 +975,8 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_IsWindowCollapsed = &UIApi::UI_IsWindowCollapsed;
     api->UI_IsWindowFocused = &UIApi::UI_IsWindowFocused;
     api->UI_IsWindowHovered = &UIApi::UI_IsWindowHovered;
+    api->UI_GetStateStorage = &UIApi::UI_GetStateStorage;
+    api->UI_SetStateStorage = &UIApi::UI_SetStateStorage;
     api->UI_GetWindowViewport = &UIApi::UI_GetWindowViewport;
     api->UI_GetWindowDrawList = &UIApi::UI_GetWindowDrawList;
     api->UI_GetBackgroundDrawList = &UIApi::UI_GetBackgroundDrawList;
@@ -952,6 +988,9 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_GetWindowDpiScale = &UIApi::UI_GetWindowDpiScale;
     api->UI_SetWindowPos = &UIApi::UI_SetWindowPos;
     api->UI_SetWindowSize = &UIApi::UI_SetWindowSize;
+    api->UI_SetNextWindowPos = &UIApi::UI_SetNextWindowPos;
+    api->UI_SetNextWindowSize = &UIApi::UI_SetNextWindowSize;
+    api->UI_SetNextWindowViewport = &UIApi::UI_SetNextWindowViewport;
     api->UI_SetNextWindowScroll = &UIApi::UI_SetNextWindowScroll;
     api->UI_GetScrollX = &UIApi::UI_GetScrollX;
     api->UI_GetScrollY = &UIApi::UI_GetScrollY;
@@ -1103,8 +1142,14 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_BeginListBox = &UIApi::UI_BeginListBox;
     api->UI_EndListBox = &UIApi::UI_EndListBox;
     api->UI_ListBox = &UIApi::UI_ListBox;
+    api->UI_BeginMultiSelect = &UIApi::UI_BeginMultiSelect;
+    api->UI_EndMultiSelect = &UIApi::UI_EndMultiSelect;
+    api->UI_SetNextItemSelectionUserData = &UIApi::UI_SetNextItemSelectionUserData;
+    api->UI_IsItemToggledSelection = &UIApi::UI_IsItemToggledSelection;
     api->UI_PlotLines = &UIApi::UI_PlotLines;
     api->UI_PlotHistogram = &UIApi::UI_PlotHistogram;
+    api->UI_PlotLinesCallback = &UIApi::UI_PlotLinesCallback;
+    api->UI_PlotHistogramCallback = &UIApi::UI_PlotHistogramCallback;
     api->UI_Value_Bool = &UIApi::UI_Value_Bool;
     api->UI_Value_Int = &UIApi::UI_Value_Int;
     api->UI_Value_UInt = &UIApi::UI_Value_UInt;
@@ -1212,6 +1257,7 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_AddRectFilled = &UIApi::UI_AddRectFilled;
     api->UI_DrawList_AddNgon = &UIApi::UI_DrawList_AddNgon;
     api->UI_DrawList_AddNgonFilled = &UIApi::UI_DrawList_AddNgonFilled;
+    api->UI_DrawList_AddNgonContour = &UIApi::UI_DrawList_AddNgonContour;
     api->UI_DrawList_AddEllipse = &UIApi::UI_DrawList_AddEllipse;
     api->UI_DrawList_AddEllipseFilled = &UIApi::UI_DrawList_AddEllipseFilled;
     api->UI_DrawList_AddBezierCubic = &UIApi::UI_DrawList_AddBezierCubic;

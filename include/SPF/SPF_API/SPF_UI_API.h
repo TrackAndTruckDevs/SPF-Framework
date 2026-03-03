@@ -764,6 +764,141 @@ typedef enum
 } SPF_TabItemFlags;
 
 /**
+ * @enum SPF_MultiSelectFlags
+ * @brief Configuration flags for the Multi-Select API (UI_BeginMultiSelect).
+ * @details Controls how multiple items can be selected, ranged, and cleared.
+ */
+typedef enum {
+    /** Default behavior. */
+    SPF_MULTI_SELECT_FLAG_NONE = 0,
+    /** Only one item can be selected at a time. */
+    SPF_MULTI_SELECT_FLAG_SINGLE_SELECT = 1 << 0,
+    /** Disable 'Select All' shortcut (Ctrl+A). */
+    SPF_MULTI_SELECT_FLAG_NO_SELECT_ALL = 1 << 1,
+    /** Disable range selection (Shift+Click). */
+    SPF_MULTI_SELECT_FLAG_NO_RANGE_SELECT = 1 << 2,
+    /** Disable automatic selection on navigation or click. */
+    SPF_MULTI_SELECT_FLAG_NO_AUTO_SELECT = 1 << 3,
+    /** Disable automatic clearing of selection. */
+    SPF_MULTI_SELECT_FLAG_NO_AUTO_CLEAR = 1 << 4,
+    /** Do not clear selection when clicking on empty space. */
+    SPF_MULTI_SELECT_FLAG_NO_AUTO_CLEAR_ON_CLICK_OUTSIDE = 1 << 5,
+    /** Enable keyboard navigation wrapping within the selection scope. */
+    SPF_MULTI_SELECT_FLAG_NAV_WRAPPING = 1 << 6,
+    /** Selection loops around when reaching boundaries. */
+    SPF_MULTI_SELECT_FLAG_LOOP = 1 << 7,
+    /** Enable 1D box-selection (marquee). */
+    SPF_MULTI_SELECT_FLAG_BOX_SELECT_1D = 1 << 8,
+    /** Enable 2D box-selection (marquee). */
+    SPF_MULTI_SELECT_FLAG_BOX_SELECT_2D = 1 << 9,
+    /** Disable scrolling during box-selection. */
+    SPF_MULTI_SELECT_FLAG_BOX_SELECT_NO_SCROLL = 1 << 10,
+    /** Clear selection when the Escape key is pressed. */
+    SPF_MULTI_SELECT_FLAG_CLEAR_ON_ESCAPE = 1 << 11,
+    /** Clear selection when clicking on the window background. */
+    SPF_MULTI_SELECT_FLAG_CLEAR_ON_CLICK_VOID = 1 << 12,
+    /** The selection scope is limited to the current window. */
+    SPF_MULTI_SELECT_FLAG_SCOPE_WINDOW = 1 << 13,
+    /** The selection scope is defined by a specific rectangle. */
+    SPF_MULTI_SELECT_FLAG_SCOPE_RECT = 1 << 14,
+    /** Select items immediately on mouse down. */
+    SPF_MULTI_SELECT_FLAG_SELECT_ON_CLICK = 1 << 15,
+    /** Use default interaction rules for selection. */
+    SPF_MULTI_SELECT_FLAG_SELECT_ON_DEFAULT_PURPOSE = 1 << 16
+} SPF_MultiSelectFlags;
+
+/**
+ * @enum SPF_InputFlags
+ * @brief Flags for input routing and shortcut handling (UI_Shortcut).
+ */
+typedef enum {
+    /** Default behavior. */
+    SPF_INPUT_FLAG_NONE = 0,
+    /** Enable key repeat for the shortcut. */
+    SPF_INPUT_FLAG_REPEAT = 1 << 0,
+    /** Route only if the item is active. */
+    SPF_INPUT_FLAG_ROUTE_ACTIVE = 1 << 10,
+    /** Route to the focused window stack (Default). */
+    SPF_INPUT_FLAG_ROUTE_FOCUSED = 1 << 11,
+    /** Global shortcut, processed regardless of focus. */
+    SPF_INPUT_FLAG_ROUTE_GLOBAL = 1 << 12,
+    /** Always process, do not participate in routing logic. */
+    SPF_INPUT_FLAG_ROUTE_ALWAYS = 1 << 13,
+    /** Overrides focused route even if not in the focus stack. */
+    SPF_INPUT_FLAG_ROUTE_OVER_FOCUSED = 1 << 14,
+    /** Overrides active item route. */
+    SPF_INPUT_FLAG_ROUTE_OVER_ACTIVE = 1 << 15,
+    /** Process only if no ImGui window is focused. */
+    SPF_INPUT_FLAG_ROUTE_UNLESS_BG_FOCUSED = 1 << 16,
+    /** Evaluate route from the root window's perspective. */
+    SPF_INPUT_FLAG_ROUTE_FROM_ROOT_WINDOW = 1 << 17,
+    /** Automatically display a tooltip for the shortcut. */
+    SPF_INPUT_FLAG_TOOLTIP = 1 << 18
+} SPF_InputFlags;
+
+/**
+ * @enum SPF_SelectionRequestType
+ * @brief Defines the type of selection modification being requested by the system.
+ */
+typedef enum {
+    /** No request. */
+    SPF_SELECTION_REQUEST_NONE = 0,
+    /** Request to set the selection state for all items in the scope. */
+    SPF_SELECTION_REQUEST_SET_ALL,
+    /** Request to set the selection state for a specific range of items. */
+    SPF_SELECTION_REQUEST_SET_RANGE
+} SPF_SelectionRequestType;
+
+/**
+ * @typedef SPF_Storage_Handle
+ * @brief Opaque handle to the internal ImGuiStorage system.
+ * @details Allows for direct manipulation of persisted UI states.
+ */
+typedef void* SPF_Storage_Handle;
+
+/**
+ * @typedef SPF_PlotGetter
+ * @brief Function signature for dynamic data retrieval in plot widgets.
+ * @param data User-provided data pointer.
+ * @param idx Index of the value to retrieve.
+ * @return float The value at the specified index.
+ */
+typedef float (*SPF_PlotGetter)(void* data, int idx);
+
+/**
+ * @struct SPF_SelectionRequest
+ * @brief Represents a single request to update the selection state.
+ */
+typedef struct {
+    /** The type of modification (SetAll or SetRange). */
+    SPF_SelectionRequestType type;
+    /** The target selection state (true = selected, false = unselected). */
+    bool selected;
+    /** Direction of the range selection (-1 or +1). */
+    int64_t range_direction;
+    /** User data ID of the first item in the range. */
+    int64_t first_item_user_data;
+    /** User data ID of the last item in the range. */
+    int64_t last_item_user_data;
+} SPF_SelectionRequest;
+
+/**
+ * @struct SPF_MultiSelectIO
+ * @brief Data exchange structure for the Multi-Select API.
+ * @details Contains the list of selection requests that the plugin must process.
+ */
+typedef struct {
+    /** Array of selection requests to be executed. */
+    SPF_SelectionRequest* requests;
+    /** Number of valid requests in the array. */
+    int requests_count;
+    /** User data ID of the item where range selection started. */
+    int64_t range_src_item_user_data;
+    /** User data ID of the item where range selection ended. */
+    int64_t range_dst_item_user_data;
+} SPF_MultiSelectIO;
+
+/**
  * @enum SPF_PopupFlags
  * @brief Configuration flags for popups and context menus (UI_BeginPopup, UI_OpenPopup).
  * @details Controls trigger conditions and layering behavior for floating windows.
@@ -1638,37 +1773,47 @@ typedef struct SPF_UI_API {
 
     /**
      * @brief Checks if a specific key or key chord (key + modifiers) is pressed using the global shortcut system.
-     * @details This is the modern way to handle hotkeys (e.g., Ctrl+S).
-     * @param key_chord Combined key and modifier flags (e.g., SPF_Mod_Ctrl | SPF_Key_S).
-     * @param flags Configuration flags for the shortcut behavior.
+     * @details This is the modern way to handle hotkeys (e.g., Ctrl+S). 
+     *          Participates in the priority-based routing system.
+     * @param key_chord Combined key and modifier flags (e.g., SPF_MOD_CTRL | SPF_KEY_S).
+     * @param flags Configuration flags from SPF_InputFlags.
      * @return bool True if the shortcut was triggered this frame.
      */
-    bool (*UI_Shortcut)(int key_chord, int flags);
+    bool (*UI_Shortcut)(int key_chord, SPF_InputFlags flags);
 
     /**
      * @brief Assigns a shortcut to the next item to be created (e.g., a menu item or button).
      * @details The shortcut will be displayed next to the item label and automatically handled by the system.
-     * @param key_chord The key combination.
-     * @param flags Configuration flags.
+     * @param key_chord The key combination (e.g., SPF_MOD_CTRL | SPF_KEY_N).
+     * @param flags Configuration flags from SPF_InputFlags.
      */
-    void (*UI_SetNextItemShortcut)(int key_chord, int flags);
+    void (*UI_SetNextItemShortcut)(int key_chord, SPF_InputFlags flags);
+
+    /**
+     * @brief Sets the key owner to the last item ID if it is hovered or active.
+     * @details Allows a widget to exclusively "own" a key, preventing other systems from processing it.
+     * @param key The key to take ownership of (from SPF_Key).
+     */
+    void (*UI_SetItemKeyOwner)(SPF_Key key);
 
     /**
      * @brief Checks if the user is currently dragging the mouse with a button held down.
-     * @param button The button index.
-     * @return True if dragging is in progress.
+     * @param button The button index (from SPF_MouseButton).
+     * @return bool True if dragging is in progress.
      */
     bool (*UI_IsMouseDragging)(SPF_MouseButton button);
 
     /**
      * @brief Gets the displacement of the mouse since the drag operation started.
-     * @param button The button index.
-     * @param[out] out_dx, out_dy Pointers to store horizontal and vertical displacement.
+     * @param button The mouse button index.
+     * @param[out] out_dx Pointer to store horizontal displacement.
+     * @param[out] out_dy Pointer to store vertical displacement.
      */
     void (*UI_GetMouseDragDelta)(SPF_MouseButton button, float* out_dx, float* out_dy);
 
     /**
      * @brief Resets the mouse drag delta for a specific button.
+     * @param button The button index to reset.
      */
     void (*UI_ResetMouseDragDelta)(SPF_MouseButton button);
 
@@ -1680,6 +1825,7 @@ typedef struct SPF_UI_API {
 
     /**
      * @brief Gets the current system mouse cursor shape.
+     * @return SPF_MouseCursor The active cursor type.
      */
     SPF_MouseCursor (*UI_GetMouseCursor)();
 
@@ -1687,24 +1833,47 @@ typedef struct SPF_UI_API {
 
     /**
      * @brief Checks if a specific key is currently held down.
-     * @param key_index The virtual key code (matching ImGuiKey_ constants).
-     * @return True if the key is held down.
+     * @param key_index The virtual key code (matching SPF_Key constants).
+     * @return bool True if the key is held down.
      */
     bool (*UI_IsKeyDown)(int key_index);
 
     /**
      * @brief Checks if a specific key was pressed in the current frame.
+     * @param key_index The virtual key code.
+     * @return bool True if pressed.
      */
     bool (*UI_IsKeyPressed)(int key_index);
 
     /**
      * @brief Checks if a specific key was released in the current frame.
+     * @param key_index The virtual key code.
+     * @return bool True if released.
      */
     bool (*UI_IsKeyReleased)(int key_index);
 
     /**
+     * @brief Returns the number of times a key has been pressed this frame (including repeats).
+     * @param key_index The virtual key code.
+     * @param repeat_delay Delay before the first repeat trigger (in seconds).
+     * @param rate Frequency of repeats (in seconds).
+     * @return int Number of trigger events.
+     */
+    int (*UI_GetKeyPressedAmount)(int key_index, float repeat_delay, float rate);
+
+    /**
+     * @brief Checks if a mouse button was released with a specific delay.
+     * @details Useful for handling long clicks (like renaming in Windows Explorer).
+     * @param button Mouse button index.
+     * @param delay Delay threshold in seconds.
+     * @return bool True if released after the delay.
+     */
+    bool (*UI_IsMouseReleasedWithDelay)(SPF_MouseButton button, float delay);
+
+    /**
      * @brief Gets the human-readable name of a key.
-     * @return Pointer to a static string containing the key name.
+     * @param key_index The virtual key code.
+     * @return const char* Pointer to a static string containing the key name.
      */
     const char* (*UI_GetKeyName)(int key_index);
 
@@ -1750,6 +1919,18 @@ typedef struct SPF_UI_API {
      * @param flags Optional hover flags (from SPF_HoveredFlags).
      */
     bool (*UI_IsWindowHovered)(SPF_HoveredFlags flags);
+
+    /**
+     * @brief Retrieves the internal state storage for the current window.
+     * @return SPF_Storage_Handle Handle to the storage object.
+     */
+    SPF_Storage_Handle (*UI_GetStateStorage)();
+
+    /**
+     * @brief Replaces the internal state storage for the current window.
+     * @param storage Handle to the new storage object.
+     */
+    void (*UI_SetStateStorage)(SPF_Storage_Handle storage);
 
     /**
      * @brief Retrieves the viewport currently containing this window.
@@ -2855,6 +3036,35 @@ typedef struct SPF_UI_API {
      */
     bool (*UI_ListBox)(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items);
 
+    // --- Multi-Select (Complex list selection) ---
+
+    /**
+     * @brief Begins a multi-selection scope for the following items (Selectable, Checkbox, etc.).
+     * @details Returns a structure containing selection requests that the plugin must handle.
+     * @param flags Behavior flags from SPF_MultiSelectFlags.
+     * @param selection_size Current number of selected items (-1 if unknown).
+     * @param items_count Total number of items in the list (-1 if unknown).
+     * @return SPF_MultiSelectIO* Pointer to the interaction object. Valid until UI_EndMultiSelect.
+     */
+    SPF_MultiSelectIO* (*UI_BeginMultiSelect)(SPF_MultiSelectFlags flags, int selection_size, int items_count);
+
+    /**
+     * @brief Ends the multi-selection scope.
+     * @return SPF_MultiSelectIO* Final state of the selection interaction.
+     */
+    SPF_MultiSelectIO* (*UI_EndMultiSelect)();
+
+    /**
+     * @brief Links a unique ID to the next item for use with the Multi-Select API.
+     * @param selection_user_data A 64-bit identifier for the item (usually an index or pointer).
+     */
+    void (*UI_SetNextItemSelectionUserData)(int64_t selection_user_data);
+
+    /**
+     * @brief Returns true if the last item's selection state was toggled by the Multi-Select system.
+     */
+    bool (*UI_IsItemToggledSelection)();
+
     // --- Data Visualization (Plots) ---
 
     /**
@@ -2874,6 +3084,33 @@ typedef struct SPF_UI_API {
      * @brief Displays a bar graph (histogram).
      */
     void (*UI_PlotHistogram)(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride);
+
+    /**
+     * @brief Displays a line graph using a data-retrieval callback instead of an array.
+     * @details This allows for dynamic data plotting without copying large arrays every frame.
+     * @param label Text label for the graph.
+     * @param values_getter Function pointer to the data retriever (SPF_PlotGetter).
+     * @param data User-provided data pointer passed to the getter.
+     * @param values_count Total number of points to plot.
+     * @param values_offset Optional offset into the data.
+     * @param overlay_text Optional text rendered on top of the graph.
+     * @param scale_min, scale_max Y-axis boundaries. Use FLT_MAX for auto-scaling.
+     * @param graph_size_x, graph_size_y Total dimensions of the widget.
+     */
+    void (*UI_PlotLinesCallback)(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
+
+    /**
+     * @brief Displays a bar graph using a data-retrieval callback.
+     * @param label Text label.
+     * @param values_getter Callback function.
+     * @param data User data.
+     * @param values_count Total points.
+     * @param values_offset Optional offset.
+     * @param overlay_text Optional overlay string.
+     * @param scale_min, scale_max Y-axis limits.
+     * @param graph_size_x, graph_size_y Widget dimensions.
+     */
+    void (*UI_PlotHistogramCallback)(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
 
     // --- Simple Value Display ---
 
@@ -3589,6 +3826,11 @@ typedef struct SPF_UI_API {
 
     /** @brief Adds a filled N-gon. */
     void (*UI_DrawList_AddNgonFilled)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+
+    /**
+     * @brief Adds an outlined N-gon using a specific path-building logic for contours.
+     */
+    void (*UI_DrawList_AddNgonContour)(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
 
     /**
      * @brief Adds an outlined ellipse.

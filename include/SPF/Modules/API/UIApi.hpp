@@ -45,8 +45,9 @@ class UIApi {
   static float UI_GetMouseWheelH();
 
   // Keyboard & Shortcut
-  static bool UI_Shortcut(int key_chord, int flags);
-  static void UI_SetNextItemShortcut(int key_chord, int flags);
+  static bool UI_Shortcut(int key_chord, SPF_InputFlags flags);
+  static void UI_SetNextItemShortcut(int key_chord, SPF_InputFlags flags);
+  static void UI_SetItemKeyOwner(SPF_Key key);
   static bool UI_IsMouseDragging(SPF_MouseButton button);
   static void UI_GetMouseDragDelta(SPF_MouseButton button, float* out_dx, float* out_dy);
   static void UI_ResetMouseDragDelta(SPF_MouseButton button);
@@ -57,6 +58,8 @@ class UIApi {
   static bool UI_IsKeyDown(int key_index);
   static bool UI_IsKeyPressed(int key_index);
   static bool UI_IsKeyReleased(int key_index);
+  static int UI_GetKeyPressedAmount(int key_index, float repeat_delay, float rate);
+  static bool UI_IsMouseReleasedWithDelay(SPF_MouseButton button, float delay);
   static const char* UI_GetKeyName(int key_index);
 
   // Clipboard
@@ -68,6 +71,8 @@ class UIApi {
   static bool UI_IsWindowCollapsed();
   static bool UI_IsWindowFocused(SPF_FocusedFlags flags);
   static bool UI_IsWindowHovered(SPF_HoveredFlags flags);
+  static SPF_Storage_Handle UI_GetStateStorage();
+  static void UI_SetStateStorage(SPF_Storage_Handle storage);
   static void* UI_GetWindowViewport();
   static SPF_DrawList_Handle UI_GetWindowDrawList();
   static SPF_DrawList_Handle UI_GetBackgroundDrawList();
@@ -269,9 +274,17 @@ class UIApi {
   static void UI_EndListBox();
   static bool UI_ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items);
 
+  // Multi-Select
+  static SPF_MultiSelectIO* UI_BeginMultiSelect(SPF_MultiSelectFlags flags, int selection_size, int items_count);
+  static SPF_MultiSelectIO* UI_EndMultiSelect();
+  static void UI_SetNextItemSelectionUserData(int64_t selection_user_data);
+  static bool UI_IsItemToggledSelection();
+
   // Data Visualization
   static void UI_PlotLines(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride);
   static void UI_PlotHistogram(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride);
+  static void UI_PlotLinesCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
+  static void UI_PlotHistogramCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
 
   // Simple Value Display
   static void UI_Value_Bool(const char* prefix, bool b);
@@ -408,6 +421,7 @@ class UIApi {
   static void UI_AddRectFilled(float x1, float y1, float x2, float y2, float r, float g, float b, float a);
   static void UI_DrawList_AddNgon(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
   static void UI_DrawList_AddNgonFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
+  static void UI_DrawList_AddNgonContour(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
   static void UI_DrawList_AddEllipse(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments, float thickness);
   static void UI_DrawList_AddEllipseFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments);
   static void UI_DrawList_AddBezierCubic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float cp1_x, float cp1_y, float cp2_x, float cp2_y, float p2_x, float p2_y, uint32_t col, float thickness, int num_segments);
