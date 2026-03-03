@@ -81,6 +81,9 @@ class UIApi {
   static float UI_GetWindowDpiScale();
   static void UI_SetWindowPos(float x, float y, SPF_Cond cond);
   static void UI_SetWindowSize(float x, float y, SPF_Cond cond);
+  static void UI_SetNextWindowPos(float x, float y, SPF_Cond cond, float pivot_x, float pivot_y);
+  static void UI_SetNextWindowSize(float x, float y, SPF_Cond cond);
+  static void UI_SetNextWindowViewport(uint32_t viewport_id);
   static void UI_SetNextWindowScroll(float scroll_x, float scroll_y);
   static float UI_GetScrollX();
   static float UI_GetScrollY();
@@ -496,7 +499,8 @@ class UIApi {
   static void UI_RenderBullet(SPF_DrawList_Handle dl, float x, float y, uint32_t col);
 
   // --- XVII. Framework Utilities ---
-  static void UI_ShowNotification(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode);
+  static SPF_Notification_Handle UI_ShowNotification(const SPF_Notification_Params* params);
+  static void UI_HideNotification(SPF_Notification_Handle handle);
   static void UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color);
   static bool UI_IsTransitionActive();
   static void UI_SetMouseBlockState(bool blockAxes, bool blockButtons, bool blockWheel);

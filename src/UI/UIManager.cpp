@@ -244,6 +244,24 @@ void UIManager::ShowNotification(const std::string& message, int type, SPF_Notif
   }
 }
 
+SPF_Notification_Handle UIManager::ShowNotificationEx(const SPF_Notification_Params* params) {
+    if (m_notificationWindow && params) {
+        SPF_Notification_Params p = *params;
+        // Resolve 'Auto' duration from settings if it's negative
+        if (p.duration < 0.0f) {
+            p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
+        }
+        return m_notificationWindow->ShowEx(p);
+    }
+    return nullptr;
+}
+
+void UIManager::HideNotification(SPF_Notification_Handle handle) {
+    if (m_notificationWindow) {
+        m_notificationWindow->Hide(handle);
+    }
+}
+
 void UIManager::PlayTransition(int type, float duration, bool reverse, int color) {
     m_activeTransition.type = type;
     m_activeTransition.duration = (duration > 0.0f) ? duration : 0.001f;

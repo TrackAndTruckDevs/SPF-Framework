@@ -1218,7 +1218,9 @@ typedef enum {
     /** Critical system failure requiring immediate attention. Deep red styling. */
     SPF_NOTIFICATION_CRITICAL,
     /** Helpful hint or suggestion for the user. Purple/Violet styling. */
-    SPF_NOTIFICATION_HINT
+    SPF_NOTIFICATION_HINT,
+    /** Custom notification with no default icon or color. Requires custom parameters. */
+    SPF_NOTIFICATION_CUSTOM
 } SPF_NotificationType;
 
 /**
@@ -1233,6 +1235,42 @@ typedef enum {
     /** Appears near the current mouse cursor position and remains until manually dismissed or a timeout occurs. */
     SPF_NOTIF_MODE_STICKY
 } SPF_Notification_DisplayMode;
+
+/**
+ * @typedef SPF_Notification_Handle
+ * @brief An opaque handle to a specific notification instance.
+ * @details Use this handle with UI_HideNotification() to programmatically close a notification.
+ */
+typedef void* SPF_Notification_Handle;
+
+/**
+ * @struct SPF_Notification_Params
+ * @brief Extended parameters for framework notifications with control over styling and duration.
+ * @details This structure allows for overriding default colors and icons, and defining 
+ *          the precise lifetime behavior (automatic, programmatic, or timed).
+ */
+typedef struct {
+    /** The notification type (influences default icon and color). Use SPF_NOTIFICATION_CUSTOM for a blank slate. */
+    SPF_NotificationType type;
+    /** The message text to display. Supports Markdown. */
+    const char* message;
+    /** Where to show the notification. */
+    SPF_Notification_DisplayMode mode;
+    /** 
+     * Notification lifetime in seconds:
+     * - Negative value (e.g. -1.0f): Automatic duration based on framework settings (Recommended/Default).
+     * - Zero (0.0f): Programmatic (infinite duration until manually hidden by the plugin).
+     * - Positive value: Exact time in seconds to show the notification.
+     */
+    float duration;
+    /** 
+     * Custom background color (RGBA). Set all components to 0.0f to use the default for 'type'.
+     * Components are in 0.0f - 1.0f range.
+     */
+    float r, g, b, a;
+    /** Custom FontAwesome icon string (e.g. FA_GEAR). Set to NULL to use the default for 'type'. */
+    const char* custom_icon;
+} SPF_Notification_Params;
 
 /**
  * @enum SPF_TransitionType
@@ -1780,6 +1818,27 @@ typedef struct SPF_UI_API {
      * @param cond Execution condition.
      */
     void (*UI_SetWindowSize)(float x, float y, SPF_Cond cond);
+
+    /**
+     * @brief Sets the position for the next window to be created.
+     * @param x, y The new screen coordinates.
+     * @param cond Condition (from SPF_Cond) when this should be applied.
+     * @param pivot_x, pivot_y Pivot point (0.0f = top-left, 0.5f = center, 1.0f = bottom-right).
+     */
+    void (*UI_SetNextWindowPos)(float x, float y, SPF_Cond cond, float pivot_x, float pivot_y);
+
+    /**
+     * @brief Sets the size for the next window to be created.
+     * @param x, y The new dimensions in pixels.
+     * @param cond Condition (from SPF_Cond) when this should be applied.
+     */
+    void (*UI_SetNextWindowSize)(float x, float y, SPF_Cond cond);
+
+    /**
+     * @brief Sets the viewport the next window should belong to (for multi-viewport support).
+     * @param viewport_id The ID of the target viewport.
+     */
+    void (*UI_SetNextWindowViewport)(uint32_t viewport_id);
 
     /**
      * @brief Programmatically scrolls the next window to a specific position.
@@ -4017,14 +4076,19 @@ typedef struct SPF_UI_API {
     // --- Notifications ---
 
     /**
-     * @brief Displays a temporary notification popup on the screen.
-     * @details This triggers a non-interactive message that automatically fades out. 
-     *          Supports Markdown syntax and icon macros.
-     * @param type The visual category (influences color and icon) from SPF_NotificationType.
-     * @param message The content to display.
-     * @param mode Positioning and stacking mode from SPF_Notification_DisplayMode.
+     * @brief Displays a notification popup on the screen using extended parameters.
+     * @details Triggers a message that can be automatic, timed, or programmatically managed.
+     *          Supports Markdown syntax and custom styling.
+     * @param params Pointer to the notification configuration structure.
+     * @return SPF_Notification_Handle A handle to the created notification for future control.
      */
-    void (*UI_ShowNotification)(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode);
+    SPF_Notification_Handle (*UI_ShowNotification)(const SPF_Notification_Params* params);
+
+    /**
+     * @brief Programmatically hides/closes a notification by its handle.
+     * @param handle The notification handle returned by UI_ShowNotification.
+     */
+    void (*UI_HideNotification)(SPF_Notification_Handle handle);
 
     // --- Transitions ---
 

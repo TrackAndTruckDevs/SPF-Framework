@@ -96,6 +96,16 @@ class UIManager : public Config::IConfigurable {
   void ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode);
 
   /**
+   * @brief Shows an extended notification using the provided parameters.
+   */
+  SPF_Notification_Handle ShowNotificationEx(const SPF_Notification_Params* params);
+
+  /**
+   * @brief Hides a notification by its handle.
+   */
+  void HideNotification(SPF_Notification_Handle handle);
+
+  /**
    * @brief Starts a cinematic screen transition.
    */
   void PlayTransition(int type, float duration, bool reverse, int color);

@@ -177,6 +177,9 @@ float UIApi::UI_GetWindowDpiScale() { return ImGui::GetWindowDpiScale(); }
 
 void UIApi::UI_SetWindowPos(float x, float y, SPF_Cond cond) { ImGui::SetWindowPos({x, y}, (ImGuiCond)cond); }
 void UIApi::UI_SetWindowSize(float x, float y, SPF_Cond cond) { ImGui::SetWindowSize({x, y}, (ImGuiCond)cond); }
+void UIApi::UI_SetNextWindowPos(float x, float y, SPF_Cond cond, float pivot_x, float pivot_y) { ImGui::SetNextWindowPos({x, y}, (ImGuiCond)cond, {pivot_x, pivot_y}); }
+void UIApi::UI_SetNextWindowSize(float x, float y, SPF_Cond cond) { ImGui::SetNextWindowSize({x, y}, (ImGuiCond)cond); }
+void UIApi::UI_SetNextWindowViewport(uint32_t viewport_id) { ImGui::SetNextWindowViewport(viewport_id); }
 void UIApi::UI_SetNextWindowScroll(float scroll_x, float scroll_y) { ImGui::SetNextWindowScroll({scroll_x, scroll_y}); }
 
 float UIApi::UI_GetScrollX() { return ImGui::GetScrollX(); }
@@ -871,9 +874,13 @@ void UIApi::UI_RenderBullet(SPF_DrawList_Handle dl, float x, float y, uint32_t c
 
 // --- XVII. Framework Utilities ---
 
-void UIApi::UI_ShowNotification(SPF_NotificationType type, const char* message, SPF_Notification_DisplayMode mode) {
-    if (!message) return;
-    UIManager::GetInstance().ShowNotification(message, (int)type, mode);
+SPF_Notification_Handle UIApi::UI_ShowNotification(const SPF_Notification_Params* params) {
+    if (!params) return nullptr;
+    return UIManager::GetInstance().ShowNotificationEx(params);
+}
+
+void UIApi::UI_HideNotification(SPF_Notification_Handle handle) {
+    UIManager::GetInstance().HideNotification(handle);
 }
 void UIApi::UI_PlayTransition(SPF_TransitionType type, float duration, bool reverse, SPF_TransitionColor color) {
     UIManager::GetInstance().PlayTransition((int)type, duration, reverse, (int)color);
@@ -1287,6 +1294,7 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_RenderCheckMark = &UIApi::UI_RenderCheckMark;
     api->UI_RenderBullet = &UIApi::UI_RenderBullet;
     api->UI_ShowNotification = &UIApi::UI_ShowNotification;
+    api->UI_HideNotification = &UIApi::UI_HideNotification;
     api->UI_PlayTransition = &UIApi::UI_PlayTransition;
     api->UI_IsTransitionActive = &UIApi::UI_IsTransitionActive;
     api->UI_SetMouseBlockState = &UIApi::UI_SetMouseBlockState;

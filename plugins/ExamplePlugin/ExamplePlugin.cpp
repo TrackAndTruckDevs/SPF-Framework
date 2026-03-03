@@ -1571,60 +1571,104 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_RenderMarkdown(markdown, markdown_base_style);
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Notification System Test (v1.1.5)");
-    ui->UI_TextWrapped("Testing different display modes and categories.");
+    ui->UI_TextStyled(separator_style, "Notification System Test (v1.2.0)");
+    ui->UI_TextWrapped("Testing new structure-based API with custom colors and programmatic control.");
 
-    // --- TOP Mode (Standard) ---
-    ui->UI_TextDisabled("Top Mode (Replaces existing)");
-    if (ui->UI_Button(ICON_FA_CIRCLE_INFO " Info", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, "This is a **top** notification. It replaces any other top notification.", SPF_NOTIF_MODE_TOP);
-    }
-    ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_CIRCLE_CHECK " Success", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Operation completed! " ICON_FA_THUMBS_UP, SPF_NOTIF_MODE_TOP);
-    }
-    ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_TRIANGLE_EXCLAMATION " Warning", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_WARNING, "Attention! High speed detected.", SPF_NOTIF_MODE_TOP);
-    }
+    // --- Helper for quick notifications ---
+    auto QuickNotif = [&](SPF_NotificationType type, const char* msg, SPF_Notification_DisplayMode mode) {
+        SPF_Notification_Params p = {};
+        p.type = type;
+        p.message = msg;
+        p.mode = mode;
+        p.duration = -1.0f; // Auto
+        ui->UI_ShowNotification(&p);
+    };
 
-    // --- STACK Mode (Bottom Right) ---
+    // --- Standard Types ---
+    ui->UI_TextDisabled("Standard Types (Top Mode)");
+    if (ui->UI_Button(ICON_FA_CIRCLE_INFO " Info", 0, 0)) QuickNotif(SPF_NOTIFICATION_INFO, "General information message.", SPF_NOTIF_MODE_TOP);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_CIRCLE_CHECK " Success", 0, 0)) QuickNotif(SPF_NOTIFICATION_SUCCESS, "Operation completed successfully!", SPF_NOTIF_MODE_TOP);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_TRIANGLE_EXCLAMATION " Warning", 0, 0)) QuickNotif(SPF_NOTIFICATION_WARNING, "Warning: Something might be wrong.", SPF_NOTIF_MODE_TOP);
+    
+    if (ui->UI_Button(ICON_FA_CIRCLE_XMARK " Error", 0, 0)) QuickNotif(SPF_NOTIFICATION_ERROR, "A standard error occurred.", SPF_NOTIF_MODE_TOP);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_RADIATION " Critical", 0, 0)) QuickNotif(SPF_NOTIFICATION_CRITICAL, "Critical system failure detected!", SPF_NOTIF_MODE_TOP);
+    ui->UI_SameLine(0, 5);
+    if (ui->UI_Button(ICON_FA_LIGHTBULB " Hint", 0, 0)) QuickNotif(SPF_NOTIFICATION_HINT, "Did you know? You can customize these notifications.", SPF_NOTIF_MODE_TOP);
+
+    // --- Custom Styling & Randomization ---
     ui->UI_Spacing();
-    ui->UI_TextDisabled("Stack Mode (Bottom-Right, Stacks upwards)");
-    if (ui->UI_Button(ICON_FA_LAYER_GROUP " Add Stacked Notif", 0, 0)) {
-        static int notif_count = 0;
-        char buf[128];
-        sprintf(buf, "Stacked message #%d\nThis will push older ones up.", ++notif_count);
-        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, buf, SPF_NOTIF_MODE_STACK);
-    }
-    ui->UI_SameLine(0, 5);
-    if (ui->UI_Button(ICON_FA_CIRCLE_XMARK " Stack Error", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_ERROR, "A stacked error occurred!", SPF_NOTIF_MODE_STACK);
+    ui->UI_TextDisabled("Custom Styling (Randomized)");
+    if (ui->UI_Button(ICON_FA_PAINT_ROLLER " Random Custom Notif", 0, 0)) {
+        static float r[] = { 1.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+        static float g[] = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f };
+        static float b[] = { 1.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+        static const char* icons[] = { ICON_FA_GEAR, ICON_FA_ROCKET, ICON_FA_GHOST, ICON_FA_DRAGON, ICON_FA_TRUCK };
+        static int rnd_idx = 0;
+        rnd_idx = (rnd_idx + 1) % 5;
+
+        SPF_Notification_Params p = {};
+        p.type = SPF_NOTIFICATION_CUSTOM;
+        p.message = "This is a **completely custom** notification\nwith random color and icon!";
+        p.mode = SPF_NOTIF_MODE_STACK;
+        p.duration = 5.0f;
+        p.r = r[rnd_idx];
+        p.g = g[rnd_idx];
+        p.b = b[rnd_idx];
+        p.a = 1.0f;
+        p.custom_icon = icons[rnd_idx];
+        ui->UI_ShowNotification(&p);
     }
 
-    // --- STICKY Mode ---
+    // --- Programmatic Control ---
     ui->UI_Spacing();
-    ui->UI_TextDisabled("Sticky Mode (At cursor, no timeout)");
+    ui->UI_TextDisabled("Programmatic Control (Manual Close)");
+    static SPF_Notification_Handle hActive = nullptr;
+    
+    if (!hActive) {
+        if (ui->UI_Button(ICON_FA_PLAY " Open Programmatic (Infinite)", 0, 0)) {
+            SPF_Notification_Params p = {};
+            p.type = SPF_NOTIFICATION_INFO;
+            p.message = "{#ffcc00}Manual Management{/}\nThis notification will stay until you click 'Close'.\nNote the static progress bar.";
+            p.mode = SPF_NOTIF_MODE_TOP;
+            p.duration = 0.0f; // 0 = Programmatic (infinite)
+            hActive = ui->UI_ShowNotification(&p);
+        }
+    } else {
+        if (ui->UI_Button(ICON_FA_STOP " Close Programmatic Notification", 0, 0)) {
+            ui->UI_HideNotification(hActive);
+            hActive = nullptr;
+        }
+    }
+
+    // --- Sticky Mode ---
+    ui->UI_Spacing();
+    ui->UI_TextDisabled("Sticky Mode (At cursor)");
     if (ui->UI_Button(ICON_FA_THUMBTACK " Toggle Sticky Help", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_HINT, 
-            "**Sticky Help Tip**\n\n"
+        SPF_Notification_Params p = {};
+        p.type = SPF_NOTIFICATION_HINT;
+        p.message = "**Sticky Help Tip**\n\n"
             "This window has no timeout. It will stay here until:\n"
             "1. You click the button again (Toggle).\n"
             "2. You click anywhere outside this notification.\n\n"
-            "Useful for explaining complex UI elements!", 
-            SPF_NOTIF_MODE_STICKY);
+            "Useful for explaining complex UI elements!";
+        p.mode = SPF_NOTIF_MODE_STICKY;
+        p.duration = -1.0f;
+        ui->UI_ShowNotification(&p);
     }
 
     ui->UI_Spacing();
     if (ui->UI_Button("Test Long Text (Top)", 0, 0)) {
-        ui->UI_ShowNotification(SPF_NOTIFICATION_INFO, 
+        QuickNotif(SPF_NOTIFICATION_INFO, 
             "This is a very long notification message designed to test the \n*automatic text wrapping* and **dynamic height** \nadjustment of the ***notification window***. "
             "It should handle multiple lines of text gracefully without cutting off the content or expanding beyond reasonable bounds.", 
             SPF_NOTIF_MODE_TOP);
     }
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Window Management Test (v1.1.5)");
+    ui->UI_TextStyled(separator_style, "Window Management Test (v1.2.0)");
     ui->UI_TextWrapped("Use the button below to center the window and resize it to fit all tabs.");
     if (ui->UI_Button("Center and Fit Window", 0, 0)) {
         const char* tabs[] = {
@@ -1661,7 +1705,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         ui->UI_SetWindowPos(pos_x, pos_y, SPF_COND_ALWAYS);
         ui->UI_SetWindowSize(total_width, win_h, SPF_COND_ALWAYS);
         
-        ui->UI_ShowNotification(SPF_NOTIFICATION_SUCCESS, "Window centered and resized to fit all tabs!", SPF_NOTIF_MODE_TOP);
+        QuickNotif(SPF_NOTIFICATION_SUCCESS, "Window centered and resized to fit all tabs!", SPF_NOTIF_MODE_TOP);
     }
 
     ui->UI_Spacing();

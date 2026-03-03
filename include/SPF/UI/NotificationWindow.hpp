@@ -28,6 +28,16 @@ public:
      */
     void Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode);
 
+    /**
+     * @brief Extended version of Show with full parameter control.
+     */
+    SPF_Notification_Handle ShowEx(const SPF_Notification_Params& params);
+
+    /**
+     * @brief Programmatically closes a notification.
+     */
+    void Hide(SPF_Notification_Handle handle);
+
     void RenderContent() override;
     ImGuiWindowFlags GetExtraWindowFlags() const override;
 
@@ -49,12 +59,20 @@ private:
         float currentYOffset = 0.0f; // Used for smooth stacking animations
         ImVec2 popupPos;             // Used for STICKY mode
         bool isClosing = false;
+
+        // Extended parameters
+        uint64_t handle = 0;
+        bool isProgrammatic = false;
+        bool initialized = false;
+        ImVec4 customColor = ImVec4(0, 0, 0, 0);
+        std::string customIcon;
     };
 
     std::vector<NotificationData> m_notifications;
+    uint64_t m_nextHandle = 1;
 
     // Internal styling helpers
-    void GetTypeStyle(int type, const char** out_icon, ImVec4& out_color);
+    void GetTypeStyle(const NotificationData& notif, const char** out_icon, ImVec4& out_color);
     void RenderSingleNotification(NotificationData& notif, int index);
 };
 
