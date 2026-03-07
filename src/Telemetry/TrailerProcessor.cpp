@@ -65,7 +65,7 @@ void TrailerProcessor::HandleConfiguration(const scs_telemetry_configuration_t* 
   // Dynamically resize wheel vectors to the actual count.
   trailer.data.wheels.resize(wheel_count);
   trailer.constants.wheels.resize(wheel_count);
-  m_logger.Info("TrailerProcessor handling configuration for trailer {} (wheels: {})...", trailer_index, wheel_count);
+  m_logger.Debug("TrailerProcessor handling configuration for trailer {} (wheels: {})...", trailer_index, wheel_count);
 
   for (uint32_t i = 0; i < wheel_count; ++i) {
     auto& wheel = constants.wheels[i];

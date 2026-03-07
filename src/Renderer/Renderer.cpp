@@ -121,8 +121,13 @@ void Renderer::Init() {
   }
 }
 
-RenderAPI Renderer::GetDetectedAPI() const {
-  return m_detectedAPI;
+RenderAPI Renderer::GetDetectedAPI() const { return m_detectedAPI; }
+
+std::unique_ptr<ITexture> Renderer::CreateTextureFromMemory(const unsigned char* data, size_t size) {
+  if (m_impl) {
+    return m_impl->CreateTextureFromMemory(data, size);
+  }
+  return nullptr;
 }
 
 void Renderer::OnRendererInit() {

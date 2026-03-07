@@ -20,6 +20,7 @@
         "title": "Ventana principal - SPF Framework",
         "patrons_button_tooltip": "Mis mecenas",
         "update_button_tooltip": "Buscar actualizaciones",
+        "connect_disabled_tooltip": "Habilite 'connect' en el archivo de configuración.",
         "version_label": "Tu versión ",
         "update_checking": "Buscando actualizaciones...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "El servidor de actualizaciones no está disponible temporalmente. Por favor, inténtalo de nuevo más tarde.",
             "generic": "Ocurrió un error inesperado al buscar actualizaciones.",
             "invalid_response": "El servidor de actualizaciones devolvió una respuesta no válida.",
-            "patrons_fetch_failed": "No se pudo cargar la lista de mecenas. Por favor, inténtalo de nuevo más tarde."
+            "patrons_fetch_failed": "No se pudo cargar la lista de patrocinadores. Por favor, inténtelo de nuevo más tarde.",
+            "forbidden": "El acceso al servidor de actualizaciones está restringido. Por favor, contacte a los desarrolladores.",
+            "not_found": "No se encontró información de lanzamiento para este canal."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "Receptor de UI",
                         "description": "Activar o desactivar la visualización de registros en la ventana de la UI."
+                    },
+                    "report": {
+                        "title": "Receptor de informes",
+                        "description": "Activar o desactivar el envío remoto de informes de errores para mejorar el framework."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Registrador",
         "button_clear": "Limpiar",
-        "checkbox_autoscroll": "Desplazamiento automático"
+        "checkbox_autoscroll": "Desplazamiento automático",
+        "label_level": "Nivel",
+        "label_module": "Módulo",
+        "context_copy_line": "Copiar línea",
+        "context_copy_message": "Copiar solo mensaje",
+        "context_copy_selected": "Copiar rango seleccionado",
+        "context_copy_all": "Copiar todo lo visible",
+        "msg_clean_session": "Aún no hay registros. Esta sesión está perfectamente limpia."
     },
     "telemetry_window": {
         "title": "Telemetría",
@@ -971,6 +985,36 @@
             "dll_not_loaded": "No cargado"
         }
     },
+    "welcome_window": {
+        "title": "¡BIENVENIDO AL MUNDO DE SPF FRAMEWORK!",
+        "intro_title": "¡Hola! Gracias por elegir nuestro framework.",
+        "intro_text": "Creamos **SPF Framework** para hacer tu juego en **ATS** y **ETS2** aún más interesante, y la gestión de plugins lo más sencilla posible.",
+        "section1": {
+            "title": "¿Cómo abrir el menú del framework?",
+            "text": "Simplemente presiona la tecla <#FFFFFF>{} **SUPR**</> en tu teclado. Este es tu panel de control principal."
+        },
+        "section2": {
+            "title": "Instalación de plugins compatibles con SPF",
+            "text": "Simplemente coloca la carpeta del plugin con la DLL en ` <#FFFFFF>{}</> `. Luego actívalos en la sección <#FFFFFF>**Gestor de Plugins**</>."
+        },
+        "section3": {
+            "title": "Configuración",
+            "text": "Todos los parámetros del framework y los plugins instalados, así como la gestión de teclas, se recogen cómodamente en la pestaña <#FFFFFF>**Configuración**</>."
+        },
+        "section4": {
+            "title": "Para Desarrolladores",
+            "text": "Si eres desarrollador, echa un vistazo a nuestro <#00b3ff>{} [GitHub]({})</>, donde encontrarás documentación y ejemplos de uso de la API."
+        },
+        "section5": {
+            "title": "Quédate con nosotros",
+            "text": "Puedes encontrar nuestros contactos y enlaces a la comunidad en la sección <#FFFFFF>**Sobre Nosotros**</>."
+        },
+        "footer": "*Desarrollado con <#ff0000>{}</> por el equipo **Track & Truck Devs**. ¡Apóyanos en <#00b3ff>{} [Patreon]({})</> para ayudar a que el proyecto crezca!*",
+        "button_go": "¡VAMOS!"
+    },
+    "notification_popup": {
+        "title": "Notificaciones"
+    },
     "description": {
         "detailed": "Un framework potente y flexible para crear y gestionar plugins para los juegos de SCS. Proporciona un conjunto básico de servicios para registro, configuración, gestión de la interfaz de usuario y más."
     },
@@ -1069,9 +1113,9 @@
         },
         "consumption_policy": {
             "never": "Nunca",
-            "on_ui_focus": "Al enfocar la UI",
+            "on_ui_focus": "Al enfocar UI",
             "always": "Siempre",
-            "manual": "Gestionado por el plugin"
+            "manual": "Controlado por plugin"
         }
     }
 }

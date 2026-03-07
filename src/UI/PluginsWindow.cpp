@@ -124,7 +124,7 @@ void PluginsWindow::RenderContent() {
 
           // 3. Interactive Reload Icon (Gold on hover)
           ImGui::SameLine();
-          if (HyperlinkButton(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+          if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::DefaultButton())) {
               m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
           }
           if (ImGui::IsItemHovered()) {
@@ -146,7 +146,7 @@ void PluginsWindow::RenderContent() {
       const char* toggleIcon = isLoaded ? ICON_FA_TOGGLE_ON : ICON_FA_TOGGLE_OFF;
       const char* tooltipText = isLoaded ? loc.Get(m_locBtnDisable).c_str() : loc.Get(m_locBtnEnable).c_str();
 
-      if (ImGui::Button(toggleIcon)) {
+      if (Button(toggleIcon, TextStyle::DefaultButton())) {
         m_eventManager.System.OnRequestPluginStateChange.Call({componentId, !isLoaded});
       }
       if (ImGui::IsItemHovered()) {
@@ -160,7 +160,7 @@ void PluginsWindow::RenderContent() {
       // --- "Info" button and modal window ---
       std::string infoTitle = loc.Get(m_locTooltipInfo) + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasInfo);
-      if (ImGui::Button(ICON_FA_CIRCLE_INFO)) {
+      if (Button(ICON_FA_CIRCLE_INFO, TextStyle::DefaultButton())) {
         ImGui::OpenPopup(infoTitle.c_str());
       }
       ImGui::EndDisabled();
@@ -221,7 +221,7 @@ void PluginsWindow::RenderContent() {
           for (size_t i = 0; i < links.size(); ++i) {
             if (i > 0) ImGui::SameLine(0, spacing);
             
-            if (HyperlinkButton(links[i].icon, TextStyle::Regular().Color(links[i].color))) {
+            if (Button(links[i].icon, TextStyle::DefaultButton().Color(links[i].color))) {
                 ShellExecute(NULL, "open", links[i].url.c_str(), NULL, NULL, SW_SHOWNORMAL);
             }
             
@@ -233,7 +233,7 @@ void PluginsWindow::RenderContent() {
 
         ImGui::EndChild();
         ImGui::Separator();
-        if (ImGui::Button("OK")) {
+        if (Button("OK", TextStyle::DefaultButton())) {
           ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -243,7 +243,7 @@ void PluginsWindow::RenderContent() {
       ImGui::SameLine();
       std::string descriptionTitle = loc.Get(m_locTooltipDesc) + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasDescription);
-      if (ImGui::Button(ICON_FA_FILE_LINES)) {
+      if (Button(ICON_FA_FILE_LINES, TextStyle::DefaultButton())) {
         ImGui::OpenPopup(descriptionTitle.c_str());
       }
       ImGui::EndDisabled();
@@ -267,7 +267,7 @@ void PluginsWindow::RenderContent() {
 
         ImGui::EndChild();
         ImGui::Separator();
-        if (ImGui::Button("OK")) {
+        if (Button("OK", TextStyle::DefaultButton())) {
           ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -276,7 +276,7 @@ void PluginsWindow::RenderContent() {
       // --- "Settings" button ---
       ImGui::SameLine();
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasSettings);
-      if (ImGui::Button(ICON_FA_GEAR)) {
+      if (Button(ICON_FA_GEAR, TextStyle::DefaultButton())) {
         m_eventManager.System.OnFocusComponentInSettingsWindow.Call(Events::UI::FocusComponentInSettingsWindow{.componentName = componentId});
       }
       ImGui::EndDisabled();

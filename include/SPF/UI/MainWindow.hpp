@@ -2,7 +2,7 @@
 
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Events/SystemEvents.hpp"    //  For update and patrons completion events
-#include "SPF/Modules/UpdateManager.hpp"  //  For UpdateStatus enum
+#include "SPF/Modules/CommunicationManager.hpp"  //  For CommunicationManager
 #include "SPF/System/ApiService.hpp"      //  For ApiResult, UpdateInfo, Patron
 #include "SPF/Hooks/HookManager.hpp"
 
@@ -13,7 +13,7 @@ class EventManager;
 }
 namespace Modules {
 class KeyBindsManager;
-class UpdateManager;
+class CommunicationManager;
 class ITelemetryService;
 }  // namespace Modules
 namespace Config {
@@ -37,10 +37,8 @@ class MainWindow : public BaseWindow {
   ImGuiWindowFlags GetExtraWindowFlags() const override;
 
   //  Override base window event handlers
-  void OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) override;
-  void OnUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e) override;
+  void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) override;
   void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) override;
-
  private:
   void ToggleVisibility();
   void RenderPatronsPopup();
@@ -97,7 +95,7 @@ class MainWindow : public BaseWindow {
 
   //  State for Update Check
   bool m_updateCheckInitiated = false;
-  Modules::UpdateManager::UpdateStatus m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::Unknown;
+  Modules::CommunicationManager::UpdateStatus m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
   std::string m_updateApiStatus; // To store the status string from the API, e.g., "switch_to_release"
   std::optional<System::UpdateInfo> m_lastUpdateInfo;
   std::optional<std::string> m_lastUpdateError;
@@ -112,6 +110,7 @@ class MainWindow : public BaseWindow {
   std::string m_locUpdateButtonTooltip;
   std::string m_locVersionLabel;
   std::string m_locUpdateChecking;
+  std::string m_locConnectDisabled;
   std::string m_locUpdatePopupTitle;
   std::string m_locUpdateNoUpdate;
   std::string m_locUpdateAvailable;

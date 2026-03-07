@@ -5,6 +5,10 @@
 #include <vector>
 #include <set>
 #include <thread>
+#include <queue>
+#include <functional>
+#include <chrono>
+#include <mutex>
 
 #include "SPF/Namespace.hpp"
 #include "SPF/Core/InitializationReport.hpp"
@@ -39,9 +43,9 @@ namespace Config {
 struct OnKeybindsModified;  // Added for live keybind updates
 }
 namespace System {
-struct OnUpdateCheckSucceeded;
-struct OnUpdateCheckFailed;
+struct OnUpdateCheckCompleted;
 struct OnPatronsFetchCompleted;
+struct OnUsageTrackingCompleted;
 }  // namespace System
 }  // namespace Events
 namespace Utils {
@@ -64,7 +68,7 @@ class KeyBindsManager;
 class PluginManager;
 class HandleManager;
 class IInputService;
-class UpdateManager;
+class CommunicationManager;
 }  // namespace Modules
 namespace Input {
 class InputManager;
@@ -165,12 +169,27 @@ class Core {
    */
   void ExecuteCommand(const std::string& command);
 
+  /**
+   * @brief Schedules a task to be executed after a certain delay in the main update loop.
+   * @param delay The delay in milliseconds.
+   * @param action The task to execute.
+   */
+  void ScheduleTask(std::chrono::milliseconds delay, std::function<void()> action);
+
  private:
   void TryStartInitialization();
 
   void BindEventHandlers();
   void LogInitializationReports(const std::vector<InitializationReport>& reports);
   std::set<std::string> HandleServiceInitialization(const std::vector<InitializationReport>& reports);
+  
+  // --- Task Scheduler ---
+  struct DeferredTask {
+    std::chrono::steady_clock::time_point triggerTime;
+    std::function<void()> action;
+  };
+  std::vector<DeferredTask> m_deferredTasks;
+  std::mutex m_deferredTasksMutex;
 
   // --- Event Handlers ---
   void OnGameWorldReady();
@@ -193,9 +212,9 @@ class Core {
   //  Update and Patrons event handlers
   void OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e);
   void OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e);
-  void OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e);
-  void OnUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e);
+  void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
   void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
+  void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
 
   void ProcessHookDependenciesForPlugin(const std::string& pluginName, bool isEnabled);
 
@@ -221,6 +240,19 @@ class Core {
   bool m_inputReady = false;
   bool m_handlersBound = false;
 
+  // --- Timing Statistics ---
+  std::chrono::steady_clock::time_point m_preloadStartTime;
+  std::chrono::steady_clock::time_point m_shutdownStartTime;
+  std::chrono::steady_clock::time_point m_mainInitStartTime;
+
+  int64_t m_preloadMs = 0;
+  int64_t m_telemetryMs = 0;
+  int64_t m_inputMs = 0;
+  int64_t m_managersMs = 0;
+  int64_t m_uiMs = 0;
+  int64_t m_hooksMs = 0;
+  int64_t m_deferredMs = 0;
+
   // --- Logging Components ---
   std::shared_ptr<Logging::Logger> m_logger;
 
@@ -232,7 +264,7 @@ class Core {
   std::unique_ptr<Modules::KeyBindsManager> m_keyBindsManager;
   std::unique_ptr<Modules::HandleManager> m_handleManager;
   std::unique_ptr<System::ApiService> m_apiService;
-  std::unique_ptr<Modules::UpdateManager> m_updateManager;
+  std::unique_ptr<Modules::CommunicationManager> m_communicationManager;
   std::vector<Config::IConfigurable*> m_configurableServices;
 
   std::unique_ptr<Telemetry::GameContext> m_gameContext;
@@ -261,9 +293,9 @@ class Core {
   //  Sinks for Update and Patrons
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>> m_onRequestUpdateCheckSink;
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>> m_onRequestPatronsFetchSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnUpdateCheckSucceeded&)>> m_onUpdateCheckSucceededSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnUpdateCheckFailed&)>> m_onUpdateCheckFailedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>> m_onUpdateCheckCompletedSink;
   std::unique_ptr<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>> m_onPatronsFetchCompletedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>> m_onUsageTrackingCompletedSink;
 
   // --- UI Components ---
   std::unique_ptr<UI::ImGuiInputConsumer> m_imguiInputConsumer;

@@ -20,6 +20,7 @@
         "title": "主窗口 - SPF Framework",
         "patrons_button_tooltip": "我的赞助人",
         "update_button_tooltip": "检查更新",
+        "connect_disabled_tooltip": "请在配置文件中启用 'connect'。",
         "version_label": "您的版本 ",
         "update_checking": "正在检查更新...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "更新服务器暂时不可用。请稍后再试。",
             "generic": "检查更新时发生意外错误。",
             "invalid_response": "更新服务器返回了无效响应。",
-            "patrons_fetch_failed": "加载赞助人列表失败。请稍后再试。"
+            "patrons_fetch_failed": "加载赞助人列表失败。请稍后再试。",
+            "forbidden": "更新检查失败。请联系开发人员。",
+            "not_found": "未找到此频道的发布信息。"
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI 接收器",
                         "description": "启用或禁用在 UI 窗口中显示日志。"
+                    },
+                    "report": {
+                        "title": "报告接收器",
+                        "description": "启用或禁用远程错误报告以帮助改进框架。"
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "日志记录器",
         "button_clear": "清除",
-        "checkbox_autoscroll": "自动滚动"
+        "checkbox_autoscroll": "自动滚动",
+        "label_level": "级别",
+        "label_module": "模块",
+        "context_copy_line": "复制行",
+        "context_copy_message": "仅复制消息",
+        "context_copy_selected": "复制选定范围",
+        "context_copy_all": "复制所有可见",
+        "msg_clean_session": "尚无日志。此会话非常干净。"
     },
     "telemetry_window": {
         "title": "遥测",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "未加载"
         }
     },
+    "welcome_window": {
+        "title": "欢迎来到 SPF FRAMEWORK 的世界！",
+        "intro_title": "你好！感谢您选择我们的框架。",
+        "intro_text": "我们创建了 **SPF Framework**，旨在让您在 **ATS** 和 **ETS2** 中的游戏体验更加有趣，并让插件管理变得尽可能简单。",
+        "section1": {
+            "title": "如何打开框架菜单？",
+            "text": "只需按下键盘上的 <#FFFFFF>{} **DELETE**</> 键。这是您的主控制面板。"
+        },
+        "section2": {
+            "title": "安装 SPF 兼容插件",
+            "text": "只需将包含 DLL 的插件文件夹放入 ` <#FFFFFF>{}</> `。然后在 <#FFFFFF>**插件管理器**</> 部分激活它们。"
+        },
+        "section3": {
+            "title": "设置",
+            "text": "所有框架参数、已安装插件以及按键绑定管理都方便地集成在 <#FFFFFF>**设置**</> 选项卡中。"
+        },
+        "section4": {
+            "title": "开发者相关",
+            "text": "如果您是开发者，请查看我们的 <#00b3ff>{} [GitHub]({})</>，您可以在那里找到文档和 API 使用示例。"
+        },
+        "section5": {
+            "title": "保持联系",
+            "text": "您可以在 <#FFFFFF>**关于我们**</> 部分找到我们的联系方式和社区链接。"
+        },
+        "footer": "*由 **Track & Truck Devs** 团队倾情<#ff0000>{}</>打造。请在 <#00b3ff>{} [Patreon]({})</> 上支持我们，帮助项目成长！*",
+        "button_go": "出发！"
+    },
+    "notification_popup": {
+        "title": "通知"
+    },
     "description": {
         "detailed": "一个强大且灵活的框架，用于创建和管理 SCS 游戏的插件。提供了一套核心服务，用于日志记录、配置、UI 管理等。"
     },
     "patrons_popup": {
-      "title": "支持项目",
-      "intro_text": "我们社区的支持是这个项目的动力。如果您觉得我们的工作有用，请考虑成为我们的赞助人。您的贡献使我们能够继续开发并为每个人创建新的、令人兴奋的插件！",
-      "link_intro": "您可以在我们的官方页面上支持我们：",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "点击可在浏览器中打开 Patreon 页面",
-      "hof_title": "名人堂",
-      "hof_empty": "我们的名人堂仍然空空如也... 成为第一个出现在这里并开启我们旅程的人吧！",
-      "hof_teaser": "支持我们，进入我们的",
-      "close_button": "关闭",
-      "tiers": {
-        "magnate": "--- 物流巨头 ---",
-        "manager": "--- 车队经理 ---",
-        "master": "--- 公路大师 ---"
-      }
+        "title": "支持项目",
+        "intro_text": "我们社区的支持是这个项目的动力。如果您觉得我们的工作有用，请考虑成为我们的赞助人。您的贡献使我们能够继续开发并为每个人创建新的、令人兴奋的插件！",
+        "link_intro": "您可以在我们的官方页面上支持我们：",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "点击可在浏览器中打开 Patreon 页面",
+        "hof_title": "名人堂",
+        "hof_empty": "我们的名人堂仍然空空如也... 成为第一个出现在这里并开启我们旅程的人吧！",
+        "hof_teaser": "支持我们，进入我们的",
+        "close_button": "关闭",
+        "tiers": {
+            "magnate": "--- 物流巨头 ---",
+            "manager": "--- 车队经理 ---",
+            "master": "--- 公路大师 ---"
+        }
     },
     "manual_popup": {
         "title": "常见问题",

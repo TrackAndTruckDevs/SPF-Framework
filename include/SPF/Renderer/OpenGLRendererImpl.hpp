@@ -21,6 +21,8 @@ class OpenGLRendererImpl : public RendererBase {
   void Init() override;
   void Shutdown() override;
 
+  std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) override;
+
  private:
   void OnInit(HDC hdc);
   void OnPresent(HDC hdc);

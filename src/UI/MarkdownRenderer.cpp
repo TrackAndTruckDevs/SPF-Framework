@@ -3,6 +3,7 @@
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/Icons.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include <regex>
 #include <windows.h>
 #include <imgui_internal.h>
@@ -118,6 +119,7 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
                 if (hDetail->level == 1) ImGui::Spacing();
             } else {
                 if (m_style.hLevel <= 2) {
+                    ImGui::NewLine(); // Fix: Force new line before separator
                     ImGui::Separator();
                 }
                 m_style.hLevel = 0;
@@ -237,7 +239,7 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 2.0f);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.5f));
                 
-                if (ImGui::Button(ICON_FA_COPY " Copy")) {
+                if (Button(ICON_FA_COPY " Copy")) {
                     ImGui::SetClipboardText(m_currentCodeBlockText.c_str());
                 }
                 
@@ -325,61 +327,66 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
         return;
     }
 
-    // --- Custom Color Parsing ---
-    static const std::regex colorRegex(R"(\{#([0-9a-fA-F]{6})\}([\s\S]*?)\{/\})");
-    std::smatch match;
-    if (type == MD_TEXT_NORMAL && !m_style.isCode && std::regex_search(textStr, match, colorRegex)) {
-        HandleText(type, textStr.substr(0, match.position()).c_str(), (MD_SIZE)match.position());
-        
-        ImVec4 oldColor = m_style.customColor;
-        unsigned int r, g, b;
-        sscanf(match[1].str().c_str(), "%02x%02x%02x", &r, &g, &b);
-        m_style.customColor = ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
-        HandleText(type, match[2].str().c_str(), (MD_SIZE)match[2].length());
-        m_style.customColor = oldColor;
-        
-        std::string suffix = textStr.substr(match.position() + match.length());
-        HandleText(type, suffix.c_str(), (MD_SIZE)suffix.length());
-        return;
-    }
-
     ImGui::PushFont(GetFontForCurrentStyle());
 
     bool colorPushed = false;
-    if (m_style.customColor.w > 0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, m_style.customColor);
-        colorPushed = true;
-    } else if (m_style.isLink) {
-        ImGui::PushStyleColor(ImGuiCol_Text, UI::Colors::URL_LINK);
-        colorPushed = true;
-    }
-if (type == MD_TEXT_SOFTBR) {
-    // Treat soft breaks as hard breaks for intuitive \n behavior in game UI
-    ImGui::NewLine();
-    m_isAtStartOfLine = true;
-    if (m_isInsideCodeBlock) m_currentCodeBlockText += "\n";
-} else if (type == MD_TEXT_BR) {
-    // Hard break
-    ImGui::NewLine();
-    m_isAtStartOfLine = true;
-    if (m_isInsideCodeBlock) m_currentCodeBlockText += "\n";
-} else {
-        const char* p = text;
-        const char* end = text + size;
+    
+    // --- Improved Color Tag Parsing ---
+    // We search for <#RRGGBB> or </> and update the state
+    size_t pos = 0;
+    while (pos < size) {
+        if (text[pos] == '<') {
+            // Check for end tag </>
+            if (pos + 2 < size && text[pos + 1] == '/' && text[pos + 2] == '>') {
+                m_style.customColor = { 0, 0, 0, 0 };
+                pos += 3;
+                continue;
+            }
+            // Check for start tag <#RRGGBB>
+            else if (pos + 8 < size && text[pos + 1] == '#') {
+                unsigned int r, g, b;
+                if (sscanf(text + pos + 2, "%02x%02x%02x", &r, &g, &b) == 3 && text[pos + 8] == '>') {
+                    m_style.customColor = ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
+                    pos += 9;
+                    continue;
+                }
+            }
+        }
 
-        while (p < end) {
+        // Standard rendering logic for the current character/atom
+        if (m_style.customColor.w > 0) {
+            ImGui::PushStyleColor(ImGuiCol_Text, m_style.customColor);
+            colorPushed = true;
+        } else if (m_style.isLink) {
+            ImGui::PushStyleColor(ImGuiCol_Text, UI::Colors::URL_LINK);
+            colorPushed = true;
+        }
+
+        const char* p = text + pos;
+        const char* end = text + size;
+        
+        // Find next tag or end of string
+        const char* next_tag = p;
+        while (next_tag < end) {
+            if (*next_tag == '<') {
+                if (next_tag + 2 < end && *(next_tag + 1) == '/' && *(next_tag + 2) == '>') break;
+                if (next_tag + 8 < end && *(next_tag + 1) == '#') break;
+            }
+            next_tag++;
+        }
+
+        while (p < next_tag) {
             const char* atom_start = p;
             bool isNewline = false;
 
-            // Identify atom (Newline, Whitespace, or Word)
             if (*p == '\n' || *p == '\r') {
                 isNewline = true;
-                if (*p == '\r' && (p + 1) < end && *(p + 1) == '\n') p += 2;
+                if (*p == '\r' && (p + 1) < next_tag && *(p + 1) == '\n') p += 2;
                 else p++;
             } else if (*p == ' ' || *p == '\t') {
-                while (p < end && (*p == ' ' || *p == '\t')) p++;
+                while (p < next_tag && (*p == ' ' || *p == '\t')) p++;
             } else {
-                while (p < end && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') p++;
+                while (p < next_tag && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' && *p != '<') p++;
             }
 
             if (isNewline) {
@@ -389,10 +396,6 @@ if (type == MD_TEXT_SOFTBR) {
             } else {
                 float atom_width = ImGui::CalcTextSize(atom_start, p).x;
                 float available = ImGui::GetContentRegionAvail().x;
-
-                // Manual wrapping check: ONLY for non-code text or inline code.
-                // For Code Blocks (which have horizontal scroll), we skip this.
-                // Code blocks in our implementation are identified by m_style.isCode AND being inside a child window (checked via TextWrapPos)
                 bool isCodeBlock = m_style.isCode && ImGui::GetCurrentWindow()->DC.TextWrapPos < 0.0f;
 
                 if (!m_isAtStartOfLine && atom_width > available && !isCodeBlock) {
@@ -400,25 +403,15 @@ if (type == MD_TEXT_SOFTBR) {
                     m_isAtStartOfLine = true;
                 }
 
-                // Background for inline code
                 if (m_style.isCode && m_style.hLevel == 0 && !m_style.isBlockQuote) {
                     ImVec2 cur = ImGui::GetCursorScreenPos();
                     ImVec2 sz = ImGui::CalcTextSize(atom_start, p);
-                    ImGui::GetWindowDrawList()->AddRectFilled(
-                        ImVec2(cur.x - 1.0f, cur.y), ImVec2(cur.x + sz.x + 1.0f, cur.y + sz.y), 
-                        ImGui::GetColorU32(UI::Colors::CODE_BG), 2.0f
-                    );
+                    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(cur.x - 1.0f, cur.y), ImVec2(cur.x + sz.x + 1.0f, cur.y + sz.y), ImGui::GetColorU32(UI::Colors::CODE_BG), 2.0f);
                 }
 
-                // Render the atom
                 ImGui::TextUnformatted(atom_start, p);
-
-                // Accumulate text for copying if in a code block
-                if (m_isInsideCodeBlock) {
-                    m_currentCodeBlockText.append(atom_start, p - atom_start);
-                }
+                if (m_isInsideCodeBlock) m_currentCodeBlockText.append(atom_start, p - atom_start);
                 
-                // Decorations (Underline / Strikethrough)
                 if (m_style.isUnderline || m_style.isStrikethrough) {
                     ImVec2 p_min = ImGui::GetItemRectMin();
                     ImVec2 p_max = ImGui::GetItemRectMax();
@@ -426,7 +419,6 @@ if (type == MD_TEXT_SOFTBR) {
                     if (m_style.isStrikethrough) ImGui::GetWindowDrawList()->AddLine(ImVec2(p_min.x, (p_min.y + p_max.y) * 0.5f), ImVec2(p_max.x, (p_min.y + p_max.y) * 0.5f), ImGui::GetColorU32(ImGuiCol_Text));
                 }
 
-                // Interactive Links
                 if (m_style.isLink && !m_href.empty() && m_href.find("color:#") == std::string::npos) {
                     if (ImGui::IsItemHovered()) {
                         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
@@ -434,14 +426,17 @@ if (type == MD_TEXT_SOFTBR) {
                     }
                 }
 
-                // Connect to next atom
                 ImGui::SameLine(0, 0);
                 m_isAtStartOfLine = false;
             }
         }
+        pos = p - text;
+        if (colorPushed) {
+            ImGui::PopStyleColor();
+            colorPushed = false;
+        }
     }
 
-    if (colorPushed) ImGui::PopStyleColor();
     ImGui::PopFont();
 }
 

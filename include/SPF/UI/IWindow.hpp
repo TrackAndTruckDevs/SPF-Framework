@@ -43,10 +43,10 @@ class IWindow {
    */
   virtual nlohmann::ordered_json GetCurrentSettings() const = 0;
 
-  // --- Event Handlers (Optional) ---
-  virtual void OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) {}
-  virtual void OnUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e) {}
+  // --- Framework Events ---
+  virtual void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {}
   virtual void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {}
+  virtual void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
 };
 }  // namespace UI
 SPF_NS_END

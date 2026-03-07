@@ -20,6 +20,7 @@
         "title": "메인 창 - SPF Framework",
         "patrons_button_tooltip": "내 후원자",
         "update_button_tooltip": "업데이트 확인",
+        "connect_disabled_tooltip": "설정 파일에서 'connect'를 활성화하십시오.",
         "version_label": "현재 버전 ",
         "update_checking": "업데이트 확인 중...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "업데이트 서버를 일시적으로 사용할 수 없습니다. 나중에 다시 시도하십시오.",
             "generic": "업데이트를 확인하는 동안 예기치 않은 오류가 발생했습니다.",
             "invalid_response": "업데이트 서버에서 잘못된 응답을 반환했습니다.",
-            "patrons_fetch_failed": "후원자 목록을 로드하지 못했습니다. 나중에 다시 시도하십시오."
+            "patrons_fetch_failed": "후원자 목록을 로드하지 못했습니다. 나중에 다시 시도하십시오.",
+            "forbidden": "업데이트 서버에 대한 액세스가 제한되었습니다. 개발자에게 문의하십시오.",
+            "not_found": "이 채널에 대한 릴리스 정보를 찾을 수 없습니다."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI 싱크",
                         "description": "UI 창에 로그 표시를 활성화하거나 비활성화합니다."
+                    },
+                    "report": {
+                        "title": "보고서 싱크",
+                        "description": "프레임워크 개선을 위해 원격 오류 보고를 활성화하거나 비활성화합니다."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "로거",
         "button_clear": "지우기",
-        "checkbox_autoscroll": "자동 스크롤"
+        "checkbox_autoscroll": "자동 스크롤",
+        "label_level": "레벨",
+        "label_module": "모듈",
+        "context_copy_line": "줄 복사",
+        "context_copy_message": "메시지만 복사",
+        "context_copy_selected": "선택 영역 복사",
+        "context_copy_all": "모든 가시적 항목 복사",
+        "msg_clean_session": "로그가 아직 없습니다. 이 세션은 완벽하게 깨끗합니다."
     },
     "telemetry_window": {
         "title": "텔레메트리",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "로드되지 않음"
         }
     },
+    "welcome_window": {
+        "title": "SPF FRAMEWORK의 세계에 오신 것을 환영합니다!",
+        "intro_title": "안녕하세요! 저희 프레임워크를 선택해 주셔서 감사합니다.",
+        "intro_text": "**SPF Framework**는 **ATS** 및 **ETS2**에서의 플레이를 더욱 흥미롭게 만들고 플러그인 관리를 최대한 단순하게 하기 위해 만들어졌습니다.",
+        "section1": {
+            "title": "프레임워크 메뉴를 여는 방법",
+            "text": "키보드의 <#FFFFFF>{} **DELETE**</> 키를 누르기만 하면 됩니다. 이것이 메인 제어판입니다."
+        },
+        "section2": {
+            "title": "SPF 호환 플러그인 설치",
+            "text": "DLL이 포함된 플러그인 폴더를 ` <#FFFFFF>{}</> `에 넣기만 하면 됩니다. 그 후 <#FFFFFF>**플러그인 관리자**</> 섹션에서 활성화하십시오."
+        },
+        "section3": {
+            "title": "설정",
+            "text": "모든 프레임워크 매개변수와 설치된 플러그인, 키 바인딩 관리는 <#FFFFFF>**설정**</> 탭에 모여 있습니다."
+        },
+        "section4": {
+            "title": "개발자 정보",
+            "text": "개발자라면 저희 <#00b3ff>{} [GitHub]({})</>를 확인해 보세요. 문서와 API 사용 예시를 찾을 수 있습니다."
+        },
+        "section5": {
+            "title": "함께해요",
+            "text": "연락처와 커뮤니티 링크는 <#FFFFFF>**소개**</> 섹션에서 찾을 수 있습니다."
+        },
+        "footer": "*Team **Track & Truck Devs**가 <#ff0000>{}</>를 담아 개발했습니다. 프로젝트 성장을 돕기 위해 <#00b3ff>{} [Patreon]({})</>에서 저희를 지원해 주세요!*",
+        "button_go": "출발!"
+    },
+    "notification_popup": {
+        "title": "알림"
+    },
     "description": {
         "detailed": "SCS 게임용 플러그인을 만들고 관리하기 위한 강력하고 유연한 프레임워크입니다. 로깅, 구성, UI 관리 등을 위한 핵심 서비스 집합을 제공합니다."
     },
     "patrons_popup": {
-      "title": "프로젝트 지원",
-      "intro_text": "우리 커뮤니티의 지원은 이 프로젝트의 원동력입니다. 우리 작업이 유용하다고 생각하시면 후원자가 되는 것을 고려해 보십시오. 귀하의 기여는 우리가 개발을 계속하고 모두를 위한 새롭고 흥미로운 플러그인을 만드는 것을 가능하게 합니다!",
-      "link_intro": "공식 페이지에서 우리를 지원할 수 있습니다:",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "브라우저에서 Patreon 페이지를 열려면 클릭하십시오.",
-      "hof_title": "명예의 전당",
-      "hof_empty": "우리 명예의 전당은 아직 비어 있습니다... 여기에 처음으로 등장하여 우리의 여정을 시작하십시오!",
-      "hof_teaser": "우리 명예의 전당에 오르려면 우리를 지원하십시오.",
-      "close_button": "닫기",
-      "tiers": {
-        "magnate": "--- 물류 거물 ---",
-        "manager": "--- 차량 관리자 ---",
-        "master": "--- 도로의 달인 ---"
-      }
+        "title": "프로젝트 지원",
+        "intro_text": "우리 커뮤니티의 지원은 이 프로젝트의 원동력입니다. 우리 작업이 유용하다고 생각하시면 후원자가 되는 것을 고려해 보십시오. 귀하의 기여는 우리가 개발을 계속하고 모두를 위한 새롭고 흥미로운 플러그인을 만드는 것을 가능하게 합니다!",
+        "link_intro": "공식 페이지에서 우리를 지원할 수 있습니다:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "브라우저에서 Patreon 페이지를 열려면 클릭하십시오.",
+        "hof_title": "명예의 전당",
+        "hof_empty": "우리 명예의 전당은 아직 비어 있습니다... 여기에 처음으로 등장하여 우리의 여정을 시작하십시오!",
+        "hof_teaser": "우리 명예의 전당에 오르려면 우리를 지원하십시오.",
+        "close_button": "닫기",
+        "tiers": {
+            "magnate": "--- 물류 거물 ---",
+            "manager": "--- 차량 관리자 ---",
+            "master": "--- 도로의 달인 ---"
+        }
     },
     "manual_popup": {
         "title": "FAQ",

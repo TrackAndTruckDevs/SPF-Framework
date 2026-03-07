@@ -49,13 +49,13 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         uintptr_t gamePtr = PatternFinder::GetRipAddress(sigAddrProfile, 3, 7);
         if (gamePtr) {
             owner.SetGamePtrAddr(gamePtr);
-            logger->Info("-> Found GamePtrAddr: 0x{:X}", gamePtr);
+            logger->Debug("-> Found GamePtrAddr: 0x{:X}", gamePtr);
         }
 
         uint32_t profileOff = PatternFinder::ReadInt32(sigAddrProfile + 10);
         if (profileOff > 0 && profileOff < 0xFFFF) {
             owner.SetProfileHandleOffset(profileOff);
-            logger->Info("-> Found ProfileHandleOffset: 0x{:X}", profileOff);
+            logger->Debug("-> Found ProfileHandleOffset: 0x{:X}", profileOff);
         }
     }
 
@@ -66,7 +66,7 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         uintptr_t sessionMgrPtr = PatternFinder::GetRipAddress(sigAddrSession, 3, 7);
         if (sessionMgrPtr) {
             owner.SetSessionMgrPtrAddr(sessionMgrPtr);
-            logger->Info("-> Found SessionMgrPtrAddr: 0x{:X}", sessionMgrPtr);
+            logger->Debug("-> Found SessionMgrPtrAddr: 0x{:X}", sessionMgrPtr);
         }
 
         // 2.2. Extract Convoy Status Offset
@@ -76,7 +76,7 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         uint8_t statusOff = PatternFinder::ReadInt8(sigAddrSession + 15);
         if (statusOff > 0) {
             owner.SetConvoyStatusOffset(statusOff);
-            logger->Info("-> Found ConvoyStatusOffset: 0x{:X}", statusOff);
+            logger->Debug("-> Found ConvoyStatusOffset: 0x{:X}", statusOff);
         }
     }
 
@@ -88,7 +88,7 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         uint8_t nameOff = PatternFinder::ReadInt8(sigAddrProps + 10);
         if (nameOff > 0) {
             owner.SetProfileDisplayNameOffset(nameOff);
-            logger->Info("-> Found ProfileDisplayNameOffset: 0x{:X}", nameOff);
+            logger->Debug("-> Found ProfileDisplayNameOffset: 0x{:X}", nameOff);
         }
 
         // 3.2. Extract ProfileType Offset (from 48 63 ?? ??)
@@ -97,7 +97,7 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         uint8_t typeOff = PatternFinder::ReadInt8(sigAddrProps + 22);
         if (typeOff > 0) {
             owner.SetProfileTypeOffset(typeOff);
-            logger->Info("-> Found ProfileTypeOffset: 0x{:X}", typeOff);
+            logger->Debug("-> Found ProfileTypeOffset: 0x{:X}", typeOff);
         }
     }
 

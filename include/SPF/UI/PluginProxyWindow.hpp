@@ -5,6 +5,7 @@
 #include "SPF/Modules/PluginManager.hpp"  // For GetInstance
 #include "SPF/Logging/LoggerFactory.hpp" // For Error logging
 #include "SPF/Namespace.hpp"
+#include "SPF/UI/UIElements.hpp" // For Button
 
 #include <windows.h> // For SEH (__try / __except)
 
@@ -45,7 +46,7 @@ class PluginProxyWindow : public BaseWindow {
          ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "CRITICAL: Window rendering disabled.");
          ImGui::TextWrapped("The plugin '%s' caused an access violation (crash) during UI execution. This usually happens due to ABI mismatch or uninitialized pointers.", m_componentName.c_str());
          ImGui::Spacing();
-         if (ImGui::Button("Try to Reload Rendering")) {
+         if (Button("Try to Reload Rendering")) {
              m_hasCrashed = false;
          }
          return;

@@ -5,12 +5,11 @@
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Utils/HashUtils.hpp"
 #include "SPF/Types.hpp"
+#include "SPF/Utils/SystemUtils.hpp"
 #include <Windows.h>
 #include <algorithm>
-
-// Define RtlGetVersion prototype
-typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
 SPF_NS_BEGIN
 namespace System {
@@ -61,6 +60,15 @@ const EnvironmentStatus& EnvironmentManager::GetStatus() {
     return m_status;
 }
 
+void EnvironmentManager::CalculateBuildHash() {
+    if (m_framework.loaderPath.empty()) return;
+    
+    m_framework.buildHash = Utils::HashUtils::CalculateFileMD5(m_framework.loaderPath);
+    
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("EnvironmentManager");
+    logger->Debug("Framework build hash calculated: {}", m_framework.buildHash);
+}
+
 void EnvironmentManager::DetectStaticFramework(HMODULE hModule) {
     m_framework.version = Config::GetFrameworkManifestData().info.version.value_or("Unknown");
     
@@ -102,29 +110,9 @@ void EnvironmentManager::DetectStaticGame() {
 }
 
 void EnvironmentManager::DetectStaticSystem() {
-    m_system.architecture = "x64";
-
-    HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
-    if (hNtdll) {
-        auto pRtlGetVersion = (RtlGetVersionPtr)GetProcAddress(hNtdll, "RtlGetVersion");
-        if (pRtlGetVersion) {
-            RTL_OSVERSIONINFOW osvi = { 0 };
-            osvi.dwOSVersionInfoSize = sizeof(osvi);
-            if (pRtlGetVersion(&osvi) == 0) {
-                m_system.osName = "Windows " + std::to_string(osvi.dwMajorVersion);
-                if (osvi.dwMajorVersion == 10 && osvi.dwBuildNumber >= 22000) m_system.osName = "Windows 11";
-                m_system.osName += " (Build " + std::to_string(osvi.dwBuildNumber) + ")";
-            }
-        }
-    }
-
-    wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
-    if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH)) {
-        char mbs[LOCALE_NAME_MAX_LENGTH];
-        size_t converted;
-        wcstombs_s(&converted, mbs, localeName, _TRUNCATE);
-        m_system.locale = mbs;
-    }
+    m_system.architecture = Utils::SystemUtils::GetSystemArchitecture();
+    m_system.osName = Utils::SystemUtils::GetOSVersionString();
+    m_system.locale = Utils::SystemUtils::GetSystemLocaleName();
 }
 
 void EnvironmentManager::RefreshDynamicStatus() {

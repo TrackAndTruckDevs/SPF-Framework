@@ -7,17 +7,10 @@ SPF_NS_BEGIN
 namespace Events::System {
 
 /**
- * @brief Fired by the UpdateManager when an update check succeeds.
+ * @brief Fired by the CommunicationManager when an update check completes (success or failure).
  */
-struct OnUpdateCheckSucceeded {
-    const SPF::System::UpdateInfo& updateInfo;
-};
-
-/**
- * @brief Fired by the UpdateManager when an update check fails.
- */
-struct OnUpdateCheckFailed {
-    const std::optional<std::string>& errorMessage;
+struct OnUpdateCheckCompleted {
+    const SPF::System::ApiResult<SPF::System::UpdateInfo>& result;
 };
 
 /**
@@ -30,6 +23,13 @@ struct OnRequestTrackUsage {};
  */
 struct OnPatronsFetchCompleted {
     const SPF::System::ApiResult<std::vector<SPF::System::Patron>>& result;
+};
+
+/**
+ * @brief Fired after analytics session has been attempted.
+ */
+struct OnUsageTrackingCompleted {
+    bool success;
 };
 
 }  // namespace Events::System

@@ -53,13 +53,13 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
 
         // `version`: The version of your plugin. It's a best practice to follow Semantic Versioning (semver.org).
         // Example: "1.0.0", "2.1.0-beta", etc.
-        api->Info_SetVersion(h, "0.1.0-alpha");
+        api->Info_SetVersion(h, "1.1.5");
 
         // Recommended to fill in
         // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.6").
         // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
         // This prevents crashes due to API changes.
-        api->Info_SetMinFrameworkVersion(h, "1.0.6");
+        api->Info_SetMinFrameworkVersion(h, "1.1.5");
 
         // `author`: (Optional) Your name or your organization's name.
         api->Info_SetAuthor(h, "Your Name");
@@ -1004,7 +1004,9 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             ui->UI_Text("Enter a command to execute in the in-game console:");
             ui->UI_InputText("##ConsoleCommand", g_ctx.consoleCommand, sizeof(g_ctx.consoleCommand), SPF_INPUT_TEXT_FLAG_NONE);
             ui->UI_SameLine(0, 0);
-            if (ui->UI_Button("Execute", 0, 0)) {
+            
+            // Example of using the new UI_ButtonEx with unified framework style and a tooltip
+            if (ui->UI_ButtonEx("Execute", 0, 0, "Click to run this command in SCS console", NULL)) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->console && g_ctx.consoleCommand[0] != '\0') {
                     g_ctx.coreAPI->console->GCon_ExecuteCommand(g_ctx.consoleCommand);
                     char log_buffer[512];
@@ -1532,7 +1534,31 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_TextColored(0.1f, 1.0f, 0.1f, 1.0f, ICON_FA_GITHUB " GitHub");
 
     ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, "Unified Button API (v1.2.0)");
+    ui->UI_TextWrapped("UI_ButtonEx provides framework-standard behavior (White -> Gold -> Dark) by default, or can be fully customized.");
 
+    // Standard button using framework defaults
+    if (ui->UI_ButtonEx(ICON_FA_CIRCLE_CHECK " Default Framework Button", 0, 40, "Uses default White/Gold/Dark logic", NULL)) {
+        SPF_Notification_Params p = { SPF_NOTIFICATION_SUCCESS, "Framework default button clicked!", SPF_NOTIF_MODE_TOP, 3.0f };
+        ui->UI_ShowNotification(&p);
+    }
+
+    ui->UI_Spacing();
+    ui->UI_Text("Custom Color Override Example:");
+    
+    // Custom button style with specific state colors
+    SPF_TextStyle_Handle custom_btn_style = ui->UI_Style_Create();
+    ui->UI_Style_SetColor(custom_btn_style, 0.5f, 1.0f, 0.5f, 1.0f);      // Idle: Light Green
+    ui->UI_Style_SetHoverColor(custom_btn_style, 1.0f, 1.0f, 1.0f, 1.0f); // Hover: White
+    ui->UI_Style_SetActiveColor(custom_btn_style, 0.0f, 0.5f, 0.0f, 1.0f); // Active: Dark Green
+    
+    if (ui->UI_ButtonEx(ICON_FA_BUG " Custom Styled Button", 300, 0, "Idle: Green | Hover: White | Active: Dark Green", custom_btn_style)) {
+        SPF_Notification_Params p = { SPF_NOTIFICATION_HINT, "Custom styled button clicked!", SPF_NOTIF_MODE_TOP, 3.0f };
+        ui->UI_ShowNotification(&p);
+    }
+    ui->UI_Style_Destroy(custom_btn_style);
+
+    ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, "Markdown Demo");
 
     const char* markdown =
@@ -1540,9 +1566,9 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         "This is a demonstration of the **SPF v1.1.5** markdown engine.\n\n"
         "--- \n"
         "### 1. Custom Colors & Formatting\n"
-        "You can now use {#ff4444}custom RGB colors{/} directly in your text. \n"
-        "This is {#44ff44}green text{/}, and this is {#ffcc00}gold text{/}.\n"
-        "You can even combine them: **{#ff4444}Bold Red{/}** and *{#44ff44}Italic Green{/}*.\n\n"
+        "You can now use <#ff4444>custom RGB colors</> directly in your text. \n"
+        "This is <#44ff44>green text</>, and this is <#ffcc00>gold text</>.\n"
+        "You can even combine them: **<#ff4444>Bold Red</>** and *<#44ff44>Italic Green</>*.\n\n"
         "--- \n\n"
         "Find plugin demonstrations, tutorials, and project updates on our YouTube Channel at [Track'n'Truck](https://www.youtube.com/@TrackAndTruck).\n\n"
         "--- \n"
@@ -1559,7 +1585,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         "> — Alan Kay\n\n"
         "```cpp\n"
         "// New colors work everywhere!\n"
-        "ui->UI_ShowNotification(..., \"{#00ff00}Success!{/}\");\n"
+        "ui->UI_ShowNotification(..., \"<#00ff00>Success!</>\");\n"
         "```\n"
         "And `inline code` is still here.\n\n"
         "| Header 1 | Header 2 |\n"
@@ -1631,7 +1657,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         if (ui->UI_Button(ICON_FA_PLAY " Open Programmatic (Infinite)", 0, 0)) {
             SPF_Notification_Params p = {};
             p.type = SPF_NOTIFICATION_INFO;
-            p.message = "{#ffcc00}Manual Management{/}\nThis notification will stay until you click 'Close'.\nNote the static progress bar.";
+            p.message = "<#ffcc00>Manual Management</>\nThis notification will stay until you click 'Close'.\nNote the static progress bar.";
             p.mode = SPF_NOTIF_MODE_TOP;
             p.duration = 0.0f; // 0 = Programmatic (infinite)
             hActive = ui->UI_ShowNotification(&p);

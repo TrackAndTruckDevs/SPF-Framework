@@ -47,3 +47,27 @@ if(EXISTS "${GAME_PLUGINS_DIR}")
         COMMENT "Deploying localization files for ${PLUGIN_NAME}"
     )
 endif()
+
+# --- Distribution for Installer ---
+# This section ensures that every build also updates the files in the installer's distribution folder.
+set(INSTALLER_DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../installer/dist" CACHE PATH "Staging directory for the installer")
+set(INSTALLER_PLUGIN_DIR "${INSTALLER_DIST_DIR}/${PLUGIN_NAME}")
+
+add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALLER_PLUGIN_DIR}"
+    COMMENT "Ensuring installer dist directory exists for ${PLUGIN_NAME}"
+)
+
+add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:${PLUGIN_NAME}>"
+        "${INSTALLER_PLUGIN_DIR}"
+    COMMENT "Copying ${PLUGIN_NAME}.dll to installer dist"
+)
+
+add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/localization"
+        "${INSTALLER_PLUGIN_DIR}/localization"
+    COMMENT "Copying localization files to installer dist"
+)

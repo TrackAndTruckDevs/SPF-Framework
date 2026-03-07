@@ -116,7 +116,7 @@ void PluginManager::LoadAllDiscoveredPluginManifests() {
     logger->Info("--- Loading all discovered plugin manifests (C-API Method) ---");
 
     for (const auto& [pluginName, discoveredPlugin] : m_discoveredPlugins) {
-        logger->Debug("  -> Attempting to load manifest for plugin '{}' from '{}'", pluginName, discoveredPlugin.dllPath.string());
+        logger->Info("  -> Attempting to load manifest for plugin '{}' from '{}'", pluginName, discoveredPlugin.dllPath.string());
 
         HMODULE handle = LoadLibraryW(discoveredPlugin.dllPath.c_str());
         if (!handle) {
@@ -132,7 +132,7 @@ void PluginManager::LoadAllDiscoveredPluginManifests() {
 
                 // Register the C++ manifest
                 m_configService->RegisterPluginManifest(pluginName, cppManifest);
-                logger->Debug("    -> Successfully built and registered manifest for plugin '{}'.", pluginName);
+                logger->Info("    -> Successfully built and registered manifest for plugin '{}'.", pluginName);
             } catch (const std::exception& e) {
                 logger->Error("    -> An exception occurred while building manifest for '{}'. Error: {}", pluginName, e.what());
             } catch (...) {
@@ -143,7 +143,7 @@ void PluginManager::LoadAllDiscoveredPluginManifests() {
         }
 
         FreeLibrary(handle);
-        logger->Debug("  -> Unloaded library for plugin '{}'", pluginName);
+        logger->Info("  -> Unloaded library for plugin '{}'", pluginName);
     }
     logger->Info("--- Finished loading all discovered plugin manifests ---");
 }

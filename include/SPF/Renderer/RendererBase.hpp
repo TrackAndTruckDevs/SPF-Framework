@@ -1,6 +1,8 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+#include "SPF/Renderer/ITexture.hpp"
+#include <memory>
 
 SPF_NS_BEGIN
 
@@ -37,6 +39,14 @@ class RendererBase {
 
   /** @brief Shuts down the renderer implementation. */
   virtual void Shutdown() = 0;
+
+  /**
+   * @brief Creates a texture from a memory buffer (e.g., PNG/JPG data).
+   * @param data The raw buffer containing the compressed image data.
+   * @param size The size of the buffer in bytes.
+   * @return A unique pointer to the created texture, or nullptr on failure.
+   */
+  virtual std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) = 0;
 
  protected:
   Renderer& m_renderer;

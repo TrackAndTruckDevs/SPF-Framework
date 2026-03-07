@@ -7,9 +7,10 @@ SPF_NS_BEGIN
 
 namespace Logging::Sinks {
 
-FileSink::FileSink(const std::filesystem::path& filename, const std::string& name) {
+FileSink::FileSink(const std::filesystem::path& filename, const std::string& name, bool append) {
   m_name = name;
-  m_file.open(filename, std::ios::out | std::ios::trunc);
+  auto mode = std::ios::out | (append ? std::ios::app : std::ios::trunc);
+  m_file.open(filename, mode);
   if (!m_file.is_open()) {
     throw std::runtime_error(fmt::format("Failed to open log file: {}", filename.string()));
   }
@@ -23,6 +24,12 @@ FileSink::~FileSink() {
 
 fmt::string_view FileSink::GetName() const {
     return m_name;
+}
+
+void FileSink::Close() {
+    if (m_file.is_open()) {
+        m_file.close();
+    }
 }
 
 void FileSink::Log(const LogMessage& msg) {

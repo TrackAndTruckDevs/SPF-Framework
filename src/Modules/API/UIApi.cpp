@@ -8,6 +8,7 @@
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Handles/WindowHandle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include <cstdarg>
 #include <vector>
 #include <cmath>
@@ -326,6 +327,14 @@ void UIApi::UI_LabelText(const char* label, const char* text) { if (label && tex
 void UIApi::UI_BulletText(const char* text) { if (text) ImGui::BulletText("%s", text); }
 
 bool UIApi::UI_Button(const char* label, float width, float height) { return ImGui::Button(label, {width, height}); }
+
+bool UIApi::UI_ButtonEx(const char* label, float width, float height, const char* tooltip, SPF_TextStyle_Handle style) {
+    if (style) {
+        return SPF::UI::Button(label, style->style, {width, height}, tooltip);
+    }
+    return SPF::UI::Button(label, SPF::UI::TextStyle::DefaultButton(), {width, height}, tooltip);
+}
+
 bool UIApi::UI_SmallButton(const char* label) { return ImGui::SmallButton(label); }
 bool UIApi::UI_InvisibleButton(const char* str_id, float width, float height) { return ImGui::InvisibleButton(str_id, {width, height}); }
 bool UIApi::UI_ArrowButton(const char* str_id, SPF_Dir dir) { return ImGui::ArrowButton(str_id, (ImGuiDir)dir); }
@@ -648,6 +657,8 @@ void UIApi::UI_Style_SetFont(SPF_TextStyle_Handle handle, SPF_Font font) {
     handle->style.Font(fontKey);
 }
 void UIApi::UI_Style_SetColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a) { if (handle) handle->style.Color({r, g, b, a}); }
+void UIApi::UI_Style_SetHoverColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a) { if (handle) handle->style.HoverColor({r, g, b, a}); }
+void UIApi::UI_Style_SetActiveColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a) { if (handle) handle->style.ActiveColor({r, g, b, a}); }
 void UIApi::UI_Style_SetAlign(SPF_TextStyle_Handle handle, SPF_TextAlign align) { if (handle) handle->style.Align((SPF::UI::TextAlign)align); }
 void UIApi::UI_Style_SetWrap(SPF_TextStyle_Handle handle, bool wrap) { if (handle) handle->style.Wrapped(wrap); }
 void UIApi::UI_Style_SetPadding(SPF_TextStyle_Handle handle, float pad_x, float pad_y) { if (handle) handle->style.Padding({pad_x, pad_y}); }
@@ -1068,6 +1079,7 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_LabelText = &UIApi::UI_LabelText;
     api->UI_BulletText = &UIApi::UI_BulletText;
     api->UI_Button = &UIApi::UI_Button;
+    api->UI_ButtonEx = &UIApi::UI_ButtonEx;
     api->UI_SmallButton = &UIApi::UI_SmallButton;
     api->UI_InvisibleButton = &UIApi::UI_InvisibleButton;
     api->UI_ArrowButton = &UIApi::UI_ArrowButton;
@@ -1231,6 +1243,8 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_Style_Destroy = &UIApi::UI_Style_Destroy;
     api->UI_Style_SetFont = &UIApi::UI_Style_SetFont;
     api->UI_Style_SetColor = &UIApi::UI_Style_SetColor;
+    api->UI_Style_SetHoverColor = &UIApi::UI_Style_SetHoverColor;
+    api->UI_Style_SetActiveColor = &UIApi::UI_Style_SetActiveColor;
     api->UI_Style_SetAlign = &UIApi::UI_Style_SetAlign;
     api->UI_Style_SetWrap = &UIApi::UI_Style_SetWrap;
     api->UI_Style_SetPadding = &UIApi::UI_Style_SetPadding;

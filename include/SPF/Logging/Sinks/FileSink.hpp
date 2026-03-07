@@ -20,8 +20,9 @@ class FileSink : public Logging::ILogSink {
    * @brief Constructs the sink and opens the file for writing.
    * @param filename The path to the log file.
    * @param name The unique name for this sink.
+   * @param append If true, appends to the file instead of overwriting.
    */
-  FileSink(const std::filesystem::path& filename, const std::string& name);
+  FileSink(const std::filesystem::path& filename, const std::string& name, bool append = false);
 
   // Copying is disallowed as it owns a file handle.
   FileSink(const FileSink&) = delete;
@@ -34,6 +35,11 @@ class FileSink : public Logging::ILogSink {
    * @brief Gets the unique name of the sink.
    */
   fmt::string_view GetName() const override;
+
+  /**
+   * @brief Manually closes the log file.
+   */
+  void Close();
 
   /**
    * @brief Implementation of the virtual method. Writes the message to the file.

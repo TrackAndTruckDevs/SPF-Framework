@@ -20,6 +20,7 @@
         "title": "Hoofdvenster - SPF Framework",
         "patrons_button_tooltip": "Mijn Patrons",
         "update_button_tooltip": "Controleren op updates",
+        "connect_disabled_tooltip": "Schakel 'connect' in het configuratiebestand in.",
         "version_label": "Jouw versie ",
         "update_checking": "Controleren op updates...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "De updateserver is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
             "generic": "Er is een onverwachte fout opgetreden bij het controleren op updates.",
             "invalid_response": "De updateserver gaf een ongeldig antwoord.",
-            "patrons_fetch_failed": "Het laden van de lijst met patrons is mislukt. Probeer het later opnieuw."
+            "patrons_fetch_failed": "Het laden van de lijst met patrons is mislukt. Probeer het later opnieuw.",
+            "forbidden": "Toegang tot de updateserver is beperkt. Neem contact op met de ontwikkelaars.",
+            "not_found": "Geen release-informatie gevonden voor dit kanaal."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI Sink",
                         "description": "Schakel het tonen van logs in het UI-venster in of uit."
+                    },
+                    "report": {
+                        "title": "Report Sink",
+                        "description": "Schakel externe foutrapportage in of uit om het framework te helpen verbeteren."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Wissen",
-        "checkbox_autoscroll": "Automatisch scrollen"
+        "checkbox_autoscroll": "Automatisch scrollen",
+        "label_level": "Niveau",
+        "label_module": "Module",
+        "context_copy_line": "Regel kopiëren",
+        "context_copy_message": "Alleen bericht kopiëren",
+        "context_copy_selected": "Geselecteerd bereik kopiëren",
+        "context_copy_all": "Alle zichtbare kopiëren",
+        "msg_clean_session": "Nog geen logs. Deze sessie is perfect schoon."
     },
     "telemetry_window": {
         "title": "Telemetrie",
@@ -970,6 +984,36 @@
             "dll_loaded": "Geladen",
             "dll_not_loaded": "Niet geladen"
         }
+    },
+    "welcome_window": {
+        "title": "WELKOM IN DE WERELD VAN SPF FRAMEWORK!",
+        "intro_title": "Hallo! Bedankt voor het kiezen van ons framework.",
+        "intro_text": "We hebben **SPF Framework** gemaakt om je spel in **ATS** en **ETS2** nog interessanter te maken, en pluginbeheer zo eenvoudig mogelijk.",
+        "section1": {
+            "title": "Hoe open je het framework-menu?",
+            "text": "Druk gewoon op de <#FFFFFF>{} **DEL**</>-toets op je toetsenbord. Dit is je hoofdbedieningspaneel."
+        },
+        "section2": {
+            "title": "SPF-compatibele plugins installeren",
+            "text": "Plaats de plugin-map met de DLL gewoon in ` <#FFFFFF>{}</> `. Activeer ze vervolgens in de sectie <#FFFFFF>**Pluginbeheer**</>."
+        },
+        "section3": {
+            "title": "Instellingen",
+            "text": "Alle framework-parameters en geïnstalleerde plugins, evenals keybind-beheer, zijn handig verzameld in het tabblad <#FFFFFF>**Instellingen**</>."
+        },
+        "section4": {
+            "title": "Voor ontwikkelaars",
+            "text": "Als je een ontwikkelaar bent — bekijk dan onze <#00b3ff>{} [GitHub]({})</>, daar vind je documentatie en API-voorbeelden."
+        },
+        "section5": {
+            "title": "Blijf bij ons",
+            "text": "Je vindt onze contactgegevens en community-links in de sectie <#FFFFFF>**Over ons**</>."
+        },
+        "footer": "*Ontwikkeld met <#ff0000>{}</> door het **Track & Truck Devs** team. Steun ons op <#00b3ff>{} [Patreon]({})</> om het project te helpen groeien!*",
+        "button_go": "LATEN WE GAAN!"
+    },
+    "notification_popup": {
+        "title": "Meldingen"
     },
     "description": {
         "detailed": "Een krachtig en flexibel framework voor het maken en beheren van plugins voor SCS-spellen. Biedt een kernset van diensten voor loggen, configuratie, UI-beheer en meer."

@@ -8,6 +8,7 @@ SPF_NS_BEGIN
 namespace System {
 // Definition of static class members
 std::filesystem::path PathManager::m_basePath;
+std::filesystem::path PathManager::m_frameworkDllPath;
 
 std::filesystem::path PathManager::m_pluginsPath;
 std::filesystem::path PathManager::m_logsPath;
@@ -47,7 +48,8 @@ void PathManager::Init(HMODULE module) {
     throw std::runtime_error("PathManager Error: Failed to get module file name.");
   }
 
-  m_basePath = std::filesystem::path(path).parent_path() / "spfAssets";
+  m_frameworkDllPath = std::filesystem::path(path);
+  m_basePath = m_frameworkDllPath.parent_path() / "spfAssets";
   std::filesystem::create_directories(m_basePath);
 
   m_configPath = m_basePath / "config";
@@ -64,6 +66,7 @@ void PathManager::Init(HMODULE module) {
 }
 
 const std::filesystem::path& PathManager::GetBasePath() { return m_basePath; }
+const std::filesystem::path& PathManager::GetFrameworkDllPath() { return m_frameworkDllPath; }
 const std::filesystem::path& PathManager::GetPluginsPath() { return m_pluginsPath; }
 const std::filesystem::path& PathManager::GetLogsPath() { return m_logsPath; }
 const std::filesystem::path& PathManager::GetConfigDir() { return m_configPath; }

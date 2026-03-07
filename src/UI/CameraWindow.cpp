@@ -1,4 +1,5 @@
 #include "SPF/UI/CameraWindow.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -396,55 +397,55 @@ void CameraWindow::RenderContent() {
   ImGui::Text("%s", loc.Get(m_locSelectCamera).c_str());
   ImGui::Separator();
 
-  if (ImGui::Button(loc.Get(m_locInterior).c_str())) {
+  if (Button(loc.Get(m_locInterior).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::InteriorCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::InteriorCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locBehind).c_str())) {
+  if (Button(loc.Get(m_locBehind).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BehindCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BehindCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locTop).c_str())) {
+  if (Button(loc.Get(m_locTop).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TopCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TopCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locCabin).c_str())) {
+  if (Button(loc.Get(m_locCabin).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::CabinCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::CabinCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locWindow).c_str())) {
+  if (Button(loc.Get(m_locWindow).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WindowCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WindowCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locBumper).c_str())) {
+  if (Button(loc.Get(m_locBumper).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BumperCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BumperCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locWheel).c_str())) {
+  if (Button(loc.Get(m_locWheel).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WheelCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WheelCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locTV).c_str())) {
+  if (Button(loc.Get(m_locTV).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TVCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TVCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (ImGui::Button(loc.Get(m_locDeveloperFreeCamera).c_str())) {
+  if (Button(loc.Get(m_locDeveloperFreeCamera).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::DeveloperFreeCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::DeveloperFreeCamera;
@@ -536,7 +537,7 @@ void CameraWindow::RenderContent() {
           ImGui::TextDisabled("%s", loc.Get(m_locRotationDefaultsNotFound).c_str());
         }
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaults).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           interiorCam->ResetToDefaults();
         }
       } else {
@@ -654,7 +655,7 @@ void CameraWindow::RenderContent() {
 
         ImGui::Separator();
 
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsBehind).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsBehind).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           behindCam->ResetToDefaults();
         }
       } else {
@@ -727,7 +728,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsTop).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsTop).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           topCam->ResetToDefaults();
         }
       } else {
@@ -761,7 +762,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsCabin).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsCabin).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           cabinCam->ResetToDefaults();
         }
       } else {
@@ -851,7 +852,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsWindow).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsWindow).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           windowCam->ResetToDefaults();
         }
       } else {
@@ -900,7 +901,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsBumper).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsBumper).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           bumperCam->ResetToDefaults();
         }
       } else {
@@ -949,7 +950,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsWheel).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsWheel).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           wheelCam->ResetToDefaults();
         }
       } else {
@@ -1024,7 +1025,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsTV).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsTV).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           tvCam->ResetToDefaults();
         }
       } else {
@@ -1110,7 +1111,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (ImGui::Button(loc.Get(m_locResetToDefaultsFreeCam).c_str(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaultsFreeCam).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           freeCam->ResetToDefaults();
         }
       } else {
@@ -1229,42 +1230,42 @@ void CameraWindow::RenderContent() {
 
               if (toCapture != 0) {
                 const char* btnText = (hoveredObj != 0) ? loc.Get(m_locCaptureHovered).c_str() : loc.Get(m_locCaptureSelected).c_str();
-                if (ImGui::Button(btnText, ImVec2(-1, 0))) {
+                if (Button(btnText, TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(toCapture);
                 }
               } else {
                 ImGui::BeginDisabled();
-                ImGui::Button(loc.Get(m_locNoActorToCapture).c_str(), ImVec2(-1, 0));
+                Button(loc.Get(m_locNoActorToCapture).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
               ImGui::Spacing();
               uintptr_t myTruck = objectService.GetPlayerVehiclePtr();
               if (myTruck != 0) {
-                if (ImGui::Button(loc.Get(m_locCaptureMyTruck).c_str(), ImVec2(-1, 0))) {
+                if (Button(loc.Get(m_locCaptureMyTruck).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(myTruck);
                 }
               } else {
                 ImGui::BeginDisabled();
-                ImGui::Button(loc.Get(m_locMyTruckNotFound).c_str(), ImVec2(-1, 0));
+                Button(loc.Get(m_locMyTruckNotFound).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
               ImGui::Separator();
               ImGui::Text("%s", loc.Get(m_locHUDPositionDebug).c_str());
-              if (ImGui::Button(loc.Get(m_locTopLeftDebug).c_str())) {
+              if (Button(loc.Get(m_locTopLeftDebug).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                 debugCam->SetHudPosition(DebugHudPosition::TopLeft);
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locBottomLeftDebug).c_str())) {
+              if (Button(loc.Get(m_locBottomLeftDebug).c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::BottomLeft);
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locTopRightDebug).c_str())) {
+              if (Button(loc.Get(m_locTopRightDebug).c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::TopRight);
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locBottomRightDebug).c_str())) {
+              if (Button(loc.Get(m_locBottomRightDebug).c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::BottomRight);
               }
 
@@ -1365,7 +1366,7 @@ void CameraWindow::RenderContent() {
                 
                 ImGui::Spacing();
                 
-                if (ImGui::Button(loc.Get(m_locCaptureSelectedVehicle).c_str(), ImVec2(-1, 0))) {
+                if (Button(loc.Get(m_locCaptureSelectedVehicle).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(selectedPtr);
                 }
               }
@@ -1384,7 +1385,7 @@ void CameraWindow::RenderContent() {
               ImGui::Separator();
 
               // Button to explicitly switch to this mode
-              if (ImGui::Button(loc.Get(m_locActivateGameAnimatedMode).c_str())) {
+              if (Button(loc.Get(m_locActivateGameAnimatedMode).c_str())) {
                 debugCam->SetMode(DebugCameraMode::ANIMATED);
               }
 
@@ -1409,17 +1410,17 @@ void CameraWindow::RenderContent() {
                 auto state = animController->GetPlaybackState();
                 if (state == GameCamera::GameCameraDebugAnimation::PlaybackState::Playing) {
                   statusText = loc.Get(m_locPlayingStatus).c_str();
-                  if (ImGui::Button(loc.Get(m_locPauseButton).c_str())) {
+                  if (Button(loc.Get(m_locPauseButton).c_str())) {
                     animController->Pause();
                   }
                 } else {
                   statusText = (state == GameCamera::GameCameraDebugAnimation::PlaybackState::Paused) ? loc.Get(m_locPausedStatus).c_str() : loc.Get(m_locStoppedStatus).c_str();
-                  if (ImGui::Button(loc.Get(m_locPlayButton).c_str())) {
+                  if (Button(loc.Get(m_locPlayButton).c_str())) {
                     animController->Play(current_item_index);
                   }
                 }
                 ImGui::SameLine();
-                if (ImGui::Button(loc.Get(m_locStopButton).c_str())) {
+                if (Button(loc.Get(m_locStopButton).c_str())) {
                   animController->Stop();
                   // After stopping, immediately sync the UI to the reset state
                   timeline_pos = 0.0f;
@@ -1461,19 +1462,19 @@ void CameraWindow::RenderContent() {
               ImGui::Text("%s", loc.Get(m_locCreateStateCamera).c_str());
               ImGui::Separator();
 
-              if (ImGui::Button(loc.Get(m_locSaveKeyframe).c_str())) {
+              if (Button(loc.Get(m_locSaveKeyframe).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->SaveState();
                 }
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locReloadFromFile).c_str())) {
+              if (Button(loc.Get(m_locReloadFromFile).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->ReloadStatesFromFile();
                 }
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locClearAllMemory).c_str())) {
+              if (Button(loc.Get(m_locClearAllMemory).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->ClearAllStatesInMemory();
                 }
@@ -1497,19 +1498,19 @@ void CameraWindow::RenderContent() {
               ImGui::InputFloat(loc.Get(m_locInternalValue).c_str(), &newState.internal_value);
               ImGui::InputFloat4(loc.Get(m_locQuaternionXYZW).c_str(), &newState.q_x);
               ImGui::InputFloat(loc.Get(m_locFOVLabel).c_str(), &newState.fov);
-              if (ImGui::Button(loc.Get(m_locAddStateMemory).c_str())) {
+              if (Button(loc.Get(m_locAddStateMemory).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->AddStateToMemory(newState);
                 }
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locUpdateStateMemory).c_str())) {
+              if (Button(loc.Get(m_locUpdateStateMemory).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->EditStateInMemory(current_item, newState);
                 }
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locDeleteStateMemory).c_str())) {
+              if (Button(loc.Get(m_locDeleteStateMemory).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->DeleteStateInMemory(current_item);
                   // Clamp current_item to be safe after deletion
@@ -1523,13 +1524,13 @@ void CameraWindow::RenderContent() {
               }
               ImGui::Separator();
 
-              if (ImGui::Button(loc.Get(m_locPreviousState).c_str())) {
+              if (Button(loc.Get(m_locPreviousState).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->CycleState(0);
                 }
               }
               ImGui::SameLine();
-              if (ImGui::Button(loc.Get(m_locNextState).c_str())) {
+              if (Button(loc.Get(m_locNextState).c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->CycleState(1);
                 }

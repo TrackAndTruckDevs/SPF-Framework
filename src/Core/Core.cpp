@@ -34,7 +34,7 @@
 #include <SPF/Modules/IBindableInput.hpp>  // Added to get full definition for event handlers
 #include <SPF/Modules/InputFactory.hpp>    // Added for conflict resolution
 #include <SPF/System/ApiService.hpp>       //  For ApiService
-#include <SPF/Modules/UpdateManager.hpp>   //  For UpdateManager
+#include <SPF/Modules/CommunicationManager.hpp>   //  For CommunicationManager
 #include <SPF/Utils/Signal.hpp>
 
 // ADDED: Telemetry module includes
@@ -73,8 +73,6 @@ Core::Core(HMODULE module)
       m_eventManager(std::make_unique<EventManager>()),
       m_configService(std::make_unique<Config::ConfigService>(*m_eventManager)), // Initialize ConfigService here
       m_inputManager(std::make_unique<Input::InputManager>(*m_eventManager)),
-      m_apiService(std::make_unique<System::ApiService>()),                                       //  Initialize ApiService
-      m_updateManager(std::make_unique<Modules::UpdateManager>(*m_eventManager, *m_apiService, *m_configService)),  //  Initialize UpdateManager
       m_onPluginWillBeLoadedSink(std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeLoaded&)>>(m_eventManager->System.OnPluginWillBeLoaded)),
       m_onPluginWillBeUnloadedSink(std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded)),
       m_onRequestPluginStateChangeSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPluginStateChange&)>>(m_eventManager->System.OnRequestPluginStateChange)),
@@ -97,9 +95,9 @@ Core::Core(HMODULE module)
       ,
       m_onRequestUpdateCheckSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>>(m_eventManager->System.OnRequestUpdateCheck)),
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
-      m_onUpdateCheckSucceededSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckSucceeded&)>>(m_eventManager->System.OnUpdateCheckSucceeded)),
-      m_onUpdateCheckFailedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckFailed&)>>(m_eventManager->System.OnUpdateCheckFailed)),
-      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)) {}
+      m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
+      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
+      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -108,6 +106,7 @@ void Core::Preload() {
     OutputDebugStringA("SPF WARNING: Core::Preload called in an unexpected state. Aborting.");
     return;
   }
+  m_preloadStartTime = std::chrono::steady_clock::now();
   m_lifecycleState = LifecycleState::Preloading;
 
   InitializationReport preloadReport;
@@ -129,10 +128,14 @@ void Core::Preload() {
   // Initialize services that do not depend on the game SDK.
   InitServices();
 
+  // Set the installation status detected by ConfigService into EnvironmentManager
+  EnvironmentManager::GetInstance().SetInstallationStatus(m_configService->GetInstallationStatus());
+
   // Now that the logger is initialized in InitServices, we can log the report from the preload phase.
   LogInitializationReports({preloadReport});
 
-  m_logger->Info("--- Core Preload sequence finished ---");
+  m_preloadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_preloadStartTime).count();
+  m_logger->Info("--- Core Preload sequence finished ({} ms) ---", m_preloadMs);
   m_lifecycleState = LifecycleState::Preloaded;
 }
 
@@ -147,9 +150,15 @@ void Core::OnTelemetryInit(const scs_telemetry_init_params_t* params) {
     return;
   }
 
+  auto startTime = std::chrono::steady_clock::now();
+  if (m_mainInitStartTime.time_since_epoch().count() == 0) {
+    m_mainInitStartTime = startTime;
+  }
+
   m_logger->Info("Core::OnTelemetryInit called.");
   InitTelemetry(params);
 
+  m_telemetryMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
   m_telemetryReady = true;
   TryStartInitialization();
 }
@@ -165,20 +174,30 @@ void Core::OnInputInit(const scs_input_init_params_t* const params) {
     return;
   }
 
+  auto startTime = std::chrono::steady_clock::now();
+  if (m_mainInitStartTime.time_since_epoch().count() == 0) {
+    m_mainInitStartTime = startTime;
+  }
+
   m_logger->Info("Core::OnInputInit called.");
   InitInputService(params);
 
+  m_inputMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
   m_inputReady = true;
   TryStartInitialization();
 }
 
 void Core::OnTelemetryShutdown() {
   m_logger->Info("SDK Telemetry is shutting down, triggering framework reset...");
+  m_shutdownStartTime = std::chrono::steady_clock::now();
   Reset();
 }
 
 void Core::OnInputShutdown() {
   m_logger->Info("SDK Input is shutting down, triggering framework reset...");
+  if (m_shutdownStartTime.time_since_epoch().count() == 0) {
+    m_shutdownStartTime = std::chrono::steady_clock::now();
+  }
   Reset();
 }
 
@@ -195,21 +214,32 @@ void Core::TryStartInitialization() {
   m_configurableServices.clear();
   // Re-add the persistent services that are not re-created in the functions below.
   m_configurableServices.push_back(&Logging::LoggerFactory::GetInstance());
+  
+  auto managersStartTime = std::chrono::steady_clock::now();
   InitManagersAndPlugins();
 
   // Preload plugins so they can create virtual input devices during their OnLoad phase.
   // This must happen before RegisterCreatedDevices().
   PluginManager::GetInstance().InitializePlugins();
 
-  // Automatically trigger usage tracking once per session.
-  m_eventManager->System.OnRequestTrackUsage.Call({});
+  // Automatically trigger analytics session with a 10-second delay to avoid startup stutters.
+  ScheduleTask(std::chrono::seconds(10), [this]() {
+    m_logger->Info("Triggering deferred analytics session...");
+    m_eventManager->System.OnRequestTrackUsage.Call({});
+  });
 
   // Now that plugins are loaded and have created their devices, register them.
   // This MUST be done before scs_input_init returns.
   m_inputService->RegisterCreatedDevices();
+  m_managersMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - managersStartTime).count();
 
+  auto uiStartTime = std::chrono::steady_clock::now();
   InitUI();
+  m_uiMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - uiStartTime).count();
+
+  auto hooksStartTime = std::chrono::steady_clock::now();
   InitHooks();
+  m_hooksMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - hooksStartTime).count();
 
   m_lifecycleState = LifecycleState::Initialized;
   m_logger->Info("--- Framework initialization complete. ---");
@@ -311,7 +341,15 @@ void Core::FullShutdown() {
   m_inputReady = false;
 
   m_lifecycleState = LifecycleState::Stopped;
-  m_logger->Info("--- Core Full Shutdown sequence finished. ---");
+  
+  if (m_shutdownStartTime.time_since_epoch().count() != 0) {
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - m_shutdownStartTime).count();
+    m_logger->Info("--- Core Full Shutdown sequence finished. ---");
+    m_logger->Debug("<<<---------- The total time to unload the framework is: {} ms ---------->>>", duration);
+  } else {
+    m_logger->Info("--- Core Full Shutdown sequence finished. ---");
+  }
 
   // Ensure background thread is finished before exiting
   if (m_deferredInitThread.joinable()) {
@@ -396,15 +434,14 @@ void Core::InitManagersAndPlugins() {
   // Phase 1: Create session-based managers.
   m_logger->Info("-> [Init] Creating session manager instances (KeyBinds, UI)...");
   m_apiService = std::make_unique<System::ApiService>();
-  m_updateManager = std::make_unique<Modules::UpdateManager>(*m_eventManager, *m_apiService, *m_configService);
+  m_communicationManager = std::make_unique<Modules::CommunicationManager>(*m_eventManager, *m_apiService, *m_configService);
   m_keyBindsManager = std::make_unique<KeyBindsManager>(*m_inputManager, *m_eventManager);
   m_configurableServices.push_back(m_keyBindsManager.get());
   // Initialize the UIManager singleton
   UIManager::GetInstance().Init(*m_eventManager, *m_inputManager, *m_configService, *m_keyBindsManager, PluginManager::GetInstance(), LoggerFactory::GetInstance(), *m_telemetryService);
   m_configurableServices.push_back(&UIManager::GetInstance());  // Add the singleton to configurable services
-  //  Initialize the UpdateManager
-  reports.push_back(m_updateManager->Initialize());
-  m_configurableServices.push_back(m_updateManager.get());
+  //  Initialize the CommunicationManager
+  reports.push_back(m_communicationManager->Initialize());
 
   // Phase 2: Initialize PluginManager and discover plugins on disk.
   m_logger->Info("-> [Init] Initializing PluginManager and discovering plugins...");
@@ -568,8 +605,8 @@ void Core::ShutdownUI() {
 void Core::ShutdownManagers() {
   m_logger->Info("--> Shutting down managers...");
   m_keyBindsManager.reset();
-  m_updateManager.reset();  //  Reset UpdateManager
-  m_apiService.reset();     //  Reset ApiService
+  m_communicationManager.reset();  //  Reset CommunicationManager
+  m_apiService.reset();            //  Reset ApiService
   // m_inputManager.reset();
   // m_handleManager.reset();
   // UIManager is now a singleton, no need to reset unique_ptr
@@ -598,12 +635,13 @@ void Core::ShutdownServices() {
   m_onTelemetryFrameStartSink.reset();
   m_onGameWorldReadySink.reset();
   m_onRequestExecuteCommandSink.reset();
-  //  Reset new Sinks
+
+  //  Update and Patrons sinks
   m_onRequestUpdateCheckSink.reset();
   m_onRequestPatronsFetchSink.reset();
-  m_onUpdateCheckSucceededSink.reset();
-  m_onUpdateCheckFailedSink.reset();
+  m_onUpdateCheckCompletedSink.reset();
   m_onPatronsFetchCompletedSink.reset();
+  m_onUsageTrackingCompletedSink.reset();
 
   // Config service is last, saving all pending changes to disk.
   m_logger->Info("    -> Saving configuration and shutting down ConfigService...");
@@ -638,27 +676,62 @@ void Core::PerformDeferredInitialization() {
   /**
    * BACKGROUND THREAD: Heavy tasks like memory pattern scanning.
    */
-  auto logger = LoggerFactory::GetInstance().GetLogger("DeferredInit");
-  logger->Info("Background initialization thread started.");
+  auto startTime = std::chrono::steady_clock::now();
+  auto logger = LoggerFactory::GetInstance().GetLogger("AsyncInit");
+  logger->Info("Starting background tasks (memory scanning, build hashing)...");
 
   // 1. Resolve Session and Profile offsets
   auto& sessionService = GameObjectSessionService::GetInstance();
   if (sessionService.TryFindAllOffsets()) {
-    logger->Info("GameObjectSessionService ready.");
+    logger->Debug("Session and Profile offsets resolved.");
   }
 
   // 2. Resolve FileSystem (UFS) offsets
   auto& fileSystemService = GameObjectFileSystemService::GetInstance();
   if (fileSystemService.TryFindAllOffsets()) {
-    logger->Info("GameObjectFileSystemService ready.");
+    logger->Debug("FileSystem (UFS) offsets resolved.");
   }
 
-  logger->Info("Background initialization thread finished.");
+  // 3. Calculate framework build hash
+  EnvironmentManager::GetInstance().CalculateBuildHash();
+
+  m_deferredMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
+  logger->Info("Background tasks completed successfully ({} ms).", m_deferredMs);
+
+  // --- FINAL DETAILED REPORT ---
+  auto now = std::chrono::steady_clock::now();
+  auto mainInitTotal = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_mainInitStartTime).count();
+  
+  m_logger->Info("<<<---------- FRAMEWORK LOADING REPORT ---------->>>");
+  m_logger->Info("  -> Preload phase (DLL attach):     {:>5} ms", m_preloadMs);
+  m_logger->Info("  -> [Main Init] (Click to ready):   {:>5} ms", mainInitTotal);
+  m_logger->Info("     |-- Telemetry Module:           {:>5} ms", m_telemetryMs);
+  m_logger->Info("     |-- Input Module:               {:>5} ms", m_inputMs);
+  m_logger->Info("     |-- Managers & Plugins:         {:>5} ms", m_managersMs);
+  m_logger->Info("     |-- UI Components:              {:>5} ms", m_uiMs);
+  m_logger->Info("     |-- Low-level Hooks:            {:>5} ms", m_hooksMs);
+  m_logger->Info("     |-- Deferred Background Tasks:  {:>5} ms", m_deferredMs);
+  m_logger->Info("<<<---------------------------------------------->>>");
 }
 
 void Core::Update() {
   // This is the main update loop for logic that is not tied to telemetry frames.
   // It's called by the renderer on every visual frame.
+  
+  // 1. Process deferred tasks
+  {
+      auto now = std::chrono::steady_clock::now();
+      std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+      for (auto it = m_deferredTasks.begin(); it != m_deferredTasks.end(); ) {
+          if (now >= it->triggerTime) {
+              it->action();
+              it = m_deferredTasks.erase(it);
+          } else {
+              ++it;
+          }
+      }
+  }
+
   if (m_inputManager) {
     m_inputManager->ProcessButtonActions();
     m_inputManager->ProcessKeyboardActions();
@@ -666,9 +739,9 @@ void Core::Update() {
     m_inputManager->ProcessJoystickActions();
   }
   PluginManager::GetInstance().UpdateAllPlugins();
-  //  Update UpdateManager to process async results
-  if (m_updateManager) {
-    m_updateManager->Update();
+  //  Update CommunicationManager to process async results
+  if (m_communicationManager) {
+    m_communicationManager->Update();
   }
 }
 
@@ -702,37 +775,31 @@ void Core::BindEventHandlers() {
   //  Connect new Sinks
   m_onRequestUpdateCheckSink->Connect<&Core::OnRequestUpdateCheck>(this);
   m_onRequestPatronsFetchSink->Connect<&Core::OnRequestPatronsFetch>(this);
-  m_onUpdateCheckSucceededSink->Connect<&Core::OnUpdateCheckSucceeded>(this);
-  m_onUpdateCheckFailedSink->Connect<&Core::OnUpdateCheckFailed>(this);
+  m_onUpdateCheckCompletedSink->Connect<&Core::OnUpdateCheckCompleted>(this);
   m_onPatronsFetchCompletedSink->Connect<&Core::OnPatronsFetchCompleted>(this);
+  m_onUsageTrackingCompletedSink->Connect<&Core::OnUsageTrackingCompleted>(this);
   m_handlersBound = true;
 }
 
 void Core::OnRequestExecuteCommand(const Events::UI::RequestExecuteCommand& e) { GameConsole::GetInstance().Execute(e.command); }
 
 void Core::OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e) {
-  m_logger->Info("Core received RequestUpdateCheck event. Delegating to UpdateManager.");
-  m_updateManager->RequestUpdateCheck();
+  m_communicationManager->RequestUpdateCheck(e.force);
 }
 
 void Core::OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e) {
-  m_logger->Info("Core received RequestPatronsFetch event. Delegating to UpdateManager.");
-  m_updateManager->RequestPatronsFetch();
+  m_communicationManager->RequestPatronsFetch(e.force);
 }
 
-void Core::OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) {
-  m_logger->Info("Core received OnUpdateCheckSucceeded event. Notifying UIManager.");
-  UIManager::GetInstance().NotifyUpdateCheckSucceeded(e);
-}
-
-void Core::OnUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e) {
-  m_logger->Info("Core received OnUpdateCheckFailed event. Notifying UIManager.");
-  UIManager::GetInstance().NotifyUpdateCheckFailed(e);
+void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+  UIManager::GetInstance().NotifyUpdateCheckCompleted(e);
 }
 
 void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
-  m_logger->Info("Core received OnPatronsFetchCompleted event. Notifying UIManager.");
   UIManager::GetInstance().NotifyPatronsFetchCompleted(e);
+}
+
+void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {
 }
 
 void Core::OnGameWorldReady() {
@@ -782,7 +849,7 @@ void Core::LogInitializationReports(const std::vector<InitializationReport>& rep
     } else {
       serviceLogger->Info("Initialized successfully.");
       for (const auto& msg : report.InfoMessages) {
-        serviceLogger->Debug("  -> {}", msg);
+        serviceLogger->Info("  -> {}", msg);
       }
     }
   }
@@ -1055,5 +1122,12 @@ void Core::ShutdownInputService() {
 }
 
 void Core::ExecuteCommand(const std::string& command) { GameConsole::GetInstance().Execute(command); }
+
+void Core::ScheduleTask(std::chrono::milliseconds delay, std::function<void()> action) {
+    auto triggerTime = std::chrono::steady_clock::now() + delay;
+    std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+    m_deferredTasks.push_back({triggerTime, std::move(action)});
+}
+
 }  // namespace Core
 SPF_NS_END

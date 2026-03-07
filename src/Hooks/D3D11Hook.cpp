@@ -123,7 +123,7 @@ bool TryToHookExistingDevice() {
         // ComPtr handles cleanup automatically
         return false;
     }
-    logger->Debug("Dummy device and swapchain created successfully for v-table scraping.");
+    logger->Info("Dummy device and swapchain created successfully for v-table scraping.");
 
     // 3. Get vtable and function pointers
     void** vtable = *reinterpret_cast<void***>(pSwapChain.Get());
@@ -131,7 +131,7 @@ bool TryToHookExistingDevice() {
     g_pResizeBuffersTarget = vtable[13];
     
     // 4. Dummy resources are released automatically by ComPtr going out of scope here.
-    logger->Debug("Dummy resources released.");
+    logger->Info("Dummy resources released.");
 
     // 5. Hook the functions using the pointers we found
     if (MH_CreateHook(g_pPresentTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_Present), reinterpret_cast<LPVOID*>(&o_Present)) != MH_OK) {

@@ -39,6 +39,8 @@ class D3D12RendererImpl : public RendererBase {
   void Init() override;
   void Shutdown() override;
 
+  std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) override;
+
  private:
   void OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue);
   void OnD3D12Present(IDXGISwapChain3* swapChain);
@@ -51,6 +53,10 @@ class D3D12RendererImpl : public RendererBase {
   // D3D12-specific members
   ComPtr<ID3D12Device> m_pd3dDevice;
   ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
+  UINT m_srvDescriptorSize = 0;
+  UINT m_nextSrvIndex = 1; // 0 is reserved for ImGui font atlas
+  static constexpr UINT MAX_SRV_DESCRIPTORS = 128;
+
   ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;
   ComPtr<ID3D12CommandQueue> m_pd3dCommandQueue;
   ComPtr<ID3D12GraphicsCommandList> m_commandList;

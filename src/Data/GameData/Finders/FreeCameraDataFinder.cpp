@@ -82,7 +82,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t* pFreecamGlobalObjectPtr = reinterpret_cast<uintptr_t*>(Utils::PatternFinder::GetRipAddress(mov_rdi_addr + 4, 3, 7));
     if (pFreecamGlobalObjectPtr) {
       owner.SetFreecamGlobalObjectPtr(pFreecamGlobalObjectPtr);
-      logger->Info("B-1: Found 'pFreecamGlobalObjectPtr' at: {:#x}", (uintptr_t)pFreecamGlobalObjectPtr);
+      logger->Debug("B-1: Found 'pFreecamGlobalObjectPtr' at: {:#x}", (uintptr_t)pFreecamGlobalObjectPtr);
     } else {
       logger->Error("B-1: FAILED to resolve RIP for pFreecamGlobalObjectPtr");
       all_found = false;
@@ -103,7 +103,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     int32_t offset = Utils::PatternFinder::ReadInt32(mov_rdx_addr + 8); // MOV RDX, [RDI + offset]
     if (Utils::PatternFinder::IsSaneOffset(offset)) {
       owner.SetFreecamContextOffset(offset);
-      logger->Info("B-2: Found 'freecamContextOffset': 0x{:X}", offset);
+      logger->Debug("B-2: Found 'freecamContextOffset': 0x{:X}", offset);
     } else {
       logger->Error("B-2: freecamContextOffset INVALID (0x{:X})", offset);
       all_found = false;
@@ -123,11 +123,11 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t lea_addr = Utils::PatternFinder::Find(LEA_PCAMERAOBJ_SIG);
     if (lea_addr) {
       pCameraObject = Utils::PatternFinder::GetRipAddress(lea_addr, 3, 7);
-      logger->Info("A-1/2: Found pCameraObject via LEA: {:#x}", pCameraObject);
+      logger->Debug("A-1/2: Found pCameraObject via LEA: {:#x}", pCameraObject);
 
       uintptr_t pfnGetter = Utils::PatternFinder::GetRipAddress(lea_addr + 7, 1, 5);
       if (pfnGetter) {
-        logger->Info("Found CVar getter function at: {:#x}", pfnGetter);
+        logger->Debug("Found CVar getter function at: {:#x}", pfnGetter);
         using CVarGetter = float (*)(uintptr_t);
         auto getter = (CVarGetter)pfnGetter;
         float real_value = getter(pCameraObject);
@@ -143,7 +143,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       if (movss_addr) {
         speed_offset = Utils::PatternFinder::ReadInt32(movss_addr + 11);
         if (Utils::PatternFinder::IsSaneOffset(speed_offset)) {
-          logger->Info("A-3: Found CVar cached value offset: 0x{:X}", speed_offset);
+          logger->Debug("A-3: Found CVar cached value offset: 0x{:X}", speed_offset);
         } else {
           logger->Error("A-3: CVar offset INVALID (0x{:X})", speed_offset);
           all_found = false;
@@ -157,7 +157,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (pCameraObject != 0 && speed_offset != 0) {
       float* pFreeCamSpeed = (float*)(pCameraObject + speed_offset);
       owner.SetFreeCamSpeedPtr(pFreeCamSpeed);
-      logger->Info("A-4: Successfully calculated pFreeCamSpeed pointer: {:#x}", (uintptr_t)pFreeCamSpeed);
+      logger->Debug("A-4: Successfully calculated pFreeCamSpeed pointer: {:#x}", (uintptr_t)pFreeCamSpeed);
     } else {
       all_found = false;
     }
@@ -184,14 +184,14 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         owner.SetFreecamQuatZOffset(quatX + 8);
         owner.SetFreecamQuatWOffset(quatX + 12);
 
-        logger->Info("Found Freecam position offsets: x=0x{:X}, y=0x{:X}, z=0x{:X}", 
+        logger->Debug("Found Freecam position offsets: x=0x{:X}, y=0x{:X}, z=0x{:X}", 
                      owner.GetFreecamPosXOffset(), owner.GetFreecamPosYOffset(), owner.GetFreecamPosZOffset());
         
-        logger->Info("Found Freecam quaternion offsets: x=0x{:X}, y=0x{:X}, z=0x{:X}, w=0x{:X}",
+        logger->Debug("Found Freecam quaternion offsets: x=0x{:X}, y=0x{:X}, z=0x{:X}, w=0x{:X}",
                      owner.GetFreecamQuatXOffset(), owner.GetFreecamQuatYOffset(), 
                      owner.GetFreecamQuatZOffset(), owner.GetFreecamQuatWOffset());
 
-        logger->Info("Found Freecam mystery float offset: 0x{:X}", owner.GetFreecamMysteryFloatOffset());
+        logger->Debug("Found Freecam mystery float offset: 0x{:X}", owner.GetFreecamMysteryFloatOffset());
       } else {
         logger->Error("Freecam position offset INVALID (0x{:X})", posX);
         all_found = false;
@@ -222,7 +222,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         owner.SetFreecamMouseXOffset(yaw);
         owner.SetFreecamMouseYOffset(pitch);
         owner.SetFreecamRollOffset(pitch + 4);
-        logger->Info("Found Freecam orientation offsets: Yaw=0x{:X}, Pitch=0x{:X}, Roll=0x{:X}", 
+        logger->Debug("Found Freecam orientation offsets: Yaw=0x{:X}, Pitch=0x{:X}, Roll=0x{:X}", 
                      yaw, pitch, pitch + 4);
       } else {
         logger->Error("Freecam orientation offsets INVALID: Yaw=0x{:X}, Pitch=0x{:X}", yaw, pitch);

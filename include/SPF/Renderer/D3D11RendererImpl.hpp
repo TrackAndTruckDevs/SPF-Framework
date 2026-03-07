@@ -31,6 +31,8 @@ class D3D11RendererImpl : public RendererBase {
   void Init() override;
   void Shutdown() override;
 
+  std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) override;
+
  private:
   // --- Hook Callbacks ---
   void OnInit(IDXGISwapChain* swapChain, ID3D11Device* device);

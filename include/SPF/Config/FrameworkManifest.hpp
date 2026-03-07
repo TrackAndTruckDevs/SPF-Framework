@@ -39,7 +39,7 @@ inline const ManifestData& GetFrameworkManifestData() {
       .configPolicy =
           {
               .allowUserConfig = true,                                                   // allow creating a configuration file
-              .userConfigurableSystems = {"localization", "settings"},  // which settings to show in the UI. "keybinds" if present, will always be displayed
+              .userConfigurableSystems = {"localization", "settings", "logging"},  // which settings to show in the UI. "keybinds" if present, will always be displayed
               .requiredHooks = {}                                                        // Framework doesn't require hooks in its own manifest
                                                                                         //"ui",  "settings", "logging"
           },
@@ -48,7 +48,11 @@ inline const ManifestData& GetFrameworkManifestData() {
             {
               "plugin_states": {},
               "hook_states": {},
-              "framework": {},
+              "framework": {
+                "connect": true,
+                "framework_instance_id": "",
+                "version": ""
+              },
               "notification_duration": 3.0
             }
         )json"),
@@ -58,10 +62,10 @@ inline const ManifestData& GetFrameworkManifestData() {
                       {
                           .file = true,  // create a log file
                           .ui = true,    // display logging in UI
-
+                          .report = true // enable remote error reporting
                       }},
       // .localization
-      .localization = {.language = "en", .sync_plugin_languages = false},
+      .localization = {.language = "en", .sync_plugin_languages = true},
       // .keybinds
       .keybinds = {.actions = {{"framework.ui.main_window",
                                 {{"toggle",
@@ -235,7 +239,8 @@ inline const ManifestData& GetFrameworkManifestData() {
             {"level", "settings_window.setting_names.logging.level.title", "settings_window.setting_names.logging.level.description"},
             {"sinks", "settings_window.setting_names.logging.sinks.title", ""},
             {"sinks.file", "settings_window.setting_names.logging.sinks.file.title", "settings_window.setting_names.logging.sinks.file.description"},
-            {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"}
+            {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"},
+            {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"}
         },
         .localizationMetadata = {
             {"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"},

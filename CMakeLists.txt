@@ -232,6 +232,7 @@ add_library(SPF SHARED
 
     "src/Logging/Logger.cpp"
     "src/Logging/LoggerFactory.cpp"
+    "src/Logging/Sinks/ErrorReportSink.cpp"
     "src/Logging/Sinks/FileSink.cpp"
     "src/Logging/Sinks/LoggerWindowSink.cpp"
     "src/Modules/HandleManager.cpp"
@@ -253,7 +254,7 @@ add_library(SPF SHARED
     "src/Modules/API/JsonReaderApi.cpp"
     "src/Modules/API/HooksApi.cpp"
     "src/Modules/API/GameLogApi.cpp"
-    "src/Modules/UpdateManager.cpp"
+    "src/Modules/CommunicationManager.cpp"
     "src/Modules/PerformanceMonitor.cpp"
     "src/Handles/GameLogCallbackHandle.cpp"
     "src/Modules/KeyBindsManager.cpp"
@@ -284,6 +285,8 @@ add_library(SPF SHARED
     "src/UI/MainWindow.cpp"
     "src/UI/NotificationWindow.cpp"
     "src/UI/UIManager.cpp"
+    "src/UI/WelcomeWindow.cpp"
+    "src/UI/Resources/spf_logo.cpp"
     "src/UI/MarkdownRenderer.cpp"
     "src/UI/UIStyle.cpp"
     "src/UI/UITypographyHelper.cpp"
@@ -296,6 +299,8 @@ add_library(SPF SHARED
     "src/System/EnvironmentManager.cpp"
     "src/System/ApiService.cpp"
     "src/Utils/PatternFinder.cpp"
+    "src/Utils/HashUtils.cpp"
+    "src/Utils/SystemUtils.cpp"
     "src/GameConsole/GameConsole.cpp"
     "src/System/Keyboard.cpp"
     "src/Input/InputManager.cpp"
@@ -332,6 +337,7 @@ target_include_directories(SPF
     # Internal SDK dependency, needed for compilation
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/vendor/scs-sdk/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb_lib"
         "${md4c_SOURCE_DIR}/src" # Added for md4c.h
 )
 

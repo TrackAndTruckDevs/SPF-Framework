@@ -7,6 +7,8 @@
 #include "SPF/System/PathManager.hpp"
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Config/ManifestData.hpp"
+#include "SPF/Utils/SystemUtils.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -18,14 +20,14 @@
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Hooks/IHook.hpp"
 
-
-
 SPF_NS_BEGIN
 
 namespace Config {
 using namespace SPF::Logging;
 using namespace SPF::System;
 using namespace SPF::Core;
+using namespace SPF::Utils;
+using namespace SPF::Localization;
 
 namespace {
 // Helper to inject _meta block into a JSON object
@@ -39,6 +41,16 @@ void InjectMetadata(nlohmann::ordered_json& target, const std::string& titleKey,
             target["_meta"]["descriptionKey"] = descriptionKey;
         }
     }
+}
+
+// // Helper to convert a dot-separated path to a JSON pointer path string (Loop version)
+std::string ToJSONPointerPath(const std::string& dotPath) {
+    if (dotPath.empty()) return "/";
+    std::string result = "/" + dotPath;
+    for (size_t i = 1; i < result.length(); ++i) {
+        if (result[i] == '.') result[i] = '/';
+    }
+    return result;
 }
 
 const nlohmann::ordered_json* GetSettings(const nlohmann::ordered_json& source, const std::string& systemName) {
@@ -55,7 +67,7 @@ nlohmann::ordered_json SerializeSettings(const ManifestData& manifest, const Man
     for (const auto& meta : manifest.customSettingsMetadata) {
         if (meta.keyPath.empty()) continue;
         try {
-            auto ptr = nlohmann::ordered_json::json_pointer("/" + std::regex_replace(meta.keyPath, std::regex("\\."), "/"));
+            auto ptr = nlohmann::ordered_json::json_pointer(ToJSONPointerPath(meta.keyPath));
             if (!j.contains(ptr)) continue;
             nlohmann::ordered_json& node = j[ptr];
             if (node.is_object() && node.contains("_value")) {
@@ -136,6 +148,14 @@ nlohmann::ordered_json SerializeLogging(const ManifestData& manifest, const Mani
             InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
         }
         sinksNode["ui"] = node;
+    }
+    if (manifest.logging.sinks.report.has_value()) {
+        nlohmann::ordered_json node;
+        node["_value"] = manifest.logging.sinks.report.value();
+        if (const auto* meta = findLoggingMeta("sinks.report")) {
+            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+        }
+        sinksNode["report"] = node;
     }
     if (!sinksNode.empty()) {
         j["sinks"] = sinksNode;
@@ -494,6 +514,12 @@ void ConfigService::ProcessAllSystemConfigurations(Core::InitializationReport& r
     }
   }
   CheckDirtyKeybinds(report);
+
+  // --- FINAL STEP: Inject current framework version into the configuration ---
+  // This ensures the version is set correctly after all re-aggregations and merges.
+  std::string currentVersionStr = GetFrameworkManifestData().info.version.value_or("0.0.0");
+  SetValue("framework", "settings.framework.version", currentVersionStr);
+
   report.InfoMessages.push_back("Finished processing all system configurations.");
 }
 
@@ -501,6 +527,55 @@ void ConfigService::Finalize(InitializationReport* report) {
   if (!report) return;
   report->ServiceName = "ConfigService";
   report->InfoMessages.push_back("Finalization sequence started.");
+
+  // --- Step 0: Detect Installation/Update Status ---
+  try {
+    auto frameworkUserConfigPath = PathManager::GetConfigFilePath("framework_settings.json");
+    std::string currentVersion = GetFrameworkManifestData().info.version.value_or("0.0.0");
+
+    if (!std::filesystem::exists(frameworkUserConfigPath)) {
+      m_installationStatus = InstallationStatus::NewInstall;
+      report->InfoMessages.push_back("No configuration file found. Marked as New Installation.");
+    } else {
+      std::ifstream file(frameworkUserConfigPath);
+      if (file.is_open() && file.peek() != std::ifstream::traits_type::eof()) {
+        nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
+        
+        // Path: settings -> framework -> version
+        std::string storedVersion = "0.0.0";
+        if (userJson.contains("settings") && userJson["settings"].contains("framework") && 
+            userJson["settings"]["framework"].contains("version")) {
+          storedVersion = userJson["settings"]["framework"]["version"].get<std::string>();
+        }
+
+        if (storedVersion == "0.0.0" || storedVersion.empty()) {
+          m_installationStatus = InstallationStatus::Updated; // File exists but no version key
+          report->InfoMessages.push_back("Configuration file found but version key is missing. Marked as Updated.");
+        } else if (storedVersion == currentVersion) {
+          m_installationStatus = InstallationStatus::SameVersion;
+          report->InfoMessages.push_back(fmt::format("Framework version {} is up to date.", storedVersion));
+        } else {
+          auto storedVerOpt = System::Version::FromString(storedVersion);
+          auto currentVerOpt = System::Version::FromString(currentVersion);
+
+          if (storedVerOpt && currentVerOpt) {
+            if (*currentVerOpt < *storedVerOpt) {
+              m_installationStatus = InstallationStatus::Downgraded;
+              report->InfoMessages.push_back(fmt::format("Downgrade detected: Stored version {} is newer than current {}.", storedVersion, currentVersion));
+            } else {
+              m_installationStatus = InstallationStatus::Updated;
+              report->InfoMessages.push_back(fmt::format("Update detected: Stored version {} is older than current {}.", storedVersion, currentVersion));
+            }
+          } else {
+            // Fallback to string comparison if parsing fails
+            m_installationStatus = (storedVersion < currentVersion) ? InstallationStatus::Updated : InstallationStatus::Downgraded;
+          }
+        }
+      }
+    }
+  } catch (...) {
+    m_installationStatus = InstallationStatus::NewInstall; // Assume new if corrupted
+  }
 
   // --- Step 1: Load framework manifest ---
   report->InfoMessages.push_back("-> Step 1/2: Loading framework manifest...");
@@ -744,6 +819,26 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
         }
       } else {
         m_dirtyComponents.insert(componentName);
+
+        // Auto-detect system language for new installations
+        if (systemName == "localization" && m_installationStatus == System::InstallationStatus::NewInstall) {
+            std::string sysLocale = SystemUtils::GetSystemLocaleName();
+            if (sysLocale.length() >= 2) {
+                std::string langCode = sysLocale.substr(0, 2);
+                std::transform(langCode.begin(), langCode.end(), langCode.begin(), ::tolower);
+
+                if (LocalizationManager::GetInstance().LanguageFileExists(componentName, langCode)) {
+                    if (finalConfig.contains("language")) {
+                        if (finalConfig["language"].is_object() && finalConfig["language"].contains("_value")) {
+                            finalConfig["language"]["_value"] = langCode;
+                        } else {
+                            finalConfig["language"] = langCode;
+                        }
+                        report.InfoMessages.push_back(fmt::format("Auto-detected system language '{}' for component '{}' during new installation.", langCode, componentName));
+                    }
+                }
+            }
+        }
       }
     }
     m_isolatedConfigs[systemName][componentName] = finalConfig;
@@ -1010,8 +1105,7 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
       if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
 
       // Update the raw config data
-      std::string pointerPathStr = "/" + std::regex_replace(keyPath, std::regex("\\."), "/");
-      nlohmann::ordered_json::json_pointer ptr(pointerPathStr);
+      nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(keyPath));
 
       // Check if the target node is a _value object and update it correctly
       auto& targetNode = m_isolatedConfigs[systemName][componentName][ptr];
@@ -1081,6 +1175,24 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
 
     // After any successful change, fire an event so other systems can react.
     m_eventManager.System.OnSettingWasChanged.Call({systemName, componentName, keyPath, value});
+
+    // Special case: if we are changing plugin states in framework settings, update the ComponentInfo cache
+    if (systemName == "settings" && componentName == "framework" && keyPath.find("plugin_states.") == 0) {
+        // Path format: plugin_states.PLUGIN_ID.enabled
+        std::string rest = keyPath.substr(14); // skip "plugin_states."
+        size_t dotPos = rest.find('.');
+        if (dotPos != std::string::npos) {
+            std::string pluginId = rest.substr(0, dotPos);
+            std::string prop = rest.substr(dotPos + 1);
+            if (prop == "enabled" && m_allComponentInfo.count(pluginId)) {
+                bool newState = false;
+                if (value.is_boolean()) newState = value.get<bool>();
+                else if (value.is_object() && value.contains("_value")) newState = value["_value"].get<bool>();
+                
+                m_allComponentInfo[pluginId].isEnabled = newState;
+            }
+        }
+    }
   } catch (const std::exception& e) {
     auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
     if (logger) logger->Error("Failed to set value for path '{}': {}", jsonPath, e.what());
@@ -1115,9 +1227,8 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
     if (m_manifests.count(componentName)) {
        nlohmann::ordered_json defaultSettings = GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework"));
       if (!defaultSettings.is_null()) {
-        std::string pointerPath = "/" + std::regex_replace(keyPath, std::regex("\\."), "/");
         try {
-          defaultValue = defaultSettings.at( nlohmann::ordered_json::json_pointer(pointerPath));
+          defaultValue = defaultSettings.at( nlohmann::ordered_json::json_pointer(ToJSONPointerPath(keyPath)));
           originalComponent = componentName;
           found = true;
         } catch (const std::exception&) {
@@ -1631,23 +1742,21 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
   }
 
   try {
-    std::string pointerPath = "/" + std::regex_replace(restOfPath, std::regex("\\."), "/");
-     nlohmann::ordered_json::json_pointer ptr(pointerPath);
-    
-    // Retrieve the raw node
-    const auto& rawNode = configRoot->at(ptr);
-
-    // Automatically unwrap _value if present (transparent access)
-    if (rawNode.is_object() && rawNode.contains("_value")) {
-        return rawNode["_value"];
-    }
-    return rawNode;
-
-  } catch (const  nlohmann::ordered_json::out_of_range&) {
-    return defaultValue;
-  } catch (const  nlohmann::ordered_json::parse_error&) {
-    return defaultValue;
+      auto ptr = nlohmann::ordered_json::json_pointer(ToJSONPointerPath(restOfPath));
+      
+      // Use find() logic or similar to avoid double lookup and exceptions
+      if (configRoot->contains(ptr)) {
+          const auto& rawNode = configRoot->at(ptr);
+          if (rawNode.is_object() && rawNode.contains("_value")) {
+              return rawNode["_value"];
+          }
+          return rawNode;
+      }
+  } catch (...) {
+      // json_pointer might throw if path is invalid, return default
   }
+
+  return defaultValue;
 }
 
 const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& componentName, const std::string& keyPath) const {
@@ -1685,8 +1794,7 @@ const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& com
   }
 
   try {
-    std::string pointerPath = "/" + std::regex_replace(restOfPath, std::regex("\\."), "/");
-     nlohmann::ordered_json::json_pointer ptr(pointerPath);
+    nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(restOfPath));
     return &configRoot->at(ptr);
   } catch (const  nlohmann::ordered_json::out_of_range&) {
     return nullptr;
@@ -1778,6 +1886,8 @@ void ConfigService::BuildAggregatedUserSettings() {
 
 const std::map<std::string,  nlohmann::ordered_json>& ConfigService::GetAggregatedUserSettings() const { return m_aggregatedUserSettings; }
 
+System::InstallationStatus ConfigService::GetInstallationStatus() const { return m_installationStatus; }
+
 std::string ConfigService::GetOrCreateFrameworkInstanceId() {
     const std::string keyPath = "settings.framework.framework_instance_id";
 
@@ -1811,6 +1921,21 @@ std::string ConfigService::GetOrCreateFrameworkInstanceId() {
 
     // Fallback in case CoCreateGuid fails
     return "generation_failed";
+}
+
+bool ConfigService::IsConnectionAllowed() {
+    const std::string keyPath = "settings.framework.connect";
+
+    // 1. Try to get the existing value
+    nlohmann::ordered_json valueJson = GetValue("framework", keyPath, nullptr);
+    
+    if (valueJson.is_boolean()) {
+        return valueJson.get<bool>();
+    }
+
+    // 2. If not found or not a boolean, create/fix it with default 'true'
+    SetValue("framework", keyPath, true);
+    return true;
 }
 
 }  // namespace Config

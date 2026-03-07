@@ -52,7 +52,7 @@ void LogFoundAddress(const char* name, uintptr_t address, bool error = false) {
   if (address == 0 || error) {
     logger->Error("FAILED to find '{}'", name);
   } else {
-    logger->Info("--- Found '{}' at: 0x{:X}", name, address);
+    logger->Debug("--- Found '{}' at: 0x{:X}", name, address);
   }
 }
 }  // namespace
@@ -76,7 +76,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (Utils::PatternFinder::IsSaneOffset(ctxOff)) {
       owner.SetStateContextOffset(ctxOff);
       owner.SetStateManagerOffset(ctxOff); // Context and Manager share the same offset
-      logger->Info("--- Found StateContextOffset: 0x{:X}", ctxOff);
+      logger->Debug("--- Found StateContextOffset: 0x{:X}", ctxOff);
     } else {
       logger->Error("StateContextOffset INVALID (0x{:X})", ctxOff);
       all_found = false;
@@ -85,7 +85,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t pAddState = Utils::PatternFinder::GetRipAddress(call_site_anchor + 12, 1, 5);
     if (pAddState) {
       owner.SetAddCameraStateFunc((void*)pAddState);
-      logger->Info("--- Found 'AddCameraState' at: 0x{:X}", pAddState);
+      logger->Debug("--- Found 'AddCameraState' at: 0x{:X}", pAddState);
     } else {
       logger->Error("FAILED to resolve AddCameraState address");
       all_found = false;
@@ -128,7 +128,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addr + 15);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetStateArrayOffset(off);
-        logger->Info("--- Found StateArrayOffset: 0x{:X}", off);
+        logger->Debug("--- Found StateArrayOffset: 0x{:X}", off);
       } else { logger->Error("StateArrayOffset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Error("FAILED to find StateArrayOffset anchor"); all_found = false; }
   }
@@ -142,7 +142,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addr + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetStateCountOffset(off);
-        logger->Info("--- Found StateCountOffset: 0x{:X}", off);
+        logger->Debug("--- Found StateCountOffset: 0x{:X}", off);
       } else { logger->Error("StateCountOffset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Error("FAILED to find StateCountOffset anchor"); all_found = false; }
   }
@@ -156,7 +156,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addr + 5);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetStateCurrentIndexOffset(off);
-        logger->Info("--- Found StateCurrentIndexOffset: 0x{:X}", off);
+        logger->Debug("--- Found StateCurrentIndexOffset: 0x{:X}", off);
       } else { logger->Error("StateCurrentIndexOffset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Error("FAILED to find StateCurrentIndexOffset anchor"); all_found = false; }
   }
@@ -170,7 +170,7 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       uintptr_t pFunc = Utils::PatternFinder::GetRipAddress(addr + 3, 1, 5);
       if (pFunc) {
         owner.SetApplyStateFunc((void*)pFunc);
-        logger->Info("--- Found 'ApplyState' at: 0x{:X}", pFunc);
+        logger->Debug("--- Found 'ApplyState' at: 0x{:X}", pFunc);
       } else { logger->Error("FAILED to resolve ApplyState address"); all_found = false; }
     } else { logger->Error("FAILED to find ApplyState anchor"); all_found = false; }
   }
@@ -186,12 +186,12 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetStateManagerOffset(off);
-        logger->Info("--- Found StateManagerOffset: 0x{:X}", off);
+        logger->Debug("--- Found StateManagerOffset: 0x{:X}", off);
       } else { logger->Error("StateManagerOffset INVALID (0x{:X})", off); all_found = false; }
 
       if (pFunc) {
         owner.SetLoadStatesFromFileFunc((void*)pFunc);
-        logger->Info("--- Found 'LoadStatesFromFile' at: 0x{:X}", pFunc);
+        logger->Debug("--- Found 'LoadStatesFromFile' at: 0x{:X}", pFunc);
       } else { logger->Error("FAILED to resolve LoadStatesFromFile address"); all_found = false; }
     } else { logger->Error("FAILED to find LoadStatesFromFile anchor"); all_found = false; }
   }

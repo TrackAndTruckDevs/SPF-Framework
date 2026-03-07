@@ -72,7 +72,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t base_ptr = Utils::PatternFinder::GetRipAddress(sig_cvar_ptr, 3, 7);
     if (base_ptr) {
       owner.SetCacheableCvarObjectPtr(base_ptr);
-      logger->Info("--- Found Cacheable CVar Object: 0x{:X}", base_ptr);
+      logger->Debug("--- Found Cacheable CVar Object: 0x{:X}", base_ptr);
     } else { logger->Error("FAILED to resolve CVar Object RIP"); all_found = false; }
   } else { logger->Warn("FAILED to find Cacheable CVar Object anchor"); all_found = false; }
 
@@ -83,7 +83,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t offset = Utils::PatternFinder::ReadInt32(sig_off + 7);
       if (Utils::PatternFinder::IsSaneOffset(offset)) {
         owner.SetCvarValueOffset(offset);
-        logger->Info("--- Found CVar Value Offset: 0x{:X}", offset);
+        logger->Debug("--- Found CVar Value Offset: 0x{:X}", offset);
       } else { logger->Error("CVar Value Offset INVALID (0x{:X})", offset); all_found = false; }
     } else { logger->Warn("FAILED to find CVar Value Offset anchor"); all_found = false; }
   }
@@ -92,7 +92,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnSetMode = Utils::PatternFinder::Find(SET_DEBUG_MODE_SIG);
   if (pfnSetMode) {
     owner.SetDebugCameraModeFunc(reinterpret_cast<void*>(pfnSetMode));
-    logger->Info("--- Found SetDebugCameraMode at: 0x{:X}", pfnSetMode);
+    logger->Debug("--- Found SetDebugCameraMode at: 0x{:X}", pfnSetMode);
   } else { logger->Warn("FAILED to find SetDebugCameraMode signature"); all_found = false; }
 
   // 2.1 Find SetSelectedActor function
@@ -100,7 +100,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnSetSelected = Utils::PatternFinder::Find("48 89 5C ? ? 57 48 83 ? ? 48 8B FA 48 8B D9 48 3B 91 ? ? ? ? 0F 84");
   if (pfnSetSelected) {
     owner.SetSetSelectedActorFunc(reinterpret_cast<void*>(pfnSetSelected));
-    logger->Info("--- Found SetSelectedActor at: 0x{:X}", pfnSetSelected);
+    logger->Debug("--- Found SetSelectedActor at: 0x{:X}", pfnSetSelected);
   } else { logger->Warn("FAILED to find SetSelectedActor signature"); all_found = false; }
 
   // 2.2 Find SetPositionLock function
@@ -108,7 +108,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnSetPosLock = Utils::PatternFinder::Find("48 8B C4 48 89 ? ? 57 48 83 ? ? 0F B6 FA 48 8B D9 38 91 ? ? ? ?");
   if (pfnSetPosLock) {
     owner.SetSetPositionLockFunc(reinterpret_cast<void*>(pfnSetPosLock));
-    logger->Info("--- Found SetPositionLock at: 0x{:X}", pfnSetPosLock);
+    logger->Debug("--- Found SetPositionLock at: 0x{:X}", pfnSetPosLock);
   } else { logger->Warn("FAILED to find SetPositionLock signature"); all_found = false; }
 
   // 2.3 Find SetRotationLock function
@@ -116,7 +116,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnSetRotLock = Utils::PatternFinder::Find("0F B6 C2 38 91 ? ? ? ? 74 26 88 91 ? ? ? ? 84 C0");
   if (pfnSetRotLock) {
     owner.SetSetRotationLockFunc(reinterpret_cast<void*>(pfnSetRotLock));
-    logger->Info("--- Found SetRotationLock at: 0x{:X}", pfnSetRotLock);
+    logger->Debug("--- Found SetRotationLock at: 0x{:X}", pfnSetRotLock);
   } else { logger->Warn("FAILED to find SetRotationLock signature"); all_found = false; }
 
   // 2.4 Find SetOrbitMode function
@@ -124,19 +124,19 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnSetOrbit = Utils::PatternFinder::Find("48 8B C4 48 89 ? ? 48 89 ? ? 55 48 8D ? ? 48 81 EC ? ? ? ? 0F B6 FA 48 8B D9");
   if (pfnSetOrbit) {
     owner.SetSetOrbitModeFunc(reinterpret_cast<void*>(pfnSetOrbit));
-    logger->Info("--- Found SetOrbitMode at: 0x{:X}", pfnSetOrbit);
+    logger->Debug("--- Found SetOrbitMode at: 0x{:X}", pfnSetOrbit);
   } else { logger->Warn("FAILED to find SetOrbitMode signature"); all_found = false; }
 
   uintptr_t pfnSetHudVis = Utils::PatternFinder::Find(SET_HUD_VISIBILITY_SIG);
   if (pfnSetHudVis) {
     owner.SetSetHudVisibilityFunc(reinterpret_cast<void*>(pfnSetHudVis));
-    logger->Info("--- Found SetHudVisibility at: 0x{:X}", pfnSetHudVis);
+    logger->Debug("--- Found SetHudVisibility at: 0x{:X}", pfnSetHudVis);
   } else { logger->Warn("FAILED to find SetHudVisibility signature"); all_found = false; }
 
   uintptr_t pfnSetHudPos = Utils::PatternFinder::Find(SET_DEBUG_HUD_POSITION_SIG);
   if (pfnSetHudPos) {
     owner.SetSetDebugHudPositionFunc(reinterpret_cast<void*>(pfnSetHudPos));
-    logger->Info("--- Found SetDebugHudPosition at: 0x{:X}", pfnSetHudPos);
+    logger->Debug("--- Found SetDebugHudPosition at: 0x{:X}", pfnSetHudPos);
   } else { logger->Warn("FAILED to find SetDebugHudPosition signature"); all_found = false; }
 
   // --- 3. Find the pDebugCamera context pointer dynamically ---
@@ -168,7 +168,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         int8_t baseOff = Utils::PatternFinder::ReadInt8(addr + 3);
         int8_t subOff = Utils::PatternFinder::ReadInt8(addr + 13);
         finalOffset = static_cast<int32_t>(baseOff) + static_cast<int32_t>(subOff);
-        logger->Info("--- Dynamically found Camera Array Offset: 0x{:X} (0x{:X} + 0x{:X})", finalOffset, baseOff, subOff);
+        logger->Debug("--- Dynamically found Camera Array Offset: 0x{:X} (0x{:X} + 0x{:X})", finalOffset, baseOff, subOff);
       } else {
         logger->Warn("Could not find Camera Array Offset logic in GetCameraObjectByID. Using fallback 0x38.");
       }
@@ -176,7 +176,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       uintptr_t pDebugCameraContext = *reinterpret_cast<uintptr_t*>(pStandardManager + finalOffset);
       if (pDebugCameraContext) {
         owner.SetDebugCameraContextPtr(pDebugCameraContext);
-        logger->Info("--- Found pDebugCameraContext (Array Base) at: 0x{:X}", pDebugCameraContext);
+        logger->Debug("--- Found pDebugCameraContext (Array Base) at: 0x{:X}", pDebugCameraContext);
       } else { logger->Error("pDebugCameraContext is NULL at 0x{:X}", pStandardManager + finalOffset); all_found = false; }
     } else { logger->Error("StandardManager is NULL"); all_found = false; }
   } else { logger->Error("StandardManager address or GetCameraObjectByID function is NULL"); all_found = false; }
@@ -195,7 +195,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrUI + 2);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetGameUiVisibleOffset(off);
-        logger->Info("--- Found Game UI Visible offset: 0x{:X}", off);
+        logger->Debug("--- Found Game UI Visible offset: 0x{:X}", off);
       } else { logger->Error("Game UI offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find Game UI Visible anchor"); all_found = false; }
 
@@ -207,7 +207,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrHUDVis + 2);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetHudVisibleOffset(off);
-        logger->Info("--- Found HUD Visible offset: 0x{:X}", off);
+        logger->Debug("--- Found HUD Visible offset: 0x{:X}", off);
       } else { logger->Error("HUD Visible offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find HUD Visible anchor"); all_found = false; }
 
@@ -219,7 +219,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrHUDPos + 2);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetHudPositionOffset(off);
-        logger->Info("--- Found HUD Position offset: 0x{:X}", off);
+        logger->Debug("--- Found HUD Position offset: 0x{:X}", off);
       } else { logger->Error("HUD Position offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find HUD Position anchor"); all_found = false; }
 
@@ -230,7 +230,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrMode + 2);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetDebugCameraModeOffset(off);
-        logger->Info("--- Found Debug Camera Mode offset: 0x{:X}", off);
+        logger->Debug("--- Found Debug Camera Mode offset: 0x{:X}", off);
       } else { logger->Error("Debug Mode offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find Debug Camera Mode anchor"); all_found = false; }
 
@@ -242,7 +242,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetDebugPosLockOffset(off);
         owner.SetDebugRotLockOffset(off + 1);
-        logger->Info("--- Found Pos/Rot Lock offsets: 0x{:X} / 0x{:X}", off, off + 1);
+        logger->Debug("--- Found Pos/Rot Lock offsets: 0x{:X} / 0x{:X}", off, off + 1);
       } else { logger->Error("Lock offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find Pos/Rot Lock anchor"); all_found = false; }
 
@@ -253,7 +253,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrOrbit + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetDebugOrbitOffset(off);
-        logger->Info("--- Found Orbit offset: 0x{:X}", off);
+        logger->Debug("--- Found Orbit offset: 0x{:X}", off);
       } else { logger->Error("Orbit offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find Orbit anchor"); all_found = false; }
 
@@ -266,7 +266,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       if (Utils::PatternFinder::IsSaneOffset(offSel) && Utils::PatternFinder::IsSaneOffset(offSpd)) {
         owner.SetDebugSelectedObjectPtrOffset(offSel);
         owner.SetDebugOrbitSpeedOffset(offSpd);
-        logger->Info("--- Found SelectedObject(0x{:X}) and OrbitSpeed(0x{:X})", offSel, offSpd);
+        logger->Debug("--- Found SelectedObject(0x{:X}) and OrbitSpeed(0x{:X})", offSel, offSpd);
       } else { logger->Error("SelectedObj/Speed INVALID (0x{:X}/0x{:X})", offSel, offSpd); all_found = false; }
     } else { logger->Warn("FAILED to find SelectedObj/Speed anchor"); all_found = false; }
 
@@ -277,7 +277,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrHover + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetDebugHoveredObjectPtrOffset(off);
-        logger->Info("--- Found Hovered Object (Actor) offset: 0x{:X}", off);
+        logger->Debug("--- Found Hovered Object (Actor) offset: 0x{:X}", off);
       } else { logger->Error("Hovered Object offset INVALID (0x{:X})", off); all_found = false; }
     } else { logger->Warn("FAILED to find Hovered Object anchor"); all_found = false; }
 

@@ -9,6 +9,7 @@
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/Icons.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Config/EnumMappings.hpp"
@@ -702,7 +703,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                             if (bindings->empty()) {
                                 ImGui::PushID((fullActionName + ":add_new").c_str());
                                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-                                if (ImGui::Button(loc.Get(m_keybindsUnassignedTextKey).c_str())) {
+                                if (Button(loc.Get(m_keybindsUnassignedTextKey).c_str())) {
                                     m_actionBeingEdited = fullActionName;
                                     m_editingBindingObject = nlohmann::ordered_json::object();
                                     m_eventManager.System.OnRequestInputCapture.Call({fullActionName, m_editingBindingObject});
@@ -777,7 +778,7 @@ void SettingsWindow::RenderKeybindsSettings() {
                                     std::string uniqueId = fullActionName + ":" + buttonText;
 
                                     ImGui::PushID(uniqueId.c_str());
-                                    if (ImGui::Button(buttonText.c_str())) {
+                                    if (Button(buttonText.c_str())) {
                                         m_actionBeingEdited = fullActionName;
                                         m_editingBindingObject = bindingJson;
                                         m_eventManager.System.OnRequestInputCapture.Call({fullActionName, bindingJson});
@@ -826,7 +827,10 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode
 
     if (key == "_meta") continue;
 
+    ImGui::PushID(key.c_str());
+
     if (value.is_object() && value.contains("_meta") && value["_meta"].value("hide_in_ui", false)) {
+      ImGui::PopID();
       continue;
     }
 
@@ -861,25 +865,25 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode
     
     if (!isDefaultBoolean) { // Only draw label in column 0 if it's NOT a default boolean
         ImGui::TextUnformatted(settingDisplayName.c_str());
-    }
 
-    if (value.is_object() && value.contains("_meta") && value["_meta"].is_object() &&
-        value["_meta"].contains("descriptionKey") && value["_meta"]["descriptionKey"].is_string()) {
-      if (ImGui::IsItemHovered()) {
-        const auto& descriptionKey = value["_meta"]["descriptionKey"].get<std::string>();
-        if (!descriptionKey.empty()) {
-          ImGui::SetTooltip(
-              "%s", (systemName == "logging" || systemName == "localization" || systemName == "ui")
-                        ? loc.GetWithFallback(m_currentComponent, descriptionKey).c_str()
-                        : loc.Get(m_currentComponent, descriptionKey).c_str());
+        if (value.is_object() && value.contains("_meta") && value["_meta"].is_object() &&
+            value["_meta"].contains("descriptionKey") && value["_meta"]["descriptionKey"].is_string()) {
+          if (ImGui::IsItemHovered()) {
+            const auto& descriptionKey = value["_meta"]["descriptionKey"].get<std::string>();
+            if (!descriptionKey.empty()) {
+              ImGui::SetTooltip(
+                  "%s", (systemName == "logging" || systemName == "localization" || systemName == "ui")
+                            ? loc.GetWithFallback(m_currentComponent, descriptionKey).c_str()
+                            : loc.Get(m_currentComponent, descriptionKey).c_str());
+            }
+          }
         }
-      }
     }
 
     // --- Column 2: Setting Control ---
     ImGui::TableSetColumnIndex(1);
-    ImGui::PushID(key.c_str());
     RenderSettingsNode(key, value, systemName, parentPath, depth);
+    
     ImGui::PopID();
   }
 }
@@ -1232,7 +1236,7 @@ void SettingsWindow::RenderContent() {
 
           // 1. Add Positive Side Button
           if (analysis.isPositiveAvailable || analysis.bothConflict) {
-              if (ImGui::Button(loc.Get(m_keyCaptureAddPositiveSideButtonKey).c_str())) {
+              if (Button(loc.Get(m_keyCaptureAddPositiveSideButtonKey).c_str())) {
                   if (analysis.bothConflict) {
                       // SPLIT: Update existing Both -> Negative
                       m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "negative"});
@@ -1244,7 +1248,7 @@ void SettingsWindow::RenderContent() {
 
           // 2. Add Negative Side Button
           if (analysis.isNegativeAvailable || analysis.bothConflict) {
-              if (ImGui::Button(loc.Get(m_keyCaptureAddNegativeSideButtonKey).c_str())) {
+              if (Button(loc.Get(m_keyCaptureAddNegativeSideButtonKey).c_str())) {
                   if (analysis.bothConflict) {
                       // SPLIT: Update existing Both -> Positive
                       m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "positive"});
@@ -1256,19 +1260,19 @@ void SettingsWindow::RenderContent() {
 
           // 3. Reassign Axis Buttons
           if (analysis.bothConflict) {
-              if (ImGui::Button(loc.Get(m_keyCaptureReassignEntireAxisButtonKey).c_str())) { 
+              if (Button(loc.Get(m_keyCaptureReassignEntireAxisButtonKey).c_str())) { 
                   reassignBinding(analysis.bothConflict);
               }
               ImGui::SameLine();
           } else {
               if (analysis.positiveConflict) {
-                  if (ImGui::Button(loc.Get(m_keyCaptureReassignPositiveSideButtonKey).c_str())) {
+                  if (Button(loc.Get(m_keyCaptureReassignPositiveSideButtonKey).c_str())) {
                       reassignBinding(analysis.positiveConflict);
                   }
                   ImGui::SameLine();
               }
               if (analysis.negativeConflict) {
-                  if (ImGui::Button(loc.Get(m_keyCaptureReassignNegativeSideButtonKey).c_str())) {
+                  if (Button(loc.Get(m_keyCaptureReassignNegativeSideButtonKey).c_str())) {
                       reassignBinding(analysis.negativeConflict);
                   }
                   ImGui::SameLine();
@@ -1276,14 +1280,14 @@ void SettingsWindow::RenderContent() {
           }
       } else {
           if (analysis.isShortPressAvailable) {
-              if (ImGui::Button(loc.Get(m_keyCaptureAddShortPressButtonKey).c_str())) {
+              if (Button(loc.Get(m_keyCaptureAddShortPressButtonKey).c_str())) {
                   addBinding("short");
               }
               ImGui::SameLine();
           }
 
           if (analysis.isLongPressAvailable) {
-              if (ImGui::Button(loc.Get(m_keyCaptureAddLongPressButtonKey).c_str())) {
+              if (Button(loc.Get(m_keyCaptureAddLongPressButtonKey).c_str())) {
                   addBinding("long");
               }
               ImGui::SameLine();
@@ -1291,21 +1295,21 @@ void SettingsWindow::RenderContent() {
       }
 
       if (analysis.shortPressConflict) {
-          if (ImGui::Button(loc.Get(m_keyCaptureReassignShortPressButtonKey).c_str())) {
+          if (Button(loc.Get(m_keyCaptureReassignShortPressButtonKey).c_str())) {
               reassignBinding(analysis.shortPressConflict);
           }
           ImGui::SameLine();
       }
 
       if (analysis.longPressConflict) {
-          if (ImGui::Button(loc.Get(m_keyCaptureReassignLongPressButtonKey).c_str())) {
+          if (Button(loc.Get(m_keyCaptureReassignLongPressButtonKey).c_str())) {
               reassignBinding(analysis.longPressConflict);
           }
           ImGui::SameLine();
       }
 
       // --- Cancel Button ---
-      if (ImGui::Button(loc.Get(m_keyCaptureCancelButtonKey).c_str())) {
+      if (Button(loc.Get(m_keyCaptureCancelButtonKey).c_str())) {
         logger->Info("User cancelled reassigning input '{}'.", inputDisplayName);
         m_conflictInfo.reset();
         ImGui::CloseCurrentPopup();
@@ -1382,7 +1386,7 @@ void SettingsWindow::RenderContent() {
               ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
               ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
               ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
-              ImGui::Button(label.c_str());
+              Button(label.c_str());
               ImGui::PopStyleColor(3);
 
               if (i < m_currentChordInputs.size() - 1) {
@@ -1403,7 +1407,7 @@ void SettingsWindow::RenderContent() {
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.0f, 0.6f, 0.6f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0f, 0.7f, 0.7f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0f, 0.8f, 0.8f));
-        if (ImGui::Button(loc.Get(m_keyCaptureDeleteButtonKey).c_str())) {
+        if (Button(loc.Get(m_keyCaptureDeleteButtonKey).c_str())) {
           // Store the name in a local variable because m_actionBeingEdited 
           // will be reset by the Cancel call below.
           std::string actionName = m_actionBeingEdited.value();
@@ -1421,7 +1425,7 @@ void SettingsWindow::RenderContent() {
         ImGui::SameLine();
       }
 
-      if (ImGui::Button(loc.Get(m_keyCaptureCancelButtonKey).c_str(), ImVec2(120, 0))) {
+      if (Button(loc.Get(m_keyCaptureCancelButtonKey).c_str(), TextStyle::DefaultButton(), ImVec2(120, 0))) {
         m_eventManager.System.OnRequestInputCaptureCancel.Call({});
         // This is a direct and safe UI state change.
         m_actionBeingEdited.reset();
@@ -1929,7 +1933,7 @@ void SettingsWindow::RenderContent() {
           float availableWidth = ImGui::GetContentRegionAvail().x;
           ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availableWidth - totalButtonsWidth) * 0.5f);
 
-          if (ImGui::Button(yesText)) {
+          if (Button(yesText)) {
             const auto& conflictingBindingJson = m_pressTypeSwapConflict->second;
             const auto& actionBeingEdited = m_editingBindingAction.value();
 
@@ -1950,7 +1954,7 @@ void SettingsWindow::RenderContent() {
             m_pressTypeSwapNewValue.reset();
           }
           ImGui::SameLine();
-          if (ImGui::Button(cancelText)) {
+          if (Button(cancelText)) {
             // Just reset state to hide this UI. The radio button will revert visually
             // because `selectedPressTypeStr` is a local temporary variable and bindingJson is not updated.
             m_pressTypeSwapConflict.reset();
@@ -2078,7 +2082,7 @@ void SettingsWindow::RenderContent() {
 
       ImGui::Separator();
 
-      if (ImGui::Button(loc.Get(m_bindingDetailsCloseButtonKey).c_str())) {
+      if (Button(loc.Get(m_bindingDetailsCloseButtonKey).c_str())) {
         m_editingBindingDetails.reset();
         m_editingBindingAction.reset();
         ImGui::CloseCurrentPopup();

@@ -23,6 +23,12 @@ TextStyle TextStyle::Monospace() { return { .fontKey = "monospace" }; }
 TextStyle TextStyle::H1() { return { .fontKey = "h1" }; }
 TextStyle TextStyle::H2() { return { .fontKey = "h2" }; }
 TextStyle TextStyle::H3() { return { .fontKey = "h3" }; }
+TextStyle TextStyle::DefaultButton() { 
+    return TextStyle::Regular()
+        .Color(Colors::WHITE)
+        .HoverColor(Colors::GOLD)
+        .ActiveColor(ImVec4(0.15f, 0.19f, 0.24f, 1.00f)); 
+}
 
 // --- ScopedStyle RAII Helper Implementation ---
 
@@ -42,6 +48,15 @@ ScopedStyle::ScopedStyle(const TextStyle& style) {
         ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
         m_colorCount++;
     }
+
+    if (style.isSeparator) {
+        float alignX = 0.0f;
+        if (style.align == TextAlign::Center) alignX = 0.5f;
+        else if (style.align == TextAlign::Right) alignX = 1.0f;
+        
+        ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(alignX, 0.5f));
+        m_varCount++;
+    }
 }
 
 ScopedStyle::~ScopedStyle() {
@@ -50,6 +65,9 @@ ScopedStyle::~ScopedStyle() {
     }
     if (m_colorCount > 0) {
         ImGui::PopStyleColor(m_colorCount);
+    }
+    if (m_varCount > 0) {
+        ImGui::PopStyleVar(m_varCount);
     }
 }
 
@@ -159,58 +177,59 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
         start_pos += replacement.length(); // Move past the replacement
     }
 
-    if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
-        // This is an approximation that assumes the markdown text doesn't have
-        // complex multi-line elements. It calculates the size of the raw text
-        // and centers it. This works well for short, single-line markdown strings.
-        ImVec2 textSize = ImVec2(0,0);
-        {
-            ScopedStyle scopedStyle(style);
-            textSize = ImGui::CalcTextSize(processedText.c_str());
-        }
+    ImGui::BeginGroup();
 
-        const float availableWidth = ImGui::GetContentRegionAvail().x;
+    // 1. Apply Top Padding
+    if (style.padding.y > 0.0f) {
+        ImGui::Dummy(ImVec2(0, style.padding.y));
+    }
+
+    // 2. Apply Left Padding using Indent (persists across NewLines)
+    if (style.padding.x > 0.0f) {
+        ImGui::Indent(style.padding.x);
+    }
+
+    // 3. Handle Alignment (Approximation for simple blocks)
+    if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
+        ImVec2 textSize = CalcTextSize(processedText.c_str(), style);
+        const float availableWidth = ImGui::GetContentRegionAvail().x - style.padding.x;
         float offsetX = 0.0f;
         if (style.align == TextAlign::Center) {
             offsetX = (availableWidth - textSize.x) * 0.5f;
         } else { // Right
             offsetX = availableWidth - textSize.x;
         }
-
         if (offsetX > 0.0f) {
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
         }
     }
 
-    // Apply padding for the entire markdown block
-    if (style.padding.x != 0.0f || style.padding.y != 0.0f) {
-        const ImVec2 cursorPos = ImGui::GetCursorPos();
-        ImGui::SetCursorPos(ImVec2(cursorPos.x + style.padding.x, cursorPos.y + style.padding.y));
-    }
-
-    // Handle Text Wrapping for Markdown
+    // 4. Handle Text Wrapping
+    bool wrapPushed = false;
     if (style.wrap) {
-        // Use a more robust way to calculate wrap position that works in child windows and tree nodes
-        float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x;
+        float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x - style.padding.x;
         ImGui::PushTextWrapPos(wrapPosX);
+        wrapPushed = true;
     }
 
-    // Apply a base text color if specified, but allow the renderer to override it
+    // 5. Base Color
+    int colorPushed = 0;
     if (style.color) {
         ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
+        colorPushed++;
     }
 
-    // Use our powerful MarkdownRenderer for the entire text
+    // 6. Render using MarkdownRenderer
     static UI::MarkdownRenderer renderer;
     renderer.Render(processedText);
 
-    if (style.color) {
-        ImGui::PopStyleColor();
-    }
+    // Cleanup
+    if (colorPushed > 0) ImGui::PopStyleColor(colorPushed);
+    if (wrapPushed) ImGui::PopTextWrapPos();
+    if (style.padding.x > 0.0f) ImGui::Unindent(style.padding.x);
+    if (style.padding.y > 0.0f) ImGui::Dummy(ImVec2(0, style.padding.y));
 
-    if (style.wrap) {
-        ImGui::PopTextWrapPos();
-    }
+    ImGui::EndGroup();
 }
 
 

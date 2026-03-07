@@ -20,6 +20,7 @@
         "title": "Hlavní okno - SPF Framework",
         "patrons_button_tooltip": "Moji patroni",
         "update_button_tooltip": "Zkontrolovat aktualizace",
+        "connect_disabled_tooltip": "Povolte 'connect' v konfiguračním souboru.",
         "version_label": "Vaše verze ",
         "update_checking": "Kontrola aktualizací...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "Aktualizační server je dočasně nedostupný. Zkuste to prosím znovu později.",
             "generic": "Při kontrole aktualizací došlo k neočekávané chybě.",
             "invalid_response": "Aktualizační server vrátil neplatnou odpověď.",
-            "patrons_fetch_failed": "Nepodařilo se načíst seznam patronů. Zkuste to prosím znovu později."
+            "patrons_fetch_failed": "Nepodařilo se načíst seznam patronů. Zkuste to prosím později.",
+            "forbidden": "Přístup k aktualizačnímu serveru je omezen. Kontaktujte vývojáře.",
+            "not_found": "Informace o vydání pro tento kanál nebyly nalezeny."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "Cíl UI",
                         "description": "Povolit nebo zakázat zobrazování logů v okně UI."
+                    },
+                    "report": {
+                        "title": "Cíl zpráv",
+                        "description": "Povolit nebo zakázat vzdálené hlášení chyb pro zlepšení frameworku."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Vymazat",
-        "checkbox_autoscroll": "Automatické posouvání"
+        "checkbox_autoscroll": "Automatické posouvání",
+        "label_level": "Úroveň",
+        "label_module": "Modul",
+        "context_copy_line": "Kopírovat řádek",
+        "context_copy_message": "Kopírovat pouze zprávu",
+        "context_copy_selected": "Kopírovat vybraný rozsah",
+        "context_copy_all": "Kopírovat vše viditelné",
+        "msg_clean_session": "Zatím žádné protokoly. Tato relace je dokonale čistá."
     },
     "telemetry_window": {
         "title": "Telemetrie",
@@ -970,6 +984,36 @@
             "dll_loaded": "Načteno",
             "dll_not_loaded": "Nenačteno"
         }
+    },
+    "welcome_window": {
+        "title": "VÍTEJTE VE SVĚTĚ SPF FRAMEWORKU!",
+        "intro_title": "Ahoj! Děkujeme, že jste si vybrali náš framework.",
+        "intro_text": "Vytvořili jsme **SPF Framework**, aby bylo vaše hraní v **ATS** a **ETS2** ještě zajímavější a správa pluginů co nejjednodušší.",
+        "section1": {
+            "title": "Jak otevřít menu frameworku?",
+            "text": "Stačí stisknout klávesu <#FFFFFF>{} **DELETE**</> na vaší klávesnici. Toto je váš hlavní ovládací panel."
+        },
+        "section2": {
+            "title": "Instalace pluginů kompatibilních s SPF",
+            "text": "Jednoduše vložte složku pluginu s DLL do ` <#FFFFFF>{}</> ` Poté je aktivujte v sekci <#FFFFFF>**Správce pluginů**</>."
+        },
+        "section3": {
+            "title": "Nastavení",
+            "text": "Všechny parametry frameworku a nainstalovaných pluginů, stejně jako správa klávesových zkratek, jsou pohodlně shromážděny na kartě <#FFFFFF>**Nastavení**</>."
+        },
+        "section4": {
+            "title": "Pro vývojáře",
+            "text": "Pokud jste vývojář — podívejte se na náš <#00b3ff>{} [GitHub]({})</>, kde najdete dokumentaci a příklady použití API."
+        },
+        "section5": {
+            "title": "Zůstaňte s námi",
+            "text": "Naše kontakty a odkazy na komunitu najdete v sekci <#FFFFFF>**O nás**</>."
+        },
+        "footer": "*Vyvinuto s <#ff0000>{}</> týmem **Track & Truck Devs**. Podpořte nás na <#00b3ff>{} [Patreon]({})</>, abyste pomohli projektu růst!*",
+        "button_go": "JEDEME!"
+    },
+    "notification_popup": {
+        "title": "Oznámení"
     },
     "description": {
         "detailed": "Výkonný a flexibilní framework pro vytváření a správu pluginů pro hry od SCS. Poskytuje základní sadu služeb pro logování, konfiguraci, správu UI a další."

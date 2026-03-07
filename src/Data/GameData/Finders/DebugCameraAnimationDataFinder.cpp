@@ -40,7 +40,7 @@ bool DebugCameraAnimationDataFinder::TryFindOffsets(GameDataCameraService& owner
         int32_t offset = Utils::PatternFinder::ReadInt32(sig_addr + 2);
         if (Utils::PatternFinder::IsSaneOffset(offset)) {
           owner.SetAnimationTimerOffset(offset);
-          logger->Info("Anchor #1: AnimationTimerOffset = 0x{:X}", offset);
+          logger->Debug("Anchor #1: AnimationTimerOffset = 0x{:X}", offset);
           timerOffsetFound = true;
         } else {
           logger->Error("Anchor #1: AnimationTimerOffset INVALID (0x{:X})", offset);
@@ -58,7 +58,7 @@ bool DebugCameraAnimationDataFinder::TryFindOffsets(GameDataCameraService& owner
     uintptr_t pfnUpdateAnimatedFlight = Utils::PatternFinder::Find(ANIMATED_FLIGHT_FUNC_SIG);
     if (pfnUpdateAnimatedFlight) {
       owner.SetUpdateAnimatedFlightFunc(reinterpret_cast<void*>(pfnUpdateAnimatedFlight));
-      logger->Info("Anchor #2: UpdateAnimatedFlight found at 0x{:X}", pfnUpdateAnimatedFlight);
+      logger->Debug("Anchor #2: UpdateAnimatedFlight found at 0x{:X}", pfnUpdateAnimatedFlight);
       funcFound = true;
     } else {
       logger->Warn("Anchor #2: FAILED to find UpdateAnimatedFlight function signature globally");

@@ -62,25 +62,25 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
     // --- Step 1: Find Managers Array & Count via GET_MANAGER_PFN_SIG ---
     uintptr_t pfnGetManager = PatternFinder::Find(GET_MANAGER_PFN_SIG);
     if (pfnGetManager) {
-        logger->Info("Anchor #1: Found UFS Manager accessor logic at {0:#x}", pfnGetManager);
+        logger->Debug("Anchor #1: Found UFS Manager accessor logic at {0:#x}", pfnGetManager);
         
         uintptr_t countAddr = PatternFinder::GetRipAddress(pfnGetManager + 0x07, 3, 7);
         if (countAddr) {
             owner.SetManagersCountAddr(countAddr);
-            logger->Info("  -> Found ManagersCountAddr: 0x{:X}", countAddr);
+            logger->Debug("  -> Found ManagersCountAddr: 0x{:X}", countAddr);
         } else { logger->Error("  !! FAILED to extract ManagersCount address."); }
 
         uintptr_t arrayAddr = PatternFinder::GetRipAddress(pfnGetManager + 0x10, 3, 7);
         if (arrayAddr) {
             owner.SetDevicesArrayAddr(arrayAddr);
-            logger->Info("  -> Found ManagersArrayAddr: 0x{:X}", arrayAddr);
+            logger->Debug("  -> Found ManagersArrayAddr: 0x{:X}", arrayAddr);
         } else { logger->Error("  !! FAILED to extract ManagersArray address."); }
     } else { logger->Warn("Anchor #1: FAILED to find GET_MANAGER_PFN signature."); }
 
     // --- Step 2: Find Offsets via UFS_RegisterMount ---
     uintptr_t pfnRegisterMount = PatternFinder::Find(REGISTER_MOUNT_FUNC_SIG);
     if (pfnRegisterMount) {
-        logger->Info("Anchor #2: Found UFS_RegisterMount at {0:#x}", pfnRegisterMount);
+        logger->Debug("Anchor #2: Found UFS_RegisterMount at {0:#x}", pfnRegisterMount);
         
         // 2.1. Mount List Head Anchor Offset (Typically 0x70)
         uintptr_t sigAddrMountManager = PatternFinder::Find(pfnRegisterMount, 2048, MOUNT_OFFSETS_SIG);
@@ -88,7 +88,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
             uint8_t listHeadOff = PatternFinder::ReadInt8(sigAddrMountManager + 7);
             if (PatternFinder::IsSaneOffset(listHeadOff)) {
                 owner.SetMountListHeadOffset(listHeadOff);
-                logger->Info("  -> Found MountListHeadOffset: 0x{:X}", listHeadOff);
+                logger->Debug("  -> Found MountListHeadOffset: 0x{:X}", listHeadOff);
             } else { logger->Error("  !! Mount List Head offset INVALID (0x{:X})", listHeadOff); }
         } else { logger->Error("  !! FAILED to find Mount Manager offsets anchor."); }
 
@@ -102,9 +102,9 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
                 owner.SetNodeDeviceOffset(deviceOff);
                 owner.SetNodeVPathOffset(vpathOff);
                 owner.SetStringBufferOffset(stringBuffOff);
-                logger->Info("  -> Found NodeDeviceOffset: 0x{:X}", deviceOff);
-                logger->Info("  -> Found NodeVPathOffset: 0x{:X}", vpathOff);
-                logger->Info("  -> Found StringBufferOffset: 0x{:X}", stringBuffOff);
+                logger->Debug("  -> Found NodeDeviceOffset: 0x{:X}", deviceOff);
+                logger->Debug("  -> Found NodeVPathOffset: 0x{:X}", vpathOff);
+                logger->Debug("  -> Found StringBufferOffset: 0x{:X}", stringBuffOff);
             } else { logger->Error("  !! Node offsets INVALID (Dev:0x{:X}, VP:0x{:X}, SB:0x{:X})", deviceOff, vpathOff, stringBuffOff); }
         } else { logger->Error("  !! FAILED to find Mount Node structure anchor."); }
 
@@ -114,7 +114,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
             uint8_t physOff = PatternFinder::ReadInt8(sigAddrPhys + 3);
             if (PatternFinder::IsSaneOffset(physOff)) {
                 owner.SetPhysicalDevicePathOffset(physOff);
-                logger->Info("  -> Found PhysicalDevicePathOffset: 0x{:X}", physOff);
+                logger->Debug("  -> Found PhysicalDevicePathOffset: 0x{:X}", physOff);
             } else { logger->Error("  !! PhysicalPathOffset INVALID (0x{:X})", physOff); }
         } else { logger->Error("  !! FAILED to find Physical Path offset anchor."); }
     } else { logger->Warn("Anchor #2: FAILED to find UFS_RegisterMount signature."); }
@@ -122,18 +122,18 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
     // --- Step 3: Find Active Profile Data via ACTIVE_PROFILE_SIG ---
     uintptr_t sigAddrProfile = PatternFinder::Find(ACTIVE_PROFILE_SIG);
     if (sigAddrProfile) {
-        logger->Info("Anchor #3: Found Active Profile logic at {0:#x}", sigAddrProfile);
+        logger->Debug("Anchor #3: Found Active Profile logic at {0:#x}", sigAddrProfile);
         
         uintptr_t gamePtr = PatternFinder::GetRipAddress(sigAddrProfile, 3, 7);
         if (gamePtr) {
             owner.SetGamePtrAddr(gamePtr);
-            logger->Info("  -> Found GamePtrAddr: 0x{:X}", gamePtr);
+            logger->Debug("  -> Found GamePtrAddr: 0x{:X}", gamePtr);
         } else { logger->Error("  !! FAILED to extract GamePtr address."); }
 
         uint32_t profileOff = PatternFinder::ReadInt32(sigAddrProfile + 10);
         if (profileOff > 0 && profileOff < 0xFFFF) {
             owner.SetProfileHandleOffset(profileOff);
-            logger->Info("  -> Found ProfileHandleOffset: 0x{:X}", profileOff);
+            logger->Debug("  -> Found ProfileHandleOffset: 0x{:X}", profileOff);
         } else { logger->Error("  !! ProfileHandleOffset is INVALID."); }
     } else { logger->Warn("Anchor #3: FAILED to find ACTIVE_PROFILE_SIG signature."); }
 

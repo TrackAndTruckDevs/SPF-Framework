@@ -1,4 +1,5 @@
 #include "SPF/UI/GameConsoleWindow.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -83,7 +84,7 @@ void GameConsoleWindow::RenderContent() {
 
     ImGui::SameLine();
 
-    if (ImGui::Button(loc.Get("game_console_window.send_button").c_str(), ImVec2(-1.0f, 0))) {
+    if (Button(loc.Get("game_console_window.send_button").c_str(), TextStyle::DefaultButton(), ImVec2(-1.0f, 0))) {
       execute();
     }
   } else {

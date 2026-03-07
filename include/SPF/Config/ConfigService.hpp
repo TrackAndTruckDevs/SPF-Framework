@@ -49,6 +49,8 @@ class ConfigService : public IConfigService {
   nlohmann::ordered_json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const override;
   const nlohmann::ordered_json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
   std::string GetOrCreateFrameworkInstanceId() override;
+  System::InstallationStatus GetInstallationStatus() const override;
+  bool IsConnectionAllowed() override;
   void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) override;
   /**
    * @brief Processes all registered system configurations (isolated and priority-merged).
@@ -118,6 +120,8 @@ class ConfigService : public IConfigService {
 
   // List of system names that are considered user-configurable (e.g., "settings", "keybinds").
   std::vector<std::string> m_userConfigurableSystems;
+
+  System::InstallationStatus m_installationStatus = System::InstallationStatus::SameVersion;
 };
 
 }  // namespace Config

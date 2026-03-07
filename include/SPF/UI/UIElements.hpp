@@ -9,17 +9,20 @@ SPF_NS_BEGIN
 namespace UI
 {
     /**
-     * @brief Renders a button that mimics a hyperlink, changing its text color on hover.
+     * @brief Renders a unified framework button.
      * 
-     * This function manually constructs a button to allow for separate control over the label's color
-     * when hovered, which is not possible with the standard ImGui::Button.
-     * The button's background behavior (normal, hovered, active) respects the current ImGui style.
+     * Behavior:
+     * - Idle: White (or style.color)
+     * - Hover: Gold (or style.hoverColor)
+     * - Active: Dark background color (or style.activeColor)
      * 
-     * @param label The text or icon to display on the button.
-     * @param style The TextStyle to apply to the label. It defines the default style and can optionally contain a `hoverColor`.
-     * @return True if the button was clicked, false otherwise.
+     * @param label Text or icon to display.
+     * @param style TextStyle to apply. Defaults to TextStyle::DefaultButton().
+     * @param size Optional fixed size. If (0,0), it auto-sizes to label.
+     * @param tooltip Optional tooltip text to display on hover.
+     * @return True if clicked.
      */
-    bool HyperlinkButton(const char* label, const TextStyle& style);
+    bool Button(const char* label, const TextStyle& style = TextStyle::DefaultButton(), const ImVec2& size = ImVec2(0, 0), const char* tooltip = nullptr);
 
 } // namespace UI
 SPF_NS_END

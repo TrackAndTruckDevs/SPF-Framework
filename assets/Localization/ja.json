@@ -20,6 +20,7 @@
         "title": "メインウィンドウ - SPF Framework",
         "patrons_button_tooltip": "私のパトロン",
         "update_button_tooltip": "アップデートを確認",
+        "connect_disabled_tooltip": "設定ファイルで 'connect' を有効にしてください。",
         "version_label": "あなたのバージョン ",
         "update_checking": "アップデートを確認中...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "アップデートサーバーは一時的に利用できません。後でもう一度お試しください。",
             "generic": "アップデートチェック中に予期せぬエラーが発生しました。",
             "invalid_response": "アップデートサーバーから無効な応答が返されました。",
-            "patrons_fetch_failed": "パトロンのリストを読み込めませんでした。後でもう一度お試しください。"
+            "patrons_fetch_failed": "パトロンのリストを読み込めませんでした。後でもう一度お試しください。",
+            "forbidden": "アップデートサーバーへのアクセスが制限されています。開発者にお問い合わせください。",
+            "not_found": "このチャネルのリリース情報が見つかりませんでした。"
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UIシンク",
                         "description": "UIウィンドウへのログ表示を有効または無効にします。"
+                    },
+                    "report": {
+                        "title": "レポートシンク",
+                        "description": "フレームワークの改善に役立てるため、リモートエラー報告を有効または無効にします。"
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "ロガー",
         "button_clear": "クリア",
-        "checkbox_autoscroll": "自動スクロール"
+        "checkbox_autoscroll": "自動スクロール",
+        "label_level": "レベル",
+        "label_module": "モジュール",
+        "context_copy_line": "行をコピー",
+        "context_copy_message": "メッセージのみコピー",
+        "context_copy_selected": "選択範囲をコピー",
+        "context_copy_all": "表示されているすべてをコピー",
+        "msg_clean_session": "ログはまだありません。このセッションは完全にクリーンです。"
     },
     "telemetry_window": {
         "title": "テレメトリー",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "未ロード"
         }
     },
+    "welcome_window": {
+        "title": "SPF FRAMEWORK の世界へようこそ！",
+        "intro_title": "こんにちは！当フレームワークを選んでいただきありがとうございます。",
+        "intro_text": "**SPF Framework** は、**ATS** や **ETS2** でのプレイをより楽しく、プラグイン管理をできるだけシンプルにするために作成されました。",
+        "section1": {
+            "title": "フレームワークメニューを開くには？",
+            "text": "キーボードの <#FFFFFF>{} **DELETE**</> キーを押すだけです。これがメインコントロールパネルになります。"
+        },
+        "section2": {
+            "title": "SPF対応プラグインのインストール",
+            "text": "DLLが含まれるプラグインフォルダを ` <#FFFFFF>{}</> ` に入れるだけです。その後、<#FFFFFF>**プラグインマネージャー**</> セクションで有効化してください。"
+        },
+        "section3": {
+            "title": "設定",
+            "text": "すべてのフレームワークパラメータとインストールされたプラグイン、キーバインド管理は、<#FFFFFF>**設定**</> タブにまとめられています。"
+        },
+        "section4": {
+            "title": "開発者の方へ",
+            "text": "開発者の方は、私たちの <#00b3ff>{} [GitHub]({})</> をご覧ください。ドキュメントやAPIの使用例が掲載されています。"
+        },
+        "section5": {
+            "title": "コミュニティ",
+            "text": "連絡先やコミュニティへのリンクは、<#FFFFFF>**私たちについて**</> セクションにあります。"
+        },
+        "footer": "*Team **Track & Truck Devs** が <#ff0000>{}</> を込めて開発しました。プロジェクトの成長を支援するために、<#00b3ff>{} [Patreon]({})</> でのサポートをお願いします！*",
+        "button_go": "出発！"
+    },
+    "notification_popup": {
+        "title": "通知"
+    },
     "description": {
         "detailed": "SCSゲームのプラグインを作成および管理するための強力で柔軟なフレームワーク。ロギング、設定、UI管理などのコアサービスを提供します。"
     },
     "patrons_popup": {
-      "title": "プロジェクトをサポート",
-      "intro_text": "コミュニティのサポートがこのプロジェクトの原動力です。私たちの活動が役立つと感じたら、パトロンになることを検討してください。皆様の貢献は、開発を継続し、すべての人に新しい刺激的なプラグインを作成することを可能にします！",
-      "link_intro": "公式ページで私たちをサポートできます：",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "クリックするとブラウザでPatreonページが開きます",
-      "hof_title": "殿堂入り",
-      "hof_empty": "私たちの殿堂はまだ空です... ここに最初に登場し、私たちの旅を始めてください！",
-      "hof_teaser": "私たちをサポートして、私たちの",
-      "close_button": "閉じる",
-      "tiers": {
-        "magnate": "--- ロジスティクス界の大物 ---",
-        "manager": "--- フリートマネージャー ---",
-        "master": "--- ロードマスター ---"
-      }
+        "title": "プロジェクトをサポート",
+        "intro_text": "コミュニティのサポートがこのプロジェクトの原動力です。私たちの活動が役立つと感じたら、パトロンになることを検討してください。皆様の貢献は、開発を継続し、すべての人に新しい刺激的なプラグインを作成することを可能にします！",
+        "link_intro": "公式ページで私たちをサポートできます：",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "クリックするとブラウザでPatreonページが開きます",
+        "hof_title": "殿堂入り",
+        "hof_empty": "私たちの殿堂はまだ空です... ここに最初に登場し、私たちの旅を始めてください！",
+        "hof_teaser": "私たちをサポートして、私たちの",
+        "close_button": "閉じる",
+        "tiers": {
+            "magnate": "--- ロジスティクス界の大物 ---",
+            "manager": "--- フリートマネージャー ---",
+            "master": "--- ロードマスター ---"
+        }
     },
     "manual_popup": {
         "title": "よくある質問",

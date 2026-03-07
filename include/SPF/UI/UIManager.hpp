@@ -81,10 +81,10 @@ class UIManager : public Config::IConfigurable {
   void NotifyInputCaptureCancelled(const Input::InputCaptureCancelled& e);
   void NotifyInputCaptureConflict(const Input::InputCaptureConflict& e);
 
-  //  Update and Patrons notifications
-  void NotifyUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e);
-  void NotifyUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e);
+  //  API related notifications
+  void NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
   void NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
+  void NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
 
   void ToggleMouseOverridden();
   void SetMouseOverride(bool overridden) { m_isMouseControlOverridden = overridden; }

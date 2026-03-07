@@ -1,7 +1,7 @@
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/Icons.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"  // Include the new icons header
-
+#include "SPF/UI/UIElements.hpp" // For Button
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cmath>  // For fabs
@@ -213,7 +213,7 @@ void BaseWindow::Render() {
       float buttonWidth = ImGui::CalcTextSize(buttonText.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 
       ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
-      if (ImGui::Button(buttonText.c_str())) {
+      if (Button(buttonText.c_str())) {
         bool was_docked = m_is_docked;
         m_is_docked = !m_is_docked;
         m_stateIsDirty = true;

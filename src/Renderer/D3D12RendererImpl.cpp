@@ -6,6 +6,8 @@
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
 
+#include <stb_image.h>
+
 #include <SPF/Hooks/D3D12Hook.hpp>
 #include <SPF/Logging/LoggerFactory.hpp>
 #include <SPF/UI/UIManager.hpp>
@@ -16,6 +18,26 @@ namespace Rendering {
 
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
+
+namespace {
+
+class D3D12Texture : public ITexture {
+public:
+    D3D12Texture(ComPtr<ID3D12Resource> resource, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle, uint32_t width, uint32_t height)
+        : m_resource(resource), m_gpuHandle(gpuHandle), m_width(width), m_height(height) {}
+
+    void* GetHandle() const override { return reinterpret_cast<void*>(m_gpuHandle.ptr); }
+    uint32_t GetWidth() const override { return m_width; }
+    uint32_t GetHeight() const override { return m_height; }
+
+private:
+    ComPtr<ID3D12Resource> m_resource;
+    D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle;
+    uint32_t m_width;
+    uint32_t m_height;
+};
+
+} // namespace
 
 D3D12RendererImpl::D3D12RendererImpl(Renderer& renderer, UI::UIManager& uiManager)
     : RendererBase(renderer),
@@ -73,6 +95,143 @@ void D3D12RendererImpl::Shutdown() {
     m_logger->Info("ImGui D3D12 implementation shut down.");
 }
 
+std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsigned char* data, size_t size) {
+    if (!m_pd3dDevice) return nullptr;
+
+    int width, height, channels;
+    unsigned char* pixels = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 4);
+    if (!pixels) {
+        m_logger->Error("D3D12 CreateTexture: stbi_load failed: {}", stbi_failure_reason());
+        return nullptr;
+    }
+
+    // 1. Create the texture resource (Default Heap)
+    D3D12_RESOURCE_DESC txtDesc = {};
+    txtDesc.MipLevels = 1;
+    txtDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    txtDesc.Width = width;
+    txtDesc.Height = height;
+    txtDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    txtDesc.DepthOrArraySize = 1;
+    txtDesc.SampleDesc.Count = 1;
+    txtDesc.SampleDesc.Quality = 0;
+    txtDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+    ComPtr<ID3D12Resource> texture;
+    D3D12_HEAP_PROPERTIES defaultHeapProps = {};
+    defaultHeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    HRESULT hr = m_pd3dDevice->CreateCommittedResource(
+        &defaultHeapProps, D3D12_HEAP_FLAG_NONE, &txtDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(texture.GetAddressOf()));
+
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        m_logger->Error("D3D12: Failed to create texture resource (HRESULT: {:#x})", (unsigned int)hr);
+        return nullptr;
+    }
+
+    // 2. Create upload buffer manually (alignment 256 for D3D12 row pitch)
+    UINT rowPitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+    UINT64 uploadBufferSize = static_cast<UINT64>(rowPitch) * height;
+
+    ComPtr<ID3D12Resource> uploadBuffer;
+    D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+    uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+    D3D12_RESOURCE_DESC bufferDesc = {};
+    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferDesc.Alignment = 0;
+    bufferDesc.Width = uploadBufferSize;
+    bufferDesc.Height = 1;
+    bufferDesc.DepthOrArraySize = 1;
+    bufferDesc.MipLevels = 1;
+    bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+    bufferDesc.SampleDesc.Count = 1;
+    bufferDesc.SampleDesc.Quality = 0;
+    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    hr = m_pd3dDevice->CreateCommittedResource(
+        &uploadHeapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
+
+    if (FAILED(hr)) {
+        stbi_image_free(pixels);
+        m_logger->Error("D3D12: Failed to create upload buffer (HRESULT: {:#x})", (unsigned int)hr);
+        return nullptr;
+    }
+
+    // 3. Map and copy data with correct pitch
+    void* mappedData = nullptr;
+    hr = uploadBuffer->Map(0, nullptr, &mappedData);
+    if (SUCCEEDED(hr)) {
+        for (int y = 0; y < height; ++y) {
+            memcpy(reinterpret_cast<unsigned char*>(mappedData) + (y * rowPitch), pixels + (y * width * 4), width * 4);
+        }
+        uploadBuffer->Unmap(0, nullptr);
+    }
+    stbi_image_free(pixels);
+
+    // 4. Record and execute copy commands
+    m_commandAllocator->Reset();
+    m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+
+    D3D12_TEXTURE_COPY_LOCATION src = {};
+    src.pResource = uploadBuffer.Get();
+    src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    src.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    src.PlacedFootprint.Footprint.Width = width;
+    src.PlacedFootprint.Footprint.Height = height;
+    src.PlacedFootprint.Footprint.Depth = 1;
+    src.PlacedFootprint.Footprint.RowPitch = rowPitch;
+
+    D3D12_TEXTURE_COPY_LOCATION dst = {};
+    dst.pResource = texture.Get();
+    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dst.SubresourceIndex = 0;
+
+    m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = texture.Get();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_commandList->ResourceBarrier(1, &barrier);
+
+    m_commandList->Close();
+    ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+    m_pd3dCommandQueue->ExecuteCommandLists(1, ppCommandLists);
+
+    // 5. Synchronize
+    WaitForLastSubmittedFrame();
+
+    // 6. Create SRV in the heap
+    if (m_nextSrvIndex >= MAX_SRV_DESCRIPTORS) {
+        m_logger->Error("D3D12: SRV Descriptor Heap exhausted!");
+        return nullptr;
+    }
+
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCpu = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
+    srvHandleCpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
+
+    D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGpu = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
+    srvHandleGpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    m_pd3dDevice->CreateShaderResourceView(texture.Get(), &srvDesc, srvHandleCpu);
+    m_nextSrvIndex++;
+
+    return std::make_unique<D3D12Texture>(texture, srvHandleGpu, width, height);
+}
+
 void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue) {
     if (m_isImGuiInitialized) {
         return;
@@ -92,9 +251,9 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* de
         return;
     }
 
-    // Create a descriptor heap for the ImGui texture atlas.
+    // Create a descriptor heap for the ImGui texture atlas and additional textures.
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = 1;
+    srvHeapDesc.NumDescriptors = MAX_SRV_DESCRIPTORS;
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     hr = m_pd3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(m_pd3dSrvDescHeap.GetAddressOf()));
@@ -102,6 +261,8 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* de
         m_logger->Critical("OnD3D12Init: CreateDescriptorHeap (SRV) failed. (HRESULT: {:#x})", static_cast<unsigned int>(hr));
         return;
     }
+
+    m_srvDescriptorSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Create a command allocator and a command list for our UI rendering.
     hr = m_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_commandAllocator.GetAddressOf()));

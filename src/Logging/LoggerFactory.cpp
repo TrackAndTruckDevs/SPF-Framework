@@ -8,6 +8,7 @@
 #include <SPF/Core/InitializationReport.hpp>
 #include <SPF/Logging/Sinks/FileSink.hpp>
 #include <SPF/Logging/Sinks/LoggerWindowSink.hpp>
+#include <SPF/Logging/Sinks/ErrorReportSink.hpp>
 #include <SPF/System/PathManager.hpp>
 
 SPF_NS_BEGIN
@@ -66,7 +67,14 @@ void LoggerFactory::Shutdown() {
 
   m_loggers.clear();
   m_globalSinks.clear();
+
+  // Emit signals before resetting
+  OnUISinkChanged.Call(nullptr);
+  OnErrorReportSinkChanged.Call(nullptr);
+  OnFrameworkFileSinkChanged.Call(nullptr);
+
   m_uiSink.reset();
+  m_errorReportSink.reset();
   m_frameworkFileSink.reset();
   m_logger.reset();
   m_defaultLogger.reset();
@@ -83,6 +91,16 @@ std::shared_ptr<Logger> LoggerFactory::GetLogger(const std::string& name) {
 std::shared_ptr<Sinks::LoggerWindowSink> LoggerFactory::GetUISink() const {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_uiSink;
+}
+
+std::shared_ptr<Sinks::ErrorReportSink> LoggerFactory::GetErrorReportSink() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_errorReportSink;
+}
+
+std::shared_ptr<ILogSink> LoggerFactory::GetFrameworkFileSink() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_frameworkFileSink;
 }
 
 void LoggerFactory::ApplyConfigurationFor(const std::string& componentName, const nlohmann::ordered_json& config) {
@@ -143,9 +161,29 @@ bool LoggerFactory::OnSettingChanged(const std::string& systemName, const std::s
       //m_logger->Debug("Updated log level for '{}' to {}", componentName, LogLevelToString(newLevel));
     }
   } else if (keyPath == "sinks.file") {
-      if (newValue.is_boolean()) {
-        ManagePrivateFileSink(componentName, newValue.get<bool>());
-      }
+    if (newValue.is_boolean()) {
+        bool enabled = newValue.get<bool>();
+        if (componentName == "framework") {
+            if (enabled && !m_frameworkFileSink) {
+                m_logger->Info("Enabling GLOBAL file sink via settings change.");
+                auto logFilePath = m_logDirectory / "framework.log";
+                m_frameworkFileSink = std::make_shared<FileSink>(logFilePath, "file_framework", true); // Use append mode
+                AddGlobalSink(m_frameworkFileSink);
+            } else if (!enabled && m_frameworkFileSink) {
+                m_logger->Info("Disabling GLOBAL file sink via settings change.");
+                
+                // CRUCIAL: Cast to FileSink and close the file handle immediately
+                if (auto fileSink = std::dynamic_pointer_cast<FileSink>(m_frameworkFileSink)) {
+                    fileSink->Close();
+                }
+                
+                RemoveGlobalSink(m_frameworkFileSink);
+                m_frameworkFileSink.reset();
+            }
+        } else {
+            ManagePrivateFileSink(componentName, enabled);
+        }
+    }
   } else if (keyPath == "sinks.ui") {
     if (newValue.is_boolean()) {
       if (newValue.get<bool>() && !m_uiSink) {
@@ -158,6 +196,18 @@ bool LoggerFactory::OnSettingChanged(const std::string& systemName, const std::s
           m_logger->Info("Removing global UI sink via settings change.");
           RemoveGlobalSink(m_uiSink);
           m_uiSink.reset();
+      }
+    }
+  } else if (keyPath == "sinks.report") {
+    if (newValue.is_boolean()) {
+      if (newValue.get<bool>() && !m_errorReportSink) {
+          m_logger->Info("Creating and adding global Error Report sink via settings change.");
+          m_errorReportSink = std::make_shared<ErrorReportSink>();
+          AddGlobalSink(m_errorReportSink);
+      } else if (!newValue.get<bool>() && m_errorReportSink) {
+          m_logger->Info("Removing global Error Report sink via settings change.");
+          RemoveGlobalSink(m_errorReportSink);
+          m_errorReportSink.reset();
       }
     }
   }
@@ -220,12 +270,23 @@ void LoggerFactory::CreateGlobalSinks(const nlohmann::ordered_json& framework_co
         if (fileSinkEnabled) {
             try {
                 auto logFilePath = m_logDirectory / "framework.log";
-                m_logger->Info("Creating GLOBAL file sink at path '{}'", logFilePath.string());
                 m_frameworkFileSink = std::make_shared<FileSink>(logFilePath, "file_framework");
                 AddGlobalSink(m_frameworkFileSink);
+                m_logger->Info("Creating GLOBAL file sink at path '{}'", logFilePath.string());
             } catch (const std::exception& e) {
                 m_logger->Error("Failed to create framework file sink. Error: {}", e.what());
                 report.Errors.push_back({fmt::format("Failed to create framework file sink: {}", e.what()), "sinks.file"});
+            }
+        } else {
+            // Cleanup existing log file if disabled at startup
+            try {
+                auto logFilePath = m_logDirectory / "framework.log";
+                if (std::filesystem::exists(logFilePath)) {
+                    m_logger->Info("File sink is disabled. Deleting existing log file: '{}'", logFilePath.string());
+                    std::filesystem::remove(logFilePath);
+                }
+            } catch (const std::exception& e) {
+                m_logger->Warn("Could not delete disabled log file: {}", e.what());
             }
         }
 
@@ -244,6 +305,22 @@ void LoggerFactory::CreateGlobalSinks(const nlohmann::ordered_json& framework_co
             m_uiSink = std::make_shared<LoggerWindowSink>();
             AddGlobalSink(m_uiSink);
         }
+
+        bool reportSinkEnabled = false;
+        if (sinksConfig.contains("report")) {
+            const auto& reportNode = sinksConfig["report"];
+            if (reportNode.is_object() && reportNode.contains("_value")) {
+                reportSinkEnabled = reportNode["_value"].get<bool>();
+            } else if (reportNode.is_boolean()) {
+                reportSinkEnabled = reportNode.get<bool>();
+            }
+        }
+
+        if (reportSinkEnabled) {
+            m_logger->Info("Creating GLOBAL Error Report sink.");
+            m_errorReportSink = std::make_shared<ErrorReportSink>();
+            AddGlobalSink(m_errorReportSink);
+        }
     }
 }
 
@@ -257,6 +334,15 @@ void LoggerFactory::AddGlobalSink(const std::shared_ptr<ILogSink>& sink) {
     if (m_logger) {
         m_logger->AddSink(sink);
     }
+
+    // Emit specialized signals if applicable
+    if (auto ui = std::dynamic_pointer_cast<LoggerWindowSink>(sink)) {
+        OnUISinkChanged.Call(ui);
+    } else if (auto report = std::dynamic_pointer_cast<ErrorReportSink>(sink)) {
+        OnErrorReportSinkChanged.Call(report);
+    } else if (sink == m_frameworkFileSink) {
+        OnFrameworkFileSinkChanged.Call(sink);
+    }
 }
 
 void LoggerFactory::RemoveGlobalSink(const std::shared_ptr<ILogSink>& sink) {
@@ -268,6 +354,15 @@ void LoggerFactory::RemoveGlobalSink(const std::shared_ptr<ILogSink>& sink) {
     // Also remove from the factory's own logger
     if (m_logger) {
         m_logger->RemoveSink(sink);
+    }
+
+    // Emit specialized signals if applicable
+    if (std::dynamic_pointer_cast<LoggerWindowSink>(sink)) {
+        OnUISinkChanged.Call(nullptr);
+    } else if (std::dynamic_pointer_cast<ErrorReportSink>(sink)) {
+        OnErrorReportSinkChanged.Call(nullptr);
+    } else if (sink == m_frameworkFileSink) {
+        OnFrameworkFileSinkChanged.Call(nullptr);
     }
 }
 

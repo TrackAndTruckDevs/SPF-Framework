@@ -23,6 +23,7 @@ namespace UI {
         std::optional<std::string> fontKey;
         std::optional<ImVec4> color;
         std::optional<ImVec4> hoverColor;
+        std::optional<ImVec4> activeColor;
         TextAlign align = TextAlign::Left;
         ImVec2 padding = {0.0f, 0.0f};
         bool wrap = false;
@@ -42,6 +43,7 @@ namespace UI {
         static TextStyle H1();
         static TextStyle H2();
         static TextStyle H3();
+        static TextStyle DefaultButton();
         
         // --- Chaining methods ---
 
@@ -104,6 +106,12 @@ namespace UI {
          * @param col The color to apply on hover.
          */
         TextStyle& HoverColor(const ImVec4& col) { hoverColor = col; return *this; }
+
+        /**
+         * @brief Sets the color of the text when active/pressed.
+         * @param col The color to apply when pressed.
+         */
+        TextStyle& ActiveColor(const ImVec4& col) { activeColor = col; return *this; }
     };
 
     /// <summary>
@@ -118,6 +126,7 @@ namespace UI {
 
     private:
         int m_colorCount = 0;
+        int m_varCount = 0;
         bool m_fontPushed = false;
     };
 

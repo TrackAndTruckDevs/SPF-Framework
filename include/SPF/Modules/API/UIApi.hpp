@@ -181,6 +181,7 @@ class UIApi {
 
   // Buttons & Interaction
   static bool UI_Button(const char* label, float width, float height);
+  static bool UI_ButtonEx(const char* label, float width, float height, const char* tooltip, SPF_TextStyle_Handle style);
   static bool UI_SmallButton(const char* label);
   static bool UI_InvisibleButton(const char* str_id, float width, float height);
   static bool UI_ArrowButton(const char* str_id, SPF_Dir dir);
@@ -393,6 +394,8 @@ class UIApi {
   static void UI_Style_Destroy(SPF_TextStyle_Handle handle);
   static void UI_Style_SetFont(SPF_TextStyle_Handle handle, SPF_Font font);
   static void UI_Style_SetColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+  static void UI_Style_SetHoverColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+  static void UI_Style_SetActiveColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
   static void UI_Style_SetAlign(SPF_TextStyle_Handle handle, SPF_TextAlign align);
   static void UI_Style_SetWrap(SPF_TextStyle_Handle handle, bool wrap);
   static void UI_Style_SetPadding(SPF_TextStyle_Handle handle, float pad_x, float pad_y);

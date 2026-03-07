@@ -3,8 +3,11 @@
 #include "SPF/Namespace.hpp"
 #include <string>
 #include <vector>
+#include <map>
 #include <optional>
 #include <future>
+#include <mutex>
+#include <condition_variable>
 
 SPF_NS_BEGIN
 namespace System {
@@ -44,6 +47,16 @@ namespace System {
         };
     
         /**
+         * @brief Represents a single report entry for an error or warning for remote reporting.
+         */
+        struct LogReportEntry {
+            std::string loggerName;
+            std::string level;
+            std::string message;
+            uint32_t count;
+        };
+
+        /**
          * @brief Holds information about the latest framework update.
          */
         struct UpdateInfo {
@@ -57,6 +70,17 @@ namespace System {
         };
     
         /**
+         * @brief Represents the current state of the API service connectivity.
+         */
+        enum class ServiceStatus {
+            Unknown,
+            Online,
+            Offline,
+            Banned,
+            ServerError
+        };
+
+        /**
          * @brief A service responsible for making remote API calls.
          *
          * This class provides an interface for fetching data from a remote server.
@@ -64,14 +88,41 @@ namespace System {
          */
         class ApiService {
         public:
+            ApiService();
+            ~ApiService() = default;
+
             // Asynchronously fetches the latest update information.
             std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel);
     
             // Asynchronously fetches the list of patrons.
             std::future<ApiResult<std::vector<Patron>>> FetchPatronsAsync(const std::string& baseUrl);
 
-            // Asynchronously sends anonymous usage data.
-            std::future<void> TrackUsageAsync(const std::string& baseUrl, std::string uuid, std::string version);
+            // Asynchronously sends anonymous usage data and grouped logs.
+            std::future<void> TrackUsageAsync(const std::string& baseUrl, std::string uuid, std::string sessionId, std::string buildHash, std::string version, std::string game, std::string gameVersion, std::map<std::string, bool> plugins, std::vector<LogReportEntry> logs);
+
+            /**
+             * @brief Gets the last known status of the service.
+             */
+            ServiceStatus GetLastStatus() const;
+
+        private:
+            struct ConnectivityState {
+                ServiceStatus status = ServiceStatus::Unknown;
+                std::string lastErrorMessage;
+                std::chrono::steady_clock::time_point lastCheckTime;
+                bool isChecking = false;
+            };
+
+            ConnectivityState m_state;
+            mutable std::mutex m_stateMutex;
+            std::condition_variable m_connectivityCV;
+
+            /**
+             * @brief Performs a health check if needed (based on time threshold).
+             * This is called internally by all public API methods.
+             * @return true if service is Online, false otherwise.
+             */
+            bool EnsureConnectivity(const std::string& baseUrl);
         };
 } // namespace System
 SPF_NS_END

@@ -126,7 +126,7 @@ bool HookManager::InstallSystemAndFeatureHooks() {
           }
         }
       } else {
-        logger->Info("Skipping disabled feature hook: {}", hook->GetDisplayName());
+        logger->Debug("Skipping disabled feature hook: {}", hook->GetDisplayName());
       }
     }
   }

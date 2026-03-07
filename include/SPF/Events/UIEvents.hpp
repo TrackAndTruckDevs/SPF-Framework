@@ -99,11 +99,15 @@ struct RequestInputCaptureCancel {};
 /**
  * @brief Fired from the UI to request a check for framework updates.
  */
-struct RequestUpdateCheck {};
+struct RequestUpdateCheck {
+  bool force = false;
+};
 
 /**
  * @brief Fired from the UI to request a fetch of the patrons list.
  */
-struct RequestPatronsFetch {};
+struct RequestPatronsFetch {
+  bool force = false;
+};
 }  // namespace Events::UI
 SPF_NS_END

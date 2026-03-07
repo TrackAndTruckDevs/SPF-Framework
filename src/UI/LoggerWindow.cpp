@@ -1,7 +1,10 @@
 #include "SPF/UI/LoggerWindow.hpp"
+#include "SPF/UI/UIElements.hpp"
 #include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
-#include "SPF/Logging/Logger.hpp"  // For LogLevelToString and GetAllLogLevels
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/UI/UIStyle.hpp"
 
 #include <imgui.h>
 #include <fmt/format.h>
@@ -12,49 +15,65 @@ namespace UI {
 using namespace SPF::Logging;
 using namespace SPF::Localization;
 
-// Helper function to get color for a log level
 static ImVec4 GetColorForLogLevel(LogLevel level) {
   switch (level) {
-    case LogLevel::Trace:
-      return ImVec4(0.5f, 0.5f, 0.5f, 1.0f);  // Gray
-    case LogLevel::Debug:
-      return ImVec4(0.4f, 0.7f, 1.0f, 1.0f);  // Light Blue
-    case LogLevel::Info:
-      return ImVec4(0.8f, 0.8f, 0.8f, 1.0f);  // Light Gray
-    case LogLevel::Warn:
-      return ImVec4(1.0f, 1.0f, 0.0f, 1.0f);  // Yellow
-    case LogLevel::Error:
-      return ImVec4(1.0f, 0.4f, 0.4f, 1.0f);  // Red
-    case LogLevel::Critical:
-      return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);  // Bright Red
-    default:
-      return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    case LogLevel::Trace: return Colors::GRAY;
+    case LogLevel::Debug: return Colors::VERY_LIGHT_BLUE;
+    case LogLevel::Info:  return Colors::VERY_LIGHT_GREEN;
+    case LogLevel::Warn:  return Colors::ORANGE;
+    case LogLevel::Error: return Colors::RED;
+    case LogLevel::Critical: return Colors::BRIGHT_RED;
+    default: return Colors::WHITE;
   }
 }
 
-LoggerWindow::LoggerWindow(const std::string& componentName, const std::string& windowId, Sinks::LoggerWindowSink& sink,
+LoggerWindow::LoggerWindow(const std::string& componentName, const std::string& windowId,
                            Config::IConfigService& configService)
-    : BaseWindow(componentName, windowId), m_sink(sink), m_configService(configService) {
+    : BaseWindow(componentName, windowId), m_configService(configService) {
   m_defaultTitle = "Logger";
   m_titleLocalizationKey = "logger_window.title";
+
+  auto& loc = LocalizationManager::GetInstance();
+  m_cachedButtonClear = loc.Get("logger_window.button_clear");
+  m_cachedCheckboxAutoscroll = loc.Get("logger_window.checkbox_autoscroll");
+  m_cachedLabelLevel = loc.Get("logger_window.label_level");
+  m_cachedLabelModule = loc.Get("logger_window.label_module");
+  m_cachedContextCopyLine = loc.Get("logger_window.context_copy_line");
+  m_cachedContextCopyMessage = loc.Get("logger_window.context_copy_message");
+  m_cachedContextCopySelected = loc.Get("logger_window.context_copy_selected");
+  m_cachedContextCopyAll = loc.Get("logger_window.context_copy_all");
+  m_cachedMsgCleanSession = loc.Get("logger_window.msg_clean_session");
+
+  m_sink = LoggerFactory::GetInstance().GetUISink();
+  SetVisibility(m_sink != nullptr);
+
+  m_onUISinkChangedSink = std::make_unique<Utils::Sink<void(std::shared_ptr<Logging::Sinks::LoggerWindowSink>)>>(LoggerFactory::GetInstance().OnUISinkChanged);
+  m_onUISinkChangedSink->Connect<&LoggerWindow::OnUISinkChanged>(this);
 }
 
-const char* LoggerWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
+void LoggerWindow::OnUISinkChanged(std::shared_ptr<Logging::Sinks::LoggerWindowSink> sink) {
+    m_sink = sink;
+    SetVisibility(sink != nullptr);
+}
+
+const char* LoggerWindow::GetWindowTitle() const { 
+    return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); 
+}
 
 bool LoggerWindow::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
-  // We only care about changes to the global logging level for our own component
   if (systemName == "logging" && componentName == m_componentName && keyPath == "level") {
     if (newValue.is_string()) {
       m_filterLevel = LogLevelFromString(newValue.get<std::string>());
     }
-    return true;  // This was handled.
+    return true;
   }
-  return false;  // This was not handled.
+  return false;
 }
 
 void LoggerWindow::BuildComponentFilterList() {
+  if (!m_sink) return;
   std::set<std::string> uniqueLoggerNames;
-  auto messages = m_sink.GetMessages();
+  auto messages = m_sink->GetMessages();
   for (const auto& item : messages) {
     uniqueLoggerNames.insert(std::string(item.logger_name));
   }
@@ -75,96 +94,83 @@ void LoggerWindow::BuildComponentFilterList() {
 
   m_componentList.clear();
   m_componentList.push_back("All");
-
-  if (!pluginComponents.empty()) {
-    m_componentList.push_back("###SEPARATOR###");
-  }
-
-  // Add plugins first, as requested
-  if (!pluginComponents.empty()) {
-    m_componentList.insert(m_componentList.end(), pluginComponents.begin(), pluginComponents.end());
-  }
-
-  // Add separator if there are both framework and plugin components
-  if (!frameworkComponents.empty() && !pluginComponents.empty()) {
-    m_componentList.push_back("###SEPARATOR###");  // Special marker for the separator
-  }
-
-  // Add framework components
-  if (!frameworkComponents.empty()) {
-    m_componentList.insert(m_componentList.end(), frameworkComponents.begin(), frameworkComponents.end());
-  }
+  if (!pluginComponents.empty()) m_componentList.push_back("###SEPARATOR###");
+  if (!pluginComponents.empty()) m_componentList.insert(m_componentList.end(), pluginComponents.begin(), pluginComponents.end());
+  if (!frameworkComponents.empty() && !pluginComponents.empty()) m_componentList.push_back("###SEPARATOR###");
+  if (!frameworkComponents.empty()) m_componentList.insert(m_componentList.end(), frameworkComponents.begin(), frameworkComponents.end());
 }
 
 void LoggerWindow::RenderContent() {
-  auto& l10n = LocalizationManager::GetInstance();
+  if (!m_sink) return;
 
-  // --- Toolbar ---
-  if (ImGui::Button(l10n.Get("logger_window.button_clear").c_str())) {
-    m_sink.Clear();
+  if (Button(m_cachedButtonClear.c_str())) {
+    m_sink->Clear();
   }
   ImGui::SameLine();
-  ImGui::Checkbox(l10n.Get("logger_window.checkbox_autoscroll").c_str(), &m_autoScroll);
-
+  ImGui::Checkbox(m_cachedCheckboxAutoscroll.c_str(), &m_autoScroll);
   ImGui::Separator();
 
-  // --- Filters ---
   ImGui::PushItemWidth(120);
-  // Log Level Filter
   if (ImGui::BeginCombo("##level_filter", LogLevelToString(m_filterLevel))) {
-    const auto& allLevels = GetAllLogLevels();
-    for (const auto& level : allLevels) {
-      const char* levelName = LogLevelToString(level);
+    for (const auto& level : GetAllLogLevels()) {
       bool is_selected = (m_filterLevel == level);
-      if (ImGui::Selectable(levelName, is_selected)) {
-        m_filterLevel = level;
-      }
-      if (is_selected) {
-        ImGui::SetItemDefaultFocus();
-      }
+      if (ImGui::Selectable(LogLevelToString(level), is_selected)) m_filterLevel = level;
+      if (is_selected) ImGui::SetItemDefaultFocus();
     }
     ImGui::EndCombo();
   }
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_cachedLabelLevel.c_str());
 
   ImGui::SameLine();
 
-  // Component Filter
   BuildComponentFilterList();
   if (ImGui::BeginCombo("##component_filter", m_selectedComponent.c_str())) {
     for (const auto& componentName : m_componentList) {
       if (componentName == "###SEPARATOR###") {
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
         continue;
       }
-
       bool is_selected = (m_selectedComponent == componentName);
-      if (ImGui::Selectable(componentName.c_str(), is_selected)) {
-        m_selectedComponent = componentName;
-      }
-      if (is_selected) {
-        ImGui::SetItemDefaultFocus();
-      }
+      if (ImGui::Selectable(componentName.c_str(), is_selected)) m_selectedComponent = componentName;
+      if (is_selected) ImGui::SetItemDefaultFocus();
     }
     ImGui::EndCombo();
   }
-  ImGui::PopItemWidth();
+  if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_cachedLabelModule.c_str());
 
+  ImGui::PopItemWidth();
   ImGui::Separator();
 
-  // --- Log output area ---
   ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+  
+  auto allMessages = m_sink->GetMessages();
+  if (allMessages.empty()) {
+      ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() * 0.5f - ImGui::CalcTextSize(m_cachedMsgCleanSession.c_str()).x * 0.5f, ImGui::GetWindowHeight() * 0.5f));
+      ImGui::TextDisabled("%s", m_cachedMsgCleanSession.c_str());
+      ImGui::EndChild();
+      return;
+  }
 
-  // Pre-filter messages before passing to the clipper
   std::vector<const Sinks::LoggerWindowSink::DisplayMessage*> filteredMessages;
-  auto allMessages = m_sink.GetMessages();
   filteredMessages.reserve(allMessages.size());
   for (const auto& item : allMessages) {
-    // Apply filters - show all if TRACE is selected, otherwise exact match
     if (!(m_filterLevel == LogLevel::Trace || item.level == m_filterLevel)) continue;
     if (m_selectedComponent != "All" && item.logger_name != m_selectedComponent) continue;
     filteredMessages.push_back(&item);
+  }
+
+  // Handle Ctrl+C for selection
+  if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
+      if (m_selectionStart != -1 && m_selectionEnd != -1) {
+          int start = std::min(m_selectionStart, m_selectionEnd);
+          int end = std::max(m_selectionStart, m_selectionEnd);
+          std::string copiedText;
+          for (int i = start; i <= end && i < filteredMessages.size(); ++i) {
+              const auto* log = filteredMessages[i];
+              copiedText += fmt::format("[{}] [{}] {}\n", LogLevelToString(log->level), log->logger_name, log->message);
+          }
+          if (!copiedText.empty()) ImGui::SetClipboardText(copiedText.c_str());
+      }
   }
 
   ImGuiListClipper clipper;
@@ -172,18 +178,83 @@ void LoggerWindow::RenderContent() {
   while (clipper.Step()) {
     for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++) {
       const auto* item = filteredMessages[row];
+      std::string lineText = fmt::format("[{}] [{}] {}", LogLevelToString(item->level), item->logger_name, item->message);
+      
+      ImGui::PushID(row);
+      
+      // Determine if this row is within the selection range
+      bool isSelected = false;
+      if (m_selectionStart != -1 && m_selectionEnd != -1) {
+          int start = std::min(m_selectionStart, m_selectionEnd);
+          int end = std::max(m_selectionStart, m_selectionEnd);
+          isSelected = (row >= start && row <= end);
+      }
 
       ImGui::PushStyleColor(ImGuiCol_Text, GetColorForLogLevel(item->level));
-      ImGui::TextUnformatted(fmt::format("[{}] [{}] {}", LogLevelToString(item->level), item->logger_name, item->message).c_str());
-      ImGui::PopStyleColor();
+      
+      // Use Selectable to allow highlighting and multi-selection
+      if (ImGui::Selectable(lineText.c_str(), isSelected, ImGuiSelectableFlags_AllowDoubleClick)) {
+          if (ImGui::GetIO().KeyShift && m_selectionStart != -1) {
+              m_selectionEnd = row;
+          } else {
+              m_selectionStart = row;
+              m_selectionEnd = row;
+          }
+      }
+
+      // Handle drag selection
+      if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+          m_selectionEnd = row;
+      }
+
+      // Right-click context menu
+      ImGui::PushStyleColor(ImGuiCol_Text, Colors::WHITE); // Force white text for menu
+      if (ImGui::BeginPopupContextItem()) {
+          // If we right-click outside current selection, select only this line
+          if (!isSelected) {
+              m_selectionStart = row;
+              m_selectionEnd = row;
+          }
+
+          if (m_selectionStart != m_selectionEnd) {
+              if (ImGui::MenuItem(m_cachedContextCopySelected.c_str())) {
+                  int start = std::min(m_selectionStart, m_selectionEnd);
+                  int end = std::max(m_selectionStart, m_selectionEnd);
+                  std::string batchText;
+                  for (int i = start; i <= end && i < filteredMessages.size(); ++i) {
+                      const auto* log = filteredMessages[i];
+                      batchText += fmt::format("[{}] [{}] {}\n", LogLevelToString(log->level), log->logger_name, log->message);
+                  }
+                  ImGui::SetClipboardText(batchText.c_str());
+              }
+              ImGui::Separator();
+          }
+
+          if (ImGui::MenuItem(m_cachedContextCopyLine.c_str())) {
+              ImGui::SetClipboardText(lineText.c_str());
+          }
+          if (ImGui::MenuItem(m_cachedContextCopyMessage.c_str())) {
+              ImGui::SetClipboardText(item->message.c_str());
+          }
+          ImGui::Separator();
+          if (ImGui::MenuItem(m_cachedContextCopyAll.c_str())) {
+              std::string allVisible;
+              for (const auto* log : filteredMessages) {
+                  allVisible += fmt::format("[{}] [{}] {}\n", LogLevelToString(log->level), log->logger_name, log->message);
+              }
+              ImGui::SetClipboardText(allVisible.c_str());
+          }
+          ImGui::EndPopup();
+      }
+      ImGui::PopStyleColor(); // Pop WHITE text
+
+      ImGui::PopStyleColor(); // Pop log level color
+      ImGui::PopID();
     }
   }
   clipper.End();
 
-  if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-    ImGui::SetScrollHereY(1.0f);
-  }
-
+  if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) ImGui::SetScrollHereY(1.0f);
   ImGui::EndChild();
 }
 }  // namespace UI

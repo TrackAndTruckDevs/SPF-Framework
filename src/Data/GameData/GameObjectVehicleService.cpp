@@ -183,7 +183,7 @@ uintptr_t GameObjectVehicleService::GetPlayerVehiclePtr() const {
     static uintptr_t lastLoggedVehicle = 0;
     if (pVehicle != lastLoggedVehicle) {
         if (pVehicle) {
-            logger->Info("GetPlayerVehiclePtr: Resolved player truck at 0x{:X}", pVehicle);
+            logger->Debug("GetPlayerVehiclePtr: Resolved player truck at 0x{:X}", pVehicle);
         } else {
             logger->Warn("GetPlayerVehiclePtr: Player truck became NULL");
         }

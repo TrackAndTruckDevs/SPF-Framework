@@ -9,6 +9,7 @@
 
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Config/ComponentInfo.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
 
 SPF_NS_BEGIN
 
@@ -92,6 +93,17 @@ struct IConfigService {
    */
   virtual std::string GetOrCreateFrameworkInstanceId() = 0;
 
+  /**
+   * @brief Gets the installation status based on the version stored in the configuration.
+   * This is determined during the configuration loading phase.
+   */
+  virtual System::InstallationStatus GetInstallationStatus() const = 0;
+
+  /**
+   * @brief Checks if network connection is allowed by the user.
+   * Creates the 'connect' key if it doesn't exist.
+   */
+  virtual bool IsConnectionAllowed() = 0;
   /**
    * @brief Gets all aggregated user settings for display in the UI.
    * This map contains all user-configurable settings, structured for easy consumption by the UI.

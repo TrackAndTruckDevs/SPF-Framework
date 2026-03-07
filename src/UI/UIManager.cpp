@@ -6,6 +6,7 @@
 #include "SPF/UI/LoggerWindow.hpp"      // Added for LoggerWindow creation
 #include "SPF/UI/CameraWindow.hpp"      // Added for CameraWindow creation
 #include "SPF/UI/InfoWindow.hpp"        // Added for InfoWindow creation
+#include "SPF/UI/WelcomeWindow.hpp"     // Added for WelcomeWindow creation
 #include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
 #include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"   // Added for TelemetryWindow creation
@@ -21,6 +22,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Input/InputManager.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
 
 
 // --- Embedded Font Data ---
@@ -751,7 +753,12 @@ void UIManager::InitializeImGui() {
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
   
-  logger->Info("Successfully loaded heading fonts (h1, h2, h3) and merged icons from memory.");
+  // New Large Bold Font for Main Headers
+  m_fonts["h1_large_bold"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansBold_compressed_data, Font_NotoSansBold_compressed_size, 32.0f, nullptr, glyph_ranges_cyrillic);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 28.0f, &icon_config_fa, icon_ranges_fa);
+  io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 28.0f, &icon_config_fab, icon_ranges_fab);
+
+  logger->Info("Successfully loaded heading fonts (h1, h2, h3, h1_large_bold) and merged icons from memory.");
 
   // 5. Monospaced Font
   m_fonts["monospace"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_RobotoMonoRegular_compressed_data, Font_RobotoMonoRegular_compressed_size, 17.0f, nullptr, io.Fonts->GetGlyphRangesDefault());
@@ -865,28 +872,20 @@ void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e)
   }
 }
 
-void UIManager::NotifyUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    logger->Debug("Received OnUpdateCheckSucceeded event. Notifying {} windows.", m_windows.size());
+void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
     for (const auto& window : m_windows) {
-        window->OnUpdateCheckSucceeded(e);
-    }
-}
-
-void UIManager::NotifyUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    logger->Debug("Received OnUpdateCheckFailed event. Notifying {} windows.", m_windows.size());
-    for (const auto& window : m_windows) {
-        window->OnUpdateCheckFailed(e);
+        window->OnUpdateCheckCompleted(e);
     }
 }
 
 void UIManager::NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    logger->Debug("Received OnPatronsFetchCompleted event. Notifying {} windows.", m_windows.size());
     for (const auto& window : m_windows) {
         window->OnPatronsFetchCompleted(e);
     }
+}
+
+void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {
+  
 }
 void UIManager::CreateAndRegisterFrameworkWindows() {
   // Ensure dependencies are valid
@@ -912,10 +911,8 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   RegisterWindow(mainWindow);
 
   // Logger Window
-  if (auto loggerSink = m_loggerFactory->GetInstance().GetUISink()) {
-    auto loggerWindow = std::make_shared<LoggerWindow>("framework", "logger_window", *loggerSink, *m_configService);
-    RegisterWindow(loggerWindow);
-  }
+  auto loggerWindow = std::make_shared<LoggerWindow>("framework", "logger_window", *m_configService);
+  RegisterWindow(loggerWindow);
 
   // Plugins Window
   auto pluginsWindow = std::make_shared<PluginsWindow>(*m_configService, *m_eventManager, "framework", "plugins_window");
@@ -944,6 +941,14 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Info Window
   auto infoWindow = std::make_shared<InfoWindow>("framework", "info_window");
   RegisterWindow(infoWindow);
+
+  // Welcome Window - Only created and registered on fresh installation
+  const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();
+  if (fwInfo.installStatus == System::InstallationStatus::NewInstall) {
+      auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
+      welcomeWindow->SetVisibility(true);
+      RegisterWindow(welcomeWindow);
+  }
 
   // Notifications (Global)
   m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");

@@ -15,11 +15,12 @@
         "zh": "Chinês (simplificado)",
         "ja": "Japonês",
         "ko": "Coreano"
-    },    
+    },
     "main_window": {
         "title": "Janela Principal - SPF Framework",
         "patrons_button_tooltip": "Meus Patrocinadores",
         "update_button_tooltip": "Verificar atualizações",
+        "connect_disabled_tooltip": "Habilite 'connect' no arquivo de configuração.",
         "version_label": "Sua versão ",
         "update_checking": "Verificando atualizações...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "O servidor de atualização está temporariamente indisponível. Por favor, tente novamente mais tarde.",
             "generic": "Ocorreu um erro inesperado ao verificar as atualizações.",
             "invalid_response": "O servidor de atualização retornou uma resposta inválida.",
-            "patrons_fetch_failed": "Falha ao carregar a lista de patrocinadores. Por favor, tente novamente mais tarde."
+            "patrons_fetch_failed": "Falha ao carregar a lista de patrocinadores. Por favor, tente novamente mais tarde.",
+            "forbidden": "O acesso ao servidor de atualização é restrito. Por favor, entre em contato com os desenvolvedores.",
+            "not_found": "Nenhuma informação de lançamento encontrada para este canal."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "Saída para UI",
                         "description": "Habilita ou desabilita a exibição de logs na janela da UI."
+                    },
+                    "report": {
+                        "title": "Saída de Relatórios",
+                        "description": "Habilita ou desabilita o relato remoto de erros para ajudar a melhorar o framework."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Limpar",
-        "checkbox_autoscroll": "Rolagem automática"
+        "checkbox_autoscroll": "Rolagem automática",
+        "label_level": "Nível",
+        "label_module": "Módulo",
+        "context_copy_line": "Copiar linha",
+        "context_copy_message": "Copiar apenas mensagem",
+        "context_copy_selected": "Copiar intervalo selecionado",
+        "context_copy_all": "Copiar todos os visíveis",
+        "msg_clean_session": "Ainda não há logs. Esta sessão está perfeitamente limpa."
     },
     "telemetry_window": {
         "title": "Telemetria",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "Não Carregado"
         }
     },
+    "welcome_window": {
+        "title": "BEM-VINDO AO MUNDO DO SPF FRAMEWORK!",
+        "intro_title": "Olá! Obrigado por escolher nosso framework.",
+        "intro_text": "Criamos o **SPF Framework** para tornar seu jogo em **ATS** e **ETS2** ainda mais interessante, e o gerenciamento de plugins o mais simples possível.",
+        "section1": {
+            "title": "Como abrir o menu do framework?",
+            "text": "Basta pressionar a tecla <#FFFFFF>{} **DELETE**</> no seu teclado. Este é o seu painel de controle principal."
+        },
+        "section2": {
+            "title": "Instalando plugins compatíveis com SPF",
+            "text": "Basta colocar a pasta do plugin com a DLL em ` <#FFFFFF>{}</> `. Em seguida, ative-os na seção <#FFFFFF>**Gerenciador de Plugins**</>."
+        },
+        "section3": {
+            "title": "Configurações",
+            "text": "Todos os parâmetros do framework e plugins instalados, bem como o gerenciamento de teclas, estão convenientemente reunidos na aba <#FFFFFF>**Configurações**</>."
+        },
+        "section4": {
+            "title": "Para Desenvolvedores",
+            "text": "Se você é um desenvolvedor — confira nosso <#00b3ff>{} [GitHub]({})</>, onde você encontrará documentação e exemplos de uso da API."
+        },
+        "section5": {
+            "title": "Fique com a gente",
+            "text": "Você pode encontrar nossos contatos e links da comunidade na seção <#FFFFFF>**Sobre Nós**</>."
+        },
+        "footer": "*Desenvolvido com <#ff0000>{}</> pela equipe **Track & Truck Devs**. Apoie-nos no <#00b3ff>{} [Patreon]({})</> para ajudar o projeto a crescer!*",
+        "button_go": "VAMOS LÁ!"
+    },
+    "notification_popup": {
+        "title": "Notificações"
+    },
     "description": {
         "detailed": "Um framework poderoso e flexível para criar e gerenciar plugins para jogos da SCS. Fornece um conjunto principal de serviços para log, configuração, gerenciamento de UI e muito mais."
     },
     "patrons_popup": {
-      "title": "Apoie o Projeto",
-      "intro_text": "O apoio da nossa comunidade é o combustível para este projeto. Se você acha nosso trabalho útil, considere se tornar um patrocinador. Sua contribuição nos permite continuar o desenvolvimento e criar novos e empolgantes plugins para todos!",
-      "link_intro": "Você pode nos apoiar em nossa página oficial:",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "Clique para abrir a página do Patreon no seu navegador",
-      "hof_title": "Hall da Fama",
-      "hof_empty": "Nosso Hall da Fama ainda está vazio... Seja o primeiro a aparecer aqui e dar o pontapé inicial em nossa jornada!",
-      "hof_teaser": "Apoie-nos para entrar em nosso",
-      "close_button": "Fechar",
-      "tiers": {
-        "magnate": "--- Magnatas da Logística ---",
-        "manager": "--- Gerentes de Frota ---",
-        "master": "--- Mestres da Estrada ---"
-      }
+        "title": "Apoie o Projeto",
+        "intro_text": "O apoio da nossa comunidade é o combustível para este projeto. Se você acha nosso trabalho útil, considere se tornar um patrocinador. Sua contribuição nos permite continuar o desenvolvimento e criar novos e empolgantes plugins para todos!",
+        "link_intro": "Você pode nos apoiar em nossa página oficial:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Clique para abrir a página do Patreon no seu navegador",
+        "hof_title": "Hall da Fama",
+        "hof_empty": "Nosso Hall da Fama ainda está vazio... Seja o primeiro a aparecer aqui e dar o pontapé inicial em nossa jornada!",
+        "hof_teaser": "Apoie-nos para entrar em nosso",
+        "close_button": "Fechar",
+        "tiers": {
+            "magnate": "--- Magnatas da Logística ---",
+            "manager": "--- Gerentes de Frota ---",
+            "master": "--- Mestres da Estrada ---"
+        }
     },
     "manual_popup": {
         "title": "FAQ",

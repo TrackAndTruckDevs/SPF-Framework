@@ -85,6 +85,7 @@ MainWindow::MainWindow(Events::EventManager& eventManager, Input::InputManager& 
       m_locUpdateButtonTooltip("main_window.update_button_tooltip"),
       m_locVersionLabel("main_window.version_label"),
       m_locUpdateChecking("main_window.update_checking"),
+      m_locConnectDisabled("main_window.connect_disabled_tooltip"),
       m_locUpdatePopupTitle("update_popup.title"),
       m_locUpdateNoUpdate("update_popup.no_update"),
       m_locUpdateAvailable("update_popup.update_available"),
@@ -255,52 +256,69 @@ void MainWindow::RenderContent() {
     // Use SameLine to position the button block from the right edge of the window
     ImGui::SameLine(ImGui::GetWindowWidth() - total_buttons_width - right_padding);
 
+    // Fetch the current connectivity setting
+    bool isConnectEnabled = m_configService.GetValue("framework", "settings.framework.connect", true).get<bool>();
+
     // Patrons Button
-    if (HyperlinkButton(ICON_FA_HAND_HOLDING_HEART, TextStyle::Regular().HoverColor(Colors::GOLD))) {
-      m_isPatronsPopupOpen = true;
-    }
-    if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("%s", loc.Get(m_locPatronsButtonTooltip).c_str());
+    {
+      TextStyle patronsButtonStyle = TextStyle::DefaultButton();
+      if (!isConnectEnabled) patronsButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
+
+      if (Button(ICON_FA_HAND_HOLDING_HEART, patronsButtonStyle)) {
+        if (isConnectEnabled) {
+          m_isPatronsPopupOpen = true;
+          m_eventManager.System.OnRequestPatronsFetch.Call({});
+        }
+      }
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locPatronsButtonTooltip : m_locConnectDisabled).c_str());
+      }
     }
 
     ImGui::SameLine();
 
     // Update Button
     {
-      TextStyle updateButtonStyle = TextStyle::Regular().HoverColor(Colors::GOLD);
-      switch (m_currentUpdateStatus) {
-        case Modules::UpdateManager::UpdateStatus::PatchAvailable:
-          updateButtonStyle.Color(Colors::YELLOW);
-          break;
-        case Modules::UpdateManager::UpdateStatus::MinorAvailable:
-          updateButtonStyle.Color(Colors::ORANGE);
-          break;
-        case Modules::UpdateManager::UpdateStatus::MajorAvailable:
-          updateButtonStyle.Color(Colors::RED);
-          break;
-        default:
-          // Keep default color for Unknown or UpToDate
-          break;
+      TextStyle updateButtonStyle = TextStyle::DefaultButton();
+      if (isConnectEnabled) {
+        switch (m_currentUpdateStatus) {
+          case Modules::CommunicationManager::UpdateStatus::PatchAvailable:
+            updateButtonStyle.Color(Colors::YELLOW);
+            break;
+          case Modules::CommunicationManager::UpdateStatus::MinorAvailable:
+            updateButtonStyle.Color(Colors::ORANGE);
+            break;
+          case Modules::CommunicationManager::UpdateStatus::MajorAvailable:
+            updateButtonStyle.Color(Colors::RED);
+            break;
+          default:
+            updateButtonStyle.Color(Colors::WHITE);
+            break;
+        }
+      } else {
+        updateButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
       }
 
-      if (HyperlinkButton(ICON_FA_ARROWS_ROTATE, updateButtonStyle)) {
-        m_isUpdatePopupOpen = true;
-        if (!m_frameworkVersion.empty()) {
-          m_eventManager.System.OnRequestUpdateCheck.Call({});
-        } else {
-          auto logger = Logging::LoggerFactory::GetInstance().GetLogger("MainWindow");
-          logger->Warn("Cannot perform update check: Framework version is not specified in the manifest.");
+      if (Button(ICON_FA_ARROWS_ROTATE, updateButtonStyle)) {
+        if (isConnectEnabled) {
+          m_isUpdatePopupOpen = true;
+          if (!m_frameworkVersion.empty()) {
+            m_eventManager.System.OnRequestUpdateCheck.Call({});
+          } else {
+            auto logger = Logging::LoggerFactory::GetInstance().GetLogger("MainWindow");
+            logger->Warn("Cannot perform update check: Framework version is not specified in the manifest.");
+          }
         }
       }
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locUpdateButtonTooltip).c_str());
+        ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locUpdateButtonTooltip : m_locConnectDisabled).c_str());
       }
     }
 
     ImGui::SameLine();
 
     // Hamburger Menu Button
-    if (HyperlinkButton(ICON_FA_BARS, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+    if (Button(ICON_FA_BARS, TextStyle::DefaultButton())) {
       ImGui::OpenPopup("HamburgerMenu");
     }  
   }
@@ -464,42 +482,43 @@ ImGuiID MainWindow::GetMainDockspaceID() const { return m_dockspaceId; }
 
 ImGuiWindowFlags MainWindow::GetExtraWindowFlags() const { return ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse; }
 
-void MainWindow::OnUpdateCheckSucceeded(const Events::System::OnUpdateCheckSucceeded& e) {
-  auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
-  logger->Debug("Update check succeeded.");
-  m_lastUpdateInfo = e.updateInfo;
-  m_lastUpdateError.reset();
+void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+  if (e.result.success && e.result.data.has_value()) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
+    logger->Debug("Update check succeeded.");
+    
+    m_lastUpdateInfo = e.result.data.value();
+    m_lastUpdateError.reset();
+    m_updateApiStatus = m_lastUpdateInfo->status;
 
-  m_updateApiStatus = m_lastUpdateInfo->status;  // Store the raw status string
-
-  if (m_updateApiStatus == "switch_to_release") {
-    m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::MinorAvailable;  // Force orange icon for "beta ended"
-  } else if (m_lastUpdateInfo->updateAvailable) {
-    if (m_lastUpdateInfo->severity == "major") {
-      m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::MajorAvailable;
-    } else if (m_lastUpdateInfo->severity == "minor") {
-      m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::MinorAvailable;
-    } else if (m_lastUpdateInfo->severity == "patch") {
-      m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::PatchAvailable;
+    if (m_updateApiStatus == "switch_to_release") {
+      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
+    } else if (m_lastUpdateInfo->updateAvailable) {
+      if (m_lastUpdateInfo->severity == "major") {
+        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
+      } else if (m_lastUpdateInfo->severity == "minor") {
+        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
+      } else if (m_lastUpdateInfo->severity == "patch") {
+        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable;
+      } else {
+        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
+      }
     } else {
-      m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::Unknown;  // Should not happen
+      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::UpToDate;
     }
   } else {
-    m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::UpToDate;
+    m_lastUpdateInfo.reset();
+    // If success was true but data missing, treat as generic error to avoid infinite "Loading"
+    m_lastUpdateError = e.result.errorMessage.has_value() ? e.result.errorMessage : std::string("api.error.generic");
+    m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
   }
 }
 
-void MainWindow::OnUpdateCheckFailed(const Events::System::OnUpdateCheckFailed& e) {
-  auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
-  logger->Warn("Update check failed. Error: {}.", e.errorMessage.value_or("N/A"));
-  m_lastUpdateInfo.reset();
-  m_lastUpdateError = e.errorMessage;
-  m_currentUpdateStatus = Modules::UpdateManager::UpdateStatus::Unknown;
-}
-
 void MainWindow::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
-  auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
-  logger->Debug("Patrons fetch completed. Success: {}. Error: {}.", e.result.success, e.result.errorMessage.value_or("N/A"));
+  if (e.result.success && e.result.data.has_value()) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
+    logger->Debug("Patrons fetch completed successfully.");
+  }
   m_lastPatronsResult = e.result;
 }
 
@@ -563,7 +582,7 @@ void MainWindow::RenderPatronsPopup() {
 
     if (!m_lastPatronsResult.has_value()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "Loading patrons...");  // TODO: Localize
-    } else if (!m_lastPatronsResult->success) {
+    } else if (!m_lastPatronsResult->success || !m_lastPatronsResult->data.has_value()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::RED),
                        "%s",
                        loc.Get(m_lastPatronsResult->errorMessage.value_or(m_locUpdateErrorGeneric)).c_str());
@@ -623,7 +642,7 @@ void MainWindow::RenderPatronsPopup() {
     ImGui::EndChild();
     ImGui::Spacing();
     // --- 5. Close Button ---
-    if (ImGui::Button(loc.Get(m_locPatronsCloseButton).c_str())) {
+    if (Button(loc.Get(m_locPatronsCloseButton).c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -660,8 +679,8 @@ void MainWindow::RenderUpdatePopup() {
       ImGui::Spacing();
       ImGui::Spacing();
       Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locUpdateChecking).c_str());
-    } else if (m_lastUpdateError.has_value()) {
-      // 2. Error state
+    } else if (m_lastUpdateError.has_value() || (m_lastUpdateInfo.has_value() && m_updateApiStatus.empty())) {
+      // 2. Error state (including success with missing status/data)
       Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::RED).Padding(ImVec2(15.0f, 0.0f)),
                        "%s",
                        loc.Get(m_lastUpdateError.value_or(m_locUpdateErrorGeneric)).c_str());
@@ -752,7 +771,7 @@ void MainWindow::RenderUpdatePopup() {
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
-    if (ImGui::Button(loc.Get(m_locUpdateCloseButton).c_str())) {
+    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -778,7 +797,7 @@ void MainWindow::RenderHamburgerMenu() {
     // Action buttons at the bottom
 
     // Open Plugins Folder button (left-aligned)
-    if (HyperlinkButton(ICON_FA_FOLDER_OPEN, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+    if (Button(ICON_FA_FOLDER_OPEN, TextStyle::DefaultButton())) {
         const std::string pluginsPath = PathManager::GetPluginsPath().string();
         ShellExecute(NULL, "open", pluginsPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
         ImGui::CloseCurrentPopup();
@@ -797,7 +816,7 @@ void MainWindow::RenderHamburgerMenu() {
     const bool isGameConsoleEnabled = hook && hook->IsEnabled();
 
     if (isGameConsoleEnabled) {
-      if (HyperlinkButton(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+      if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::DefaultButton())) {
         m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
         ImGui::CloseCurrentPopup();
       }
@@ -817,7 +836,7 @@ void MainWindow::RenderHamburgerMenu() {
 
     // Shutdown Button
     if (isGameConsoleEnabled) {
-      if (HyperlinkButton(ICON_FA_POWER_OFF, TextStyle::Regular().HoverColor(Colors::GOLD))) {
+      if (Button(ICON_FA_POWER_OFF, TextStyle::DefaultButton())) {
         m_isShutdownPopupOpen = true;
       }
       if (ImGui::IsItemHovered()) {
@@ -905,7 +924,7 @@ void MainWindow::RenderManualPopup() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (ImGui::Button(loc.Get(m_locUpdateCloseButton).c_str())) {  // Re-use close button text
+    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {  // Re-use close button text
       ImGui::Spacing();
       ImGui::CloseCurrentPopup();
     }
@@ -995,7 +1014,7 @@ void MainWindow::RenderAboutPopup() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (ImGui::Button(loc.Get(m_locUpdateCloseButton).c_str())) {
+    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {  // Re-use close button text
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -1055,7 +1074,7 @@ void MainWindow::RenderLegalPopup() {
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (ImGui::Button(loc.Get(m_locUpdateCloseButton).c_str())) {
+    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -1073,16 +1092,16 @@ void MainWindow::RenderShutdownPopup() {
 
   // Shutdown Confirmation Popup
   if (ImGui::BeginPopupModal(loc.Get(m_locShutdownPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::BeginChild("ShutdownPopupContent", ImVec2(500, 150), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("ShutdownPopupContent", ImVec2(500, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
     Typography::RenderMarkdownText(loc.Get(m_locShutdownPopupContent), TextStyle::Regular().Wrapped());
     ImGui::EndChild();
     ImGui::Separator();
-    if (ImGui::Button(loc.Get(m_locShutdownPopupConfirm).c_str())) {
+    if (Button(loc.Get(m_locShutdownPopupConfirm).c_str(), TextStyle::DefaultButton())) {
       m_eventManager.System.OnRequestExecuteCommand.Call({"sdk unload"});
       ImGui::CloseCurrentPopup();
     }
     ImGui::SameLine();
-    if (ImGui::Button(loc.Get(m_locShutdownPopupCancel).c_str())) {
+    if (Button(loc.Get(m_locShutdownPopupCancel).c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();

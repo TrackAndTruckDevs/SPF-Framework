@@ -38,9 +38,9 @@ void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const
     m_gameState.telemetry_game_version_minor = SCS_GET_MINOR_VERSION(SCS_TELEMETRY_ATS_GAME_VERSION_CURRENT);
   }
 
-  m_logger.Info("GameDataProcessor initialized for %s.", m_gameState.game_name.c_str());
+  m_logger.Info("GameDataProcessor initialized for {}.", m_gameState.game_name);
   m_logger.Info(
-    "Versions: Game %u.%u, Telemetry SDK %u.%u, Game-specific SDK %u.%u",
+    "Versions: Game {}.{}, Telemetry SDK {}.{}, Game-specific SDK {}.{}",
     m_gameState.scs_game_version_major,
     m_gameState.scs_game_version_minor,
     m_gameState.telemetry_plugin_version_major,
@@ -65,7 +65,7 @@ void GameDataProcessor::HandleConfiguration(const scs_telemetry_configuration_t*
         break;  // No more substances
       }
     }
-    m_logger.Info("Registered %zu substances.", m_commonData.substances.size());
+    m_logger.Info("Registered {} substances.", m_commonData.substances.size());
   }
 }
 

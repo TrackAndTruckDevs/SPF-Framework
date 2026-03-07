@@ -161,6 +161,9 @@ bool User32Hook::Install() {
 
   logger->Info("Installing User32 hooks for the first time...");
 
+  // Reset keyboard state tracker to prevent stuck keys after reload
+  memset(g_previousKeyboardState, 0, sizeof(g_previousKeyboardState));
+
   // Initialize the baseline keyboard state
   if (!GetKeyboardState(g_previousKeyboardState)) {
     logger->Warn("Could not get initial keyboard state.");

@@ -12,17 +12,30 @@
 #include <string>
 #include <filesystem>
 #include <chrono>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <Windows.h>
 
 SPF_NS_BEGIN
 enum class Game;
 namespace System {
 
+enum class InstallationStatus {
+    SameVersion,    // Everything is up to date
+    NewInstall,     // First run (no config file)
+    Updated,        // Stored version is lower than current or missing
+    Downgraded      // Stored version is newer than current
+};
+
 struct FrameworkInfo {
     std::string version;
     std::string buildType;
     std::string configuration;
+    std::string buildHash;
     std::filesystem::path loaderPath;
+    InstallationStatus installStatus = InstallationStatus::SameVersion;
 };
 
 struct GameInfo {
@@ -63,8 +76,14 @@ public:
     /** @brief Detects all static info. Called in Core::Preload. */
     void Initialize(HMODULE hModule);
 
+    /** @brief Calculates the build hash of the framework DLL. Called in background thread. */
+    void CalculateBuildHash();
+
     /** @brief Called from Telemetry SDK to set precise game name and ID. */
     void SetGameData(const std::string& fullName, SPF::Game gameId);
+
+    /** @brief Sets the installation status detected by ConfigService. */
+    void SetInstallationStatus(InstallationStatus status) { m_framework.installStatus = status; }
 
     // --- Accessors ---
     const FrameworkInfo& GetFrameworkInfo() const { return m_framework; }

@@ -15,11 +15,12 @@
         "zh": "Chinese (Simplified)",
         "ja": "Japanese",
         "ko": "Korean"
-    },    
+    },
     "main_window": {
         "title": "Main Window - SPF Framework",
         "patrons_button_tooltip": "My Patrons",
         "update_button_tooltip": "Check for updates",
+        "connect_disabled_tooltip": "Enable 'connect' in the configuration file.",
         "version_label": "Your version ",
         "update_checking": "Checking for updates...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "The update server is temporarily unavailable. Please try again later.",
             "generic": "An unexpected error occurred while checking for updates.",
             "invalid_response": "The update server returned an invalid response.",
-            "patrons_fetch_failed": "Failed to load the list of patrons. Please try again later."
+            "patrons_fetch_failed": "Failed to load the list of patrons. Please try again later.",
+            "forbidden": "Access to the update server is restricted. Please contact the developers.",
+            "not_found": "No release information found for the selected channel."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI Sink",
                         "description": "Enable or disable showing logs in the UI window."
+                    },
+                    "report": {
+                        "title": "Report Sink",
+                        "description": "Enable or disable remote error reporting to help improve the framework."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Clear",
-        "checkbox_autoscroll": "Auto-scroll"
+        "checkbox_autoscroll": "Auto-scroll",
+        "label_level": "Level",
+        "label_module": "Module",
+        "context_copy_line": "Copy Line",
+        "context_copy_message": "Copy Message Only",
+        "context_copy_selected": "Copy Selected Range",
+        "context_copy_all": "Copy All Visible",
+        "msg_clean_session": "No logs yet. This session is perfectly clean."
     },
     "telemetry_window": {
         "title": "Telemetry",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "Not Loaded"
         }
     },
+    "welcome_window": {
+        "title": "WELCOME TO THE WORLD OF SPF FRAMEWORK!",
+        "intro_title": "Hello! Thank you for choosing our framework.",
+        "intro_text": "We created **SPF Framework** to make your game in **ATS** and **ETS2** even more interesting, and plugin management as simple as possible.",
+        "section1": {
+            "title": "How to open the framework menu?",
+            "text": "Just press the <#FFFFFF>{} **DELETE**</> key on your keyboard. This is your main control panel."
+        },
+        "section2": {
+            "title": "Installing spf-compatible plugins",
+            "text": "Simply place the plugin folder with the DLL in ` <#FFFFFF>{}</> ` Then activate them in the <#FFFFFF>**Plugin Manager**</> section."
+        },
+        "section3": {
+            "title": "Settings",
+            "text": "All framework parameters and installed plugins, as well as keybind management, are conveniently collected in the <#FFFFFF>**Settings**</> tab."
+        },
+        "section4": {
+            "title": "For Developers",
+            "text": "If you are a developer — check out our <#00b3ff>{} [GitHub]({})</>, where you will find documentation and live examples of API usage for writing your own plugin."
+        },
+        "section5": {
+            "title": "Stay with us",
+            "text": "You can find our contacts and community links in the <#FFFFFF>**About Us**</> section."
+        },
+        "footer": "*Developed with <#ff0000>{}</> by the **Track & Truck Devs** team. Support us on <#00b3ff>{} [Patreon]({})</> to help the project grow!*",
+        "button_go": "LET'S GO!"
+    },
+    "notification_popup": {
+        "title": "Notifications"
+    },
     "description": {
         "detailed": "A powerful and flexible framework for creating and managing plugins for SCS games. Provides a core set of services for logging, configuration, UI management, and more."
     },
     "patrons_popup": {
-      "title": "Support the Project",
-      "intro_text": "Our community's support is the fuel for this project. If you find our work useful, consider becoming a patron. Your contribution allows us to continue development and create new, exciting plugins for everyone!",
-      "link_intro": "You can support us on our official page:",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "Click to open Patreon page in your browser",
-      "hof_title": "Hall of Fame",
-      "hof_empty": "Our Hall of Fame is still empty... Be the first to appear here and kickstart our journey!",
-      "hof_teaser": "Support us to get into our",
-      "close_button": "Close",
-      "tiers": {
-        "magnate": "--- Logistics Magnates ---",
-        "manager": "--- Fleet Managers ---",
-        "master": "--- Road Masters ---"
-      }
+        "title": "Support the Project",
+        "intro_text": "Our community's support is the fuel for this project. If you find our work useful, consider becoming a patron. Your contribution allows us to continue development and create new, exciting plugins for everyone!",
+        "link_intro": "You can support us on our official page:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Click to open Patreon page in your browser",
+        "hof_title": "Hall of Fame",
+        "hof_empty": "Our Hall of Fame is still empty... Be the first to appear here and kickstart our journey!",
+        "hof_teaser": "Support us to get into our",
+        "close_button": "Close",
+        "tiers": {
+            "magnate": "--- Logistics Magnates ---",
+            "manager": "--- Fleet Managers ---",
+            "master": "--- Road Masters ---"
+        }
     },
     "manual_popup": {
         "title": "FAQ",
@@ -1069,9 +1113,9 @@
         },
         "consumption_policy": {
             "never": "Never",
-            "on_ui_focus": "On UI Focus",
+            "on_ui_focus": "On UI focus",
             "always": "Always",
-            "manual": "Plugin Managed"
+            "manual": "Plugin controlled"
         }
     }
 }

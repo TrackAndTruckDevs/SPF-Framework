@@ -752,6 +752,24 @@ Displays a standard clickable button.
     ```
 
 ---
+**`bool UI_ButtonEx(const char* label, float width, float height, const char* tooltip, SPF_TextStyle_Handle style)`**
+An advanced button that follows framework branding and supports tooltips.
+*   **Behavior:**
+    *   **Idle:** Uses text color from `style` (defaults to White).
+    *   **Hover:** Automatically turns **Gold** and displays `tooltip` if provided.
+    *   **Active:** Automatically turns **Dark** (background color) for tactile feedback.
+*   **Parameters:**
+    *   `width / height`: `0.0f` for auto-sizing.
+    *   `tooltip`: Optional text to display when hovered (NULL to disable).
+    *   `style`: Optional text style handle (NULL for framework defaults).
+*   **Example:**
+    ```c
+    if (ui->UI_ButtonEx(ICON_FA_SAVE " Save", 150, 40, "Commit your changes", NULL)) {
+        SaveData();
+    }
+    ```
+
+---
 **`bool UI_SmallButton(const char* label)`**
 A button with zero vertical padding. It is designed to fit perfectly within a line of standard text.
 
@@ -1362,6 +1380,18 @@ Changes one of the standard UI colors (see the `SPF_StyleColor` enum in Section 
     ```
 
 ---
+**`void UI_Style_SetColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a)`**
+Sets the base text color for a custom style handle.
+
+---
+**`void UI_Style_SetHoverColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a)`**
+Sets the text color when the element is hovered. Primarily used by `UI_ButtonEx`.
+
+---
+**`void UI_Style_SetActiveColor(SPF_TextStyle_Handle handle, float r, float g, float b, float a)`**
+Sets the text color when the element is pressed/active. Primarily used by `UI_ButtonEx`.
+
+---
 **`void UI_PopStyleColor(int count)`**
 Removes the specified number of color changes from the stack.
 
@@ -1415,6 +1445,8 @@ The SPF Framework includes a built-in Markdown parser for rendering rich text do
 ---
 **`void UI_RenderMarkdown(const char* markdown_text)`**
 Renders a block of text with support for headers (`#`), bold (`**`), italics (`*`), lists, and code blocks.
+*   **Color Highlighting:** You can use `<#RRGGBB>text</>` tags to colorize parts of the text.
+    *   *Example:* `ui->UI_RenderMarkdown("This is <#ff0000>red text</>.");`
 *   **Logic:** It automatically handles word wrapping and style application based on the Markdown tags.
 
 ---

@@ -20,6 +20,7 @@
         "title": "Ana Pencere - SPF Framework",
         "patrons_button_tooltip": "Destekçilerim",
         "update_button_tooltip": "Güncellemeleri kontrol et",
+        "connect_disabled_tooltip": "Yapılandırma dosyasında 'connect' özelliğini etkinleştirin.",
         "version_label": "Sizin sürümünüz ",
         "update_checking": "Güncellemeler kontrol ediliyor...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "Güncelleme sunucusu geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
             "generic": "Güncelleme kontrolü sırasında beklenmeyen bir hata oluştu.",
             "invalid_response": "Güncelleme sunucusu geçersiz bir yanıt döndürdü.",
-            "patrons_fetch_failed": "Destekçi listesi yüklenemedi. Lütfen daha sonra tekrar deneyin."
+            "patrons_fetch_failed": "Destekçi listesi alınamadı. Lütfen daha sonra tekrar deneyin.",
+            "forbidden": "Güncelleme sunucusuna erişim kısıtlanmıştır. Lütfen geliştiricilerle iletişime geçin.",
+            "not_found": "Bu kanal için sürüm bilgisi bulunamadı."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI Havuzu",
                         "description": "UI penceresinde günlüklerin gösterilmesini etkinleştirir veya devre dışı bırakır."
+                    },
+                    "report": {
+                        "title": "Rapor Havuzu",
+                        "description": "Framework'ün geliştirilmesine yardımcı olmak için uzaktan hata raporlamayı etkinleştirin veya devre dışı bırakın."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Günlükleyici",
         "button_clear": "Temizle",
-        "checkbox_autoscroll": "Otomatik kaydırma"
+        "checkbox_autoscroll": "Otomatik kaydırma",
+        "label_level": "Seviye",
+        "label_module": "Modül",
+        "context_copy_line": "Satırı Kopyala",
+        "context_copy_message": "Sadece Mesajı Kopyala",
+        "context_copy_selected": "Seçili Aralığı Kopyala",
+        "context_copy_all": "Görünenlerin Tümünü Kopyala",
+        "msg_clean_session": "Henüz günlük yok. Bu oturum tamamen temiz."
     },
     "telemetry_window": {
         "title": "Telemetri",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "Yüklenmedi"
         }
     },
+    "welcome_window": {
+        "title": "SPF FRAMEWORK DÜNYASINA HOŞ GELDİNİZ!",
+        "intro_title": "Merhaba! Framework'ümüzü seçtiğiniz için teşekkürler.",
+        "intro_text": "**SPF Framework**'ü, **ATS** ve **ETS2** oyun deneyiminizi daha ilginç hale getirmek ve eklenti yönetimini mümkün olduğunca basitleştirmek için oluşturduk.",
+        "section1": {
+            "title": "Framework menüsü nasıl açılır?",
+            "text": "Klavyenizdeki <#FFFFFF>{} **DELETE**</> tuşuna basmanız yeterlidir. Bu sizin ana kontrol panelinizdir."
+        },
+        "section2": {
+            "title": "SPF uyumlu eklentilerin kurulumu",
+            "text": "Eklenti klasörünü DLL ile birlikte ` <#FFFFFF>{}</> ` içine yerleştirmeniz yeterlidir. Ardından bunları <#FFFFFF>**Eklenti Yöneticisi**</> bölümünden etkinleştirin."
+        },
+        "section3": {
+            "title": "Ayarlar",
+            "text": "Tüm framework parametreleri ve yüklü eklentilerin yanı sıra tuş ataması yönetimi, <#FFFFFF>**Ayarlar**</> sekmesinde rahatça toplanmıştır."
+        },
+        "section4": {
+            "title": "Geliştiriciler İçin",
+            "text": "Eğer bir geliştiriciyseniz — <#00b3ff>{} [GitHub]({})</> sayfamıza göz atın, orada dokümantasyon ve API kullanım örnekleri bulacaksınız."
+        },
+        "section5": {
+            "title": "Bizimle kalın",
+            "text": "İletişim bilgilerimizi ve topluluk bağlantılarımızı <#FFFFFF>**Hakkımızda**</> bölümünde bulabilirsiniz."
+        },
+        "footer": "*<#ff0000>{}</> ile **Track & Truck Devs** ekibi tarafından geliştirildi. Projenin büyümesine yardımcı olmak için bizi <#00b3ff>{} [Patreon]({})</> üzerinden destekleyin!*",
+        "button_go": "HADİ BAŞLAYALIM!"
+    },
+    "notification_popup": {
+        "title": "Bildirimler"
+    },
     "description": {
         "detailed": "SCS oyunları için eklentiler oluşturmak ve yönetmek için güçlü ve esnek bir çatıdır. Günlük kaydı, yapılandırma, UI yönetimi ve daha fazlası için temel hizmetler sağlar."
     },
     "patrons_popup": {
-      "title": "Projeyi Destekle",
-      "intro_text": "Topluluğumuzun desteği bu projenin yakıtıdır. Çalışmalarımızı faydalı buluyorsanız, lütfen destekçi olmayı düşünün. Katkınız, geliştirmeye devam etmemizi ve herkes için yeni, heyecan verici eklentiler oluşturmamızı sağlar!",
-      "link_intro": "Bizi resmi sayfamızda destekleyebilirsiniz:",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "Patreon sayfasını tarayıcınızda açmak için tıklayın",
-      "hof_title": "Şöhretler Salonu",
-      "hof_empty": "Şöhretler Salonumuz hala boş... Buraya ilk giren siz olun ve yolculuğumuzu başlatın!",
-      "hof_teaser": "Şöhretler Salonumuza girmek için bizi destekleyin",
-      "close_button": "Kapat",
-      "tiers": {
-        "magnate": "--- Lojistik Magnatları ---",
-        "manager": "--- Filo Yöneticileri ---",
-        "master": "--- Yol Ustaları ---"
-      }
+        "title": "Projeyi Destekle",
+        "intro_text": "Topluluğumuzun desteği bu projenin yakıtıdır. Çalışmalarımızı faydalı buluyorsanız, lütfen destekçi olmayı düşünün. Katkınız, geliştirmeye devam etmemizi ve herkes için yeni, heyecan verici eklentiler oluşturmamızı sağlar!",
+        "link_intro": "Bizi resmi sayfamızda destekleyebilirsiniz:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Patreon sayfasını tarayıcınızda açmak için tıklayın",
+        "hof_title": "Şöhretler Salonu",
+        "hof_empty": "Şöhretler Salonumuz hala boş... Buraya ilk giren siz olun ve yolculuğumuzu başlatın!",
+        "hof_teaser": "Şöhretler Salonumuza girmek için bizi destekleyin",
+        "close_button": "Kapat",
+        "tiers": {
+            "magnate": "--- Lojistik Magnatları ---",
+            "manager": "--- Filo Yöneticileri ---",
+            "master": "--- Yol Ustaları ---"
+        }
     },
     "manual_popup": {
         "title": "SSS",

@@ -2494,6 +2494,25 @@ typedef struct SPF_UI_API {
     bool (*UI_Button)(const char* label, float width, float height);
 
     /**
+     * @brief Renders a unified framework button with advanced features.
+     * 
+     * @details This button handles state-dependent text/icon colors automatically:
+     *          - Idle:   Uses style color (or framework WHITE default).
+     *          - Hover:  Uses style hoverColor (or framework GOLD default).
+     *          - Active: Uses style activeColor (or framework DARK background color default).
+     * 
+     * @param label   Text or icon to display on the button.
+     * @param width   Width of the button. Set to 0 for auto-sizing to label.
+     * @param height  Height of the button. Set to 0 for auto-sizing to label.
+     * @param tooltip Optional tooltip text shown on hover. Set to NULL to disable.
+     * @param style   Optional handle to a custom TextStyle. 
+     *                - If NULL: Uses DefaultButton() (White/Gold/Dark logic).
+     *                - If provided: You can override specific states (e.g., .Color(RED) for a red delete button).
+     * @return bool   True if the button was clicked this frame.
+     */
+    bool (*UI_ButtonEx)(const char* label, float width, float height, const char* tooltip, SPF_TextStyle_Handle style);
+
+    /**
      * @brief Displays a small button.
      * @details Has smaller padding than a regular button. Good for embedding in text.
      * @param label Text to display.
@@ -3687,6 +3706,10 @@ typedef struct SPF_UI_API {
     void (*UI_Style_SetFont)(SPF_TextStyle_Handle handle, SPF_Font font);
     /** @brief Sets the text color for this style. */
     void (*UI_Style_SetColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+    /** @brief Sets the hover color for this style. */
+    void (*UI_Style_SetHoverColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
+    /** @brief Sets the active/pressed color for this style. */
+    void (*UI_Style_SetActiveColor)(SPF_TextStyle_Handle handle, float r, float g, float b, float a);
     /** @brief Sets horizontal alignment (Left, Center, Right). */
     void (*UI_Style_SetAlign)(SPF_TextStyle_Handle handle, SPF_TextAlign align);
     /** @brief Enables or disables text wrapping. */
@@ -3710,6 +3733,8 @@ typedef struct SPF_UI_API {
     /**
      * @brief Renders a block of Markdown text.
      * @details Supports headers, bold, italic, lists, and code blocks.
+     *          Also supports custom text color highlighting using <#RRGGBB>text</> tags.
+     *          Example: ui->UI_RenderMarkdown("This is <#ff0000>red</> and <#00ff00>green</> text.", NULL);
      * @param markdown_text Raw markdown string.
      * @param base_style_handle Optional base style for overall layout.
      */

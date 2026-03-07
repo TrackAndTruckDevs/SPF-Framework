@@ -9,7 +9,10 @@ namespace UI
         constexpr ImVec4 GOLD         = ImVec4(1.00f, 0.75f, 0.00f, 1.00f);
         constexpr ImVec4 RED          = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
         constexpr ImVec4 GREEN        = ImVec4(0.40f, 0.80f, 0.40f, 1.00f);
+        constexpr ImVec4 VERY_LIGHT_GREEN        = ImVec4(0.5f, 1.0f, 0.75f, 1.00f);
         constexpr ImVec4 BLUE         = ImVec4(0.010f, 0.40f, 0.90f, 1.00f);
+        constexpr ImVec4 LIGHT_BLUE   = ImVec4(0.20f, 0.60f, 1.00f, 1.00f);
+        constexpr ImVec4 VERY_LIGHT_BLUE   = ImVec4(0.5f, 0.75f, 1.0f, 1.00f);
         constexpr ImVec4 URL_LINK     = ImVec4(0.010f, 0.50f, 0.90f, 1.00f);
         constexpr ImVec4 GRAY         = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
         constexpr ImVec4 LIGHT_GRAY   = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -23,8 +26,9 @@ namespace UI
         constexpr ImVec4 BRIGHT_RED   = ImVec4(1.00f, 0.20f, 0.20f, 1.00f);
         constexpr ImVec4 DARK_RED     = ImVec4(0.80f, 0.00f, 0.00f, 1.00f);
         constexpr ImVec4 PURPLE       = ImVec4(0.60f, 0.40f, 1.00f, 1.00f);
-        constexpr ImVec4 LIGHT_BLUE   = ImVec4(0.20f, 0.60f, 1.00f, 1.00f);
         constexpr ImVec4 SEPIA        = ImVec4(0.62f, 0.39f, 0.20f, 1.00f);
+        constexpr ImVec4 CYAN         = ImVec4(0.00f, 1.00f, 1.00f, 1.00f);
+        constexpr ImVec4 MAGENTA      = ImVec4(1.00f, 0.00f, 1.00f, 1.00f);
     }
 
     class Style

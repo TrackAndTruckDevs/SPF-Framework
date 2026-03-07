@@ -2,15 +2,16 @@
 
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Config/IConfigurable.hpp"
-#include "SPF/Logging/Logger.hpp"  // For LogLevel
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Namespace.hpp"
+#include "SPF/Utils/Signal.hpp"
 
 SPF_NS_BEGIN
 
 namespace Logging::Sinks {
 class LoggerWindowSink;
-}  // namespace Logging::Sinks
+}
 
 namespace UI {
 /**
@@ -19,7 +20,7 @@ namespace UI {
  */
 class LoggerWindow : public BaseWindow, public Config::IConfigurable {
  public:
-  LoggerWindow(const std::string& componentName, const std::string& windowId, Logging::Sinks::LoggerWindowSink& sink,
+  LoggerWindow(const std::string& componentName, const std::string& windowId,
                Config::IConfigService& configService);
 
   // --- IConfigurable Implementation ---
@@ -31,9 +32,26 @@ class LoggerWindow : public BaseWindow, public Config::IConfigurable {
 
  private:
   void BuildComponentFilterList();
+  void OnUISinkChanged(std::shared_ptr<Logging::Sinks::LoggerWindowSink> sink);
 
-  Logging::Sinks::LoggerWindowSink& m_sink;
+  std::shared_ptr<Logging::Sinks::LoggerWindowSink> m_sink;
   Config::IConfigService& m_configService;
+  std::unique_ptr<Utils::Sink<void(std::shared_ptr<Logging::Sinks::LoggerWindowSink>)>> m_onUISinkChangedSink;
+
+  // --- Cached Localization ---
+  std::string m_cachedButtonClear;
+  std::string m_cachedCheckboxAutoscroll;
+  std::string m_cachedLabelLevel;
+  std::string m_cachedLabelModule;
+  std::string m_cachedContextCopyLine;
+  std::string m_cachedContextCopyMessage;
+  std::string m_cachedContextCopySelected;
+  std::string m_cachedContextCopyAll;
+  std::string m_cachedMsgCleanSession;
+
+  // --- Selection State ---
+  int m_selectionStart = -1;
+  int m_selectionEnd = -1;
 
   // --- Filter State ---
   Logging::LogLevel m_filterLevel = Logging::LogLevel::Trace;

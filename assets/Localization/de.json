@@ -15,11 +15,12 @@
         "zh": "Chinesisch (vereinfacht)",
         "ja": "Japanisch",
         "ko": "Koreanisch"
-    },    
+    },
     "main_window": {
         "title": "Hauptfenster - SPF Framework",
         "patrons_button_tooltip": "Meine Gönner",
         "update_button_tooltip": "Nach Updates suchen",
+        "connect_disabled_tooltip": "Aktivieren Sie 'connect' in der Konfigurationsdatei.",
         "version_label": "Ihre Version ",
         "update_checking": "Suche nach Updates...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "Der Update-Server ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
             "generic": "Bei der Suche nach Updates ist ein unerwarteter Fehler aufgetreten.",
             "invalid_response": "Der Update-Server hat eine ungültige Antwort zurückgegeben.",
-            "patrons_fetch_failed": "Die Liste der Gönner konnte nicht geladen werden. Bitte versuchen Sie es später erneut."
+            "patrons_fetch_failed": "Die Liste der Gönner konnte nicht geladen werden. Bitte versuchen Sie es später erneut.",
+            "forbidden": "Der Zugriff auf den Update-Server ist eingeschränkt. Bitte kontaktieren Sie die Entwickler.",
+            "not_found": "Für diesen Kanal wurden keine Release-Informationen gefunden."
         }
     },
     "plugins_window": {
@@ -123,6 +126,10 @@
                     "ui": {
                         "title": "UI-Senke",
                         "description": "Aktiviert oder deaktiviert die Anzeige von Protokollen im UI-Fenster."
+                    },
+                    "report": {
+                        "title": "Bericht-Senke",
+                        "description": "Aktivieren oder deaktivieren Sie die Remote-Fehlerberichterstattung, um das Framework zu verbessern."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Löschen",
-        "checkbox_autoscroll": "Auto-Scroll"
+        "checkbox_autoscroll": "Auto-Scroll",
+        "label_level": "Ebene",
+        "label_module": "Modul",
+        "context_copy_line": "Zeile kopieren",
+        "context_copy_message": "Nur Nachricht kopieren",
+        "context_copy_selected": "Ausgewählten Bereich kopieren",
+        "context_copy_all": "Alle sichtbaren kopieren",
+        "msg_clean_session": "Noch keine Protokolle. Diese Sitzung ist vollkommen sauber."
     },
     "telemetry_window": {
         "title": "Telemetrie",
@@ -971,24 +985,54 @@
             "dll_not_loaded": "Nicht geladen"
         }
     },
+    "welcome_window": {
+        "title": "WILLKOMMEN IN DER WELT DES SPF FRAMEWORKS!",
+        "intro_title": "Hallo! Vielen Dank, dass du dich für unser Framework entschieden hast.",
+        "intro_text": "Wir haben das **SPF Framework** entwickelt, um dein Spielerlebnis in **ATS** und **ETS2** noch interessanter zu gestalten und die Verwaltung von Plugins so einfach wie möglich zu machen.",
+        "section1": {
+            "title": "Wie öffnet man das Framework-Menü?",
+            "text": "Drücke einfach die <#FFFFFF>{} **ENTF**</>-Taste auf deiner Tastatur. Dies ist dein Hauptbedienfeld."
+        },
+        "section2": {
+            "title": "Installation von SPF-kompatiblen Plugins",
+            "text": "Lege einfach den Plugin-Ordner mit der DLL in ` <#FFFFFF>{}</> ` ab. Aktiviere sie dann im Bereich <#FFFFFF>**Plugin-Manager**</>."
+        },
+        "section3": {
+            "title": "Einstellungen",
+            "text": "Alle Framework-Parameter und installierten Plugins sowie die Verwaltung der Tastenbelegungen sind bequem im Tab <#FFFFFF>**Einstellungen**</> zusammengefasst."
+        },
+        "section4": {
+            "title": "Für Entwickler",
+            "text": "Wenn du ein Entwickler bist — schau auf unserem <#00b3ff>{} [GitHub]({})</> vorbei, dort findest du Dokumentationen und Beispiele zur API-Nutzung."
+        },
+        "section5": {
+            "title": "Bleib bei uns",
+            "text": "Unsere Kontakte und Community-Links findest du im Bereich <#FFFFFF>**Über uns**</>."
+        },
+        "footer": "*Entwickelt mit <#ff0000>{}</> vom **Track & Truck Devs** Team. Unterstütze uns auf <#00b3ff>{} [Patreon]({})</>, um das Projekt wachsen zu lassen!*",
+        "button_go": "LOS GEHT'S!"
+    },
+    "notification_popup": {
+        "title": "Benachrichtigungen"
+    },
     "description": {
         "detailed": "Ein leistungsstarkes und flexibles Framework zur Erstellung und Verwaltung von Plugins für SCS-Spiele. Bietet einen Kernsatz von Diensten für Protokollierung, Konfiguration, UI-Management und mehr."
     },
     "patrons_popup": {
-      "title": "Unterstütze das Projekt",
-      "intro_text": "Die Unterstützung unserer Community ist der Treibstoff für dieses Projekt. Wenn Sie unsere Arbeit nützlich finden, werden Sie Gönner. Ihr Beitrag ermöglicht es uns, die Entwicklung fortzusetzen und neue, aufregende Plugins für alle zu erstellen!",
-      "link_intro": "Sie können uns auf unserer offiziellen Seite unterstützen:",
-      "link_text": "patreon.com/TrackAndTruckDevs",
-      "link_tooltip": "Klicken, um die Patreon-Seite im Browser zu öffnen",
-      "hof_title": "Ruhmeshalle",
-      "hof_empty": "Unsere Ruhmeshalle ist noch leer... Seien Sie der Erste, der hier erscheint und unsere Reise startet!",
-      "hof_teaser": "Unterstützen Sie uns, um in unsere",
-      "close_button": "Schließen",
-      "tiers": {
-        "magnate": "--- Logistik-Magnaten ---",
-        "manager": "--- Flottenmanager ---",
-        "master": "--- Straßenmeister ---"
-      }
+        "title": "Unterstütze das Projekt",
+        "intro_text": "Die Unterstützung unserer Community ist der Treibstoff für dieses Projekt. Wenn Sie unsere Arbeit nützlich finden, werden Sie Gönner. Ihr Beitrag ermöglicht es uns, die Entwicklung fortzusetzen und neue, aufregende Plugins für alle zu erstellen!",
+        "link_intro": "Sie können uns auf unserer offiziellen Seite unterstützen:",
+        "link_text": "patreon.com/TrackAndTruckDevs",
+        "link_tooltip": "Klicken, um die Patreon-Seite im Browser zu öffnen",
+        "hof_title": "Ruhmeshalle",
+        "hof_empty": "Unsere Ruhmeshalle ist noch leer... Seien Sie der Erste, der hier erscheint und unsere Reise startet!",
+        "hof_teaser": "Unterstützen Sie uns, um in unsere",
+        "close_button": "Schließen",
+        "tiers": {
+            "magnate": "--- Logistik-Magnaten ---",
+            "manager": "--- Flottenmanager ---",
+            "master": "--- Straßenmeister ---"
+        }
     },
     "manual_popup": {
         "title": "FAQ",
@@ -1068,10 +1112,10 @@
             "negative": "Negative Seite"
         },
         "consumption_policy": {
-            "never": "Niemals",
+            "never": "Nie",
             "on_ui_focus": "Bei UI-Fokus",
             "always": "Immer",
-            "manual": "Vom Plugin verwaltet"
+            "manual": "Plugin-gesteuert"
         }
     }
 }

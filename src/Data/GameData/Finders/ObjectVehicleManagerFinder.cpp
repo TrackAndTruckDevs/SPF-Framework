@@ -162,14 +162,14 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             logger->Warn("Could not find DebugCamera_RenderInfoOverlay signature. The game has likely been updated.");
             return false;
         }
-        logger->Info("Found DebugCamera_RenderInfoOverlay function at {0:#x}", renderInfoOverlayFuncAddr);
+        logger->Debug("Found DebugCamera_RenderInfoOverlay function at {0:#x}", renderInfoOverlayFuncAddr);
 
         uintptr_t movInstructionAddr = PatternFinder::Find(renderInfoOverlayFuncAddr, 0x300, TRAFFIC_MANAGER_POINTER_LOAD_SIG);
         if (!movInstructionAddr) {
             logger->Warn("Found the function, but could not find the TrafficManager pointer load instruction inside it.");
             return false;
         }
-        logger->Info("Found TrafficManager pointer load instruction at {0:#x}", movInstructionAddr);
+        logger->Debug("Found TrafficManager pointer load instruction at {0:#x}", movInstructionAddr);
 
         uintptr_t nextInstructionAddr = movInstructionAddr + 7;
         int32_t relativeOffset = *reinterpret_cast<int32_t*>(movInstructionAddr + 3);
@@ -182,7 +182,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         }
 
         logger->Info("--- TRAFFIC MANAGER FOUND ---");
-        logger->Info("Address: {0:#x}", trafficManagerAddr);
+        logger->Debug("Address: {0:#x}", trafficManagerAddr);
         logger->Info("-----------------------------");
 
         owner.SetTrafficManagerAddr(trafficManagerAddr);
@@ -199,7 +199,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrArray + 3);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetPArrayObjectOffset(off);
-                logger->Info("--- Found Vehicle Array offset: 0x{:X}", off);
+                logger->Debug("--- Found Vehicle Array offset: 0x{:X}", off);
             } else { logger->Error("Vehicle Array offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Vehicle Array anchor"); }
 
@@ -209,7 +209,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrCount + 3);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetVehicleCountOffset(off);
-                logger->Info("--- Found Vehicle Count offset: 0x{:X}", off);
+                logger->Debug("--- Found Vehicle Count offset: 0x{:X}", off);
             } else { logger->Error("Vehicle Count offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Vehicle Count anchor"); }
 
@@ -219,7 +219,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         if (addrSize) {
             uint8_t size = PatternFinder::ReadInt8(addrSize + 3);
             owner.SetSpawnedVehicleStructSize(size);
-            logger->Info("--- Found Vehicle Struct Size: 0x{:X}", size);
+            logger->Debug("--- Found Vehicle Struct Size: 0x{:X}", size);
         } else { logger->Error("FAILED to find Vehicle Struct Size anchor"); }
     } else { logger->Error("FAILED to find ClearLocalVehicles signature"); }
 
@@ -234,7 +234,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t offset = PatternFinder::ReadInt32(addrIdLoad + 8);
             if (PatternFinder::IsSaneOffset(offset)) {
                 owner.SetVehicleIdOffset(offset);
-                logger->Info("--- Found Vehicle ID offset: 0x{:X}", offset);
+                logger->Debug("--- Found Vehicle ID offset: 0x{:X}", offset);
             } else { logger->Error("Vehicle ID offset INVALID (0x{:X})", offset); }
         } else { logger->Error("FAILED to find Vehicle ID load anchor"); }
     } else { logger->Error("FAILED to find DebugCamera_RenderInfoOverlay for ID search"); }
@@ -247,7 +247,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         int32_t offset = PatternFinder::ReadInt32(pfnLocalPlayerPath + 3);
         if (PatternFinder::IsSaneOffset(offset)) {
             owner.SetLocalPlayerControllerOffset(offset);
-            logger->Info("--- Found LocalPlayerController offset: 0x{:X}", offset);
+            logger->Debug("--- Found LocalPlayerController offset: 0x{:X}", offset);
         } else {
             logger->Error("LocalPlayerController offset INVALID (0x{:X})", offset);
         }
@@ -263,7 +263,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         int32_t offset = PatternFinder::ReadInt8(pfnPlayerVehiclePath + 5);
         if (PatternFinder::IsSaneOffset(offset)) {
             owner.SetPlayerVehicleInControllerOffset(offset);
-            logger->Info("--- Found PlayerVehicleInController offset: 0x{:X}", offset);
+            logger->Debug("--- Found PlayerVehicleInController offset: 0x{:X}", offset);
         } else {
             logger->Error("PlayerVehicle offset INVALID (0x{:X})", offset);
         }
@@ -283,7 +283,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrSpeedLimit + 4);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetSpeedLimitOffset(off);
-                logger->Info("--- Found Speed Limit offset: 0x{:X}", off);
+                logger->Debug("--- Found Speed Limit offset: 0x{:X}", off);
             } else { logger->Error("Speed Limit offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Speed Limit anchor"); }
 
@@ -293,7 +293,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrPatience + 5);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetPatienceOffset(off);
-                logger->Info("--- Found Patience offset: 0x{:X}", off);
+                logger->Debug("--- Found Patience offset: 0x{:X}", off);
             } else { logger->Error("Patience offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Patience anchor"); }
 
@@ -303,7 +303,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrSafety + 5);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetSafetyOffset(off);
-                logger->Info("--- Found Safety offset: 0x{:X}", off);
+                logger->Debug("--- Found Safety offset: 0x{:X}", off);
             } else { logger->Error("Safety offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Safety anchor"); }
 
@@ -313,7 +313,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrLaneSpeed + 3);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetLaneSpeedInputOffset(off);
-                logger->Info("--- Found Lane Speed Input offset: 0x{:X}", off);
+                logger->Debug("--- Found Lane Speed Input offset: 0x{:X}", off);
             } else { logger->Error("Lane Speed Input offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Lane Speed Input anchor"); }
 
@@ -323,7 +323,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
             int32_t off = PatternFinder::ReadInt32(addrTargetSpeed + 4);
             if (PatternFinder::IsSaneOffset(off)) {
                 owner.SetTargetSpeedOffset(off);
-                logger->Info("--- Found Target Speed offset: 0x{:X}", off);
+                logger->Debug("--- Found Target Speed offset: 0x{:X}", off);
             } else { logger->Error("Target Speed offset INVALID (0x{:X})", off); }
         } else { logger->Error("FAILED to find Target Speed anchor"); }
 
@@ -332,7 +332,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         if (addrSubObj) {
             uint8_t off = PatternFinder::ReadInt8(addrSubObj + 3);
             owner.SetVehicleSubObjectOffset(off);
-            logger->Info("--- Found Vehicle Sub-Object offset: 0x{:X}", off);
+            logger->Debug("--- Found Vehicle Sub-Object offset: 0x{:X}", off);
         } else { logger->Error("FAILED to find Vehicle Sub-Object anchor"); }
 
         // 4.7. Acceleration VTable Offset (Anchor: CALL [RAX+10]; MOV RAX, [RSI+10]; ...)
@@ -340,7 +340,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         if (addrAccelFn) {
             uint8_t off = PatternFinder::ReadInt8(addrAccelFn + 2);
             owner.SetVtableGetAccelerationOffset(off);
-            logger->Info("--- Found Acceleration VTable offset: 0x{:X}", off);
+            logger->Debug("--- Found Acceleration VTable offset: 0x{:X}", off);
         } else { logger->Error("FAILED to find Acceleration VTable anchor"); }
 
         // 4.8. Speed VTable Offset (Anchor: CALL [RAX+08]; MOVSD [RSP+40], XMM9)
@@ -348,7 +348,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         if (addrSpeedFn) {
             uint8_t off = PatternFinder::ReadInt8(addrSpeedFn + 2);
             owner.SetVtableGetCurrentSpeedOffset(off);
-            logger->Info("--- Found Speed VTable offset: 0x{:X}", off);
+            logger->Debug("--- Found Speed VTable offset: 0x{:X}", off);
         } else { logger->Error("FAILED to find Speed VTable anchor"); }
     } else { logger->Error("FAILED to find FormatObjectDebugInfo for property search"); }
 

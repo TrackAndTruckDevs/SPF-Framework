@@ -59,6 +59,7 @@ struct LoggingData {
     struct Sinks {
         std::optional<bool> file; ///< @brief True to enable the file sink.
         std::optional<bool> ui;   ///< @brief True to enable the UI logger window sink.
+        std::optional<bool> report; ///< @brief True to enable the remote error reporting sink.
     } sinks;
 };
 

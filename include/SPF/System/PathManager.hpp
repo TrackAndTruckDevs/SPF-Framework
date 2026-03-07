@@ -29,6 +29,12 @@ class PathManager {
   static const std::filesystem::path& GetBasePath();
 
   /**
+   * @brief Returns the absolute path to the framework's DLL file.
+   * @return A constant reference to a std::filesystem::path object.
+   */
+  static const std::filesystem::path& GetFrameworkDllPath();
+
+  /**
    * @brief Returns the full path to the configuration file for the specified module.
    * @param configFileName The name of the configuration file (e.g., "framework_settings.json").
    * @return The full path to the file in the configuration directory.
@@ -135,6 +141,7 @@ class PathManager {
 
  private:
   static std::filesystem::path m_basePath;
+  static std::filesystem::path m_frameworkDllPath;
 
   static std::filesystem::path m_pluginsPath;
   static std::filesystem::path m_logsPath;

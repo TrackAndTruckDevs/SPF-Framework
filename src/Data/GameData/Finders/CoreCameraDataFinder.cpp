@@ -52,7 +52,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t pStandardManagerPtrAddr = Utils::PatternFinder::GetRipAddress(addrManager, 3, 7);
     if (pStandardManagerPtrAddr) {
       owner.SetStandardManagerPtrAddr(pStandardManagerPtrAddr);
-      logger->Info("Anchor #1: StandardManagerPtrAddr = 0x{:X}", pStandardManagerPtrAddr);
+      logger->Debug("Anchor #1: StandardManagerPtrAddr = 0x{:X}", pStandardManagerPtrAddr);
     } else {
       logger->Error("Anchor #1: FAILED to resolve RIP address for StandardManagerPtrAddr");
       all_found = false;
@@ -69,7 +69,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     int8_t offset = Utils::PatternFinder::ReadInt8(addrId + 2);
     if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(offset))) {
       owner.SetActiveCameraIdOffset(static_cast<intptr_t>(offset));
-      logger->Info("Anchor #2: ActiveCameraIdOffset = 0x{:X}", (uint8_t)offset);
+      logger->Debug("Anchor #2: ActiveCameraIdOffset = 0x{:X}", (uint8_t)offset);
     } else {
       logger->Error("Anchor #2: ActiveCameraIdOffset INVALID (0x{:X})", (uint8_t)offset);
       all_found = false;
@@ -87,7 +87,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t pWorldCoords = Utils::PatternFinder::GetRipAddress(addrWorld, 4, 8);
     if (pWorldCoords) {
       owner.SetCameraWorldCoordinatesPtr(reinterpret_cast<uintptr_t*>(pWorldCoords));
-      logger->Info("Anchor #3: WorldCoordinatesPtr = 0x{:X}", pWorldCoords);
+      logger->Debug("Anchor #3: WorldCoordinatesPtr = 0x{:X}", pWorldCoords);
     } else {
       logger->Error("Anchor #3: FAILED to resolve RIP address for WorldCoordinatesPtr");
       all_found = false;
@@ -100,7 +100,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   m_isReady = all_found;
   if (all_found) {
     owner.SetCoreOffsetsFound(true);
-    logger->Info("Successfully found all Core Camera offsets dynamically.");
+    logger->Debug("Successfully found all Core Camera offsets dynamically.");
   } else {
     logger->Error("Failed to find one or more Core Camera offsets. Plugin stability is compromised.");
   }

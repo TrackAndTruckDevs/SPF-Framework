@@ -5,6 +5,7 @@
 
 #include "SPF/Namespace.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
+#include "SPF/Renderer/ITexture.hpp"
 
 SPF_NS_BEGIN
 
@@ -61,6 +62,14 @@ class Renderer {
    * @return The detected RenderAPI enum value.
    */
   RenderAPI GetDetectedAPI() const;
+
+  /**
+   * @brief Creates a texture from a memory buffer.
+   * @param data The raw image data buffer.
+   * @param size The size of the buffer.
+   * @return A unique pointer to the created texture.
+   */
+  std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size);
 
   // --- Callbacks from Implementation ---
 

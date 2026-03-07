@@ -20,6 +20,7 @@
         "title": "Główne Okno - SPF Framework",
         "patrons_button_tooltip": "Moi Patroni",
         "update_button_tooltip": "Sprawdź aktualizacje",
+        "connect_disabled_tooltip": "Włącz 'connect' w pliku konfiguracyjnym.",
         "version_label": "Twoja wersja ",
         "update_checking": "Sprawdzanie aktualizacji...",
         "menu": {
@@ -71,7 +72,9 @@
             "server_unavailable": "Serwer aktualizacji jest tymczasowo niedostępny. Spróbuj ponownie później.",
             "generic": "Wystąpił nieoczekiwany błąd podczas sprawdzania aktualizacji.",
             "invalid_response": "Serwer aktualizacji zwrócił nieprawidłową odpowiedź.",
-            "patrons_fetch_failed": "Nie udało się załadować listy patronów. Spróbuj ponownie później."
+            "patrons_fetch_failed": "Nie udało się pobrać listy patronów. Spróbuj ponownie później.",
+            "forbidden": "Dostęp do serwera aktualizacji jest ograniczony. Prosimy o kontakt z deweloperami.",
+            "not_found": "Nie znaleziono informacji o wydaniu dla tego kanału."
         }
     },
     "plugins_window": {
@@ -122,7 +125,11 @@
                     },
                     "ui": {
                         "title": "Zasobnik UI",
-                        "description": "Włącz lub wyłącz pokazywanie logów w oknie UI."
+                        "description": "Włącz або wyłącz pokazywanie logów w oknie UI."
+                    },
+                    "report": {
+                        "title": "Zasobnik raportów",
+                        "description": "Włącz lub wyłącz zdalne zgłaszanie błędów, щоб pomóc w ulepszaniu frameworka."
                     }
                 }
             },
@@ -321,7 +328,14 @@
     "logger_window": {
         "title": "Logger",
         "button_clear": "Wyczyść",
-        "checkbox_autoscroll": "Automatyczne przewijanie"
+        "checkbox_autoscroll": "Automatyczne przewijanie",
+        "label_level": "Poziom",
+        "label_module": "Moduł",
+        "context_copy_line": "Kopiuj linię",
+        "context_copy_message": "Kopiuj tylko wiadomość",
+        "context_copy_selected": "Kopiuj wybrany zakres",
+        "context_copy_all": "Kopiuj wszystkie widoczne",
+        "msg_clean_session": "Brak logów. Ta sesja jest idealnie czysta."
     },
     "telemetry_window": {
         "title": "Telemetria",
@@ -971,6 +985,36 @@
             "dll_not_loaded": "Nie załadowano"
         }
     },
+    "welcome_window": {
+        "title": "WITAJ W ŚWIECIE SPF FRAMEWORK!",
+        "intro_title": "Cześć! Dziękujemy za wybranie naszego frameworka.",
+        "intro_text": "Stworzyliśmy **SPF Framework**, aby Twoja gra w **ATS** i **ETS2** była jeszcze ciekawsza, a zarządzanie wtyczkami tak proste, jak to tylko możliwe.",
+        "section1": {
+            "title": "Jak otworzyć menu frameworka?",
+            "text": "Po prostu naciśnij klawisz <#FFFFFF>{} **DELETE**</> na klawiaturze. To Twój główny panel sterowania."
+        },
+        "section2": {
+            "title": "Instalacja wtyczek kompatybilnych z spf",
+            "text": "Po prostu umieść folder wtyczki z plikiem DLL w ` <#FFFFFF>{}</> ` Następnie aktywuj je w sekcji <#FFFFFF>**Menedżer wtyczek**</>."
+        },
+        "section3": {
+            "title": "Ustawienia",
+            "text": "Wszystkie parametry frameworka i zainstalowanych wtyczek, a także zarządzanie skrótami klawiszowymi, są wygodnie zebrane w zakładce <#FFFFFF>**Ustawienia**</>."
+        },
+        "section4": {
+            "title": "Dla programistów",
+            "text": "Jeśli jesteś programistą — zajrzyj na nasz <#00b3ff>{} [GitHub]({})</>, gdzie znajdziesz dokumentację i przykłady użycia API."
+        },
+        "section5": {
+            "title": "Zostań z nami",
+            "text": "Nasze dane kontaktowe i linki do społeczności znajdziesz w sekcji <#FFFFFF>**O nas**</>."
+        },
+        "footer": "*Opracowane z <#ff0000>{}</> przez zespół **Track & Truck Devs**. Wesprzyj nas na <#00b3ff>{} [Patreon]({})</>, aby pomóc projektowi rosnąć!*",
+        "button_go": "RUSZAJMY!"
+    },
+    "notification_popup": {
+        "title": "Powiadomienia"
+    },
     "description": {
         "detailed": "Potężny i elastyczny framework do tworzenia i zarządzania wtyczkami do gier SCS. Zapewnia podstawowy zestaw usług do logowania, konfiguracji, zarządzania interfejsem użytkownika i nie tylko."
     },
@@ -1071,7 +1115,7 @@
             "never": "Nigdy",
             "on_ui_focus": "Gdy UI ma fokus",
             "always": "Zawsze",
-            "manual": "Zarządzane через plugin"
+            "manual": "Kontrolowane przez wtyczkę"
         }
     }
 }
