@@ -57,16 +57,28 @@ namespace System {
         };
 
         /**
+         * @brief Holds markdown changelog data for a specific version.
+         */
+        struct ChangelogData {
+            std::string title;
+            std::string markdown;
+        };
+
+        /**
          * @brief Holds information about the latest framework update.
          */
         struct UpdateInfo {
             bool updateAvailable = false;
-            std::string status;   // e.g., "update_available", "up_to_date", "switch_to_release"
-            std::string severity; // e.g., "major", "minor", "patch"
-            Version latestVersion;
-            std::string formattedLatestVersion;
+            struct {
+                Version ver;
+                std::string full;
+            } latestVersion;
             std::string downloadUrl;
-            std::string changelog;
+            struct {
+                std::string archive;
+                std::string binary;
+            } md5;
+            ChangelogData content;
         };
     
         /**
@@ -91,9 +103,12 @@ namespace System {
             ApiService();
             ~ApiService() = default;
 
-            // Asynchronously fetches the latest update information.
-            std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel);
+            // Asynchronously fetches the latest update information using the new get_framework_update.php.
+            std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel, const std::string& lang);
     
+            // Asynchronously fetches localized release notes for a specific version using get_release_notes.php.
+            std::future<ApiResult<ChangelogData>> FetchReleaseNotesAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& lang);
+
             // Asynchronously fetches the list of patrons.
             std::future<ApiResult<std::vector<Patron>>> FetchPatronsAsync(const std::string& baseUrl);
 

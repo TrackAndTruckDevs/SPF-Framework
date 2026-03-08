@@ -15,7 +15,8 @@ using json = nlohmann::ordered_json;
 namespace {
     // --- Constants for the API ---
     constexpr const char* API_HEALTH_PATH = "/api/v1/health.php";
-    constexpr const char* API_UPDATE_PATH = "/api/v1/check_update.php";
+    constexpr const char* API_UPDATE_PATH = "/api/v1/get_framework_update.php";
+    constexpr const char* API_NOTES_PATH  = "/api/v1/get_release_notes.php";
     constexpr const char* API_PATRONS_PATH = "/api/v1/get_patrons.php";
     constexpr const char* API_TRACK_USAGE_PATH = "/api/v1/track_usage.php";
     
@@ -161,16 +162,15 @@ namespace System {
     }
 
     // --- ApiService Implementation ---
-    std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel) {
+    std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel, const std::string& lang) {
         auto promise = std::make_shared<std::promise<ApiResult<UpdateInfo>>>();
         std::future<ApiResult<UpdateInfo>> future = promise->get_future();
 
-        std::thread([this, promise, baseUrl, major, minor, patch, channel]() {
+        std::thread([this, promise, baseUrl, major, minor, patch, channel, lang]() {
             auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
             ApiResult<UpdateInfo> apiResult;
             
             try {
-                // 1. Ensure connectivity before proceeding
                 if (!EnsureConnectivity(baseUrl)) {
                     std::lock_guard<std::mutex> lock(m_stateMutex);
                     apiResult.success = false;
@@ -179,13 +179,14 @@ namespace System {
                     return;
                 }
 
-                logger->Debug("Fetching update info...");
+                logger->Debug("Checking for framework updates (current v{}.{}.{})...", major, minor, patch);
 
                 json requestBody = {
                     {"major", major},
                     {"minor", minor},
                     {"patch", patch},
-                    {"channel", channel}
+                    {"channel", channel},
+                    {"lang", lang}
                 };
 
                 cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_UPDATE_PATH},
@@ -203,51 +204,116 @@ namespace System {
                 }
 
                 json responseBody = json::parse(r.text);
-
                 if (responseBody.value("status", "") != "success") {
-                    logger->Warn("Update API application error: {}", responseBody.value("message", "Unknown error"));
                     apiResult.success = false;
                     apiResult.errorMessage = "api.error.generic";
                     promise->set_value(apiResult);
                     return;
                 }
 
-                UpdateInfo info;
-                info.status = responseBody.value("message", "up_to_date"); 
-                std::transform(info.status.begin(), info.status.end(), info.status.begin(), ::tolower);
+                // Safe extraction of "data" object
+                json data = responseBody.value("data", json::object());
+                if (!data.is_object()) data = json::object();
 
-                info.updateAvailable = responseBody.value("update_available", false);
-                info.latestVersion.major = responseBody.value("latest_major", 0);
-                info.latestVersion.minor = responseBody.value("latest_minor", 0);
-                info.latestVersion.patch = responseBody.value("latest_patch", 0);
-                info.formattedLatestVersion = fmt::format("{}.{}.{}", info.latestVersion.major, info.latestVersion.minor, info.latestVersion.patch);
+                UpdateInfo info;
+                info.updateAvailable = data.value("update_available", false);
 
                 if (info.updateAvailable) {
-                    // Calculate severity locally based on version difference
-                    if (info.latestVersion.major > major) {
-                        info.severity = "major";
-                    } else if (info.latestVersion.minor > minor) {
-                        info.severity = "minor";
-                    } else {
-                        info.severity = "patch";
-                    }
+                    // Safe extraction of "version"
+                    json v = data.value("version", json::object());
+                    info.latestVersion.ver.major = v.value("major", 0);
+                    info.latestVersion.ver.minor = v.value("minor", 0);
+                    info.latestVersion.ver.patch = v.value("patch", 0);
+                    info.latestVersion.full = v.value("full", "unknown");
+
+                    info.downloadUrl = data.value("download_url", "");
+
+                    // Safe extraction of "md5"
+                    json m = data.value("md5", json::object());
+                    info.md5.archive = m.value("archive", "");
+                    info.md5.binary  = m.value("binary", "");
+
+                    // Safe extraction of "content"
+                    json c = data.value("content", json::object());
+                    info.content.title    = c.value("title", "");
+                    info.content.markdown = c.value("markdown", "");
                     
-                    info.downloadUrl = responseBody.value("download_url", "");
-                    info.changelog = responseBody.value("changelog", "No description provided.");
-                    
-                    logger->Debug("Update check: current={}.{}.{}, latest={}.{}.{}, calculated severity={}", 
-                        major, minor, patch, info.latestVersion.major, info.latestVersion.minor, info.latestVersion.patch, info.severity);
+                    logger->Info("Update available: v{} -> v{}", fmt::format("{}.{}.{}", major, minor, patch), info.latestVersion.full);
                 }
                 
                 apiResult.success = true;
                 apiResult.data = info;
 
-            } catch (const json::parse_error& e) {
-                logger->Error("JSON parse error (Update): {}", e.what());
-                apiResult.success = false;
-                apiResult.errorMessage = "api.error.invalid_response";
             } catch (const std::exception& e) {
-                logger->Error("Unexpected error (Update): {}", e.what());
+                logger->Error("API Update Check Error: {}", e.what());
+                apiResult.success = false;
+                apiResult.errorMessage = "api.error.generic";
+            }
+
+            promise->set_value(apiResult);
+        }).detach();
+
+        return future;
+    }
+
+    std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& lang) {
+        auto promise = std::make_shared<std::promise<ApiResult<ChangelogData>>>();
+        std::future<ApiResult<ChangelogData>> future = promise->get_future();
+
+        std::thread([this, promise, baseUrl, major, minor, patch, lang]() {
+            auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
+            ApiResult<ChangelogData> apiResult;
+
+            try {
+                if (!EnsureConnectivity(baseUrl)) {
+                    std::lock_guard<std::mutex> lock(m_stateMutex);
+                    apiResult.success = false;
+                    apiResult.errorMessage = m_state.lastErrorMessage;
+                    promise->set_value(apiResult);
+                    return;
+                }
+
+                json requestBody = {
+                    {"major", major},
+                    {"minor", minor},
+                    {"patch", patch},
+                    {"lang", lang}
+                };
+
+                cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_NOTES_PATH},
+                                            cpr::Header{{"Content-Type", "application/json"},
+                                                        {"X-API-Key", API_CLIENT_SECRET}},
+                                            cpr::Body{requestBody.dump()},
+                                            cpr::Timeout{10000},
+                                            cpr::ConnectTimeout{5000});
+
+                if (r.error.code != cpr::ErrorCode::OK || r.status_code != 200) {
+                    apiResult.success = false;
+                    apiResult.errorMessage = "api.error.generic";
+                    promise->set_value(apiResult);
+                    return;
+                }
+
+                json responseBody = json::parse(r.text);
+                if (responseBody.value("status", "") != "success") {
+                    apiResult.success = false;
+                    apiResult.errorMessage = "api.error.content_not_found";
+                    promise->set_value(apiResult);
+                    return;
+                }
+
+                json data = responseBody.value("data", json::object());
+                ChangelogData notes;
+                
+                json c = data.value("content", json::object());
+                notes.title = c.value("title", "");
+                notes.markdown = c.value("markdown", "");
+
+                apiResult.success = true;
+                apiResult.data = notes;
+
+            } catch (const std::exception& e) {
+                logger->Error("API Release Notes Error: {}", e.what());
                 apiResult.success = false;
                 apiResult.errorMessage = "api.error.generic";
             }
@@ -293,12 +359,17 @@ namespace System {
 
                 json responseBody = json::parse(r.text);
 
-                if (!responseBody.is_object() || !responseBody.contains("patrons") || !responseBody["patrons"].is_array()) {
-                     throw std::runtime_error("Invalid JSON structure for patrons response.");
+                if (!responseBody.is_object() || !responseBody.contains("data")) {
+                     throw std::runtime_error("Invalid JSON structure: missing 'data' object.");
+                }
+
+                json data = responseBody["data"];
+                if (!data.contains("patrons") || !data["patrons"].is_array()) {
+                     throw std::runtime_error("Invalid JSON structure: 'patrons' array not found in 'data'.");
                 }
 
                 std::vector<Patron> patrons;
-                for (const auto& item : responseBody["patrons"]) {
+                for (const auto& item : data["patrons"]) {
                     Patron p;
                     p.name = item.value("name", "Unknown Patron");
                     p.tier = item.value("tier", 0);

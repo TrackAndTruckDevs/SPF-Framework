@@ -1590,7 +1590,20 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
         "And `inline code` is still here.\n\n"
         "| Header 1 | Header 2 |\n"
         "|----------|----------|\n"
-        "| Cell 1   | Cell 2   |\n";
+        "| Cell 1   | Cell 2   |\n\n"
+        "--- \n"
+        "### 4. GitHub-style Alerts\n"
+        "> [!NOTE]\n"
+        "> This is a blue information block.\n"
+        "> This is a blue information block.\n\n"
+        "> [!TIP]\n"
+        "> This is a green tip block.\n\n"
+        "> [!IMPORTANT]\n"
+        "> This is a purple important block.\n\n"
+        "> [!WARNING]\n"
+        "> This is a gold warning block.\n\n"
+        "> [!CAUTION]\n"
+        "> This is a red caution block.\n";
     
     // The base style for markdown can have padding, but the renderer will handle fonts/colors.
     ui->UI_Style_SetPadding(markdown_base_style, 10.0f, 5.0f);

@@ -65,11 +65,20 @@ namespace Modules {
          */
         void RequestPatronsFetch(bool forceRefresh = false);
 
+        /**
+         * @brief Requests release notes for the current framework version.
+         */
+        void RequestReleaseNotesFetch();
+
         // --- Data Submission (SET) ---
         /**
          * @brief Queues analytics session data for submission.
          */
         void RequestTrackUsage();
+
+        // --- Signals ---
+        Utils::Signal<void(const System::UpdateInfo&)> OnUpdateInfoReceived;
+        Utils::Signal<void(const System::ChangelogData&)> OnReleaseNotesReceived;
 
     private:
         // --- Event Handlers ---
@@ -101,11 +110,13 @@ namespace Modules {
         // --- Cache States ---
         ResourceState<System::UpdateInfo> m_updateState;
         ResourceState<std::vector<System::Patron>> m_patronsState;
+        ResourceState<System::ChangelogData> m_releaseNotesState;
         std::mutex m_stateMutex;
 
         // --- Futures for async processing ---
         std::optional<std::future<System::ApiResult<System::UpdateInfo>>> m_updateFuture;
         std::optional<std::future<System::ApiResult<std::vector<System::Patron>>>> m_patronsFuture;
+        std::optional<std::future<System::ApiResult<System::ChangelogData>>> m_releaseNotesFuture;
         std::optional<std::future<void>> m_trackUsageFuture;
 
         // --- Sinks ---

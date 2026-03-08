@@ -26,6 +26,15 @@ public:
 
 private:
     // --- Rendering Context ---
+    enum class AlertType {
+        None,
+        Note,      // [!NOTE] -> Blue
+        Tip,       // [!TIP] -> Green
+        Important, // [!IMPORTANT] -> Purple
+        Warning,   // [!WARNING] -> Orange/Gold
+        Caution    // [!CAUTION] -> Red
+    };
+
     struct Style {
         bool isBold = false;
         bool isItalic = false;
@@ -34,6 +43,7 @@ private:
         bool isCode = false;
         bool isLink = false;
         bool isBlockQuote = false;
+        AlertType alertType = AlertType::None;
         unsigned int hLevel = 0; // 0 = no heading, 1-6 = H1-H6
         ImVec4 customColor = {0,0,0,0}; // (0,0,0,0) means no custom color
     };
@@ -71,6 +81,8 @@ private:
     float m_quoteStartY = 0.0f;
     bool m_isAtStartOfLine = true;
     bool m_isInsideCodeBlock = false; // Flag to distinguish block vs inline code
+    bool m_isWaitingForAlertMarker = false; // Flag to detect [!NOTE] etc.
+    bool m_skipNextNewline = false;
 };
 
 } // namespace UI

@@ -164,11 +164,17 @@ void WelcomeWindow::RenderContent() {
     }
 }
 
+void WelcomeWindow::SetUpdateContent(const std::string& title, const std::string& changelogMarkdown) {
+    m_updateTitle = title;
+    m_updateChangelog = changelogMarkdown;
+    m_mode = WelcomeMode::FrameworkUpdate;
+}
+
 void WelcomeWindow::RenderMarkdownContent() {
     auto& loc = Localization::LocalizationManager::GetInstance();
     const std::string comp = "framework";
     const auto& manifest = Config::GetFrameworkManifestData();
-    std::string pluginsPath = System::PathManager::GetPluginsPath().string();
+    auto bodyStyle = TextStyle::Bold().Wrapped().Color(Colors::SILVER).Padding(ImVec2(7, 0));
 
     std::string iconKeyboard = ICON_FA_KEYBOARD;
     std::string iconGithub   = ICON_FA_GITHUB;
@@ -177,51 +183,72 @@ void WelcomeWindow::RenderMarkdownContent() {
     std::string githubUrl    = manifest.info.githubUrl.value_or("");
     std::string patreonUrl   = manifest.info.patreonUrl.value_or("");
 
-    // Header 1: Intro (Inside Child)
-    ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD).Align(TextAlign::Center).Wrapped(), 
-                     "%s", m_locIntroTitle.c_str());
-    ImGui::PopStyleVar();
-    
-    auto bodyStyle = TextStyle::Bold().Wrapped().Color(Colors::SILVER).Padding(ImVec2(7, 0));
-    ImGui::Spacing();
-    Typography::RenderMarkdownText(m_locIntroText, bodyStyle);
-    ImGui::Spacing();
-    ImGui::Spacing();
+    if (m_mode == WelcomeMode::FirstInstall) {
+        std::string pluginsPath = System::PathManager::GetPluginsPath().string();
 
-    // Section 1
-    Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_BARS_STAGGERED, m_locSection1Title.c_str());
-    Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section1.text", iconKeyboard), bodyStyle);
-    ImGui::Spacing();
-    ImGui::Spacing();
+        // Header 1: Intro (Inside Child)
+        ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
+        Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD).Align(TextAlign::Center).Wrapped(), 
+                         "%s", m_locIntroTitle.c_str());
+        ImGui::PopStyleVar();
+        
+        ImGui::Spacing();
+        Typography::RenderMarkdownText(m_locIntroText, bodyStyle);
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-    // Section 2
-    Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_FOLDER_OPEN, m_locSection2Title.c_str());
-    Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section2.text", pluginsPath), bodyStyle);
-    ImGui::Spacing();
-    ImGui::Spacing();
+        // Section 1
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_BARS_STAGGERED, m_locSection1Title.c_str());
+        Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section1.text", iconKeyboard), bodyStyle);
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-    // Section 3
-    Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_GEAR, m_locSection3Title.c_str());
-    Typography::RenderMarkdownText(m_locSection3Text, bodyStyle);
-    ImGui::Spacing();
-    ImGui::Spacing();
+        // Section 2
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_FOLDER_OPEN, m_locSection2Title.c_str());
+        Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section2.text", pluginsPath), bodyStyle);
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-    // Section 4
-    Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_CODE, m_locSection4Title.c_str());
-    Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section4.text", iconGithub, githubUrl), bodyStyle);
-    ImGui::Spacing();
-    ImGui::Spacing();
+        // Section 3
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_GEAR, m_locSection3Title.c_str());
+        Typography::RenderMarkdownText(m_locSection3Text, bodyStyle);
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-    // Section 5
-    Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_HANDSHAKE, m_locSection5Title.c_str());
-    Typography::RenderMarkdownText(m_locSection5Text, bodyStyle);
-    
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
+        // Section 4
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_CODE, m_locSection4Title.c_str());
+        Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.section4.text", iconGithub, githubUrl), bodyStyle);
+        ImGui::Spacing();
+        ImGui::Spacing();
 
-    Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.footer", iconHeart, iconPatreon, patreonUrl), bodyStyle);
+        // Section 5
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY).Separator(), "%s %s", ICON_FA_HANDSHAKE, m_locSection5Title.c_str());
+        Typography::RenderMarkdownText(m_locSection5Text, bodyStyle);
+        
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.footer", iconHeart, iconPatreon, patreonUrl), bodyStyle);
+    } else {
+        // --- FRAMEWORK UPDATE MODE ---
+        // 1. Gold Header with separator (consistent with FirstInstall style)
+        ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
+        Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD).Align(TextAlign::Center).Wrapped(), 
+                         "%s", m_updateTitle.c_str());
+        ImGui::PopStyleVar();
+
+        ImGui::Spacing();
+
+        // 2. The main changelog/markdown from server
+        Typography::RenderMarkdownText(m_updateChangelog, bodyStyle);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        Typography::RenderMarkdownText(loc.GetFormatted(comp, "welcome_window.footer", iconHeart, iconPatreon, patreonUrl), bodyStyle);
+    }
 }
 
 void WelcomeWindow::ApplySettings(const nlohmann::ordered_json& settings) {

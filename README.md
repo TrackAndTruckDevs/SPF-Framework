@@ -96,6 +96,9 @@
    ✔ Markdown Rendering (MD4C):
     To provide rich text formatting, SPF uses a proprietary Markdown renderer built directly on the **md4c (Markdown for C) parser**. This custom engine ensures perfect layout flow across different styles, supporting GFM tables, custom inline colors, and integrated clipboard support for code blocks.
 
+   ✔ Image Loading (stb_image):
+    For efficient and memory-safe image decoding, SPF integrates the **stb_image** library. This allows plugins to load textures directly from common formats like PNG and JPG into GPU-ready buffers.
+
 
 
 <h2 align="center">❤️ Support the Project</h2>
@@ -374,6 +377,7 @@ This project would not be possible without the incredible work of the open-sourc
 *   **[nlohmann/json](https://github.com/nlohmann/json)**: For easy and powerful JSON manipulation.
 *   **[cpr (C++ Requests)](https://github.com/libcpr/cpr)**: For handling all external web requests with a clean, modern interface.
 *   **[md4c](https://github.com/mity/md4c)**: For providing fast and lightweight Markdown rendering within the UI.
+*   **[stb_image](https://github.com/nothings/stb)**: For reliable and easy image uploads.
 *   **[zlib](https://github.com/madler/zlib)**: For data compression, used as a dependency by other core components.
 *   **[SCS SDK](https://modding.scssoft.com/wiki/Documentation/Engine/SDK/Telemetry)**: For providing the official telemetry interface that makes this all possible.
 

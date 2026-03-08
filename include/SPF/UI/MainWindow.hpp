@@ -96,7 +96,6 @@ class MainWindow : public BaseWindow {
   //  State for Update Check
   bool m_updateCheckInitiated = false;
   Modules::CommunicationManager::UpdateStatus m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
-  std::string m_updateApiStatus; // To store the status string from the API, e.g., "switch_to_release"
   std::optional<System::UpdateInfo> m_lastUpdateInfo;
   std::optional<std::string> m_lastUpdateError;
   bool m_isUpdatePopupOpen = false;

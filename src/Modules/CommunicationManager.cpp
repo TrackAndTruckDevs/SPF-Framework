@@ -2,6 +2,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
 #include <algorithm>
 #include <cctype>
 #include <random>
@@ -66,6 +67,10 @@ namespace Modules {
                 m_updateState.status = ResourceStatus::Ready;
                 m_updateState.data = result.data;
                 logger->Debug("Update info successfully cached.");
+                
+                if (result.data) {
+                    OnUpdateInfoReceived.Call(*result.data);
+                }
             } else {
                 if (result.errorMessage.value_or("") == "api.error.forbidden") {
                     m_updateState.status = ResourceStatus::Banned;
@@ -100,13 +105,33 @@ namespace Modules {
             m_eventManager.System.OnPatronsFetchCompleted.Call({result});
         }
 
-        // 3. Check TrackUsage future
+        // 3. Check ReleaseNotes future (New)
+        if (m_releaseNotesFuture && m_releaseNotesFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            System::ApiResult<System::ChangelogData> result = m_releaseNotesFuture->get();
+            m_releaseNotesFuture.reset();
+
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            if (result.success && result.data) {
+                m_releaseNotesState.status = ResourceStatus::Ready;
+                m_releaseNotesState.data = result.data;
+                logger->Debug("Release notes successfully fetched.");
+                
+                OnReleaseNotesReceived.Call(*result.data);
+            } else {
+                m_releaseNotesState.status = ResourceStatus::Error;
+                m_releaseNotesState.lastErrorTime = now;
+                m_releaseNotesState.lastErrorMessage = result.errorMessage;
+                logger->Warn("Failed to fetch release notes: {}", result.errorMessage.value_or("unknown error"));
+            }
+        }
+
+        // 4. Check TrackUsage future
         if (m_trackUsageFuture && m_trackUsageFuture->valid() && m_trackUsageFuture->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             m_trackUsageFuture.reset();
             m_eventManager.System.OnUsageTrackingCompleted.Call({true});
         }
 
-        // 4. Periodic tracking (Logs OR Plugin state changes)
+        // 5. Periodic tracking (Logs OR Plugin state changes)
         bool shouldReport = (m_errorSink && m_errorSink->HasPendingLogs());
         
         if (!shouldReport) {
@@ -162,7 +187,6 @@ namespace Modules {
 
         std::lock_guard<std::mutex> lock(m_stateMutex);
         if (!ShouldPerformRequest(m_updateState.status, m_updateState.lastErrorTime, forceRefresh)) {
-            // If we have cached result (Success, Banned or recent Error), fire it immediately
             if (m_updateState.status != ResourceStatus::NotLoaded && m_updateState.status != ResourceStatus::Loading) {
                 System::ApiResult<System::UpdateInfo> cachedResult;
                 cachedResult.success = (m_updateState.status == ResourceStatus::Ready);
@@ -173,26 +197,42 @@ namespace Modules {
             return;
         }
 
-        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("CommunicationManager");
         const auto& allComponents = m_configService.GetAllComponentInfo();
         auto it = allComponents.find("framework");
-        if (it == allComponents.end()) return;
+        if (it == allComponents.end() || !it->second.version || !it->second.websiteUrl) return;
 
-        const auto& info = it->second;
-        if (!info.version || !info.websiteUrl) return;
-
-        std::string currentVersion = *info.version;
-        std::string updateBaseUrl = *info.websiteUrl;
-
+        std::string currentVersion = *it->second.version;
         std::string lowerVersion = currentVersion;
         std::transform(lowerVersion.begin(), lowerVersion.end(), lowerVersion.begin(), ::tolower);
-        std::string channel = (lowerVersion.find("beta") != std::string::npos) ? "beta" : "release";
+        std::string channel = (lowerVersion.find("beta") != std::string::npos) ? "beta" : "stable";
 
         auto versionOpt = System::Version::FromString(currentVersion);
         if (!versionOpt) return;
 
+        std::string currentLang = Localization::LocalizationManager::GetInstance().GetComponentLanguage("framework");
+
         m_updateState.status = ResourceStatus::Loading;
-        m_updateFuture = m_apiService.FetchUpdateInfoAsync(updateBaseUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, channel);
+        m_updateFuture = m_apiService.FetchUpdateInfoAsync(*it->second.websiteUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, channel, currentLang);
+    }
+
+    void CommunicationManager::RequestReleaseNotesFetch() {
+        EnsurePermission();
+        if (!m_connectionAllowed) return;
+
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        if (m_releaseNotesState.status == ResourceStatus::Loading) return;
+
+        const auto& allComponents = m_configService.GetAllComponentInfo();
+        auto it = allComponents.find("framework");
+        if (it == allComponents.end() || !it->second.version || !it->second.websiteUrl) return;
+
+        auto versionOpt = System::Version::FromString(*it->second.version);
+        if (!versionOpt) return;
+
+        std::string currentLang = Localization::LocalizationManager::GetInstance().GetComponentLanguage("framework");
+
+        m_releaseNotesState.status = ResourceStatus::Loading;
+        m_releaseNotesFuture = m_apiService.FetchReleaseNotesAsync(*it->second.websiteUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, currentLang);
     }
 
     void CommunicationManager::RequestPatronsFetch(bool forceRefresh) {
@@ -246,8 +286,8 @@ namespace Modules {
         bool hasLogs = (errorSink && errorSink->HasPendingLogs());
 
         // Bail out if already sent and nothing changed
-        if (m_hasInitialTrackingSent && !hasPluginChanges && !hasLogs) {
-            return;
+        if (m_hasInitialTrackingSent) {
+            if (!hasPluginChanges && !hasLogs) return;
         }
 
         auto& env = System::EnvironmentManager::GetInstance();

@@ -160,7 +160,7 @@ void PluginsWindow::RenderContent() {
       // --- "Info" button and modal window ---
       std::string infoTitle = loc.Get(m_locTooltipInfo) + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasInfo);
-      if (Button(ICON_FA_CIRCLE_INFO, TextStyle::DefaultButton())) {
+      if (Button(ICON_FA_CIRCLE_INFO)) {
         ImGui::OpenPopup(infoTitle.c_str());
       }
       ImGui::EndDisabled();

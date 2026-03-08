@@ -489,26 +489,21 @@ void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompl
     
     m_lastUpdateInfo = e.result.data.value();
     m_lastUpdateError.reset();
-    m_updateApiStatus = m_lastUpdateInfo->status;
 
-    if (m_updateApiStatus == "switch_to_release") {
-      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
-    } else if (m_lastUpdateInfo->updateAvailable) {
-      if (m_lastUpdateInfo->severity == "major") {
-        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
-      } else if (m_lastUpdateInfo->severity == "minor") {
-        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
-      } else if (m_lastUpdateInfo->severity == "patch") {
-        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable;
-      } else {
-        m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
+    if (m_lastUpdateInfo->updateAvailable) {
+      // For now, determining status based on version presence
+      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable; // Default
+      
+      auto currentVerOpt = System::Version::FromString(m_frameworkVersion);
+      if (currentVerOpt) {
+          if (m_lastUpdateInfo->latestVersion.ver.major > currentVerOpt->major) m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
+          else if (m_lastUpdateInfo->latestVersion.ver.minor > currentVerOpt->minor) m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
       }
     } else {
       m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::UpToDate;
     }
   } else {
     m_lastUpdateInfo.reset();
-    // If success was true but data missing, treat as generic error to avoid infinite "Loading"
     m_lastUpdateError = e.result.errorMessage.has_value() ? e.result.errorMessage : std::string("api.error.generic");
     m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::Unknown;
   }
@@ -660,8 +655,8 @@ void MainWindow::RenderUpdatePopup() {
 
   if (ImGui::BeginPopupModal(loc.Get(m_locUpdatePopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     // Determine required popup size based on content
-    bool hasChangelog = m_lastUpdateInfo.has_value() && !m_lastUpdateInfo->changelog.empty();
-    ImVec2 childSize = hasChangelog ? ImVec2(575, 300) : ImVec2(450, 75);
+    bool hasChangelog = m_lastUpdateInfo.has_value() && !m_lastUpdateInfo->content.markdown.empty();
+    ImVec2 childSize = hasChangelog ? ImVec2(575, 300) : ImVec2(450, 100);
     
     ImGui::BeginChild("description_modals_update", childSize, false);
     
@@ -679,56 +674,32 @@ void MainWindow::RenderUpdatePopup() {
       ImGui::Spacing();
       ImGui::Spacing();
       Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locUpdateChecking).c_str());
-    } else if (m_lastUpdateError.has_value() || (m_lastUpdateInfo.has_value() && m_updateApiStatus.empty())) {
-      // 2. Error state (including success with missing status/data)
+    } else if (m_lastUpdateError.has_value()) {
+      // 2. Error state (Network, API error, etc.)
       Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::RED).Padding(ImVec2(15.0f, 0.0f)),
                        "%s",
                        loc.Get(m_lastUpdateError.value_or(m_locUpdateErrorGeneric)).c_str());
     } else if (m_lastUpdateInfo.has_value()) {
-      // 3. Success states (guaranteed to have data)
+      // 3. Success states (Received response from server)
       const auto& updateData = m_lastUpdateInfo.value();
+      auto bodyStyle = TextStyle::Bold().Wrapped().Color(Colors::SILVER).Padding(ImVec2(10, 0));
 
-      if (m_updateApiStatus == "up_to_date") {
+      if (m_currentUpdateStatus == Modules::CommunicationManager::UpdateStatus::UpToDate) {
         ImGui::Spacing();
+        // Here: Server said we are up to date.
         Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Align(TextAlign::Center), "%s", loc.Get(m_locUpdateNoUpdate).c_str());
-      } else if (m_updateApiStatus == "switch_to_release") {
-        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)),
-                       "%s %s",
-                       loc.Get(m_locUpdateSwitchToRelease).c_str(),
-                       updateData.formattedLatestVersion.c_str());
-
-        if (hasChangelog) {
-          ImGui::Spacing();
-          ImGui::Separator();
-          ImGui::Spacing();
-          ImGui::BeginChild("ChangelogScroll", ImVec2(0, 175), false, ImGuiWindowFlags_HorizontalScrollbar);
-          Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::GRAY), "%s", updateData.changelog.c_str());
-          ImGui::EndChild();
-          ImGui::Spacing();
-          ImGui::Separator();
-        }
-
-        ImGui::Spacing();
-        Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline().Align(TextAlign::Center), "%s", loc.Get(m_locUpdateDownloadLink).c_str());
-        if (ImGui::IsItemHovered()) {
-          std::string tooltipText = loc.GetFormatted("framework", m_locUpdateDownloadTooltip, updateData.formattedLatestVersion);
-          ImGui::SetTooltip("%s", tooltipText.c_str());
-          ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-          if (ImGui::IsMouseClicked(0)) {
-            ShellExecute(NULL, "open", updateData.downloadUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
-          }
-        }
-      } else if (m_updateApiStatus == "update_available") {
+      } else if (updateData.updateAvailable) {
+        // Here: Server said there is a new version.
         Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)),
                        "%s",
-                       loc.GetFormatted("framework", m_locUpdateAvailable, updateData.formattedLatestVersion).c_str());
+                       loc.GetFormatted("framework", m_locUpdateAvailable, updateData.latestVersion.full).c_str());
         
         if (hasChangelog) {
           ImGui::Spacing();
           ImGui::Separator();
           ImGui::Spacing();
           ImGui::BeginChild("ChangelogScroll", ImVec2(0, 175), false, ImGuiWindowFlags_HorizontalScrollbar);
-          Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::GRAY), "%s", updateData.changelog.c_str());
+          Typography::RenderMarkdownText(updateData.content.markdown, bodyStyle);
           ImGui::EndChild();
           ImGui::Spacing();
           ImGui::Separator();
@@ -737,7 +708,7 @@ void MainWindow::RenderUpdatePopup() {
         ImGui::Spacing();
         Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline().Align(TextAlign::Center), "%s", loc.Get(m_locUpdateDownloadLink).c_str());
         if (ImGui::IsItemHovered()) {
-          std::string tooltipText = loc.GetFormatted("framework", m_locUpdateDownloadTooltip, updateData.formattedLatestVersion);
+          std::string tooltipText = loc.GetFormatted("framework", m_locUpdateDownloadTooltip, updateData.latestVersion.full);
           ImGui::SetTooltip("%s", tooltipText.c_str());
           ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
           if (ImGui::IsMouseClicked(0)) {

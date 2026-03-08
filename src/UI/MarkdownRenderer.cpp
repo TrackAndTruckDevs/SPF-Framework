@@ -21,6 +21,7 @@ void MarkdownRenderer::Render(const std::string& markdownText) {
     m_style = Style(); 
     m_href.clear();
     m_isAtStartOfLine = true;
+    m_skipNextNewline = false;
 
     MD_PARSER parser = {
         0, 
@@ -143,21 +144,58 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
             if (enter) {
                 EnsureNewLine();
                 m_style.isBlockQuote = true;
+                m_style.alertType = AlertType::None;
+                m_isWaitingForAlertMarker = true; // Wait for [!NOTE] etc. in the next HandleText
                 m_quoteStartY = ImGui::GetCursorScreenPos().y;
                 ImGui::Indent(16.0f);
             } else {
                 float endY = ImGui::GetCursorScreenPos().y;
                 ImGui::Unindent(16.0f);
                 
+                // --- Determine Alert Style ---
+                ImVec4 accentColor = ImGui::GetStyleColorVec4(ImGuiCol_Separator);
+                const char* alertIcon = nullptr;
+                const char* alertLabel = nullptr;
+
+                switch (m_style.alertType) {
+                    case AlertType::Note:
+                        accentColor = Colors::BLUE;
+                        alertIcon = ICON_FA_CIRCLE_INFO;
+                        alertLabel = "Note";
+                        break;
+                    case AlertType::Tip:
+                        accentColor = Colors::GREEN;
+                        alertIcon = ICON_FA_LIGHTBULB;
+                        alertLabel = "Tip";
+                        break;
+                    case AlertType::Important:
+                        accentColor = Colors::PURPLE;
+                        alertIcon = ICON_FA_CIRCLE_EXCLAMATION;
+                        alertLabel = "Important";
+                        break;
+                    case AlertType::Warning:
+                        accentColor = Colors::ORANGE;
+                        alertIcon = ICON_FA_TRIANGLE_EXCLAMATION;
+                        alertLabel = "Warning";
+                        break;
+                    case AlertType::Caution:
+                        accentColor = Colors::DARK_RED;
+                        alertIcon = ICON_FA_CIRCLE_XMARK;
+                        alertLabel = "Caution";
+                        break;
+                    default: break;
+                }
+
                 // Draw a continuous vertical line
                 ImVec2 p = ImGui::GetCursorScreenPos(); // Current position after unindent
                 ImGui::GetWindowDrawList()->AddRectFilled(
                     ImVec2(p.x + 4.0f, m_quoteStartY), 
                     ImVec2(p.x + 7.0f, endY), 
-                    ImGui::GetColorU32(ImGuiCol_Separator)
+                    ImGui::GetColorU32(accentColor)
                 );
 
                 m_style.isBlockQuote = false;
+                m_style.alertType = AlertType::None;
                 ImGui::Spacing();
                 m_isAtStartOfLine = true;
             }
@@ -322,6 +360,52 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
 
     std::string textStr(text, size);
     
+    // --- GitHub Alert Detection ---
+    if (m_isWaitingForAlertMarker && m_style.isBlockQuote) {
+        m_isWaitingForAlertMarker = false;
+        
+        size_t skipLen = 0;
+        if (textStr.find("[!NOTE]") == 0) { m_style.alertType = AlertType::Note; skipLen = 7; }
+        else if (textStr.find("[!TIP]") == 0) { m_style.alertType = AlertType::Tip; skipLen = 6; }
+        else if (textStr.find("[!IMPORTANT]") == 0) { m_style.alertType = AlertType::Important; skipLen = 12; }
+        else if (textStr.find("[!WARNING]") == 0) { m_style.alertType = AlertType::Warning; skipLen = 10; }
+        else if (textStr.find("[!CAUTION]") == 0) { m_style.alertType = AlertType::Caution; skipLen = 10; }
+
+        if (m_style.alertType != AlertType::None) {
+            // Determine visual parameters for the header
+            ImVec4 accentColor = ImGui::GetStyleColorVec4(ImGuiCol_Separator);
+            const char* alertIcon = nullptr;
+            const char* alertLabel = nullptr;
+
+            switch (m_style.alertType) {
+                case AlertType::Note:      accentColor = Colors::BLUE; alertIcon = ICON_FA_CIRCLE_INFO; alertLabel = "Note"; break;
+                case AlertType::Tip:       accentColor = Colors::GREEN; alertIcon = ICON_FA_LIGHTBULB; alertLabel = "Tip"; break;
+                case AlertType::Important: accentColor = Colors::PURPLE; alertIcon = ICON_FA_CIRCLE_EXCLAMATION; alertLabel = "Important"; break;
+                case AlertType::Warning:   accentColor = Colors::ORANGE; alertIcon = ICON_FA_TRIANGLE_EXCLAMATION; alertLabel = "Warning"; break;
+                case AlertType::Caution:   accentColor = Colors::DARK_RED; alertIcon = ICON_FA_CIRCLE_XMARK; alertLabel = "Caution"; break;
+                default: break;
+            }
+
+            // Render Header
+            EnsureNewLine();
+            Typography::Text(TextStyle::Bold().Color(accentColor), "%s %s", alertIcon, alertLabel);
+                        m_isAtStartOfLine = true;
+            m_skipNextNewline = true; // Signal to skip the immediate \n from the markdown source
+
+            // Skip the marker and any trailing space/newline within the current text atom
+            const char* newStart = text + skipLen;
+            size_t newSize = size - skipLen;
+            while (newSize > 0 && (*newStart == ' ' || *newStart == '\t')) {
+                newStart++;
+                newSize--;
+            }
+            if (newSize == 0) return; // Only marker was present
+            text = newStart;
+            size = (MD_SIZE)newSize;
+            textStr.assign(text, size);
+        }
+    }
+
     // Skip the language identifier text often sent at start of code blocks in MD4C
     if (m_style.isCode && m_isAtStartOfLine && (textStr == "cpp" || textStr == "c" || textStr == "javascript" || textStr == "json")) {
         return;
@@ -366,11 +450,18 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
         const char* end = text + size;
         
         // Find next tag or end of string
-        const char* next_tag = p;
+        const char* next_tag = p + 1; 
         while (next_tag < end) {
             if (*next_tag == '<') {
+                // Check for end tag </>
                 if (next_tag + 2 < end && *(next_tag + 1) == '/' && *(next_tag + 2) == '>') break;
-                if (next_tag + 8 < end && *(next_tag + 1) == '#') break;
+                
+                // Check for valid start tag <#RRGGBB>
+                if (next_tag + 8 < end && *(next_tag + 1) == '#') {
+                    unsigned int tr, tg, tb;
+                    if (sscanf(next_tag + 2, "%02x%02x%02x", &tr, &tg, &tb) == 3 && next_tag[8] == '>')
+                        break;
+                }
             }
             next_tag++;
         }
@@ -386,14 +477,20 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
             } else if (*p == ' ' || *p == '\t') {
                 while (p < next_tag && (*p == ' ' || *p == '\t')) p++;
             } else {
-                while (p < next_tag && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' && *p != '<') p++;
+                // We consume all non-whitespace characters until next_tag or whitespace
+                while (p < next_tag && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') p++;
             }
 
             if (isNewline) {
-                ImGui::NewLine();
-                m_isAtStartOfLine = true;
-                if (m_isInsideCodeBlock) m_currentCodeBlockText += "\n";
+                if (m_skipNextNewline) {
+                    m_skipNextNewline = false;
+                } else {
+                    ImGui::NewLine();
+                    m_isAtStartOfLine = true;
+                    if (m_isInsideCodeBlock) m_currentCodeBlockText += "\n";
+                }
             } else {
+                m_skipNextNewline = false; // Any real text cancels the skip
                 float atom_width = ImGui::CalcTextSize(atom_start, p).x;
                 float available = ImGui::GetContentRegionAvail().x;
                 bool isCodeBlock = m_style.isCode && ImGui::GetCurrentWindow()->DC.TextWrapPos < 0.0f;

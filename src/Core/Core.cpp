@@ -371,8 +371,14 @@ void Core::InitFeatureHooks() {
   }
 
   const auto& frameworkSettings = frameworkSettingsNode->at("framework");
+  const bool isNewInstall = (System::EnvironmentManager::GetInstance().GetFrameworkInfo().installStatus == System::InstallationStatus::NewInstall);
+
   if (!frameworkSettings.contains("hook_states")) {
-    m_logger->Warn("'hook_states' not found in framework settings. Hooks will use default values.");
+    if (isNewInstall) {
+        m_logger->Debug("'hook_states' not found in framework settings (expected for new install). Hooks will use default values.");
+    } else {
+        m_logger->Warn("'hook_states' not found in framework settings. Hooks will use default values.");
+    }
     return;
   }
 
@@ -386,9 +392,14 @@ void Core::InitFeatureHooks() {
       hookManager.ReconcileHookState(hook, isEnabled);  // Use ReconcileHookState
       m_logger->Info("Applied config for hook: {}. Enabled: {}.", hookName, isEnabled);
     } else {
-      // If no config entry, use the hook's default enabled state (which is false for GameLogHook)
+      // If no config entry, use the hook's default enabled state
       hookManager.ReconcileHookState(hook, hook->IsEnabled());
-      m_logger->Warn("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
+      
+      if (isNewInstall) {
+          m_logger->Debug("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
+      } else {
+          m_logger->Warn("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
+      }
     }
   }
 }
@@ -438,7 +449,7 @@ void Core::InitManagersAndPlugins() {
   m_keyBindsManager = std::make_unique<KeyBindsManager>(*m_inputManager, *m_eventManager);
   m_configurableServices.push_back(m_keyBindsManager.get());
   // Initialize the UIManager singleton
-  UIManager::GetInstance().Init(*m_eventManager, *m_inputManager, *m_configService, *m_keyBindsManager, PluginManager::GetInstance(), LoggerFactory::GetInstance(), *m_telemetryService);
+  UIManager::GetInstance().Init(*m_eventManager, *m_inputManager, *m_configService, *m_keyBindsManager, PluginManager::GetInstance(), *m_communicationManager, LoggerFactory::GetInstance(), *m_telemetryService);
   m_configurableServices.push_back(&UIManager::GetInstance());  // Add the singleton to configurable services
   //  Initialize the CommunicationManager
   reports.push_back(m_communicationManager->Initialize());

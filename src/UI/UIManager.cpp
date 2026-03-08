@@ -66,27 +66,33 @@ UIManager::UIManager()
       m_configService(nullptr),
       m_keyBindsManager(nullptr),
       m_pluginManager(nullptr),
+      m_communicationManager(nullptr),
       m_onPluginDidLoadSink(nullptr),        // will be initialized in Init()
-      m_onPluginWillBeUnloadedSink(nullptr)  // will be initialized in Init()
+      m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
+      m_onReleaseNotesReceivedSink(nullptr)  // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
 }
 
 void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager,
-            Modules::PluginManager& pluginManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService) {
+            Modules::PluginManager& pluginManager, Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService) {
   m_eventManager = &eventManager;
   m_inputManager = &inputManager;
   m_configService = &configService;
   m_keyBindsManager = &keyBindsManager;
   m_pluginManager = &pluginManager;
+  m_communicationManager = &communicationManager;
   m_loggerFactory = &loggerFactory;
   m_telemetryService = &telemetryService;
+  
   // Initialize and connect sinks
   m_onPluginDidLoadSink = std::make_unique<Utils::Sink<void(const Events::OnPluginDidLoad&)>>(m_eventManager->System.OnPluginDidLoad);
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
+  m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
+  m_onReleaseNotesReceivedSink->Connect<&UIManager::OnReleaseNotesReceived>(this);
 }
 
 void UIManager::CloseFocusedWindow() {
@@ -800,6 +806,25 @@ void UIManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) {
   DestroyWindowsForOwner(e.pluginName);
 }
 
+void UIManager::OnReleaseNotesReceived(const System::ChangelogData& data) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    logger->Info("Release notes received: '{}'. Showing welcome window.", data.title);
+
+    auto welcomeWindow = dynamic_cast<WelcomeWindow*>(GetWindow("framework", "welcome_window"));
+    
+    // Create it if it doesn't exist (e.g. if it wasn't a NewInstall but an Update)
+    if (!welcomeWindow) {
+        auto sharedWelcome = std::make_shared<WelcomeWindow>("framework", "welcome_window");
+        RegisterWindow(sharedWelcome);
+        welcomeWindow = sharedWelcome.get();
+    }
+
+    if (welcomeWindow) {
+        welcomeWindow->SetUpdateContent(data.title, data.markdown);
+        welcomeWindow->SetVisibility(true);
+    }
+}
+
 void UIManager::DestroyWindowsForOwner(const std::string& owner) {
   // Save settings for all windows belonging to this owner before removing them.
   // This ensures positions, sizes, and visibility are persisted to the config service.
@@ -942,12 +967,16 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   auto infoWindow = std::make_shared<InfoWindow>("framework", "info_window");
   RegisterWindow(infoWindow);
 
-  // Welcome Window - Only created and registered on fresh installation
+  // Welcome Window - Only created and registered on fresh installation or framework update
   const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();
   if (fwInfo.installStatus == System::InstallationStatus::NewInstall) {
       auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
       welcomeWindow->SetVisibility(true);
       RegisterWindow(welcomeWindow);
+  } else if (fwInfo.installStatus == System::InstallationStatus::Updated) {
+      // If updated, we request release notes from the server. 
+      // When they arrive, OnReleaseNotesReceived will show the window.
+      m_communicationManager->RequestReleaseNotesFetch();
   }
 
   // Notifications (Global)

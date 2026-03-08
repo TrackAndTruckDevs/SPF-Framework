@@ -29,10 +29,14 @@ namespace UI
 
         bool hovered, held;
         bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, 0);
+        
+        const bool is_disabled = (g.CurrentItemFlags & ImGuiItemFlags_Disabled);
 
-        // Determine background color with hardcoded framework defaults
+        // Determine background color
         ImU32 bg_col;
-        if (held) {
+        if (is_disabled) {
+            bg_col = ImGui::GetColorU32(ImGuiCol_Button);
+        } else if (held) {
             bg_col = ImGui::GetColorU32(Colors::GOLD); // Always GOLD on click
         } else if (hovered) {
             bg_col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
@@ -42,7 +46,9 @@ namespace UI
 
         // Determine text color with "Smart Fallbacks"
         ImVec4 final_text_color;
-        if (held) {
+        if (is_disabled) {
+            final_text_color = imgui_style.Colors[ImGuiCol_TextDisabled];
+        } else if (held) {
             // When button is GOLD, text must be DARK for contrast
             final_text_color = style.activeColor.value_or(ImVec4(0.15f, 0.19f, 0.24f, 1.00f));
         } else if (hovered) {
@@ -50,6 +56,12 @@ namespace UI
         } else {
             final_text_color = style.color.value_or(imgui_style.Colors[ImGuiCol_Text]);
         }
+        
+        // If disabled, we also need to respect the Global Alpha which ImGui sets for disabled items
+        if (is_disabled) {
+            final_text_color.w *= imgui_style.DisabledAlpha;
+        }
+        
         const ImU32 text_col = ImGui::ColorConvertFloat4ToU32(final_text_color);
 
         // Render the button background

@@ -30,6 +30,7 @@ class InputManager;
 }
 namespace Modules {
 class PluginManager;
+class CommunicationManager;
 }
 namespace Config {
 struct IConfigService;
@@ -58,7 +59,7 @@ class UIManager : public Config::IConfigurable {
 
   // Initialize method to pass dependencies, replacing constructor parameters
   void Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager,
-            Modules::PluginManager& pluginManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService);
+            Modules::PluginManager& pluginManager, Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService);
 
   // Creates and registers all framework-defined UI windows.
   // This method centralizes UI window creation within UIManager.
@@ -125,6 +126,7 @@ class UIManager : public Config::IConfigurable {
  private:
   void OnPluginLoaded(const Events::OnPluginDidLoad& e);
   void OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e);
+  void OnReleaseNotesReceived(const System::ChangelogData& data);
 
   void InitializeImGui();
   void ShutdownImGui();
@@ -149,6 +151,7 @@ class UIManager : public Config::IConfigurable {
   Config::IConfigService* m_configService = nullptr;
   Modules::KeyBindsManager* m_keyBindsManager = nullptr;
   Modules::PluginManager* m_pluginManager = nullptr;
+  Modules::CommunicationManager* m_communicationManager = nullptr;
   Logging::LoggerFactory* m_loggerFactory = nullptr;
   Modules::ITelemetryService* m_telemetryService = nullptr;
   Rendering::Renderer* m_renderer = nullptr;
@@ -165,6 +168,7 @@ class UIManager : public Config::IConfigurable {
 
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginDidLoad&)>> m_onPluginDidLoadSink;
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>> m_onPluginWillBeUnloadedSink;
+  std::unique_ptr<Utils::Sink<void(const System::ChangelogData&)>> m_onReleaseNotesReceivedSink;
 };
 }  // namespace UI
 

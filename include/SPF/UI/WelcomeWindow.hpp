@@ -10,6 +10,11 @@ SPF_NS_BEGIN
 
 namespace UI {
 
+enum class WelcomeMode {
+    FirstInstall,
+    FrameworkUpdate
+};
+
 class WelcomeWindow : public IWindow {
  public:
   WelcomeWindow(const std::string& componentName, const std::string& windowId);
@@ -31,6 +36,8 @@ class WelcomeWindow : public IWindow {
 
   // Helpers
   void SetVisibility(bool visible) { m_isVisible = visible; }
+  void SetMode(WelcomeMode mode) { m_mode = mode; }
+  void SetUpdateContent(const std::string& title, const std::string& changelogMarkdown);
 
  private:
   void InitializeResources();
@@ -43,6 +50,10 @@ class WelcomeWindow : public IWindow {
   bool m_isVisible = false;
   bool m_isFocused = false;
   bool m_wasVisibleLastFrame = false;
+
+  WelcomeMode m_mode = WelcomeMode::FirstInstall;
+  std::string m_updateTitle;
+  std::string m_updateChangelog;
 
   std::unique_ptr<Rendering::ITexture> m_logoTexture;
   MarkdownRenderer m_markdownRenderer;
