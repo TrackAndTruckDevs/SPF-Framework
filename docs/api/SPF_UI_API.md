@@ -1416,12 +1416,12 @@ Restores the previous style variables from the stack.
 The framework provides access to high-quality fonts for different use cases.
 
 ---
-**`SPF_Font_Handle* UI_GetFont(const char* font_key)`**
+**`SPF_Font_Handle UI_GetFont(const char* font_key)`**
 Retrieves a handle to a pre-loaded font by its key.
 *   **Default Keys:** `"default"`, `"bold"`, `"h1"`, `"h2"`, `"monospace"`.
 
 ---
-**`void UI_PushFont(SPF_Font_Handle* handle)`**
+**`void UI_PushFont(SPF_Font_Handle handle)`**
 Sets the active font for all subsequent text rendering.
 *   **Example:**
     ```c
@@ -1490,7 +1490,14 @@ Draws an outlined circle. `segments = 0` uses automatic smoothing.
 Renders a string at a specific screen position without any layout logic.
 
 ---
-**`void UI_DrawList_AddImage(SPF_DrawList_Handle dl, void* texture_id, float min_x, float min_y, float max_x, float max_y, float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y, uint32_t col)`**
+**`void UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width)`**
+Renders text using a specific font style and size from the `SPF_Font` enumeration.
+*   **Parameters:**
+    *   `font`: One of the `SPF_FONT_` enum values (e.g., `SPF_FONT_BOLD`).
+    *   `font_size`: The size in pixels.
+    *   `wrap_width`: Optional width for automatic line wrapping (0.0 for no wrap).
+
+---
 Renders a texture into the specified rectangular area. Supports custom UV mapping and tinting.
 
 ### Stateful Path Building

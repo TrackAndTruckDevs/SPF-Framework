@@ -1477,7 +1477,9 @@ typedef enum {
     /** Medium header font (e.g., Level 2 Header). */
     SPF_FONT_H2,
     /** Small header font (e.g., Level 3 Header). */
-    SPF_FONT_H3
+    SPF_FONT_H3,
+    /** Very large bold header font (32px). */
+    SPF_FONT_H1_LARGE_BOLD
 } SPF_Font;
 
 /**
@@ -3542,16 +3544,16 @@ typedef struct SPF_UI_API {
     /**
      * @brief Retrieves a handle to a pre-configured font by its identifier.
      * @param font_key String ID of the font (e.g., "bold", "h1", "regular").
-     * @return SPF_Font_Handle* Handle to the font, or NULL if not found.
+     * @return SPF_Font_Handle Handle to the font, or NULL if not found.
      */
-    SPF_Font_Handle* (*UI_GetFont)(const char* font_key);
+    SPF_Font_Handle (*UI_GetFont)(const char* font_key);
 
     /**
      * @brief Pushes a font onto the stack, making it active for all subsequent text rendering.
      * @details Every UI_PushFont() must be matched with a UI_PopFont().
      * @param font_handle Handle obtained from UI_GetFont().
      */
-    void (*UI_PushFont)(SPF_Font_Handle* font_handle);
+    void (*UI_PushFont)(SPF_Font_Handle font_handle);
 
     /**
      * @brief Restores the previous font from the stack.
@@ -3936,8 +3938,8 @@ typedef struct SPF_UI_API {
     /** @brief Adds text at an absolute screen position. */
     void (*UI_DrawList_AddText)(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
 
-    /** @brief Adds text using a specific font handle and size. */
-    void (*UI_DrawList_AddTextWithFont)(SPF_DrawList_Handle dl, SPF_Font_Handle* font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
+    /** @brief Adds text using a specific font enum and size. */
+    void (*UI_DrawList_AddTextWithFont)(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
 
     // --- Path API (Stateful shape building) ---
 

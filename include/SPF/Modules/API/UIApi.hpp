@@ -364,8 +364,8 @@ class UIApi {
   static const SPF_Payload_Handle* UI_GetDragDropPayload();
 
   // --- XI. Style & Typography ---
-  static SPF_Font_Handle* UI_GetFont(const char* font_key);
-  static void UI_PushFont(SPF_Font_Handle* font_handle);
+  static SPF_Font_Handle UI_GetFont(const char* font_key);
+  static void UI_PushFont(SPF_Font_Handle font_handle);
   static void UI_PopFont();
   static void UI_PushStyleColor(SPF_StyleColor idx, float r, float g, float b, float a);
   static void UI_PopStyleColor(int count);
@@ -437,7 +437,7 @@ class UIApi {
   static void UI_DrawList_AddImageRounded(SPF_DrawList_Handle dl, void* user_texture_id, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y, uint32_t col, float rounding, SPF_DrawFlags flags);
   static void UI_DrawList_AddCallback(SPF_DrawList_Handle dl, void (*callback)(const void* parent_list, const void* cmd), void* user_data);
   static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
-  static void UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font_Handle* font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
+  static void UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
   static void UI_DrawList_PathClear(SPF_DrawList_Handle dl);
   static void UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y);
   static void UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, SPF_DrawFlags flags, float thickness);

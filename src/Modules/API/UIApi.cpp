@@ -556,11 +556,11 @@ const SPF_Payload_Handle* UIApi::UI_GetDragDropPayload() { return (const SPF_Pay
 
 // --- XI. Style & Typography ---
 
-SPF_Font_Handle* UIApi::UI_GetFont(const char* font_key) {
+SPF_Font_Handle UIApi::UI_GetFont(const char* font_key) {
     if (!font_key) return nullptr;
-    return (SPF_Font_Handle*)UI::UIManager::GetInstance().GetFont(font_key);
+    return (SPF_Font_Handle)UI::UIManager::GetInstance().GetFont(font_key);
 }
-void UIApi::UI_PushFont(SPF_Font_Handle* font_handle) { if (font_handle) ImGui::PushFont((ImFont*)font_handle); }
+void UIApi::UI_PushFont(SPF_Font_Handle font_handle) { if (font_handle) ImGui::PushFont((ImFont*)font_handle); }
 void UIApi::UI_PopFont() { ImGui::PopFont(); }
 
 void UIApi::UI_PushStyleColor(SPF_StyleColor idx, float r, float g, float b, float a) { ImGui::PushStyleColor((ImGuiCol)idx, {r, g, b, a}); }
@@ -616,6 +616,7 @@ void UIApi::UI_CalcTextSizeWithFont(SPF_Font font, float font_size, const char* 
         case SPF_FONT_H1: fontName = "h1"; break;
         case SPF_FONT_H2: fontName = "h2"; break;
         case SPF_FONT_H3: fontName = "h3"; break;
+        case SPF_FONT_H1_LARGE_BOLD: fontName = "h1_large_bold"; break;
     }
     ImFont* imFont = UI::UIManager::GetInstance().GetFont(fontName);
     if (imFont) {
@@ -805,8 +806,27 @@ void UIApi::UI_DrawList_AddImageRounded(SPF_DrawList_Handle dl, void* user_textu
 void UIApi::UI_DrawList_AddCallback(SPF_DrawList_Handle dl, void (*callback)(const void* parent_list, const void* cmd), void* user_data) { if (dl) ((ImDrawList*)dl)->AddCallback((ImDrawCallback)callback, user_data); }
 
 void UIApi::UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text) { if (dl && text) ((ImDrawList*)dl)->AddText({pos_x, pos_y}, col, text); }
-void UIApi::UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font_Handle* font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width) {
-    if (dl && font && text) ((ImDrawList*)dl)->AddText((ImFont*)font, font_size, {pos_x, pos_y}, col, text, nullptr, wrap_width);
+void UIApi::UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width) {
+    if (!dl || !text) return;
+    const char* fontName = "regular";
+    switch (font) {
+        case SPF_FONT_BOLD: fontName = "bold"; break;
+        case SPF_FONT_ITALIC: fontName = "italic"; break;
+        case SPF_FONT_BOLD_ITALIC: fontName = "bold_italic"; break;
+        case SPF_FONT_MEDIUM: fontName = "medium"; break;
+        case SPF_FONT_MEDIUM_ITALIC: fontName = "medium_italic"; break;
+        case SPF_FONT_MONOSPACE: fontName = "monospace"; break;
+        case SPF_FONT_H1: fontName = "h1"; break;
+        case SPF_FONT_H2: fontName = "h2"; break;
+        case SPF_FONT_H3: fontName = "h3"; break;
+        case SPF_FONT_H1_LARGE_BOLD: fontName = "h1_large_bold"; break;
+    }
+    ImFont* imFont = UI::UIManager::GetInstance().GetFont(fontName);
+    if (imFont) {
+        ((ImDrawList*)dl)->AddText(imFont, font_size, {pos_x, pos_y}, col, text, nullptr, wrap_width);
+    } else {
+        ((ImDrawList*)dl)->AddText({pos_x, pos_y}, col, text);
+    }
 }
 
 void UIApi::UI_DrawList_PathClear(SPF_DrawList_Handle dl) { if (dl) ((ImDrawList*)dl)->PathClear(); }
