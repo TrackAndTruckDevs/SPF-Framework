@@ -26,7 +26,7 @@ inline const ManifestData& GetFrameworkManifestData() {
               .descriptionKey = "description.detailed",  // key in the translation file
               .descriptionLiteral = "",                  // if there is no translation, you can write a description here
               .email = "mailto:spf.framework@gmail.com",
-              .discordUrl = "",
+              .discordUrl = "https://discord.gg/kadd8AQuMt",
               .steamProfileUrl = "",
               .githubUrl = "https://github.com/TrackAndTruckDevs/SPF-Framework",
               .youtubeUrl = "https://www.youtube.com/@TrackAndTruck",
