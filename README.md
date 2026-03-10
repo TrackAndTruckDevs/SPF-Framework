@@ -352,7 +352,9 @@ We will review your contribution as soon as possible. Thank you for helping us i
 
 <h2 align="center">📞 Community & Support</h2>
 
-We love to connect with our community! Find plugin demonstrations, tutorials, and project updates on our YouTube Channel at [Track'n'Truck](https://www.youtube.com/@TrackAndTruck).
+We love to connect with our community! Join our official **Discord Server** for technical support and development discussions: [**https://discord.gg/kadd8AQuMt**](https://discord.gg/kadd8AQuMt)
+
+Find plugin demonstrations, tutorials, and project updates on our YouTube Channel at [Track'n'Truck](https://www.youtube.com/@TrackAndTruck).
 
 You can also join our **Patreon community** [Patreon community](https://www.patreon.com/TrackAndTruckDevs) with a free subscription! There you'll have access to our public chat, **"The Dispatch,"** where you can get quick answers to your questions, stay updated on project news, and connect with other enthusiasts.
 
