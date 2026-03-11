@@ -155,7 +155,7 @@ static void MaskMouseState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvD
     int maxButtons = (cbData >= sizeof(DIMOUSESTATE2)) ? 8 : 4;
 
     for (int i = 0; i < maxButtons; ++i) {
-        if (inputManager.IsMouseButtonBlocked(static_cast<SPF::System::MouseButton>(i))) {
+        if (inputManager.IsMouseButtonBlocked(static_cast<SPF::System::MouseButton>(i)) || inputManager.IsMouseCaptured()) {
             pButtons[i] = 0;
         }
     }

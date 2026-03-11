@@ -160,6 +160,9 @@ class InputManager {
   bool IsJoystickButtonBlocked(int buttonIndex) const;
   bool IsGamepadButtonBlocked(System::GamepadButton button) const;
   
+  bool IsKeyboardCaptured() const;
+  bool IsMouseCaptured() const;
+
   // New: Check if an axis is consumed by the framework
   bool IsAxisConsumed(uint8_t deviceType, int axisIndex) const;
 

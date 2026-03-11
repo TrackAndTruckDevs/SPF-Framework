@@ -379,22 +379,17 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
     }
   }
 
-  // If a consumer (like ImGui) handled the event, we block it from the game and, crucially,
-  // we do not process it for our own keybinds system.
-  // Exception: We never block the Escape key, allowing it to be processed by our keybind system
-  // even if ImGui captures it (e.g., to close a modal).
+  // If a consumer (like ImGui) handled the event, we block it from the game
+  // and stop propagation to our own keybinds system to prevent accidental triggers.
   if (consumedByConsumer && event.key != System::Keyboard::Escape) {
+    state.blockInput = event.pressed;
+    state.isDown = event.pressed;
+    state.wasDown = event.pressed;
     return true;
   }
 
   // If not consumed by UI, then process for keybinds and decide on blocking.
-  bool shouldBlock = ProcessAndDecide(event, priority);
-
-  if (shouldBlock) {
-    return true;
-  }
-
-  return false;  // Not blocked, not consumed
+  return ProcessAndDecide(event, priority);
 }
 
 bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priority) {
@@ -793,6 +788,20 @@ bool InputManager::IsGamepadButtonBlocked(System::GamepadButton button) const {
   uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(button);
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
+}
+
+bool InputManager::IsKeyboardCaptured() const {
+  for (auto* consumer : m_consumers) {
+    if (consumer->IsCapturingKeyboard()) return true;
+  }
+  return false;
+}
+
+bool InputManager::IsMouseCaptured() const {
+  for (auto* consumer : m_consumers) {
+    if (consumer->IsCapturingMouse()) return true;
+  }
+  return false;
 }
 
 bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float value, ButtonState& state) {

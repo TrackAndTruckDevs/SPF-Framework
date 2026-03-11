@@ -255,6 +255,14 @@ bool ImGuiInputConsumer::OnMouseWheel(const Input::MouseWheelEvent& event) {
   io.AddMouseWheelEvent(0.0f, event.delta);
   return io.WantCaptureMouse;
 }
+
+bool ImGuiInputConsumer::IsCapturingKeyboard() {
+  return ImGui::GetIO().WantCaptureKeyboard;
+}
+
+bool ImGuiInputConsumer::IsCapturingMouse() {
+  return ImGui::GetIO().WantCaptureMouse;
+}
 }  // namespace UI
 
 SPF_NS_END

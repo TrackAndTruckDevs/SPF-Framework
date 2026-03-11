@@ -16,6 +16,9 @@ class ImGuiInputConsumer : public Input::IInputConsumer {
   bool OnMouseButton(const Input::MouseButtonEvent& event) override;
   bool OnMouseMove(const Input::MouseMoveEvent& event) override;
   bool OnMouseWheel(const Input::MouseWheelEvent& event) override;
+
+  bool IsCapturingKeyboard() override;
+  bool IsCapturingMouse() override;
 };
 }  // namespace UI
 

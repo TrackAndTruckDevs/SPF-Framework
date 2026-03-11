@@ -35,20 +35,33 @@ static bool ProcessSingleKey(int vkCode, bool isDownWinAPI, bool isDownPhysical)
     bool isDownForFramework = isDownWinAPI || isDownPhysical;
     bool wasDown = (g_previousKeyboardState[vkCode] & 0x80) != 0;
 
+    bool publishedBlock = false;
     if (key != SPF::System::Keyboard::Unknown && isDownForFramework != wasDown) {
-        inputManager.PublishKeyboardEvent(SPF::Input::KeyboardEvent{key, isDownForFramework});
+        publishedBlock = inputManager.PublishKeyboardEvent(SPF::Input::KeyboardEvent{key, isDownForFramework});
     }
 
     // Update state tracker
     if (isDownForFramework) g_previousKeyboardState[vkCode] |= 0x80;
     else g_previousKeyboardState[vkCode] &= ~0x80;
 
-    // Determine if the key or mouse button (represented by VK) should be blocked for the game.
-    bool blocked = inputManager.IsKeyBlocked(key);
+    // determine if the key or mouse button (represented by VK) should be blocked for the game.
+    // A key is blocked if either the framework says so (via publishedBlock) OR if it's already in a blocked state.
+    bool blocked = inputManager.IsKeyBlocked(key) || publishedBlock;
+
+    // CRUCIAL: If any UI consumer (like ImGui) is capturing keyboard, we block ALL keys from the game.
+    // This handles polling functions like GetKeyboardState even for keys that haven't changed state.
+    if (!blocked && inputManager.IsKeyboardCaptured() && key != SPF::System::Keyboard::Escape) {
+        blocked = true;
+    }
+
     if (!blocked) {
         auto mouseBtn = SPF::System::MouseButtonMapping::GetInstance().FromWinAPI(vkCode);
         if (mouseBtn != SPF::System::MouseButton::Unknown) {
             blocked = inputManager.IsMouseButtonBlocked(mouseBtn);
+            // Also check for UI mouse capture
+            if (!blocked && inputManager.IsMouseCaptured()) {
+                blocked = true;
+            }
         }
     }
 

@@ -23,6 +23,9 @@ class IInputConsumer {
   // Joystick Events
   virtual bool OnJoystickButtonPress(const JoystickEvent& event) { return false; }
   virtual bool OnJoystickButtonRelease(const JoystickEvent& event) { return false; }
+
+  virtual bool IsCapturingKeyboard() { return false; }
+  virtual bool IsCapturingMouse() { return false; }
 };
 
 }  // namespace Input
