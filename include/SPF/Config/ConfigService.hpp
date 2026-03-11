@@ -52,6 +52,9 @@ class ConfigService : public IConfigService {
   System::InstallationStatus GetInstallationStatus() const override;
   bool IsConnectionAllowed() override;
   void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) override;
+  void RegisterActionMetadata(const std::string& componentName, const std::string& actionFullName, const std::string& titleKey, const std::string& descKey) override;
+  void UnregisterActionMetadata(const std::string& componentName, const std::string& actionFullName) override;
+  std::vector<std::string> GetOwnedActions(const std::string& componentName) const override;
   /**
    * @brief Processes all registered system configurations (isolated and priority-merged).
    * This method iterates through all known systems and applies the appropriate merge strategy

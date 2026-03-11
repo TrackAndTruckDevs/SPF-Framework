@@ -35,6 +35,7 @@ class EventManager;
 
 namespace Modules {
 using ActionCallback = std::function<void()>;
+using ActionCallbackEx = std::function<void(const std::string&, void*)>;
 
 enum class ActivationBehavior {
   Toggle,  // Action is triggered once
@@ -53,6 +54,8 @@ struct Binding {
 
 struct Action {
   ActionCallback Callback;
+  ActionCallbackEx CallbackEx;
+  void* UserData = nullptr;
   std::vector<Binding> Inputs;
 };
 
@@ -72,7 +75,22 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
    */
   void UpdateKeybindings(const nlohmann::ordered_json* keyBindsConfig);
 
+  /**
+   * @brief Ensures that an action entry exists in the manager's active actions map.
+   * @details If the action doesn't exist, it creates a new empty Action struct.
+   *          This is used for dynamic action registration at runtime.
+   * @param actionKey The full name of the action (e.g., "MyPlugin.Group.Action").
+   */
+  void EnsureActionExists(const std::string& actionKey);
+
+  /**
+   * @brief Removes an action entry from the manager.
+   * @param actionKey The full name of the action.
+   */
+  void RemoveAction(const std::string& actionKey);
+
   void RegisterAction(const std::string& actionKey, ActionCallback callback);
+  void RegisterActionEx(const std::string& actionKey, ActionCallbackEx callback, void* userData);
   void UnregisterOwner(const std::string& owner);
 
   /**

@@ -86,8 +86,11 @@ api->Settings_SetJson(h, defaults);
     *   `fileSink`: `true` to enable a dedicated log file for the plugin.
 *   **Localization**: `Defaults_SetLocalization(h, "en")`
     *   Sets the default initial language.
-    *   **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, consume)`
+    **Keybinds**: `Defaults_AddKeybind(h, group, action, type, key, consume)`
     *   **Universal Signature**: Since version 1.0.7, this function only takes the identity of the bind. All processing parameters are set to sensible framework defaults and can be further tuned by the user in the UI.
+    *   `group`: The action group identifier (e.g., `"Movement"`).
+        *   **Smart Naming**: The API automatically prepends your Plugin ID if it's missing (e.g., `"Movement"` becomes `"MyPlugin.Movement"`).
+    *   `action`: The logical action name (e.g., `"forward"`).
     *   `type`: The hardware device type.
         *   Digital: `"keyboard"`, `"gamepad"`, `"mouse"`.
         *   Analog (Optimized for continuous movement): `"gamepad_axis"`, `"mouse_axis"`, `"joystick_axis"`.
@@ -159,6 +162,7 @@ void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_B
                                "slider", "{ \"min\": 0.0, \"max\": 1.0, \"format\": \"%.2f\" }", false);
 
     // 5. Default Keybind
+    // SMART NAMING: "Main" group will be automatically prefixed with "SimplePlugin.Main"
     api->Defaults_AddKeybind(h, "Main", "Open", "keyboard", "KEY_F10", "always");
     api->Meta_AddKeybind(h, "Main", "Open", "Open Menu", "Press F10 to enter settings.");
 }

@@ -267,8 +267,10 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
 
       // Create a new Action object to replace the old one.
       Action newAction;
-      // IMPORTANT: Preserve the callback from the existing action.
+      // IMPORTANT: Preserve the callbacks and user data from the existing action.
       newAction.Callback = actionIt->second.Callback;
+      newAction.CallbackEx = actionIt->second.CallbackEx;
+      newAction.UserData = actionIt->second.UserData;
 
       // Populate the new action's input list from the configuration.
       for (const auto& inputConfig : *inputs) {
@@ -290,6 +292,26 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
 
   logger->Info("Keybinding update complete.");
 }
+
+void KeyBindsManager::EnsureActionExists(const std::string& actionKey) {
+    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+    if (m_actions.find(actionKey) == m_actions.end()) {
+        m_actions[actionKey] = Action();
+        auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+        if (logger) logger->Info("Dynamically created action entry for '{}'.", actionKey);
+    }
+}
+
+void KeyBindsManager::RemoveAction(const std::string& actionKey) {
+    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+    auto it = m_actions.find(actionKey);
+    if (it != m_actions.end()) {
+        m_actions.erase(it);
+        auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+        if (logger) logger->Info("Dynamically removed action entry for '{}'.", actionKey);
+    }
+}
+
 void KeyBindsManager::RegisterAction(const std::string& actionKey, ActionCallback callback) {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   auto it = m_actions.find(actionKey);
@@ -298,6 +320,18 @@ void KeyBindsManager::RegisterAction(const std::string& actionKey, ActionCallbac
   } else {
     auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
     if (logger) logger->Warn("Attempted to register a callback for an unknown action '{}'.", actionKey);
+  }
+}
+
+void KeyBindsManager::RegisterActionEx(const std::string& actionKey, ActionCallbackEx callback, void* userData) {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it != m_actions.end()) {
+    it->second.CallbackEx = callback;
+    it->second.UserData = userData;
+  } else {
+    auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+    if (logger) logger->Warn("Attempted to register an extended callback for an unknown action '{}'.", actionKey);
   }
 }
 
@@ -583,6 +617,7 @@ void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressTy
       for (const auto& b : action.Inputs) {
         if (&b == best) {
           if (action.Callback) action.Callback();
+          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
           return;
         }
       }
@@ -599,6 +634,7 @@ void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType press
       for (const auto& b : action.Inputs) {
         if (&b == best) {
           if (action.Callback) action.Callback();
+          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
           return;
         }
       }
@@ -615,6 +651,7 @@ void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType
       for (const auto& b : action.Inputs) {
         if (&b == best) {
           if (action.Callback) action.Callback();
+          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
           return;
         }
       }
@@ -631,12 +668,14 @@ void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType)
             for (const auto& b : action.Inputs) {
                 if (&b == best) {
                     if (action.Callback) action.Callback();
+                    if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
                     return;
                 }
             }
         }
     }
-}  
+}
+  
   float KeyBindsManager::GetActionValue(const std::string& actionName) const {
       std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
       auto it = m_actions.find(actionName);

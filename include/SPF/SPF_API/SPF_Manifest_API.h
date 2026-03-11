@@ -50,18 +50,17 @@
  *     // Keybinds (Universal): Group, Action, Type, Key, Consume
  *
  *     // Example 1: Digital keyboard binding (F5 to toggle menu)
- *     api->Defaults_AddKeybind(h, "MyPlugin.Main", "toggle", "keyboard", "KEY_F5", "always");
+ *     // SMART NAMING: "Main" automatically becomes "MySuperPlugin.Main"
+ *     api->Defaults_AddKeybind(h, "Main", "toggle", "keyboard", "KEY_F5", "always");
  *
  *     // Example 2: Analog gamepad binding (Right Trigger for throttle)
- *     // Note: Use "_AXIS" suffix for gamepad triggers and sticks to enable analog mode.
- *     api->Defaults_AddKeybind(h, "MyPlugin.Vehicle", "throttle", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
+ *     api->Defaults_AddKeybind(h, "Vehicle", "throttle", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
  *
  *     // Example 3: Mouse wheel binding (Axis index 2)
- *     api->Defaults_AddKeybind(h, "MyPlugin.UI", "zoom", "mouse_axis", "2", "on_ui_focus");
+ *     api->Defaults_AddKeybind(h, "UI", "zoom", "mouse_axis", "2", "on_ui_focus");
  *
  *     // Example 4: Key chord binding (Ctrl+K)
- *     // Format for chord 'key' parameter: "device:key+device:key"
- *     api->Defaults_AddKeybind(h, "MyPlugin.Admin", "secret", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_K", "always");
+ *     api->Defaults_AddKeybind(h, "Admin", "secret", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_K", "always");
  *
  *     // Windows: Name, Visible (bool), Interactive (bool), X, Y, W, H, Collapsed (bool), AutoScroll (bool)
  *     api->Defaults_AddWindow(h, "MainWindow", true, true, 100, 100, 400, 300, false, false);
@@ -78,7 +77,8 @@
  *     api->Meta_AddCustomSetting(h, "rendering.mode", "Quality", nullptr, "combo", modeOpts, false);
  *
  *     // UI Metadata for standard elements
- *     api->Meta_AddKeybind(h, "MyPlugin.Main", "toggle", "Toggle Menu", "Opens the main UI.");
+ *     // SMART NAMING: Group "Main" resolves to "MySuperPlugin.Main"
+ *     api->Meta_AddKeybind(h, "Main", "toggle", "Toggle Menu", "Opens the main UI.");
  *     api->Meta_AddWindow(h, "MainWindow", "Main Plugin UI", "Primary interaction window.");
  * }
  *
@@ -314,7 +314,11 @@ typedef struct SPF_Manifest_Builder_API {
      *          - @b threshold: Defaults to 0.5 (used if the user later switches mode to "digital" in UI).
      * 
      * @param h          The manifest builder handle.
-     * @param groupName  Action group identifier (e.g., "MyPlugin.Movement"). Used for UI grouping.
+     * @param groupName  Action group identifier (e.g., "Movement"). Used for UI grouping.
+     *                   ### Smart Naming:
+     *                   The API automatically prepends your Plugin ID to the group name if it's missing.
+     *                   Example: "Movement" becomes "MyPlugin.Movement".
+     *                   If you provide a name that already starts with your Plugin ID, it remains unchanged.
      * @param actionName The logical action name (e.g., "forward"). 
      *                   The full logical action key is formed as "groupName.actionName".
      * @param type       Input category. Supported values:
@@ -443,6 +447,8 @@ typedef struct SPF_Manifest_Builder_API {
      * @brief Adds metadata for a keybind action.
      * @param h The builder handle.
      * @param groupName The group name (must match `Defaults_AddKeybind`).
+     *                  ### Smart Naming:
+     *                  The API automatically prepends your Plugin ID to the group name if it's missing.
      * @param actionName The action name (must match `Defaults_AddKeybind`).
      * @param titleKey Localization key for the title.
      * @param descKey Localization key for the description.

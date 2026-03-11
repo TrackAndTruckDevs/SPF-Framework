@@ -11,11 +11,20 @@ namespace Modules::API {
 using namespace SPF::Config;
 
 // =================================================================================================
-// 1. Helper Functions (Internal)
+// 1. Internal Context Structure
 // =================================================================================================
 
-static ManifestData* Cast(SPF_Manifest_Builder_Handle* h) {
-    return reinterpret_cast<ManifestData*>(h);
+/**
+ * @brief Context used during the BuildManifest call.
+ * This wraps the ManifestData being built and the known PluginID (pluginName).
+ */
+struct ManifestBuilderContext {
+    ManifestData* manifest;
+    std::string pluginName;
+};
+
+static ManifestBuilderContext* Cast(SPF_Manifest_Builder_Handle* h) {
+    return reinterpret_cast<ManifestBuilderContext*>(h);
 }
 
 static void LogError(const char* context, const char* message) {
@@ -23,64 +32,77 @@ static void LogError(const char* context, const char* message) {
     if (logger) logger->Error("{}: {}", context, message);
 }
 
+/**
+ * @brief Ensures action group starts with PluginID. (e.g. "Camera" -> "ExamplePlugin.Camera")
+ */
+static std::string SanitizeGroup(const std::string& pluginName, const char* groupName) {
+    if (!groupName || *groupName == '\0') return pluginName;
+    std::string name = groupName;
+    std::string prefix = pluginName + ".";
+    if (name.find(prefix) != 0 && name != pluginName) {
+        return prefix + name;
+    }
+    return name;
+}
+
 // =================================================================================================
 // 2. Info Implementations
 // =================================================================================================
 
 static void Info_SetName(SPF_Manifest_Builder_Handle* h, const char* name) {
-    if (h && name) Cast(h)->info.name = name;
+    if (h && name) Cast(h)->manifest->info.name = name;
 }
 
 static void Info_SetVersion(SPF_Manifest_Builder_Handle* h, const char* version) {
-    if (h && version) Cast(h)->info.version = version;
+    if (h && version) Cast(h)->manifest->info.version = version;
 }
 
 static void Info_SetMinFrameworkVersion(SPF_Manifest_Builder_Handle* h, const char* version) {
-    if (h && version) Cast(h)->info.minFrameworkVersion = version;
+    if (h && version) Cast(h)->manifest->info.minFrameworkVersion = version;
 }
 
 static void Info_SetAuthor(SPF_Manifest_Builder_Handle* h, const char* author) {
-    if (h && author) Cast(h)->info.author = author;
+    if (h && author) Cast(h)->manifest->info.author = author;
 }
 
 static void Info_SetDescriptionKey(SPF_Manifest_Builder_Handle* h, const char* key) {
-    if (h && key) Cast(h)->info.descriptionKey = key;
+    if (h && key) Cast(h)->manifest->info.descriptionKey = key;
 }
 
 static void Info_SetDescriptionLiteral(SPF_Manifest_Builder_Handle* h, const char* desc) {
-    if (h && desc) Cast(h)->info.descriptionLiteral = desc;
+    if (h && desc) Cast(h)->manifest->info.descriptionLiteral = desc;
 }
 
 static void Info_SetEmail(SPF_Manifest_Builder_Handle* h, const char* email) {
-    if (h && email) Cast(h)->info.email = email;
+    if (h && email) Cast(h)->manifest->info.email = email;
 }
 
 static void Info_SetDiscordUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.discordUrl = url;
+    if (h && url) Cast(h)->manifest->info.discordUrl = url;
 }
 
 static void Info_SetSteamProfileUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.steamProfileUrl = url;
+    if (h && url) Cast(h)->manifest->info.steamProfileUrl = url;
 }
 
 static void Info_SetGithubUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.githubUrl = url;
+    if (h && url) Cast(h)->manifest->info.githubUrl = url;
 }
 
 static void Info_SetYoutubeUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.youtubeUrl = url;
+    if (h && url) Cast(h)->manifest->info.youtubeUrl = url;
 }
 
 static void Info_SetScsForumUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.scsForumUrl = url;
+    if (h && url) Cast(h)->manifest->info.scsForumUrl = url;
 }
 
 static void Info_SetPatreonUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.patreonUrl = url;
+    if (h && url) Cast(h)->manifest->info.patreonUrl = url;
 }
 
 static void Info_SetWebsiteUrl(SPF_Manifest_Builder_Handle* h, const char* url) {
-    if (h && url) Cast(h)->info.websiteUrl = url;
+    if (h && url) Cast(h)->manifest->info.websiteUrl = url;
 }
 
 // =================================================================================================
@@ -88,15 +110,15 @@ static void Info_SetWebsiteUrl(SPF_Manifest_Builder_Handle* h, const char* url) 
 // =================================================================================================
 
 static void Policy_SetAllowUserConfig(SPF_Manifest_Builder_Handle* h, bool allow) {
-    if (h) Cast(h)->configPolicy.allowUserConfig = allow;
+    if (h) Cast(h)->manifest->configPolicy.allowUserConfig = allow;
 }
 
 static void Policy_AddConfigurableSystem(SPF_Manifest_Builder_Handle* h, const char* systemName) {
-    if (h && systemName) Cast(h)->configPolicy.userConfigurableSystems.push_back(systemName);
+    if (h && systemName) Cast(h)->manifest->configPolicy.userConfigurableSystems.push_back(systemName);
 }
 
 static void Policy_AddRequiredHook(SPF_Manifest_Builder_Handle* h, const char* hookName) {
-    if (h && hookName) Cast(h)->configPolicy.requiredHooks.push_back(hookName);
+    if (h && hookName) Cast(h)->manifest->configPolicy.requiredHooks.push_back(hookName);
 }
 
 // =================================================================================================
@@ -108,7 +130,7 @@ static void Settings_SetJson(SPF_Manifest_Builder_Handle* h, const char* jsonStr
     try {
         auto j = nlohmann::ordered_json::parse(jsonStr);
         if (j.is_object()) {
-            Cast(h)->settings = std::move(j);
+            Cast(h)->manifest->settings = std::move(j);
         } else {
             LogError("Settings_SetJson", "Root of custom settings must be a JSON object.");
         }
@@ -123,20 +145,23 @@ static void Settings_SetJson(SPF_Manifest_Builder_Handle* h, const char* jsonStr
 
 static void Defaults_SetLogging(SPF_Manifest_Builder_Handle* h, const char* level, bool fileSink) {
     if (!h) return;
-    auto* m = Cast(h);
-    if (level && *level) m->logging.level = level;
-    m->logging.sinks.file = fileSink;
-    m->logging.sinks.ui = true; // Always enable UI logging by default, controlled by framework
+    auto* ctx = Cast(h);
+    if (level && *level) ctx->manifest->logging.level = level;
+    ctx->manifest->logging.sinks.file = fileSink;
+    ctx->manifest->logging.sinks.ui = true;
 }
 
 static void Defaults_SetLocalization(SPF_Manifest_Builder_Handle* h, const char* langCode) {
-    if (h && langCode && *langCode) Cast(h)->localization.language = langCode;
+    if (h && langCode && *langCode) Cast(h)->manifest->localization.language = langCode;
 }
 
 static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, 
                                 const char* type, const char* key, const char* consume) {
     if (!h || !group || !action || *group == '\0' || *action == '\0') return;
     
+    auto* ctx = Cast(h);
+    std::string sanitizedGroup = SanitizeGroup(ctx->pluginName, group);
+
     KeybindDefinition def;
     std::string typeStr = type ? type : "";
     def.type = typeStr;
@@ -169,7 +194,7 @@ static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* grou
         if (key && *key) def.key = key;
     }
 
-    Cast(h)->keybinds.actions[group][action].push_back(std::move(def));
+    ctx->manifest->keybinds.actions[sanitizedGroup][action].push_back(std::move(def));
 }
 
 static void Defaults_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, 
@@ -188,7 +213,7 @@ static void Defaults_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windo
     win.isCollapsed = isCollapsed;
     win.autoScroll = autoScroll;
 
-    Cast(h)->ui.windows[windowName] = win;
+    Cast(h)->manifest->ui.windows[windowName] = win;
 }
 
 // =================================================================================================
@@ -220,17 +245,20 @@ static void Meta_AddCustomSetting(SPF_Manifest_Builder_Handle* h, const char* ke
         }
     }
 
-    Cast(h)->customSettingsMetadata.push_back(std::move(meta));
+    Cast(h)->manifest->customSettingsMetadata.push_back(std::move(meta));
 }
 
 static void Meta_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, const char* title, const char* desc) {
     if (!h || !group || !action) return;
+    auto* ctx = Cast(h);
+    std::string sanitizedGroup = SanitizeGroup(ctx->pluginName, group);
+
     KeybindActionMetadata meta;
-    meta.groupName = group;
+    meta.groupName = sanitizedGroup;
     meta.actionName = action;
     if (title) meta.titleKey = title;
     if (desc) meta.descriptionKey = desc;
-    Cast(h)->keybindsMetadata.push_back(meta);
+    ctx->manifest->keybindsMetadata.push_back(meta);
 }
 
 static void Meta_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, const char* title, const char* desc) {
@@ -239,7 +267,7 @@ static void Meta_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowNam
     meta.windowName = windowName;
     if (title) meta.titleKey = title;
     if (desc) meta.descriptionKey = desc;
-    Cast(h)->uiMetadata.push_back(meta);
+    Cast(h)->manifest->uiMetadata.push_back(meta);
 }
 
 static void Meta_AddStandardSetting(SPF_Manifest_Builder_Handle* h, const char* system, const char* key, const char* title, const char* desc) {
@@ -250,10 +278,11 @@ static void Meta_AddStandardSetting(SPF_Manifest_Builder_Handle* h, const char* 
     if (title) meta.titleKey = title;
     if (desc) meta.descriptionKey = desc;
 
+    auto* ctx = Cast(h);
     if (std::string(system) == "logging") {
-        Cast(h)->loggingMetadata.push_back(meta);
+        ctx->manifest->loggingMetadata.push_back(meta);
     } else if (std::string(system) == "localization") {
-        Cast(h)->localizationMetadata.push_back(meta);
+        ctx->manifest->localizationMetadata.push_back(meta);
     }
 }
 
@@ -313,14 +342,18 @@ ManifestData ManifestApi::BuildManifest(SPF_GetManifestAPI_Func pGetManifestFunc
         return manifest;
     }
 
+    // Create context for this build session
+    ManifestBuilderContext context;
+    context.manifest = &manifest;
+    context.pluginName = pluginName;
+
     // Create the Builder API table
     SPF_Manifest_Builder_API builderApi;
     FillBuilderApi(&builderApi);
 
     // Call the plugin's builder function
-    // cast &manifest to the opaque handle type
     try {
-        pluginApi.BuildManifest(reinterpret_cast<SPF_Manifest_Builder_Handle*>(&manifest), &builderApi);
+        pluginApi.BuildManifest(reinterpret_cast<SPF_Manifest_Builder_Handle*>(&context), &builderApi);
     } catch (const std::exception& e) {
         LogError("BuildManifest", e.what());
     } catch (...) {

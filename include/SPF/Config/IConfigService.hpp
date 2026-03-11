@@ -191,6 +191,29 @@ struct IConfigService {
    * @param report A report to log the outcome of the operation.
    */
   virtual void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) = 0;
+
+  /**
+   * @brief Dynamically registers metadata for a keybind action at runtime.
+   * @param componentName The ID of the component (plugin) owning the action.
+   * @param actionFullName The full name of the action (e.g., "MyPlugin.Dynamic.Cmd1").
+   * @param titleKey Localization key or literal for the title.
+   * @param descKey Localization key or literal for the description.
+   */
+  virtual void RegisterActionMetadata(const std::string& componentName, const std::string& actionFullName, const std::string& titleKey, const std::string& descKey) = 0;
+
+  /**
+   * @brief Dynamically unregisters metadata for a keybind action at runtime.
+   * @param componentName The ID of the component (plugin) owning the action.
+   * @param actionFullName The full name of the action to remove.
+   */
+  virtual void UnregisterActionMetadata(const std::string& componentName, const std::string& actionFullName) = 0;
+
+  /**
+   * @brief Retrieves a list of all action full names owned by a specific component.
+   * @param componentName The ID of the component.
+   * @return A vector of full action keys (e.g. {"Plugin.Action1", "Plugin.Action2"}).
+   */
+  virtual std::vector<std::string> GetOwnedActions(const std::string& componentName) const = 0;
 };
 }  // namespace Config
 

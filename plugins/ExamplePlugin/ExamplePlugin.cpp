@@ -32,6 +32,9 @@ const char* PLUGIN_NAME = "ExamplePlugin";
  */
 PluginContext g_ctx;
 
+// --- Forward Declarations ---
+static void OnDynamicActionTriggered(const char* action_id, void* user_data);
+
 // =================================================================================================
 // 2. Manifest Implementation
 // =================================================================================================
@@ -144,24 +147,24 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
         // First action: Toggle the main window.
         // `groupName`: A category for the action. Best practice is "{PluginName}.{Feature}".
         // `actionName`: The specific action, usually a verb.
-        // The full action name becomes "ExamplePlugin.MainWindow.toggle".
+        // The full action name becomes "MainWindow.toggle".
         // `type`: "keyboard", "gamepad", "gamepad_axis", etc. 
         // `key`: "KEY_F5", "BTN_A", "LEFT_STICK_X".
         // `consume`: "never", "on_ui_focus", "always", "manual".
         // Note: press_type, behavior, and axis settings are defaulted automatically.
-        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "always");
-        api->Defaults_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_F5", "always");
+        api->Defaults_AddKeybind(h, "MainWindow", "toggle", "keyboard", "KEY_F5", "always");
+        api->Defaults_AddKeybind(h, "MainWindow", "toggle", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_F5", "always");
 
         // Second action: Cycle through camera views.
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keyboard", "KEY_F6", "always");
+        api->Defaults_AddKeybind(h, "Camera", "cycle", "keyboard", "KEY_F6", "always");
 
         // Third action: Demonstrate programmatic blocking (using 'manual' consume policy).
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Demo", "honk", "keyboard", "KEY_H", "manual");
+        api->Defaults_AddKeybind(h, "Demo", "honk", "keyboard", "KEY_H", "manual");
 
         // --- NEW: Analog Test Action ---
         // This action can be triggered by either Space key or Right Trigger.
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Test", "Axis", "keyboard", "KEY_SPACE", "never");
-        api->Defaults_AddKeybind(h, "ExamplePlugin.Test", "Axis", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
+        api->Defaults_AddKeybind(h, "Test", "Axis", "keyboard", "KEY_SPACE", "never");
+        api->Defaults_AddKeybind(h, "Test", "Axis", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
     }
 
     // --- UI ---
@@ -234,8 +237,8 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
 
     // --- Keybinds Metadata ---
     {
-        api->Meta_AddKeybind(h, "ExamplePlugin.MainWindow", "toggle", "keybind.main_window_toggle.title", "keybind.main_window_toggle.description");
-        api->Meta_AddKeybind(h, "ExamplePlugin.Camera", "cycle", "keybind.camera_cycle.title", "keybind.camera_cycle.description");
+        api->Meta_AddKeybind(h, "MainWindow", "toggle", "keybind.main_window_toggle.title", "keybind.main_window_toggle.description");
+        api->Meta_AddKeybind(h, "Camera", "cycle", "keybind.camera_cycle.title", "keybind.camera_cycle.description");
     }
 
     // --- UI Metadata ---
@@ -335,12 +338,28 @@ void OnActivated(const SPF_Core_API* core_api) {
     // Register callbacks for systems that require the core API.
     if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
         g_ctx.keybindsHandle = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
-        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.MainWindow.toggle", OnToggleMainWindow);
-        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.Camera.cycle", OnCameraKeybind);
-        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "ExamplePlugin.Demo.honk", []() {
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "MainWindow.toggle", OnToggleMainWindow);
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "Camera.cycle", OnCameraKeybind);
+        g_ctx.coreAPI->keybinds->Kbind_Register(g_ctx.keybindsHandle, "Demo.honk", []() {
             auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
             g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "BEEP! (Honk action triggered in plugin)");
         });
+
+        // Loop through all existing actions (including dynamic ones) and restore callbacks
+        int actionCount = g_ctx.coreAPI->keybinds->Kbind_GetActionCount(g_ctx.keybindsHandle);
+        for (int i = 0; i < actionCount; i++) {
+            char actionName[128];
+            g_ctx.coreAPI->keybinds->Kbind_GetActionNameByIndex(g_ctx.keybindsHandle, i, actionName, sizeof(actionName));
+            
+            // For any dynamic action, register our generic test callback
+            if (strstr(actionName, "MainWindow.toggle") == nullptr && 
+                strstr(actionName, "Camera.cycle") == nullptr && 
+                strstr(actionName, "Demo.honk") == nullptr &&
+                strstr(actionName, "Test.Axis") == nullptr) {
+                g_ctx.coreAPI->keybinds->Kbind_Register_Ex(g_ctx.keybindsHandle, actionName, OnDynamicActionTriggered, (void*)"RestoredDynamic");
+            }
+        }
+
         g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Registered keybinds.");
     }
 
@@ -675,7 +694,7 @@ void OnGameLogMessage(const char* log_line, void* user_data) {
 }
 
 /**
- * @brief The callback function for the "ExamplePlugin.MainWindow.toggle" keybind action.
+ * @brief The callback function for the "MainWindow.toggle" keybind action.
  * @details This function was registered with the Keybinds API in `OnActivated`. It is executed
  *          whenever the user presses the key combination assigned to this action (F5 by default).
  */
@@ -693,7 +712,7 @@ void OnToggleMainWindow() {
 }
 
 /**
- * @brief The callback function for the "ExamplePlugin.Camera.cycle" keybind action.
+ * @brief The callback function for the "Camera.cycle" keybind action.
  * @details This function was registered with the Keybinds API in `OnActivated`. It is executed
  *          whenever the user presses the key combination assigned to this action (F6 by default).
  */
@@ -1021,7 +1040,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
             if (ui->UI_Checkbox("Block Game Horn (H key)", &g_ctx.isHonkIntercepted)) {
                 if (g_ctx.coreAPI && g_ctx.coreAPI->keybinds) {
                     auto h = g_ctx.coreAPI->keybinds->Kbind_GetContext(PLUGIN_NAME);
-                    g_ctx.coreAPI->keybinds->Kbind_SetBlockState(h, "ExamplePlugin.Demo.honk", g_ctx.isHonkIntercepted);
+                    g_ctx.coreAPI->keybinds->Kbind_SetBlockState(h, "Demo.honk", g_ctx.isHonkIntercepted);
                 }
             }
 
@@ -1045,6 +1064,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         if (ui->UI_BeginTabItem("Styling API", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderStylingTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Environment", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderEnvironmentTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Input Test", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Dynamic Keybinds", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderDynamicKeybindsTab(ui, user_data); ui->UI_EndTabItem(); }
         ui->UI_EndTabBar();
     }
 }
@@ -1391,10 +1411,10 @@ void RenderInputTestTab(SPF_UI_API* ui, void* user_data) {
     }
 
     ui->UI_Text("Use this tab to test analog axis bindings and view detailed binding info.");
-    ui->UI_Text("Assign any axis to 'ExamplePlugin.Test.Axis' in settings.");
+    ui->UI_Text("Assign any axis to 'Test.Axis' in settings.");
     ui->UI_Separator();
 
-    const char* actionName = "ExamplePlugin.Test.Axis";
+    const char* actionName = "Test.Axis";
     auto keybinds = g_ctx.coreAPI->keybinds;
     auto format = g_ctx.coreAPI->formatting;
 
@@ -2004,6 +2024,96 @@ void* Detour_GameStringFormatting(void* pOutput, const char** ppInput) {
     // CRITICAL: Always call the original function via the trampoline pointer.
     // Failure to do so will break the game's functionality and likely cause a crash.
     return g_ctx.o_GameStringFormatting(pOutput, ppInput);
+}
+
+static void OnDynamicActionTriggered(const char* action_id, void* user_data) {
+    auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
+    
+    char log_buf[256];
+    g_ctx.coreAPI->formatting->Fmt_Format(log_buf, sizeof(log_buf), ">>> DYNAMIC ACTION TRIGGERED: %s (Context: %s) <<<", 
+        action_id ? action_id : "NULL", 
+        user_data ? (const char*)user_data : "NULL");
+    
+    g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buf);
+    
+    if (g_ctx.uiAPI) {
+        char msg_buf[256];
+        g_ctx.coreAPI->formatting->Fmt_Format(msg_buf, sizeof(msg_buf), "Action '%s' Triggered!", action_id ? action_id : "Unknown");
+        SPF_Notification_Params p = { SPF_NOTIFICATION_SUCCESS, msg_buf, SPF_NOTIF_MODE_TOP, 2.0f };
+        g_ctx.uiAPI->UI_ShowNotification(&p);
+    }
+}
+
+void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.coreAPI || !g_ctx.coreAPI->keybinds || !g_ctx.keybindsHandle || !ui) {
+        ui->UI_Text("Keybinds API not available.");
+        return;
+    }
+
+    ui->UI_Text("This tab tests the NEW dynamic keybind registration at runtime.");
+    ui->UI_Separator();
+
+    // 1. INPUT SECTION
+    static char inputActionID[64] = "MyCustomAction";
+    static char inputTitle[64] = "My Custom Action";
+    static char inputDesc[128] = "This action was added manually.";
+
+    ui->UI_Text("Action ID (internal):");
+    ui->UI_InputText("##ActionID", inputActionID, sizeof(inputActionID), SPF_INPUT_TEXT_FLAG_NONE);
+    
+    ui->UI_Text("Title (Display Name):");
+    ui->UI_InputText("##ActionTitle", inputTitle, sizeof(inputTitle), SPF_INPUT_TEXT_FLAG_NONE);
+    
+    ui->UI_Text("Description (Tooltip):");
+    ui->UI_InputText("##ActionDesc", inputDesc, sizeof(inputDesc), SPF_INPUT_TEXT_FLAG_NONE);
+
+    ui->UI_Spacing();
+
+    if (ui->UI_Button(ICON_FA_PLUS " Register New Dynamic Action", 0, 0)) {
+        if (inputActionID[0] == '\0') {
+            SPF_Notification_Params p = { SPF_NOTIFICATION_ERROR, "Action ID cannot be empty!", SPF_NOTIF_MODE_TOP, 3.0f };
+            ui->UI_ShowNotification(&p);
+        } else {
+            // New signature: one call handles both metadata and the callback with context
+            g_ctx.coreAPI->keybinds->Kbind_RegisterActionMetadata(g_ctx.keybindsHandle, inputActionID, inputTitle, inputDesc, OnDynamicActionTriggered, (void*)"DynamicContext");
+
+            char successMsg[256];
+            g_ctx.coreAPI->formatting->Fmt_Format(successMsg, sizeof(successMsg), "Action '%s' registered!", inputActionID);
+            SPF_Notification_Params p = { SPF_NOTIFICATION_HINT, successMsg, SPF_NOTIF_MODE_STACK, 3.0f };
+            ui->UI_ShowNotification(&p);
+        }
+    }
+
+    ui->UI_Separator();
+
+    // 2. LIST SECTION
+    ui->UI_Text("Currently Managed Actions:");
+    int count = g_ctx.coreAPI->keybinds->Kbind_GetActionCount(g_ctx.keybindsHandle);
+    
+    if (count == 0) {
+        ui->UI_Text("No actions found.");
+    } else {
+        for (int i = 0; i < count; i++) {
+            char name[128];
+            g_ctx.coreAPI->keybinds->Kbind_GetActionNameByIndex(g_ctx.keybindsHandle, i, name, sizeof(name));
+            
+            ui->UI_PushID_Int(i);
+            
+            if (ui->UI_Button(ICON_FA_TRASH_CAN, 0, 0)) {
+                g_ctx.coreAPI->keybinds->Kbind_UnregisterActionMetadata(g_ctx.keybindsHandle, name);
+                
+                char delMsg[256];
+                g_ctx.coreAPI->formatting->Fmt_Format(delMsg, sizeof(delMsg), "Removed action: %s", name);
+                SPF_Notification_Params p = { SPF_NOTIFICATION_WARNING, delMsg, SPF_NOTIF_MODE_STACK, 3.0f };
+                ui->UI_ShowNotification(&p);
+            }
+            
+            ui->UI_SameLine(0, 5);
+            ui->UI_Text(name);
+            
+            ui->UI_PopID();
+        }
+    }
 }
 
 // =================================================================================================

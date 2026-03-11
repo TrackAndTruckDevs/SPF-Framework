@@ -7,7 +7,7 @@ The SPF KeyBinds API provides a powerful and flexible system for your plugin to 
 Understanding the keybind system requires knowing three core concepts:
 
 **1. Action**
-An "action" is a named, logical operation within your plugin, like "toggle UI" or "increase value". Each action is defined in your plugin's manifest and has a unique name.
+An "action" is a named, logical operation within your plugin, like "toggle UI" or "increase value". Each action is defined in your plugin's manifest or registered dynamically at runtime using `Kbind_RegisterActionMetadata`. Starting from v1.2.0, the API handles plugin namespaces automatically (Smart Naming).
 
 **2. Keybind**
 A "keybind" is the specific keyboard or gamepad button combination that triggers an action. You provide default keybinds in your manifest, but the user can always override these in the framework's main Settings UI.
@@ -22,8 +22,23 @@ By default, actions can pass input to the game or consume it entirely based on s
 
 The process is simple and involves two main steps:
 
-1.  **Declare in Manifest:** In your `GetManifestData` function, you define all your plugin's actions and their default keybinds. This makes the framework's UI aware of them.
-2.  **Register Callback:** In your plugin's `OnLoad` function, you call the `Register` function to link a specific action name from your manifest to a C function in your code.
+1.  **Declare Actions:** Define your actions statically in the `BuildManifest` function or dynamically at runtime using `Kbind_RegisterActionMetadata`.
+2.  **Register Callback:** In your plugin's `OnActivated` function, you call the `Register` function to link a specific action name to a C function in your code.
+
+## Smart Naming
+
+Starting from v1.2.0, the API automatically handles plugin-specific namespaces. You no longer need to manually prepend your Plugin ID to every action name.
+
+### How it works:
+- If you provide a name like `"toggle"`, the API automatically converts it to `"{PluginID}.toggle"`.
+- If you provide a group like `"UI.open"`, it becomes `"{PluginID}.UI.open"`.
+- Names that already start with your Plugin ID remain unchanged.
+
+| Input Name          | Internal Full Key (Result)      |
+|---------------------|---------------------------------|
+| "honk"              | "MyPlugin.honk"                 |
+| "Camera.cycle"      | "MyPlugin.Camera.cycle"         |
+| "MyPlugin.test"     | "MyPlugin.test" (no change)     |
 
 ## Getting the API Context
 
@@ -97,10 +112,24 @@ Gets a keybinds context handle for your plugin.
 
 ---
 **`void Kbind_Register(SPF_KeyBinds_Handle* h, const char* actionName, void (*callback)(void))`**
-Registers a callback function for a specific action defined in the manifest.
+Registers a standard callback function for a specific logical action.
 *   **h:** The context handle obtained from `Kbind_GetContext`.
-*   **actionName:** The name of the action. This **must** exactly match an `actionName` you defined in your manifest.
+*   **actionName:** The name of the action. **Smart Naming** is applied (e.g., `"General.DoWork"` becomes `"MyPlugin.General.DoWork"`).
 *   **callback:** A pointer to a `void(void)` function that will be called when the action is triggered.
+
+---
+**`typedef void (*SPF_Keybind_Callback_Ex)(const char* action_id, void* user_data)`**
+Advanced callback type that receives context information.
+*   **action_id:** The full internal name of the action that was triggered (e.g., `"MyPlugin.UI.toggle"`).
+*   **user_data:** The custom pointer that was passed during registration.
+
+---
+**`void Kbind_Register_Ex(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_Callback_Ex callback, void* user_data)`**
+Registers an extended callback function with a context pointer and action ID support.
+*   **h:** The context handle.
+*   **actionName:** The logical name of the action. **Smart Naming** is applied.
+*   **callback:** The function pointer (receives `action_id` and `user_data`).
+*   **user_data:** An arbitrary pointer that will be passed back to the callback. This is useful for passing class instances or specific context objects.
 
 ---
 **`float Kbind_GetActionValue(SPF_KeyBinds_Handle* h, const char* actionName)`**
@@ -110,7 +139,7 @@ Gets the current value of the input bound to the specified action. This function
 > For actions bound to buttons, this method returns the **immediate physical state** (1.0 = pressed, 0.0 = released). It **ignores** logical behaviors such as 'toggle', 'hold', or 'press_type'. If you need to react to these logical events, use `Kbind_Register` instead.
 
 *   **h:** The context handle obtained from `Kbind_GetContext`.
-*   **actionName:** The full name of the action (e.g., "MyPlugin.Controls.Throttle").
+*   **actionName:** The logical name of the action (e.g., `"Controls.Throttle"`). **Smart Naming** is applied.
 *   **Returns:** A `float` value representing the current processed state:
     *   **Digital Buttons (Keyboard/Gamepad):** Returns `1.0` if pressed, `0.0` otherwise.
     *   **Analog Triggers:** Returns `0.0` to `1.0`.
@@ -162,9 +191,32 @@ Gets the human-readable display name of the input (e.g., "Space", "Cross").
 **`void Kbind_SetBlockState(SPF_KeyBinds_Handle* h, const char* actionName, bool block)`**
 Programmatically controls whether an action's physical input is blocked from the game.
 *   **h:** The context handle obtained from `Kbind_GetContext`.
-*   **actionName:** The full name of the action (e.g., "MyPlugin.Movement.Forward").
+*   **actionName:** The logical name of the action (e.g., `"Movement.Forward"`). **Smart Naming** is applied.
 *   **block:** If `true`, the framework will block the input from reaching the game. If `false`, the input will be passed through.
 *   **Note**: This function is only effective if the action's `consume` policy is set to **"manual"** (Plugin Managed) in the settings.
+
+---
+**`void Kbind_RegisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName, const char* titleKey, const char* descKey, SPF_Keybind_Callback_Ex callback, void* user_data)`**
+Dynamically registers a new logical action at runtime with an optional extended callback. This allows creating new actions "on the fly" and assigning logic in a single call.
+*   **h:** The context handle.
+*   **actionName:** The internal ID for the action. **Smart Naming** is applied.
+*   **titleKey:** Localization key (or literal) for the display name in the menu.
+*   **descKey:** (Optional) Localization key (or literal) for the tooltip description.
+*   **callback:** (Optional) An extended callback function. If provided, it will be automatically registered for this action.
+*   **user_data:** (Optional) Data pointer for the callback.
+
+---
+**`void Kbind_UnregisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName)`**
+Removes a dynamically registered action from the UI and configuration.
+*   **actionName:** The name of the action to remove. **Smart Naming** is applied.
+
+---
+**`int Kbind_GetActionCount(SPF_KeyBinds_Handle* h)`**
+Returns the total number of actions currently owned by the plugin (both static and dynamic).
+
+---
+**`int Kbind_GetActionNameByIndex(SPF_KeyBinds_Handle* h, int index, char* out_buffer, int buffer_size)`**
+Gets the full name of an action by its zero-based index. Useful for recovering dynamic actions during plugin activation to re-register their callbacks.
 
 ---
 **`void Kbind_UnregisterAll(SPF_KeyBinds_Handle* h)`**
@@ -187,41 +239,55 @@ void OnWalkModeToggle(bool active) {
 }
 ```
 
-## Complete Example
+## Complete Example (Static & Dynamic)
 
-This example shows how to define an action to toggle a UI window and register a callback for it.
+This example shows how to define actions and register callbacks using the modern Smart Naming approach.
 
-**1. Manifest Definition (`GetManifestData`)**
-First, define the action and its default keybind in your manifest.
+**1. Manifest Definition (`BuildManifest`)**
+Define static actions and their default keybinds.
 
 ```c
-// In GetManifestData()
-g_manifest.keybinds.actionCount = 1;
-g_manifest.keybinds.actions[0].groupName = "MyPlugin.UI";
-g_manifest.keybinds.actions[0].actionName = "toggle_main_window";
-g_manifest.keybinds.actions[0].keybind.keyCode = KEY_F5; // Default to F5
+void MyPlugin_BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api) {
+    // SMART NAMING: "UI" group will be automatically prefixed with "MyPlugin."
+    api->Defaults_AddKeybind(h, "UI", "toggle_window", "keyboard", "KEY_F5", "always");
+    api->Meta_AddKeybind(h, "UI", "toggle_window", "Toggle Menu", "Press F5 to open UI");
+}
 ```
 
-**2. C++ Implementation**
-Next, register a callback for this action in your plugin's code.
+**2. C++ Implementation & Dynamic Actions**
+Register callbacks and add new actions on the fly.
 
 ```c
-// Global state for our window
-static bool s_isWindowVisible = false;
+void ToggleMainWindow() { /* ... */ }
 
-// The callback function that will be triggered
-void ToggleMainWindow() {
-    s_isWindowVisible = !s_isWindowVisible;
-    
-    // In a real plugin, you would use the UI API to show/hide the window
+// Extended callback can identify which of many actions was triggered
+void OnDynamicAction(const char* action_id, void* user_data) {
+    Log("Action %s triggered with context %s", action_id, (const char*)user_data);
 }
 
-// In your activation function
 void MyPlugin_OnActivated(const SPF_Core_API* api) {
     if (api->keybinds) {
         SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
-        // Register the "MyPlugin.UI.toggle_main_window" action to our C function
-        api->keybinds->Kbind_Register(h, "MyPlugin.UI.toggle_main_window", &ToggleMainWindow);
+        
+        // A. Register static action (short names work!)
+        api->keybinds->Kbind_Register(h, "UI.toggle_window", &ToggleMainWindow);
+
+        // B. Add a dynamic action with logic in ONE call
+        api->keybinds->Kbind_RegisterActionMetadata(h, "Dynamic.Cmd1", "Manual Action", "Created at runtime", &OnDynamicAction, (void*)"Cmd1Context");
+
+        // C. Use Register_Ex for actions defined in manifest (e.g. to use one function for multiple buttons)
+        api->keybinds->Kbind_Register_Ex(h, "Camera.cycle", &OnDynamicAction, (void*)"CameraContext");
+
+        // D. Recover actions (e.g. after game restart)
+        int count = api->keybinds->Kbind_GetActionCount(h);
+        for (int i = 0; i < count; i++) {
+            char name[128];
+            api->keybinds->Kbind_GetActionNameByIndex(h, i, name, sizeof(name));
+            // Re-register universal callback for dynamic actions
+            if (strstr(name, "Dynamic.")) {
+                api->keybinds->Kbind_Register_Ex(h, name, &OnDynamicAction, (void*)"Restored");
+            }
+        }
     }
 }
 ```
@@ -229,12 +295,12 @@ Now, when the user presses F5 (or whatever key they rebind it to), the `ToggleMa
 
 ## Advanced Usage Example: Inspecting Bindings
 
-This example shows how to inspect all physical bindings assigned to an action.
+This example shows how to inspect all physical bindings assigned to an action using short names.
 
 ```cpp
 void OnActivated(const SPF_Core_API* api) {
     SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
-    const char* action = "MyPlugin.General.Jump";
+    const char* action = "General.Jump"; // Smart Naming will resolve to "MyPlugin.General.Jump"
 
     int count = api->keybinds->Kbind_GetBindingCount(h, action);
     for (int i = 0; i < count; i++) {

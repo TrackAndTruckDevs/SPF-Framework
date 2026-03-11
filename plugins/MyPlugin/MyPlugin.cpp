@@ -142,13 +142,12 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     {
         // --- Action 0: A sample keybind to toggle a window ---
         // `groupName`: Logical grouping for actions, used to avoid name collisions.
-        // Best practice: "{PluginName}.{Feature}".
         // `actionName`: (e.g., "toggle", "activate").
         // Define one or more default key combinations for this action.
         // `type`: "keyboard", "gamepad", "gamepad_axis", "joystick", "joystick_axis", "mouse", "mouse_axis".
         // `key`: Key name (see VirtualKeyMapping.cpp or GamepadButtonMapping.cpp).
         // `consume`: When to consume input: "never", "on_ui_focus", "always", "manual".
-        api->Defaults_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "keyboard", "KEY_F5", "always");
+        api->Defaults_AddKeybind(h, "MainWindow", "toggle", "keyboard", "KEY_F5", "always");
     }
     */
 
@@ -199,7 +198,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     {
         // `groupName`: Must match the action's groupName.
         // `actionName`: Must match the action's actionName.
-        api->Meta_AddKeybind(h, "MyPlugin.MainWindow", "toggle", "Toggle Main Window", "Opens or closes the main window of MyPlugin.");
+        api->Meta_AddKeybind(h, "MainWindow", "toggle", "Toggle Main Window", "Opens or closes the main window of MyPlugin.");
     }
     */
 

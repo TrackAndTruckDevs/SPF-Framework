@@ -452,6 +452,11 @@ void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
  */
 void RenderInputTestTab(SPF_UI_API* ui, void* user_data);
 
+/**
+ * @brief Renders the content of the "Dynamic Keybinds" tab to test runtime action registration.
+ */
+void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data);
+
 // --- Helper Functions ---
 // These are internal functions that encapsulate specific logic for better organization.
 

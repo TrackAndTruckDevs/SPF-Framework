@@ -9,6 +9,7 @@
 #include "SPF/Config/ManifestData.hpp"
 #include "SPF/Utils/SystemUtils.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -1936,6 +1937,105 @@ bool ConfigService::IsConnectionAllowed() {
     // 2. If not found or not a boolean, create/fix it with default 'true'
     SetValue("framework", keyPath, true);
     return true;
+}
+
+void ConfigService::RegisterActionMetadata(const std::string& componentName, const std::string& actionFullName, const std::string& titleKey, const std::string& descKey) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+    
+    // 1. NORMALIZE: Ensure actionFullName starts with componentName (e.g. "ExamplePlugin.myAction")
+    // This is mandatory for UI visibility and proper JSON serialization.
+    std::string sanitizedFullName = actionFullName;
+    std::string prefix = componentName + ".";
+    if (actionFullName.find(prefix) != 0) {
+        sanitizedFullName = prefix + actionFullName;
+    }
+
+    // 2. Register ownership
+    m_keybindOwnership[sanitizedFullName] = componentName;
+
+    // 3. Split into group and action
+    size_t lastDot = sanitizedFullName.rfind('.');
+    std::string groupName = sanitizedFullName.substr(0, lastDot);
+    std::string actionName = sanitizedFullName.substr(lastDot + 1);
+
+    if (!m_mergedConfigs.count("keybinds")) {
+        m_mergedConfigs["keybinds"] = nlohmann::ordered_json::object();
+    }
+    
+    auto& keybinds = m_mergedConfigs["keybinds"];
+    if (!keybinds.contains(groupName)) {
+        keybinds[groupName] = nlohmann::ordered_json::object();
+    }
+    
+    if (!keybinds[groupName].contains(actionName)) {
+        keybinds[groupName][actionName] = nlohmann::ordered_json::object();
+        keybinds[groupName][actionName]["bindings"] = nlohmann::ordered_json::array();
+    }
+
+    // 4. Inject metadata
+    auto& actionNode = keybinds[groupName][actionName];
+    InjectMetadata(actionNode, titleKey, descKey);
+
+    // 5. Mark dirty to ensure it's saved in the plugin's settings.json
+    m_dirtyComponents.insert(componentName);
+
+    // 6. Fire event to refresh UI
+    m_eventManager.System.OnKeybindsModified.Call({});
+
+    if (logger) logger->Info("Dynamically registered action metadata for '{}' (Owner: {})", sanitizedFullName, componentName);
+
+    // 7. Ensure the action exists in KeyBindsManager
+    Modules::KeyBindsManager::GetInstance().EnsureActionExists(sanitizedFullName);
+}
+
+void ConfigService::UnregisterActionMetadata(const std::string& componentName, const std::string& actionFullName) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+
+    // NORMALIZE input name first to find the correct internal key
+    std::string sanitizedFullName = actionFullName;
+    std::string prefix = componentName + ".";
+    if (actionFullName.find(prefix) != 0) {
+        sanitizedFullName = prefix + actionFullName;
+    }
+
+    // 1. Remove from ownership map
+    auto it = m_keybindOwnership.find(sanitizedFullName);
+    if (it != m_keybindOwnership.end() && it->second == componentName) {
+        m_keybindOwnership.erase(it);
+    } else {
+        return; 
+    }
+
+    // 2. Remove from merged config
+    size_t lastDot = sanitizedFullName.rfind('.');
+    std::string groupName = sanitizedFullName.substr(0, lastDot);
+    std::string actionName = sanitizedFullName.substr(lastDot + 1);
+
+    if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName)) {
+        auto& group = m_mergedConfigs["keybinds"][groupName];
+        if (group.contains(actionName)) {
+            group.erase(actionName);
+            if (group.empty()) {
+                m_mergedConfigs["keybinds"].erase(groupName);
+            }
+            m_dirtyComponents.insert(componentName);
+            m_eventManager.System.OnKeybindsModified.Call({});
+            if (logger) logger->Info("Dynamically unregistered action '{}' for component '{}'.", sanitizedFullName, componentName);
+        }
+    }
+
+    // 3. Completely remove from KeyBindsManager logic
+    Modules::KeyBindsManager::GetInstance().RemoveAction(sanitizedFullName);
+}
+
+std::vector<std::string> ConfigService::GetOwnedActions(const std::string& componentName) const {
+    std::vector<std::string> actions;
+    for (const auto& [actionKey, owner] : m_keybindOwnership) {
+        if (owner == componentName) {
+            actions.push_back(actionKey);
+        }
+    }
+    return actions;
 }
 
 }  // namespace Config
