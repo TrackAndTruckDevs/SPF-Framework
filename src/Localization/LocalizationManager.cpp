@@ -228,8 +228,14 @@ const std::string& LocalizationManager::Get(const std::string& componentName, co
     auto& reported = m_reportedMissingKeys[componentName];
     auto [it, inserted] = reported.insert(key);
     if (inserted) {
+        // If the key contains spaces, it's likely a literal string, not a translation key.
+        // We return it as is without warning.
+        if (key.find(' ') != std::string::npos) {
+            return *it;
+        }
+
         auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
-        logger->Warn("Localization key '{}' not found for component '{}'.", key, componentName);
+        logger->Debug("Localization key '{}' not found for component '{}'.", key, componentName);
     }
     return *it;
 }
@@ -255,8 +261,13 @@ const std::string& LocalizationManager::GetWithFallback(const std::string& prima
     auto& reported = m_reportedMissingKeys[primaryComponentName];
     auto [it, inserted] = reported.insert(key);
     if (inserted) {
+        // Suppress warning for literal strings (contain spaces)
+        if (key.find(' ') != std::string::npos) {
+            return *it;
+        }
+
         auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
-        logger->Warn("Localization key '{}' not found for component '{}' and no framework fallback available.", key, primaryComponentName);
+        logger->Debug("Localization key '{}' not found for component '{}' and no framework fallback available.", key, primaryComponentName);
     }
     return *it;
 }

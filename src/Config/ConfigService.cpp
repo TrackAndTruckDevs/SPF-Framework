@@ -574,8 +574,13 @@ void ConfigService::Finalize(InitializationReport* report) {
         }
       }
     }
+    
+    // NEW: Propagate status to EnvironmentManager
+    System::EnvironmentManager::GetInstance().SetInstallationStatus(m_installationStatus);
+
   } catch (...) {
-    m_installationStatus = InstallationStatus::NewInstall; // Assume new if corrupted
+    m_installationStatus = InstallationStatus::NewInstall;
+    System::EnvironmentManager::GetInstance().SetInstallationStatus(m_installationStatus);
   }
 
   // --- Step 1: Load framework manifest ---
