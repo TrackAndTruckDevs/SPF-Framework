@@ -4412,6 +4412,18 @@ typedef struct SPF_UI_API {
      */
     bool (*UI_IsMouseOverridden)();
 
+    /**
+     * @brief Adds text to a draw list using a specific font handle and size.
+     * @param dl Handle to the target draw list.
+     * @param font_handle Valid font handle retrieved via UI_GetFont or LoadFont functions.
+     * @param font_size Desired font size in pixels.
+     * @param pos_x, pos_y Screen coordinates for the text origin.
+     * @param col Text color in RGBA format (0xRRGGBBAA).
+     * @param text The string to be rendered.
+     * @param wrap_width Optional width for automatic text wrapping (use 0.0f for no wrap).
+     */
+    void (*UI_DrawList_AddTextWithFontHandle)(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
+
     // ============================================================================================
     // XIV. RESOURCE MANAGEMENT (TEXTURES & FONTS)
     // ============================================================================================

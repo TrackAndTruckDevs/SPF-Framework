@@ -829,6 +829,12 @@ void UIApi::UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, f
     }
 }
 
+void UIApi::UI_DrawList_AddTextWithFontHandle(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width) {
+    if (dl && font_handle && text) {
+        ((ImDrawList*)dl)->AddText((ImFont*)font_handle, font_size, {pos_x, pos_y}, col, text, nullptr, wrap_width);
+    }
+}
+
 void UIApi::UI_DrawList_PathClear(SPF_DrawList_Handle dl) { if (dl) ((ImDrawList*)dl)->PathClear(); }
 void UIApi::UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y) { if (dl) ((ImDrawList*)dl)->PathLineTo({pos_x, pos_y}); }
 void UIApi::UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, SPF_DrawFlags flags, float thickness) { if (dl) ((ImDrawList*)dl)->PathStroke(col, (ImDrawFlags)flags, thickness); }
@@ -1409,6 +1415,7 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_DestroyTexture = &UIApi::UI_DestroyTexture;
     api->UI_LoadFontFromMemory = &UIApi::UI_LoadFontFromMemory;
     api->UI_LoadFontFromFile = &UIApi::UI_LoadFontFromFile;
+    api->UI_DrawList_AddTextWithFontHandle = &UIApi::UI_DrawList_AddTextWithFontHandle;
 }
 
 }  // namespace Modules::API

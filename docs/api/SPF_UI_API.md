@@ -1858,6 +1858,18 @@ Requests the framework to load a font from a file on disk.
     *   `config`: Pointer to an `SPF_Font_Config` structure.
 *   **Returns:** `NULL` on the first call. Use `UI_GetFont(name)` in subsequent frames to retrieve the valid handle.
 
+---
+**`void UI_DrawList_AddTextWithFontHandle(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width)`**
+Directly renders text into a draw list using a specific font handle (retrieved via `UI_GetFont`).
+*   **Parameters:**
+    *   `dl`: The target draw list.
+    *   `font_handle`: A valid font handle.
+    *   `font_size`: The rendering size in pixels.
+    *   `pos_x, pos_y`: Absolute screen coordinates.
+    *   `col`: Text color (0xRRGGBBAA).
+    *   `text`: The string to display.
+    *   `wrap_width`: (Optional) Maximum width before wrapping. Use `0.0f` for no wrap.
+
 ### Specialized Rendering
 
 ---

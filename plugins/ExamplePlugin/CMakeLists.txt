@@ -58,7 +58,7 @@ endif()
 
 # --- Distribution for Installer ---
 # This section ensures that every build also updates the files in the installer's distribution folder.
-set(INSTALLER_DIST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../installer/dist" CACHE PATH "Staging directory for the installer")
+set(INSTALLER_DIST_DIR "${CMAKE_SOURCE_DIR}/../installer/dist" CACHE PATH "Staging directory for the installer")
 set(INSTALLER_PLUGIN_DIR "${INSTALLER_DIST_DIR}/${PLUGIN_NAME}")
 
 add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD

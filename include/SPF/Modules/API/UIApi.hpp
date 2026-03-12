@@ -438,6 +438,7 @@ class UIApi {
   static void UI_DrawList_AddCallback(SPF_DrawList_Handle dl, void (*callback)(const void* parent_list, const void* cmd), void* user_data);
   static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
   static void UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
+  static void UI_DrawList_AddTextWithFontHandle(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
   static void UI_DrawList_PathClear(SPF_DrawList_Handle dl);
   static void UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y);
   static void UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, SPF_DrawFlags flags, float thickness);
