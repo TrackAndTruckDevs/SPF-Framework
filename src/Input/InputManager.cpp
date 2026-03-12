@@ -1,4 +1,5 @@
 #include <Windows.h>  // Pre-include for safety
+#include <intrin.h>
 
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Input/IInputConsumer.hpp"
@@ -1045,9 +1046,41 @@ void InputManager::SetMouseButtonsControl(bool gameHasControl) { m_gameControlsM
 void InputManager::SetMouseWheelControl(bool gameHasControl) { m_gameControlsMouseWheel = gameHasControl; }
 
 void InputManager::SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel) {
-    m_pluginRequestedMouseAxesBlock = blockAxes;
-    m_pluginRequestedMouseButtonsBlock = blockButtons;
-    m_pluginRequestedMouseWheelBlock = blockWheel;
+    void* caller = _ReturnAddress();
+    
+    auto& req = m_programmaticMouseBlocks[caller];
+    if (req.axes == blockAxes && req.buttons == blockButtons && req.wheel == blockWheel) {
+        return; // No change from this caller
+    }
+
+    req.axes = blockAxes;
+    req.buttons = blockButtons;
+    req.wheel = blockWheel;
+
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
+    logger->Trace("Mouse block request updated from source 0x{:p}: Axes={}, Buttons={}, Wheel={}", 
+        caller, blockAxes, blockButtons, blockWheel);
+}
+
+bool InputManager::IsProgrammaticMouseAxesBlockRequested() const {
+    for (auto const& [source, req] : m_programmaticMouseBlocks) {
+        if (req.axes) return true;
+    }
+    return false;
+}
+
+bool InputManager::IsProgrammaticMouseButtonsBlockRequested() const {
+    for (auto const& [source, req] : m_programmaticMouseBlocks) {
+        if (req.buttons) return true;
+    }
+    return false;
+}
+
+bool InputManager::IsProgrammaticMouseWheelBlockRequested() const {
+    for (auto const& [source, req] : m_programmaticMouseBlocks) {
+        if (req.wheel) return true;
+    }
+    return false;
 }
 
 void InputManager::StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding) {

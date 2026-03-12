@@ -144,9 +144,9 @@ class InputManager {
   // --- Programmatic (Plugin) Mouse Blocking ---
   void SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel);
   bool IsAxisAccumulator(uint32_t hardwareCode) const;
-  bool IsProgrammaticMouseAxesBlockRequested() const { return m_pluginRequestedMouseAxesBlock; }
-  bool IsProgrammaticMouseButtonsBlockRequested() const { return m_pluginRequestedMouseButtonsBlock; }
-  bool IsProgrammaticMouseWheelBlockRequested() const { return m_pluginRequestedMouseWheelBlock; }
+  bool IsProgrammaticMouseAxesBlockRequested() const;
+  bool IsProgrammaticMouseButtonsBlockRequested() const;
+  bool IsProgrammaticMouseWheelBlockRequested() const;
 
   const std::set<uint32_t>& GetCurrentlyPressedHardwareCodes() const { return m_currentlyPressedHardwareCodes; }
   const std::map<uint32_t, float>& GetCurrentlyActiveAxisValues() const { return m_activeAxisValues; }
@@ -219,9 +219,12 @@ class InputManager {
   bool m_gameControlsMouseButtons = true;
   bool m_gameControlsMouseWheel = true;
 
-  bool m_pluginRequestedMouseAxesBlock = false;
-  bool m_pluginRequestedMouseButtonsBlock = false;
-  bool m_pluginRequestedMouseWheelBlock = false;
+  struct MouseBlockRequest {
+    bool axes = false;
+    bool buttons = false;
+    bool wheel = false;
+  };
+  std::map<void*, MouseBlockRequest> m_programmaticMouseBlocks;
 
   std::set<uint32_t> m_currentlyPressedHardwareCodes;
   std::map<uint32_t, float> m_activeAxisValues;

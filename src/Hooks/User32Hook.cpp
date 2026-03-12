@@ -14,12 +14,14 @@ static BYTE g_previousKeyboardState[256] = {};
 
 // Define pointer types for the original functions
 using SetCursorPos_t = BOOL(WINAPI*)(int, int);
+using GetCursorPos_t = BOOL(WINAPI*)(LPPOINT);
 using GetKeyboardState_t = BOOL(WINAPI*)(PBYTE);
 using GetAsyncKeyState_t = SHORT(WINAPI*)(int);
 using GetKeyState_t = SHORT(WINAPI*)(int);
 
 // Pointers to the original functions
 static SetCursorPos_t oSetCursorPos = nullptr;
+static GetCursorPos_t oGetCursorPos = nullptr;
 static GetKeyboardState_t oGetKeyboardState = nullptr;
 static GetAsyncKeyState_t oGetAsyncKeyState = nullptr;
 static GetKeyState_t oGetKeyState = nullptr;
@@ -74,6 +76,21 @@ BOOL WINAPI hkSetCursorPos(int X, int Y) {
     return TRUE;  // Lie that we set the position
   }
   return oSetCursorPos(X, Y);
+}
+
+BOOL WINAPI hkGetCursorPos(LPPOINT lpPoint) {
+  BOOL result = oGetCursorPos(lpPoint);
+  if (result && lpPoint != nullptr && !SPF::Input::InputManager::GetInstance().ShouldGameControlMouseAxes()) {
+    // If blocked, we return a fixed position (e.g., center of the screen or last known position)
+    // to prevent the game from detecting movement. 
+    // For many games, returning the same position every time effectively blocks mouse look.
+    static POINT lastPoint = { 0, 0 };
+    if (lastPoint.x == 0 && lastPoint.y == 0) lastPoint = *lpPoint;
+    *lpPoint = lastPoint;
+  } else if (result && lpPoint != nullptr) {
+      // Update last known position when not blocked
+  }
+  return result;
 }
 
 BOOL WINAPI hkGetKeyboardState(PBYTE lpKeyState) {
@@ -184,6 +201,7 @@ bool User32Hook::Install() {
 
   // --- Create all hooks ---
   MH_CreateHook(reinterpret_cast<LPVOID>(&SetCursorPos), reinterpret_cast<LPVOID>(&hkSetCursorPos), reinterpret_cast<void**>(&oSetCursorPos));
+  MH_CreateHook(reinterpret_cast<LPVOID>(&GetCursorPos), reinterpret_cast<LPVOID>(&hkGetCursorPos), reinterpret_cast<void**>(&oGetCursorPos));
   MH_CreateHook(reinterpret_cast<LPVOID>(&GetKeyboardState), reinterpret_cast<LPVOID>(&hkGetKeyboardState), reinterpret_cast<void**>(&oGetKeyboardState));
   MH_CreateHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState), reinterpret_cast<LPVOID>(&hkGetAsyncKeyState), reinterpret_cast<void**>(&oGetAsyncKeyState));
   MH_CreateHook(reinterpret_cast<LPVOID>(&GetKeyState), reinterpret_cast<LPVOID>(&hkGetKeyState), reinterpret_cast<void**>(&oGetKeyState));
@@ -204,6 +222,7 @@ void User32Hook::Uninstall() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("User32Hook");
     // Disable hooks individually instead of using MH_ALL_HOOKS
     MH_DisableHook(reinterpret_cast<LPVOID>(&SetCursorPos));
+    MH_DisableHook(reinterpret_cast<LPVOID>(&GetCursorPos));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyState));
@@ -217,10 +236,12 @@ void User32Hook::Remove() {
 
     // Disable and remove hooks individually
     MH_DisableHook(reinterpret_cast<LPVOID>(&SetCursorPos));
+    MH_DisableHook(reinterpret_cast<LPVOID>(&GetCursorPos));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
     MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyState));
     MH_RemoveHook(reinterpret_cast<LPVOID>(&SetCursorPos));
+    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetCursorPos));
     MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
     MH_RemoveHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
     MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyState));
@@ -229,6 +250,7 @@ void User32Hook::Remove() {
 
     g_hooksCreated = false;
     oSetCursorPos = nullptr;
+    oGetCursorPos = nullptr;
     oGetKeyboardState = nullptr;
     oGetAsyncKeyState = nullptr;
     oGetKeyState = nullptr;

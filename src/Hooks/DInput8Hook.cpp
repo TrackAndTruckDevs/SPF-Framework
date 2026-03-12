@@ -150,6 +150,14 @@ static void InjectVirtualEvent(DIDEVICEOBJECTDATA* rgdod, DWORD& writeIdx, DWORD
 
 static void MaskMouseState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvData) {
     auto& inputManager = SPF::Input::InputManager::GetInstance();
+    
+    // Mask Axes (X, Y) if requested
+    if (!inputManager.ShouldGameControlMouseAxes()) {
+        LONG* pAxes = (LONG*)lpvData;
+        pAxes[0] = 0; // X
+        pAxes[1] = 0; // Y
+    }
+
     // Offset to buttons in DIMOUSESTATE/DIMOUSESTATE2 is after 3 LONG axes (12 bytes)
     BYTE* pButtons = (BYTE*)lpvData + 12;
     int maxButtons = (cbData >= sizeof(DIMOUSESTATE2)) ? 8 : 4;
