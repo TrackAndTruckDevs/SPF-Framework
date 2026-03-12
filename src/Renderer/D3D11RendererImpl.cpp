@@ -128,6 +128,13 @@ std::unique_ptr<ITexture> D3D11RendererImpl::CreateTextureFromMemory(const unsig
     return std::make_unique<D3D11Texture>(srv, width, height);
 }
 
+void D3D11RendererImpl::RefreshFontAtlas() {
+    if (m_device) {
+        ImGui_ImplDX11_InvalidateDeviceObjects();
+        ImGui_ImplDX11_CreateDeviceObjects();
+    }
+}
+
 void D3D11RendererImpl::OnInit(IDXGISwapChain* swapChain, ID3D11Device* device) {
   m_logger->Info("OnInit signal received. Initializing ImGui D3D11 backend...");
   m_logger->Info("SwapChain: {0:p}, Device: {0:p}", static_cast<void*>(swapChain), static_cast<void*>(device));

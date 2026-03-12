@@ -466,8 +466,49 @@ void RenderWindow(IWindow* window, ImGuiID mainDockspaceId, bool isShellVisible)
 }
 
 void UIManager::RenderAll() {
-  // Process unload queue at the beginning of the frame
+  // 1. Process unload queue at the beginning of the frame
   m_pluginManager->ProcessUnloadQueue();
+
+  // 2. Process pending font requests before any ImGui calls for this frame
+  if (m_fontAtlasRebuildPending) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    logger->Info("New fonts requested. Rebuilding font atlas...");
+
+    ImGuiIO& io = ImGui::GetIO();
+    
+    for (auto& req : m_pendingFontRequests) {
+      ImFontConfig config;
+      config.MergeMode = req.merge;
+      config.PixelSnapH = true;
+      
+      ImFont* font = nullptr;
+      if (req.isMemory) {
+        // Transfer ownership of data to a long-lived buffer in UIManager
+        auto persistedData = std::make_unique<std::vector<unsigned char>>(std::move(req.data));
+        font = io.Fonts->AddFontFromMemoryTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, reinterpret_cast<const ImWchar*>(req.ranges));
+        m_fontDataBuffers.push_back(std::move(persistedData));
+      } else {
+        font = io.Fonts->AddFontFromFileTTF(req.path.c_str(), req.size_pixels, &config, reinterpret_cast<const ImWchar*>(req.ranges));
+      }
+
+      if (font) {
+        m_fonts[req.name] = font;
+        logger->Info("Font '{}' successfully added to atlas.", req.name);
+      } else {
+        logger->Error("Failed to load font '{}'.", req.name);
+      }
+    }
+
+    m_pendingFontRequests.clear();
+    
+    if (io.Fonts->Build()) {
+      if (m_renderer) {
+        m_renderer->RefreshFontAtlas();
+        logger->Info("Font atlas rebuilt and GPU texture updated.");
+      }
+    }
+    m_fontAtlasRebuildPending = false;
+  }
 
   // --- Declarative Rendering Logic ---
   auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"));
@@ -828,6 +869,38 @@ void UIManager::DestroyPluginTexture(void* texture_id) {
   if (it != m_pluginTextures.end()) {
     m_pluginTextures.erase(it);
   }
+}
+
+ImFont* UIManager::LoadPluginFontFromMemory(const std::string& name, const void* data, size_t data_size, float size_pixels, bool merge, const uint16_t* ranges) {
+  if (m_fonts.count(name)) return m_fonts[name];
+
+  FontRequest req;
+  req.name = name;
+  req.data.assign(static_cast<const unsigned char*>(data), static_cast<const unsigned char*>(data) + data_size);
+  req.size_pixels = size_pixels;
+  req.merge = merge;
+  req.ranges = ranges;
+  req.isMemory = true;
+
+  m_pendingFontRequests.push_back(std::move(req));
+  m_fontAtlasRebuildPending = true;
+  return nullptr; // Will be available next frame
+}
+
+ImFont* UIManager::LoadPluginFontFromFile(const std::string& name, const std::string& path, float size_pixels, bool merge, const uint16_t* ranges) {
+  if (m_fonts.count(name)) return m_fonts[name];
+
+  FontRequest req;
+  req.name = name;
+  req.path = path;
+  req.size_pixels = size_pixels;
+  req.merge = merge;
+  req.ranges = ranges;
+  req.isMemory = false;
+
+  m_pendingFontRequests.push_back(std::move(req));
+  m_fontAtlasRebuildPending = true;
+  return nullptr; // Will be available next frame
 }
 
 void UIManager::OnPluginLoaded(const Events::OnPluginDidLoad& e) {

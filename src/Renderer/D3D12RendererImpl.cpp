@@ -96,7 +96,7 @@ void D3D12RendererImpl::Shutdown() {
 }
 
 std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsigned char* data, size_t size) {
-    if (!m_pd3dDevice) return nullptr;
+    if (!m_pd3dDevice || !m_assetCommandList || !m_assetCommandAllocator) return nullptr;
 
     int width, height, channels;
     unsigned char* pixels = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 4);
@@ -131,7 +131,7 @@ std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsig
         return nullptr;
     }
 
-    // 2. Create upload buffer manually (alignment 256 for D3D12 row pitch)
+    // 2. Create upload buffer manually
     UINT rowPitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
     UINT64 uploadBufferSize = static_cast<UINT64>(rowPitch) * height;
 
@@ -141,16 +141,12 @@ std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsig
 
     D3D12_RESOURCE_DESC bufferDesc = {};
     bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    bufferDesc.Alignment = 0;
     bufferDesc.Width = uploadBufferSize;
     bufferDesc.Height = 1;
     bufferDesc.DepthOrArraySize = 1;
     bufferDesc.MipLevels = 1;
-    bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
     bufferDesc.SampleDesc.Count = 1;
-    bufferDesc.SampleDesc.Quality = 0;
     bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
     hr = m_pd3dDevice->CreateCommittedResource(
         &uploadHeapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
@@ -162,10 +158,9 @@ std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsig
         return nullptr;
     }
 
-    // 3. Map and copy data with correct pitch
+    // 3. Copy data to upload buffer
     void* mappedData = nullptr;
-    hr = uploadBuffer->Map(0, nullptr, &mappedData);
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(uploadBuffer->Map(0, nullptr, &mappedData))) {
         for (int y = 0; y < height; ++y) {
             memcpy(reinterpret_cast<unsigned char*>(mappedData) + (y * rowPitch), pixels + (y * width * 4), width * 4);
         }
@@ -173,63 +168,83 @@ std::unique_ptr<ITexture> D3D12RendererImpl::CreateTextureFromMemory(const unsig
     }
     stbi_image_free(pixels);
 
-    // 4. Record and execute copy commands
-    m_commandAllocator->Reset();
-    m_commandList->Reset(m_commandAllocator.Get(), nullptr);
+    // 4. Record and execute copy commands using the DEDICATED asset command list
+    {
+        std::lock_guard<std::mutex> lock(m_descHeapMutex);
+        m_assetCommandAllocator->Reset();
+        m_assetCommandList->Reset(m_assetCommandAllocator.Get(), nullptr);
 
-    D3D12_TEXTURE_COPY_LOCATION src = {};
-    src.pResource = uploadBuffer.Get();
-    src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    src.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    src.PlacedFootprint.Footprint.Width = width;
-    src.PlacedFootprint.Footprint.Height = height;
-    src.PlacedFootprint.Footprint.Depth = 1;
-    src.PlacedFootprint.Footprint.RowPitch = rowPitch;
+        D3D12_TEXTURE_COPY_LOCATION src = {};
+        src.pResource = uploadBuffer.Get();
+        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+        src.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        src.PlacedFootprint.Footprint.Width = width;
+        src.PlacedFootprint.Footprint.Height = height;
+        src.PlacedFootprint.Footprint.Depth = 1;
+        src.PlacedFootprint.Footprint.RowPitch = rowPitch;
 
-    D3D12_TEXTURE_COPY_LOCATION dst = {};
-    dst.pResource = texture.Get();
-    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dst.SubresourceIndex = 0;
+        D3D12_TEXTURE_COPY_LOCATION dst = {};
+        dst.pResource = texture.Get();
+        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+        dst.SubresourceIndex = 0;
 
-    m_commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+        m_assetCommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = texture.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_commandList->ResourceBarrier(1, &barrier);
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = texture.Get();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_assetCommandList->ResourceBarrier(1, &barrier);
 
-    m_commandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
-    m_pd3dCommandQueue->ExecuteCommandLists(1, ppCommandLists);
+        m_assetCommandList->Close();
+        ID3D12CommandList* ppCommandLists[] = { m_assetCommandList.Get() };
+        m_pd3dCommandQueue->ExecuteCommandLists(1, ppCommandLists);
 
-    // 5. Synchronize
-    WaitForLastSubmittedFrame();
-
-    // 6. Create SRV in the heap
-    if (m_nextSrvIndex >= MAX_SRV_DESCRIPTORS) {
-        m_logger->Error("D3D12: SRV Descriptor Heap exhausted!");
-        return nullptr;
+        // Synchronize: Wait for this specific operation to complete
+        UINT64 waitValue = ++m_fenceLastSignaledValue;
+        m_pd3dCommandQueue->Signal(m_fence.Get(), waitValue);
+        
+        if (m_fence->GetCompletedValue() < waitValue) {
+            m_fence->SetEventOnCompletion(waitValue, m_fenceEvent);
+            WaitForSingleObject(m_fenceEvent, INFINITE);
+        }
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCpu = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
-    srvHandleCpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
+    // 5. Create SRV
+    D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGpu = {};
+    {
+        std::lock_guard<std::mutex> lock(m_descHeapMutex);
+        if (m_nextSrvIndex >= MAX_SRV_DESCRIPTORS) {
+            m_logger->Error("D3D12: SRV Descriptor Heap exhausted!");
+            return nullptr;
+        }
 
-    D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGpu = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
-    srvHandleGpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
+        D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCpu = m_pd3dSrvDescHeap->GetCPUDescriptorHandleForHeapStart();
+        srvHandleCpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
+        srvHandleGpu = m_pd3dSrvDescHeap->GetGPUDescriptorHandleForHeapStart();
+        srvHandleGpu.ptr += (m_nextSrvIndex * m_srvDescriptorSize);
 
-    m_pd3dDevice->CreateShaderResourceView(texture.Get(), &srvDesc, srvHandleCpu);
-    m_nextSrvIndex++;
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+
+        m_pd3dDevice->CreateShaderResourceView(texture.Get(), &srvDesc, srvHandleCpu);
+        m_nextSrvIndex++;
+    }
 
     return std::make_unique<D3D12Texture>(texture, srvHandleGpu, width, height);
+}
+
+void D3D12RendererImpl::RefreshFontAtlas() {
+    if (m_pd3dDevice) {
+        ImGui_ImplDX12_InvalidateDeviceObjects();
+        ImGui_ImplDX12_CreateDeviceObjects();
+    }
 }
 
 void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue) {
@@ -279,6 +294,19 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* de
     if (FAILED(hr)) {
         m_logger->Critical("OnD3D12Init: commandList->Close failed. (HRESULT: {:#x})", static_cast<unsigned int>(hr));
         return;
+    }
+
+    // NEW: Create dedicated command objects for ASSET LOADING (Texture creation etc)
+    hr = m_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_assetCommandAllocator.GetAddressOf()));
+    if (SUCCEEDED(hr)) {
+        hr = m_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_assetCommandAllocator.Get(), NULL, IID_PPV_ARGS(m_assetCommandList.GetAddressOf()));
+        if (SUCCEEDED(hr)) {
+            m_assetCommandList->Close();
+        } else {
+            m_logger->Error("D3D12 Init: Failed to create asset command list.");
+        }
+    } else {
+        m_logger->Error("D3D12 Init: Failed to create asset command allocator.");
     }
 
     // Create a fence for GPU-CPU synchronization.
@@ -383,10 +411,15 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
     m_pd3dCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
     // Signal the fence to mark that this frame's commands have been submitted.
-    UINT64 fenceValue = m_fenceLastSignaledValue + 1;
-    hr = m_pd3dCommandQueue->Signal(m_fence.Get(), fenceValue);
-    if (FAILED(hr)) { m_logger->Error("OnD3D12Present: CommandQueue->Signal failed. (HRESULT: {:#x})", static_cast<unsigned int>(hr)); return; }
-    m_fenceLastSignaledValue = fenceValue;
+    {
+        std::lock_guard<std::mutex> lock(m_descHeapMutex);
+        UINT64 fenceValue = ++m_fenceLastSignaledValue;
+        hr = m_pd3dCommandQueue->Signal(m_fence.Get(), fenceValue);
+        if (FAILED(hr)) { 
+            m_logger->Error("OnD3D12Present: CommandQueue->Signal failed. (HRESULT: {:#x})", static_cast<unsigned int>(hr)); 
+            return; 
+        }
+    }
 }
 
 void D3D12RendererImpl::OnD3D12BeforeResize(IDXGISwapChain3* swapChain, UINT width, UINT height) {

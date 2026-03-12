@@ -7,6 +7,7 @@
 #include <wrl/client.h> // For ComPtr
 
 #include <vector>
+#include <mutex>
 
 #include <SPF/Renderer/RendererBase.hpp>
 #include "SPF/Utils/Signal.hpp"
@@ -40,6 +41,7 @@ class D3D12RendererImpl : public RendererBase {
   void Shutdown() override;
 
   std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) override;
+  void RefreshFontAtlas() override;
 
  private:
   void OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue);
@@ -61,6 +63,11 @@ class D3D12RendererImpl : public RendererBase {
   ComPtr<ID3D12CommandQueue> m_pd3dCommandQueue;
   ComPtr<ID3D12GraphicsCommandList> m_commandList;
   ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+
+  // Asset Loading (Manual textures)
+  ComPtr<ID3D12GraphicsCommandList> m_assetCommandList;
+  ComPtr<ID3D12CommandAllocator> m_assetCommandAllocator;
+  std::mutex m_descHeapMutex;
 
   // Render Target
   std::vector<ComPtr<ID3D12Resource>> m_mainRenderTargetResource;

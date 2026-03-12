@@ -528,6 +528,10 @@ class UIApi {
   static void* UI_CreateTextureFromMemory(const void* data, size_t size, int* out_width, int* out_height);
   static void* UI_CreateTextureFromFile(const char* file_path, int* out_width, int* out_height);
   static void UI_DestroyTexture(void* texture_id);
+
+  // --- Font Management ---
+  static SPF_Font_Handle UI_LoadFontFromMemory(const char* name, const void* data, size_t data_size, const SPF_Font_Config* config);
+  static SPF_Font_Handle UI_LoadFontFromFile(const char* name, const char* file_path, const SPF_Font_Config* config);
 };
 }  // namespace Modules::API
 SPF_NS_END

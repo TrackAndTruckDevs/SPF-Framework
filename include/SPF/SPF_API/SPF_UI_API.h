@@ -1483,6 +1483,15 @@ typedef enum {
 } SPF_Font;
 
 /**
+ * @brief Configuration for loading a custom font.
+ */
+typedef struct SPF_Font_Config_t {
+    float size_pixels;      /**< Font size in pixels. */
+    bool merge_mode;        /**< If true, merge this font into the previously loaded font. Useful for icons. */
+    const uint16_t* ranges; /**< Optional glyph ranges (e.g., from UI_GetIO_GlyphRangesCyrillic). NULL for default. */
+} SPF_Font_Config;
+
+/**
  * @enum SPF_TextAlign
  * @brief Horizontal text alignment options.
  */
@@ -4432,5 +4441,35 @@ typedef struct SPF_UI_API {
      * @param texture_id The texture identifier to destroy.
      */
     void (*UI_DestroyTexture)(void* texture_id);
+
+    // --- Font Management ---
+
+    /**
+     * @brief Loads a TTF/OTF font from a memory buffer.
+     * @details The framework makes an internal copy of the data, so the plugin can safely free its buffer after call.
+     * @warning This function is ASYNCHRONOUS. It returns NULL immediately because the font atlas
+     *          must be rebuilt at the start of the next frame to prevent rendering glitches.
+     *          The valid SPF_Font_Handle must be retrieved in subsequent frames using UI_GetFont()
+     *          with the same unique name.
+     * @param name A unique name to identify this font (for caching/lookup).
+     * @param data Pointer to the raw font file data.
+     * @param data_size Size of the data buffer.
+     * @param config Font loading parameters (size, merging, etc.).
+     * @return SPF_Font_Handle Always returns NULL on the first call. Retrieve the actual handle later via UI_GetFont.
+     */
+    SPF_Font_Handle (*UI_LoadFontFromMemory)(const char* name, const void* data, size_t data_size, const SPF_Font_Config* config);
+
+    /**
+     * @brief Loads a TTF/OTF font from a file on disk.
+     * @warning This function is ASYNCHRONOUS. It returns NULL immediately because the font atlas
+     *          must be rebuilt at the start of the next frame to prevent rendering glitches.
+     *          The valid SPF_Font_Handle must be retrieved in subsequent frames using UI_GetFont()
+     *          with the same unique name.
+     * @param name A unique name to identify this font.
+     * @param file_path Absolute path to the .ttf or .otf file.
+     * @param config Font loading parameters (size, merging, etc.).
+     * @return SPF_Font_Handle Always returns NULL on the first call. Retrieve the actual handle later via UI_GetFont.
+     */
+    SPF_Font_Handle (*UI_LoadFontFromFile)(const char* name, const char* file_path, const SPF_Font_Config* config);
 
 } SPF_UI_API;

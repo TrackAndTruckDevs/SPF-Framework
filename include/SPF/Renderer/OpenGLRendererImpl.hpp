@@ -22,6 +22,7 @@ class OpenGLRendererImpl : public RendererBase {
   void Shutdown() override;
 
   std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) override;
+  void RefreshFontAtlas() override;
 
  private:
   void OnInit(HDC hdc);

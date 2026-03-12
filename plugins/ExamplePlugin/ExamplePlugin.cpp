@@ -410,6 +410,24 @@ void OnActivated(const SPF_Core_API* core_api) {
                 g_ctx.coreAPI->logger->Log(logger, SPF_LOG_WARN, "Manual Texture Management: Failed to load texture from file (is data\\test.png present?).");
             }
         }
+
+        // --- Demo: Load Font from File ---
+        if (g_ctx.uiAPI->UI_LoadFontFromFile && g_ctx.environmentAPI) {
+            char dataPath[512];
+            g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataPath, sizeof(dataPath));
+            
+            char fontPath[1024];
+            g_ctx.coreAPI->formatting->Fmt_Format(fontPath, sizeof(fontPath), "%s\\Rushon Ground.ttf", dataPath);
+
+            SPF_Font_Config config = { 24.0f, false, nullptr };
+
+            // Note: UI_LoadFontFromFile returns NULL immediately because the font atlas rebuild is deferred
+            // until the beginning of the next frame to avoid performance hitches.
+            // The actual SPF_Font_Handle should be retrieved later during rendering using UI_GetFont("ExamplePlugin_CustomFont").
+            g_ctx.uiAPI->UI_LoadFontFromFile("ExamplePlugin_CustomFont", fontPath, &config);
+            
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Dynamic Font Management: Requested custom font Rushon Ground.ttf. It will be available in the next frame.");
+        }
     }
 
     // --- Telemetry Event Example ---
@@ -1601,7 +1619,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_TextColored(0.1f, 1.0f, 0.1f, 1.0f, ICON_FA_GITHUB " GitHub");
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Unified Button API (v1.2.0)");
+    ui->UI_TextStyled(separator_style, "Unified Button API");
     ui->UI_TextWrapped("UI_ButtonEx provides framework-standard behavior (White -> Gold -> Dark) by default, or can be fully customized.");
 
     // Standard button using framework defaults
@@ -1677,7 +1695,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_RenderMarkdown(markdown, markdown_base_style);
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Notification System Test (v1.2.0)");
+    ui->UI_TextStyled(separator_style, "Notification System Test");
     ui->UI_TextWrapped("Testing new structure-based API with custom colors and programmatic control.");
 
     // --- Helper for quick notifications ---
@@ -1774,7 +1792,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     }
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Window Management Test (v1.2.0)");
+    ui->UI_TextStyled(separator_style, "Window Management Test");
     ui->UI_TextWrapped("Use the button below to center the window and resize it to fit all tabs.");
     if (ui->UI_Button("Center and Fit Window", 0, 0)) {
         const char* tabs[] = {
@@ -1815,7 +1833,7 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     }
 
     ui->UI_Spacing();
-    ui->UI_TextStyled(separator_style, "Custom Gradient API Test (v1.1.5)");
+    ui->UI_TextStyled(separator_style, "Custom Gradient API Test");
     ui->UI_TextWrapped("Demonstrating multi-color primitives for advanced custom widgets.");
 
     float canvas_x, canvas_y;
@@ -1841,6 +1859,20 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_DrawList_AddRectFilledMultiColor(dl, canvas_x + 220, canvas_y + 10, canvas_x + 350, canvas_y + 90, col_tl, col_tr, col_br, col_bl);
 
     ui->UI_Dummy(360, 100); // Reserve space for custom drawing
+
+    ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, ICON_FA_FONT " Dynamic Font Rendering");
+    ui->UI_TextWrapped("Demonstrating UI_LoadFontFromFile. Below is text rendered with 'Rushon Ground.ttf' loaded from the plugin's data folder.");
+    if (!g_ctx.pluginFont) {
+        ui->UI_TextColored(1.0f, 0.5f, 0.0f, 1.0f, "Custom font not loaded yet (queued for next frame or missing file).");
+        g_ctx.pluginFont = ui->UI_GetFont("ExamplePlugin_CustomFont");
+    }    
+    else{
+        ui->UI_PushFont(g_ctx.pluginFont);
+        ui->UI_TextColored(0.4f, 0.7f, 1.0f, 1.0f, "This text uses a custom plugin font!");
+        ui->UI_Text("Sample: ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789");
+        ui->UI_PopFont();
+    }
 
     ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, ICON_FA_IMAGE " Manual Texture Rendering");

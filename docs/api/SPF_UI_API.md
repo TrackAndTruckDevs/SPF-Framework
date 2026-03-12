@@ -1827,6 +1827,37 @@ Releases the GPU resources associated with a manually created texture. Plugins s
 *   **Parameters:**
     *   `texture_id`: The identifier returned by `UI_CreateTextureFromMemory` or `UI_CreateTextureFromFile`.
 
+### Resource Management (Fonts)
+
+SPF allows plugins to load custom TTF/OTF fonts and icons at runtime. Because ImGui requires a font atlas rebuild to register new glyphs, font loading is an **asynchronous** process.
+
+#### `SPF_Font_Config`
+A configuration structure used when loading fonts:
+*   `size_pixels`: The desired font size.
+*   `merge_mode`: If `true`, the glyphs from this font will be merged into the previously loaded font (commonly used for adding icons to a text font).
+*   `ranges`: Optional pointer to glyph ranges (e.g., `UI_GetIO_GlyphRangesCyrillic()`).
+
+---
+**`SPF_Font_Handle UI_LoadFontFromMemory(const char* name, const void* data, size_t data_size, const SPF_Font_Config* config)`**
+Requests the framework to load a font from a raw memory buffer.
+*   **Warning:** Returns `NULL` immediately. The framework makes a copy of the data and rebuilds the font atlas at the start of the next frame.
+*   **Parameters:**
+    *   `name`: A unique string ID for this font (e.g., "MyPlugin_Main").
+    *   `data`: Pointer to the TTF/OTF file bytes.
+    *   `data_size`: Size of the buffer in bytes.
+    *   `config`: Pointer to an `SPF_Font_Config` structure.
+*   **Returns:** `NULL` on the first call. Use `UI_GetFont(name)` in subsequent frames to retrieve the valid handle.
+
+---
+**`SPF_Font_Handle UI_LoadFontFromFile(const char* name, const char* file_path, const SPF_Font_Config* config)`**
+Requests the framework to load a font from a file on disk.
+*   **Warning:** Returns `NULL` immediately. The font atlas is rebuilt at the start of the next frame.
+*   **Parameters:**
+    *   `name`: A unique string ID for this font.
+    *   `file_path`: Absolute path to the font file.
+    *   `config`: Pointer to an `SPF_Font_Config` structure.
+*   **Returns:** `NULL` on the first call. Use `UI_GetFont(name)` in subsequent frames to retrieve the valid handle.
+
 ### Specialized Rendering
 
 ---

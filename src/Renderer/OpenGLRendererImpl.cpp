@@ -135,6 +135,13 @@ std::unique_ptr<ITexture> OpenGLRendererImpl::CreateTextureFromMemory(const unsi
     return std::make_unique<OpenGLTexture>(textureID, width, height);
 }
 
+void OpenGLRendererImpl::RefreshFontAtlas() {
+    if (m_isImGuiInitialized) {
+        ImGui_ImplOpenGL3_DestroyDeviceObjects();
+        ImGui_ImplOpenGL3_CreateDeviceObjects();
+    }
+}
+
 void OpenGLRendererImpl::OnInit(HDC hdc) {
     if (m_isImGuiInitialized) {
         return;

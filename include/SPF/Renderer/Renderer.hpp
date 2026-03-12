@@ -71,6 +71,11 @@ class Renderer {
    */
   std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size);
 
+  /**
+   * @brief Rebuilds the font atlas in the implementation.
+   */
+  void RefreshFontAtlas();
+
   // --- Callbacks from Implementation ---
 
   /**

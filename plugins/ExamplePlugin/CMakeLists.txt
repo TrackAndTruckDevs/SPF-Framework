@@ -79,3 +79,10 @@ add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
         "${INSTALLER_PLUGIN_DIR}/localization"
     COMMENT "Copying localization files to installer dist"
 )
+
+add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/data"
+        "${INSTALLER_PLUGIN_DIR}/data"
+    COMMENT "Copying data dir to installer dist"
+)

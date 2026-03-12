@@ -276,6 +276,9 @@ struct PluginContext {
   void* pluginFileTexture = nullptr;
   int fileTextureWidth = 0;
   int fileTextureHeight = 0;
+
+  // --- Dynamic Font Management Demo ---
+  SPF_Font_Handle pluginFont = nullptr;
 };
 
 /**

@@ -969,6 +969,16 @@ void UIApi::UI_DestroyTexture(void* texture_id) {
     UIManager::GetInstance().DestroyPluginTexture(texture_id);
 }
 
+SPF_Font_Handle UIApi::UI_LoadFontFromMemory(const char* name, const void* data, size_t data_size, const SPF_Font_Config* config) {
+    if (!config) return nullptr;
+    return reinterpret_cast<SPF_Font_Handle>(UIManager::GetInstance().LoadPluginFontFromMemory(name, data, data_size, config->size_pixels, config->merge_mode, config->ranges));
+}
+
+SPF_Font_Handle UIApi::UI_LoadFontFromFile(const char* name, const char* file_path, const SPF_Font_Config* config) {
+    if (!config) return nullptr;
+    return reinterpret_cast<SPF_Font_Handle>(UIManager::GetInstance().LoadPluginFontFromFile(name, file_path, config->size_pixels, config->merge_mode, config->ranges));
+}
+
 // --- Fill API ---
 
 void UIApi::FillUIApi(SPF_UI_API* api) {
@@ -1397,6 +1407,8 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_CreateTextureFromMemory = &UIApi::UI_CreateTextureFromMemory;
     api->UI_CreateTextureFromFile = &UIApi::UI_CreateTextureFromFile;
     api->UI_DestroyTexture = &UIApi::UI_DestroyTexture;
+    api->UI_LoadFontFromMemory = &UIApi::UI_LoadFontFromMemory;
+    api->UI_LoadFontFromFile = &UIApi::UI_LoadFontFromFile;
 }
 
 }  // namespace Modules::API

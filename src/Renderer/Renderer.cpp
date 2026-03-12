@@ -130,6 +130,12 @@ std::unique_ptr<ITexture> Renderer::CreateTextureFromMemory(const unsigned char*
   return nullptr;
 }
 
+void Renderer::RefreshFontAtlas() {
+  if (m_impl) {
+    m_impl->RefreshFontAtlas();
+  }
+}
+
 void Renderer::OnRendererInit() {
   m_logger->Info("Implementation initialized. Signaling Core for late-init...");
   m_core.LateInit();

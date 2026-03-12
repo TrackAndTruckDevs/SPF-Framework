@@ -48,6 +48,12 @@ class RendererBase {
    */
   virtual std::unique_ptr<ITexture> CreateTextureFromMemory(const unsigned char* data, size_t size) = 0;
 
+  /**
+   * @brief Rebuilds the ImGui font atlas texture in the GPU.
+   * Called by UIManager when new fonts are added dynamically.
+   */
+  virtual void RefreshFontAtlas() = 0;
+
  protected:
   Renderer& m_renderer;
 };
