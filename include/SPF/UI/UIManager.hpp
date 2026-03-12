@@ -17,8 +17,11 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <unordered_map>
 #include <nlohmann/json.hpp>
 #include <imgui.h>  // For ImFont
+
+#include "SPF/Renderer/ITexture.hpp"
 
 SPF_NS_BEGIN
 
@@ -123,6 +126,11 @@ class UIManager : public Config::IConfigurable {
 
   void CloseFocusedWindow();
 
+  // --- Manual Texture Management (API support) ---
+  void* CreatePluginTexture(const void* data, size_t size, int* out_width, int* out_height);
+  void* CreatePluginTextureFromFile(const char* file_path, int* out_width, int* out_height);
+  void DestroyPluginTexture(void* texture_id);
+
  private:
   void OnPluginLoaded(const Events::OnPluginDidLoad& e);
   void OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e);
@@ -158,6 +166,7 @@ class UIManager : public Config::IConfigurable {
 
   std::vector<std::shared_ptr<IWindow>> m_windows;
   std::map<std::string, ImFont*> m_fonts;
+  std::unordered_map<void*, std::unique_ptr<Rendering::ITexture>> m_pluginTextures;
   const std::map<std::string, nlohmann::ordered_json>* m_allUIConfigs = nullptr;
   std::string m_windowToFocus;
   std::string m_lastFocusedDockedWindowId;

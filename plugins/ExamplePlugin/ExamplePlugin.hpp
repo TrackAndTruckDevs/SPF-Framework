@@ -264,6 +264,18 @@ struct PluginContext {
    * @brief List of discovered vehicle handles to show in the dropdown.
    */
   std::vector<SPF_VehicleHandle> vehicleHandles;
+
+  // --- Manual Texture Management Demo ---
+  /**
+   * @brief Handle to a texture created manually from memory.
+   */
+  void* pluginTexture = nullptr;
+  int textureWidth = 0;
+  int textureHeight = 0;
+
+  void* pluginFileTexture = nullptr;
+  int fileTextureWidth = 0;
+  int fileTextureHeight = 0;
 };
 
 /**

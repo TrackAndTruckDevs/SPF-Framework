@@ -1798,6 +1798,35 @@ Forcefully takes control of the mouse cursor, ensuring it remains visible and ac
 **`bool UI_IsMouseOverridden()`**
 Returns `true` if the mouse control logic is currently in override mode.
 
+### Resource Management (Textures)
+
+This section provides functions for loading and managing graphical resources like textures directly from the plugin.
+
+---
+**`void* UI_CreateTextureFromMemory(const void* data, size_t size, int* out_width, int* out_height)`**
+Creates a GPU texture from a buffer containing compressed image data (PNG, JPG, etc.).
+*   **Parameters:**
+    *   `data`: Pointer to the raw bytes of the image file.
+    *   `size`: Total size of the data buffer.
+    *   `out_width`: (Optional) Pointer to an integer to receive the texture width.
+    *   `out_height`: (Optional) Pointer to an integer to receive the texture height.
+*   **Returns:** A `void*` texture identifier (e.g., `ID3D11ShaderResourceView*`) to be used with `UI_Image`.
+
+---
+**`void* UI_CreateTextureFromFile(const char* file_path, int* out_width, int* out_height)`**
+Creates a GPU texture directly from an image file on disk.
+*   **Parameters:**
+    *   `file_path`: Absolute path to the image file (PNG, JPG, TGA, BMP).
+    *   `out_width`: (Optional) Pointer to an integer to receive the texture width.
+    *   `out_height`: (Optional) Pointer to an integer to receive the texture height.
+*   **Returns:** A `void*` texture identifier to be used with `UI_Image`.
+
+---
+**`void UI_DestroyTexture(void* texture_id)`**
+Releases the GPU resources associated with a manually created texture. Plugins should call this when a texture is no longer needed to prevent memory leaks.
+*   **Parameters:**
+    *   `texture_id`: The identifier returned by `UI_CreateTextureFromMemory` or `UI_CreateTextureFromFile`.
+
 ### Specialized Rendering
 
 ---

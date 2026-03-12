@@ -47,6 +47,10 @@
 
 #include "SPF/UI/MainWindow.hpp"      // Required for dynamic_cast and GetMainDockspaceID
 #include "SPF/UI/SettingsWindow.hpp"  // Required for dynamic_cast
+#include "SPF/Renderer/Renderer.hpp"
+#include <fstream>
+#include <iterator>
+
 SPF_NS_BEGIN
 
 namespace UI {
@@ -777,6 +781,52 @@ void UIManager::InitializeImGui() {
 void UIManager::ShutdownImGui() {
   if (ImGui::GetCurrentContext()) {
     ImGui::DestroyContext();
+  }
+}
+
+void* UIManager::CreatePluginTexture(const void* data, size_t size, int* out_width, int* out_height) {
+  if (!m_renderer) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    if (logger) logger->Error("Cannot create texture: Renderer is not initialized.");
+    return nullptr;
+  }
+
+  auto texture = m_renderer->CreateTextureFromMemory(static_cast<const unsigned char*>(data), size);
+  if (!texture) {
+    return nullptr;
+  }
+
+  void* handle = texture->GetHandle();
+  if (out_width) *out_width = static_cast<int>(texture->GetWidth());
+  if (out_height) *out_height = static_cast<int>(texture->GetHeight());
+
+  m_pluginTextures[handle] = std::move(texture);
+  return handle;
+}
+
+void* UIManager::CreatePluginTextureFromFile(const char* file_path, int* out_width, int* out_height) {
+  std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+  if (!file) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    if (logger) logger->Error("Cannot create texture: Failed to open file '{}'", file_path);
+    return nullptr;
+  }
+
+  std::streamsize size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  std::vector<unsigned char> buffer(static_cast<size_t>(size));
+  if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+    return nullptr;
+  }
+
+  return CreatePluginTexture(buffer.data(), buffer.size(), out_width, out_height);
+}
+
+void UIManager::DestroyPluginTexture(void* texture_id) {
+  auto it = m_pluginTextures.find(texture_id);
+  if (it != m_pluginTextures.end()) {
+    m_pluginTextures.erase(it);
   }
 }
 

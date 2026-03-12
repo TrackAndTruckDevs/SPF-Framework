@@ -333,6 +333,7 @@ void OnActivated(const SPF_Core_API* core_api) {
     if (g_ctx.coreAPI) {
         g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
         g_ctx.environmentAPI = g_ctx.coreAPI->environment;
+        g_ctx.uiAPI = g_ctx.coreAPI->ui;
     }
 
     // Register callbacks for systems that require the core API.
@@ -374,6 +375,42 @@ void OnActivated(const SPF_Core_API* core_api) {
 
     // Parse the complex object on activation to demonstrate GetJsonValueHandle and JsonReaderApi.
     ParseComplexObject();
+
+    // --- Manual Texture Management Demo ---
+    if (g_ctx.uiAPI && g_ctx.uiAPI->UI_CreateTextureFromMemory) {
+        static const unsigned char white_pixel_png[] = {
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+            0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0xFF, 0xFF, 0x3F,
+            0x00, 0x05, 0xFE, 0x02, 0xFE, 0xDC, 0x44, 0x74, 0x06, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+            0x44, 0xAE, 0x42, 0x60, 0x82
+        };
+
+        g_ctx.pluginTexture = g_ctx.uiAPI->UI_CreateTextureFromMemory(white_pixel_png, sizeof(white_pixel_png), &g_ctx.textureWidth, &g_ctx.textureHeight);
+        
+        if (g_ctx.pluginTexture) {
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Manual Texture Management: Successfully loaded demo texture from memory.");
+        } else {
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_WARN, "Manual Texture Management: Failed to load demo texture (Renderer might not be ready).");
+        }
+
+        // --- Demo: Load from File ---
+        if (g_ctx.uiAPI->UI_CreateTextureFromFile && g_ctx.environmentAPI) {
+            char dataPath[512];
+            g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataPath, sizeof(dataPath));
+            
+            char filePath[1024];
+            g_ctx.coreAPI->formatting->Fmt_Format(filePath, sizeof(filePath), "%s\\test.png", dataPath);
+
+            g_ctx.pluginFileTexture = g_ctx.uiAPI->UI_CreateTextureFromFile(filePath, &g_ctx.fileTextureWidth, &g_ctx.fileTextureHeight);
+            
+            if (g_ctx.pluginFileTexture) {
+                g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Manual Texture Management: Successfully loaded texture from data\\test.png.");
+            } else {
+                g_ctx.coreAPI->logger->Log(logger, SPF_LOG_WARN, "Manual Texture Management: Failed to load texture from file (is data\\test.png present?).");
+            }
+        }
+    }
 
     // --- Telemetry Event Example ---
     // Get a handle for the telemetry API and register our callbacks.
@@ -605,6 +642,16 @@ void OnUnload() {
     g_ctx.gameLogCallbackHandle = nullptr;
 
     // 2. Clear API Context Handles
+    if (g_ctx.uiAPI) {
+        if (g_ctx.pluginTexture) {
+            g_ctx.uiAPI->UI_DestroyTexture(g_ctx.pluginTexture);
+            g_ctx.pluginTexture = nullptr;
+        }
+        if (g_ctx.pluginFileTexture) {
+            g_ctx.uiAPI->UI_DestroyTexture(g_ctx.pluginFileTexture);
+            g_ctx.pluginFileTexture = nullptr;
+        }
+    }
     g_ctx.telemetryHandle = nullptr;
     g_ctx.keybindsHandle = nullptr;
     g_ctx.mainWindowHandle = nullptr;
@@ -1794,6 +1841,32 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_DrawList_AddRectFilledMultiColor(dl, canvas_x + 220, canvas_y + 10, canvas_x + 350, canvas_y + 90, col_tl, col_tr, col_br, col_bl);
 
     ui->UI_Dummy(360, 100); // Reserve space for custom drawing
+
+    ui->UI_Spacing();
+    ui->UI_TextStyled(separator_style, ICON_FA_IMAGE " Manual Texture Rendering");
+    ui->UI_TextWrapped("Demonstrating UI_CreateTextureFromMemory. This image was loaded from a raw byte array in the plugin.");
+
+    if (g_ctx.pluginTexture) {
+        // Display the manually loaded texture
+        ui->UI_Image(g_ctx.pluginTexture, 128.0f, 128.0f);
+        
+        char dim_buf[64];
+        g_ctx.coreAPI->formatting->Fmt_Format(dim_buf, sizeof(dim_buf), "Memory Texture Size: %d x %d", g_ctx.textureWidth, g_ctx.textureHeight);
+        ui->UI_TextDisabled(dim_buf);
+    } else {
+        ui->UI_TextColored(1.0f, 0.0f, 0.0f, 1.0f, "Failed to load memory texture.");
+    }
+
+    ui->UI_Spacing();
+    ui->UI_Text("File-based Texture Rendering:");
+    if (g_ctx.pluginFileTexture) {
+        ui->UI_Image(g_ctx.pluginFileTexture, 348.0f, 236.0f);
+        char dim_buf[64];
+        g_ctx.coreAPI->formatting->Fmt_Format(dim_buf, sizeof(dim_buf), "File Texture Size: %d x %d", g_ctx.fileTextureWidth, g_ctx.fileTextureHeight);
+        ui->UI_TextDisabled(dim_buf);
+    } else {
+        ui->UI_TextColored(1.0f, 0.5f, 0.0f, 1.0f, "File texture not loaded (assets\\test.png missing?)");
+    }
 
     ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, "Screen Transition API Test");

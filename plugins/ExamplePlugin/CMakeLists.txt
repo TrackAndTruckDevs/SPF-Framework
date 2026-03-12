@@ -46,6 +46,14 @@ if(EXISTS "${GAME_PLUGINS_DIR}")
             "${PLUGIN_DEPLOY_DIR}/localization"
         COMMENT "Deploying localization files for ${PLUGIN_NAME}"
     )
+
+    # This command copies the data directory.
+    add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/data"
+            "${PLUGIN_DEPLOY_DIR}/data"
+        COMMENT "Deploying data dir for ${PLUGIN_NAME}"
+    )
 endif()
 
 # --- Distribution for Installer ---

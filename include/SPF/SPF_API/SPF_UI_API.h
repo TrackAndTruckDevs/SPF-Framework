@@ -4403,4 +4403,34 @@ typedef struct SPF_UI_API {
      */
     bool (*UI_IsMouseOverridden)();
 
+    // ============================================================================================
+    // XIV. RESOURCE MANAGEMENT (TEXTURES & FONTS)
+    // ============================================================================================
+
+    /**
+     * @brief Creates a GPU texture from compressed image data in memory (PNG, JPG, etc.).
+     * @param data Pointer to the raw compressed image data.
+     * @param size Size of the data buffer in bytes.
+     * @param out_width Optional pointer to receive the texture width in pixels.
+     * @param out_height Optional pointer to receive the texture height in pixels.
+     * @return void* A texture identifier (ShaderResourceView* on DX11/12, GLuint on OpenGL) 
+     *               to be used with UI_Image functions. Returns NULL on failure.
+     */
+    void* (*UI_CreateTextureFromMemory)(const void* data, size_t size, int* out_width, int* out_height);
+    
+    /**
+     * @brief Creates a GPU texture directly from an image file on disk (PNG, JPG, etc.).
+     * @param file_path Absolute path to the image file.
+     * @param out_width Optional pointer to receive the texture width in pixels.
+     * @param out_height Optional pointer to receive the texture height in pixels.
+     * @return void* A texture identifier to be used with UI_Image functions. Returns NULL on failure.
+     */
+    void* (*UI_CreateTextureFromFile)(const char* file_path, int* out_width, int* out_height);
+
+    /**
+     * @brief Destroys a texture previously created via UI_CreateTextureFromMemory or UI_CreateTextureFromFile.
+     * @param texture_id The texture identifier to destroy.
+     */
+    void (*UI_DestroyTexture)(void* texture_id);
+
 } SPF_UI_API;

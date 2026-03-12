@@ -523,6 +523,11 @@ class UIApi {
   static void UI_SetMouseBlockState(bool blockAxes, bool blockButtons, bool blockWheel);
   static void UI_SetMouseOverride(bool overridden);
   static bool UI_IsMouseOverridden();
+
+  // --- XIV. RESOURCE MANAGEMENT (TEXTURES & FONTS) ---
+  static void* UI_CreateTextureFromMemory(const void* data, size_t size, int* out_width, int* out_height);
+  static void* UI_CreateTextureFromFile(const char* file_path, int* out_width, int* out_height);
+  static void UI_DestroyTexture(void* texture_id);
 };
 }  // namespace Modules::API
 SPF_NS_END

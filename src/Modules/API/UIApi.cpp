@@ -955,6 +955,20 @@ void UIApi::UI_SetMouseBlockState(bool blockAxes, bool blockButtons, bool blockW
 void UIApi::UI_SetMouseOverride(bool overridden) { UIManager::GetInstance().SetMouseOverride(overridden); }
 bool UIApi::UI_IsMouseOverridden() { return UIManager::GetInstance().IsMouseOverridden(); }
 
+// --- XIV. RESOURCE MANAGEMENT (TEXTURES & FONTS) ---
+
+void* UIApi::UI_CreateTextureFromMemory(const void* data, size_t size, int* out_width, int* out_height) {
+    return UIManager::GetInstance().CreatePluginTexture(data, size, out_width, out_height);
+}
+
+void* UIApi::UI_CreateTextureFromFile(const char* file_path, int* out_width, int* out_height) {
+    return UIManager::GetInstance().CreatePluginTextureFromFile(file_path, out_width, out_height);
+}
+
+void UIApi::UI_DestroyTexture(void* texture_id) {
+    UIManager::GetInstance().DestroyPluginTexture(texture_id);
+}
+
 // --- Fill API ---
 
 void UIApi::FillUIApi(SPF_UI_API* api) {
@@ -1380,6 +1394,9 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
     api->UI_SetMouseBlockState = &UIApi::UI_SetMouseBlockState;
     api->UI_SetMouseOverride = &UIApi::UI_SetMouseOverride;
     api->UI_IsMouseOverridden = &UIApi::UI_IsMouseOverridden;
+    api->UI_CreateTextureFromMemory = &UIApi::UI_CreateTextureFromMemory;
+    api->UI_CreateTextureFromFile = &UIApi::UI_CreateTextureFromFile;
+    api->UI_DestroyTexture = &UIApi::UI_DestroyTexture;
 }
 
 }  // namespace Modules::API
