@@ -321,7 +321,9 @@ This section features community-developed plugins that are built on the SPF-Fram
 
 * [SPF_FrontalBlindspotViewer](https://github.com/TrackAndTruckDevs/SPF_FrontalBlindspotViewer.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that provides a smooth, animated camera movement to let you easily see traffic lights when they are obstructed by your truck's A-pillar.***
 
-* [SPF_RedLightCameraPlugin](https://github.com/TrackAndTruckDevs/SPF_RedLightCameraPlugin.git) - ***his plugin automatically takes a screenshot from a unique, customized camera angle every time you get a ticket in ATS and ETS2 for running a red light.***
+* [SPF_RedLightCameraPlugin](https://github.com/TrackAndTruckDevs/SPF_RedLightCameraPlugin.git) - ***His plugin automatically takes a screenshot from a unique, customized camera angle every time you get a ticket in ATS and ETS2 for running a red light.***
+
+* [PWE Overlay](https://github.com/Marcinekk/PWE-Overlay.git) - ***Advanced web-based overlay for ATS & ETS2 built on SPF-Framework and WebView2. Features real-time telemetry, custom bank economy hooks, and Logitech G27 LED support.***
 
 ---
 **Are you a developer who has created a plugin using SPF?** We would love to feature your work here. To have your plugin added to this list, please open an issue or a pull request on our GitHub repository and provide a link to your project.
