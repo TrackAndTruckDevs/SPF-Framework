@@ -214,6 +214,32 @@ struct IConfigService {
    * @return A vector of full action keys (e.g. {"Plugin.Action1", "Plugin.Action2"}).
    */
   virtual std::vector<std::string> GetOwnedActions(const std::string& componentName) const = 0;
+
+  /**
+   * @brief Checks if a specific key exists in a component's configuration.
+   * @param componentName The ID of the component.
+   * @param keyPath The dot-separated path to the key.
+   */
+  virtual bool HasKey(const std::string& componentName, const std::string& keyPath) const = 0;
+
+  /**
+   * @brief Force-saves the configuration for a specific component.
+   * @param componentName The ID of the component.
+   */
+  virtual void SaveComponentConfig(const std::string& componentName) = 0;
+
+  /**
+   * @brief Removes a key or an entire path from a component's configuration.
+   * @param componentName The ID of the component.
+   * @param keyPath The dot-separated path to the key or object to remove.
+   */
+  virtual void RemoveKey(const std::string& componentName, const std::string& keyPath) = 0;
+
+  /**
+   * @brief Reloads the configuration for a specific component from disk.
+   * @param componentName The ID of the component.
+   */
+  virtual void ReloadComponentConfig(const std::string& componentName) = 0;
 };
 }  // namespace Config
 

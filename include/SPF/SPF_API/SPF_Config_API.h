@@ -245,6 +245,57 @@ typedef struct SPF_Config_API {
      */
     void (*Cfg_SetBool)(SPF_Config_Handle* h, const char* key, bool value);
 
+    // --- New ABI-safe extensions ---
+
+    /**
+     * @brief Checks if a specific key path exists in the configuration.
+     * @param h The context handle.
+     * @param key The dot-separated key for the value (e.g., "settings.commands").
+     * @return `true` if the key exists, `false` otherwise.
+     */
+    bool (*Cfg_HasKey)(SPF_Config_Handle* h, const char* key);
+
+    /**
+     * @brief Force-saves the current configuration state from memory to 'settings.json'.
+     * @details Use this to ensure persistence after critical changes.
+     * @param h The context handle.
+     */
+    void (*Cfg_Save)(SPF_Config_Handle* h);
+
+    /**
+     * @brief Removes a key or an entire path from the configuration.
+     * @details This is useful for cleaning up lists or old configuration nodes.
+     * @param h The context handle.
+     * @param key The key or path to remove (e.g., "settings.old_commands").
+     */
+    void (*Cfg_RemoveKey)(SPF_Config_Handle* h, const char* key);
+
+    /**
+     * @brief Sets a raw JSON string as the value for a key.
+     * @details Allows writing complex JSON structures directly. 
+     *          Warning: The framework may validate or re-format the string.
+     * @param h The context handle.
+     * @param key The key for the value.
+     * @param json_literal A valid JSON string (e.g., "[1, 2, 3]" or "{\"a\": 1}").
+     */
+    void (*Cfg_SetJsonString)(SPF_Config_Handle* h, const char* key, const char* json_literal);
+
+    /**
+     * @brief Discards in-memory changes and reloads the configuration from disk.
+     * @param h The context handle.
+     */
+    void (*Cfg_Reload)(SPF_Config_Handle* h);
+
+    /**
+     * @brief Retrieves a raw JSON string representation of a configuration node.
+     * @param h The context handle.
+     * @param key The key for the value.
+     * @param[out] out_buffer Buffer to store the JSON string.
+     * @param buffer_size Size of the output buffer.
+     * @return Number of characters written. Truncated if >= buffer_size.
+     */
+    int (*Cfg_GetJsonString)(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
+
 } SPF_Config_API;
 
 #ifdef __cplusplus

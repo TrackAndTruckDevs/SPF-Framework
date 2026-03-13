@@ -93,6 +93,45 @@ Retrieves a handle to an element at a specific index in a JSON array.
 *   **index:** The zero-based index of the element to retrieve.
 *   **Returns:** A new handle to the element's value if the index is valid, otherwise `NULL`.
 
+---
+**`int Json_GetObjectSize(const SPF_JsonValue_Handle* h)`**
+Gets the number of members (keys) in a JSON object.
+*   **h:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_OBJECT`.
+*   **Returns:** The number of members in the object.
+
+---
+**`int Json_GetMemberName(const SPF_JsonValue_Handle* h, int index, char* out_buffer, int buffer_size)`**
+Retrieves the name of a member (key) at a specific index in a JSON object. This is the primary function for iterating over an object's keys.
+*   **h:** A handle to a JSON value, which must be of type `SPF_JSON_TYPE_OBJECT`.
+*   **index:** The zero-based index of the member.
+*   **Returns:** The number of characters written. Truncated if >= `buffer_size`.
+
+---
+**`SPF_JsonValue_Handle* Json_GetMemberValueByIndex(const SPF_JsonValue_Handle* h, int index)`**
+Retrieves a handle to a member's value at a specific index in a JSON object. 
+*   **Use Case:** Optimized iteration when you need both the key (via `Json_GetMemberName`) and the value without doing a name-based lookup.
+*   **Returns:** A new handle to the value, or `NULL` if the index is invalid.
+
+
+## Complete Example: Iterating Over an Object
+
+This example shows how to iterate over all members of an object without knowing their names beforehand.
+
+```c
+const SPF_JsonValue_Handle* obj_h = config->Cfg_GetJsonValueHandle(config_h, "settings.dynamic_list");
+
+if (obj_h && json->Json_GetType(obj_h) == SPF_JSON_TYPE_OBJECT) {
+    int size = json->Json_GetObjectSize(obj_h);
+    for (int i = 0; i < size; ++i) {
+        char key_name[64];
+        json->Json_GetMemberName(obj_h, i, key_name, sizeof(key_name));
+        
+        const SPF_JsonValue_Handle* val_h = json->Json_GetMemberValueByIndex(obj_h, i);
+        // ... process key_name and val_h ...
+    }
+}
+```
+
 ## Complete Example
 
 Here is a complete example of a function that reads a complex object from the configuration and parses it using this API.

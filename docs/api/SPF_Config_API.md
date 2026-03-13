@@ -172,3 +172,41 @@ Sets a string value.
 ```c
 s_configAPI->Cfg_SetString(s_myPluginConfig, "settings.user.name", "NewPlayerName");
 ```
+
+---
+**`void Cfg_SetJsonString(SPF_Config_Handle* h, const char* key, const char* json_literal)`**
+Sets a raw JSON string as the value for a key. This allows writing complex structures (arrays, objects) in one call.
+*   `json_literal`: A valid JSON string (e.g., `"[1, 2, 3]"` or `{\"a\": 1}`).
+
+**Example:**
+```c
+s_configAPI->Cfg_SetJsonString(s_myPluginConfig, "settings.commands", "{\"cmd1\": {\"enabled\": true}}");
+```
+
+---
+### Management & Inspection
+
+These functions provide direct control over the configuration life-cycle and structure.
+
+**`bool Cfg_HasKey(SPF_Config_Handle* h, const char* key)`**
+Checks if a specific key path exists in the configuration.
+*   **Returns:** `true` if the key exists, `false` otherwise.
+
+---
+**`void Cfg_Save(SPF_Config_Handle* h)`**
+Force-saves the current configuration state from memory to `settings.json` immediately.
+*   **Note:** Use this sparingly, as the framework normally saves changes on exit or when the user saves settings in the UI.
+
+---
+**`void Cfg_RemoveKey(SPF_Config_Handle* h, const char* key)`**
+Removes a key or an entire path (including nested objects) from the configuration.
+*   **Use Case:** Clearing old lists or nodes before writing new data.
+
+---
+**`void Cfg_Reload(SPF_Config_Handle* h)`**
+Discards all unsaved in-memory changes and reloads the configuration from the disk.
+
+---
+**`int Cfg_GetJsonString(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size)`**
+Retrieves a raw JSON string representation of a configuration node.
+*   **Returns:** Number of characters written. Truncated if >= `buffer_size`.

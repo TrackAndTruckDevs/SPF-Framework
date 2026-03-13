@@ -23,6 +23,9 @@ class JsonReaderApi {
   static SPF_JsonValue_Handle* Json_GetMember(const SPF_JsonValue_Handle* h, const char* memberName);
   static int Json_GetArraySize(const SPF_JsonValue_Handle* h);
   static SPF_JsonValue_Handle* Json_GetArrayItem(const SPF_JsonValue_Handle* h, int index);
+  static int Json_GetObjectSize(const SPF_JsonValue_Handle* h);
+  static int Json_GetMemberName(const SPF_JsonValue_Handle* h, int index, char* out_buffer, int buffer_size);
+  static SPF_JsonValue_Handle* Json_GetMemberValueByIndex(const SPF_JsonValue_Handle* h, int index);
 };
 }  // namespace Modules::API
 SPF_NS_END

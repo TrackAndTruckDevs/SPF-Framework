@@ -55,6 +55,10 @@ class ConfigService : public IConfigService {
   void RegisterActionMetadata(const std::string& componentName, const std::string& actionFullName, const std::string& titleKey, const std::string& descKey) override;
   void UnregisterActionMetadata(const std::string& componentName, const std::string& actionFullName) override;
   std::vector<std::string> GetOwnedActions(const std::string& componentName) const override;
+  bool HasKey(const std::string& componentName, const std::string& keyPath) const override;
+  void SaveComponentConfig(const std::string& componentName) override;
+  void RemoveKey(const std::string& componentName, const std::string& keyPath) override;
+  void ReloadComponentConfig(const std::string& componentName) override;
   /**
    * @brief Processes all registered system configurations (isolated and priority-merged).
    * This method iterates through all known systems and applies the appropriate merge strategy

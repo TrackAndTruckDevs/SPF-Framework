@@ -2043,6 +2043,101 @@ std::vector<std::string> ConfigService::GetOwnedActions(const std::string& compo
     return actions;
 }
 
+bool ConfigService::HasKey(const std::string& componentName, const std::string& keyPath) const {
+    return GetValuePtr(componentName, keyPath) != nullptr;
+}
+
+void ConfigService::SaveComponentConfig(const std::string& componentName) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+    if (m_dirtyComponents.find(componentName) == m_dirtyComponents.end()) {
+        if (logger) logger->Debug("SaveComponentConfig: Component '{}' is not dirty, skipping.", componentName);
+        return;
+    }
+
+    // Reuse SaveAllDirty logic but only for this component
+    std::set<std::string> originalDirty = m_dirtyComponents;
+    m_dirtyComponents.clear();
+    m_dirtyComponents.insert(componentName);
+    
+    SaveAllDirty();
+    
+    // Restore remaining dirty components
+    for (const auto& comp : originalDirty) {
+        if (comp != componentName) {
+            m_dirtyComponents.insert(comp);
+        }
+    }
+}
+
+void ConfigService::RemoveKey(const std::string& componentName, const std::string& keyPath) {
+    size_t firstDot = keyPath.find('.');
+    if (firstDot == std::string::npos) return;
+
+    std::string systemName = keyPath.substr(0, firstDot);
+    std::string restOfPath = keyPath.substr(firstDot + 1);
+
+    auto strategyIt = m_systemStrategies.find(systemName);
+    if (strategyIt == m_systemStrategies.end()) return;
+
+    try {
+        if (strategyIt->second == MergeStrategy::Isolate) {
+            if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
+
+            nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(restOfPath));
+            auto& config = m_isolatedConfigs[systemName][componentName];
+            
+            if (config.contains(ptr)) {
+                std::string parentPath = restOfPath;
+                std::string leafKey;
+                size_t lastDot = restOfPath.rfind('.');
+                
+                if (lastDot != std::string::npos) {
+                    parentPath = restOfPath.substr(0, lastDot);
+                    leafKey = restOfPath.substr(lastDot + 1);
+                    nlohmann::ordered_json::json_pointer parentPtr(ToJSONPointerPath(parentPath));
+                    if (config.contains(parentPtr) && config[parentPtr].is_object()) {
+                        config[parentPtr].erase(leafKey);
+                    }
+                } else {
+                    leafKey = restOfPath;
+                    config.erase(leafKey);
+                }
+
+                m_dirtyComponents.insert(componentName);
+                BuildAggregatedUserSettings();
+            }
+        } else {
+            // PriorityMerge (keybinds)
+            if (!m_mergedConfigs.contains(systemName)) return;           
+            
+            size_t lastDot = restOfPath.rfind('.');
+            if (lastDot == std::string::npos) return;
+            std::string groupName = restOfPath.substr(0, lastDot);
+            std::string actionName = restOfPath.substr(lastDot + 1);
+
+            if (m_mergedConfigs[systemName].contains(groupName) && m_mergedConfigs[systemName][groupName].contains(actionName)) {
+                m_mergedConfigs[systemName][groupName].erase(actionName);
+                if (m_mergedConfigs[systemName][groupName].empty()) {
+                    m_mergedConfigs[systemName].erase(groupName);
+                }
+                m_dirtyComponents.insert(componentName);
+            }
+        }
+    } catch (...) {}
+}
+
+void ConfigService::ReloadComponentConfig(const std::string& componentName) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+    if (logger) logger->Info("Reloading configuration for component '{}' from disk.", componentName);
+
+    // 1. Remove from dirty to prevent overwriting during process
+    m_dirtyComponents.erase(componentName);
+
+    // 2. Re-process configurations
+    InitializationReport report;
+    ProcessAllSystemConfigurations(report);
+}
+
 }  // namespace Config
 
 SPF_NS_END

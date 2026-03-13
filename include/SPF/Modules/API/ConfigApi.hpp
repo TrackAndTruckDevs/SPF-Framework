@@ -22,6 +22,13 @@ class ConfigApi {
   static bool Cfg_GetBool(SPF_Config_Handle* h, const char* key, bool defaultValue);
   static void Cfg_SetBool(SPF_Config_Handle* h, const char* key, bool value);
   static SPF_JsonValue_Handle* Cfg_GetJsonValueHandle(SPF_Config_Handle* h, const char* key);
+
+  static bool Cfg_HasKey(SPF_Config_Handle* h, const char* key);
+  static void Cfg_Save(SPF_Config_Handle* h);
+  static void Cfg_RemoveKey(SPF_Config_Handle* h, const char* key);
+  static void Cfg_SetJsonString(SPF_Config_Handle* h, const char* key, const char* json_literal);
+  static void Cfg_Reload(SPF_Config_Handle* h);
+  static int Cfg_GetJsonString(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
 };
 }  // namespace Modules::API
 SPF_NS_END

@@ -191,6 +191,33 @@ typedef struct SPF_JsonReader_API {
      */
     SPF_JsonValue_Handle* (*Json_GetArrayItem)(const SPF_JsonValue_Handle* h, int index);
 
+    /**
+     * @brief Gets the number of members (keys) in a JSON object.
+     * @param h A handle to a JSON value. Must be of type `SPF_JSON_TYPE_OBJECT`.
+     * @return The number of members in the object, or 0 if the handle is not a valid object.
+     */
+    int (*Json_GetObjectSize)(const SPF_JsonValue_Handle* h);
+
+    /**
+     * @brief Retrieves the name of a member at a specific index in a JSON object.
+     * @param h A handle to a JSON value. Must be of type `SPF_JSON_TYPE_OBJECT`.
+     * @param index The zero-based index of the member.
+     * @param[out] out_buffer A buffer to store the member name.
+     * @param buffer_size The size of the output buffer.
+     * @return The number of characters written. If >= buffer_size, the name was truncated.
+     */
+    int (*Json_GetMemberName)(const SPF_JsonValue_Handle* h, int index, char* out_buffer, int buffer_size);
+
+    /**
+     * @brief Retrieves a handle to a member's value at a specific index in a JSON object.
+     * @details This is an optimized way to iterate over an object without performing
+     *          a name-based lookup for every member.
+     * @param h A handle to a JSON value. Must be of type `SPF_JSON_TYPE_OBJECT`.
+     * @param index The zero-based index of the member.
+     * @return A new handle to the member's value, or `NULL` if the index is invalid.
+     */
+    SPF_JsonValue_Handle* (*Json_GetMemberValueByIndex)(const SPF_JsonValue_Handle* h, int index);
+
 } SPF_JsonReader_API;
 
 #ifdef __cplusplus
