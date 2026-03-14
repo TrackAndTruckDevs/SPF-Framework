@@ -56,13 +56,13 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
 
         // `version`: The version of your plugin. It's a best practice to follow Semantic Versioning (semver.org).
         // Example: "1.0.0", "2.1.0-beta", etc.
-        api->Info_SetVersion(h, "1.1.6");
+        api->Info_SetVersion(h, "1.1.7");
 
         // Recommended to fill in
         // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.6").
         // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
         // This prevents crashes due to API changes.
-        api->Info_SetMinFrameworkVersion(h, "1.1.6");
+        api->Info_SetMinFrameworkVersion(h, "1.1.7");
 
         // `author`: (Optional) Your name or your organization's name.
         api->Info_SetAuthor(h, "Your Name");
