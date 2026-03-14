@@ -209,6 +209,10 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
       metaNode = &node["_meta"];
   }
 
+  if (metaNode && metaNode->value("hide_in_ui", false)) {
+      return;
+  }
+
   if (metaNode) {
       if (metaNode->contains("titleKey") && (*metaNode)["titleKey"].is_string()) {
           const auto& titleKey = (*metaNode)["titleKey"].get<std::string>();
@@ -829,7 +833,12 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode
 
     ImGui::PushID(key.c_str());
 
-    if (value.is_object() && value.contains("_meta") && value["_meta"].value("hide_in_ui", false)) {
+    const nlohmann::ordered_json* metaNode = nullptr;
+    if (value.is_object() && value.contains("_meta") && value["_meta"].is_object()) {
+        metaNode = &value["_meta"];
+    }
+
+    if (metaNode && metaNode->value("hide_in_ui", false)) {
       ImGui::PopID();
       continue;
     }
