@@ -1,3 +1,18 @@
+# For MSVC, use static runtime linking (/MT instead of /MD) to avoid missing DLL errors (Win32 Error 126) on end-user machines.
+if(MSVC)
+    set(variables 
+        CMAKE_CXX_FLAGS_DEBUG 
+        CMAKE_CXX_FLAGS_RELEASE 
+        CMAKE_CXX_FLAGS_RELWITHDEBINFO 
+        CMAKE_CXX_FLAGS_MINSIZEREL
+    )
+    foreach(variable ${variables})
+        if(${variable} MATCHES "/MD")
+            string(REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+        endif()
+    endforeach()
+endif()
+
 # Define the name of our plugin
 set(PLUGIN_NAME ExamplePlugin)
 

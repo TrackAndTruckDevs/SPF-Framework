@@ -12,10 +12,29 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Set /utf-8 flag for MSVC to avoid encoding issues in dependencies (e.g., fmt)
+# --- Global MSVC Runtime Configuration (/MT) ---
+# This ensures that the framework and ALL its dependencies (cpr, zlib, md4c, etc.) 
+# use static runtime linking. This avoids "Win32 Error 126" on machines without 
+# VC++ Redistributables and silences "D9025: overriding /MT with /MD" warnings.
 if(MSVC)
+    # 1. Set the modern CMake abstraction for runtime library selection
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+    # 2. Force /MT in global compiler flags for older dependencies or manual logic
+    set(variables 
+        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS_MINSIZEREL
+        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_MINSIZEREL
+    )
+    foreach(variable ${variables})
+        if(${variable} MATCHES "/MD")
+            string(REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+        endif()
+    endforeach()
+    
+    # Add /utf-8 flag to avoid encoding issues
     add_compile_options(/utf-8)
 endif()
+# --- End of Global MSVC Runtime Configuration ---
 
 # --- Dependency Management (FetchContent) ---
 include(FetchContent)
