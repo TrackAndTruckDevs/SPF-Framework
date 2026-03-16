@@ -174,6 +174,9 @@ void OpenGLRendererImpl::OnPresent(HDC hdc) {
     GLboolean last_enable_srgb = glIsEnabled(GL_FRAMEBUFFER_SRGB);
     glDisable(GL_FRAMEBUFFER_SRGB);
 
+    // Ask the UIManager to update state (fonts, plugins, etc.) before the ImGui frame starts.
+    m_renderer.OnRendererUpdate();
+
     // Start the ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplWin32_NewFrame();

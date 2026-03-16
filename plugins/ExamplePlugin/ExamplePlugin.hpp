@@ -279,6 +279,7 @@ struct PluginContext {
 
   // --- Dynamic Font Management Demo ---
   SPF_Font_Handle pluginFont = nullptr;
+  SPF_Font_Handle memoryFont = nullptr;
 };
 
 /**

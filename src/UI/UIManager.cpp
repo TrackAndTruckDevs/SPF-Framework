@@ -465,30 +465,36 @@ void RenderWindow(IWindow* window, ImGuiID mainDockspaceId, bool isShellVisible)
   }
 }
 
-void UIManager::RenderAll() {
-  // 1. Process unload queue at the beginning of the frame
+void UIManager::Update() {
+  // 1. Process unload queue at the beginning of the update phase
   m_pluginManager->ProcessUnloadQueue();
 
-  // 2. Process pending font requests before any ImGui calls for this frame
+  // 2. Process pending font requests BEFORE any ImGui NewFrame calls
   if (m_fontAtlasRebuildPending) {
     auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
     logger->Info("New fonts requested. Rebuilding font atlas...");
 
     ImGuiIO& io = ImGui::GetIO();
-    
+
     for (auto& req : m_pendingFontRequests) {
       ImFontConfig config;
       config.MergeMode = req.merge;
       config.PixelSnapH = true;
-      
+
       ImFont* font = nullptr;
       if (req.isMemory) {
         // Transfer ownership of data to a long-lived buffer in UIManager
         auto persistedData = std::make_unique<std::vector<unsigned char>>(std::move(req.data));
-        font = io.Fonts->AddFontFromMemoryTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, reinterpret_cast<const ImWchar*>(req.ranges));
+        
+        if (req.isCompressed) {
+            font = io.Fonts->AddFontFromMemoryCompressedTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
+        } else {
+            font = io.Fonts->AddFontFromMemoryTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
+        }
+        
         m_fontDataBuffers.push_back(std::move(persistedData));
       } else {
-        font = io.Fonts->AddFontFromFileTTF(req.path.c_str(), req.size_pixels, &config, reinterpret_cast<const ImWchar*>(req.ranges));
+        font = io.Fonts->AddFontFromFileTTF(req.path.c_str(), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
       }
 
       if (font) {
@@ -500,7 +506,7 @@ void UIManager::RenderAll() {
     }
 
     m_pendingFontRequests.clear();
-    
+
     if (io.Fonts->Build()) {
       if (m_renderer) {
         m_renderer->RefreshFontAtlas();
@@ -509,9 +515,12 @@ void UIManager::RenderAll() {
     }
     m_fontAtlasRebuildPending = false;
   }
+}
 
+void UIManager::RenderAll() {
   // --- Declarative Rendering Logic ---
   auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"));
+
   const bool isShellVisible = mainWindow && mainWindow->IsVisible();
   const ImGuiID mainDockspaceId = isShellVisible ? mainWindow->GetMainDockspaceID() : 0;
 
@@ -879,8 +888,19 @@ ImFont* UIManager::LoadPluginFontFromMemory(const std::string& name, const void*
   req.data.assign(static_cast<const unsigned char*>(data), static_cast<const unsigned char*>(data) + data_size);
   req.size_pixels = size_pixels;
   req.merge = merge;
-  req.ranges = ranges;
   req.isMemory = true;
+  
+  uint32_t magic = *(const uint32_t*)data;
+  req.isCompressed = (magic != 0x00010000 && magic != 0x4F54544F); 
+
+  if (ranges) {
+    const uint16_t* r = ranges;
+    while (*r) {
+      req.ranges.push_back(*r++);
+      req.ranges.push_back(*r++);
+    }
+    req.ranges.push_back(0);
+  }
 
   m_pendingFontRequests.push_back(std::move(req));
   m_fontAtlasRebuildPending = true;
@@ -895,8 +915,17 @@ ImFont* UIManager::LoadPluginFontFromFile(const std::string& name, const std::st
   req.path = path;
   req.size_pixels = size_pixels;
   req.merge = merge;
-  req.ranges = ranges;
   req.isMemory = false;
+  req.isCompressed = false;
+
+  if (ranges) {
+    const uint16_t* r = ranges;
+    while (*r) {
+      req.ranges.push_back(*r++);
+      req.ranges.push_back(*r++);
+    }
+    req.ranges.push_back(0);
+  }
 
   m_pendingFontRequests.push_back(std::move(req));
   m_fontAtlasRebuildPending = true;

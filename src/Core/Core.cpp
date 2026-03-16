@@ -749,6 +749,10 @@ void Core::Update() {
     m_inputManager->ProcessMouseActions();
     m_inputManager->ProcessJoystickActions();
   }
+
+  // Update UI Manager (processes font requests and other pre-frame tasks)
+  UI::UIManager::GetInstance().Update();
+
   PluginManager::GetInstance().UpdateAllPlugins();
   //  Update CommunicationManager to process async results
   if (m_communicationManager) {

@@ -85,7 +85,14 @@ class Renderer {
   void OnRendererInit();
 
   /**
+   * @brief A callback invoked by the renderer implementation each frame to perform UI-independent updates.
+   * This MUST be called BEFORE any ImGui NewFrame calls.
+   */
+  void OnRendererUpdate();
+
+  /**
    * @brief A callback invoked by the renderer implementation each frame to perform UI rendering.
+   * This MUST be called AFTER ImGui NewFrame and BEFORE ImGui::Render().
    */
   void OnRendererRenderImGui();
 

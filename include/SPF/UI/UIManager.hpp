@@ -73,6 +73,13 @@ class UIManager : public Config::IConfigurable {
 
   void RegisterWindow(std::shared_ptr<IWindow> window);
   IWindow* GetWindow(const std::string& componentName, const std::string& windowId) const;
+  
+  /**
+   * @brief Updates internal UI state (processes queues, rebuilds font atlas if needed).
+   * This MUST be called before ImGui::NewFrame().
+   */
+  void Update();
+
   void RenderAll();
 
   // Renderer access
@@ -179,8 +186,9 @@ class UIManager : public Config::IConfigurable {
     std::vector<unsigned char> data;
     float size_pixels;
     bool merge;
-    const uint16_t* ranges;
+    std::vector<uint16_t> ranges;
     bool isMemory;
+    bool isCompressed;
   };
   std::vector<FontRequest> m_pendingFontRequests;
   std::vector<std::unique_ptr<std::vector<unsigned char>>> m_fontDataBuffers;

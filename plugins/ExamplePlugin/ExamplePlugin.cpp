@@ -10,6 +10,9 @@
 #include "ExamplePlugin.hpp"
 #include <cstring> // For C-style string manipulation functions like strncpy_s, strcpy_s, strcmp, strstr.
 
+// --- Custom Fonts ---
+#include "font\DRKrapkaSquare.h"
+
 namespace ExamplePlugin {
 
 // =================================================================================================
@@ -426,7 +429,11 @@ void OnActivated(const SPF_Core_API* core_api) {
             // The actual SPF_Font_Handle should be retrieved later during rendering using UI_GetFont("ExamplePlugin_CustomFont").
             g_ctx.uiAPI->UI_LoadFontFromFile("ExamplePlugin_CustomFont", fontPath, &config);
             
-            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Dynamic Font Management: Requested custom font Rushon Ground.ttf. It will be available in the next frame.");
+            // --- Demo: Load Font from Memory (DRKrapkaSquare) ---
+            // We use the compressed data from the generated .h file.
+            g_ctx.uiAPI->UI_LoadFontFromMemory("ExamplePlugin_MemoryFont", Font_DRKrapkaSquare_compressed_data, Font_DRKrapkaSquare_compressed_size, &config);
+
+            g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "Dynamic Font Management: Requested fonts from file and memory. They will be available in the next frame.");
         }
     }
 
@@ -1862,16 +1869,36 @@ void RenderStylingTab(SPF_UI_API* ui, void* user_data) {
 
     ui->UI_Spacing();
     ui->UI_TextStyled(separator_style, ICON_FA_FONT " Dynamic Font Rendering");
-    ui->UI_TextWrapped("Demonstrating UI_LoadFontFromFile. Below is text rendered with 'Rushon Ground.ttf' loaded from the plugin's data folder.");
+    ui->UI_TextWrapped("Demonstrating UI_LoadFontFromFile and UI_LoadFontFromMemory.");
+    
+    // --- File Font Demo ---
     if (!g_ctx.pluginFont) {
-        ui->UI_TextColored(1.0f, 0.5f, 0.0f, 1.0f, "Custom font not loaded yet (queued for next frame or missing file).");
         g_ctx.pluginFont = ui->UI_GetFont("ExamplePlugin_CustomFont");
     }    
-    else{
+    
+    if (g_ctx.pluginFont) {
         ui->UI_PushFont(g_ctx.pluginFont);
-        ui->UI_TextColored(0.4f, 0.7f, 1.0f, 1.0f, "This text uses a custom plugin font!");
+        ui->UI_TextColored(0.4f, 0.7f, 1.0f, 1.0f, "This text uses a custom font loaded from FILE (Rushon Ground.ttf)!");
         ui->UI_Text("Sample: ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789");
         ui->UI_PopFont();
+    } else {
+        ui->UI_TextColored(1.0f, 0.5f, 0.0f, 1.0f, "File font not loaded yet (queued for next frame or missing file).");
+    }
+
+    ui->UI_Spacing();
+
+    // --- Memory Font Demo ---
+    if (!g_ctx.memoryFont) {
+        g_ctx.memoryFont = ui->UI_GetFont("ExamplePlugin_MemoryFont");
+    }
+
+    if (g_ctx.memoryFont) {
+        ui->UI_PushFont(g_ctx.memoryFont);
+        ui->UI_TextColored(0.7f, 1.0f, 0.4f, 1.0f, "This text uses a custom font loaded from MEMORY (DRKrapkaSquare)!");
+        ui->UI_Text("Sample: ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789");
+        ui->UI_PopFont();
+    } else {
+        ui->UI_TextColored(1.0f, 0.5f, 0.0f, 1.0f, "Memory font not loaded yet (queued for next frame).");
     }
 
     ui->UI_Spacing();

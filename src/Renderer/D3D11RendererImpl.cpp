@@ -161,6 +161,9 @@ void D3D11RendererImpl::OnPresent(IDXGISwapChain* swapChain) {
     return;
   }
 
+  // Ask the UIManager to update state (fonts, plugins, etc.) before the ImGui frame starts.
+  m_renderer.OnRendererUpdate();
+
   // Start a new ImGui frame.
   ImGui_ImplDX11_NewFrame();
   ImGui_ImplWin32_NewFrame();

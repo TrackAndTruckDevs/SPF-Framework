@@ -141,14 +141,20 @@ void Renderer::OnRendererInit() {
   m_core.LateInit();
 }
 
-void Renderer::OnRendererRenderImGui() {
+void Renderer::OnRendererUpdate() {
   // --- Update Performance Monitor ---
   auto currentTime = std::chrono::steady_clock::now();
   std::chrono::duration<float> dt_duration = currentTime - m_lastFrameTime;
   m_lastFrameTime = currentTime;
   PerformanceMonitor::GetInstance().Update(dt_duration.count());
 
+  // Perform core updates (including font processing in UIManager)
+  // before the ImGui frame starts.
   m_core.Update();
+}
+
+void Renderer::OnRendererRenderImGui() {
+  // Render UI windows
   m_core.ImGuiRender();
 }
 

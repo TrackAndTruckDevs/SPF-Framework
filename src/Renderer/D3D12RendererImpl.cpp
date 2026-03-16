@@ -360,6 +360,9 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
     // Ensure the GPU has finished with the command allocator before we reset and use it again.
     WaitForLastSubmittedFrame();
 
+    // Ask the UIManager to update state (fonts, plugins, etc.) before the ImGui frame starts.
+    m_renderer.OnRendererUpdate();
+
     // Start a new ImGui frame.
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
