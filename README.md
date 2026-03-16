@@ -325,6 +325,7 @@ This section features community-developed plugins that are built on the SPF-Fram
 
 * [PWE Overlay](https://github.com/Marcinekk/PWE-Overlay.git) - ***Advanced web-based overlay for ATS & ETS2 built on SPF-Framework and WebView2. Features real-time telemetry, custom bank economy hooks, and Logitech G27 LED support.***
 
+* [SPF_ConsoleCommandHotkeys](https://github.com/TrackAndTruckDevs/SPF_ConsoleCommandHotkeys.git) - ***A plugin for ATS & ETS2 to execute any console command via hotkeys and cycle sequences. Features an in-game manager UI.***
 ---
 **Are you a developer who has created a plugin using SPF?** We would love to feature your work here. To have your plugin added to this list, please open an issue or a pull request on our GitHub repository and provide a link to your project.
 
