@@ -911,6 +911,11 @@ void Core::OnRequestPluginStateChange(const Events::UI::RequestPluginStateChange
   } else {
     // Dependencies are processed on the OnPluginWillBeUnloaded event.
     Modules::PluginManager::GetInstance().QueuePluginForUnload(e.pluginName);
+    
+    // Ensure all dirty settings are saved to disk before/during unloading
+    if (m_configService) {
+        m_configService->SaveAllDirty();
+    }
   }
 
   // Also update the configuration to persist the state

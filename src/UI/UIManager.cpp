@@ -210,29 +210,26 @@ void UIManager::Shutdown() {
 void UIManager::RegisterWindow(std::shared_ptr<IWindow> window) {
   if (!window) return;
 
-  // Apply settings before adding the window
-  if (m_allUIConfigs) {
+  // Apply settings before adding the window - read directly from ConfigService
+  if (m_configService) {
     const auto& componentName = window->GetComponentName();
     const auto& windowId = window->GetWindowId();
 
-    auto compIt = m_allUIConfigs->find(componentName);
-    if (compIt != m_allUIConfigs->end()) {
-      const auto& componentUIConfig = compIt->second;
-      if (componentUIConfig.contains("windows") && componentUIConfig["windows"].contains(windowId)) {
-        const auto& windowConfig = componentUIConfig["windows"][windowId];
-        nlohmann::ordered_json strippedConfig;
+    // Get the window settings from the "ui" system
+    nlohmann::ordered_json windowConfig = m_configService->GetValue(componentName, "ui.windows." + windowId, nlohmann::ordered_json::object());
 
-        for (const auto& [key, node] : windowConfig.items()) {
-          if (node.is_object() && node.contains("_value")) {
-            strippedConfig[key] = node["_value"];
-          } else {
-            // Keep non-_value properties (like _meta) if needed, but for ApplySettings we only need values.
-            // For now, we can ignore them, or copy them if the window needs them.
-            // Let's assume ApplySettings only wants simple values.
-          }
+    if (windowConfig.is_object()) {
+      nlohmann::ordered_json strippedConfig;
+
+      for (const auto& [key, node] : windowConfig.items()) {
+        if (node.is_object() && node.contains("_value")) {
+          strippedConfig[key] = node["_value"];
+        } else {
+          // If it's a raw value (e.g. from a fresh manifest-based config), use it as is
+          strippedConfig[key] = node;
         }
-        window->ApplySettings(strippedConfig);
       }
+      window->ApplySettings(strippedConfig);
     }
   }
 
@@ -980,10 +977,17 @@ void UIManager::OnReleaseNotesReceived(const System::ChangelogData& data) {
 void UIManager::DestroyWindowsForOwner(const std::string& owner) {
   // Save settings for all windows belonging to this owner before removing them.
   // This ensures positions, sizes, and visibility are persisted to the config service.
+  bool hasWindows = false;
   for (const auto& window : m_windows) {
     if (window && window->GetComponentName() == owner) {
       m_configService->SetValue(owner, "ui.windows." + window->GetWindowId(), window->GetCurrentSettings());
+      hasWindows = true;
     }
+  }
+
+  if (hasWindows) {
+      // Force save to disk immediately so reloading the plugin mid-session picks up latest state
+      m_configService->SaveAllDirty();
   }
 
   std::erase_if(m_windows, [&](const std::shared_ptr<IWindow>& window) { return window->GetComponentName() == owner; });
