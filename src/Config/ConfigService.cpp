@@ -44,6 +44,57 @@ void InjectMetadata(nlohmann::ordered_json& target, const std::string& titleKey,
     }
 }
 
+// Helper to convert a dot-separated path to a JSON pointer, automatically descending into _value wrappers if they exist.
+nlohmann::ordered_json::json_pointer GetMetaAwarePointer(const nlohmann::ordered_json& root, const std::string& dotPath) {
+    if (dotPath.empty()) return nlohmann::ordered_json::json_pointer("/");
+
+    std::string pointerStr = "";
+    const nlohmann::ordered_json* current = &root;
+
+    std::string remaining = dotPath;
+    while (!remaining.empty()) {
+        size_t dotPos = remaining.find('.');
+        std::string part = (dotPos == std::string::npos) ? remaining : remaining.substr(0, dotPos);
+        remaining = (dotPos == std::string::npos) ? "" : remaining.substr(dotPos + 1);
+
+        // If current node is a Value Object (has _value), we MUST descend into _value to find the 'part'
+        if (current && current->is_object() && current->contains("_value")) {
+            pointerStr += "/_value";
+            current = &((*current)["_value"]);
+        }
+
+        pointerStr += "/";
+        // JSON pointer requires escaping ~ to ~0 and / to ~1
+        for (char c : part) {
+            if (c == '~') pointerStr += "~0";
+            else if (c == '/') pointerStr += "~1";
+            else pointerStr += c;
+        }
+
+        // Move 'current' for the next iteration to detect intermediate _value wrappers
+        if (current) {
+            if (current->is_object() && current->contains(part)) {
+                current = &((*current)[part]);
+            } else if (current->is_array()) {
+                try {
+                    size_t idx = std::stoul(part);
+                    if (idx < current->size()) {
+                        current = &((*current)[idx]);
+                    } else {
+                        current = nullptr;
+                    }
+                } catch (...) {
+                    current = nullptr;
+                }
+            } else {
+                current = nullptr;
+            }
+        }
+    }
+
+    return nlohmann::ordered_json::json_pointer(pointerStr);
+}
+
 // // Helper to convert a dot-separated path to a JSON pointer path string (Loop version)
 std::string ToJSONPointerPath(const std::string& dotPath) {
     if (dotPath.empty()) return "/";
@@ -1111,7 +1162,7 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
       if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
 
       // Update the raw config data
-      nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(keyPath));
+      nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(m_isolatedConfigs[systemName][componentName], keyPath);
 
       // Check if the target node is a _value object and update it correctly
       auto& targetNode = m_isolatedConfigs[systemName][componentName][ptr];
@@ -1126,9 +1177,14 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
       }
 
       // Perform a targeted update on the aggregated map as well
-      auto& aggregatedTargetNode = m_aggregatedUserSettings[componentName][systemName][ptr];
+      nlohmann::ordered_json::json_pointer aggregatedPtr = GetMetaAwarePointer(m_aggregatedUserSettings[componentName][systemName], keyPath);
+      auto& aggregatedTargetNode = m_aggregatedUserSettings[componentName][systemName][aggregatedPtr];
       if (aggregatedTargetNode.is_object() && aggregatedTargetNode.contains("_value")) {
-          aggregatedTargetNode["_value"] = value;
+          if (value.is_object() && value.contains("_value")) {
+            aggregatedTargetNode["_value"] = value["_value"];
+          } else {
+            aggregatedTargetNode["_value"] = value;
+          }
       } else {
           aggregatedTargetNode = value;
       }
@@ -1748,7 +1804,7 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
   }
 
   try {
-      auto ptr = nlohmann::ordered_json::json_pointer(ToJSONPointerPath(restOfPath));
+      auto ptr = GetMetaAwarePointer(*configRoot, restOfPath);
       
       // Use find() logic or similar to avoid double lookup and exceptions
       if (configRoot->contains(ptr)) {
@@ -1800,7 +1856,7 @@ const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& com
   }
 
   try {
-    nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(restOfPath));
+    nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(*configRoot, restOfPath);
     return &configRoot->at(ptr);
   } catch (const  nlohmann::ordered_json::out_of_range&) {
     return nullptr;
@@ -2080,27 +2136,47 @@ void ConfigService::RemoveKey(const std::string& componentName, const std::strin
     if (strategyIt == m_systemStrategies.end()) return;
 
     try {
+        auto unescape = [](std::string s) -> std::string {
+            size_t pos = 0;
+            while ((pos = s.find("~1", pos)) != std::string::npos) { s.replace(pos, 2, "/"); pos += 1; }
+            pos = 0;
+            while ((pos = s.find("~0", pos)) != std::string::npos) { s.replace(pos, 2, "~"); pos += 1; }
+            return s;
+        };
+
         if (strategyIt->second == MergeStrategy::Isolate) {
             if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
 
-            nlohmann::ordered_json::json_pointer ptr(ToJSONPointerPath(restOfPath));
             auto& config = m_isolatedConfigs[systemName][componentName];
+            nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(config, restOfPath);
             
             if (config.contains(ptr)) {
-                std::string parentPath = restOfPath;
-                std::string leafKey;
-                size_t lastDot = restOfPath.rfind('.');
-                
-                if (lastDot != std::string::npos) {
-                    parentPath = restOfPath.substr(0, lastDot);
-                    leafKey = restOfPath.substr(lastDot + 1);
-                    nlohmann::ordered_json::json_pointer parentPtr(ToJSONPointerPath(parentPath));
-                    if (config.contains(parentPtr) && config[parentPtr].is_object()) {
-                        config[parentPtr].erase(leafKey);
+                std::string actualPath = ptr.to_string();
+                size_t lastSlash = actualPath.rfind('/');
+                if (lastSlash != std::string::npos) {
+                    std::string parentPathStr = actualPath.substr(0, lastSlash);
+                    std::string leafKey = unescape(actualPath.substr(lastSlash + 1));
+
+                    nlohmann::ordered_json::json_pointer parentPtr(parentPathStr);
+                    if (config.contains(parentPtr)) {
+                        auto& parentNode = config[parentPtr];
+                        if (parentNode.is_object()) {
+                            parentNode.erase(leafKey);
+                        } else if (parentNode.is_array()) {
+                            try {
+                                size_t idx = std::stoul(leafKey);
+                                if (idx < parentNode.size()) {
+                                    parentNode.erase(parentNode.begin() + idx);
+                                }
+                            } catch (...) {}
+                        }
                     }
                 } else {
-                    leafKey = restOfPath;
-                    config.erase(leafKey);
+                    // Root level key
+                    std::string rootKey = unescape(actualPath.substr(1));
+                    if (config.is_object()) {
+                        config.erase(rootKey);
+                    }
                 }
 
                 m_dirtyComponents.insert(componentName);
@@ -2136,6 +2212,20 @@ void ConfigService::ReloadComponentConfig(const std::string& componentName) {
     // 2. Re-process configurations
     InitializationReport report;
     ProcessAllSystemConfigurations(report);
+}
+
+bool ConfigService::IsSettingHidden(const std::string& componentName, const std::string& keyPath) const {
+    auto it = m_manifests.find(componentName);
+    if (it == m_manifests.end()) return false;
+
+    // customSettingsMetadata contains paths WITHOUT the system prefix (e.g. "commands", not "settings.commands")
+    for (const auto& meta : it->second.customSettingsMetadata) {
+        if (meta.keyPath == keyPath) {
+            return meta.hide_in_ui;
+        }
+    }
+
+    return false;
 }
 
 }  // namespace Config

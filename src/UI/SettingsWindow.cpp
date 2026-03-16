@@ -833,6 +833,15 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode
 
     ImGui::PushID(key.c_str());
 
+    std::string currentPath = parentPath.empty() ? key : parentPath + "." + key;
+
+    // First check: manifest-based hiding (most reliable, only for "settings" system)
+    if (systemName == "settings" && m_configService.IsSettingHidden(m_currentComponent, currentPath)) {
+        ImGui::PopID();
+        continue;
+    }
+
+    // Second check: metadata-based hiding within JSON (fallback/dynamic)
     const nlohmann::ordered_json* metaNode = nullptr;
     if (value.is_object() && value.contains("_meta") && value["_meta"].is_object()) {
         metaNode = &value["_meta"];
@@ -854,8 +863,6 @@ void SettingsWindow::DrawSettingsRows(const nlohmann::ordered_json& settingsNode
 
     bool isDefaultBoolean = actualValueNode->is_boolean() && !hasCustomWidget;
 
-
-    std::string currentPath = parentPath.empty() ? key : parentPath + "." + key;
     size_t depth = parentPath.empty() ? 0 : std::count(parentPath.begin(), parentPath.end(), '.') + 1;
 
     ImGui::TableNextRow();

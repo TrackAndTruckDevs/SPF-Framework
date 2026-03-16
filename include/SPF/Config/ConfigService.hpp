@@ -59,6 +59,7 @@ class ConfigService : public IConfigService {
   void SaveComponentConfig(const std::string& componentName) override;
   void RemoveKey(const std::string& componentName, const std::string& keyPath) override;
   void ReloadComponentConfig(const std::string& componentName) override;
+  bool IsSettingHidden(const std::string& componentName, const std::string& keyPath) const override;
   /**
    * @brief Processes all registered system configurations (isolated and priority-merged).
    * This method iterates through all known systems and applies the appropriate merge strategy

@@ -240,6 +240,13 @@ struct IConfigService {
    * @param componentName The ID of the component.
    */
   virtual void ReloadComponentConfig(const std::string& componentName) = 0;
+
+  /**
+   * @brief Checks if a specific setting is marked as hidden in the manifest metadata.
+   * @param componentName The ID of the component.
+   * @param keyPath The dot-separated path to the key (without system name).
+   */
+  virtual bool IsSettingHidden(const std::string& componentName, const std::string& keyPath) const = 0;
 };
 }  // namespace Config
 
