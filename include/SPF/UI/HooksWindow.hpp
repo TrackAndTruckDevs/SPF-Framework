@@ -25,7 +25,7 @@ namespace UI {
  */
 class HooksWindow : public BaseWindow {
  public:
-  HooksWindow(UIManager& uiManager, Events::EventManager& eventManager, const std::string& componentName, const std::string& windowId);
+  HooksWindow(const std::string& componentName, const std::string& windowId, UIManager& uiManager, Events::EventManager& eventManager);
 
  protected:
   void RenderContent() override;

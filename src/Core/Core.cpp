@@ -47,7 +47,9 @@
 #include <SPF/GameCamera/GameCameraManager.hpp>
 #include <SPF/Data/GameData/GameDataCameraService.hpp>
 #include <SPF/Data/GameData/GameObjectVehicleService.hpp>
+#include <SPF/Data/GameData/GameWorldService.hpp>
 #include <SPF/Data/GameData/GameObjectFileSystemService.hpp>
+#include <SPF/Data/GameData/GameObjectSessionService.hpp>
 #include <SPF/Data/GameData/GameObjectSessionService.hpp>
 
 using namespace SPF::Logging;
@@ -559,6 +561,7 @@ void Core::InitHooks() {
   EnvironmentManager::GetInstance().Initialize(m_module);
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
+  GameWorldService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
@@ -703,7 +706,13 @@ void Core::PerformDeferredInitialization() {
     logger->Debug("FileSystem (UFS) offsets resolved.");
   }
 
-  // 3. Calculate framework build hash
+  // 3. Resolve GameWorld (Environment) offsets
+  auto& worldService = GameWorldService::GetInstance();
+  if (worldService.TryFindAllOffsets()) {
+    logger->Debug("GameWorld (Environment) offsets resolved.");
+  }
+
+  // 4. Calculate framework build hash
   EnvironmentManager::GetInstance().CalculateBuildHash();
 
   m_deferredMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
@@ -840,6 +849,16 @@ void Core::OnGameWorldReady() {
       m_logger->Info("GameObjectVehicleService is now ready.");
     } else {
       m_logger->Warn("GameObjectVehicleService is not ready yet. Will retry on next event.");
+    }
+  }
+
+  // Finalize GameWorld data
+  auto& worldService = Data::GameData::GameWorldService::GetInstance();
+  if (!worldService.AreAllFindersReady()) {
+    if (worldService.TryFindAllOffsets()) {
+      m_logger->Info("GameWorldService is now ready.");
+    } else {
+      m_logger->Warn("GameWorldService is not ready yet. Will retry on next event.");
     }
   }
 }

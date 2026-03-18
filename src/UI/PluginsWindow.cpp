@@ -17,7 +17,7 @@ SPF_NS_BEGIN
 namespace UI {
 using namespace SPF::Localization;
 
-PluginsWindow::PluginsWindow(Config::IConfigService& configService, Events::EventManager& eventManager, const std::string& componentName, const std::string& windowId)
+PluginsWindow::PluginsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, Events::EventManager& eventManager)
     : BaseWindow(componentName, windowId), m_configService(configService), m_eventManager(eventManager) {
   m_locTitle = "plugins_window.title";
   m_locTableStatus = "plugins_window.table.status";

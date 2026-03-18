@@ -15,8 +15,8 @@ using namespace SPF::Hooks;
 using namespace SPF::Events;
 using namespace SPF::Localization;
 
-HooksWindow::HooksWindow(UIManager& uiManager, EventManager& eventManager, const std::string& componentName, const std::string& windowId)
-    : BaseWindow(componentName, windowId), m_uiManager(uiManager), m_eventManager(eventManager), m_hookManager(HookManager::GetInstance()) {
+HooksWindow::HooksWindow(const std::string& componentName, const std::string& windowId, UIManager& uiManager, Events::EventManager& eventManager)
+    : BaseWindow(componentName, windowId), m_uiManager(uiManager), m_eventManager(eventManager), m_hookManager(Hooks::HookManager::GetInstance()) {
   m_defaultTitle = "Hooks";
   m_titleLocalizationKey = "hooks_window.title";
 }

@@ -86,7 +86,7 @@ const char* GameCameraTypeToString(GameCamera::GameCameraType type) {
 }
 }  // namespace
 
-CameraWindow::CameraWindow(GameCameraManager& gameCameraService, const std::string& owner, const std::string& name)
+CameraWindow::CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService)
     : BaseWindow(owner, name), m_gameCameraService(gameCameraService) {
     m_titleLocalizationKey = "camera_window.title";
     m_locCurrentCamera = "camera_window.current_camera";

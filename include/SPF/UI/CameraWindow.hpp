@@ -20,7 +20,7 @@ namespace UI {
  */
 class CameraWindow : public BaseWindow {
  public:
-  CameraWindow(GameCamera::GameCameraManager& gameCameraService, const std::string& owner, const std::string& name);
+  CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService);
 
  protected:
     const char* GetWindowTitle() const override;

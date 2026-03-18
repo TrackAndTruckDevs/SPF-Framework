@@ -32,8 +32,8 @@ class Sink;
 namespace UI {
 class SettingsWindow : public BaseWindow {
  public:
-  SettingsWindow(Config::IConfigService& configService, const std::vector<std::string>& logLevels, Events::EventManager& eventManager, const std::string& componentName,
-                 const std::string& windowId);
+  SettingsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, const std::vector<std::string>& logLevels,
+                 Events::EventManager& eventManager);
 
  protected:
   const char* GetWindowTitle() const override;

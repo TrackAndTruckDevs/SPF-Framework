@@ -14,7 +14,7 @@ class EventManager;
 namespace UI {
 class PluginsWindow : public BaseWindow {
  public:
-  PluginsWindow(Config::IConfigService& configService, Events::EventManager& eventManager, const std::string& componentName, const std::string& windowId);
+  PluginsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, Events::EventManager& eventManager);
 
  protected:
   void RenderContent() override;

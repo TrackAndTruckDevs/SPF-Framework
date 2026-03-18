@@ -6,11 +6,13 @@
 #include "SPF/UI/LoggerWindow.hpp"      // Added for LoggerWindow creation
 #include "SPF/UI/CameraWindow.hpp"      // Added for CameraWindow creation
 #include "SPF/UI/InfoWindow.hpp"        // Added for InfoWindow creation
+#include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
 #include "SPF/UI/WelcomeWindow.hpp"     // Added for WelcomeWindow creation
 #include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
 #include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"   // Added for TelemetryWindow creation
 #include "SPF/UI/NotificationWindow.hpp" // Added for Notifications
+
 
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -44,6 +46,7 @@
 #include <imgui_internal.h>
 
 #include "SPF/GameCamera/GameCameraManager.hpp"  // For animation input blocking
+#include "SPF/Data/GameData/GameWorldService.hpp"
 
 #include "SPF/UI/MainWindow.hpp"      // Required for dynamic_cast and GetMainDockspaceID
 #include "SPF/UI/SettingsWindow.hpp"  // Required for dynamic_cast
@@ -1096,15 +1099,15 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   RegisterWindow(loggerWindow);
 
   // Plugins Window
-  auto pluginsWindow = std::make_shared<PluginsWindow>(*m_configService, *m_eventManager, "framework", "plugins_window");
+  auto pluginsWindow = std::make_shared<PluginsWindow>("framework", "plugins_window", *m_configService, *m_eventManager);
   RegisterWindow(pluginsWindow);
 
   // Settings Window
-  auto settingsWindow = std::make_shared<SettingsWindow>(*m_configService, logLevels, *m_eventManager, "framework", "settings_window");
+  auto settingsWindow = std::make_shared<SettingsWindow>("framework", "settings_window", *m_configService, logLevels, *m_eventManager);
   RegisterWindow(settingsWindow);
 
   // Hooks Window
-  auto hooksWindow = std::make_shared<HooksWindow>(*this, *m_eventManager, "framework", "hooks_window");
+  auto hooksWindow = std::make_shared<HooksWindow>("framework", "hooks_window", *this, *m_eventManager);
   RegisterWindow(hooksWindow);
 
   // Telemetry Window
@@ -1116,12 +1119,16 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   RegisterWindow(gameConsoleWindow);
 
   // Camera Window
-  auto cameraWindow = std::make_shared<CameraWindow>(GameCamera::GameCameraManager::GetInstance(), "framework", "camera_window");
+  auto cameraWindow = std::make_shared<CameraWindow>("framework", "camera_window", GameCamera::GameCameraManager::GetInstance());
   RegisterWindow(cameraWindow);
 
   // Info Window
   auto infoWindow = std::make_shared<InfoWindow>("framework", "info_window");
   RegisterWindow(infoWindow);
+
+  // Game World Window
+  auto gameWorldWindow = std::make_shared<GameWorldWindow>("framework", "gameworld_window", Data::GameData::GameWorldService::GetInstance());
+  RegisterWindow(gameWorldWindow);
 
   // Welcome Window - Only created and registered on fresh installation or framework update
   const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();

@@ -29,8 +29,8 @@ using namespace SPF::Localization;
 using namespace SPF::Logging;
 using namespace SPF::System;
 
-SettingsWindow::SettingsWindow(Config::IConfigService& configService, const std::vector<std::string>& logLevels, Events::EventManager& eventManager,
-                               const std::string& componentName, const std::string& windowId)
+SettingsWindow::SettingsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService,
+                               const std::vector<std::string>& logLevels, Events::EventManager& eventManager)
     : BaseWindow(componentName, windowId),
       m_configService(configService),
       m_logLevels(logLevels),
