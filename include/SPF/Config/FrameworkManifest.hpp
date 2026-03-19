@@ -210,7 +210,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                           }},
                           {"gameworld_window",
                           {
-                              .isVisible = true,
+                              .isVisible = false,
                               .isInteractive = false,
                               .posX = 0,
                               .posY = 0,

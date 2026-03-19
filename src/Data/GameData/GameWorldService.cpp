@@ -1,14 +1,10 @@
 /**                                                                                               
  * @file GameWorldService.cpp                                                                          
  * @brief Implementation of the GameWorldService for managing and manipulating the game environment.
- *
- * @details This service acts as the central logic unit for interacting with the 
- *          game's visual world state (e.g., time of day, skybox, lighting). 
- *          It utilizes the GameWorldDataFinder to dynamically resolve game 
- *          memory addresses and offsets, ensuring stability across game updates.
  */ 
 
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
@@ -30,7 +26,7 @@ void GameWorldService::Initialize() {
 
   RegisterFinders();
 
-  m_isInitialized = false;     // Initially not ready, will be set by TryFindAllOffsets
+  m_isInitialized = false;
   logger->Info("GameWorldService initialization finished. Waiting for critical offsets.");
 }
 
@@ -40,10 +36,16 @@ void GameWorldService::Shutdown() {
     logger->Info("GameWorldService has been shut down.");
     m_isInitialized = false;
 
-    // Clear all data members to their initial state
     m_environmentBasePtr = 0;
+    m_timeMgrPtrAddr = 0;
     m_envObjectOffset = 0;
     m_timeOffset = 0;
+    m_simulationTimeOffset = 0;
+    m_subMinuteSecondsOffset = 0;
+    m_mapScaleOffset = 0;
+    m_realPlayTimeOffset = 0;
+    m_realPlaySecondsOffset = 0;
+    m_skyboxAutoUpdateOffset = 0;
     m_updateFnAddr = 0;
   }
 }
@@ -53,7 +55,7 @@ void GameWorldService::RegisterFinders() {
 }
 
 bool GameWorldService::TryFindAllOffsets() {
-  if (m_isInitialized) return true;  // Already found everything
+  if (m_isInitialized) return true;
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameWorldService");
   logger->Info("Attempting to find all necessary game data offsets for GameWorldService.");
@@ -61,13 +63,11 @@ bool GameWorldService::TryFindAllOffsets() {
   bool all_critical_found_this_pass = true;
 
   for (const auto& finder : m_dataFinders) {
-    if (!finder->IsReady())  // Only try to find if not already ready
-    {
+    if (!finder->IsReady()) {
       if (finder->TryFindOffsets(*this)) {
         logger->Info("-> Finder '{}' succeeded.", finder->GetName());
       } else {
         logger->Warn("-> Finder '{}' failed. Will retry.", finder->GetName());
-        // For now, WorldDataFinder is our only and critical finder
         if (strcmp(finder->GetName(), "WorldDataFinder") == 0) {
           all_critical_found_this_pass = false;
         }
@@ -107,10 +107,10 @@ uint32_t GameWorldService::GetPreviewTime() {
 
   // This retrieves the visual environment time (skybox/lighting state).
   // Note: This value is distinct from the actual game simulation clock.
-  uintptr_t baseObjAddr = *(uintptr_t*)m_environmentBasePtr;
-  if (!baseObjAddr) return 0;
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return 0;
 
-  uintptr_t envObject = *(uintptr_t*)(baseObjAddr + m_envObjectOffset);
+  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
   if (!envObject) return 0;
 
   return *(uint32_t*)(envObject + m_timeOffset);
@@ -119,31 +119,155 @@ uint32_t GameWorldService::GetPreviewTime() {
 void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
   if (!m_isInitialized) return;
 
-  // Ensure minutes are within the valid day range (0 - 1439)
-  uint32_t normalizedMinutes = totalMinutes % 1440;
+  uint32_t normalizedMinutes = totalMinutes % (1440 * 7); // Use full week cycle for visual consistency
 
-  uintptr_t baseObjAddr = *(uintptr_t*)m_environmentBasePtr;
-  if (!baseObjAddr) return;
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return;
 
-  uintptr_t envObject = *(uintptr_t*)(baseObjAddr + m_envObjectOffset);
+  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
   if (!envObject) return;
 
   // Update the visual time minutes (used for skybox and shadow calculations).
   // In the game engine, if the simulation is unpaused, this value will be
-  // overwritten by the real game time logic on the next frame.
+  // overwritten by the real game time logic on the next frame unless 
+  // auto-update is disabled at 0x46c4.
   *(uint32_t*)(envObject + m_timeOffset) = normalizedMinutes;
-  
-  // Reset the secondary state field (UpdateEnvironmentState uses this to detect changes)
-  *(uint32_t*)(envObject + m_timeOffset + 4) = 0;
+  *(float*)(envObject + m_timeOffset + 4) = 0.0f; // Visual seconds
 
-  // Trigger the Environment Update function (RCX = envObject)
-  // This function recalculates sun position, fog, and light scattering based on the time set above.
   typedef void(__fastcall* UpdateEnv_t)(uintptr_t rcx);
   UpdateEnv_t UpdateEnv = (UpdateEnv_t)m_updateFnAddr;
 
   if (UpdateEnv) {
     UpdateEnv(envObject);
   }
+}
+
+uint32_t GameWorldService::GetSimulationTime() {
+  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return 0;
+
+  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  if (!timeMgr) return 0;
+
+  return *(uint32_t*)(timeMgr + m_simulationTimeOffset);
+}
+
+void GameWorldService::SetSimulationTime(uint32_t totalMinutes) {
+  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return;
+
+  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  if (!timeMgr) return;
+
+  *(uint32_t*)(timeMgr + m_simulationTimeOffset) = totalMinutes;
+  *(float*)(timeMgr + m_subMinuteSecondsOffset) = 0.0f;
+}
+
+uint32_t GameWorldService::GetRealPlayTime() {
+  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return 0;
+
+  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  if (!timeMgr) return 0;
+
+  return *(uint32_t*)(timeMgr + m_realPlayTimeOffset);
+}
+
+float GameWorldService::GetMapScale() {
+  if (!m_isInitialized || m_environmentBasePtr == 0) return 1.0f;
+
+  uintptr_t envBaseObj = *(uintptr_t*)m_environmentBasePtr;
+  if (!envBaseObj) return 1.0f;
+
+  return *(float*)(envBaseObj + m_mapScaleOffset);
+}
+
+uint32_t GameWorldService::GetGameDay() {
+  return GetSimulationTime() / 1440;
+}
+
+uint32_t GameWorldService::GetDayOfWeek() {
+  return GetGameDay() % 7;
+}
+
+uint32_t GameWorldService::GetGameWeek() {
+  return GetGameDay() / 7;
+}
+
+float GameWorldService::GetGlobalWarp() {
+  if (!m_isInitialized || m_globalWarpOffset == 0) return 1.0f;
+
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return 1.0f;
+
+  return *(float*)(coreApp + m_globalWarpOffset);
+}
+
+void GameWorldService::SetGlobalWarp(float warp) {
+  if (!m_isInitialized || m_globalWarpOffset == 0) return;
+
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return;
+
+  *(float*)(coreApp + m_globalWarpOffset) = warp;
+}
+
+// bool GameWorldService::IsGamePaused() {
+//   if (!m_isInitialized || m_pauseStatusOffset == 0) return false;
+
+//   uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+//   if (!coreApp) return false;
+
+//   return *(uint8_t*)(coreApp + m_pauseStatusOffset) != 0;
+// }
+
+// void GameWorldService::SetGamePaused(bool paused) {
+//   if (!m_isInitialized || m_pauseStatusOffset == 0) return;
+
+//   uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+//   if (!coreApp) return;
+
+//   *(uint8_t*)(coreApp + m_pauseStatusOffset) = paused ? 1 : 0;
+// }
+
+uint32_t GameWorldService::GetFrameCounter() {
+  if (!m_isInitialized || m_frameCounterOffset == 0) return 0;
+
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return 0;
+
+  return *(uint32_t*)(coreApp + m_frameCounterOffset);
+}
+
+double GameWorldService::GetRealDeltaTime() {
+  if (!m_isInitialized || m_realDeltaTimeOffset == 0) return 0.0;
+
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return 0.0;
+
+  // Values is stored in microseconds, convert to seconds
+  uint64_t microSecs = *(uint64_t*)(coreApp + m_realDeltaTimeOffset);
+  return (double)microSecs * 1e-06;
+}
+
+float GameWorldService::GetTimeScale() {
+  // Not used in this version, as we found map scale instead.
+  // Kept for interface compatibility.
+  return GetMapScale();
+}
+
+void GameWorldService::SetTimeScale(float scale) {
+  // We do not recommend setting MapScale directly as it might break pathfinding.
+  // Stub for now.
+}
+
+void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
+  if (!m_isInitialized) return;
+
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return;
+
+  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  if (!envObject) return;
+
+  *(int32_t*)(envObject + m_skyboxAutoUpdateOffset) = enabled ? 0 : 1;
 }
 
 } // namespace Data::GameData

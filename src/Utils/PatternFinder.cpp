@@ -78,9 +78,9 @@ uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos,
 }
 
 bool PatternFinder::IsSaneOffset(int32_t offset) {
-  // Most game camera objects and structures are well within 16KB (0x4000).
+  // Most game camera objects and structures are well within 24KB (0x6000).
   // This check prevents the use of garbage values from incorrect pattern matches.
-  return offset > 0 && offset < 0x4000;
+  return offset > 0 && offset < 0x6000;
 }
 
 std::vector<int> PatternFinder::SignatureToVector(const std::string& signature) {

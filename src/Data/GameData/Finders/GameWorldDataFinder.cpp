@@ -141,6 +141,298 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
         all_found = false;
     }
 
+    // 2. Find the entry point of the UpdateSimulationTime function.
+    // Ghidra: 140406f40
+    // Signature: 40 56 48 83 ?? ?? 48 8B ?? E8 82 ?? ?? ?? 84
+    const char* UPDATE_SIM_TIME_SIG = "40 56 48 83 ?? ?? 48 8B ?? E8 82 ?? ?? ?? 84";
+    uintptr_t pfnUpdateSimTime = Utils::PatternFinder::Find(UPDATE_SIM_TIME_SIG);
+
+    if (!pfnUpdateSimTime) {
+        logger->Error("CRITICAL: Failed to find UpdateSimulationTime function start.");
+        return false;
+    }
+    logger->Debug("UpdateSimulationTime found at 0x{:X}", pfnUpdateSimTime);
+
+    // 3. Find the entry point of the UpdateGameSession function.
+    // Ghidra: 14079a3a0
+    // Signature: 40 56 57 48 83 ?? ?? 48 8B ?? ?? ?? ?? ?? 48 8B ?? 0F
+    const char* UPDATE_SESSION_SIG = "40 56 57 48 83 ?? ?? 48 8b ?? ?? ?? ?? ?? 48 8b ?? 0f";
+    uintptr_t pfnUpdateSession = Utils::PatternFinder::Find(UPDATE_SESSION_SIG);
+    if (pfnUpdateSession) {
+        logger->Debug("UpdateGameSession found at 0x{:X}", pfnUpdateSession);
+    } else {
+        logger->Error("CRITICAL: Failed to find UpdateGameSession function start.");
+        return false;
+    }
+
+    const size_t SIM_TIME_SEARCH_RANGE = 1024;
+    const size_t SESSION_SEARCH_RANGE = 2048;
+
+    /*
+     * ANCHOR #4: Time Manager Global Pointer (DAT_142cf7668)
+     * Signature provided by user: 48 8b ? ? ? ? ? 48 85 ? ? ? 32 ? 48 ? ? ? 5e
+     * 
+     * amtrucks.exe+1083586 - 48 8B 35 9B63C701     - mov rsi,[amtrucks.exe+2CF9928]
+     * amtrucks.exe+108358D - 48 85 F6              - test rsi,rsi
+     * amtrucks.exe+1083590 - 75 08                 - jne amtrucks.exe+108359A
+     * amtrucks.exe+1083592 - 32 C0                 - xor al,al
+     * amtrucks.exe+1083594 - 48 83 C4 70           - add rsp,70
+     * amtrucks.exe+1083598 - 5E                    - pop rsi
+     * amtrucks.exe+1083599 - C3                    - ret 
+     */
+    const char* p_time_manager_ptr = "48 8B ?? ?? ?? ?? ?? 48 85 ?? ?? ?? 32 ?? 48 ?? ?? ?? 5E";
+    addr = Utils::PatternFinder::Find(p_time_manager_ptr);
+    if (addr) {
+        // The instruction is 7 bytes long: 48 8B ?? [4-byte RIP displacement]
+        uintptr_t timeMgrPtrAddr = Utils::PatternFinder::GetRipAddress(addr, 3, 7);
+        if (timeMgrPtrAddr) {
+            owner.SetTimeMgrPtrAddr(timeMgrPtrAddr);
+            logger->Debug("Anchor #4: Time Manager Pointer found at 0x{:X}", timeMgrPtrAddr);
+        } else {
+            logger->Error("Anchor #4: Failed to resolve Time Manager Pointer.");
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #4: FAILED to find Time Manager signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #5: Simulation Time Offset (0x15C)
+     * Signature: 44 8b b6 ? ? ? ? b8
+     * Ghidra: 140406f7b 44 8b b6 5c 01 00 00  MOV R14D, dword ptr [RSI + 0x15c]
+     */
+    const char* p_sim_time_off = "44 8B B6 ?? ?? ?? ?? B8";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_sim_time_off);
+    if (addr) {
+        int32_t simTimeOff = Utils::PatternFinder::ReadInt32(addr + 3);
+        if (Utils::PatternFinder::IsSaneOffset(simTimeOff)) {
+            owner.SetSimulationTimeOffset(simTimeOff);
+            logger->Debug("Anchor #5: Simulation Time Offset found: 0x{:X}", simTimeOff);
+        } else {
+            logger->Error("Anchor #5: Simulation Time Offset (0x{:X}) is insane.", simTimeOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #5: FAILED to find Simulation Time Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #6: Sub-Minute Seconds Offset (0x160)
+     * Signature: f3 0f 58 8e ? ? ? ? 0f
+     * Ghidra: 140406feb f3 0f 58 8e 60 01 00 00  ADDSS XMM1, dword ptr [RSI + 0x160]
+     * f3 0f 58        ADDSS      XMM1,dword ptr [RSI + 0x160]
+     * 8e 60 01 00 00
+     */
+    const char* p_sub_sec_off = "F3 0F 58 8E ?? ?? ?? ?? 0F";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_sub_sec_off);
+    if (addr) {
+        int32_t subSecOff = Utils::PatternFinder::ReadInt32(addr + 4);
+        if (Utils::PatternFinder::IsSaneOffset(subSecOff)) {
+            owner.SetSubMinuteSecondsOffset(subSecOff);
+            logger->Debug("Anchor #6: Sub-Minute Seconds Offset found: 0x{:X}", subSecOff);
+        } else {
+            logger->Error("Anchor #6: Sub-Minute Seconds Offset (0x{:X}) is insane.", subSecOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #6: FAILED to find Sub-Minute Seconds Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #7: Map Scale (local.scale) Offset (0x2F3C)
+     * Signature: f3 44 0f 59 ? ? ? ? ? 41
+     * Ghidra: 140406fda f3 44 0f 59 88 3c 2f 00 00  MULSS XMM9, dword ptr [RAX + 0x2f3c]
+     */
+    const char* p_warp_off = "F3 44 0F 59 ?? ?? ?? ?? ?? 41";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_warp_off);
+    if (addr) {
+        // The 32-bit offset starts at index 5 (after F3 44 0F 59 88)
+        int32_t warpOff = Utils::PatternFinder::ReadInt32(addr + 5);
+        if (Utils::PatternFinder::IsSaneOffset(warpOff)) {
+            owner.SetMapScaleOffset(warpOff);
+            logger->Debug("Anchor #7: Map Scale Offset found: 0x{:X}", warpOff);
+        } else {
+            logger->Error("Anchor #7: Map Scale Offset (0x{:X}) is insane.", warpOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #7: FAILED to find Map Scale Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #9: Skybox Auto-update Offset (0x46C4)
+     * Signature: 41 83 b9 ? ? ? ? ? 75
+     * Ghidra: 14040706f 41 83 b9 c4 46 00 00 00  CMP dword ptr [R9 + 0x46c4], 0x0
+     * 41 83 b9        CMP        dword ptr [R9 + 0x46c4],0x0
+     * c4 46 00 00 00
+     */
+    const char* p_skybox_off = "41 83 B9 ?? ?? ?? ?? ?? 75";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_skybox_off);
+    if (addr) {
+        int32_t skyboxOff = Utils::PatternFinder::ReadInt32(addr + 3);
+        if (Utils::PatternFinder::IsSaneOffset(skyboxOff)) {
+            owner.SetSkyboxAutoUpdateOffset(skyboxOff);
+            logger->Debug("Anchor #9: Skybox Auto-update Offset found: 0x{:X}", skyboxOff);
+        } else {
+            logger->Error("Anchor #9: Skybox Auto-update Offset (0x{:X}) is insane.", skyboxOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #9: FAILED to find Skybox Auto-update Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHORS #10 & #11: Real Play Time (Minutes & Seconds)
+     * Signature provided by user: ff 86 ? ? ? ? f3 0f ? ? ? ? ? ? 48
+     * 
+     * Ghidra context:
+     * 1404071b5 ff 86 e0 01 00 00  INC dword ptr [RSI + 0x1e0]
+     * 1404071bb f3 0f 11 86 e4 01 00 00  MOVSS dword ptr [RSI + 0x1e4], XMM0
+     * 1404071c3 48 8b 4e 10  MOV RCX, qword ptr [RSI + 0x10]
+     */
+    const char* p_real_play_time_sig = "FF 86 ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 48";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_real_play_time_sig);
+    if (addr) {
+        // Extract 0x1E0 (from INC dword ptr [RSI + offset])
+        int32_t realTimeOff = Utils::PatternFinder::ReadInt32(addr + 2);
+        // Extract 0x1E4 (from MOVSS dword ptr [RSI + offset], XMM0)
+        // INC instruction is 6 bytes long, MOVSS starts at addr + 6, offset at addr + 10
+        int32_t realSecOff = Utils::PatternFinder::ReadInt32(addr + 10);
+
+        if (Utils::PatternFinder::IsSaneOffset(realTimeOff)) {
+            owner.SetRealPlayTimeOffset(realTimeOff);
+            logger->Debug("Anchor #10: Real Play Time Offset found: 0x{:X}", realTimeOff);
+        } else {
+            logger->Error("Anchor #10: Real Play Time Offset (0x{:X}) is insane.", realTimeOff);
+            all_found = false;
+        }
+
+        if (Utils::PatternFinder::IsSaneOffset(realSecOff)) {
+            owner.SetRealPlaySecondsOffset(realSecOff);
+            logger->Debug("Anchor #11: Real Play Seconds Offset found: 0x{:X}", realSecOff);
+        } else {
+            logger->Error("Anchor #11: Real Play Seconds Offset (0x{:X}) is insane.", realSecOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchors #10 & #11: FAILED to find Real Play Time combined signature.");
+        all_found = false;
+    }
+
+    // 4. Find the entry point of the CoreEngine_UpdateLoop function.
+    // Signature provided by user: 48 8b c4 55 53 56 57 41 54 41 55 41 56 41 57 48 8d ? ? ? ? ? 48 81 ? ? ? ? ? 0f 29 ? ? 4c ? ? 0f 29 ? ? 44 ? ? ? ? 44 ? ? ? ? ? ? ? 8b
+    const char* CORE_ENGINE_LOOP_SIG = "48 8B C4 55 53 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 0F 29 ?? ?? 4C ?? ?? 0F 29 ?? ?? 44 ?? ?? ?? ?? 44 ?? ?? ?? ?? ?? ?? ?? 8B";
+    uintptr_t pfnCoreEngineLoop = Utils::PatternFinder::Find(CORE_ENGINE_LOOP_SIG);
+
+    if (!pfnCoreEngineLoop) {
+        logger->Error("CRITICAL: Failed to find CoreEngine_UpdateLoop function start.");
+        return false;
+    }
+    logger->Debug("CoreEngine_UpdateLoop found at 0x{:X}", pfnCoreEngineLoop);
+
+    const size_t CORE_SEARCH_RANGE = 4096;
+
+    /*
+     * ANCHOR #12: Global Warp Offset (0x66C)
+     * Signature provided by user: f3 41 ? ? ? ? ? ? ? f3 44
+     * 
+     * Ghidra context:
+     * 14039a3d2 f3 41 0f 10 97 6c 06 00 00  MOVSS XMM2, dword ptr [R15 + 0x66c]
+     * 14039a3db f3 44 0f 10 0d ac 61 e6 01  MOVSS XMM9, dword ptr [DAT_142200590]
+     */
+    const char* p_global_warp_sig = "F3 41 0F 10 97 ?? ?? ?? ?? F3 44";
+    addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_global_warp_sig);
+    if (addr) {
+        int32_t warpOff = Utils::PatternFinder::ReadInt32(addr + 5);
+        if (Utils::PatternFinder::IsSaneOffset(warpOff)) {
+            owner.SetGlobalWarpOffset(warpOff);
+            logger->Debug("Anchor #12: Global Warp Offset found: 0x{:X}", warpOff);
+        } else {
+            logger->Error("Anchor #12: Global Warp Offset (0x{:X}) is insane.", warpOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #12: FAILED to find Global Warp Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #13: Pause Status Offset (0x859)
+     * Signature provided by user: 41 38 ? ? ? ? ? ? ? ? ? ? 41 88
+     * 
+     * Ghidra context:
+     * 14039a3ba 41 38 97 59 08 00 00  CMP byte ptr [R15 + 0x859], DL
+     * 14039a3c6 41 88 97 59 08 00 00  MOV byte ptr [R15 + 0x859], DL
+     */
+    const char* p_pause_status_sig = "41 38 97 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 88";
+    addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_pause_status_sig);
+    if (addr) {
+        int32_t pauseOff = Utils::PatternFinder::ReadInt32(addr + 3);
+        if (Utils::PatternFinder::IsSaneOffset(pauseOff)) {
+            owner.SetPauseStatusOffset(pauseOff);
+            logger->Debug("Anchor #13: Pause Status Offset found: 0x{:X}", pauseOff);
+        } else {
+            logger->Error("Anchor #13: Pause Status Offset (0x{:X}) is insane.", pauseOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #13: FAILED to find Pause Status Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #14: Frame Counter Offset (0x19C)
+     * Signature provided by user: 8b 81 ? ? ? ? 83
+     * 
+     * Ghidra context:
+     * 140399f65 8b 81 9c 01 00 00  MOV EAX, dword ptr [RCX + 0x19c]
+     */
+    const char* p_frame_counter_sig = "8B 81 ?? ?? ?? ?? 83";
+    addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_frame_counter_sig);
+    if (addr) {
+        int32_t frameCounterOff = Utils::PatternFinder::ReadInt32(addr + 2);
+        if (Utils::PatternFinder::IsSaneOffset(frameCounterOff)) {
+            owner.SetFrameCounterOffset(frameCounterOff);
+            logger->Debug("Anchor #14: Frame Counter Offset found: 0x{:X}", frameCounterOff);
+        } else {
+            logger->Error("Anchor #14: Frame Counter Offset (0x{:X}) is insane.", frameCounterOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #14: FAILED to find Frame Counter Offset signature.");
+        all_found = false;
+    }
+
+    /*
+     * ANCHOR #15: Real Delta Time Offset (0x8E8)
+     * Signature provided by user: f2 48 ? ? ? ? ? ? ? 44 8b
+     * 
+     * Ghidra context:
+     * 140406f72 f2 48 0f 2a 80 e8 08 00 00  CVTSI2SD XMM0, qword ptr [RAX + 0x8e8]
+     * 140406f7b 44 8b b6 5c 01 00 00  MOV R14D, dword ptr [RSI + 0x15c]
+     */
+    const char* p_delta_time_off_sig = "F2 48 ?? ?? ?? ?? ?? ?? ?? 44 8B";
+    addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_delta_time_off_sig);
+    if (addr) {
+        // Offset 0x8E8 is at addr + 5 (after F2 48 0F 2A 80)
+        int32_t deltaTimeOff = Utils::PatternFinder::ReadInt32(addr + 5);
+        if (Utils::PatternFinder::IsSaneOffset(deltaTimeOff)) {
+            owner.SetRealDeltaTimeOffset(deltaTimeOff);
+            logger->Debug("Anchor #15: Real Delta Time Offset found: 0x{:X}", deltaTimeOff);
+        } else {
+            logger->Error("Anchor #15: Real Delta Time Offset (0x{:X}) is insane.", deltaTimeOff);
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #15: FAILED to find Real Delta Time Offset signature.");
+        all_found = false;
+    }
+
     m_isReady = all_found;
     return all_found;
 }
