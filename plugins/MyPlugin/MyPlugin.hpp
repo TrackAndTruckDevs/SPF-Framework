@@ -46,6 +46,8 @@
 // #include <SPF/SPF_API/SPF_Vehicle_API.h>        // For SPF_Vehicle_API, SPF_VehicleHandle
 // #include <SPF/SPF_API/SPF_GameLog_API.h>        // For SPF_GameLog_Callback_Handle
 // #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged). Functions: Json_GetType, Json_GetString, etc.
+// #include <SPF/SPF_API/SPF_JsonWriter_API.h>     // For creating and modifying JSON structures in memory.
+// #include <SPF/SPF_API/SPF_JsonIO_API.h>         // For loading and saving JSON files.
 // #include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
 
 // =================================================================================================
@@ -98,6 +100,9 @@ struct PluginContext {
   // SPF_VirtualDevice_Handle* virtualDeviceHandle = nullptr; // Requires: SPF_VirtInput_API.h
   // SPF_Camera_API* cameraAPI = nullptr;               // Requires: SPF_Camera_API.h
   // SPF_Vehicle_API* vehicleAPI = nullptr;             // Requires: SPF_Vehicle_API.h
+  // SPF_JsonWriter_API* jsonWriterAPI = nullptr;       // Requires: SPF_JsonWriter_API.h
+  // SPF_JsonIO_API* jsonIOAPI = nullptr;               // Requires: SPF_JsonIO_API.h
+  // SPF_Config_Handle* customConfigHandle = nullptr;   // Demonstrates Cfg_CreateCustomContext
   // SPF_GameLog_Callback_Handle gameLogCallbackHandle = nullptr; // Requires: SPF_GameLog_API.h
 
   // --- Telemetry Callback Handles (Optional - Uncomment if needed) ---

@@ -30,6 +30,8 @@
 #include <SPF/SPF_API/SPF_GameLog_API.h>       // For subscribing to the game's internal log output.
 #include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
 #include <SPF/SPF_API/SPF_JsonReader_API.h>    // For safely reading JSON data provided by the framework in callbacks.
+#include <SPF/SPF_API/SPF_JsonWriter_API.h>    // For creating and modifying JSON structures in memory.
+#include <SPF/SPF_API/SPF_JsonIO_API.h>        // For loading and saving JSON files.
 #include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
 
 // =================================================================================================
@@ -111,6 +113,16 @@ struct PluginContext {
   SPF_Vehicle_API* vehicleAPI = nullptr;
 
   /**
+   * @brief Pointer to the JSON Writer API.
+   */
+  SPF_JsonWriter_API* jsonWriterAPI = nullptr;
+
+  /**
+   * @brief Pointer to the JSON IO API.
+   */
+  SPF_JsonIO_API* jsonIOAPI = nullptr;
+
+  /**
    * @brief Pointer to the Environment API, for retrieving game and system info.
    */
   SPF_Environment_API* environmentAPI = nullptr;
@@ -119,6 +131,12 @@ struct PluginContext {
    * @brief Handle to our Environment API context.
    */
   SPF_Environment_Handle* environmentHandle = nullptr;
+
+  /**
+   * @brief Handle to a custom configuration context (demonstrates Cfg_CreateCustomContext).
+   */
+  SPF_Config_Handle* customConfigHandle = nullptr;
+  bool isCustomConfigAutoSave = true;
 
   // --- Cached Handles & Pointers ---
   // Pointers and handles that are frequently used can be cached here for convenience and performance.
@@ -472,6 +490,11 @@ void RenderInputTestTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Dynamic Keybinds" tab to test runtime action registration.
  */
 void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Custom JSON" tab to demonstrate the new JSON and Config API features.
+ */
+void RenderCustomJsonTab(SPF_UI_API* ui, void* user_data);
 
 // --- Helper Functions ---
 // These are internal functions that encapsulate specific logic for better organization.

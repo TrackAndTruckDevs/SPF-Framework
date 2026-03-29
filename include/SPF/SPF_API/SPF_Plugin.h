@@ -90,6 +90,8 @@ typedef struct SPF_GameConsole_API SPF_GameConsole_API;
 typedef struct SPF_Formatting_API SPF_Formatting_API;
 typedef struct SPF_GameLog_API SPF_GameLog_API;
 typedef struct SPF_JsonReader_API SPF_JsonReader_API;
+typedef struct SPF_JsonWriter_API SPF_JsonWriter_API;
+typedef struct SPF_JsonIO_API SPF_JsonIO_API;
 typedef struct SPF_Vehicle_API SPF_Vehicle_API;
 typedef struct SPF_Environment_API SPF_Environment_API;
 
@@ -286,6 +288,21 @@ struct SPF_Load_API {
    * @brief Environment API. Provides information about game, framework and system.
    */
   SPF_Environment_API* environment;
+
+  /**
+   * @brief (Advanced) JSON Reader API. 
+   */
+  SPF_JsonReader_API* json_reader;
+
+  /**
+   * @brief (Advanced) JSON Writer API.
+   */
+  SPF_JsonWriter_API* json_writer;
+
+  /**
+   * @brief JSON IO API.
+   */
+  SPF_JsonIO_API* json_io;
 };
 
 /**
@@ -387,6 +404,16 @@ struct SPF_Core_API {
     * @brief Environment API. For retrieving game, system, and framework info.
     */
      SPF_Environment_API* environment;
+
+   /**
+    * @brief (Advanced) JSON Writer API.
+    */
+     SPF_JsonWriter_API* json_writer;
+
+   /**
+    * @brief JSON IO API.
+    */
+     SPF_JsonIO_API* json_io;
    };
 
 // =================================================================================================

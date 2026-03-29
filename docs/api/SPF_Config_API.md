@@ -207,6 +207,34 @@ Removes a key or an entire path (including nested objects) from the configuratio
 Discards all unsaved in-memory changes and reloads the configuration from the disk.
 
 ---
+**`SPF_Config_Handle* Cfg_CreateCustomContext(const char* filePath)`**
+Creates a configuration context for an arbitrary JSON file on disk. This allows you to use the standard `Cfg_Get/Set` functions for any JSON file, not just the default `settings.json`.
+
+*   **filePath:** The full physical path to the JSON file. You can use the `SPF_Environment_API` to resolve paths dynamically.
+*   **Returns:** A handle to the configuration context, or `NULL` if the file couldn't be opened or parsed.
+
+**Example:**
+```c
+char dataDir[512];
+envAPI->Env_GetPluginDataDir(envHandle, dataDir, sizeof(dataDir));
+
+char fullPath[1024];
+fmtAPI->Fmt_Format(fullPath, sizeof(fullPath), "%s\\my_custom_config.json", dataDir);
+
+SPF_Config_Handle* customCfg = configAPI->Cfg_CreateCustomContext(fullPath);
+if (customCfg) {
+    int value = configAPI->Cfg_GetInt32(customCfg, "ui.some_value", 0);
+}
+```
+
+---
+**`void Cfg_SetAutoSave(SPF_Config_Handle* h, bool enabled)`**
+Enables or disables automatic saving to disk when values are changed in this context.
+
+*   **h:** The context handle (plugin default or custom).
+*   **enabled:** If `true` (default), changes made via `Cfg_Set...` are immediately synced to disk. If `false`, you must call `Cfg_Save` manually.
+
+---
 **`int Cfg_GetJsonString(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size)`**
 Retrieves a raw JSON string representation of a configuration node.
 *   **Returns:** Number of characters written. Truncated if >= `buffer_size`.

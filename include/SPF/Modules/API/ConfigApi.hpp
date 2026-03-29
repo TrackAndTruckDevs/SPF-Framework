@@ -29,6 +29,8 @@ class ConfigApi {
   static void Cfg_SetJsonString(SPF_Config_Handle* h, const char* key, const char* json_literal);
   static void Cfg_Reload(SPF_Config_Handle* h);
   static int Cfg_GetJsonString(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
+  static SPF_Config_Handle* Cfg_CreateCustomContext(const char* filePath);
+  static void Cfg_SetAutoSave(SPF_Config_Handle* h, bool enabled);
 };
 }  // namespace Modules::API
 SPF_NS_END

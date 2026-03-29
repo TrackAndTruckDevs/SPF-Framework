@@ -247,6 +247,20 @@ struct IConfigService {
    * @param keyPath The dot-separated path to the key (without system name).
    */
   virtual bool IsSettingHidden(const std::string& componentName, const std::string& keyPath) const = 0;
+
+  /**
+   * @brief Creates or retrieves a configuration context for an arbitrary JSON file.
+   * @param filePath The full physical path to the JSON file.
+   * @return A unique identifier for this custom context (e.g. the filePath itself).
+   */
+  virtual std::string CreateCustomContext(const std::string& filePath) = 0;
+
+  /**
+   * @brief Enables or disables automatic saving for a specific configuration context.
+   * @param contextId The ID of the context (pluginName or custom context ID).
+   * @param enabled If true, changes are automatically synced to disk.
+   */
+  virtual void SetAutoSave(const std::string& contextId, bool enabled) = 0;
 };
 }  // namespace Config
 

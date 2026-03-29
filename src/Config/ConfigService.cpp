@@ -1148,6 +1148,27 @@ const std::map<std::string, nlohmann::ordered_json>* ConfigService::GetAllCompon
 }
 
 void ConfigService::SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::ordered_json& value) {
+  // --- Check custom configs first ---
+  auto customIt = m_customConfigs.find(componentName);
+  if (customIt != m_customConfigs.end()) {
+      try {
+          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, jsonPath);
+          customIt->second[ptr] = value;
+          
+          // Auto-save logic for custom configs
+          if (m_disabledAutoSave.find(componentName) == m_disabledAutoSave.end()) {
+              auto pathIt = m_customContextPaths.find(componentName);
+              if (pathIt != m_customContextPaths.end()) {
+                  std::ofstream file(pathIt->second);
+                  file << customIt->second.dump(4);
+              }
+          }
+          
+          m_eventManager.System.OnSettingWasChanged.Call({"", componentName, jsonPath, value});
+          return;
+      } catch (...) {}
+  }
+
   size_t firstDot = jsonPath.find('.');
   if (firstDot == std::string::npos) return;
 
@@ -1747,6 +1768,18 @@ void ConfigService::SaveAllDirty() {
 }
 
 nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName, const std::string& keyPath, const  nlohmann::ordered_json& defaultValue) const {
+  // --- Check custom configs first ---
+  auto customIt = m_customConfigs.find(componentName);
+  if (customIt != m_customConfigs.end()) {
+      try {
+          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
+          if (customIt->second.contains(ptr)) {
+              return customIt->second[ptr];
+          }
+      } catch (...) {}
+      return defaultValue;
+  }
+
   if (keyPath.rfind("info.", 0) == 0) {
     auto manifestIt = m_manifests.find(componentName);
     if (manifestIt != m_manifests.end()) {
@@ -1822,6 +1855,18 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
 }
 
 const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& componentName, const std::string& keyPath) const {
+  // --- Check custom configs first ---
+  auto customIt = m_customConfigs.find(componentName);
+  if (customIt != m_customConfigs.end()) {
+      try {
+          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
+          if (customIt->second.contains(ptr)) {
+              return &customIt->second.at(ptr);
+          }
+      } catch (...) {}
+      return nullptr;
+  }
+
   size_t firstDot = keyPath.find('.');
   if (firstDot == std::string::npos) {
     return nullptr;
@@ -2105,6 +2150,26 @@ bool ConfigService::HasKey(const std::string& componentName, const std::string& 
 
 void ConfigService::SaveComponentConfig(const std::string& componentName) {
     auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+
+    // --- Support manual saving for custom configs ---
+    auto customIt = m_customConfigs.find(componentName);
+    if (customIt != m_customConfigs.end()) {
+        auto pathIt = m_customContextPaths.find(componentName);
+        if (pathIt != m_customContextPaths.end()) {
+            try {
+                std::ofstream file(pathIt->second);
+                if (file.is_open()) {
+                    file << customIt->second.dump(4);
+                    if (logger) logger->Info("Manually saved custom config to {}", pathIt->second);
+                    return;
+                }
+            } catch (const std::exception& e) {
+                if (logger) logger->Error("Failed to manually save custom config {}: {}", pathIt->second, e.what());
+                return;
+            }
+        }
+    }
+
     if (m_dirtyComponents.find(componentName) == m_dirtyComponents.end()) {
         if (logger) logger->Debug("SaveComponentConfig: Component '{}' is not dirty, skipping.", componentName);
         return;
@@ -2226,6 +2291,39 @@ bool ConfigService::IsSettingHidden(const std::string& componentName, const std:
     }
 
     return false;
+}
+
+std::string ConfigService::CreateCustomContext(const std::string& filePath) {
+    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+    if (m_customConfigs.count(filePath)) return filePath;
+
+    try {
+        if (std::filesystem::exists(filePath)) {
+            std::ifstream file(filePath);
+            if (file.is_open()) {
+                nlohmann::ordered_json j;
+                file >> j;
+                m_customConfigs[filePath] = std::move(j);
+                if (logger) logger->Info("Loaded custom configuration from {}", filePath);
+            }
+        } else {
+            m_customConfigs[filePath] = nlohmann::ordered_json::object();
+            if (logger) logger->Info("Created new custom configuration context for {}", filePath);
+        }
+        m_customContextPaths[filePath] = filePath;
+        return filePath;
+    } catch (const std::exception& e) {
+        if (logger) logger->Error("Failed to create custom context for {}. Error: {}", filePath, e.what());
+        return "";
+    }
+}
+
+void ConfigService::SetAutoSave(const std::string& contextId, bool enabled) {
+    if (enabled) {
+        m_disabledAutoSave.erase(contextId);
+    } else {
+        m_disabledAutoSave.insert(contextId);
+    }
 }
 
 }  // namespace Config

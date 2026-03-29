@@ -293,6 +293,10 @@ void OnLoad(const SPF_Load_API* load_api) {
     // It's crucial to check if the API pointers are valid before using them. This prevents
     // crashes if the framework fails to provide them for some reason.
     if (g_ctx.loadAPI && g_ctx.loadAPI->logger && g_ctx.loadAPI->config && g_ctx.loadAPI->input) {
+        // Cache new JSON APIs from loadAPI
+        g_ctx.jsonWriterAPI = g_ctx.loadAPI->json_writer;
+        g_ctx.jsonIOAPI = g_ctx.loadAPI->json_io;
+
         // Cache environment API and get context
         g_ctx.environmentAPI = g_ctx.loadAPI->environment;
         if (g_ctx.environmentAPI) {
@@ -337,6 +341,8 @@ void OnActivated(const SPF_Core_API* core_api) {
         g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
         g_ctx.environmentAPI = g_ctx.coreAPI->environment;
         g_ctx.uiAPI = g_ctx.coreAPI->ui;
+        g_ctx.jsonWriterAPI = g_ctx.coreAPI->json_writer;
+        g_ctx.jsonIOAPI = g_ctx.coreAPI->json_io;
     }
 
     // Register callbacks for systems that require the core API.
@@ -690,13 +696,120 @@ void OnUnload() {
     // 4. Null out core API pointers
     g_ctx.uiAPI = nullptr;
     g_ctx.vehicleAPI = nullptr;
+    g_ctx.jsonWriterAPI = nullptr;
+    g_ctx.jsonIOAPI = nullptr;
+    g_ctx.customConfigHandle = nullptr;
     g_ctx.coreAPI = nullptr;
     g_ctx.loadAPI = nullptr;
-}
+    }
 
-// =================================================================================================
+    void RenderCustomJsonTab(SPF_UI_API* ui, void* user_data) {
+    if (!g_ctx.jsonWriterAPI || !g_ctx.jsonIOAPI || !g_ctx.coreAPI || !g_ctx.coreAPI->config) {
+        ui->UI_Text("JSON Writer/IO or Config API is not available.");
+        return;
+    }
+
+    auto writer = g_ctx.jsonWriterAPI;
+    auto io = g_ctx.jsonIOAPI;
+    auto config = g_ctx.coreAPI->config;
+
+    ui->UI_TextWrapped("This tab demonstrates creating, saving, and managing custom JSON files through the new API.");
+    ui->UI_Separator();
+
+    // --- Part 1: JSON Builder & IO ---
+    if (ui->UI_TreeNode("1. JSON Builder & Serialization")) {
+        static char jsonOutput[1024] = "";
+        char dataDir[512];
+        g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataDir, sizeof(dataDir));
+
+        static char fileName[128] = "custom_test.json";
+        char fullPath[1024];
+        g_ctx.coreAPI->formatting->Fmt_Format(fullPath, sizeof(fullPath), "%s\\%s", dataDir, fileName);
+
+        ui->UI_InputText("File Name", fileName, sizeof(fileName), SPF_INPUT_TEXT_FLAG_NONE);
+        ui->UI_InputText("Full Path (Read Only)", fullPath, sizeof(fullPath), SPF_INPUT_TEXT_FLAG_READ_ONLY);
+
+        if (ui->UI_Button("Create & Save Test JSON", 0, 0)) {
+            // Build a JSON object: { "plugin": "ExamplePlugin", "data": { "value": 123, "active": true }, "tags": ["test", "api"] }
+            SPF_JsonValue_Handle* root = writer->Json_CreateObject();
+            writer->Json_SetString(root, "plugin", PLUGIN_NAME);
+
+            SPF_JsonValue_Handle* dataNode = writer->Json_CreateObject();
+            writer->Json_SetInt(dataNode, "value", 123);
+            writer->Json_SetBool(dataNode, "active", true);
+            writer->Json_SetNode(root, "data", dataNode);
+
+            SPF_JsonValue_Handle* tagsArray = writer->Json_CreateArray();
+            writer->Json_ArrayAppendString(tagsArray, "test");
+            writer->Json_ArrayAppendString(tagsArray, "api");
+            writer->Json_SetNode(root, "tags", tagsArray);
+
+            // Save to file using dynamic path
+            if (io->Json_SaveToFile(root, fullPath, true)) {
+                io->Json_ToString(root, true, jsonOutput, sizeof(jsonOutput));
+                SPF_Notification_Params p = { SPF_NOTIFICATION_SUCCESS, "JSON created and saved successfully!", SPF_NOTIF_MODE_TOP, 3.0f };
+                ui->UI_ShowNotification(&p);
+            }
+
+            // Cleanup handles
+            writer->Json_DestroyHandle(root);
+        }
+
+        if (jsonOutput[0] != '\0') {
+            ui->UI_Text("Generated JSON:");
+            ui->UI_InputTextMultiline("##JsonPreview", jsonOutput, sizeof(jsonOutput), 0, 150, SPF_INPUT_TEXT_FLAG_READ_ONLY);
+        }
+
+        ui->UI_TreePop();
+    }
+
+    // --- Part 2: Custom Config Context ---
+    if (ui->UI_TreeNode("2. Custom Config Context")) {
+        char dataDir[512];
+        g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataDir, sizeof(dataDir));
+
+        static char configFileName[128] = "custom_config.json";
+        char fullConfigPath[1024];
+        g_ctx.coreAPI->formatting->Fmt_Format(fullConfigPath, sizeof(fullConfigPath), "%s\\%s", dataDir, configFileName);
+
+        ui->UI_InputText("Config File Name", configFileName, sizeof(configFileName), SPF_INPUT_TEXT_FLAG_NONE);
+        ui->UI_InputText("Full Config Path (Read Only)", fullConfigPath, sizeof(fullConfigPath), SPF_INPUT_TEXT_FLAG_READ_ONLY);
+
+        if (ui->UI_Button("Open as Config Context", 0, 0)) {
+            g_ctx.customConfigHandle = config->Cfg_CreateCustomContext(fullConfigPath);
+            if (g_ctx.customConfigHandle) {
+                SPF_Notification_Params p = { SPF_NOTIFICATION_SUCCESS, "Custom config context created!", SPF_NOTIF_MODE_TOP, 3.0f };
+                ui->UI_ShowNotification(&p);
+            }
+        }
+        if (g_ctx.customConfigHandle) {
+            ui->UI_Separator();
+            ui->UI_TextColored(0.4f, 1.0f, 0.4f, 1.0f, "Context Active!");
+
+            static int myInt = 0;
+            myInt = config->Cfg_GetInt32(g_ctx.customConfigHandle, "ui.test_value", 0);
+            if (ui->UI_SliderInt("Value in Custom File", &myInt, 0, 100, "%d", SPF_SLIDER_FLAG_NONE)) {
+                config->Cfg_SetInt32(g_ctx.customConfigHandle, "ui.test_value", myInt);
+            }
+
+            if (ui->UI_Checkbox("Auto Save", &g_ctx.isCustomConfigAutoSave)) {
+                config->Cfg_SetAutoSave(g_ctx.customConfigHandle, g_ctx.isCustomConfigAutoSave);
+            }
+
+            if (!g_ctx.isCustomConfigAutoSave) {
+                if (ui->UI_Button("Manual Save", 0, 0)) {
+                    config->Cfg_Save(g_ctx.customConfigHandle);
+                }
+            }
+        }
+
+        ui->UI_TreePop();
+    }
+    }
+
+    // =================================================================================================
 // 4. Framework Callbacks
-// =================================================================================================
+    // =================================================================================================
 // These functions are callbacks that the plugin registers to be notified of specific events
 // by the framework, such as a setting changing, a key being pressed, or a game event occurring.
 
@@ -1137,6 +1250,7 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
         if (ui->UI_BeginTabItem("Environment", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderEnvironmentTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Input Test", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderInputTestTab(ui, user_data); ui->UI_EndTabItem(); }
         if (ui->UI_BeginTabItem("Dynamic Keybinds", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderDynamicKeybindsTab(ui, user_data); ui->UI_EndTabItem(); }
+        if (ui->UI_BeginTabItem("Custom JSON", nullptr, SPF_TAB_ITEM_FLAG_NONE)) { RenderCustomJsonTab(ui, user_data); ui->UI_EndTabItem(); }
         ui->UI_EndTabBar();
     }
 }

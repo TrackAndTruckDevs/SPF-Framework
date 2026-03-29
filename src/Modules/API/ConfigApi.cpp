@@ -220,6 +220,27 @@ void ConfigApi::Cfg_Reload(SPF_Config_Handle* h) {
     }
 }
 
+SPF_Config_Handle* ConfigApi::Cfg_CreateCustomContext(const char* filePath) {
+    if (!filePath) return nullptr;
+    auto& pm = PluginManager::GetInstance();
+    if (!pm.GetConfigService() || !pm.GetHandleManager()) return nullptr;
+    
+    std::string contextId = pm.GetConfigService()->CreateCustomContext(filePath);
+    if (contextId.empty()) return nullptr;
+
+    auto h_unique = std::make_unique<Handles::ConfigHandle>(contextId);
+    return reinterpret_cast<SPF_Config_Handle*>(pm.GetHandleManager()->RegisterHandle(contextId.c_str(), std::move(h_unique)));
+}
+
+void ConfigApi::Cfg_SetAutoSave(SPF_Config_Handle* h, bool enabled) {
+    auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
+    if (!cfgHandle) return;
+    auto& pm = PluginManager::GetInstance();
+    if (pm.GetConfigService()) {
+        pm.GetConfigService()->SetAutoSave(cfgHandle->pluginName, enabled);
+    }
+}
+
 int ConfigApi::Cfg_GetJsonString(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size) {
     auto* cfgHandle = reinterpret_cast<Handles::ConfigHandle*>(h);
     if (!cfgHandle || !key || !out_buffer || buffer_size <= 0) return 0;
@@ -281,6 +302,8 @@ void ConfigApi::FillConfigApi(SPF_Config_API* api) {
     api->Cfg_SetJsonString = &ConfigApi::Cfg_SetJsonString;
     api->Cfg_Reload = &ConfigApi::Cfg_Reload;
     api->Cfg_GetJsonString = &ConfigApi::Cfg_GetJsonString;
+    api->Cfg_CreateCustomContext = &ConfigApi::Cfg_CreateCustomContext;
+    api->Cfg_SetAutoSave = &ConfigApi::Cfg_SetAutoSave;
 }
 
 } // namespace Modules::API

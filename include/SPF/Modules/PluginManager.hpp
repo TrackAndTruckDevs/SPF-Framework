@@ -14,6 +14,8 @@
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/SPF_API/SPF_GameConsole_API.h"
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
+#include "SPF/SPF_API/SPF_JsonWriter_API.h"
+#include "SPF/SPF_API/SPF_JsonIO_API.h"
 #include "SPF/SPF_API/SPF_Formatting_API.h"
 #include "SPF/SPF_API/SPF_GameLog_API.h"
 #include "SPF/SPF_API/SPF_Environment_API.h"
@@ -172,6 +174,8 @@ class PluginManager {
   SPF_Camera_API m_cameraAPI{};
   SPF_GameConsole_API m_gameConsoleAPI{};
   SPF_JsonReader_API m_jsonReaderAPI{};
+  SPF_JsonWriter_API m_jsonWriterAPI{};
+  SPF_JsonIO_API m_jsonIOAPI{};
   SPF_Formatting_API m_formattingAPI{};
   SPF_GameLog_API m_gameLogAPI{};
   SPF_Vehicle_API m_vehicleAPI{};

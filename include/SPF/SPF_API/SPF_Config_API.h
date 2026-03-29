@@ -296,6 +296,22 @@ typedef struct SPF_Config_API {
      */
     int (*Cfg_GetJsonString)(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
 
+    /**
+     * @brief Creates a configuration context for an arbitrary JSON file.
+     * @details This allows you to use the standard Cfg_Get/Set functions for any JSON 
+     *          file on disk, not just the default settings.json.
+     * @param filePath The full physical path to the JSON file.
+     * @return A handle to the configuration context, or NULL on error.
+     */
+    SPF_Config_Handle* (*Cfg_CreateCustomContext)(const char* filePath);
+
+    /**
+     * @brief Enables or disables automatic saving to disk when values are changed.
+     * @param h The context handle.
+     * @param enabled If true, changes are automatically synced to disk (default).
+     */
+    void (*Cfg_SetAutoSave)(SPF_Config_Handle* h, bool enabled);
+
 } SPF_Config_API;
 
 #ifdef __cplusplus

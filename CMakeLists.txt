@@ -273,6 +273,8 @@ add_library(SPF SHARED
     "src/Modules/API/VirtualInputApi.cpp"
     "src/Modules/API/GameConsoleApi.cpp"
     "src/Modules/API/JsonReaderApi.cpp"
+    "src/Modules/API/JsonWriterApi.cpp"
+    "src/Modules/API/JsonIOApi.cpp"
     "src/Modules/API/HooksApi.cpp"
     "src/Modules/API/GameLogApi.cpp"
     "src/Modules/CommunicationManager.cpp"

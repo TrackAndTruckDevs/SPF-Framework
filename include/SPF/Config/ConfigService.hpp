@@ -60,6 +60,8 @@ class ConfigService : public IConfigService {
   void RemoveKey(const std::string& componentName, const std::string& keyPath) override;
   void ReloadComponentConfig(const std::string& componentName) override;
   bool IsSettingHidden(const std::string& componentName, const std::string& keyPath) const override;
+  std::string CreateCustomContext(const std::string& filePath) override;
+  void SetAutoSave(const std::string& contextId, bool enabled) override;
   /**
    * @brief Processes all registered system configurations (isolated and priority-merged).
    * This method iterates through all known systems and applies the appropriate merge strategy
@@ -130,6 +132,14 @@ class ConfigService : public IConfigService {
   std::vector<std::string> m_userConfigurableSystems;
 
   System::InstallationStatus m_installationStatus = System::InstallationStatus::SameVersion;
+
+  // --- Custom Configs ---
+  // Key: contextId (plugin name or full path), Value: JSON content
+  std::map<std::string, nlohmann::ordered_json> m_customConfigs;
+  // Key: contextId, Value: full path to file
+  std::map<std::string, std::string> m_customContextPaths;
+  // Set of contextIds where auto-save is disabled
+  std::set<std::string> m_disabledAutoSave;
 };
 
 }  // namespace Config

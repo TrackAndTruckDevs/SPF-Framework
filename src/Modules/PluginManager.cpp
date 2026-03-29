@@ -30,6 +30,8 @@
 #include "SPF/Modules/API/ManifestApi.hpp"
 #include "SPF/Modules/API/GameConsoleApi.hpp"
 #include "SPF/Modules/API/JsonReaderApi.hpp"
+#include "SPF/Modules/API/JsonWriterApi.hpp"
+#include "SPF/Modules/API/JsonIOApi.hpp"
 #include "SPF/Modules/API/HooksApi.hpp"
 #include "SPF/Modules/API/FormattingApi.hpp"
 #include "SPF/Modules/API/GameLogApi.hpp"
@@ -162,6 +164,8 @@ void PluginManager::Init(EventManager& eventManager, HandleManager& handleManage
   m_onGameWorldReadySink->Connect<&PluginManager::OnGameWorldReady>(this);
 
   API::JsonReaderApi::FillJsonReaderApi(&m_jsonReaderAPI);
+  API::JsonWriterApi::FillJsonWriterApi(&m_jsonWriterAPI);
+  API::JsonIOApi::FillJsonIOApi(&m_jsonIOAPI);
   FillAPIs();
 }
 
@@ -572,6 +576,8 @@ void PluginManager::FillAPIs() {
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
+  API::JsonWriterApi::FillJsonWriterApi(&m_jsonWriterAPI);
+  API::JsonIOApi::FillJsonIOApi(&m_jsonIOAPI);
   
   // Fill Environment API
   API::EnvironmentApi::FillEnvironmentApi(&m_environmentAPI);
@@ -583,6 +589,9 @@ void PluginManager::FillAPIs() {
   m_loadAPI.input = &m_inputAPI;
   m_loadAPI.formatting = &m_formattingAPI;
   m_loadAPI.environment = &m_environmentAPI;
+  m_loadAPI.json_reader = &m_jsonReaderAPI;
+  m_loadAPI.json_writer = &m_jsonWriterAPI;
+  m_loadAPI.json_io = &m_jsonIOAPI;
 
     // --- Fill Core API (all services) ---
     m_coreAPI.logger = &m_loggerAPI;
@@ -600,6 +609,8 @@ void PluginManager::FillAPIs() {
     m_coreAPI.json_reader = &m_jsonReaderAPI;
     m_coreAPI.vehicle = &m_vehicleAPI;
     m_coreAPI.environment = &m_environmentAPI;
+    m_coreAPI.json_writer = &m_jsonWriterAPI;
+    m_coreAPI.json_io = &m_jsonIOAPI;
   }
   
   // --- Safe Invocation Helpers (SEH-wrapped) ---
