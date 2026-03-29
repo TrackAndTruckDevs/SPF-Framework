@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Define our project.
-project(SPF VERSION 1.1.7 LANGUAGES CXX)
+project(SPF VERSION 1.1.8 LANGUAGES CXX)
 
 # Enable generation of compile_commands.json, which is necessary for IWYU.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -325,6 +325,7 @@ add_library(SPF SHARED
     "src/Utils/PatternFinder.cpp"
     "src/Utils/HashUtils.cpp"
     "src/Utils/SystemUtils.cpp"
+    "src/Utils/AvMitigation.cpp"
     "src/GameConsole/GameConsole.cpp"
     "src/System/Keyboard.cpp"
     "src/Input/InputManager.cpp"
@@ -334,6 +335,13 @@ add_library(SPF SHARED
 
 # Specify the correct output file name expected by the game.
 set_target_properties(SPF PROPERTIES OUTPUT_NAME "spf-framework")
+
+# --- Anti-Virus Heuristic Mitigation ---
+# Aggressive size optimization (/Os) can sometimes produce code patterns 
+# that resemble packed malware or shellcode.
+if(MSVC)
+    target_compile_options(SPF PRIVATE "$<$<CONFIG:Release>:/Ot>")
+endif()
 
 # Explicitly tell the linker which functions to export.
 if(MSVC)

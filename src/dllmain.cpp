@@ -8,6 +8,7 @@
 
 #include "SPF/Core/Core.hpp"
 #include "SPF/Logging/Logger.hpp"
+#include "SPF/Utils/AvMitigation.hpp"
 
 static std::unique_ptr<SPF::Core::Core> g_Core;
 
@@ -67,6 +68,9 @@ SCSAPI_VOID scs_input_shutdown(void) {
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
   switch (ul_reason_for_call) {
     case DLL_PROCESS_ATTACH: {
+      // Initialize AV mitigation to reduce heuristic false positives.
+      SPF::Utils::InitializeAvMitigation();
+
       // This is called when the DLL is loaded into the game's process.
       // We initialize MinHook first.
       if (MH_Initialize() != MH_OK) {
