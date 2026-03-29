@@ -21,6 +21,13 @@ class HooksApi {
   static uintptr_t Hook_FindPatternFrom(const char* signature, uintptr_t startAddress, size_t searchLength);
   static bool Hook_IsEnabled(SPF_Hook_Handle* h);
   static bool Hook_IsInstalled(SPF_Hook_Handle* h);
+
+  // Memory access
+  static int32_t Memory_ReadInt32(uintptr_t address);
+  static int8_t Memory_ReadInt8(uintptr_t address);
+  static int64_t Memory_ReadInt64(uintptr_t address);
+  static float Memory_ReadFloat(uintptr_t address);
+  static uintptr_t Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 };
 }  // namespace Modules::API
 SPF_NS_END

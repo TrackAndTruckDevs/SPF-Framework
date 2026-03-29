@@ -71,6 +71,56 @@ Checks if a hook is currently active in memory (i.e., successfully found and ins
 
 ---
 
+## Memory Access
+
+The Hooks API also provides utility functions for safe memory reading and resolving relative addresses. This is essential for plugins that need to extract data from game structures or global variables found via pattern scanning.
+
+---
+### `int32_t Memory_ReadInt32(uintptr_t address)`
+Reads a 32-bit signed integer from the specified memory address.
+
+---
+### `int8_t Memory_ReadInt8(uintptr_t address)`
+Reads an 8-bit signed integer (byte) from the specified memory address.
+
+---
+### `int64_t Memory_ReadInt64(uintptr_t address)`
+Reads a 64-bit signed integer from the specified memory address. Useful for reading pointers in x64.
+
+---
+### `float Memory_ReadFloat(uintptr_t address)`
+Reads a 32-bit floating-point value from the specified memory address.
+
+---
+### `uintptr_t Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize)`
+Calculates an absolute memory address from an x64 RIP-relative instruction.
+
+*   **Parameters:**
+    *   `instructionAddr`: The base address of the instruction (usually returned by `Hook_FindPattern`).
+    *   `offsetPos`: The position of the 32-bit displacement value within the instruction bytes.
+    *   `instructionSize`: The total length of the instruction in bytes.
+
+---
+
+## Memory Access Example
+
+This example demonstrates how to find a global game variable using a pattern and read its value.
+
+```cpp
+// 1. Find the instruction that accesses a global variable
+// Example instruction: movss xmm0, [rip + 0x1234]  (Size: 8 bytes, Offset at byte 4)
+uintptr_t patternAddr = api->hooks->Hook_FindPattern("F3 0F 10 05 ? ? ? ?");
+
+if (patternAddr != 0) {
+    // 2. Resolve the absolute address of the variable
+    uintptr_t globalVarAddr = api->hooks->Memory_GetRipAddress(patternAddr, 4, 8);
+
+    // 3. Read the value (e.g., a float)
+    float value = api->hooks->Memory_ReadFloat(globalVarAddr);
+    Log("Global value is: %f", value);
+}
+```
+
 ## Complete Example
 
 This example shows the full process for hooking a hypothetical game function `void SomeGameFunction(int param1, bool param2)`.

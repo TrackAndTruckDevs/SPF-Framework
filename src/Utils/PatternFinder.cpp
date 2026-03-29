@@ -71,6 +71,21 @@ int8_t PatternFinder::ReadInt8(uintptr_t address) {
   return *reinterpret_cast<int8_t*>(address);
 }
 
+int64_t PatternFinder::ReadInt64(uintptr_t address) {
+  if (address == 0) return 0;
+  return *reinterpret_cast<int64_t*>(address);
+}
+
+float PatternFinder::ReadFloat(uintptr_t address) {
+  if (address == 0) return 0.0f;
+  return *reinterpret_cast<float*>(address);
+}
+
+double PatternFinder::ReadDouble(uintptr_t address) {
+  if (address == 0) return 0.0;
+  return *reinterpret_cast<double*>(address);
+}
+
 uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
   if (instructionAddr == 0) return 0;
   int32_t displacement = ReadInt32(instructionAddr + offsetPos);

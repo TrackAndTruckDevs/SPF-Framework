@@ -106,6 +106,53 @@ typedef bool (*SPF_Hook_IsEnabled_t)(SPF_Hook_Handle* h);
  */
 typedef bool (*SPF_Hook_IsInstalled_t)(SPF_Hook_Handle* h);
 
+/**
+ * @brief Reads a 32-bit integer from a specific memory address.
+ * @param address The absolute memory address to read from.
+ * @return The 32-bit integer value, or 0 if the address is null.
+ */
+typedef int32_t (*SPF_Memory_ReadInt32_t)(uintptr_t address);
+
+/**
+ * @brief Reads an 8-bit integer (byte) from a specific memory address.
+ * @param address The absolute memory address to read from.
+ * @return The 8-bit integer value, or 0 if the address is null.
+ */
+typedef int8_t (*SPF_Memory_ReadInt8_t)(uintptr_t address);
+
+/**
+ * @brief Reads a 64-bit integer from a specific memory address.
+ * @param address The absolute memory address to read from.
+ * @return The 64-bit integer value, or 0 if the address is null.
+ */
+typedef int64_t (*SPF_Memory_ReadInt64_t)(uintptr_t address);
+
+/**
+ * @brief Reads a 32-bit floating-point value from a specific memory address.
+ * @param address The absolute memory address to read from.
+ * @return The float value, or 0.0f if the address is null.
+ */
+typedef float (*SPF_Memory_ReadFloat_t)(uintptr_t address);
+
+/**
+ * @brief Calculates an absolute address from a RIP-relative instruction (x64).
+ *
+ * @details In x64 architecture, many instructions use relative addressing from the 
+ *          current Instruction Pointer (RIP). This function resolves the final 
+ *          absolute address.
+ *
+ * @param instructionAddr The starting address of the instruction (e.g., found via pattern).
+ * @param offsetPos The byte offset within the instruction where the 32-bit displacement is located.
+ * @param instructionSize The total size of the instruction in bytes.
+ * @return The resolved absolute address.
+ *
+ * @code
+ * // Example: mov rax, [rip + 0x123456] -> instruction is 7 bytes, offset starts at byte 3
+ * uintptr_t addr = api->Memory_GetRipAddress(patternAddr, 3, 7);
+ * @endcode
+ */
+typedef uintptr_t (*SPF_Memory_GetRipAddress_t)(uintptr_t instructionAddr, int offsetPos, int instructionSize);
+
 
 /**
  * @struct SPF_Hooks_API
@@ -208,6 +255,16 @@ typedef struct {
 
     SPF_Hook_IsEnabled_t Hook_IsEnabled;
     SPF_Hook_IsInstalled_t Hook_IsInstalled;
+
+    /**
+     * @brief Safe memory reading and RIP-relative address resolution.
+     * @section Memory Access API
+     */
+    SPF_Memory_ReadInt32_t Memory_ReadInt32;
+    SPF_Memory_ReadInt8_t Memory_ReadInt8;
+    SPF_Memory_ReadInt64_t Memory_ReadInt64;
+    SPF_Memory_ReadFloat_t Memory_ReadFloat;
+    SPF_Memory_GetRipAddress_t Memory_GetRipAddress;
 } SPF_Hooks_API;
 
 

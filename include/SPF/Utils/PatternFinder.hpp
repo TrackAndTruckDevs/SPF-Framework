@@ -59,6 +59,30 @@ class PatternFinder {
   static int8_t ReadInt8(uintptr_t address);
 
   /**
+   * @brief Reads a 64-bit integer from the specified address.
+   *
+   * @param address The memory address to read from.
+   * @return The 64-bit integer value.
+   */
+  static int64_t ReadInt64(uintptr_t address);
+
+  /**
+   * @brief Reads a floating-point value from the specified address.
+   *
+   * @param address The memory address to read from.
+   * @return The float value.
+   */
+  static float ReadFloat(uintptr_t address);
+
+  /**
+   * @brief Reads a double-precision floating-point value from the specified address.
+   *
+   * @param address The memory address to read from.
+   * @return The double value.
+   */
+  static double ReadDouble(uintptr_t address);
+
+  /**
    * @brief Calculates an absolute address from a RIP-relative instruction.
    *
    * @param instructionAddr The starting address of the instruction.
