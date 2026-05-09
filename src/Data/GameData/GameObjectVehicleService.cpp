@@ -79,10 +79,11 @@ bool GameObjectVehicleService::IsFinderReady(const char* finderName) const {
 }
 
 uintptr_t GameObjectVehicleService::GetLocalPlayerControllerAddr() const {
-    if (m_pTrafficManagerAddr == 0 || m_localPlayerControllerOffset == 0) {
+    uintptr_t trafficManager = GetTrafficManagerAddr();
+    if (trafficManager == 0 || m_localPlayerControllerOffset == 0) {
         return 0;
     }
-    return *reinterpret_cast<uintptr_t*>(m_pTrafficManagerAddr + m_localPlayerControllerOffset);
+    return *reinterpret_cast<uintptr_t*>(trafficManager + m_localPlayerControllerOffset);
 }
 
 std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService::GetAllVehiclesFullInfo() const {
@@ -94,13 +95,14 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
 
 
     // 1. Get vehicle count
-    uint32_t vehicleCount = *reinterpret_cast<uint32_t*>(m_pTrafficManagerAddr + m_vehicleCountOffset);
+    uintptr_t trafficManager = GetTrafficManagerAddr();
+    uint32_t vehicleCount = *reinterpret_cast<uint32_t*>(trafficManager + m_vehicleCountOffset);
     if (vehicleCount == 0 || vehicleCount > 500) { // Sanity check
         return vehicleInfo;
     }
 
     // 2. Get pVehicleArrayData
-    uintptr_t pVehicleArrayData = *reinterpret_cast<uintptr_t*>(m_pTrafficManagerAddr + m_pArrayObjectOffset);
+    uintptr_t pVehicleArrayData = *reinterpret_cast<uintptr_t*>(trafficManager + m_pArrayObjectOffset);
     if (!pVehicleArrayData) {
         return vehicleInfo;
     }
@@ -161,12 +163,10 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
 uintptr_t GameObjectVehicleService::GetPlayerVehiclePtr() const {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameObjectVehicleService");
 
-    if (m_pTrafficManagerAddr == 0 || m_localPlayerControllerOffset == 0 || m_playerVehicleInControllerOffset == 0) {
+    uintptr_t trafficManager = GetTrafficManagerAddr();
+    if (trafficManager == 0 || m_localPlayerControllerOffset == 0 || m_playerVehicleInControllerOffset == 0) {
         return 0;
     }
-
-    // Use the Traffic Manager address directly (it's already the object address)
-    uintptr_t trafficManager = m_pTrafficManagerAddr;
 
     // 1. Get the local player controller pointer
     uintptr_t pControllerAddr = trafficManager + m_localPlayerControllerOffset;

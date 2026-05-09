@@ -5,9 +5,18 @@
 #include "SPF/GameCamera/DebugHudPosition.hpp"
 
 #include <cstdint>
+// #include <vector>
+// #include <string>
 
 SPF_NS_BEGIN
 namespace GameCamera {
+// struct TextureResource {
+//   int dx11Id;
+//   std::string name;
+//   int width;
+//   int height;
+// };
+
 class GameCameraDebug {
  public:
   GameCameraDebug();
@@ -41,8 +50,22 @@ class GameCameraDebug {
   void SetSelectedObjectPtr(uintptr_t ptr);
   uintptr_t GetHoveredObjectPtr() const;
 
+  // // --- PiP Texture ---
+  // uintptr_t GetPipTextureSrv() const;
+  // uintptr_t GetGpsTextureSrv() const;
+  // uintptr_t GetMirrorTextureSrv(int index) const;
+  // uintptr_t GetTextureSrvByPath(const std::string& path) const;
+
+  // void SetSelectedTextureId(int id);
+  // int GetSelectedTextureId() const;
+  // int GetTextureCount() const;
+  // bool IsRenderTargetImage(int id) const;
+
+  // std::vector<TextureResource> GetAvailableTextures();
+
  private:
   mutable DebugCameraMode m_currentMode = DebugCameraMode::SIMPLE;
+  // int m_selectedTextureId = 4;
 };
 }  // namespace GameCamera
 SPF_NS_END

@@ -17,7 +17,10 @@ void GameCameraInterior::OnActivate() {
   // Get the raw camera object pointer when this camera becomes active
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t pStandardManager = *(uintptr_t*)gameData.GetStandardManagerPtrAddr();
+  
+  // GetStandardManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
+  uintptr_t pStandardManager = gameData.GetStandardManager();
+  
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }
@@ -92,6 +95,8 @@ void GameCameraInterior::SetFov(float fov) {
 
   // Check if everything is available
   if (fov_base_offset && pfnUpdateCameraProjection && pCameraParamsObject && x1_offset && x2_offset && y1_offset && y2_offset) {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
+
     // 1. Set the base FOV value
     *reinterpret_cast<float*>(pCam + fov_base_offset) = fov;
 
@@ -101,6 +106,12 @@ void GameCameraInterior::SetFov(float fov) {
 
     // 3. Call the game's function to make the FOV change take effect
     pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
+
+    // Log final results
+    // float horiz_final = *reinterpret_cast<float*>(pCam + gameData.GetFovHorizFinalOffset());
+    // float vert_final = *reinterpret_cast<float*>(pCam + gameData.GetFovVertFinalOffset());
+
+    // logger->Trace("SetFov [Result]: H={:.4f}, V={:.4f}", horiz_final, vert_final);
   } else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
     logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");

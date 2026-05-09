@@ -36,7 +36,10 @@ public:
     bool IsFinderReady(const char* finderName) const;
 
     // --- Public Getters ---
-    uintptr_t GetTrafficManagerAddr() const { return m_pTrafficManagerAddr; }
+    uintptr_t GetTrafficManagerAddr() const {
+        if (m_pTrafficManagerAddr == 0) return 0;
+        return m_pTrafficManagerAddr + m_trafficManagerAdjustment;
+    }
     uintptr_t GetLocalPlayerControllerAddr() const;
     uintptr_t GetPArrayObjectOffset() const { return m_pArrayObjectOffset; }
     uintptr_t GetVehicleCountOffset() const { return m_vehicleCountOffset; }
@@ -61,6 +64,10 @@ public:
     // --- Public Setters (for use by finder implementations) ---
     void SetTrafficManagerAddr(uintptr_t ptr) {
         m_pTrafficManagerAddr = ptr;
+    }
+
+    void SetTrafficManagerAdjustment(intptr_t adj) {
+        m_trafficManagerAdjustment = adj;
     }
 
     void SetLocalPlayerControllerOffset(uintptr_t offset) {
@@ -127,6 +134,7 @@ private:
 
     bool m_isInitialized = false;
     uintptr_t m_pTrafficManagerAddr = 0;
+    intptr_t m_trafficManagerAdjustment = 0;
     uintptr_t m_localPlayerControllerOffset = 0;
     uintptr_t m_playerVehicleInControllerOffset = 0;
     uintptr_t m_pArrayObjectOffset = 0;

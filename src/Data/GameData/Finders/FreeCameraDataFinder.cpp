@@ -76,19 +76,62 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    * Ghidra: FUN_1407a25ac
    * Anchor: LEA RAX, [RBP-58h]; MOV RDI, [RIP+...]
    */
-  const char* pFreecamGlobalObjectPtr_SIG = "48 8D 45 A8 48 8B 3D ? ? ? ? 4C 8D 85";
-  uintptr_t mov_rdi_addr = Utils::PatternFinder::Find(pFreecamGlobalObjectPtr_SIG);
-  if (mov_rdi_addr) {
-    uintptr_t* pFreecamGlobalObjectPtr = reinterpret_cast<uintptr_t*>(Utils::PatternFinder::GetRipAddress(mov_rdi_addr + 4, 3, 7));
-    if (pFreecamGlobalObjectPtr) {
-      owner.SetFreecamGlobalObjectPtr(pFreecamGlobalObjectPtr);
-      logger->Debug("B-1: Found 'pFreecamGlobalObjectPtr' at: {:#x}", (uintptr_t)pFreecamGlobalObjectPtr);
+  /**
+   * B-1: Find Freecam Global Object Pointer.
+   * Logic: First find a unique anchor near the profile selection check, 
+   * then find the first MOV instruction that loads the global pointer.
+   * 
+   * 1.59 Ghidra Example:
+   * 1407cfb59: 4c 89 bc 24 b0 01 00 00  MOV qword ptr [RSP + 0x1b0], R15
+   * 1407cfb61: 84 c0                    TEST AL, AL
+   * 1407cfb63: 74 07                    JZ LAB_1407cfb6c
+   * 1407cfb65: 32 db                    XOR BL, BL
+   * ...
+   * 1407cfb6c: 48 8b 05 fd 12 c1 02     MOV RAX, qword ptr [DAT_1433e0e70]
+   */
+  const char* FREECAM_ANCHOR_SIG = "4C 89 ?? ?? ?? ?? ?? ?? 84 C0 ?? ?? 32 DB";
+  uintptr_t anchor_addr = Utils::PatternFinder::Find(FREECAM_ANCHOR_SIG);
+  if (anchor_addr) {
+    uintptr_t mov_addr = Utils::PatternFinder::Find(anchor_addr, 100, "48 8B");
+    if (mov_addr) {
+        uintptr_t* pFreecamGlobalObjectPtr = reinterpret_cast<uintptr_t*>(Utils::PatternFinder::GetRipAddress(mov_addr, 3, 7));
+        if (pFreecamGlobalObjectPtr) {
+          owner.SetFreecamGlobalObjectPtr(pFreecamGlobalObjectPtr);
+          logger->Debug("B-1: Found 'pFreecamGlobalObjectPtr' at: {:#x}", (uintptr_t)pFreecamGlobalObjectPtr);
+
+          // --- 1.1 Dynamic Pointer Adjustment Detection (v1.59+ support) ---
+          /*
+           * In newer game versions (starting from 1.59), the global pointer does not point
+           * to the start of the Freecam system object. The game adjusts it immediately after loading.
+           * 
+           * 1.59 Ghidra Example:
+           * 1407cfb6c: 48 8b 05 ...  MOV RAX, qword ptr [DAT_...]
+           * 1407cfb76: 48 8d 70 f0     LEA RSI, [RAX - 0x10]  <-- This is what we need to detect.
+           */
+          intptr_t adjustment = 0;
+          constexpr size_t ADJUSTMENT_SCAN_RANGE = 32;
+
+          // Search for LEA instruction (48 8D) within a small window after the MOV load.
+          uintptr_t addrLea = Utils::PatternFinder::Find(mov_addr, ADJUSTMENT_SCAN_RANGE, "48 8D");
+          if (addrLea) {
+            // Instruction: 48 8D [REG] [OFFSET] -> 48 8D 70 f0
+            // Offset is at byte 3: [f0]
+            int8_t imm8 = Utils::PatternFinder::ReadInt8(addrLea + 3);
+            adjustment = static_cast<intptr_t>(imm8);
+            logger->Info("Detected Freecam global object pointer adjustment: {} (via LEA)", adjustment);
+          }
+          owner.SetFreecamGlobalObjectAdjustment(adjustment);
+
+        } else {
+          logger->Error("B-1: FAILED to resolve RIP for pFreecamGlobalObjectPtr");
+          all_found = false;
+        }
     } else {
-      logger->Error("B-1: FAILED to resolve RIP for pFreecamGlobalObjectPtr");
+      logger->Error("B-1: FAILED to find 48 8B instruction after anchor.");
       all_found = false;
     }
   } else {
-    logger->Warn("B-1: Could not find signature for 'pFreecamGlobalObjectPtr'.");
+    logger->Warn("B-1: Could not find FREECAM_ANCHOR signature.");
     all_found = false;
   }
 
@@ -97,7 +140,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    * Ghidra: FUN_1407a26d2
    * Anchor: CALL FUN_14043c850; MOV RDX, [RDI + offset]
    */
-  const char* freecamContextOffset_SIG = "E8 ? ? ? ? 48 8B 97 ? ? ? ? 49 8B 8D";
+  const char* freecamContextOffset_SIG = "E8 ? ? ? ? 48 8B ? ? ? ? ? 49 8B ? ? ? ? ? e8 ? ? ? ? 48 ? ? ? ? ? ? 48 ? ? 74";
   uintptr_t mov_rdx_addr = Utils::PatternFinder::Find(freecamContextOffset_SIG);
   if (mov_rdx_addr) {
     int32_t offset = Utils::PatternFinder::ReadInt32(mov_rdx_addr + 8); // MOV RDX, [RDI + offset]
@@ -210,7 +253,7 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   uintptr_t pfnHandleInput = cameraHooks.GetDebugCameraHandleInputFunc();
   if (pfnHandleInput) {
     // Yaw Anchor: MOV [reg+off], reg; LEA RDI, [RCX + offset]; MOV [reg+off], reg
-    uintptr_t addrYaw = Utils::PatternFinder::Find(pfnHandleInput, 512, "48 89 ?? ?? 48 8D 79 ?? 4C 89 ?? ??");
+    uintptr_t addrYaw = Utils::PatternFinder::Find(pfnHandleInput, 512, "48 89 ?? ?? 48 8D");
     // Pitch Anchor: MOVAPS [reg+off], XMM8; MOVSS XMM8, [RCX + offset]; MOVAPS [reg+off], XMM11
     uintptr_t addrPitch = Utils::PatternFinder::Find(pfnHandleInput, 512, "44 0F 29 ?? ?? F3 44 0F 10 41 ?? 44 0F 29 ?? ?? ?? ?? ??");
 

@@ -38,6 +38,7 @@ void GameObjectFileSystemService::Reset() {
     m_devicesArrayAddr = 0;
     m_managersCountAddr = 0;
     m_gamePtrAddr = 0;
+    m_gamePtrAdjustment = 0;
     m_profileHandleOffset = 0;
     m_mountListHeadOffset = 0;
     m_physDevicePathOffset = 0;

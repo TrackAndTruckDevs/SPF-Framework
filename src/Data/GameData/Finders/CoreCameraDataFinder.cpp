@@ -15,20 +15,20 @@ namespace {
  * Inside InitializeCamera: MOV RBX, qword ptr [StandardManagerPtr]; MOV EDI, EDX
  * Signature targets the RIP-relative MOV and the subsequent MOV EDI, EDX.
  */
-const char* STANDARD_MANAGER_SIG = "48 8B 1D ?? ?? ?? ?? 8B FA";
+const char* STANDARD_MANAGER_SIG = "48 8B 1D ?? ?? ?? ?? ?? ?? 48";
 
 /*
  * Anchor #2: Active Camera ID Offset
  * Inside InitializeCamera: CMP dword ptr [RBX + offset], imm8; MOV dword ptr [RBX + offset+4], EDX
  * Signature targets the structure of the check while masking volatile values.
  */
-const char* ACTIVE_CAMERA_ID_SIG = "83 7B ?? ?? 89 53 ??";
+const char* ACTIVE_CAMERA_ID_SIG = "83 7B ?? ?? 89";
 
 /*
  * Anchor #3: World Coordinates Pointer
  * Global search for the MOVSD instruction that writes camera world coordinates.
  */
-const char* WORLD_COORDINATES_SIG = "F2 0F 11 05 ?? ?? ?? ?? 89 05 ?? ?? ?? ?? 83 BF";
+const char* WORLD_COORDINATES_SIG = "F2 0F ?? ?? ?? ?? ?? ?? 89 05 ?? ?? ?? ?? 83";
 }  // namespace
 
 bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
@@ -53,6 +53,44 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (pStandardManagerPtrAddr) {
       owner.SetStandardManagerPtrAddr(pStandardManagerPtrAddr);
       logger->Debug("Anchor #1: StandardManagerPtrAddr = 0x{:X}", pStandardManagerPtrAddr);
+
+      // --- 1.1 Dynamic Pointer Adjustment Detection (v1.59+ support) ---
+      /*
+       * In newer game versions (starting from 1.59), the global pointer does not point
+       * to the start of the StandardManager object. Instead, the game manually adjusts
+       * the pointer after loading it.
+       * 
+       * We look for instructions like:
+       * ADD RBX, imm8 (48 83 C3 XX)
+       * SUB RBX, imm8 (48 83 EB XX)
+       * 
+       * We scan a small window after the initial load to find this correction logic.
+       */
+      intptr_t adjustment = 0;
+      constexpr size_t ADJUSTMENT_SCAN_RANGE = 64;
+      
+      // Search for ADD RBX, imm8 (48 83 C3)
+      uintptr_t addrAdd = Utils::PatternFinder::Find(addrManager, ADJUSTMENT_SCAN_RANGE, "48 83 C3");
+      if (addrAdd) {
+        int8_t imm8 = Utils::PatternFinder::ReadInt8(addrAdd + 3);
+        adjustment = static_cast<intptr_t>(imm8);
+        logger->Info("Detected StandardManager pointer adjustment: {} (via ADD RBX)", adjustment);
+      } else {
+        // Search for SUB RBX, imm8 (48 83 EB)
+        uintptr_t addrSub = Utils::PatternFinder::Find(addrManager, ADJUSTMENT_SCAN_RANGE, "48 83 EB");
+        if (addrSub) {
+          int8_t imm8 = Utils::PatternFinder::ReadInt8(addrSub + 3);
+          adjustment = -static_cast<intptr_t>(imm8);
+          logger->Info("Detected StandardManager pointer adjustment: {} (via SUB RBX)", adjustment);
+        }
+      }
+
+      if (adjustment != 0) {
+        owner.SetStandardManagerAdjustment(adjustment);
+      } else {
+        logger->Debug("No StandardManager pointer adjustment detected (likely pre-1.59 version).");
+      }
+
     } else {
       logger->Error("Anchor #1: FAILED to resolve RIP address for StandardManagerPtrAddr");
       all_found = false;

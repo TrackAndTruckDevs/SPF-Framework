@@ -186,6 +186,29 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
         logger->Info("-----------------------------");
 
         owner.SetTrafficManagerAddr(trafficManagerAddr);
+
+        // --- 1.1 Dynamic Pointer Adjustment Detection (v1.59+ support) ---
+        /*
+         * In newer game versions (starting from 1.59), the global TrafficManager pointer
+         * may point to a location within the object, requiring an adjustment.
+         * 
+         * Ghidra 1.59 Example:
+         * 1404c9730: 48 8b 05 ...  MOV RAX, qword ptr [DAT_1433e0ec0]
+         * 1404c9737: 48 85 c0       TEST RAX, RAX
+         * 1404c973a: 74 2b           JZ LAB_...
+         * 1404c973c: 48 83 c0 e8     ADD RAX, -0x18  <-- Adjustment is -0x18 (-24)
+         */
+        intptr_t adjustment = 0;
+        constexpr size_t ADJUSTMENT_SCAN_RANGE = 32;
+
+        // Search for ADD RAX, imm8 (48 83 C0 XX)
+        uintptr_t addrAdd = PatternFinder::Find(movInstructionAddr, ADJUSTMENT_SCAN_RANGE, "48 83 C0");
+        if (addrAdd) {
+            int8_t imm8 = PatternFinder::ReadInt8(addrAdd + 3);
+            adjustment = static_cast<intptr_t>(imm8);
+            logger->Info("Detected TrafficManager pointer adjustment: {} (via ADD)", adjustment);
+        }
+        owner.SetTrafficManagerAdjustment(adjustment);
     }
 
     // --- Step 2: Find offsets within ClearLocalVehicles ---

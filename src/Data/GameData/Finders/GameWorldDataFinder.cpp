@@ -28,7 +28,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
     // 44 8b 91        MOV        R10D,dword ptr [RCX + 0x210]
     // 10 02 00 00
     // 48 8b e9        MOV        RBP,RCX    
-    const char* UPDATE_TIME_ADVANCE_SIG = "48 8B ?? ?? 48 81 EC ?? ?? ?? ?? 44 8B 91 ?? ?? ?? ?? 48 8B";
+    const char* UPDATE_TIME_ADVANCE_SIG = "48 81 ? ? ? ? ? 44 8b ? ? ? ? ? ? ? ? ? ? ? 0f 84 ? ? ? ? 48 ? ? ? ba";
     uintptr_t pfnUpdateTimeAdvance = Utils::PatternFinder::Find(UPDATE_TIME_ADVANCE_SIG);
 
     if (!pfnUpdateTimeAdvance) {
@@ -72,7 +72,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * ANCHOR #2: Environment Object Offset
      * This signature finds the instruction that dereferences the global pointer 
      * to get the actual environment object.
-     * Ghidra: 14147d313 48 8b 9b e8 07 00 00  MOV RBX, qword ptr [RBX + 0x7e8]
+     * Ghidra: 14147d313 48 8b 9b  MOV RBX, qword ptr [RBX + 0x7e8]
      *
      * 48 8b 9b        MOV        RBX,qword ptr [RBX + 0x7e8]
      * e8 07 00 00
@@ -80,7 +80,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * e8 0e 48        CALL       GetChildUiElementById
      * e8 fe
      */
-    const char* p_obj_offset = "48 8B ?? ?? ?? ?? ?? 49 8B ?? E8";
+    const char* p_obj_offset = "48 8B 9b";
     addr = Utils::PatternFinder::Find(pfnUpdateTimeAdvance, SEARCH_RANGE, p_obj_offset);
     if (addr) {
         // The 32-bit offset is at index 3 of the instruction "48 8B 9B [offset]".
@@ -108,18 +108,18 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      *   14147d3d1 c7 83 54 3e 00 00 00 00 00 00  MOV dword ptr [RBX + 0x3e54], 0x0
      *   14147d3db e8 90 f3 fc fe        CALL UpdateEnvironmentState
      */
-    const char* p_time_update = "44 89 ?? ?? ?? ?? ?? C7 83 ?? ?? ?? ?? ?? ?? ?? ?? E8";
+    const char* p_time_update = "48 8b cb 44 89";
     addr = Utils::PatternFinder::Find(pfnUpdateTimeAdvance, SEARCH_RANGE, p_time_update);
     if (addr) {
         // 1. Extract Time Offset (from MOV dword ptr [RBX + offset], R14D)
         // The 32-bit offset is at index 3 of the instruction "44 89 B3 [offset]".
-        int32_t timeOffset = Utils::PatternFinder::ReadInt32(addr + 3);
+        int32_t timeOffset = Utils::PatternFinder::ReadInt32(addr + 6);
         
         // 2. Extract Update Function Address (from CALL UpdateEnvironmentState)
         // The CALL instruction (E8) is at the end of this pattern match.
         // The byte pattern's "E8" is at 'addr + 17'.
         // The CALL instruction is 5 bytes long: E8 [4-byte relative displacement].
-        uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addr + 17, 1, 5);
+        uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addr + 20, 1, 5);
 
         if (Utils::PatternFinder::IsSaneOffset(timeOffset)) {
             owner.SetTimeOffset(timeOffset);
@@ -143,8 +143,8 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
     // 2. Find the entry point of the UpdateSimulationTime function.
     // Ghidra: 140406f40
-    // Signature: 40 56 48 83 ?? ?? 48 8B ?? E8 82 ?? ?? ?? 84
-    const char* UPDATE_SIM_TIME_SIG = "40 56 48 83 ?? ?? 48 8B ?? E8 82 ?? ?? ?? 84";
+    // Signature: 40 ? 48 83 ?? ?? 48 8B ?? E8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? 48 8b
+    const char* UPDATE_SIM_TIME_SIG = "40 ? 48 83 ?? ?? 48 8B ?? E8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? 48 8b";
     uintptr_t pfnUpdateSimTime = Utils::PatternFinder::Find(UPDATE_SIM_TIME_SIG);
 
     if (!pfnUpdateSimTime) {
@@ -155,8 +155,8 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
     // 3. Find the entry point of the UpdateGameSession function.
     // Ghidra: 14079a3a0
-    // Signature: 40 56 57 48 83 ?? ?? 48 8B ?? ?? ?? ?? ?? 48 8B ?? 0F
-    const char* UPDATE_SESSION_SIG = "40 56 57 48 83 ?? ?? 48 8b ?? ?? ?? ?? ?? 48 8b ?? 0f";
+    // Signature: 48 8b ?? ?? ?? ?? ?? 48 8b ?? 0f ?? ?? ?? ?? 48 ?? ?? ?? ?? 33
+    const char* UPDATE_SESSION_SIG = "48 8b ?? ?? ?? ?? ?? 48 8b ?? 0f ?? ?? ?? ?? 48 ?? ?? ?? ?? 33";
     uintptr_t pfnUpdateSession = Utils::PatternFinder::Find(UPDATE_SESSION_SIG);
     if (pfnUpdateSession) {
         logger->Debug("UpdateGameSession found at 0x{:X}", pfnUpdateSession);
@@ -180,7 +180,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * amtrucks.exe+1083598 - 5E                    - pop rsi
      * amtrucks.exe+1083599 - C3                    - ret 
      */
-    const char* p_time_manager_ptr = "48 8B ?? ?? ?? ?? ?? 48 85 ?? ?? ?? 32 ?? 48 ?? ?? ?? 5E";
+    const char* p_time_manager_ptr = "48 8B ?? ?? ?? ?? ?? 48 85 ?? ?? ?? 32 ?? 48 ?? ?? ?? ?? c3 48 ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? ?? 48";
     addr = Utils::PatternFinder::Find(p_time_manager_ptr);
     if (addr) {
         // The instruction is 7 bytes long: 48 8B ?? [4-byte RIP displacement]
@@ -199,10 +199,10 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
     /*
      * ANCHOR #5: Simulation Time Offset (0x15C)
-     * Signature: 44 8b b6 ? ? ? ? b8
-     * Ghidra: 140406f7b 44 8b b6 5c 01 00 00  MOV R14D, dword ptr [RSI + 0x15c]
+     * Signature: 44 8b
+     * Ghidra: 140406f7b 44 8b ? ? ? ? ?   MOV R14D(?), dword ptr [RSI + 0x15c]
      */
-    const char* p_sim_time_off = "44 8B B6 ?? ?? ?? ?? B8";
+    const char* p_sim_time_off = "44 8B";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_sim_time_off);
     if (addr) {
         int32_t simTimeOff = Utils::PatternFinder::ReadInt32(addr + 3);
@@ -225,7 +225,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * f3 0f 58        ADDSS      XMM1,dword ptr [RSI + 0x160]
      * 8e 60 01 00 00
      */
-    const char* p_sub_sec_off = "F3 0F 58 8E ?? ?? ?? ?? 0F";
+    const char* p_sub_sec_off = "F3 0F 58 ?? ?? ?? ?? ?? 0F ?? ?? 73";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_sub_sec_off);
     if (addr) {
         int32_t subSecOff = Utils::PatternFinder::ReadInt32(addr + 4);
@@ -246,7 +246,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * Signature: f3 44 0f 59 ? ? ? ? ? 41
      * Ghidra: 140406fda f3 44 0f 59 88 3c 2f 00 00  MULSS XMM9, dword ptr [RAX + 0x2f3c]
      */
-    const char* p_warp_off = "F3 44 0F 59 ?? ?? ?? ?? ?? 41";
+    const char* p_warp_off = "F3 ?? 0F 59 ?? ?? ?? ?? ?? 41";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_warp_off);
     if (addr) {
         // The 32-bit offset starts at index 5 (after F3 44 0F 59 88)
@@ -270,7 +270,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * 41 83 b9        CMP        dword ptr [R9 + 0x46c4],0x0
      * c4 46 00 00 00
      */
-    const char* p_skybox_off = "41 83 B9 ?? ?? ?? ?? ?? 75";
+    const char* p_skybox_off = "41 ?? B9";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_skybox_off);
     if (addr) {
         int32_t skyboxOff = Utils::PatternFinder::ReadInt32(addr + 3);
@@ -295,7 +295,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * 1404071bb f3 0f 11 86 e4 01 00 00  MOVSS dword ptr [RSI + 0x1e4], XMM0
      * 1404071c3 48 8b 4e 10  MOV RCX, qword ptr [RSI + 0x10]
      */
-    const char* p_real_play_time_sig = "FF 86 ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 48";
+    const char* p_real_play_time_sig = "FF ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? 48";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_real_play_time_sig);
     if (addr) {
         // Extract 0x1E0 (from INC dword ptr [RSI + offset])
@@ -325,8 +325,8 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
     }
 
     // 4. Find the entry point of the CoreEngine_UpdateLoop function.
-    // Signature provided by user: 48 8b c4 55 53 56 57 41 54 41 55 41 56 41 57 48 8d ? ? ? ? ? 48 81 ? ? ? ? ? 0f 29 ? ? 4c ? ? 0f 29 ? ? 44 ? ? ? ? 44 ? ? ? ? ? ? ? 8b
-    const char* CORE_ENGINE_LOOP_SIG = "48 8B C4 55 53 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 0F 29 ?? ?? 4C ?? ?? 0F 29 ?? ?? 44 ?? ?? ?? ?? 44 ?? ?? ?? ?? ?? ?? ?? 8B";
+    // Signature provided by user: 48 8b c4 55 53 56 57 41 54 41 55 41 56 41 57 48 8d ? ? ? ? ? 48 81 ? ? ? ? ? 0f 29 ? ? 4c
+    const char* CORE_ENGINE_LOOP_SIG = "48 8B C4 55 53 56 57 41 54 41 55 41 56 41 57 48 8D ?? ?? ?? ?? ?? 48 81 ?? ?? ?? ?? ?? 0F 29 ?? ?? 4C";
     uintptr_t pfnCoreEngineLoop = Utils::PatternFinder::Find(CORE_ENGINE_LOOP_SIG);
 
     if (!pfnCoreEngineLoop) {
@@ -345,7 +345,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * 14039a3d2 f3 41 0f 10 97 6c 06 00 00  MOVSS XMM2, dword ptr [R15 + 0x66c]
      * 14039a3db f3 44 0f 10 0d ac 61 e6 01  MOVSS XMM9, dword ptr [DAT_142200590]
      */
-    const char* p_global_warp_sig = "F3 41 0F 10 97 ?? ?? ?? ?? F3 44";
+    const char* p_global_warp_sig = "F3 41 0F 10 ?? ?? ?? ?? ?? F3 44 ?? ?? ?? ?? ?? ?? ?? 41 ?? ?? ?? 49";
     addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_global_warp_sig);
     if (addr) {
         int32_t warpOff = Utils::PatternFinder::ReadInt32(addr + 5);
@@ -369,7 +369,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * 14039a3ba 41 38 97 59 08 00 00  CMP byte ptr [R15 + 0x859], DL
      * 14039a3c6 41 88 97 59 08 00 00  MOV byte ptr [R15 + 0x859], DL
      */
-    const char* p_pause_status_sig = "41 38 97 ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 88";
+    const char* p_pause_status_sig = "41 38 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 41 88 ?? ?? ?? ?? ?? e8 ?? ?? ?? ?? f3";
     addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_pause_status_sig);
     if (addr) {
         int32_t pauseOff = Utils::PatternFinder::ReadInt32(addr + 3);
@@ -392,7 +392,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * Ghidra context:
      * 140399f65 8b 81 9c 01 00 00  MOV EAX, dword ptr [RCX + 0x19c]
      */
-    const char* p_frame_counter_sig = "8B 81 ?? ?? ?? ?? 83";
+    const char* p_frame_counter_sig = "8B ?? ?? ?? ?? ?? 0f ?? ?? ?? 44";
     addr = Utils::PatternFinder::Find(pfnCoreEngineLoop, CORE_SEARCH_RANGE, p_frame_counter_sig);
     if (addr) {
         int32_t frameCounterOff = Utils::PatternFinder::ReadInt32(addr + 2);
@@ -416,7 +416,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
      * 140406f72 f2 48 0f 2a 80 e8 08 00 00  CVTSI2SD XMM0, qword ptr [RAX + 0x8e8]
      * 140406f7b 44 8b b6 5c 01 00 00  MOV R14D, dword ptr [RSI + 0x15c]
      */
-    const char* p_delta_time_off_sig = "F2 48 ?? ?? ?? ?? ?? ?? ?? 44 8B";
+    const char* p_delta_time_off_sig = "F2 48 ?? ?? ?? ?? ?? ?? ?? b8";
     addr = Utils::PatternFinder::Find(pfnUpdateSimTime, SIM_TIME_SEARCH_RANGE, p_delta_time_off_sig);
     if (addr) {
         // Offset 0x8E8 is at addr + 5 (after F2 48 0F 2A 80)

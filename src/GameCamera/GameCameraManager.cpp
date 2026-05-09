@@ -113,16 +113,10 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   // --- Low-level game call ---
   // This part is the same as before, telling the game engine to switch.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t pStandardManagerAddr = gameData.GetStandardManagerPtrAddr();
+  uintptr_t standardManagerPtr = gameData.GetStandardManager();
 
-  if (!pStandardManagerAddr) {
-    logger->Error("SwitchTo failed: StandardManagerPtrAddr is null.");
-    return;
-  }
-
-  uintptr_t standardManagerPtr = *(uintptr_t*)pStandardManagerAddr;
   if (!standardManagerPtr) {
-    logger->Error("SwitchTo failed: standardManagerPtr is null.");
+    logger->Error("SwitchTo failed: StandardManager is null.");
     return;
   }
 
@@ -137,17 +131,17 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
     // native InitializeCamera function, unlike other cameras that just use the StandardManager pointer.
     // The following logic resolves this special context pointer.
 
-    // 1. Get the pointer to the global object related to the free camera system.
-    uintptr_t* pFreecamGlobalObjectPtr = gameData.GetFreecamGlobalObjectPtr();
-    if (!pFreecamGlobalObjectPtr || !*pFreecamGlobalObjectPtr) {
-      logger->Error("SwitchTo(0) failed: Freecam global object pointer is not available.");
+    // 1. Get the actual, adjusted pointer to the global object related to the free camera system.
+    // Handles v1.59+ pointer adjustments (e.g. -16 offset).
+    uintptr_t base_obj = gameData.GetFreecamGlobalObject();
+    if (!base_obj) {
+      logger->Error("SwitchTo(0) failed: Freecam global object is not available.");
       return;
     }
 
     // 2. Calculate the final initialization context pointer.
-    // This involves dereferencing the global object pointer and adding a specific offset.
+    // This involves dereferencing the global object base and adding a specific offset.
     uintptr_t freeCamInitContext = 0;
-    uintptr_t base_obj = *pFreecamGlobalObjectPtr;
     uintptr_t context_offset = gameData.GetFreecamContextOffset();
 
     freeCamInitContext = *(uintptr_t*)(base_obj + context_offset);
@@ -171,15 +165,17 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
 
   // Get data fresh from the source services to ensure it's valid.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t pStandardManagerAddr = gameData.GetStandardManagerPtrAddr();
+  
+  // GetStandardManager() handles the pointer dereferencing and version-specific adjustments.
+  uintptr_t standardManagerPtr = gameData.GetStandardManager();
   intptr_t camera_id_offset = gameData.GetActiveCameraIdOffset();
 
-  if (!pStandardManagerAddr || camera_id_offset == 0) {
+  // Explicit safety checks for the manager pointer and the ID offset.
+  if (!standardManagerPtr) {
     return static_cast<GameCameraType>(-1);
   }
 
-  uintptr_t standardManagerPtr = *(uintptr_t*)pStandardManagerAddr;
-  if (!standardManagerPtr) {
+  if (camera_id_offset == 0) {
     return static_cast<GameCameraType>(-1);
   }
 

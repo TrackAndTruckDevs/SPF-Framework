@@ -13,7 +13,7 @@ namespace {
 const char* SET_DEBUG_MODE_SIG = "48 89 5C ? ? 57 48 83 EC 50 8B FA 48 8B D9 39 91";
 
 // Signature for the SetHUDVisibility function.
-const char* SET_HUD_VISIBILITY_SIG = "48 89 5C 24 10 55 56 57 48 83 EC 40 48 8D B1 30 05 00 00 0F B6 EA";
+const char* SET_HUD_VISIBILITY_SIG = "40 53 55 56 57 41 56 48 83 ? ? 4c 8d b1 ? ? ? ? 33";
 
 // Signature for the SetDebugHudPosition function.
 const char* SET_DEBUG_HUD_POSITION_SIG = "48 89 5C 24 08 57 48 83 EC 20 48 8B D9 8B FA 48 8B 89 30 05 00 00 48 85 C9";
@@ -32,7 +32,7 @@ const char* SET_DEBUG_HUD_POSITION_SIG = "48 89 5C 24 08 57 48 83 EC 20 48 8B D9
  *    - E8...        (call GetAndCacheValue)
  *    - 85 C0        (test eax, eax)
  */
-const char* CACHEABLE_CVAR_PTR_SIG = "48 8D 0D ? ? ? ? 4C 89 88 ? ? ? ? E8 ? ? ? ? 85 C0";
+const char* CACHEABLE_CVAR_PTR_SIG = "48 8D 0D ? ? ? ? ? ? ? ? ? ? ? e8 ? ? ? ? 85 ? 7e";
 
 /*
  * Signature to find the dynamic offset of the value within the CVar object.
@@ -97,7 +97,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
   // 2.1 Find SetSelectedActor function
   // Signature provided by user: MOV [RSP+8], RBX; PUSH RDI; SUB RSP, 20; MOV RDI, RDX; MOV RBX, RCX; CMP RDX, [RCX+4A0]
-  uintptr_t pfnSetSelected = Utils::PatternFinder::Find("48 89 5C ? ? 57 48 83 ? ? 48 8B FA 48 8B D9 48 3B 91 ? ? ? ? 0F 84");
+  uintptr_t pfnSetSelected = Utils::PatternFinder::Find("48 89 5C ? ? ? 48 83 ? ? 48 8B ? 48 8B ? 48 3B ? ? ? ? ? 0F 84 ? ? ? ? 48 89");
   if (pfnSetSelected) {
     owner.SetSetSelectedActorFunc(reinterpret_cast<void*>(pfnSetSelected));
     logger->Debug("--- Found SetSelectedActor at: 0x{:X}", pfnSetSelected);
@@ -140,14 +140,14 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   } else { logger->Warn("FAILED to find SetDebugHudPosition signature"); all_found = false; }
 
   // --- 3. Find the pDebugCamera context pointer dynamically ---
-  uintptr_t pStandardManagerAddr = owner.GetStandardManagerPtrAddr();
   auto& cameraHooks = Hooks::CameraHooks::GetInstance();
   uintptr_t pfnGetCamObj = reinterpret_cast<uintptr_t>(cameraHooks.GetGetCameraObjectFunc());
+  
+  // GetStandardManager() handles the pointer dereferencing and version-specific adjustments (like v1.59).
+  uintptr_t pStandardManager = owner.GetStandardManager();
 
-  if (pStandardManagerAddr && pfnGetCamObj) {
-    uintptr_t pStandardManager = *reinterpret_cast<uintptr_t*>(pStandardManagerAddr);
-    if (pStandardManager) {
-      /*
+  if (pStandardManager && pfnGetCamObj) {
+    /*
        * HOW-TO-FIND Camera Array Offset:
        * We look inside GetCameraObjectByID function.
        * It adds a base offset to RCX (StandardManager) and then reads the array pointer.
@@ -177,9 +177,14 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       if (pDebugCameraContext) {
         owner.SetDebugCameraContextPtr(pDebugCameraContext);
         logger->Debug("--- Found pDebugCameraContext (Array Base) at: 0x{:X}", pDebugCameraContext);
-      } else { logger->Error("pDebugCameraContext is NULL at 0x{:X}", pStandardManager + finalOffset); all_found = false; }
-    } else { logger->Error("StandardManager is NULL"); all_found = false; }
-  } else { logger->Error("StandardManager address or GetCameraObjectByID function is NULL"); all_found = false; }
+      } else {
+        logger->Error("pDebugCameraContext is NULL at 0x{:X}", pStandardManager + finalOffset);
+        all_found = false;
+      }
+    } else {
+      logger->Error("StandardManager or GetCameraObjectByID function is NULL");
+      all_found = false;
+    }
 
   // --- 4. Find internal offsets within DebugCamera_HandleInput and RenderInfoOverlay ---
   uintptr_t pfnHandleInput = cameraHooks.GetDebugCameraHandleInputFunc();
@@ -190,9 +195,9 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     // 4.1 Game UI Visible (0x450)
     // Anchor: CMP byte ptr [RSI + offset], 0; SETZ AL; MOV byte ptr [RSI + offset], AL; MOVSD
     // HOW-TO-FIND: Search for Clean UI toggle logic in HandleInput.
-    uintptr_t addrUI = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "80 BE ? ? ? ? ? 0F 94 C0 88 86 ? ? ? ? F2 0F 10 05");
+    uintptr_t addrUI = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "44 ? ? ? ? ? ? 0F 94 C0 88 86 ? ? ? ? F2 0F 10 05");
     if (addrUI) {
-      int32_t off = Utils::PatternFinder::ReadInt32(addrUI + 2);
+      int32_t off = Utils::PatternFinder::ReadInt32(addrUI + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
         owner.SetGameUiVisibleOffset(off);
         logger->Debug("--- Found Game UI Visible offset: 0x{:X}", off);
@@ -225,7 +230,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
     // 4.4 Debug Camera Mode (0x454)
     // Anchor: MOV EAX, [RSI + offset]; LEA R14, [rip + ...]
-    uintptr_t addrMode = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "8B 86 ? ? ? ? 4C 8D 35");
+    uintptr_t addrMode = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "8B 86 ? ? ? ? ? ? ? ? ? ? ? f3");
     if (addrMode) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrMode + 2);
       if (Utils::PatternFinder::IsSaneOffset(off)) {

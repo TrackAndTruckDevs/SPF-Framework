@@ -31,6 +31,7 @@ class CameraWindow : public BaseWindow {
 
   // Tab switching state
   bool m_needsTabSwitch = false;
+//   bool m_showPipWindow = false;
   GameCamera::GameCameraType m_activeTabType = GameCamera::GameCameraType::Unknown;
 
   // Localization keys

@@ -24,12 +24,12 @@ const char* GET_MANAGER_PFN_SIG = "48 83 ? ? 48 63 ? 48 3b ? ? ? ? ? 73 ? 48 8b 
  * @brief Signature to find the UFS_RegisterMount function.
  * This is the primary function for registering virtual paths to physical devices.
  */
-const char* REGISTER_MOUNT_FUNC_SIG = "48 89 5c ? ? 48 89 74 ? ? 55 57 41 ? 41 ? 41 ? 48 8d ? ? ? 48 81 ec ? ? ? ? 48 8b 3d";
+const char* REGISTER_MOUNT_FUNC_SIG = "48 89 5c ? ? 48 89 74 ? ? 55 57 41 ? 41 ? 41 ? 48 8d ? ? ? 48 81 ec ? ? ? ? 48 8b 3d ? ? ? ? 4c";
 
 /**
  * @brief Signature for extracting list head anchor offset from UFS_RegisterMount.
  */
-const char* MOUNT_OFFSETS_SIG = "49 8d ? ? 49 8b ? ? 88 ? ? ? 0f";
+const char* MOUNT_OFFSETS_SIG = "49 8d ? ? 49 8b ? ? 88";
 
 /**
  * @brief Signature for extracting node structure and string buffer offsets.
@@ -38,7 +38,7 @@ const char* MOUNT_OFFSETS_SIG = "49 8d ? ? 49 8b ? ? 88 ? ? ? 0f";
  * LEA RCX, [RSI + 0x18] (NodeVPathOffset)
  * MOV [RCX + 0x08], RAX (StringBufferOffset)
  */
-const char* MOUNT_NODE_STRUCTURE_SIG = "48 89 ? ? 48 8d ? ? 48 89 ? ? 4c";
+const char* MOUNT_NODE_STRUCTURE_SIG = "48 89 ? ? 48 8d ? ? 48 89";
 
 /**
  * @brief Signature for extracting the physical path offset from a device object.
@@ -46,10 +46,16 @@ const char* MOUNT_NODE_STRUCTURE_SIG = "48 89 ? ? 48 8d ? ? 48 89 ? ? 4c";
 const char* PHYS_PATH_OFFSET_SIG = "49 8b ? ? 48 8d ? ? ? ? ? 48 89 ? ? ? 48 8d";
 
 /**
- * @brief Signature to find the active profile handle within the global game object.
- * Based on 'SelectProfile' disassembly where the game resolves the active profile.
+ * @brief Unique signature to find the middle of SelectProfile function.
+ * Matches stack saving operations and a test on DL:
+ * 1.59 Ghidra Example:
+ * 140eab70c: 0f 29 70 b8           MOVAPS xmmword ptr [RAX + -0x48], XMM6
+ * 140eab710: 0f 29 78 a8           MOVAPS xmmword ptr [RAX + -0x58], XMM7
+ * 140eab714: 44 0f 29 40 98        MOVAPS xmmword ptr [RAX + -0x68], XMM8
+ * 140eab719: 84 d2                 TEST DL, DL
+ * 140eab71b: 0f 84 ...             JZ ...
  */
-const char* ACTIVE_PROFILE_SIG = "48 8b ? ? ? ? ? 4c 8b ? ? ? ? ? e8 ? ? ? ? 48 8b ? ? ? ? ? 4c 8d ? ? ? ? ? 48";
+const char* PROFILE_LOGIC_ANCHOR_SIG = "0F ?? ?? ?? 0F ?? ?? ?? 44 0F ?? ?? ?? 84 D2 0F";
 
 } // namespace
 
@@ -119,23 +125,35 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
         } else { logger->Error("  !! FAILED to find Physical Path offset anchor."); }
     } else { logger->Warn("Anchor #2: FAILED to find UFS_RegisterMount signature."); }
 
-    // --- Step 3: Find Active Profile Data via ACTIVE_PROFILE_SIG ---
-    uintptr_t sigAddrProfile = PatternFinder::Find(ACTIVE_PROFILE_SIG);
-    if (sigAddrProfile) {
-        logger->Debug("Anchor #3: Found Active Profile logic at {0:#x}", sigAddrProfile);
-        
-        uintptr_t gamePtr = PatternFinder::GetRipAddress(sigAddrProfile, 3, 7);
+    // --- Step 3: Find Active Profile Data via New v1.59 Signature ---
+    const char* PROFILE_V159_SIG = "48 8B 05 ? ? ? ? 48 85 C0 74 08 48 05 ? ? ? ? EB 03 48 8B C5 4C 8B A0";
+    uintptr_t profileBlockAddr = PatternFinder::Find(PROFILE_V159_SIG);
+
+    if (profileBlockAddr) {
+        logger->Debug("Found profile data block at {0:#x}", profileBlockAddr);
+
+        // 3.1. Find global gamePtr: 48 8b 05 [RIP_OFF]
+        uintptr_t gamePtr = PatternFinder::GetRipAddress(profileBlockAddr, 3, 7);
         if (gamePtr) {
             owner.SetGamePtrAddr(gamePtr);
             logger->Debug("  -> Found GamePtrAddr: 0x{:X}", gamePtr);
-        } else { logger->Error("  !! FAILED to extract GamePtr address."); }
+        } else { logger->Error("  !! FAILED to resolve RIP address for GamePtr."); }
 
-        uint32_t profileOff = PatternFinder::ReadInt32(sigAddrProfile + 10);
-        if (profileOff > 0 && profileOff < 0xFFFF) {
+        // 3.2. Find base adjustment: 48 05 [IMM32]
+        int32_t adj = PatternFinder::ReadInt32(profileBlockAddr + 14);
+        owner.SetGamePtrAdjustment(adj);
+        logger->Debug("  -> Found GamePtr Adjustment: {}", adj);
+
+        // 3.3. Find profile offset: 4c 8b a0 [OFF32]
+        uint32_t profileOff = PatternFinder::ReadInt32(profileBlockAddr + 26);
+        if (PatternFinder::IsSaneOffset(profileOff)) {
             owner.SetProfileHandleOffset(profileOff);
             logger->Debug("  -> Found ProfileHandleOffset: 0x{:X}", profileOff);
-        } else { logger->Error("  !! ProfileHandleOffset is INVALID."); }
-    } else { logger->Warn("Anchor #3: FAILED to find ACTIVE_PROFILE_SIG signature."); }
+        } else { logger->Error("  !! ProfileHandleOffset is INVALID (0x{:X}).", profileOff); }
+
+    } else {
+        logger->Warn("FAILED to find PROFILE_V159 signature.");
+    }
 
     // --- Final Readiness Check ---
     m_isReady = (owner.GetDevicesArrayAddr() != 0 && 

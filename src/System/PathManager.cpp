@@ -134,7 +134,9 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
   // 1. Access the global Game object
   uintptr_t* ppGame = reinterpret_cast<uintptr_t*>(ufs.GetGamePtrAddr());
   if (!ppGame || !IsValidPointer(*ppGame)) return "";
-  uintptr_t g_Game = *ppGame;
+  
+  // Apply v1.59+ adjustment to the base game pointer
+  uintptr_t g_Game = *ppGame + ufs.GetGamePtrAdjustment();
 
   // 2. Get the Profile Handle from the Game object
   uintptr_t profileHandleAddr = g_Game + ufs.GetProfileHandleOffset();
@@ -151,14 +153,20 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
   }
 
   logger->Debug("Profile change detected. Old: {:#x}, New: {:#x}", m_lastProfileAddr, profile);
+  m_lastProfileAddr = profile;
 
   auto& sessionService = Data::GameData::GameObjectSessionService::GetInstance();
 
   // 4. Extract Display Name and Profile Type using dynamic offsets
   const char** ppDisplayName = reinterpret_cast<const char**>(profile + sessionService.GetProfileDisplayNameOffset());
-  if (!ppDisplayName || !IsValidPointer((uintptr_t)*ppDisplayName)) return "";
+  if (!ppDisplayName || !IsValidPointer((uintptr_t)*ppDisplayName)) {
+      logger->Error("GetCurrentProfilePath: DisplayName pointer is invalid.");
+      return "";
+  }
   
   const char* displayName = *ppDisplayName;
+  logger->Debug("GetCurrentProfilePath: Resolved DisplayName: '{}'", displayName);
+
   int profileType = *reinterpret_cast<int*>(profile + sessionService.GetProfileTypeOffset());
 
   // 5. Determine subdirectory based on profile type (Logic from SetProfileBasePath)

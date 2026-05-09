@@ -32,6 +32,7 @@ public:
     uintptr_t GetDevicesArrayAddr() const { return m_devicesArrayAddr; }
     uintptr_t GetManagersCountAddr() const { return m_managersCountAddr; }
     uintptr_t GetGamePtrAddr() const { return m_gamePtrAddr; }
+    intptr_t GetGamePtrAdjustment() const { return m_gamePtrAdjustment; }
     uint32_t GetProfileHandleOffset() const { return m_profileHandleOffset; }
     uint32_t GetMountListHeadOffset() const { return m_mountListHeadOffset; }
     uint32_t GetPhysicalDevicePathOffset() const { return m_physDevicePathOffset; }
@@ -44,6 +45,7 @@ public:
     void SetDevicesArrayAddr(uintptr_t addr) { m_devicesArrayAddr = addr; }
     void SetManagersCountAddr(uintptr_t addr) { m_managersCountAddr = addr; }
     void SetGamePtrAddr(uintptr_t addr) { m_gamePtrAddr = addr; }
+    void SetGamePtrAdjustment(intptr_t adj) { m_gamePtrAdjustment = adj; }
     void SetProfileHandleOffset(uint32_t offset) { m_profileHandleOffset = offset; }
     void SetMountListHeadOffset(uint32_t offset) { m_mountListHeadOffset = offset; }
     void SetPhysicalDevicePathOffset(uint32_t offset) { m_physDevicePathOffset = offset; }
@@ -62,6 +64,7 @@ private:
     uintptr_t m_devicesArrayAddr = 0;
     uintptr_t m_managersCountAddr = 0;
     uintptr_t m_gamePtrAddr = 0;
+    intptr_t m_gamePtrAdjustment = 0;
     uint32_t m_profileHandleOffset = 0;
     uint32_t m_mountListHeadOffset = 0;
     uint32_t m_physDevicePathOffset = 0;

@@ -15,7 +15,10 @@ void GameCameraBehind::OnActivate() {
 
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t pStandardManager = *(uintptr_t*)gameData.GetStandardManagerPtrAddr();
+  
+  // GetStandardManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
+  uintptr_t pStandardManager = gameData.GetStandardManager();
+  
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }

@@ -1202,6 +1202,120 @@ void CameraWindow::RenderContent() {
                 }
               }
 
+              // ImGui::Spacing();
+              // ImGui::Checkbox("Show PiP Texture Window", &m_showPipWindow);
+
+              // // --- NEW: Scanned Dynamic Textures Selector ---
+              // ImGui::Separator();
+              // ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Scanned Dynamic Textures (Auto-scan):");
+              
+              // auto scannedTextures = debugCam->GetAvailableTextures();
+              // static int selectedScanIdx = -1;
+
+              // std::string comboPreview = "Select a texture to preview...";
+              // if (selectedScanIdx >= 0 && selectedScanIdx < (int)scannedTextures.size()) {
+              //     comboPreview = scannedTextures[selectedScanIdx].name;
+              // }
+
+              // if (ImGui::BeginCombo("##ScannedTexturesCombo", comboPreview.c_str())) {
+              //   for (int i = 0; i < (int)scannedTextures.size(); ++i) {
+              //     bool isSelected = (selectedScanIdx == i);
+              //     char label[1024];
+              //     sprintf_s(label, "[ID: %d] %s (%dx%d)",
+              //         scannedTextures[i].dx11Id,
+              //         scannedTextures[i].name.c_str(),
+              //         scannedTextures[i].width,
+              //         scannedTextures[i].height);
+
+              //     if (ImGui::Selectable(label, isSelected)) {
+              //       selectedScanIdx = i;
+              //       debugCam->SetSelectedTextureId(scannedTextures[i].dx11Id);
+              //     }
+              //     if (isSelected) ImGui::SetItemDefaultFocus();
+              //   }
+              //   ImGui::EndCombo();
+              // }
+
+              // // --- DIAGNOSTIC: Automatic Methods Testing ---
+              // ImGui::Spacing();
+              // ImGui::TextColored(ImVec4(0.0f, 1.0f, 1.0f, 1.0f), "Direct Access (Experimental):");
+              // if (ImGui::Button("Find GPS (Auto)")) {
+              //     uintptr_t srv = debugCam->GetGpsTextureSrv();
+              // }
+              // ImGui::SameLine();
+              // if (ImGui::Button("Find Map (Path)")) {
+              //     debugCam->GetTextureSrvByPath("/material/ui/dashboard/bare_map.tobj");
+              // }
+              // ImGui::SameLine();
+              // if (ImGui::Button("Find Dash (Path)")) {
+              //     debugCam->GetTextureSrvByPath("/vehicle/truck/share/dashboard.tobj");
+              // }
+
+              // if (ImGui::TreeNode("Mirrors Diagnostics")) {
+              //     for (int m = 0; m < 7; m++) {
+              //         char mLabel[32];
+              //         sprintf_s(mLabel, "Mirror %d", m);
+              //         if (ImGui::Button(mLabel)) {
+              //             debugCam->GetMirrorTextureSrv(m);
+              //         }
+              //         if (m < 6) ImGui::SameLine();
+              //     }
+              //     ImGui::TreePop();
+              // }
+
+              // ImGui::Separator();
+              // // Texture ID Selection with Buttons
+              // int textureCount = debugCam->GetTextureCount();
+              // int currentId = debugCam->GetSelectedTextureId();
+              
+              // ImGui::Text("Texture ID: %d / %d", currentId, textureCount);
+              // if (ImGui::Button("-", ImVec2(30, 0))) {
+              //   if (currentId > 0) debugCam->SetSelectedTextureId(currentId - 1);
+              // }
+              // ImGui::SameLine();
+              // if (ImGui::Button("+", ImVec2(30, 0))) {
+              //   if (currentId < textureCount - 1) debugCam->SetSelectedTextureId(currentId + 1);
+              // }
+              // ImGui::SameLine();
+              
+              // static bool skipEmpty = true;
+              // ImGui::Checkbox("Skip Empty", &skipEmpty);
+              
+              // ImGui::SameLine();
+              // static bool filterRtvSrv = false;
+              // ImGui::Checkbox("Filter RTV+SRV", &filterRtvSrv);
+
+              // if (skipEmpty) {
+              //   ImGui::SameLine();
+              //   if (ImGui::Button("Next Active")) {
+              //     for (int i = currentId + 1; i < textureCount; ++i) {
+              //       if (filterRtvSrv) {
+              //         if (debugCam->IsRenderTargetImage(i)) {
+              //           debugCam->SetSelectedTextureId(i);
+              //           break;
+              //         }
+              //       } else if (debugCam->GetPipTextureSrv() != 0) {
+              //         debugCam->SetSelectedTextureId(i);
+              //         break;
+              //       }
+              //     }
+              //   }
+              // }
+
+              // std::string pipComboLabel = "Select ID: " + std::to_string(currentId);
+              // if (ImGui::BeginCombo("##PipIDCombo", pipComboLabel.c_str())) {
+              //   for (int i = 0; i < textureCount; ++i) {
+              //     if (filterRtvSrv && !debugCam->IsRenderTargetImage(i)) continue;
+                  
+              //     bool isSelected = (currentId == i);
+              //     std::string name = "ID " + std::to_string(i);
+              //     if (ImGui::Selectable(name.c_str(), isSelected)) {
+              //       debugCam->SetSelectedTextureId(i);
+              //     }
+              //   }
+              //   ImGui::EndCombo();
+              // }
+
               ImGui::Separator();
               uintptr_t selectedObj = debugCam->GetSelectedObjectPtr();
               uintptr_t hoveredObj = debugCam->GetHoveredObjectPtr();
@@ -1616,6 +1730,20 @@ void CameraWindow::RenderContent() {
     }
   }
   ImGui::EndTabBar();
+
+  // if (m_showPipWindow) {
+  //   auto* debugCam = m_gameCameraService.GetDebugCamera();
+  //   if (debugCam) {
+  //     uintptr_t srv = debugCam->GetPipTextureSrv();
+  //     if (srv) {
+  //       if (ImGui::Begin("PiP Texture Viewer", &m_showPipWindow)) {
+  //         ImGui::Image((ImTextureID)srv, ImVec2(400, 225));
+  //       }
+  //       ImGui::End();
+  //     }
+  //   }
+  // }
+
   m_needsTabSwitch = false;
 }
 }  // namespace UI

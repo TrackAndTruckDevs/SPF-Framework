@@ -36,8 +36,32 @@ class GameDataCameraService {
 
   // --- Public Getters ---
   uintptr_t GetStandardManagerPtrAddr() const { return m_pStandardManagerPtrAddr; }
+
+  /**
+   * @brief Returns the actual, adjusted pointer to the StandardManager object.
+   * This handles game versions where the manager object's base address is offset from the global pointer.
+   */
+  uintptr_t GetStandardManager() const {
+    if (m_pStandardManagerPtrAddr == 0) return 0;
+    uintptr_t rawPtr = *reinterpret_cast<uintptr_t*>(m_pStandardManagerPtrAddr);
+    if (rawPtr == 0) return 0;
+    return rawPtr + m_standardManagerAdjustment;
+  }
+
   intptr_t GetActiveCameraIdOffset() const { return m_activeCameraIdOffset; }
   uintptr_t* GetFreecamGlobalObjectPtr() const { return m_pFreecamGlobalObjectPtr; }
+
+  /**
+   * @brief Returns the actual, adjusted pointer to the Freecam Global object.
+   * Similar to GetStandardManager, handles v1.59+ pointer adjustments.
+   */
+  uintptr_t GetFreecamGlobalObject() const {
+    if (m_pFreecamGlobalObjectPtr == nullptr) return 0;
+    uintptr_t rawPtr = *m_pFreecamGlobalObjectPtr;
+    if (rawPtr == 0) return 0;
+    return rawPtr + m_freecamGlobalObjectAdjustment;
+  }
+
   uintptr_t GetFreecamContextOffset() const { return m_freecamContextOffset; }
   intptr_t GetInteriorSeatXOffset() const { return m_interior_seat_x_offset; }
   intptr_t GetInteriorSeatYOffset() const { return m_interior_seat_y_offset; }
@@ -185,9 +209,11 @@ class GameDataCameraService {
 
   // --- Public Setters (for use by ICameraDataFinder implementations) ---
   void SetStandardManagerPtrAddr(uintptr_t val) { m_pStandardManagerPtrAddr = val; }
+  void SetStandardManagerAdjustment(intptr_t val) { m_standardManagerAdjustment = val; }
   void SetCoreOffsetsFound(bool val) { m_coreOffsetsFound = val; }
   void SetActiveCameraIdOffset(intptr_t val) { m_activeCameraIdOffset = val; }
   void SetFreecamGlobalObjectPtr(uintptr_t* val) { m_pFreecamGlobalObjectPtr = val; }
+  void SetFreecamGlobalObjectAdjustment(intptr_t val) { m_freecamGlobalObjectAdjustment = val; }
   void SetFreecamContextOffset(uintptr_t val) { m_freecamContextOffset = val; }
   void SetInteriorSeatXOffset(intptr_t val) { m_interior_seat_x_offset = val; }
   void SetInteriorSeatYOffset(intptr_t val) { m_interior_seat_y_offset = val; }
@@ -326,7 +352,10 @@ class GameDataCameraService {
   void SetStateCountOffset(intptr_t val) { m_stateCountOffset = val; }
   void SetStateCurrentIndexOffset(intptr_t val) { m_stateCurrentIndexOffset = val; }
 
-  // --- Debug Camera Animation Setters ---
+  // --- Debug Camera Animation Data ---
+  void* m_pfnUpdateAnimatedFlight = nullptr;
+  intptr_t m_animationTimerOffset = 0;
+
   void SetUpdateAnimatedFlightFunc(void* val) { m_pfnUpdateAnimatedFlight = val; }
   void SetAnimationTimerOffset(intptr_t val) { m_animationTimerOffset = val; }
 
@@ -343,8 +372,10 @@ class GameDataCameraService {
 
   // --- Core Camera Data ---
   uintptr_t m_pStandardManagerPtrAddr = 0;
+  intptr_t m_standardManagerAdjustment = 0; // v1.59: stores the adjustment (e.g. -0x10)
   intptr_t m_activeCameraIdOffset = 0;
   uintptr_t* m_pFreecamGlobalObjectPtr = nullptr;
+  intptr_t m_freecamGlobalObjectAdjustment = 0;
   uintptr_t m_freecamContextOffset = 0;
 
   // --- Interior Camera Offsets ---
@@ -487,10 +518,6 @@ class GameDataCameraService {
   intptr_t m_stateArrayOffset = 0;
   intptr_t m_stateCountOffset = 0;
   intptr_t m_stateCurrentIndexOffset = 0;
-
-  // --- Debug Camera Animation Data ---
-  void* m_pfnUpdateAnimatedFlight = nullptr;
-  intptr_t m_animationTimerOffset = 0;
 };
 
 }  // namespace Data::GameData

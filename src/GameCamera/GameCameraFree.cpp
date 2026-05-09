@@ -16,11 +16,17 @@ void GameCameraFree::OnActivate() {
   // Get the raw camera object pointer when this camera becomes active
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t pStandardManager = *(uintptr_t*)gameData.GetStandardManagerPtrAddr();
+  
+  // GetStandardManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
+  uintptr_t pStandardManager = gameData.GetStandardManager();
+  
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
+    
     if (m_pCameraObject) {
       logger->Info("GameCameraFree object base address successfully obtained: {:#x}", (uintptr_t)m_pCameraObject);
+    } else {
+      logger->Error("GameCameraFree: Resolved object pointer is null.");
     }
   }
 }

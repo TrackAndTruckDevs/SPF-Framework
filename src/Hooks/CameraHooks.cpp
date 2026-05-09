@@ -6,7 +6,7 @@
 
 SPF_NS_BEGIN
 namespace Hooks {
-CameraHooks::CameraHooks() : m_signature("48 89 5C 24 08 48 89 74 24 10 57 48 81 EC ? ? ? ? 48 8B 1D ? ? ? ? 8B FA 48 8B F1") {}
+CameraHooks::CameraHooks() : m_signature("48 89 5c ? ? 48 89 ? ? ? ? 48 81 ec 90 ? ? ? 48 8b 1d ? ? ? ? ? ? 48") {}
 
 // Internal signature for the secondary camera function.
 namespace {
