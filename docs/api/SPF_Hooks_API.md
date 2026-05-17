@@ -9,7 +9,28 @@ The API uses pattern scanning to locate functions in memory, making your hooks r
 Before using this API, it is critical to understand three concepts:
 
 **1. Signature**
-A signature is a unique sequence of bytes that represents the beginning of a function in the game's compiled code. Instead of relying on a fixed memory address (which changes with every game update), we find the function by searching for this unique "fingerprint". Wildcards (`?` or `??`) can be used for bytes that might change.
+A signature is a unique sequence of bytes that represents the beginning of a function in the game's compiled code. Instead of relying on a fixed memory address (which changes with every game update), we find the function by searching for this unique "fingerprint". 
+
+The SPF pattern scanner supports advanced syntax:
+- **Exact Bytes**: Hex values (e.g., `48 89`).
+- **Wildcards**: `?` or `??` matches any single byte.
+- **Ranges**: `[XX-YY]` matches any byte within the specified hex range (e.g., `[40-7F]`).
+
+### Signature Syntax
+
+The pattern scanner is designed to be both flexible and precise. Using ranges is especially powerful for x64 assembly where you want to match instructions that target any general-purpose register but avoid RIP-relative addressing.
+
+| Syntax | Description | Example |
+| :--- | :--- | :--- |
+| `XX` | Exact hex byte | `48`, `8B`, `E8` |
+| `?` or `??` | Wildcard (matches anything) | `48 8B ?? ??` |
+| `[XX-YY]` | Hex range (inclusive) | `[40-7F]` |
+
+**Example: Advanced Matching**
+To find an instruction like `LEA REG, [REG + disp8]` while ignoring `LEA REG, [RIP + disp32]`, you can use:
+`48 8D [40-7F]`
+
+In this case, `[40-7F]` matches the ModR/M byte for register+offset addressing, effectively skipping RIP-relative variants (which use bytes like `05`, `0D`, `15`, etc. which are outside the `40-7F` range).
 
 **2. Detour**
 A detour is your C++ function that the framework will execute *instead of* the original game function. For this to work safely, your detour function **must** have the exact same signature as the function you are hooking: the same calling convention, the same return type, and the same parameters in the same order.
@@ -53,13 +74,13 @@ Finds a function by its byte signature and installs a hook.
     *   `displayName`: A user-friendly name for display in UI menus.
     *   `pDetour`: A pointer to your detour function.
     *   `ppOriginal`: A pointer to your trampoline function pointer variable (e.g., `(void**)&o_MyFunction`). The framework will write the trampoline's address here.
-    *   `signature`: A string representing the byte pattern (e.g., `"48 89 5C 24 ? 57 48 83"`).
+    *   `signature`: A string representing the byte pattern. Supports exact bytes, wildcards (`??`), and ranges (`[XX-YY]`).
     *   `isEnabled`: The initial enabled state of the hook.
 *   **Returns:** An opaque handle to the hook, or `NULL` on failure.
 
 ---
 ### `uintptr_t Hook_FindPattern(const char* signature)`
-Finds a byte pattern in the game's memory and returns the address. This is useful for reading data or for more complex hooking scenarios.
+Finds a byte pattern in the game's memory and returns the address. Supports the full signature syntax including ranges and wildcards.
 
 ---
 ### `bool Hook_IsEnabled(SPF_Hook_Handle* h)`

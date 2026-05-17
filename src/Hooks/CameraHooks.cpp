@@ -12,7 +12,7 @@ CameraHooks::CameraHooks() : m_signature("48 89 5c ? ? 48 89 ? ? ? ? 48 81 ec 90
 namespace {
 const char* GET_CAMERA_OBJECT_SIG = "48 83 EC 48 4C 63 C2 4C 3B 41 40";
 const char* UPDATE_CAMERA_PROJECTION_SIG = "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 70 0F B6 41 2C 48 8D 51 3C F3";
-const char* DEBUG_CAMERA_HANDLE_INPUT_SIG = "55 56 48 8D ? ? ? FF FF 48 81 EC ? ? ? ? 80 B9 3C 01 00 00 00";
+const char* DEBUG_CAMERA_HANDLE_INPUT_SIG = "55 56 48 8D ? ? ? FF FF 48 81 EC ? ? ? ? 80 B9";
 }  // namespace
 
 CameraHooks& CameraHooks::GetInstance() {

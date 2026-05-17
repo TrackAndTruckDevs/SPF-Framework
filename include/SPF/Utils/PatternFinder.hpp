@@ -98,9 +98,44 @@ class PatternFinder {
    */
   static bool IsSaneOffset(int32_t offset);
 
+  /**
+   * @struct ByteMatcher
+   * @brief Represents a single byte matching rule in a signature.
+   * 
+   * Supports:
+   * - EXACT: Matches a specific byte value (e.g., "48").
+   * - WILDCARD: Matches any byte value (e.g., "??", "?").
+   * - RANGE: Matches any byte within a [min, max] range (e.g., "[40-7F]").
+   */
+  struct ByteMatcher {
+    enum Type { EXACT, WILDCARD, RANGE };
+    Type type;
+    uint8_t min;
+    uint8_t max;
+
+    /**
+     * @brief Checks if a given byte matches this rule.
+     * @param b The byte to check.
+     * @return true if it matches, false otherwise.
+     */
+    bool Matches(uint8_t b) const {
+      if (type == WILDCARD) return true;
+      if (type == EXACT) return b == min;
+      return b >= min && b <= max;
+    }
+  };
+
  private:
-  static std::vector<int> SignatureToVector(const std::string& signature);
-  static uintptr_t Find(const char* moduleName, const std::vector<int>& signature);
+  /**
+   * @brief Internal helper to parse a signature string into a vector of matchers.
+   * Supports "??", "?", "XX", and "[XX-YY]" formats.
+   */
+  static std::vector<ByteMatcher> SignatureToVector(const std::string& signature);
+
+  /**
+   * @brief Internal helper to perform a scan using pre-parsed ByteMatchers.
+   */
+  static uintptr_t Find(const char* moduleName, const std::vector<ByteMatcher>& signature);
 };
 }  // namespace Utils
 SPF_NS_END

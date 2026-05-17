@@ -37,6 +37,7 @@ void GameWorldService::Shutdown() {
     m_isInitialized = false;
 
     m_environmentBasePtr = 0;
+    m_environmentAdjustment = 0;
     m_timeMgrPtrAddr = 0;
     m_envObjectOffset = 0;
     m_timeOffset = 0;
@@ -109,8 +110,10 @@ uint32_t GameWorldService::GetPreviewTime() {
   // Note: This value is distinct from the actual game simulation clock.
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return 0;
+  basePtr += m_environmentAdjustment;
 
   uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
+
   if (!envObject) return 0;
 
   return *(uint32_t*)(envObject + m_timeOffset);
@@ -123,6 +126,7 @@ void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
 
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return;
+  basePtr += m_environmentAdjustment;
 
   uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
   if (!envObject) return;
@@ -175,6 +179,7 @@ float GameWorldService::GetMapScale() {
 
   uintptr_t envBaseObj = *(uintptr_t*)m_environmentBasePtr;
   if (!envBaseObj) return 1.0f;
+  envBaseObj += m_environmentAdjustment;
 
   return *(float*)(envBaseObj + m_mapScaleOffset);
 }
@@ -263,6 +268,7 @@ void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
 
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return;
+  basePtr += m_environmentAdjustment;
 
   uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
   if (!envObject) return;

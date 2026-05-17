@@ -1061,7 +1061,7 @@ void CameraWindow::RenderContent() {
         if (freeCam->GetOrientation(&mouse_x, &mouse_y, &roll)) {
           bool rotChanged = false;
           rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseHorizontalFreeCam).c_str(), &mouse_x, 0.0f, 6.28318f, "%.4f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseVerticalFreeCam).c_str(), &mouse_y, -1.57079f, 1.57079f, "%.4f");
+          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseVerticalFreeCam).c_str(), &mouse_y, 0.0f, 6.28318f, "%.4f");
           rotChanged |= ImGui::SliderFloat(loc.Get(m_locRollFreeCam).c_str(), &roll, -1.57079f, 1.57079f, "%.4f");
           if (rotChanged) {
             freeCam->SetOrientation(mouse_x, mouse_y, roll);

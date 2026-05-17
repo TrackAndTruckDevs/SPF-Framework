@@ -49,6 +49,7 @@ class GameWorldService {
   void SetRealDeltaTimeOffset(intptr_t val) { m_realDeltaTimeOffset = val; }
   void SetSkyboxAutoUpdateOffset(intptr_t val) { m_skyboxAutoUpdateOffset = val; }
   void SetUpdateFnAddr(uintptr_t val) { m_updateFnAddr = val; }
+  void SetEnvironmentAdjustment(intptr_t val) { m_environmentAdjustment = val; }
 
   // --- World Manipulation Methods ---
   uint32_t GetPreviewTime();
@@ -89,6 +90,7 @@ class GameWorldService {
 
   // --- World Data Offsets and Pointers ---
   uintptr_t m_environmentBasePtr = 0;    // Pointer to MainEngineObject (DAT_143368640)
+  intptr_t m_environmentAdjustment = 0; // Dynamic adjustment (e.g. -0x10 for old versions)
   uintptr_t m_timeMgrPtrAddr = 0;       // Pointer to TimeManager object (DAT_142cf7668)
   
   intptr_t m_envObjectOffset = 0;        // Offset to Environment object (0x7e8) from MainEngine

@@ -1,6 +1,7 @@
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/IFileSystemDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/FileSystemDataFinder.hpp"
+#include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include <string>
 
 SPF_NS_BEGIN
@@ -33,13 +34,18 @@ bool GameObjectFileSystemService::TryFindAllOffsets() {
     return allFound;
 }
 
+uintptr_t GameObjectFileSystemService::GetGamePtrAddr() const {
+    return GameObjectSessionService::GetInstance().GetGamePtrAddr();
+}
+
+uint32_t GameObjectFileSystemService::GetProfileHandleOffset() const {
+    return GameObjectSessionService::GetInstance().GetProfileHandleOffset();
+}
+
 void GameObjectFileSystemService::Reset() {
     m_homePathPtrAddr = 0;
     m_devicesArrayAddr = 0;
     m_managersCountAddr = 0;
-    m_gamePtrAddr = 0;
-    m_gamePtrAdjustment = 0;
-    m_profileHandleOffset = 0;
     m_mountListHeadOffset = 0;
     m_physDevicePathOffset = 0;
     m_nodeDeviceOffset = 0;

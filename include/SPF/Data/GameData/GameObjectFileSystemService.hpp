@@ -31,22 +31,21 @@ public:
     uintptr_t GetHomePathPtrAddr() const { return m_homePathPtrAddr; }
     uintptr_t GetDevicesArrayAddr() const { return m_devicesArrayAddr; }
     uintptr_t GetManagersCountAddr() const { return m_managersCountAddr; }
-    uintptr_t GetGamePtrAddr() const { return m_gamePtrAddr; }
-    intptr_t GetGamePtrAdjustment() const { return m_gamePtrAdjustment; }
-    uint32_t GetProfileHandleOffset() const { return m_profileHandleOffset; }
     uint32_t GetMountListHeadOffset() const { return m_mountListHeadOffset; }
     uint32_t GetPhysicalDevicePathOffset() const { return m_physDevicePathOffset; }
     uint32_t GetNodeDeviceOffset() const { return m_nodeDeviceOffset; }
     uint32_t GetNodeVPathOffset() const { return m_nodeVPathOffset; }
     uint32_t GetStringBufferOffset() const { return m_stringBufferOffset; }
 
+    // Redirection to centralized SessionService for core offsets
+    uintptr_t GetGamePtrAddr() const;
+    uint32_t GetProfileHandleOffset() const;
+    intptr_t GetGamePtrAdjustment() const { return 0; } // Adjustment is 0 in v1.59.2+
+
     // --- Found Addresses & Offsets (Setters for finders) ---
     void SetHomePathPtrAddr(uintptr_t addr) { m_homePathPtrAddr = addr; }
     void SetDevicesArrayAddr(uintptr_t addr) { m_devicesArrayAddr = addr; }
     void SetManagersCountAddr(uintptr_t addr) { m_managersCountAddr = addr; }
-    void SetGamePtrAddr(uintptr_t addr) { m_gamePtrAddr = addr; }
-    void SetGamePtrAdjustment(intptr_t adj) { m_gamePtrAdjustment = adj; }
-    void SetProfileHandleOffset(uint32_t offset) { m_profileHandleOffset = offset; }
     void SetMountListHeadOffset(uint32_t offset) { m_mountListHeadOffset = offset; }
     void SetPhysicalDevicePathOffset(uint32_t offset) { m_physDevicePathOffset = offset; }
     void SetNodeDeviceOffset(uint32_t offset) { m_nodeDeviceOffset = offset; }
@@ -63,9 +62,6 @@ private:
     uintptr_t m_homePathPtrAddr = 0;
     uintptr_t m_devicesArrayAddr = 0;
     uintptr_t m_managersCountAddr = 0;
-    uintptr_t m_gamePtrAddr = 0;
-    intptr_t m_gamePtrAdjustment = 0;
-    uint32_t m_profileHandleOffset = 0;
     uint32_t m_mountListHeadOffset = 0;
     uint32_t m_physDevicePathOffset = 0;
     uint32_t m_nodeDeviceOffset = 0;

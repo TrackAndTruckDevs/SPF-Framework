@@ -13,7 +13,21 @@ namespace {
 const char* SET_DEBUG_MODE_SIG = "48 89 5C ? ? 57 48 83 EC 50 8B FA 48 8B D9 39 91";
 
 // Signature for the SetHUDVisibility function.
-const char* SET_HUD_VISIBILITY_SIG = "40 53 55 56 57 41 56 48 83 ? ? 4c 8d b1 ? ? ? ? 33";
+//                       **************************************************************
+//                       *                          FUNCTION                          *
+//                       **************************************************************
+//                                DebugCamera_SetHUDVisibility()
+// 1404c5350 48 89 5c                   MOV        qword ptr [RSP + local_res10],RBX
+//           24 10
+// 1404c5355 55                         PUSH       RBP
+// 1404c5356 56                         PUSH       RSI
+// 1404c5357 57                         PUSH       RDI
+// 1404c5358 48 83 ec 40                SUB        RSP,0x40
+// 1404c535c 48 8d b1                   LEA        RSI,[RCX + 0x530] 
+//           30 05 00 00
+// 1404c5363 0f b6 ea                   MOVZX      EBP,DL
+// 1404c5366 48 83 3e 00                CMP        qword ptr [RSI],0x0
+const char* SET_HUD_VISIBILITY_SIG = "48 ? ? ? ? ? ? ? 48 83 ? ? 48 8d ? ? ? ? ? 0f ? ? 48";
 
 // Signature for the SetDebugHudPosition function.
 const char* SET_DEBUG_HUD_POSITION_SIG = "48 89 5C 24 08 57 48 83 EC 20 48 8B D9 8B FA 48 8B 89 30 05 00 00 48 85 C9";
@@ -95,9 +109,25 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     logger->Debug("--- Found SetDebugCameraMode at: 0x{:X}", pfnSetMode);
   } else { logger->Warn("FAILED to find SetDebugCameraMode signature"); all_found = false; }
 
-  // 2.1 Find SetSelectedActor function
-  // Signature provided by user: MOV [RSP+8], RBX; PUSH RDI; SUB RSP, 20; MOV RDI, RDX; MOV RBX, RCX; CMP RDX, [RCX+4A0]
-  uintptr_t pfnSetSelected = Utils::PatternFinder::Find("48 89 5C ? ? ? 48 83 ? ? 48 8B ? 48 8B ? 48 3B ? ? ? ? ? 0F 84 ? ? ? ? 48 89");
+  // 2.1 Find DebugCamera_SetSelectedActor function
+  //                       **************************************************************
+  //                       *                          FUNCTION                          *
+  //                       **************************************************************
+  //                       DebugCamera_SetSelectedActor
+  // 1404c7e90 48 89 5c                   MOV        qword ptr [RSP + local_res8],RBX
+  //           24 08
+  // 1404c7e95 57                         PUSH       RDI
+  // 1404c7e96 48 83 ec 20                SUB        RSP,0x20
+  // 1404c7e9a 48 8b fa                   MOV        RDI,RDX
+  // 1404c7e9d 48 8b d9                   MOV        RBX,RCX
+  // 1404c7ea0 48 3b 91                   CMP        RDX,qword ptr [RCX + 0x4a0]
+  //           a0 04 00 00
+  // 1404c7ea7 0f 84 41                   JZ         LAB_1404c7fee
+  //           01 00 00
+  // 1404c7ead 48 85 d2                   TEST       RDX,RDX
+  // 1404c7eb0 74 78                      JZ         LAB_1404c7f2a
+  // 1404c7eb2 48 8b 4a 60                MOV        RCX,qword ptr [RDX + 0x60]
+  uintptr_t pfnSetSelected = Utils::PatternFinder::Find("48 89 5C ? ? ? 48 83 ? ? 48 8B ? 48 8B ? 48 3B ? ? ? ? ? 0F 84 ? ? ? ? 48 ? ? ? ? 48");
   if (pfnSetSelected) {
     owner.SetSetSelectedActorFunc(reinterpret_cast<void*>(pfnSetSelected));
     logger->Debug("--- Found SetSelectedActor at: 0x{:X}", pfnSetSelected);
@@ -195,7 +225,17 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     // 4.1 Game UI Visible (0x450)
     // Anchor: CMP byte ptr [RSI + offset], 0; SETZ AL; MOV byte ptr [RSI + offset], AL; MOVSD
     // HOW-TO-FIND: Search for Clean UI toggle logic in HandleInput.
-    uintptr_t addrUI = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "44 ? ? ? ? ? ? 0F 94 C0 88 86 ? ? ? ? F2 0F 10 05");
+    //      1404c28a1 80 be 50                   CMP        byte ptr [RSI + 0x450],0x0
+    //            04 00 00 00
+    //  1404c28a8 0f 94 c0                   SETZ       AL
+    //  1404c28ab 88 86 50                   MOV        byte ptr [RSI + 0x450],AL
+    //            04 00 00
+    //                        LAB_1404c28b1                                   XREF[2]:      1404c282b(j), 1404c289f(j)  
+    //  1404c28b1 f2 0f 10                   MOVSD      XMM0,qword ptr [DAT_1433a9b50]
+    //            05 97 72 
+    //            ee 02
+
+    uintptr_t addrUI = Utils::PatternFinder::Find(pfnHandleInput, SEARCH_RANGE_HUGE, "80 ? ? ? ? ? ? 0F 94 C0 88 86 ? ? ? ? F2 0F 10 05");
     if (addrUI) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrUI + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {

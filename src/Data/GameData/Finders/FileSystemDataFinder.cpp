@@ -125,35 +125,9 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
         } else { logger->Error("  !! FAILED to find Physical Path offset anchor."); }
     } else { logger->Warn("Anchor #2: FAILED to find UFS_RegisterMount signature."); }
 
-    // --- Step 3: Find Active Profile Data via New v1.59 Signature ---
-    const char* PROFILE_V159_SIG = "48 8B 05 ? ? ? ? 48 85 C0 74 08 48 05 ? ? ? ? EB 03 48 8B C5 4C 8B A0";
-    uintptr_t profileBlockAddr = PatternFinder::Find(PROFILE_V159_SIG);
-
-    if (profileBlockAddr) {
-        logger->Debug("Found profile data block at {0:#x}", profileBlockAddr);
-
-        // 3.1. Find global gamePtr: 48 8b 05 [RIP_OFF]
-        uintptr_t gamePtr = PatternFinder::GetRipAddress(profileBlockAddr, 3, 7);
-        if (gamePtr) {
-            owner.SetGamePtrAddr(gamePtr);
-            logger->Debug("  -> Found GamePtrAddr: 0x{:X}", gamePtr);
-        } else { logger->Error("  !! FAILED to resolve RIP address for GamePtr."); }
-
-        // 3.2. Find base adjustment: 48 05 [IMM32]
-        int32_t adj = PatternFinder::ReadInt32(profileBlockAddr + 14);
-        owner.SetGamePtrAdjustment(adj);
-        logger->Debug("  -> Found GamePtr Adjustment: {}", adj);
-
-        // 3.3. Find profile offset: 4c 8b a0 [OFF32]
-        uint32_t profileOff = PatternFinder::ReadInt32(profileBlockAddr + 26);
-        if (PatternFinder::IsSaneOffset(profileOff)) {
-            owner.SetProfileHandleOffset(profileOff);
-            logger->Debug("  -> Found ProfileHandleOffset: 0x{:X}", profileOff);
-        } else { logger->Error("  !! ProfileHandleOffset is INVALID (0x{:X}).", profileOff); }
-
-    } else {
-        logger->Warn("FAILED to find PROFILE_V159 signature.");
-    }
+    // --- Step 3: Find Active Profile Data ---
+    // REMOVED: Core profile offsets (GamePtr, ProfileHandle) are now centrally managed by SessionDataFinder.
+    // FileSystemDataFinder now relies on GameObjectSessionService for these root addresses.
 
     // --- Final Readiness Check ---
     m_isReady = (owner.GetDevicesArrayAddr() != 0 && 

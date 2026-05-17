@@ -107,18 +107,24 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
            * 1.59 Ghidra Example:
            * 1407cfb6c: 48 8b 05 ...  MOV RAX, qword ptr [DAT_...]
            * 1407cfb76: 48 8d 70 f0     LEA RSI, [RAX - 0x10]  <-- This is what we need to detect.
+           * 
+           * FIX (1.59.2): We must be careful not to catch RIP-relative LEA instructions (like 48 8D 05).
+           * We specifically look for LEA instructions with a 1-byte displacement (ModRM byte 0x40-0x7F).
            */
           intptr_t adjustment = 0;
           constexpr size_t ADJUSTMENT_SCAN_RANGE = 32;
 
-          // Search for LEA instruction (48 8D) within a small window after the MOV load.
-          uintptr_t addrLea = Utils::PatternFinder::Find(mov_addr, ADJUSTMENT_SCAN_RANGE, "48 8D");
+          // Search for LEA instruction (48 8D) with a 1-byte displacement ModRM byte.
+          // We mask the ModRM byte to ensure it's in the [REG + imm8] range (0x40-0x7F).
+          uintptr_t addrLea = Utils::PatternFinder::Find(mov_addr, ADJUSTMENT_SCAN_RANGE, "48 8D [40-7F]");
           if (addrLea) {
-            // Instruction: 48 8D [REG] [OFFSET] -> 48 8D 70 f0
-            // Offset is at byte 3: [f0]
+            // Instruction: 48 8D [ModRM] [OFFSET] -> e.g., 48 8D 70 f0
+            // Offset is at byte 3.
             int8_t imm8 = Utils::PatternFinder::ReadInt8(addrLea + 3);
             adjustment = static_cast<intptr_t>(imm8);
             logger->Info("Detected Freecam global object pointer adjustment: {} (via LEA)", adjustment);
+          } else {
+            logger->Debug("No Freecam pointer adjustment detected (LEA pattern not found).");
           }
           owner.SetFreecamGlobalObjectAdjustment(adjustment);
 

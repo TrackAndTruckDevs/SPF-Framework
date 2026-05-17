@@ -10,9 +10,21 @@ using namespace Utils;
 namespace {
 
 /**
- * @brief Signature to find the active profile handle (v1.59+).
+ * @brief Signature to find the active profile handle (Updated for v1.59.2).
+ * 
+ * Old logic (v1.58.x):
+ * 48 8b 05 ...       MOV RAX, qword ptr [GamePtr]
+ * 48 85 c0           TEST RAX, RAX
+ * 74 08              JZ ...
+ * 48 05 b0 fb ff ff  ADD RAX, -0x450
+ * 4c 8b a0 98 0f...  MOV R12, qword ptr [RAX + 0xf98]
+ * 
+ * New logic (v1.59.2):
+ * 140e9893a 48 8b 05 ...  MOV RAX, qword ptr [DAT_1433c5e78]
+ * 140e98941 4c 8b a0 98 0f 00 00  MOV R12, qword ptr [RAX + 0xf98]  <-- Offset is here (+10 from start)
+ * 140e98948 e8 ...        CALL FUN_14060c500
  */
-const char* ACTIVE_PROFILE_SIG = "48 8B 05 ? ? ? ? 48 85 C0 74 08 48 05 ? ? ? ? EB 03 48 8B C5 4C 8B A0";
+const char* ACTIVE_PROFILE_SIG = "48 8B 05 ? ? ? ? 4C 8B A0 ? ? ? ? e8 ? ? ? ? 48";
 
 /**
  * @brief Signature to find the global session manager and its status field.
@@ -49,8 +61,9 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
         }
 
         // 1.2. Extract Profile Handle Offset (from 4C 8B A0 XX XX XX XX)
-        // Instruction is at sigAddr + 23. Offset is at 23 + 3 = 26.
-        uint32_t profileOff = PatternFinder::ReadInt32(sigAddrProfile + 26);
+        // In v1.59.2, the instruction starts at sigAddr + 7.
+        // The 32-bit offset is at (sigAddr + 7) + 3 = sigAddr + 10.
+        uint32_t profileOff = PatternFinder::ReadInt32(sigAddrProfile + 10);
         if (PatternFinder::IsSaneOffset(profileOff)) {
             owner.SetProfileHandleOffset(profileOff);
             logger->Debug("-> Found ProfileHandleOffset: 0x{:X}", profileOff);

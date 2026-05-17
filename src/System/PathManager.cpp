@@ -192,9 +192,9 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
 }
 
 std::string PathManager::GetCurrentProfileName() {
-  if (m_cachedProfileName.empty()) {
-      GetCurrentProfilePath();
-  }
+  // Always call GetCurrentProfilePath to ensure the cache is refreshed 
+  // if the game has switched to a different profile object.
+  GetCurrentProfilePath();
   return m_cachedProfileName;
 }
 

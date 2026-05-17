@@ -12,7 +12,13 @@
 * ================================================================================================
 *                                                                                                 
 * 1. **Signature Scanning**: Find target functions using unique byte patterns. This 
-*    avoids hardcoded memory addresses that change every update.
+*    avoids hardcoded memory addresses that change every update. 
+*    The pattern scanning syntax supports:
+*    - **Exact Bytes**: Standard hex values (e.g., `48 89 5C`).
+*    - **Wildcards**: Use `?` or `??` to match any byte (e.g., `48 8B ?? ?? ??`).
+*    - **Ranges**: Use `[XX-YY]` to match a byte within a hex range (e.g., `[40-7F]`).
+*      This is particularly useful for matching ModR/M bytes to filter out 
+*      RIP-relative addressing (which usually ends in `05`, `0D`, `15`, etc.).
 *                                                                                                 
 * 2. **Detours**: Your custom function that executes instead of the original. 
 *    It MUST match the original signature exactly.
@@ -76,8 +82,11 @@ typedef SPF_Hook_Handle* (*SPF_Hook_Register_t)(const char* pluginName, const ch
 /**
  * @brief Finds a byte pattern in the game's memory.
  *
- * @param signature A string representing the byte pattern (e.g., "48 89 5C 24 ? 57 48 83").
- *                  Use '?' or '??' for wildcards.
+ * @param signature A string representing the byte pattern.
+ *                  Supported formats:
+ *                  - `XX`: Exact hex byte (e.g., "48")
+ *                  - `?` or `??`: Wildcard (matches any byte)
+ *                  - `[XX-YY]`: Range (matches any byte from XX to YY, e.g., "[40-7F]")
  * @return The memory address where the pattern was found, or 0 if not found.
  */
 typedef uintptr_t (*SPF_Hook_FindPattern_t)(const char* signature);
@@ -85,7 +94,7 @@ typedef uintptr_t (*SPF_Hook_FindPattern_t)(const char* signature);
 /**
  * @brief Finds a byte pattern within a specific memory range.
  *
- * @param signature A string representing the byte pattern.
+ * @param signature A string representing the byte pattern. Supports wildcards and ranges.
  * @param startAddress The base address to start searching from.
  * @param searchLength The size of the memory block to search.
  * @return The memory address where the pattern was found, or 0 if not found.
@@ -166,8 +175,8 @@ typedef uintptr_t (*SPF_Memory_GetRipAddress_t)(uintptr_t instructionAddr, int o
  * @section Core Concepts
  * 1.  **Signature**: A unique sequence of bytes representing the beginning of a
  *     function in memory. This is used to find the function's address, which
- *     can change between game updates. Wildcards ('?' or '??') can be used for
- *     bytes that might change.
+ *     can change between game updates. Supports exact bytes, wildcards (`?` or `??`),
+ *     and hex ranges (`[XX-YY]`) for advanced instruction matching.
  * 2.  **Detour**: Your C++ function that will be executed when the game tries to
  *     call the original function. It MUST have the exact same function signature
  *     (calling convention, parameters, and return type) as the function you are hooking.
