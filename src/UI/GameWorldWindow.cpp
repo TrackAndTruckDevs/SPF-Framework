@@ -147,10 +147,17 @@ void GameWorldWindow::RenderContent() {
         ImGui::SetTooltip("Controls the speed of the entire game (physics, traffic, animations).");
     }
 
-    // bool isPaused = m_worldService.IsGamePaused();
-    // if (ImGui::Checkbox("Engine Pause Status", &isPaused)) {
-    //     m_worldService.SetGamePaused(isPaused);
-    // }
+    // --- Engine Pause / Halt Section ---
+    bool isPaused = m_worldService.IsGamePaused();
+    Typography::Text(TextStyle::Regular().Color(isPaused ? Colors::RED : Colors::GREEN), 
+                     "Engine Pause Status: %s", isPaused ? "TRUE" : "FALSE");
+
+    if (ImGui::Checkbox("Set Engine Pause (Plugin)", &isPaused)) {
+        m_worldService.SetGamePaused(isPaused);
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Programmatically set the engine to paused state.");
+    }
 
     ImGui::Spacing();
     

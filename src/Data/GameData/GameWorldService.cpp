@@ -48,6 +48,11 @@ void GameWorldService::Shutdown() {
     m_realPlaySecondsOffset = 0;
     m_skyboxAutoUpdateOffset = 0;
     m_updateFnAddr = 0;
+
+    m_globalHaltOffset = 0;
+    m_simulationHaltOffset = 0;
+    m_trafficHaltOffset = 0;
+    m_pluginHalted = false;
   }
 }
 
@@ -214,23 +219,33 @@ void GameWorldService::SetGlobalWarp(float warp) {
   *(float*)(coreApp + m_globalWarpOffset) = warp;
 }
 
-// bool GameWorldService::IsGamePaused() {
-//   if (!m_isInitialized || m_pauseStatusOffset == 0) return false;
+bool GameWorldService::IsGamePaused() {
+  if (!m_isInitialized || m_globalHaltOffset == 0) return false;
 
-//   uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
-//   if (!coreApp) return false;
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return false;
 
-//   return *(uint8_t*)(coreApp + m_pauseStatusOffset) != 0;
-// }
+  // If any halt counter is > 0, the game is technically paused/halted
+  return *(int32_t*)(coreApp + m_globalHaltOffset) > 0 || 
+         *(int32_t*)(coreApp + m_simulationHaltOffset) > 0;
+}
 
-// void GameWorldService::SetGamePaused(bool paused) {
-//   if (!m_isInitialized || m_pauseStatusOffset == 0) return;
+void GameWorldService::SetGamePaused(bool paused) {
+    SetEngineHalt(paused);
+}
 
-//   uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
-//   if (!coreApp) return;
+void GameWorldService::SetEngineHalt(bool halted) {
+  if (!m_isInitialized || m_globalHaltOffset == 0 || m_simulationHaltOffset == 0) return;
 
-//   *(uint8_t*)(coreApp + m_pauseStatusOffset) = paused ? 1 : 0;
-// }
+  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
+  if (!coreApp) return;
+
+  *(int32_t*)(coreApp + m_globalHaltOffset) = halted ? 1 : 0;
+  *(int32_t*)(coreApp + m_simulationHaltOffset) = halted ? 1 : 0;
+  *(int32_t*)(coreApp + m_trafficHaltOffset) = halted ? 1 : 0;
+  
+  m_pluginHalted = halted;
+}
 
 uint32_t GameWorldService::GetFrameCounter() {
   if (!m_isInitialized || m_frameCounterOffset == 0) return 0;

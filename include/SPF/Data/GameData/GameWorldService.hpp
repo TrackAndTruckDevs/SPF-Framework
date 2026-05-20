@@ -70,8 +70,14 @@ class GameWorldService {
   void SetGlobalWarp(float warp);
   bool IsGamePaused();
   void SetGamePaused(bool paused);
+  void SetEngineHalt(bool halted);
   uint32_t GetFrameCounter();
   double GetRealDeltaTime();
+
+  // --- Public Setters (for use by finders) ---
+  void SetGlobalHaltOffset(intptr_t val) { m_globalHaltOffset = val; }
+  void SetSimulationHaltOffset(intptr_t val) { m_simulationHaltOffset = val; }
+  void SetTrafficHaltOffset(intptr_t val) { m_trafficHaltOffset = val; }
 
   // --- Time Calculation Helpers ---
   uint32_t GetGameDay();         // Total game days (since start of epoch)
@@ -86,6 +92,7 @@ class GameWorldService {
 
   // --- Runtime State ---
   bool m_isInitialized = false;
+  bool m_pluginHalted = false;
   std::vector<std::unique_ptr<IGameWorldDataFinder>> m_dataFinders;
 
   // --- World Data Offsets and Pointers ---
@@ -122,6 +129,11 @@ class GameWorldService {
    */
   intptr_t m_globalWarpOffset = 0;       // Offset to global warp/speed (0x66c)
   intptr_t m_pauseStatusOffset = 0;      // Offset to global pause flag (0x859)
+
+  intptr_t m_globalHaltOffset = 0;       // Global execution counter (0xA14)
+  intptr_t m_simulationHaltOffset = 0;   // Simulation execution counter (0xA08)
+  intptr_t m_trafficHaltOffset = 0;      // Traffic/Physics counter (0xA10)
+
   intptr_t m_frameCounterOffset = 0;     // Offset to engine frame counter (0x19c)
   intptr_t m_realDeltaTimeOffset = 0;    // Offset to real-time delta in microseconds (0x8e8)
 

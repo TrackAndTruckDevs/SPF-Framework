@@ -439,6 +439,60 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
         all_found = false;
     }
 
+    /*
+     * ANCHOR #16: Engine Halt Counters (Global, Simulation, Traffic)
+     * We find the anchor function 'ForceUnwindEngineStates' and then search for
+     * the logic block where execution counters are decremented.
+     */
+    const char* FORCE_UNWIND_SIG = "40 53 55 57 41 54 41 57 48 83 EC ? 48 8B 1D ? ? ? ? 48 8B F9";
+    uintptr_t pfnForceUnwind = Utils::PatternFinder::Find(FORCE_UNWIND_SIG);
+    if (pfnForceUnwind) {
+        logger->Debug("ForceUnwindEngineStates found at 0x{:X}", pfnForceUnwind);
+
+        // Search for the decrement block: FF 8F ? ? ? ? FF 8F ? ? ? ? 83 ? ? 89 87
+        const char* p_halt_counters_sig = "FF 8F ? ? ? ? FF 8F ? ? ? ? 83 ? ? 89 87";
+        uintptr_t haltBlockAddr = Utils::PatternFinder::Find(pfnForceUnwind, 2048, p_halt_counters_sig);
+        if (haltBlockAddr) {
+            // 1. Global Halt Offset (from FF 8F XX XX XX XX)
+            int32_t globalHaltOff = Utils::PatternFinder::ReadInt32(haltBlockAddr + 2);
+            // 2. Traffic Halt Offset (from the second FF 8F XX XX XX XX)
+            int32_t trafficHaltOff = Utils::PatternFinder::ReadInt32(haltBlockAddr + 8);
+            // 3. Simulation Halt Offset (from 89 87 XX XX XX XX)
+            // 89 87 is at index 15. Offset is at index 15 + 2 = 17.
+            int32_t simHaltOff = Utils::PatternFinder::ReadInt32(haltBlockAddr + 17);
+
+            if (Utils::PatternFinder::IsSaneOffset(globalHaltOff)) {
+                owner.SetGlobalHaltOffset(globalHaltOff);
+                logger->Debug("Anchor #16: Global Halt Offset found: 0x{:X}", globalHaltOff);
+            } else {
+                logger->Error("Anchor #16: Global Halt Offset INVALID (0x{:X})", globalHaltOff);
+                all_found = false;
+            }
+
+            if (Utils::PatternFinder::IsSaneOffset(trafficHaltOff)) {
+                owner.SetTrafficHaltOffset(trafficHaltOff);
+                logger->Debug("Anchor #16: Traffic Halt Offset found: 0x{:X}", trafficHaltOff);
+            } else {
+                logger->Error("Anchor #16: Traffic Halt Offset INVALID (0x{:X})", trafficHaltOff);
+                all_found = false;
+            }
+
+            if (Utils::PatternFinder::IsSaneOffset(simHaltOff)) {
+                owner.SetSimulationHaltOffset(simHaltOff);
+                logger->Debug("Anchor #16: Simulation Halt Offset found: 0x{:X}", simHaltOff);
+            } else {
+                logger->Error("Anchor #16: Simulation Halt Offset INVALID (0x{:X})", simHaltOff);
+                all_found = false;
+            }
+        } else {
+            logger->Error("Anchor #16: FAILED to find Halt Counters logic block.");
+            all_found = false;
+        }
+    } else {
+        logger->Error("Anchor #16: FAILED to find ForceUnwindEngineStates anchor.");
+        all_found = false;
+    }
+
     m_isReady = all_found;
     return all_found;
 }
