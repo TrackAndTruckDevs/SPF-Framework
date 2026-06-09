@@ -1,14 +1,16 @@
 /**                                                                                               
  * @file GameWorldService.cpp                                                                          
- * @brief Implementation of the GameWorldService for managing and manipulating the game environment.
+ * @brief Implementation of the GameWorldService for managing core engine state and world clock.
  */ 
 
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <Windows.h>
+#include <algorithm>
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -43,16 +45,17 @@ void GameWorldService::Shutdown() {
     m_timeOffset = 0;
     m_simulationTimeOffset = 0;
     m_subMinuteSecondsOffset = 0;
-    m_mapScaleOffset = 0;
     m_realPlayTimeOffset = 0;
     m_realPlaySecondsOffset = 0;
-    m_skyboxAutoUpdateOffset = 0;
+    m_mapScaleOffset = 0;
+    m_globalWarpOffset = 0;
+    m_pauseStatusOffset = 0;
+    m_frameCounterOffset = 0;
+    m_realDeltaTimeOffset = 0;
     m_updateFnAddr = 0;
-
     m_globalHaltOffset = 0;
     m_simulationHaltOffset = 0;
     m_trafficHaltOffset = 0;
-    m_pluginHalted = false;
   }
 }
 
@@ -90,6 +93,10 @@ bool GameWorldService::TryFindAllOffsets() {
   return m_isInitialized;
 }
 
+bool GameWorldService::IsReady() {
+  return m_isInitialized && AreAllFindersReady();
+}
+
 bool GameWorldService::IsFinderReady(const char* name) const {
   for (const auto& finder : m_dataFinders) {
     if (strcmp(finder->GetName(), name) == 0) {
@@ -101,12 +108,14 @@ bool GameWorldService::IsFinderReady(const char* name) const {
 
 bool GameWorldService::AreAllFindersReady() const {
   for (const auto& finder : m_dataFinders) {
-    if (!finder->IsReady()) {
-      return false;
-    }
+    if (!finder->IsReady()) return false;
   }
   return true;
 }
+
+
+
+// --- World Manipulation Methods ---
 
 uint32_t GameWorldService::GetPreviewTime() {
   if (!m_isInitialized) return 0;
@@ -176,6 +185,19 @@ uint32_t GameWorldService::GetRealPlayTime() {
   uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
   if (!timeMgr) return 0;
 
+  // In version 1.60+, Real Play Time is part of an array_t<uint32_t>.
+  // We detect this by the offset value (e.g., 0x1B98 vs 0x1C8).
+  if (m_realPlayTimeOffset > 0x1000) {
+    // Read the data pointer from the array_t structure (at offset +0x08).
+    // As per Ghidra 1.60 analysis, the structure is accessed via an array helper.
+    uintptr_t arrayDataPtr = *(uintptr_t*)(timeMgr + m_realPlayTimeOffset + 0x08);
+    if (!arrayDataPtr) return 0;
+
+    // Read the first element (minutes) which corresponds to the local player.
+    return *(uint32_t*)arrayDataPtr;
+  }
+
+  // Version 1.59 and older: direct uint32_t access.
   return *(uint32_t*)(timeMgr + m_realPlayTimeOffset);
 }
 
@@ -267,16 +289,6 @@ double GameWorldService::GetRealDeltaTime() {
   return (double)microSecs * 1e-06;
 }
 
-float GameWorldService::GetTimeScale() {
-  // Not used in this version, as we found map scale instead.
-  // Kept for interface compatibility.
-  return GetMapScale();
-}
-
-void GameWorldService::SetTimeScale(float scale) {
-  // We do not recommend setting MapScale directly as it might break pathfinding.
-  // Stub for now.
-}
 
 void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
   if (!m_isInitialized) return;
@@ -291,5 +303,5 @@ void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
   *(int32_t*)(envObject + m_skyboxAutoUpdateOffset) = enabled ? 0 : 1;
 }
 
-} // namespace Data::GameData
+}  // namespace Data::GameData
 SPF_NS_END

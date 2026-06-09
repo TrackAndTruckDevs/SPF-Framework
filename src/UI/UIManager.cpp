@@ -7,6 +7,7 @@
 #include "SPF/UI/CameraWindow.hpp"      // Added for CameraWindow creation
 #include "SPF/UI/InfoWindow.hpp"        // Added for InfoWindow creation
 #include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
+#include "SPF/UI/ClimateWindow.hpp"      // Added for ClimateWindow creation
 #include "SPF/UI/WelcomeWindow.hpp"     // Added for WelcomeWindow creation
 #include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
 #include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
@@ -47,6 +48,7 @@
 
 #include "SPF/GameCamera/GameCameraManager.hpp"  // For animation input blocking
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/ClimateService.hpp"
 
 #include "SPF/UI/MainWindow.hpp"      // Required for dynamic_cast and GetMainDockspaceID
 #include "SPF/UI/SettingsWindow.hpp"  // Required for dynamic_cast
@@ -1129,6 +1131,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Game World Window
   auto gameWorldWindow = std::make_shared<GameWorldWindow>("framework", "gameworld_window", Data::GameData::GameWorldService::GetInstance());
   RegisterWindow(gameWorldWindow);
+
+  // Climate Window
+  auto climateWindow = std::make_shared<ClimateWindow>("framework", "climate_window", Data::GameData::ClimateService::GetInstance());
+  RegisterWindow(climateWindow);
 
   // Welcome Window - Only created and registered on fresh installation or framework update
   const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();

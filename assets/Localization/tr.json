@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "Oyun Dünyası",
+        "not_ready": "Oyun Dünyası Servisi başlatılmadı. Lütfen oyuna girin.",
+        "visual_time": {
+            "title": "Görsel (Önizleme) Zamanı",
+            "lock_checkbox": "Görsel Zamanı Kilitle (Skybox Otomatik Güncellemeyi Devre Dışı Bırak)",
+            "lock_tooltip": "Kilitliyse, duraklatma kaldırıldığında oyun görsel zamanınızı geçersiz kılmaz.",
+            "slider_label": "Görsel Zaman Sürgüsü",
+            "slider_disabled_hint": "Bu sürgüyü kullanmak için 'Görsel Zamanı Kilitle' seçeneğini etkinleştirin."
+        },
+        "simulation_time": {
+            "title": "Oyun Simülasyon Zamanı (Kalıcı)",
+            "state_label": "Mevcut Durum: Hafta %d, %s (Gün %d)",
+            "world_clock": "Dünya Saati: %s",
+            "slider_label": "Günün Saati Sürgüsü",
+            "minus_day": "-1 Gün",
+            "plus_day": "+1 Gün",
+            "reset_midnight": "Gece Yarısına Sıfırla"
+        },
+        "engine_info": {
+            "title": "Oyun Motoru Bilgileri",
+            "map_scale": "Harita Ölçeği (local.scale): %.2f",
+            "map_scale_tooltip": "Otoyollarda 1:19, şehirlerde 1:3.",
+            "playtime": "Toplam Oturum Oyun Süresi: %d saat, %d dak"
+        },
+        "engine_controls": {
+            "title": "Temel Motor Kontrolleri",
+            "global_warp": "Genel Oyun Hızı (Warp)",
+            "warp_tooltip": "Tüm oyunun hızını kontrol eder (fizik, trafik, animasyonlar).",
+            "pause_status": "Motor Duraklatma Durumu: %s",
+            "pause_checkbox": "Motor Duraklatmayı Ayarla (Eklenti)",
+            "pause_tooltip": "Motoru programlı olarak duraklatılmış duruma ayarlar.",
+            "frame_counter": "Motor Kare Sayacı: %u",
+            "delta_time": "Gerçek Delta Zamanı: %.6f s"
+        },
+        "days": {
+            "monday": "Pazartesi",
+            "tuesday": "Salı",
+            "wednesday": "Çarşamba",
+            "thursday": "Perşembe",
+            "friday": "Cuma",
+            "saturday": "Cumartesi",
+            "sunday": "Pazar"
+        }
+    },
+    "climate_window": {
+        "title": "İklim ve Hava Durumu"
+    },
     "info_window": {
         "title": "Ortam Bilgileri",
         "tabs": {

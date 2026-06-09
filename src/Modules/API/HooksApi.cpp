@@ -19,6 +19,16 @@ void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
     api->Memory_ReadInt64 = &Utils::PatternFinder::ReadInt64;
     api->Memory_ReadFloat = &Utils::PatternFinder::ReadFloat;
     api->Memory_GetRipAddress = &Utils::PatternFinder::GetRipAddress;
+
+    // ABI Extension (v1.1)
+    api->Hook_FindString = &HooksApi::Hook_FindString;
+    api->Hook_FindFunctionByString = &HooksApi::Hook_FindFunctionByString;
+    // ABI Extension (Advanced Lookup)
+    api->Hook_GetFunctionStart = &HooksApi::Hook_GetFunctionStart;
+    api->Hook_FindChain = &HooksApi::Hook_FindChain;
+    api->Hook_FindVTable = &HooksApi::Hook_FindVTable;
+    api->Hook_GetVTableFunction = &HooksApi::Hook_GetVTableFunction;
+    api->Hook_FindFunctionByConstant = &HooksApi::Hook_FindFunctionByConstant;
 }
 
 uintptr_t HooksApi::Hook_FindPattern(const char* signature) {
@@ -57,6 +67,39 @@ float HooksApi::Memory_ReadFloat(uintptr_t address) {
 
 uintptr_t HooksApi::Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
     return Utils::PatternFinder::GetRipAddress(instructionAddr, offsetPos, instructionSize);
+}
+
+uintptr_t HooksApi::Hook_FindString(const char* str) {
+    return Utils::PatternFinder::FindString(str);
+}
+
+uintptr_t HooksApi::Hook_FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
+    return Utils::PatternFinder::FindFunctionByString(str, findStart, contextSig, contextRange);
+}
+
+uintptr_t HooksApi::Hook_GetFunctionStart(uintptr_t address) {
+    return Utils::PatternFinder::GetFunctionStart(address);
+}
+
+uintptr_t HooksApi::Hook_FindChain(const char** signatures, size_t count, size_t maxGap, uintptr_t startAddress, size_t searchRange) {
+    if (!signatures || count == 0) return 0;
+    std::vector<std::string> sigs;
+    for (size_t i = 0; i < count; ++i) {
+        sigs.push_back(signatures[i]);
+    }
+    return Utils::PatternFinder::FindChain(sigs, maxGap, startAddress, searchRange);
+}
+
+uintptr_t HooksApi::Hook_FindVTable(const char* signature, int offsetPos, int instructionSize) {
+    return Utils::PatternFinder::FindVTable(signature, offsetPos, instructionSize);
+}
+
+uintptr_t HooksApi::Hook_GetVTableFunction(uintptr_t vtableAddr, int index) {
+    return Utils::PatternFinder::GetVTableFunction(vtableAddr, index);
+}
+
+uintptr_t HooksApi::Hook_FindFunctionByConstant(uint32_t constant, bool findStart) {
+    return Utils::PatternFinder::FindFunctionByConstant(constant, findStart);
 }
 
 } // namespace Modules::API

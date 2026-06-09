@@ -193,6 +193,7 @@ add_library(SPF SHARED
     "src/Data/GameData/GameObjectFileSystemService.cpp"
     "src/Data/GameData/GameObjectSessionService.cpp"
     "src/Data/GameData/GameWorldService.cpp"
+    "src/Data/GameData/ClimateService.cpp"
     "src/Data/GameData/Finders/CoreCameraDataFinder.cpp"
     "src/Data/GameData/Finders/FreeCameraDataFinder.cpp"
     "src/Data/GameData/Finders/InteriorCameraDataFinder.cpp"
@@ -212,6 +213,7 @@ add_library(SPF SHARED
     "src/Data/GameData/Finders/FileSystemDataFinder.cpp"
     "src/Data/GameData/Finders/SessionDataFinder.cpp"
     "src/Data/GameData/Finders/GameWorldDataFinder.cpp"
+    "src/Data/GameData/Finders/ClimateDataFinder.cpp"
     "src/Events/EventManager.cpp"
     "src/Events/Proxies/WndProcEventProxy.cpp"
 
@@ -306,6 +308,7 @@ add_library(SPF SHARED
     "src/UI/CameraWindow.cpp"
     "src/UI/InfoWindow.cpp"    
     "src/UI/GameWorldWindow.cpp"
+    "src/UI/ClimateWindow.cpp"
     "src/UI/MainWindow.cpp"
     "src/UI/NotificationWindow.cpp"
     "src/UI/UIManager.cpp"

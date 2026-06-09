@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "ゲームワールド",
+        "not_ready": "ゲームワールドサービスが初期化されていません。ゲームをロードしてください。",
+        "visual_time": {
+            "title": "ビジュアル（プレビュー）時間",
+            "lock_checkbox": "ビジュアル時間をロック（スカイボックスの自動更新を無効化）",
+            "lock_tooltip": "ロックされている場合、一時停止を解除したときにゲームがビジュアル時間を上書きしません。",
+            "slider_label": "ビジュアル時間スライダー",
+            "slider_disabled_hint": "このスライダーを使用するには、「ビジュアル時間をロック」を有効にしてください。"
+        },
+        "simulation_time": {
+            "title": "ゲームシミュレーション時間（永続的）",
+            "state_label": "現在の状態: 第%d週, %s (%d日目)",
+            "world_clock": "ワールドクロック: %s",
+            "slider_label": "時刻スライダー",
+            "minus_day": "-1日",
+            "plus_day": "+1日",
+            "reset_midnight": "真夜中にリセット"
+        },
+        "engine_info": {
+            "title": "ゲームエンジン情報",
+            "map_scale": "マップスケール (local.scale): %.2f",
+            "map_scale_tooltip": "高速道路では1:19、都市部では1:3。",
+            "playtime": "セッションの総プレイ時間: %d時間%d分"
+        },
+        "engine_controls": {
+            "title": "コアエンジンコントロール",
+            "global_warp": "グローバルゲームワープ",
+            "warp_tooltip": "ゲーム全体の速度（物理、交通、アニメーション）を制御します。",
+            "pause_status": "エンジンの一時停止ステータス: %s",
+            "pause_checkbox": "エンジンの一時停止を設定 (プラグイン)",
+            "pause_tooltip": "プログラムでエンジンを一時停止状態に設定します。",
+            "frame_counter": "エンジンフレームカウンター: %u",
+            "delta_time": "リアルデルタタイム: %.6f 秒"
+        },
+        "days": {
+            "monday": "月曜日",
+            "tuesday": "火曜日",
+            "wednesday": "水曜日",
+            "thursday": "木曜日",
+            "friday": "金曜日",
+            "saturday": "土曜日",
+            "sunday": "日曜日"
+        }
+    },
+    "climate_window": {
+        "title": "気候と天候"
+    },
     "info_window": {
         "title": "環境情報",
         "tabs": {

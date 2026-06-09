@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "Game World",
+        "not_ready": "Game World Service is not initialized. Please load into the game.",
+        "visual_time": {
+            "title": "Visual (Preview) Time",
+            "lock_checkbox": "Lock Visual Time (Disable Skybox Auto-update)",
+            "lock_tooltip": "If locked, the game won't override your visual time when unpaused.",
+            "slider_label": "Visual Time Slider",
+            "slider_disabled_hint": "Enable 'Lock Visual Time' to use this slider."
+        },
+        "simulation_time": {
+            "title": "Game Simulation Time (Permanent)",
+            "state_label": "Current State: Week %d, %s (Day %d)",
+            "world_clock": "World Clock: %s",
+            "slider_label": "Time of Day Slider",
+            "minus_day": "-1 Day",
+            "plus_day": "+1 Day",
+            "reset_midnight": "Reset to Midnight"
+        },
+        "engine_info": {
+            "title": "Game Engine Info",
+            "map_scale": "Map Scale (local.scale): %.2f",
+            "map_scale_tooltip": "1:19 on highways, 1:3 in cities.",
+            "playtime": "Total Session Playtime: %d hours, %d mins"
+        },
+        "engine_controls": {
+            "title": "Core Engine Controls",
+            "global_warp": "Global Game Warp",
+            "warp_tooltip": "Controls the speed of the entire game (physics, traffic, animations).",
+            "pause_status": "Engine Pause Status: %s",
+            "pause_checkbox": "Set Engine Pause (Plugin)",
+            "pause_tooltip": "Programmatically set the engine to paused state.",
+            "frame_counter": "Engine Frame Counter: %u",
+            "delta_time": "Real Delta Time: %.6f s"
+        },
+        "days": {
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday",
+            "sunday": "Sunday"
+        }
+    },
+    "climate_window": {
+        "title": "Climate & Weather"
+    },    
     "info_window": {
         "title": "Environment Information",
         "tabs": {

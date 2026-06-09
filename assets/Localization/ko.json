@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "게임 월드",
+        "not_ready": "게임 월드 서비스가 초기화되지 않았습니다. 게임에 접속해 주세요.",
+        "visual_time": {
+            "title": "시각적 (미리보기) 시간",
+            "lock_checkbox": "시각적 시간 잠금 (스카이박스 자동 업데이트 비활성화)",
+            "lock_tooltip": "잠겨 있으면 일시 중지를 해제해도 게임이 시각적 시간을 덮어쓰지 않습니다.",
+            "slider_label": "시각적 시간 슬라이더",
+            "slider_disabled_hint": "이 슬라이더를 사용하려면 '시각적 시간 잠금'을 활성화하세요."
+        },
+        "simulation_time": {
+            "title": "게임 시뮬레이션 시간 (영구)",
+            "state_label": "현재 상태: %d주차, %s (%d일째)",
+            "world_clock": "세계 시간: %s",
+            "slider_label": "시간대 슬라이더",
+            "minus_day": "-1일",
+            "plus_day": "+1일",
+            "reset_midnight": "자정으로 초기화"
+        },
+        "engine_info": {
+            "title": "게임 엔진 정보",
+            "map_scale": "맵 배율 (local.scale): %.2f",
+            "map_scale_tooltip": "고속도로 1:19, 도시 1:3.",
+            "playtime": "총 세션 플레이 시간: %d시간 %d분"
+        },
+        "engine_controls": {
+            "title": "핵심 엔진 제어",
+            "global_warp": "전역 게임 워프",
+            "warp_tooltip": "게임 전체의 속도(물리, 교통, 애니메이션)를 제어합니다.",
+            "pause_status": "엔진 일시 중지 상태: %s",
+            "pause_checkbox": "엔진 일시 중지 설정 (플러그인)",
+            "pause_tooltip": "프로그램 방식으로 엔진을 일시 중지 상태로 설정합니다.",
+            "frame_counter": "엔진 프레임 카운터: %u",
+            "delta_time": "실제 델타 타임: %.6f s"
+        },
+        "days": {
+            "monday": "월요일",
+            "tuesday": "화요일",
+            "wednesday": "수요일",
+            "thursday": "목요일",
+            "friday": "금요일",
+            "saturday": "토요일",
+            "sunday": "일요일"
+        }
+    },
+    "climate_window": {
+        "title": "기후 및 날씨"
+    },
     "info_window": {
         "title": "환경 정보",
         "tabs": {

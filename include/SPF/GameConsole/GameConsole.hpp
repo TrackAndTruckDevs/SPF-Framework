@@ -72,9 +72,10 @@ class GameConsole : public Hooks::IHook {
   // --- Hook Configuration ---
   std::string m_ownerName = "framework";
   std::string m_name = "GameConsole";
-  std::string m_displayName = "Game Console";  // Will be localized later
+  std::string m_displayName = "Game Console";
   bool m_isEnabled = true;
-  std::string m_signature = "40 53 56 57 41 56 41 57 48 81 EC ? ? ? ? 45 33 F6";
+  std::string m_stringSignature = "[cmd] Unknown queue id: %u";
+  std::string m_signature = "e8 ?? ?? ?? ?? 32 c0";
 
   // --- Runtime State ---
   uintptr_t m_hookedAddress = 0;

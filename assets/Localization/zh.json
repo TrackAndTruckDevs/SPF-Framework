@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "游戏世界",
+        "not_ready": "游戏世界服务未初始化。请先进入游戏。",
+        "visual_time": {
+            "title": "视觉（预览）时间",
+            "lock_checkbox": "锁定视觉时间（禁用天空盒自动更新）",
+            "lock_tooltip": "如果锁定，游戏在取消暂停时不会覆盖您的视觉时间。",
+            "slider_label": "视觉时间滑块",
+            "slider_disabled_hint": "启用“锁定视觉时间”以使用此滑块。"
+        },
+        "simulation_time": {
+            "title": "游戏模拟时间（永久）",
+            "state_label": "当前状态：第%d周, %s (第%d天)",
+            "world_clock": "世界时钟：%s",
+            "slider_label": "时间段滑块",
+            "minus_day": "-1天",
+            "plus_day": "+1天",
+            "reset_midnight": "重置为午夜"
+        },
+        "engine_info": {
+            "title": "游戏引擎信息",
+            "map_scale": "地图比例 (local.scale): %.2f",
+            "map_scale_tooltip": "高速公路 1:19，城市 1:3。",
+            "playtime": "当前会话总游戏时间：%d小时 %d分钟"
+        },
+        "engine_controls": {
+            "title": "核心引擎控制",
+            "global_warp": "全局游戏速度 (Warp)",
+            "warp_tooltip": "控制整个游戏的速度（物理、交通、动画）。",
+            "pause_status": "引擎暂停状态：%s",
+            "pause_checkbox": "设置引擎暂停 (插件)",
+            "pause_tooltip": "通过程序将引擎设置为暂停状态。",
+            "frame_counter": "引擎帧计数器：%u",
+            "delta_time": "实际增量时间 (Delta Time): %.6f s"
+        },
+        "days": {
+            "monday": "星期一",
+            "tuesday": "星期二",
+            "wednesday": "星期三",
+            "thursday": "星期四",
+            "friday": "星期五",
+            "saturday": "星期六",
+            "sunday": "星期日"
+        }
+    },
+    "climate_window": {
+        "title": "气候与天气"
+    },
     "info_window": {
         "title": "环境信息",
         "tabs": {

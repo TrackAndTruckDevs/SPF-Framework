@@ -24,15 +24,39 @@ bool GameConsole::Install() {
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
 
-  uintptr_t address = Utils::PatternFinder::Find(m_signature.c_str());
+  /**
+   * SEARCH STRATEGY (Verified for Game Version 1.60):
+   * We locate the command enqueuer function by finding a reference to the error string:
+   * "[cmd] Unknown queue id: %u" (found in FUN_1401dc890).
+   *
+   * Since this string might be used in multiple places, we use a context signature
+   * to match the specific exit block of our target function.
+   *
+   * Target Code Snippet (Ghidra 1.60):
+   * 1401dc95d 48 8d 0d ...   LEA RCX, [s_[cmd]_Unknown_queue_id:_%u_...]
+   * 1401dc964 e8 47 bc ...   CALL FUN_1400f85b0  <- m_signature matches here (E8 ?? ?? ?? ??)
+   * 1401dc969 32 c0          XOR AL, AL          <- m_signature matches here (32 C0)
+   * 1401dc96b 48 81 c4 ...   ADD RSP, 0xc40
+   * 1401dc972 5b             POP RBX
+   * 1401dc973 c3             RET
+   *
+   * After finding the Xref, we backtrack to find the function prologue:
+   * 1401dc890 40 53          PUSH RBX
+   * 1401dc892 48 81 ec ...   SUB RSP, 0xc40
+   */
+  uintptr_t address = Utils::PatternFinder::FindFunctionByString(
+    m_stringSignature.c_str(), 
+    true,                      // Auto-backtrack to PUSH RBX / SUB RSP
+    m_signature.c_str()        // Context: CALL + XOR AL, AL
+  );
 
   if (address) {
     m_ExecuteGameCommand = reinterpret_cast<ExecuteCommandFn>(address);
     m_hookedAddress = address;  // Save address on success
-    logger->Info("Found command execution function at address: {:#x}", address);
+    logger->Info("Found command execution function (via string xref) at address: {:#x}", address);
     return true;
   } else {
-    logger->Error("Could not find command execution function signature. The game might have been updated.");
+    logger->Error("Could not find command execution function via string/context. The game might have been updated.");
     return false;
   }
 }

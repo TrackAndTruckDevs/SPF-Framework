@@ -17,8 +17,9 @@
 *    - **Exact Bytes**: Standard hex values (e.g., `48 89 5C`).
 *    - **Wildcards**: Use `?` or `??` to match any byte (e.g., `48 8B ?? ?? ??`).
 *    - **Ranges**: Use `[XX-YY]` to match a byte within a hex range (e.g., `[40-7F]`).
-*      This is particularly useful for matching ModR/M bytes to filter out 
-*      RIP-relative addressing (which usually ends in `05`, `0D`, `15`, etc.).
+*    - **Variable Wildcards**: Use `[min-max?]` to match a sequence of any bytes with 
+*      variable length (e.g., `[1-3?]` matches 1, 2, or 3 bytes). This is crucial for 
+*      handling different compiler optimizations or minor code changes between updates.
 *                                                                                                 
 * 2. **Detours**: Your custom function that executes instead of the original. 
 *    It MUST match the original signature exactly.
@@ -162,6 +163,79 @@ typedef float (*SPF_Memory_ReadFloat_t)(uintptr_t address);
  */
 typedef uintptr_t (*SPF_Memory_GetRipAddress_t)(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 
+/**
+ * @brief Finds the address of a null-terminated string in the game module.
+ * @param str The string to look for.
+ * @return The memory address of the string, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindString_t)(const char* str);
+
+/**
+ * @brief Finds a function address based on a string it contains, with optional context.
+ * @param str The string used by the target function.
+ * @param findStart If true, will automatically backtrack to the function prologue.
+ * @param contextSig Optional additional signature to match near the string reference to disambiguate.
+ * @param contextRange The search window size (in bytes) for the context signature.
+ * @return The function address, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindFunctionByString_t)(const char* str, bool findStart, const char* contextSig, size_t contextRange);
+
+/**
+ * @brief Finds the starting address of a function containing the given address.
+ *
+ * @details Uses Windows Runtime Function Tables (.pdata) for 100% accuracy on x64.
+ *          This is the most reliable way to find function boundaries without heuristics.
+ *
+ * @param address Any address within the function (e.g., found via pattern).
+ * @return The address of the function's first instruction, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_GetFunctionStart_t)(uintptr_t address);
+
+/**
+ * @brief Finds a sequence of patterns that appear close to each other.
+ *
+ * @details Useful when the compiler inserts padding, NOPs, or minor logic (like log calls)
+ *          between key instructions that you want to match.
+ *
+ * @param signatures An array of signature strings to find in order.
+ * @param count The number of signatures in the array.
+ * @param maxGap The maximum number of bytes allowed between each pattern match.
+ * @param startAddress Optional address to start searching from. If 0, searches entire module.
+ * @param searchRange Optional range limit. If 0 and startAddress is set, tries to detect function end.
+ * @return The address where the FIRST pattern in the chain starts, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindChain_t)(const char** signatures, size_t count, size_t maxGap, uintptr_t startAddress, size_t searchRange);
+
+/**
+ * @brief Extracts a VTable address from an instruction that references it.
+ * 
+ * @param signature A signature that matches the instruction referencing the VTable (e.g., LEA RAX, [RIP+...]).
+ * @param offsetPos The byte position of the 32-bit displacement within the instruction.
+ * @param instructionSize The total size of the instruction in bytes.
+ * @return The absolute address of the VTable, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindVTable_t)(const char* signature, int offsetPos, int instructionSize);
+
+/**
+ * @brief Gets a function address from a VTable by its index.
+ * 
+ * @param vtableAddr The absolute address of the VTable.
+ * @param index The 0-based index of the function in the table.
+ * @return The absolute address of the function, or 0 if invalid.
+ */
+typedef uintptr_t (*SPF_Hook_GetVTableFunction_t)(uintptr_t vtableAddr, int index);
+
+/**
+ * @brief Finds a function that references a specific 32-bit constant value.
+ * 
+ * @details Useful for finding math-heavy functions or those using unique "magic numbers".
+ * 
+ * @param constant The 32-bit value to look for (e.g., 0x3C888889).
+ * @param findStart If true, the scanner will backtrack to the beginning of the function.
+ * @return The function start or reference address, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindFunctionByConstant_t)(uint32_t constant, bool findStart);
+
 
 /**
  * @struct SPF_Hooks_API
@@ -274,10 +348,77 @@ typedef struct {
     SPF_Memory_ReadInt64_t Memory_ReadInt64;
     SPF_Memory_ReadFloat_t Memory_ReadFloat;
     SPF_Memory_GetRipAddress_t Memory_GetRipAddress;
+
+    /**
+     * @brief Finds the memory address of a null-terminated string in the module.
+     * @param str The string to search for.
+     * @return The absolute address of the string, or 0 if not found.
+     */
+    SPF_Hook_FindString_t Hook_FindString;
+
+    /**
+     * @brief Locates a function based on a string reference it contains.
+     * @param str The string to look for inside the function.
+     * @param findStart If true, the scanner will automatically backtrack to the function prologue.
+     * @param contextSig Optional byte signature to match near the string reference for disambiguation.
+     * @param contextRange The search window size (in bytes) for the context signature.
+     * @return The start address of the function, or 0 if not found.
+     */
+    SPF_Hook_FindFunctionByString_t Hook_FindFunctionByString;
+
+    /**
+     * @brief Finds the starting address of a function containing the given address.
+     * 
+     * @details This is the most reliable way to find the beginning of a function in x64.
+     *          It uses the Windows Runtime Function Tables (.pdata), which are 100% accurate
+     *          as they are required for system stack unwinding.
+     * 
+     * @param address Any memory address within the function (e.g., from a pattern match).
+     * @return The absolute address of the function's first instruction, or 0 if not found.
+     */
+    SPF_Hook_GetFunctionStart_t Hook_GetFunctionStart;
+
+    /**
+     * @brief Finds a sequence of patterns that appear close to each other in memory.
+     * 
+     * @details Use this to create "logical chains" of instructions. It's much more stable
+     *          than a single long signature because it can skip variable-length gaps 
+     *          inserted by the compiler (like padding, log calls, or minor logic changes).
+     * 
+     * @param signatures An array of C-strings containing the signatures to find in order.
+     * @param count The number of signatures provided in the array.
+     * @param maxGap The maximum number of bytes allowed between each successful pattern match.
+     * @param startAddress Optional address to begin the search. If 0, the entire module is scanned.
+     * @param searchRange Optional range limit. If 0 and startAddress is set, defaults to 4KB (covers most functions).
+     * @return The memory address where the FIRST signature in the chain starts, or 0 if not found.
+     */
+    SPF_Hook_FindChain_t Hook_FindChain;
+
+    /**
+     * @brief Finds a VTable address by looking for an instruction that references it.
+     * @param signature Byte pattern for the instruction (e.g., "48 8D 05").
+     * @param offsetPos Byte offset within the instruction where the 32-bit displacement starts.
+     * @param instructionSize Total length of the instruction in bytes.
+     * @return The absolute address of the VTable, or 0 if not found.
+     */
+    SPF_Hook_FindVTable_t Hook_FindVTable;
+
+    /**
+     * @brief Gets a function address from a Virtual Function Table (VTable) by index.
+     * @param vtableAddr Absolute address of the VTable.
+     * @param index 0-based index of the function pointer.
+     * @return The absolute address of the function, or 0 if not found.
+     */
+    SPF_Hook_GetVTableFunction_t Hook_GetVTableFunction;
+
+    /**
+     * @brief Locates a function that uses a specific 32-bit constant (magic number).
+     * @param constant The 32-bit value to search for (e.g., 0x3C888889).
+     * @param findStart If true, automatically returns the function prologue address.
+     * @return The function or reference address, or 0 if not found.
+     */
+    SPF_Hook_FindFunctionByConstant_t Hook_FindFunctionByConstant;
 } SPF_Hooks_API;
-
-
-
 
 #ifdef __cplusplus
 }

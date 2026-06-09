@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "Mondo di gioco",
+        "not_ready": "Il servizio del mondo di gioco non è inizializzato. Carica una partita.",
+        "visual_time": {
+            "title": "Ora visuale (Anteprima)",
+            "lock_checkbox": "Blocca ora visuale (Disabilita aggiornamento auto del cielo)",
+            "lock_tooltip": "Se bloccato, il gioco non sovrascriverà la tua ora visuale quando non è in pausa.",
+            "slider_label": "Cursore ora visuale",
+            "slider_disabled_hint": "Attiva 'Blocca ora visuale' per usare questo cursore."
+        },
+        "simulation_time": {
+            "title": "Tempo di simulazione del gioco (Permanente)",
+            "state_label": "Stato attuale: Settimana %d, %s (Giorno %d)",
+            "world_clock": "Orologio mondiale: %s",
+            "slider_label": "Cursore ora del giorno",
+            "minus_day": "-1 Giorno",
+            "plus_day": "+1 Giorno",
+            "reset_midnight": "Ripristina a mezzanotte"
+        },
+        "engine_info": {
+            "title": "Informazioni motore di gioco",
+            "map_scale": "Scala della mappa (local.scale): %.2f",
+            "map_scale_tooltip": "1:19 sulle autostrade, 1:3 nelle città.",
+            "playtime": "Tempo di gioco totale della sessione: %d h, %d min"
+        },
+        "engine_controls": {
+            "title": "Controlli motore principali",
+            "global_warp": "Warp globale del gioco",
+            "warp_tooltip": "Controlla la velocità dell'intero gioco (fisica, traffico, animazioni).",
+            "pause_status": "Stato di pausa del motore: %s",
+            "pause_checkbox": "Imposta pausa motore (Plugin)",
+            "pause_tooltip": "Imposta programmaticamente il motore in stato di pausa.",
+            "frame_counter": "Contatore frame del motore: %u",
+            "delta_time": "Delta Time reale: %.6f s"
+        },
+        "days": {
+            "monday": "Lunedì",
+            "tuesday": "Martedì",
+            "wednesday": "Mercoledì",
+            "thursday": "Giovedì",
+            "friday": "Venerdì",
+            "saturday": "Sabato",
+            "sunday": "Domenica"
+        }
+    },
+    "climate_window": {
+        "title": "Clima e meteo"
+    },
     "info_window": {
         "title": "Informazioni sull'ambiente",
         "tabs": {

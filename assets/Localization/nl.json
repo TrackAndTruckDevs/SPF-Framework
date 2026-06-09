@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "Gamewereld",
+        "not_ready": "Gamewereldservice is niet geïnitialiseerd. Laad het spel.",
+        "visual_time": {
+            "title": "Visuele (Voorbeeld) Tijd",
+            "lock_checkbox": "Vergrendel Visuele Tijd (Skybox Auto-update uitschakelen)",
+            "lock_tooltip": "Indien vergrendeld, zal het spel je visuele čas niet overschrijven wanneer het spel wordt hervat.",
+            "slider_label": "Visuele Tijdschuifregelaar",
+            "slider_disabled_hint": "Schakel 'Vergrendel Visuele Tijd' in om deze schuifregelaar te gebruiken."
+        },
+        "simulation_time": {
+            "title": "Spelsimulatietijd (Permanent)",
+            "state_label": "Huidige Status: Week %d, %s (Dag %d)",
+            "world_clock": "Wereldklok: %s",
+            "slider_label": "Tijd van de Dag Schuifregelaar",
+            "minus_day": "-1 Dag",
+            "plus_day": "+1 Dag",
+            "reset_midnight": "Reset naar Middernacht"
+        },
+        "engine_info": {
+            "title": "Game Engine Info",
+            "map_scale": "Kaartschaal (local.scale): %.2f",
+            "map_scale_tooltip": "1:19 op snelwegen, 1:3 in steden.",
+            "playtime": "Totale Sessie Speeltijd: %d uur, %d min"
+        },
+        "engine_controls": {
+            "title": "Kern Engine Besturing",
+            "global_warp": "Globale Spel Warp",
+            "warp_tooltip": "Regelt de snelheid van het hele spel (fysica, verkeer, animaties).",
+            "pause_status": "Engine Pauzestatus: %s",
+            "pause_checkbox": "Stel Engine Pauze in (Plugin)",
+            "pause_tooltip": "Zet de engine programmatisch in de gepauzeerde staat.",
+            "frame_counter": "Engine Frameteller: %u",
+            "delta_time": "Real Delta Time: %.6f s"
+        },
+        "days": {
+            "monday": "Maandag",
+            "tuesday": "Dinsdag",
+            "wednesday": "Woensdag",
+            "thursday": "Donderdag",
+            "friday": "Vrijdag",
+            "saturday": "Zaterdag",
+            "sunday": "Zondag"
+        }
+    },
+    "climate_window": {
+        "title": "Klimaat & Weer"
+    },
     "info_window": {
         "title": "Omgevingsinformatie",
         "tabs": {

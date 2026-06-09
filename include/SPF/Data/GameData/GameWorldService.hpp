@@ -2,16 +2,18 @@
 
 #include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
 #include "SPF/Namespace.hpp"
+#include "SPF/Utils/Vec3.hpp"
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <string>
 
 SPF_NS_BEGIN
 namespace Data::GameData {
 
 /**
  * @class GameWorldService
- * @brief A service that provides memory offsets and pointers for game world data (time, weather, etc.).
+ * @brief A service that provides memory offsets and pointers for core game world data (time, engine state).
  */
 class GameWorldService {
  public:
@@ -22,7 +24,7 @@ class GameWorldService {
 
   void Initialize();
   void Shutdown();
-  bool IsReady() const { return m_isInitialized; }
+  bool IsReady();
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
@@ -33,7 +35,7 @@ class GameWorldService {
   intptr_t GetTimeOffset() const { return m_timeOffset; }
   uintptr_t GetUpdateFnAddr() const { return m_updateFnAddr; }
 
-  // --- Public Setters (for use by IGameWorldDataFinder implementations) ---
+  // --- Public Setters (for finders) ---
   void SetEnvironmentBasePtr(uintptr_t val) { m_environmentBasePtr = val; }
   void SetTimeMgrPtrAddr(uintptr_t val) { m_timeMgrPtrAddr = val; }
   void SetEnvObjectOffset(intptr_t val) { m_envObjectOffset = val; }
@@ -50,6 +52,9 @@ class GameWorldService {
   void SetSkyboxAutoUpdateOffset(intptr_t val) { m_skyboxAutoUpdateOffset = val; }
   void SetUpdateFnAddr(uintptr_t val) { m_updateFnAddr = val; }
   void SetEnvironmentAdjustment(intptr_t val) { m_environmentAdjustment = val; }
+  void SetGlobalHaltOffset(intptr_t val) { m_globalHaltOffset = val; }
+  void SetSimulationHaltOffset(intptr_t val) { m_simulationHaltOffset = val; }
+  void SetTrafficHaltOffset(intptr_t val) { m_trafficHaltOffset = val; }
 
   // --- World Manipulation Methods ---
   uint32_t GetPreviewTime();
@@ -58,12 +63,10 @@ class GameWorldService {
   uint32_t GetSimulationTime();
   void SetSimulationTime(uint32_t totalMinutes);
 
-  float GetTimeScale();
-  void SetTimeScale(float scale);
 
   void SetSkyboxAutoUpdate(bool enabled);
 
-  // --- New Core/World methods ---
+  // --- Core/Engine Methods ---
   uint32_t GetRealPlayTime();
   float GetMapScale();
   float GetGlobalWarp();
@@ -74,13 +77,8 @@ class GameWorldService {
   uint32_t GetFrameCounter();
   double GetRealDeltaTime();
 
-  // --- Public Setters (for use by finders) ---
-  void SetGlobalHaltOffset(intptr_t val) { m_globalHaltOffset = val; }
-  void SetSimulationHaltOffset(intptr_t val) { m_simulationHaltOffset = val; }
-  void SetTrafficHaltOffset(intptr_t val) { m_trafficHaltOffset = val; }
-
   // --- Time Calculation Helpers ---
-  uint32_t GetGameDay();         // Total game days (since start of epoch)
+  uint32_t GetGameDay();         // Total game days
   uint32_t GetDayOfWeek();       // 0 = Monday, 6 = Sunday
   uint32_t GetGameWeek();        // Current game week index
 
@@ -96,49 +94,33 @@ class GameWorldService {
   std::vector<std::unique_ptr<IGameWorldDataFinder>> m_dataFinders;
 
   // --- World Data Offsets and Pointers ---
-  uintptr_t m_environmentBasePtr = 0;    // Pointer to MainEngineObject (DAT_143368640)
-  intptr_t m_environmentAdjustment = 0; // Dynamic adjustment (e.g. -0x10 for old versions)
-  uintptr_t m_timeMgrPtrAddr = 0;       // Pointer to TimeManager object (DAT_142cf7668)
+  uintptr_t m_environmentBasePtr = 0;    
+  intptr_t m_environmentAdjustment = 0; 
+  uintptr_t m_timeMgrPtrAddr = 0;       
   
-  intptr_t m_envObjectOffset = 0;        // Offset to Environment object (0x7e8) from MainEngine
-  intptr_t m_timeOffset = 0;             // Offset to Visual/Preview minutes (0x3e50) from EnvironmentObject
+  intptr_t m_envObjectOffset = 0;        
+  intptr_t m_timeOffset = 0;             
   
-  /**
-   * @brief SIMULATION TIME (Game World Clock)
-   * This is the time seen on the truck's dashboard. It is accelerated (Map Scale)
-   * and can jump forward during activities like resting or using the ferry.
-   * Unit: Total minutes passed in the game world.
-   */
-  intptr_t m_simulationTimeOffset = 0;   // Offset to game world minutes (0x15c) from TimeManager
-  intptr_t m_subMinuteSecondsOffset = 0; // Offset to game world seconds accumulator (0x160)
+  intptr_t m_simulationTimeOffset = 0;   
+  intptr_t m_subMinuteSecondsOffset = 0; 
   
-  /**
-   * @brief REAL PLAY TIME (Profile Playtime)
-   * This is the actual wall-clock time the player has spent in the simulation (unpaused).
-   * It has a 1:1 ratio with real-world time and does not jump during world events.
-   * Unit: Total minutes spent in the current session/profile.
-   */
-  intptr_t m_realPlayTimeOffset = 0;     // Offset to real playtime minutes (0x1e0) from TimeManager
-  intptr_t m_realPlaySecondsOffset = 0;  // Offset to real playtime seconds accumulator (0x1e4)
+  intptr_t m_realPlayTimeOffset = 0;     
+  intptr_t m_realPlaySecondsOffset = 0;  
   
-  intptr_t m_mapScaleOffset = 0;         // Offset to Map/Local Scale (0x2f3c). (e.g. 19.0 on highways, 3.0 in cities)
+  intptr_t m_mapScaleOffset = 0;         
 
-  /**
-   * @brief CORE ENGINE PARAMETERS (from CoreApp)
-   * These parameters control the global behavior of the game engine.
-   */
-  intptr_t m_globalWarpOffset = 0;       // Offset to global warp/speed (0x66c)
-  intptr_t m_pauseStatusOffset = 0;      // Offset to global pause flag (0x859)
+  intptr_t m_globalWarpOffset = 0;       
+  intptr_t m_pauseStatusOffset = 0;      
 
-  intptr_t m_globalHaltOffset = 0;       // Global execution counter (0xA14)
-  intptr_t m_simulationHaltOffset = 0;   // Simulation execution counter (0xA08)
-  intptr_t m_trafficHaltOffset = 0;      // Traffic/Physics counter (0xA10)
+  intptr_t m_globalHaltOffset = 0;       
+  intptr_t m_simulationHaltOffset = 0;   
+  intptr_t m_trafficHaltOffset = 0;      
 
-  intptr_t m_frameCounterOffset = 0;     // Offset to engine frame counter (0x19c)
-  intptr_t m_realDeltaTimeOffset = 0;    // Offset to real-time delta in microseconds (0x8e8)
+  intptr_t m_frameCounterOffset = 0;     
+  intptr_t m_realDeltaTimeOffset = 0;    
 
-  intptr_t m_skyboxAutoUpdateOffset = 0; // Offset to auto-update flag (0x46c4) in EnvironmentObject
-  uintptr_t m_updateFnAddr = 0;          // Address of the UpdateEnvironmentState function
+  intptr_t m_skyboxAutoUpdateOffset = 0; 
+  uintptr_t m_updateFnAddr = 0;          
 };
 
 }  // namespace Data::GameData

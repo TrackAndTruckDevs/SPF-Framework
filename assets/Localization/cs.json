@@ -931,6 +931,54 @@
             }
         }
     },
+    "gameworld_window": {
+        "title": "Herní svět",
+        "not_ready": "Služba herního světa není inicializována. Načtěte se prosím do hry.",
+        "visual_time": {
+            "title": "Vizuální (náhledový) čas",
+            "lock_checkbox": "Zamknout vizuální čas (vypnout auto-aktualizaci skyboxu)",
+            "lock_tooltip": "Pokud je zamknuto, hra nepřepíše váš vizuální čas po zrušení pauzy.",
+            "slider_label": "Posuvník vizuálního času",
+            "slider_disabled_hint": "Povolte 'Zamknout vizuální čas' pro použití tohoto posuvníku."
+        },
+        "simulation_time": {
+            "title": "Čas simulace hry (trvalý)",
+            "state_label": "Aktuální stav: Týden %d, %s (Den %d)",
+            "world_clock": "Světový čas: %s",
+            "slider_label": "Posuvník denní doby",
+            "minus_day": "-1 Den",
+            "plus_day": "+1 Den",
+            "reset_midnight": "Resetovat na půlnoc"
+        },
+        "engine_info": {
+            "title": "Informace o herním enginu",
+            "map_scale": "Měřítko mapy (local.scale): %.2f",
+            "map_scale_tooltip": "1:19 na dálnicích, 1:3 ve městech.",
+            "playtime": "Celková herní doba relace: %d hod, %d min"
+        },
+        "engine_controls": {
+            "title": "Základní ovládací prvky enginu",
+            "global_warp": "Globální zrychlení hry (Warp)",
+            "warp_tooltip": "Ovládá rychlost celé hry (fyzika, doprava, animace).",
+            "pause_status": "Stav pauzy enginu: %s",
+            "pause_checkbox": "Nastavit pauzu enginu (Plugin)",
+            "pause_tooltip": "Programově nastaví engine do stavu pozastavení.",
+            "frame_counter": "Počítadlo snímků enginu: %u",
+            "delta_time": "Reálný časový krok (Delta Time): %.6f s"
+        },
+        "days": {
+            "monday": "Pondělí",
+            "tuesday": "Úterý",
+            "wednesday": "Středa",
+            "thursday": "Čtvrtek",
+            "friday": "Pátek",
+            "saturday": "Sobota",
+            "sunday": "Neděle"
+        }
+    },
+    "climate_window": {
+        "title": "Klima a počasí"
+    },
     "info_window": {
         "title": "Informace o prostředí",
         "tabs": {

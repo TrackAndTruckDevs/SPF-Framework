@@ -50,7 +50,7 @@
 #include <SPF/Data/GameData/GameWorldService.hpp>
 #include <SPF/Data/GameData/GameObjectFileSystemService.hpp>
 #include <SPF/Data/GameData/GameObjectSessionService.hpp>
-#include <SPF/Data/GameData/GameObjectSessionService.hpp>
+#include <SPF/Data/GameData/ClimateService.hpp>
 
 using namespace SPF::Logging;
 using namespace SPF::Events;
@@ -562,6 +562,7 @@ void Core::InitHooks() {
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
+  ClimateService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
@@ -859,6 +860,16 @@ void Core::OnGameWorldReady() {
       m_logger->Info("GameWorldService is now ready.");
     } else {
       m_logger->Warn("GameWorldService is not ready yet. Will retry on next event.");
+    }
+  }
+
+  // Finalize Climate data
+  auto& climateService = Data::GameData::ClimateService::GetInstance();
+  if (!climateService.AreAllFindersReady()) {
+    if (climateService.TryFindAllOffsets()) {
+      m_logger->Info("ClimateService is now ready.");
+    } else {
+      m_logger->Warn("ClimateService is not ready yet. Will retry on next event.");
     }
   }
 }

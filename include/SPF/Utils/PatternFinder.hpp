@@ -43,6 +43,56 @@ class PatternFinder {
   static uintptr_t Find(uintptr_t base, size_t size, const unsigned char* signature, size_t signatureSize);
 
   /**
+   * @brief Finds the starting address of a function containing the given address.
+   * Uses Windows Runtime Function Tables (.pdata) for 100% accuracy on x64.
+   * 
+   * @param address Any address within the function.
+   * @return The address of the function's first instruction, or 0 if not found.
+   */
+  static uintptr_t GetFunctionStart(uintptr_t address);
+
+  /**
+   * @brief Extracts a VTable address from an instruction that references it.
+   * Usually looks for 'LEA RAX, [RIP + offset]' or similar.
+   * 
+   * @param signature A signature that matches the instruction referencing the VTable.
+   * @param offsetPos The position of the 32-bit displacement within the instruction.
+   * @param instructionSize The total size of the instruction.
+   * @return The absolute address of the VTable, or 0 if not found.
+   */
+  static uintptr_t FindVTable(const char* signature, int offsetPos = 3, int instructionSize = 7);
+
+  /**
+   * @brief Gets a function address from a Virtual Function Table (VTable) by its index.
+   * 
+   * @param vtableAddr The absolute address of the VTable.
+   * @param index The 0-based index of the function in the VTable.
+   * @return The address of the function, or 0 if invalid.
+   */
+  static uintptr_t GetVTableFunction(uintptr_t vtableAddr, int index);
+
+  /**
+   * @brief Finds a function that references a specific 32-bit constant value.
+   * 
+   * @param constant The 32-bit value to search for (e.g., 0x3C888889).
+   * @param findStart If true, returns the function start, otherwise returns the reference address.
+   * @return The function or reference address, or 0 if not found.
+   */
+  static uintptr_t FindFunctionByConstant(uint32_t constant, bool findStart = true);
+
+  /**
+   * @brief Finds a sequence of patterns that appear close to each other.
+   * Useful when compiler inserts padding or minor logic between key instructions.
+   * 
+   * @param signatures A list of signatures to find in order.
+   * @param maxGap The maximum number of bytes allowed between each pattern.
+   * @param startAddress Optional address to start searching from (scans module if 0).
+   * @param searchRange Optional range limit. If 0 and startAddress is set, tries to detect function end.
+   * @return The address where the FIRST pattern in the chain starts, or 0.
+   */
+  static uintptr_t FindChain(const std::vector<std::string>& signatures, size_t maxGap = 256, uintptr_t startAddress = 0, size_t searchRange = 0);
+
+  /**
    * @brief Reads a 32-bit integer from the specified address.
    *
    * @param address The memory address to read from.
@@ -112,9 +162,11 @@ class PatternFinder {
     Type type;
     uint8_t min;
     uint8_t max;
+    int minCount = 1;
+    int maxCount = 1;
 
     /**
-     * @brief Checks if a given byte matches this rule.
+     * @brief Checks if a given byte matches this rule's criteria.
      * @param b The byte to check.
      * @return true if it matches, false otherwise.
      */
@@ -125,7 +177,40 @@ class PatternFinder {
     }
   };
 
+  /**
+   * @brief Finds the address of a null-terminated string in the module's data sections.
+   */
+  static uintptr_t FindString(const char* str, const char* moduleName = nullptr);
+
+  /**
+   * @brief Finds all RIP-relative references (Xrefs) to a specific target address.
+   */
+  static std::vector<uintptr_t> FindXrefs(uintptr_t targetAddr, const char* moduleName = nullptr);
+
+  /**
+   * @brief Finds a function address based on a string it contains.
+   * @param str The string to look for.
+   * @param findStart If true, will backtrack to the beginning of the function (prologue).
+   * @param contextSig Optional additional signature to match near the string reference to disambiguate.
+   * @param contextRange The search window size (in bytes) for the context signature.
+   */
+  static uintptr_t FindFunctionByString(const char* str, bool findStart = true, const char* contextSig = nullptr, size_t contextRange = 512);
+
  private:
+  /**
+   * @brief Helper for recursive chain validation with backtracking.
+   */
+  static uintptr_t FindChainRecursive(
+      const std::vector<std::vector<ByteMatcher>>& compiledSigs,
+      size_t sigIdx,
+      uintptr_t currentBase,
+      size_t maxGap,
+      uintptr_t searchLimit);
+
+  /**
+   * @brief Internal helper to match a pattern starting at a specific address using backtracking.
+   */
+  static bool MatchInternal(const uint8_t* data, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen);
   /**
    * @brief Internal helper to parse a signature string into a vector of matchers.
    * Supports "??", "?", "XX", and "[XX-YY]" formats.
