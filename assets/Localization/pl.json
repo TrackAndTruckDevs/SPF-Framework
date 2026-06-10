@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Wersja Steam:",
             "active_profile": "Aktywny profil:",
+            "profile_type": "Typ profilu:",
             "exe_path": "Ścieżka EXE:",
             "root_path": "Ścieżka główna:",
             "command_line": "Wiersz poleceń"

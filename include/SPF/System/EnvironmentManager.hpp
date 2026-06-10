@@ -59,6 +59,7 @@ struct SystemInfo {
 
 struct EnvironmentStatus {
     std::string profileName;
+    std::string profileType;
     bool isVR;
     bool isTobiiActive;
     std::string renderer;

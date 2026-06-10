@@ -178,6 +178,11 @@ Gets the current multiplayer mode ("None", "Convoy", or "TruckersMP").
 **`bool Env_IsSteamOverlayDllLoaded(SPF_Environment_Handle* h)`**
 Checks if the Steam Overlay renderer DLL (`GameOverlayRenderer64.dll`) is present in the process memory.
 
+---
+**`int Env_GetActiveProfileType(SPF_Environment_Handle* h, char* out_buffer, int buffer_size)`**
+Gets the type of the currently active profile.
+*   **Returns:** Actual string length. Returns one of: `"Steam Cloud"`, `"Local"`, `"Preview"`, `"Academy"`, `"Demo"`.
+
 <br>
 
 ### Section 6: Plugin Sandboxing (Helper Paths)

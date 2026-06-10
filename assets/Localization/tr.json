@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Steam Sürümü:",
             "active_profile": "Aktif Profil:",
+            "profile_type": "Profil Türü:",
             "exe_path": "EXE Yolu:",
             "root_path": "Kök Yol:",
             "command_line": "Komut Satırı"

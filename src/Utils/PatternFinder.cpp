@@ -425,29 +425,24 @@ std::vector<uintptr_t> PatternFinder::FindXrefs(uintptr_t targetAddr, const char
 uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
   if (!str) return 0;
 
-  // Find ALL occurrences of the string
-  std::vector<uintptr_t> strAddrs;
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(nullptr);
-  if (hModule && GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-    uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
-    size_t len = strlen(str);
-    for (uintptr_t i = 0; i < size - len; ++i) {
-        if (memcmp((void*)(base + i), str, len) == 0) strAddrs.push_back(base + i);
-    }
-  }
+  // 1. Find the address of the string in the module
+  uintptr_t sAddr = FindString(str);
+  if (!sAddr) return 0;
 
-  if (strAddrs.empty()) return 0;
+  // 2. Find ALL references to this string
+  // Tier 1: Direct Xrefs (LEA/MOV reg, [RIP + offset])
+  std::vector<uintptr_t> allXrefs = FindXrefs(sAddr);
 
-  std::vector<uintptr_t> allXrefs;
-  for (uintptr_t sAddr : strAddrs) {
-    auto xrefs = FindXrefs(sAddr);
-    allXrefs.insert(allXrefs.end(), xrefs.begin(), xrefs.end());
+  // Tier 2: Indirect Xrefs via Data Pointers (PTR_s_...)
+  std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
+  for (uintptr_t ptrAddr : ptrs) {
+      auto indirectXrefs = FindXrefs(ptrAddr);
+      allXrefs.insert(allXrefs.end(), indirectXrefs.begin(), indirectXrefs.end());
   }
 
   if (allXrefs.empty()) return 0;
 
+  // 3. Validate references and find function starts
   for (uintptr_t xref : allXrefs) {
     bool contextMatch = true;
     if (contextSig) {
@@ -460,6 +455,26 @@ uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, c
     }
   }
   return 0;
+}
+
+std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, const char* moduleName) {
+  std::vector<uintptr_t> pointers;
+  MODULEINFO moduleInfo = {0};
+  HMODULE hModule = GetModuleHandleA(moduleName);
+  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
+    return pointers;
+  }
+
+  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
+  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
+
+  // Scan for 8-byte aligned targetAddr in the entire module address space
+  for (uintptr_t i = 0; i < size - 8; i += 8) {
+    if (*reinterpret_cast<uintptr_t*>(base + i) == targetAddr) {
+        pointers.push_back(base + i);
+    }
+  }
+  return pointers;
 }
 
 }  // namespace Utils

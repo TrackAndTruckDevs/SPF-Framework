@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Steam 版本:",
             "active_profile": "当前个人资料:",
+            "profile_type": "个人资料类型:",
             "exe_path": "EXE 路径:",
             "root_path": "根路径:",
             "command_line": "命令行"

@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Версия Steam:",
             "active_profile": "Активный профиль:",
+            "profile_type": "Тип профиля:",
             "exe_path": "Путь к EXE:",
             "root_path": "Корневой путь:",
             "command_line": "Командная строка"

@@ -48,6 +48,7 @@ class InfoWindow : public BaseWindow {
   std::string m_locGameSteamId;
   std::string m_locGameIsSteam;
   std::string m_locGameActiveProfile;
+  std::string m_locGameProfileType;
   std::string m_locGameExePath;
   std::string m_locGameRootPath;
   std::string m_locGameCommandLine;

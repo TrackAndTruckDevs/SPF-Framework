@@ -356,6 +356,15 @@ typedef struct SPF_Environment_API {
      */
     bool (*Env_CreatePath)(SPF_Environment_Handle* h, const char* path);
 
+    /**
+     * @brief Gets the type of the active profile (e.g., "Steam Cloud", "Local", "Demo").
+     * @param h The context handle.
+     * @param out_buffer Buffer to receive the type string.
+     * @param buffer_size Size of the output buffer.
+     * @return Length of the type string.
+     */
+    int (*Env_GetActiveProfileType)(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
+
 } SPF_Environment_API;
 
 #ifdef __cplusplus

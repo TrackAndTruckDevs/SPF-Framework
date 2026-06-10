@@ -43,6 +43,7 @@ class EnvironmentApi {
 
   // Section 5: Status
   static int Env_GetActiveProfileName(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
+  static int Env_GetActiveProfileType(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
   static bool Env_IsVRActive(SPF_Environment_Handle* h);
   static bool Env_IsTobiiDllLoaded(SPF_Environment_Handle* h);
   static int Env_GetRendererName(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);

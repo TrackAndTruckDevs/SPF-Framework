@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Steam 버전:",
             "active_profile": "활성 프로필:",
+            "profile_type": "프로필 유형:",
             "exe_path": "EXE 경로:",
             "root_path": "루트 경로:",
             "command_line": "명령줄"

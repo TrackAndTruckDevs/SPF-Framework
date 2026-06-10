@@ -1001,6 +1001,7 @@
             "steam_id": "Steam ID:",
             "is_steam": "Steam verze:",
             "active_profile": "Aktivní profil:",
+            "profile_type": "Typ profilu:",
             "exe_path": "Cesta k EXE:",
             "root_path": "Kořenový adresář:",
             "command_line": "Příkazový řádek"

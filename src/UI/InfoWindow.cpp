@@ -35,6 +35,7 @@ InfoWindow::InfoWindow(const std::string& componentName, const std::string& wind
   m_locGameSteamId = "info_window.game.steam_id";
   m_locGameIsSteam = "info_window.game.is_steam";
   m_locGameActiveProfile = "info_window.game.active_profile";
+  m_locGameProfileType = "info_window.game.profile_type";
   m_locGameExePath = "info_window.game.exe_path";
   m_locGameRootPath = "info_window.game.root_path";
   m_locGameCommandLine = "info_window.game.command_line";
@@ -150,6 +151,10 @@ void InfoWindow::RenderGameTab() {
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameActiveProfile).c_str());
   ImGui::SameLine();
   Typography::Text(TextStyle::Regular().Color(Colors::GOLD), "%s", status.profileName.c_str());
+
+  Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameProfileType).c_str());
+  ImGui::SameLine();
+  Typography::Text(TextStyle::Regular().Color(Colors::WHITE), "%s", status.profileType.c_str());
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameExePath).c_str());
   ImGui::TextWrapped("%s", info.exePath.string().c_str());

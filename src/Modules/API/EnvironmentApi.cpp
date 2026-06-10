@@ -141,6 +141,10 @@ int EnvironmentApi::Env_GetActiveProfileName(SPF_Environment_Handle* h, char* ou
     return SafeCopyString(System::EnvironmentManager::GetInstance().GetStatus().profileName, out, size);
 }
 
+int EnvironmentApi::Env_GetActiveProfileType(SPF_Environment_Handle* h, char* out, int size) {
+    return SafeCopyString(System::EnvironmentManager::GetInstance().GetStatus().profileType, out, size);
+}
+
 bool EnvironmentApi::Env_IsVRActive(SPF_Environment_Handle* h) {
     return System::EnvironmentManager::GetInstance().GetStatus().isVR;
 }
@@ -240,6 +244,7 @@ void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
     api->Env_GetPluginLogsDir = &EnvironmentApi::Env_GetPluginLogsDir;
     api->Env_GetPluginDataDir = &EnvironmentApi::Env_GetPluginDataDir;
     api->Env_CreatePath = &EnvironmentApi::Env_CreatePath;
+    api->Env_GetActiveProfileType = &EnvironmentApi::Env_GetActiveProfileType;
 }
 
 } // namespace Modules::API

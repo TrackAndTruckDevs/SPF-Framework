@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Steam版:",
             "active_profile": "有効なプロファイル:",
+            "profile_type": "プロファイルタイプ:",
             "exe_path": "EXEパス:",
             "root_path": "ルートパス:",
             "command_line": "コマンドライン"

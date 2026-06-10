@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Steam-versie:",
             "active_profile": "Actief profiel:",
+            "profile_type": "Profieltype:",
             "exe_path": "EXE-pad:",
             "root_path": "Rootpad:",
             "command_line": "Opdrachtregel"

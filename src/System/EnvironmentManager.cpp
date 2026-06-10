@@ -119,9 +119,37 @@ void EnvironmentManager::RefreshDynamicStatus() {
     auto& sessionService = Data::GameData::GameObjectSessionService::GetInstance();
     
     // 1. Profile Information
-    // We get the human-readable name (e.g. 'SPF_Test') for the Game tab
     std::string activeName = PathManager::GetCurrentProfileName();
     m_status.profileName = activeName.empty() ? "None" : activeName;
+
+    m_status.profileType = "Local"; // Default
+    if (sessionService.AreAllFindersReady() && !activeName.empty()) {
+        uintptr_t gamePtrAddr = sessionService.GetGamePtrAddr();
+        uintptr_t gamePtr = (gamePtrAddr != 0) ? *reinterpret_cast<uintptr_t*>(gamePtrAddr) : 0;
+        
+        if (gamePtr != 0) {
+            // 1. Get the Profile Handle address
+            uintptr_t profileHandleAddr = gamePtr + sessionService.GetProfileHandleOffset();
+            uintptr_t profileHandle = *reinterpret_cast<uintptr_t*>(profileHandleAddr);
+            
+            if (profileHandle != 0) {
+                // 2. The first 8 bytes of the handle point to the REAL profile object (profile_t)
+                uintptr_t profileObj = *reinterpret_cast<uintptr_t*>(profileHandle);
+                
+                if (profileObj != 0) {
+                    // 3. Read the type from the profile object (offset 0x40)
+                    int type = *reinterpret_cast<int*>(profileObj + sessionService.GetProfileTypeOffset());
+                    switch (type) {
+                        case 4:  m_status.profileType = "Steam Cloud"; break;
+                        case 0:  m_status.profileType = "Preview";     break;
+                        case 1:  m_status.profileType = "Academy";     break;
+                        case 2:  m_status.profileType = "Demo";        break;
+                        default: m_status.profileType = "Local";       break;
+                    }
+                }
+            }
+        }
+    }
 
     // 2. Additional Paths (resolved via UFS with fallback to /home subdirectory)
     std::string musicStr = PathManager::ResolveVirtualPath("/home/music");

@@ -1001,6 +1001,7 @@
             "steam_id": "Steam AppID:",
             "is_steam": "Versione Steam:",
             "active_profile": "Profilo attivo:",
+            "profile_type": "Tipo di profilo:",
             "exe_path": "Percorso EXE:",
             "root_path": "Percorso radice:",
             "command_line": "Riga di comando"

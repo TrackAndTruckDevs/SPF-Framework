@@ -221,6 +221,12 @@ class PatternFinder {
    * @brief Internal helper to perform a scan using pre-parsed ByteMatchers.
    */
   static uintptr_t Find(const char* moduleName, const std::vector<ByteMatcher>& signature);
+
+  /**
+   * @brief Finds all 8-byte aligned memory locations that contain the specified address.
+   * Useful for finding indirect pointers in data sections.
+   */
+  static std::vector<uintptr_t> FindDataPointers(uintptr_t targetAddr, const char* moduleName = nullptr);
 };
 }  // namespace Utils
 SPF_NS_END
