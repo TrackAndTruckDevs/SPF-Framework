@@ -29,6 +29,14 @@ void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
     api->Hook_FindVTable = &HooksApi::Hook_FindVTable;
     api->Hook_GetVTableFunction = &HooksApi::Hook_GetVTableFunction;
     api->Hook_FindFunctionByConstant = &HooksApi::Hook_FindFunctionByConstant;
+
+    // --- ABI Extension (v1.2) ---
+    api->Reflection_GetAttributeOffset = &HooksApi::Reflection_GetAttributeOffset;
+    api->Reflection_ResolveSmartPtr    = &HooksApi::Reflection_ResolveSmartPtr;
+    api->Memory_WriteFloat             = &HooksApi::Memory_WriteFloat;
+    api->Memory_WriteInt32             = &HooksApi::Memory_WriteInt32;
+    api->Memory_ReadVector3            = &HooksApi::Memory_ReadVector3;
+    api->Memory_WriteVector3           = &HooksApi::Memory_WriteVector3;
 }
 
 uintptr_t HooksApi::Hook_FindPattern(const char* signature) {
@@ -100,6 +108,46 @@ uintptr_t HooksApi::Hook_GetVTableFunction(uintptr_t vtableAddr, int index) {
 
 uintptr_t HooksApi::Hook_FindFunctionByConstant(uint32_t constant, bool findStart) {
     return Utils::PatternFinder::FindFunctionByConstant(constant, findStart);
+}
+
+uintptr_t HooksApi::Reflection_GetAttributeOffset(const char* className, const char* attributeName) {
+    return Utils::PatternFinder::FindAttributeOffset(className, attributeName);
+}
+
+uintptr_t HooksApi::Reflection_ResolveSmartPtr(uintptr_t address) {
+    if (!address) return 0;
+    // Standard SCS engine smart pointer dereference: [ptr + 8] contains the raw object pointer.
+    try {
+        return *reinterpret_cast<uintptr_t*>(address + 8);
+    } catch (...) {
+        return 0;
+    }
+}
+
+void HooksApi::Memory_WriteFloat(uintptr_t address, float value) {
+    if (address) *reinterpret_cast<float*>(address) = value;
+}
+
+void HooksApi::Memory_WriteInt32(uintptr_t address, int32_t value) {
+    if (address) *reinterpret_cast<int32_t*>(address) = value;
+}
+
+void HooksApi::Memory_ReadVector3(uintptr_t address, float* outX, float* outY, float* outZ) {
+    if (address && outX && outY && outZ) {
+        float* p = reinterpret_cast<float*>(address);
+        *outX = p[0];
+        *outY = p[1];
+        *outZ = p[2];
+    }
+}
+
+void HooksApi::Memory_WriteVector3(uintptr_t address, float x, float y, float z) {
+    if (address) {
+        float* p = reinterpret_cast<float*>(address);
+        p[0] = x;
+        p[1] = y;
+        p[2] = z;
+    }
 }
 
 } // namespace Modules::API

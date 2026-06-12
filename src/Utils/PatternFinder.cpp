@@ -1,480 +1,430 @@
+#define NOMINMAX
 #include "SPF/Utils/PatternFinder.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 
 #include <Windows.h>
 #include <Psapi.h>
 #include <vector>
+#include <unordered_map>
 #include <string>
 #include <sstream>
 #include <regex>
+#include <algorithm>
 
 SPF_NS_BEGIN
 namespace Utils {
 
+// ===========================================================================
+// PRIVATE HELPERS
+// ===========================================================================
+
+namespace {
+
 /**
- * @brief Public entry point for scanning the entire game module.
+ * @brief High-performance scanner using SIMD-accelerated memchr for initial matches.
+ * @param skipCode If true, skips executable sections.
  */
+static std::vector<uintptr_t> FindAllRawInternal(const char* moduleName, const uint8_t* data, size_t len, bool skipCode) {
+  std::vector<uintptr_t> results;
+  if (len == 0) return results;
+
+  auto sections = PatternFinder::GetModuleSections(moduleName);
+  uint8_t firstByte = data[0];
+
+  for (const auto& sec : sections) {
+    if (skipCode && (sec.name == ".text" || sec.name == "INIT")) continue;
+    if (sec.name == ".pdata") continue;
+    if (sec.size < len) continue;
+
+    const uint8_t* start = reinterpret_cast<const uint8_t*>(sec.base);
+    const uint8_t* end = start + sec.size;
+    const uint8_t* curr = start;
+
+    // Fast SIMD-accelerated search loop
+    while (curr <= end - len) {
+      // Find the next occurrence of the first byte
+      const uint8_t* found = static_cast<const uint8_t*>(memchr(curr, firstByte, (end - len) - curr + 1));
+      if (!found) break;
+
+      // Verify the full sequence
+      if (len == 1 || memcmp(found, data, len) == 0) {
+        results.push_back(reinterpret_cast<uintptr_t>(found));
+      }
+      curr = found + 1;
+    }
+  }
+  return results;
+}
+
+/**
+ * @brief Resolves a pointer chain with depth protection.
+ */
+static bool PointerLeadsToString(uintptr_t addr, const char* substring, int maxDepth = 3) {
+  if (addr < 0x10000 || maxDepth <= 0) return false;
+  try {
+    const char* str = reinterpret_cast<const char*>(addr);
+    if (str[0] >= 0x20 && str[0] <= 0x7E && strstr(str, substring)) return true;
+    return PointerLeadsToString(*reinterpret_cast<uintptr_t*>(addr), substring, maxDepth - 1);
+  } catch (...) { return false; }
+}
+
+} // anonymous namespace
+
+// ===========================================================================
+// SINGLETON ACCESS
+// ===========================================================================
+
+PatternFinder& PatternFinder::GetInstance() {
+  static PatternFinder instance;
+  return instance;
+}
+
+// ===========================================================================
+// SECTION 1: Pattern Matching Core
+// ===========================================================================
+
 uintptr_t PatternFinder::Find(const char* signature) {
   auto signatureVec = SignatureToVector(signature);
-  if (signatureVec.empty()) {
-    return 0;
+  if (signatureVec.empty()) return 0;
+  uintptr_t result = Find(nullptr, signatureVec);
+  if (!result) {
+    Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Error("Find: Signature not found: '{}'", signature);
   }
-  return Find(nullptr, signatureVec);
+  return result;
 }
 
-/**
- * @brief Public entry point for scanning a specific memory range with a string signature.
- */
 uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature) {
   auto signatureVec = SignatureToVector(signature);
-  if (signatureVec.empty() || base == 0 || size == 0) {
-    return 0;
-  }
+  if (signatureVec.empty() || base == 0 || size == 0) return 0;
+  size_t minLen = 0;
+  for (const auto& m : signatureVec) minLen += m.minCount;
+  if (size < minLen) return 0;
 
-  size_t minPatternLen = 0;
-  for (const auto& m : signatureVec) minPatternLen += m.minCount;
-
-  for (uintptr_t i = 0; i < size - minPatternLen; ++i) {
-    size_t dummyMatchLen = 0;
-    if (MatchInternal(reinterpret_cast<uint8_t*>(base + i), signatureVec, 0, 0, dummyMatchLen)) {
-      return base + i;
-    }
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
+  for (uintptr_t i = 0; i <= size - minLen; ++i) {
+    size_t dummy;
+    if (MatchInternal(data + i, signatureVec, 0, 0, dummy)) return base + i;
   }
   return 0;
 }
 
-/**
- * @brief Public entry point for scanning a specific memory range with a raw byte array.
- * Note: This version supports simple wildcards via '?' character in the byte array if needed,
- * but primarily used for exact byte sequences.
- */
 uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const unsigned char* signature, size_t signatureSize) {
-  if (!base || !size || !signature || !signatureSize) {
-    return 0;
-  }
+  if (!base || !size || !signature || !signatureSize || size < signatureSize) return 0;
+  
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
+  uint8_t firstByte = signature[0];
 
-  for (uintptr_t i = 0; i < size - signatureSize; ++i) {
-    bool found = true;
-    for (size_t j = 0; j < signatureSize; ++j) {
-      if (signature[j] != '?' && *(unsigned char*)(base + i + j) != signature[j]) {
-        found = false;
-        break;
-      }
+  for (uintptr_t i = 0; i <= size - signatureSize; ) {
+    const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, firstByte, size - signatureSize - i + 1));
+    if (!found) break;
+
+    uintptr_t foundIdx = reinterpret_cast<uintptr_t>(found) - base;
+    bool match = true;
+    for (size_t j = 1; j < signatureSize; ++j) {
+      if (signature[j] != '?' && found[j] != signature[j]) { match = false; break; }
     }
-    if (found) {
-      return base + i;
-    }
+    if (match) return reinterpret_cast<uintptr_t>(found);
+    i = foundIdx + 1;
   }
   return 0;
-}
-
-uintptr_t PatternFinder::GetFunctionStart(uintptr_t address) {
-  if (address == 0) return 0;
-
-  // 1. Try official Windows .pdata tables first
-  DWORD64 imageBase = 0;
-  PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
-
-  uintptr_t candidate = 0;
-  if (funcEntry && imageBase) {
-    candidate = static_cast<uintptr_t>(imageBase + funcEntry->BeginAddress);
-  } else {
-    // If no .pdata entry, start backtracking from the current address
-    candidate = address;
-  }
-
-  // 2. Backtrack to find the REAL start (prologue)
-  // Compilers always separate functions with 'CC' (INT3) or '90' (NOP) padding.
-  // We look for at least 2 padding bytes or a standard function alignment (16-byte).
-  for (uintptr_t addr = candidate; addr > candidate - 0x2000; --addr) {
-    if (addr <= 1) break;
-    uint8_t* p = reinterpret_cast<uint8_t*>(addr);
-
-    // If the previous bytes are padding, then 'addr' is likely the start of the function
-    bool hasPaddingBefore = (p[-1] == 0xCC && p[-2] == 0xCC) || (p[-1] == 0x90 && p[-2] == 0x90);
-    
-    // Check if we hit a standard prologue pattern as well
-    bool isPrologue = (p[0] == 0x48 && p[1] == 0x8B && p[2] == 0xC4) || // MOV RAX, RSP
-                      (p[0] == 0x40 && p[1] == 0x53) ||                // PUSH RBX
-                      (p[0] == 0x48 && p[1] == 0x83 && p[2] == 0xEC) || // SUB RSP, imm8
-                      (p[0] == 0x48 && p[1] == 0x81 && p[2] == 0xEC);   // SUB RSP, imm32
-
-    if (hasPaddingBefore || (isPrologue && (addr % 8 == 0))) {
-      // Ensure the start is properly aligned (functions are at least 8-byte aligned)
-      if (addr % 8 == 0) return addr;
-      // If not 8-byte aligned, keep going back until we hit alignment or more padding
-    }
-  }
-
-  return candidate;
-}
-
-uintptr_t PatternFinder::FindVTable(const char* signature, int offsetPos, int instructionSize) {
-  uintptr_t instrAddr = Find(signature);
-  if (!instrAddr) return 0;
-
-  return GetRipAddress(instrAddr, offsetPos, instructionSize);
-}
-
-uintptr_t PatternFinder::GetVTableFunction(uintptr_t vtableAddr, int index) {
-  if (!vtableAddr) return 0;
-  return *reinterpret_cast<uintptr_t*>(vtableAddr + (index * 8));
-}
-
-uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStart) {
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(nullptr);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return 0;
-  }
-
-  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
-
-  // 1. Find the constant in the module's data sections
-  uintptr_t constantAddr = 0;
-  for (uintptr_t i = 0; i < size - 4; ++i) {
-    if (*reinterpret_cast<uint32_t*>(base + i) == constant) {
-        constantAddr = base + i;
-        
-        // 2. Find Xrefs to this constant
-        auto xrefs = FindXrefs(constantAddr);
-        if (!xrefs.empty()) {
-            uintptr_t firstXref = xrefs[0];
-            if (!findStart) return firstXref;
-            return GetFunctionStart(firstXref);
-        }
-    }
-  }
-
-  return 0;
-}
-
-// Helper for recursive chain validation with backtracking
-uintptr_t PatternFinder::FindChainRecursive(
-    const std::vector<std::vector<ByteMatcher>>& compiledSigs,
-    size_t sigIdx,
-    uintptr_t currentBase,
-    size_t maxGap,
-    uintptr_t searchLimit) 
-{
-    // If we've matched all signatures, success!
-    if (sigIdx == compiledSigs.size()) return 1;
-
-    // The current pattern must start within 'maxGap' bytes from currentBase
-    uintptr_t end = currentBase + maxGap;
-    if (end > searchLimit) end = searchLimit;
-
-    // Calculate minimum length of the current pattern
-    size_t minLen = 0;
-    for (const auto& m : compiledSigs[sigIdx]) minLen += m.minCount;
-
-    for (uintptr_t i = currentBase; i <= end - minLen; ++i) {
-        size_t matchLen = 0;
-        if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[sigIdx], 0, 0, matchLen)) {
-            // If this is the last signature in the chain
-            if (sigIdx == compiledSigs.size() - 1) return i;
-
-            // Try to find the next link starting AFTER this one
-            if (FindChainRecursive(compiledSigs, sigIdx + 1, i + matchLen, maxGap, searchLimit)) {
-                return i;
-            }
-        }
-    }
-    return 0;
 }
 
 uintptr_t PatternFinder::FindChain(const std::vector<std::string>& signatures, size_t maxGap, uintptr_t startAddress, size_t searchRange) {
   if (signatures.empty()) return 0;
-
-  // 1. Pre-compile all signatures
   std::vector<std::vector<ByteMatcher>> compiledSigs;
-  for (const auto& sig : signatures) {
-    compiledSigs.push_back(SignatureToVector(sig));
-  }
+  for (const auto& sig : signatures) compiledSigs.push_back(SignatureToVector(sig));
 
-  // 2. Determine search boundaries
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(nullptr);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return 0;
-  }
+  auto sections = GetModuleSections(nullptr);
+  if (sections.empty()) return 0;
 
-  uintptr_t moduleBase = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t moduleSize = (uintptr_t)moduleInfo.SizeOfImage;
+  uintptr_t moduleBase = sections.front().base;
+  uintptr_t moduleEnd = sections.back().base + sections.back().size;
   uintptr_t searchBase = (startAddress == 0) ? moduleBase : startAddress;
-  
-  // 1. Determine search limit: prioritized manual range, then default 4KB, then full module
-  uintptr_t searchLimit;
-  if (startAddress != 0) {
-      searchLimit = startAddress + (searchRange > 0 ? searchRange : 4096);
-  } else {
-      searchLimit = moduleBase + moduleSize;
-  }
+  uintptr_t searchLimit = (startAddress != 0) ? (startAddress + (searchRange > 0 ? searchRange : 4096)) : moduleEnd;
+  if (searchLimit > moduleEnd) searchLimit = moduleEnd;
 
-  // 2. Clamp limit to module boundaries to avoid access violation
-  if (searchLimit > moduleBase + moduleSize) searchLimit = moduleBase + moduleSize;
-
-  // 3. Find candidates for the FIRST signature across the ENTIRE search range
   size_t firstMinLen = 0;
   for (const auto& m : compiledSigs[0]) firstMinLen += m.minCount;
+  if (searchLimit < searchBase + firstMinLen) return 0;
 
   for (uintptr_t i = searchBase; i <= searchLimit - firstMinLen; ++i) {
-    size_t matchLen = 0;
-    if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[0], 0, 0, matchLen)) {
-        // If there's only one signature, we are done
+    size_t dummy;
+    if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[0], 0, 0, dummy)) {
         if (compiledSigs.size() == 1) return i;
-
-        // Otherwise, validate the rest of the chain with backtracking
-        if (FindChainRecursive(compiledSigs, 1, i + matchLen, maxGap, searchLimit)) {
-            return i;
-        }
+        if (FindChainRecursive(compiledSigs, 1, i + dummy, maxGap, searchLimit)) return i;
     }
   }
-
   return 0;
 }
 
-int32_t PatternFinder::ReadInt32(uintptr_t address) {
-  if (address == 0) return 0;
-  return *reinterpret_cast<int32_t*>(address);
-}
+// ===========================================================================
+// SECTION 2: SCS Reflection Support
+// ===========================================================================
 
-int8_t PatternFinder::ReadInt8(uintptr_t address) {
-  if (address == 0) return 0;
-  return *reinterpret_cast<int8_t*>(address);
-}
-
-int64_t PatternFinder::ReadInt64(uintptr_t address) {
-  if (address == 0) return 0;
-  return *reinterpret_cast<int64_t*>(address);
-}
-
-float PatternFinder::ReadFloat(uintptr_t address) {
-  if (address == 0) return 0.0f;
-  return *reinterpret_cast<float*>(address);
-}
-
-double PatternFinder::ReadDouble(uintptr_t address) {
-  if (address == 0) return 0.0;
-  return *reinterpret_cast<double*>(address);
-}
-
-uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
-  if (instructionAddr == 0) return 0;
-  int32_t displacement = ReadInt32(instructionAddr + offsetPos);
-  return instructionAddr + instructionSize + displacement;
-}
-
-bool PatternFinder::IsSaneOffset(int32_t offset) {
-  return offset > 0 && offset < 0x6000;
-}
-
-/**
- * @brief Parses a signature string into a vector of ByteMatchers.
- * Handles exact bytes (XX), wildcards (??, ?), ranges ([XX-YY]), and variable wildcards ([min-max?]).
- */
-std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const std::string& signature) {
-  std::vector<ByteMatcher> matchers;
-  std::stringstream ss(signature);
-  std::string part;
-
-  // Regex to match value range: [XX-YY] where XX and YY are hex bytes
-  static const std::regex rangeRegex(R"(\[([0-9A-Fa-f]{1,2})-([0-9A-Fa-f]{1,2})\])");
-  // Regex to match count range: [min-max?] where min and max are decimal numbers
-  static const std::regex countWildcardRegex(R"(\[([0-9]+)-([0-9]+)\?\])");
-
-  while (ss >> part) {
-    if (part == "?" || part == "??") {
-      matchers.push_back({ByteMatcher::WILDCARD, 0, 0, 1, 1});
-    } else {
-      std::smatch match;
-      if (std::regex_match(part, match, countWildcardRegex)) {
-        int minCount = std::stoi(match[1].str());
-        int maxCount = std::stoi(match[2].str());
-        matchers.push_back({ByteMatcher::WILDCARD, 0, 0, minCount, maxCount});
-      } else if (std::regex_match(part, match, rangeRegex)) {
-        uint8_t min = static_cast<uint8_t>(std::stoi(match[1].str(), nullptr, 16));
-        uint8_t max = static_cast<uint8_t>(std::stoi(match[2].str(), nullptr, 16));
-        matchers.push_back({ByteMatcher::RANGE, min, max, 1, 1});
-      } else {
-        // Exact byte
-        try {
-          uint8_t val = static_cast<uint8_t>(std::stoi(part, nullptr, 16));
-          matchers.push_back({ByteMatcher::EXACT, val, val, 1, 1});
-        } catch (...) {
-          // Handle invalid hex parts if necessary (skip or log)
-        }
-      }
-    }
-  }
-  return matchers;
-}
-
-/**
- * @brief Internal helper to match a pattern starting at a specific address using backtracking.
- */
-bool PatternFinder::MatchInternal(const uint8_t* data, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen) {
-  if (matcherIdx == matchers.size()) {
-    matchLen = dataIdx;
-    return true;
-  }
-
-  const auto& matcher = matchers[matcherIdx];
+uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* attributeName) {
+  auto& instance = GetInstance();
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
   
-  // Try all possible counts from minCount to maxCount
-  for (int count = matcher.minCount; count <= matcher.maxCount; ++count) {
-    bool match = true;
-    for (int i = 0; i < count; ++i) {
-      if (!matcher.Matches(data[dataIdx + i])) {
-        match = false;
-        break;
-      }
-    }
-
-    if (match) {
-      // Recursively match the rest of the pattern
-      if (MatchInternal(data, matchers, dataIdx + count, matcherIdx + 1, matchLen)) {
-        return true;
-      }
-    }
-
-    // Optimization: if minCount == maxCount, no need to try other counts
-    if (matcher.minCount == matcher.maxCount) break;
+  if (instance.m_reflectionCache.count(className)) {
+    auto& classMap = instance.m_reflectionCache[className];
+    if (classMap.count(attributeName)) return classMap[attributeName];
+    // Optimization: If the class descriptor was already harvested but attribute is missing,
+    // it's likely not in the table. Skip Module scan.
   }
 
-  return false;
-}
-
-/**
- * @brief Internal core scanning function that targets a specific module.
- */
-/**
- * @brief Internal core scanning function that targets a specific module.
- */
-uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatcher>& signature) {
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(moduleName);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return 0;
+  // Find attribute name string (with null terminator for higher accuracy and harvesting speed)
+  std::vector<uintptr_t> attrStrAddrs;
+  if (instance.m_stringCache.count(attributeName)) {
+    attrStrAddrs = instance.m_stringCache[attributeName];
+  } else {
+    // For reflection table strings, we search WITH null terminator (+1) to avoid false partial matches
+    attrStrAddrs = FindAllRawInternal(nullptr, (const uint8_t*)attributeName, strlen(attributeName) + 1, true);
+    instance.m_stringCache[attributeName] = attrStrAddrs;
   }
 
-  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
-  
-  size_t minPatternLen = 0;
-  for (const auto& m : signature) minPatternLen += m.minCount;
+  if (attrStrAddrs.empty()) return 0;
 
-  for (uintptr_t i = 0; i < size - minPatternLen; ++i) {
-    size_t dummyMatchLen = 0;
-    if (MatchInternal(reinterpret_cast<uint8_t*>(base + i), signature, 0, 0, dummyMatchLen)) {
-      return base + i;
+  for (uintptr_t attrStrAddr : attrStrAddrs) {
+    std::vector<uintptr_t> allAttrXrefs = FindDataPointers(attrStrAddr);
+    for (uintptr_t xref : allAttrXrefs) {
+      /* [xref-24]:Offset, [xref-16]:TypeID, [xref]:NamePtr, [xref+8]:OwnerPtr */
+      uintptr_t entryOwner = *reinterpret_cast<uintptr_t*>(xref + 8);
+      if (PointerLeadsToString(entryOwner, className)) {
+        logger->Info("FindAttributeOffset: Harvesting class '{}'...", className);
+        std::vector<uintptr_t> allClassAttrs = FindDataPointers(entryOwner);
+        auto& classMap = instance.m_reflectionCache[className];
+        for (uintptr_t pOwnerPtr : allClassAttrs) {
+            uintptr_t pNamePtr = pOwnerPtr - 8;
+            uintptr_t nameAddr = *reinterpret_cast<uintptr_t*>(pNamePtr);
+            if (!nameAddr || nameAddr < 0x10000) continue;
+            try {
+              const char* fName = reinterpret_cast<const char*>(nameAddr);
+              if (fName[0] >= 0x20 && fName[0] <= 0x7E) {
+                int32_t off = ReadInt32(pNamePtr - 24);
+                if (off == 0) off = static_cast<int32_t>(GetSizeFromTypeId(*reinterpret_cast<uint64_t*>(pNamePtr - 16)));
+                if (IsSaneOffset(off)) classMap[fName] = static_cast<uintptr_t>(off);
+              }
+            } catch (...) {}
+        }
+        if (classMap.count(attributeName)) return classMap[attributeName];
+        int32_t finalOff = ReadInt32(xref - 24);
+        if (IsSaneOffset(finalOff)) return static_cast<uintptr_t>(finalOff);
+      }
     }
   }
   return 0;
 }
 
-/**
- * @brief Actual raw byte search for strings.
- */
-static uintptr_t FindRaw(const char* moduleName, const uint8_t* data, size_t len) {
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(moduleName);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return 0;
-  }
-  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
-  for (uintptr_t i = 0; i < size - len; ++i) {
-    if (memcmp((void*)(base + i), data, len) == 0) return base + i;
-  }
-  return 0;
+size_t PatternFinder::GetSizeFromTypeId(uint64_t typeId) {
+    static const std::unordered_map<uint64_t, size_t> kTypeSizeMap = {{0x05,4},{0x09,12},{0x39,4},{0x3E,8},{0x3B,8}};
+    auto it = kTypeSizeMap.find(typeId);
+    return (it != kTypeSizeMap.end()) ? it->second : 0;
 }
 
-uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
-  if (!str) return 0;
-  return FindRaw(moduleName, (const uint8_t*)str, strlen(str));
+// ===========================================================================
+// SECTION 3: Reverse Engineering Tools
+// ===========================================================================
+
+uintptr_t PatternFinder::GetFunctionStart(uintptr_t address) {
+  if (address == 0) return 0;
+  DWORD64 imageBase = 0;
+  PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
+  uintptr_t candidate = (funcEntry && imageBase) ? static_cast<uintptr_t>(imageBase + funcEntry->BeginAddress) : address;
+  for (uintptr_t addr = candidate; addr > candidate - 0x2000; --addr) {
+    if (addr <= 1) break;
+    uint8_t* p = reinterpret_cast<uint8_t*>(addr);
+    if (((p[-1] == 0xCC || p[-1] == 0x90) && (p[-2] == 0xCC || p[-2] == 0x90)) || 
+        ((p[0] == 0x48 && p[1] == 0x8B && p[2] == 0xC4) || (p[0] == 0x40 && p[1] == 0x53))) {
+      if (addr % 8 == 0) return addr;
+    }
+  }
+  return candidate;
 }
 
 std::vector<uintptr_t> PatternFinder::FindXrefs(uintptr_t targetAddr, const char* moduleName) {
   std::vector<uintptr_t> xrefs;
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(moduleName);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return xrefs;
-  }
-
-  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
-
-  for (uintptr_t i = 0; i < size - 7; ++i) {
-    uint8_t* p = (uint8_t*)(base + i);
-    // Check for LEA/MOV reg, [rip + offset]
-    // REX prefix for 64-bit: 0x48 to 0x4F
-    // Opcode: 0x8D (LEA) or 0x8B (MOV)
-    // ModR/M: 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x35, 0x3D (any reg, mod=00, rm=101)
-    if ((p[0] >= 0x48 && p[0] <= 0x4F) && (p[1] == 0x8D || p[1] == 0x8B) && (p[2] & 0x07) == 0x05) {
-      uintptr_t resolved = GetRipAddress(base + i, 3, 7);
-      if (resolved == targetAddr) {
-        xrefs.push_back(base + i);
+  auto sections = GetModuleSections(moduleName);
+  for (const auto& sec : sections) {
+    if (sec.size < 7 || sec.name == ".pdata") continue;
+    for (uintptr_t i = 0; i <= sec.size - 7; ++i) {
+      uint8_t* p = (uint8_t*)(sec.base + i);
+      if ((p[0] >= 0x48 && p[0] <= 0x4F) && (p[1] == 0x8D || p[1] == 0x8B) && (p[2] & 0x07) == 0x05) {
+        if (GetRipAddress(sec.base + i, 3, 7) == targetAddr) xrefs.push_back(sec.base + i);
       }
     }
   }
   return xrefs;
 }
 
-uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
-  if (!str) return 0;
-
-  // 1. Find the address of the string in the module
-  uintptr_t sAddr = FindString(str);
-  if (!sAddr) return 0;
-
-  // 2. Find ALL references to this string
-  // Tier 1: Direct Xrefs (LEA/MOV reg, [RIP + offset])
-  std::vector<uintptr_t> allXrefs = FindXrefs(sAddr);
-
-  // Tier 2: Indirect Xrefs via Data Pointers (PTR_s_...)
-  std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
-  for (uintptr_t ptrAddr : ptrs) {
-      auto indirectXrefs = FindXrefs(ptrAddr);
-      allXrefs.insert(allXrefs.end(), indirectXrefs.begin(), indirectXrefs.end());
-  }
-
-  if (allXrefs.empty()) return 0;
-
-  // 3. Validate references and find function starts
-  for (uintptr_t xref : allXrefs) {
-    bool contextMatch = true;
-    if (contextSig) {
-        contextMatch = (Find(xref - contextRange, contextRange * 2, contextSig) != 0);
+std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, const char* moduleName) {
+  auto& instance = GetInstance();
+  if (instance.m_pointerCache.count(targetAddr)) return instance.m_pointerCache[targetAddr];
+  std::vector<uintptr_t> pointers;
+  auto sections = GetModuleSections(moduleName);
+  for (const auto& sec : sections) {
+    if (sec.name == ".text" || sec.name == "INIT" || sec.name == ".pdata") continue;
+    if (sec.size < 8) continue;
+    for (uintptr_t i = 0; i <= sec.size - 8; i += 8) {
+      if (*reinterpret_cast<uintptr_t*>(sec.base + i) == targetAddr) pointers.push_back(sec.base + i);
     }
+  }
+  instance.m_pointerCache[targetAddr] = pointers;
+  return pointers;
+}
 
-    if (contextMatch) {
-        if (!findStart) return xref;
-        return GetFunctionStart(xref);
+uintptr_t PatternFinder::FindVTable(const char* signature, int offsetPos, int instructionSize) {
+  uintptr_t instrAddr = Find(signature);
+  return instrAddr ? GetRipAddress(instrAddr, offsetPos, instructionSize) : 0;
+}
+
+uintptr_t PatternFinder::GetVTableFunction(uintptr_t vtableAddr, int index) {
+  return vtableAddr ? *reinterpret_cast<uintptr_t*>(vtableAddr + (index * 8)) : 0;
+}
+
+uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStart) {
+  auto sections = GetModuleSections(nullptr);
+  for (const auto& sec : sections) {
+    if (sec.size < 4 || sec.name == ".pdata") continue;
+    for (uintptr_t i = 0; i <= sec.size - 4; ++i) {
+      if (*reinterpret_cast<uint32_t*>(sec.base + i) == constant) {
+          auto xrefs = FindXrefs(sec.base + i);
+          if (!xrefs.empty()) return findStart ? GetFunctionStart(xrefs[0]) : xrefs[0];
+      }
     }
   }
   return 0;
 }
 
-std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, const char* moduleName) {
-  std::vector<uintptr_t> pointers;
-  MODULEINFO moduleInfo = {0};
-  HMODULE hModule = GetModuleHandleA(moduleName);
-  if (!hModule || !GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO))) {
-    return pointers;
+uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
+  uintptr_t sAddr = FindString(str);
+  if (!sAddr) return 0;
+  std::vector<uintptr_t> allXrefs = FindXrefs(sAddr);
+  std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
+  for (uintptr_t ptrAddr : ptrs) {
+      auto indirect = FindXrefs(ptrAddr);
+      allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
   }
+  for (uintptr_t xref : allXrefs) {
+    if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) return findStart ? GetFunctionStart(xref) : xref;
+  }
+  return 0;
+}
 
-  uintptr_t base = (uintptr_t)moduleInfo.lpBaseOfDll;
-  uintptr_t size = (uintptr_t)moduleInfo.SizeOfImage;
+// ===========================================================================
+// SECTION 4: Safe Memory Access & Utilities
+// ===========================================================================
 
-  // Scan for 8-byte aligned targetAddr in the entire module address space
-  for (uintptr_t i = 0; i < size - 8; i += 8) {
-    if (*reinterpret_cast<uintptr_t*>(base + i) == targetAddr) {
-        pointers.push_back(base + i);
+int32_t PatternFinder::ReadInt32(uintptr_t address) { return address ? *reinterpret_cast<int32_t*>(address) : 0; }
+int8_t  PatternFinder::ReadInt8(uintptr_t address)  { return address ? *reinterpret_cast<int8_t*>(address) : 0; }
+int64_t PatternFinder::ReadInt64(uintptr_t address) { return address ? *reinterpret_cast<int64_t*>(address) : 0; }
+float   PatternFinder::ReadFloat(uintptr_t address)  { return address ? *reinterpret_cast<float*>(address) : 0.0f; }
+double  PatternFinder::ReadDouble(uintptr_t address) { return address ? *reinterpret_cast<double*>(address) : 0.0; }
+
+uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
+  if (!instructionAddr) return 0;
+  return instructionAddr + instructionSize + ReadInt32(instructionAddr + offsetPos);
+}
+
+bool PatternFinder::IsSaneOffset(int32_t offset) { return offset > 0 && offset < 0x6000; }
+
+uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
+  if (!str) return 0;
+  // Scan ALL sections for generic strings for reliability, but use high-performance memchr
+  auto results = FindAllRawInternal(moduleName, (const uint8_t*)str, strlen(str), false);
+  return results.empty() ? 0 : results[0];
+}
+
+std::vector<PatternFinder::MemorySection> PatternFinder::GetModuleSections(const char* moduleName) {
+  auto& instance = GetInstance();
+  std::string key = moduleName ? moduleName : "";
+  if (instance.m_sectionCache.count(key)) return instance.m_sectionCache[key];
+  std::vector<MemorySection> sections;
+  HMODULE hModule = GetModuleHandleA(moduleName);
+  if (!hModule) return sections;
+  auto dos = reinterpret_cast<PIMAGE_DOS_HEADER>(hModule);
+  auto nt = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<uintptr_t>(hModule) + dos->e_lfanew);
+  auto section = IMAGE_FIRST_SECTION(nt);
+  for (int i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++section) {
+    MemorySection s;
+    s.base = reinterpret_cast<uintptr_t>(hModule) + section->VirtualAddress;
+    s.size = section->Misc.VirtualSize;
+    s.name = std::string(reinterpret_cast<const char*>(section->Name), 8);
+    size_t nullPos = s.name.find('\0');
+    if (nullPos != std::string::npos) s.name.erase(nullPos);
+    sections.push_back(s);
+  }
+  instance.m_sectionCache[key] = sections;
+  return sections;
+}
+
+// ===========================================================================
+// INTERNAL MATCHING ENGINE
+// ===========================================================================
+
+uintptr_t PatternFinder::FindChainRecursive(const std::vector<std::vector<ByteMatcher>>& compiledSigs, size_t sigIdx, uintptr_t currentBase, size_t maxGap, uintptr_t searchLimit) {
+    if (sigIdx == compiledSigs.size()) return 1;
+    uintptr_t end = std::min(currentBase + maxGap, searchLimit);
+    size_t minLen = 0;
+    for (const auto& m : compiledSigs[sigIdx]) minLen += m.minCount;
+    if (end < currentBase + minLen) return 0;
+    for (uintptr_t i = currentBase; i <= end - minLen; ++i) {
+        size_t dummy;
+        if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[sigIdx], 0, 0, dummy)) {
+            if (sigIdx == compiledSigs.size() - 1 || FindChainRecursive(compiledSigs, sigIdx + 1, i + dummy, maxGap, searchLimit)) return i;
+        }
+    }
+    return 0;
+}
+
+bool PatternFinder::MatchInternal(const uint8_t* data, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen) {
+  if (matcherIdx == matchers.size()) { matchLen = dataIdx; return true; }
+  const auto& m = matchers[matcherIdx];
+  for (int count = m.minCount; count <= m.maxCount; ++count) {
+    bool match = true;
+    for (int i = 0; i < count; ++i) { if (!m.Matches(data[dataIdx + i])) { match = false; break; } }
+    if (match && MatchInternal(data, matchers, dataIdx + count, matcherIdx + 1, matchLen)) return true;
+    if (m.minCount == m.maxCount) break;
+  }
+  return false;
+}
+
+std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const std::string& signature) {
+  std::vector<ByteMatcher> matchers;
+  std::stringstream ss(signature);
+  std::string part;
+  static const std::regex rangeRegex(R"(\[([0-9A-Fa-f]{1,2})-([0-9A-Fa-f]{1,2})\])");
+  static const std::regex countRegex(R"(\[([0-9]+)-([0-9]+)\?\])");
+  while (ss >> part) {
+    if (part == "?" || part == "??") matchers.push_back({ByteMatcher::WILDCARD, 0, 0, 1, 1});
+    else {
+      std::smatch m;
+      std::string sPart = part;
+      if (std::regex_match(sPart, m, countRegex)) {
+        matchers.push_back({ByteMatcher::WILDCARD, 0, 0, std::stoi(m[1].str()), std::stoi(m[2].str())});
+      }
+      else if (std::regex_match(sPart, m, rangeRegex)) {
+        matchers.push_back({ByteMatcher::RANGE, (uint8_t)std::stoi(m[1].str(), nullptr, 16), (uint8_t)std::stoi(m[2].str(), nullptr, 16), 1, 1});
+      }
+      else {
+        matchers.push_back({ByteMatcher::EXACT, (uint8_t)std::stoi(sPart, nullptr, 16), (uint8_t)std::stoi(sPart, nullptr, 16), 1, 1});
+      }
     }
   }
-  return pointers;
+  return matchers;
+}
+
+uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatcher>& signature) {
+  auto sections = GetModuleSections(moduleName);
+  size_t minLen = 0;
+  for (const auto& m : signature) minLen += m.minCount;
+  for (const auto& sec : sections) {
+    if (sec.size < minLen) continue;
+    for (uintptr_t i = 0; i <= sec.size - minLen; ++i) {
+      size_t dummy;
+      if (MatchInternal(reinterpret_cast<uint8_t*>(sec.base + i), signature, 0, 0, dummy)) return sec.base + i;
+    }
+  }
+  return 0;
 }
 
 }  // namespace Utils

@@ -36,6 +36,16 @@ class HooksApi {
   static uintptr_t Hook_FindVTable(const char* signature, int offsetPos, int instructionSize);
   static uintptr_t Hook_GetVTableFunction(uintptr_t vtableAddr, int index);
   static uintptr_t Hook_FindFunctionByConstant(uint32_t constant, bool findStart);
-};
-}  // namespace Modules::API
+
+  // --- Reflection API (v1.2) ---
+  static uintptr_t Reflection_GetAttributeOffset(const char* className, const char* attributeName);
+  static uintptr_t Reflection_ResolveSmartPtr(uintptr_t address);
+
+  // --- Advanced Memory API (v1.2) ---
+  static void Memory_WriteFloat(uintptr_t address, float value);
+  static void Memory_WriteInt32(uintptr_t address, int32_t value);
+  static void Memory_ReadVector3(uintptr_t address, float* outX, float* outY, float* outZ);
+  static void Memory_WriteVector3(uintptr_t address, float x, float y, float z);
+  };
+  }  // namespace Modules::API
 SPF_NS_END

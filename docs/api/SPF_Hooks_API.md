@@ -248,9 +248,30 @@ Checks if a hook is currently active in memory (i.e., successfully found and ins
 
 ---
 
+## Reflection API (v1.2)
+
+The Reflection API provides high-level access to game object data by leveraging the engine's internal "descriptors". This is the most robust way to access fields because symbolic names (like those in `.sii` files) are used instead of hardcoded offsets.
+
+---
+### `uintptr_t Reflection_GetAttributeOffset(const char* className, const char* attributeName)`
+Dynamically resolves the byte offset of a class member variable.
+
+*   **Parameters:**
+    *   `className`: The internal SCS name of the class (e.g., `"vehicle_interior_camera"`).
+    *   `attributeName`: The engine name of the attribute (e.g., `"head_offset"`).
+*   **Returns**: The relative offset from the object's base address, or `0` if not found.
+
+---
+### `uintptr_t Reflection_ResolveSmartPtr(uintptr_t address)`
+Safely dereferences an SCS `smart_ptr` to get the raw underlying object address.
+
+*   **Details**: SCS uses a custom reference-counting smart pointer for many objects (traffic, player truck, etc.). This function handles the dereference logic and validation to safely retrieve the target object's address.
+
+---
+
 ## Memory Access
 
-The Hooks API also provides utility functions for safe memory reading and resolving relative addresses. This is essential for plugins that need to extract data from game structures or global variables found via pattern scanning.
+The Hooks API also provides utility functions for safe memory reading, writing, and resolving relative addresses. This is essential for plugins that need to extract data from game structures or global variables found via pattern scanning.
 
 ---
 ### `int32_t Memory_ReadInt32(uintptr_t address)`
@@ -267,6 +288,22 @@ Reads a 64-bit signed integer from the specified memory address. Useful for read
 ---
 ### `float Memory_ReadFloat(uintptr_t address)`
 Reads a 32-bit floating-point value from the specified memory address.
+
+---
+### `void Memory_WriteFloat(uintptr_t address, float value)`
+Writes a 32-bit floating-point value directly to the specified memory address.
+
+---
+### `void Memory_WriteInt32(uintptr_t address, int32_t value)`
+Writes a 32-bit signed integer directly to the specified memory address.
+
+---
+### `void Memory_ReadVector3(uintptr_t address, float* outX, float* outY, float* outZ)`
+Reads three consecutive 32-bit floats from memory into the provided variables. This is the standard format for positions and rotations in the SCS engine.
+
+---
+### `void Memory_WriteVector3(uintptr_t address, float x, float y, float z)`
+Writes three 32-bit floats to the specified memory address as a 3D vector.
 
 ---
 ### `uintptr_t Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize)`

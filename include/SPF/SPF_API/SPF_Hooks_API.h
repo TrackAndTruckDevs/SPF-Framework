@@ -236,6 +236,75 @@ typedef uintptr_t (*SPF_Hook_GetVTableFunction_t)(uintptr_t vtableAddr, int inde
  */
 typedef uintptr_t (*SPF_Hook_FindFunctionByConstant_t)(uint32_t constant, bool findStart);
 
+/**
+ * @brief Finds an attribute offset for a class using SCS reflection.
+ * 
+ * @details This allows you to dynamically find member variables in SCS objects using 
+ *          the same names you see in .sii files or class descriptors. 
+ *          Requires the "Harvesting" system to be active in the framework.
+ * 
+ * @param className The name of the SCS class (e.g., "vehicle_interior_camera").
+ * @param attributeName The name of the attribute (e.g., "head_offset").
+ * @return The relative byte offset of the attribute, or 0 if not found.
+ * 
+ * @code
+ * // Example: Find FOV offset in the camera manager
+ * uintptr_t offset = api->Reflection_GetAttributeOffset("core_camera", "camera_fov");
+ * if (offset > 0) {
+ *     float currentFov = api->Memory_ReadFloat(cameraAddr + offset);
+ * }
+ * @endcode
+ */
+typedef uintptr_t (*SPF_Reflection_GetAttributeOffset_t)(const char* className, const char* attributeName);
+
+/**
+ * @brief Resolves an SCS smart_ptr to its raw underlying object address.
+ * 
+ * @details Many SCS game objects (like traffic vehicles or player trucks) are stored 
+ *          using a custom smart_ptr implementation. This function handles the 
+ *          dereferencing and safety checks to get you the real memory address.
+ * 
+ * @param address The address of the smart_ptr object in memory.
+ * @return The absolute address of the underlying object, or 0 if null/invalid.
+ */
+typedef uintptr_t (*SPF_Reflection_ResolveSmartPtr_t)(uintptr_t address);
+
+/**
+ * @brief Writes a 32-bit floating-point value to memory.
+ * @param address The absolute memory address to write to.
+ * @param value The float value to write.
+ */
+typedef void (*SPF_Memory_WriteFloat_t)(uintptr_t address, float value);
+
+/**
+ * @brief Writes a 32-bit integer value to memory.
+ * @param address The absolute memory address to write to.
+ * @param value The 32-bit integer value to write.
+ */
+typedef void (*SPF_Memory_WriteInt32_t)(uintptr_t address, int32_t value);
+
+/**
+ * @brief Reads a 3-component vector (float3) from memory.
+ * 
+ * @details SCS games use float3 structures (X, Y, Z) for positions, rotations, and scales.
+ * 
+ * @param address The start address of the vector in memory.
+ * @param outX Pointer to store the X component.
+ * @param outY Pointer to store the Y component.
+ * @param outZ Pointer to store the Z component.
+ */
+typedef void (*SPF_Memory_ReadVector3_t)(uintptr_t address, float* outX, float* outY, float* outZ);
+
+/**
+ * @brief Writes a 3-component vector (float3) to memory.
+ * 
+ * @param address The start address of the vector in memory.
+ * @param x The X value to write.
+ * @param y The Y value to write.
+ * @param z The Z value to write.
+ */
+typedef void (*SPF_Memory_WriteVector3_t)(uintptr_t address, float x, float y, float z);
+
 
 /**
  * @struct SPF_Hooks_API
@@ -418,6 +487,51 @@ typedef struct {
      * @return The function or reference address, or 0 if not found.
      */
     SPF_Hook_FindFunctionByConstant_t Hook_FindFunctionByConstant;
+
+    /**
+     * @name Reflection API (v1.2)
+     * @{
+     */
+
+    /**
+     * @brief Dynamically finds the byte offset of a class member using SCS reflection.
+     * @see SPF_Reflection_GetAttributeOffset_t
+     */
+    SPF_Reflection_GetAttributeOffset_t Reflection_GetAttributeOffset;
+
+    /**
+     * @brief Safely dereferences an SCS smart_ptr to get the underlying object address.
+     * @see SPF_Reflection_ResolveSmartPtr_t
+     */
+    SPF_Reflection_ResolveSmartPtr_t Reflection_ResolveSmartPtr;
+
+    /** @} */
+
+    /**
+     * @name Advanced Memory API (v1.2)
+     * @{
+     */
+
+    /**
+     * @brief Writes a float value to the specified memory address.
+     */
+    SPF_Memory_WriteFloat_t Memory_WriteFloat;
+
+    /**
+     * @brief Writes a 32-bit integer to the specified memory address.
+     */
+    SPF_Memory_WriteInt32_t Memory_WriteInt32;
+
+    /**
+     * @brief Reads a 3D vector (X, Y, Z) from memory into separate variables.
+     */
+    SPF_Memory_ReadVector3_t Memory_ReadVector3;
+
+    /**
+     * @brief Writes X, Y, Z components to a memory location as a 3D vector.
+     */
+    SPF_Memory_WriteVector3_t Memory_WriteVector3;
+
 } SPF_Hooks_API;
 
 #ifdef __cplusplus
