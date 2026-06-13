@@ -756,8 +756,18 @@
             "dyn_offset_laziness": "Інерція дин. зміщення",
             "dynamic_offset_not_found": "Динамічне зміщення: дані не знайдено",
             "base_fov_behind": "Базовий FOV##Behind",
-            "reset_to_defaults_behind": "Скинути до значень за замовчуванням##Behind",
-            "not_available": "Об'єкт камери позаду недоступний."
+            "not_available": "Об'єкт камери позаду недоступний.",
+            "collision_settings": "Налаштування колізій",
+            "validation": "Увімкнути колізії",
+            "validation_radius": "Радіус колізії",
+            "validation_speed_pos": "Швидкість колізії (Поз)",
+            "validation_speed_neg": "Швидкість колізії (Нег)",
+            "speed_fov_factor": "Фактор FOV від швидкості",
+            "shake_settings": "Налаштування тряски та тремтіння",
+            "shake_anim_step": "Крок анімації тряски",
+            "shake_anim_scale_min": "Мін. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Масив анімації тряски"
         },
         "top_camera": {
             "height_zoom": "Висота / Зум",
@@ -772,12 +782,10 @@
             "backward_offset": "Зміщення назад",
             "dynamic_offset_not_found": "Динамічне зміщення: дані не знайдено",
             "base_fov_top": "Базовий FOV##Top",
-            "reset_to_defaults_top": "Скинути до значень за замовчуванням##Top",
             "not_available": "Об'єкт камери зверху недоступний."
         },
         "cabin_camera": {
             "base_fov_cabin": "Базовий FOV##Cabin",
-            "reset_to_defaults_cabin": "Скинути до значень за замовчуванням##Cabin",
             "not_available": "Об'єкт камери кабіни недоступний."
         },
         "window_camera": {
@@ -800,7 +808,6 @@
             "default_ud_window": "За замовчуванням В/Н##Window",
             "rotation_defaults_not_found_window": "Значення за замовчуванням: дані не знайдено",
             "base_fov_window": "Базовий FOV##Window",
-            "reset_to_defaults_window": "Скинути до значень за замовчуванням##Window",
             "not_available": "Об'єкт камери з вікна недоступний."
         },
         "bumper_camera": {
@@ -810,7 +817,6 @@
             "offset_z_bumper": "Зміщення Z##Bumper",
             "offset_not_found": "Зміщення: дані не знайдено",
             "base_fov_bumper": "Базовий FOV##Bumper",
-            "reset_to_defaults_bumper": "Скинути до значень за замовчуванням##Bumper",
             "not_available": "Об'єкт камери бампера недоступний."
         },
         "wheel_camera": {
@@ -820,7 +826,6 @@
             "offset_z_wheel": "Зміщення Z##Wheel",
             "offset_not_found": "Зміщення: дані не знайдено",
             "base_fov_wheel": "Базовий FOV##Wheel",
-            "reset_to_defaults_wheel": "Скинути до значень за замовчуванням##Wheel",
             "not_available": "Об'єкт камери колеса недоступний."
         },
         "tv_camera": {
@@ -838,7 +843,6 @@
             "road_uplift_z_tv": "Підйом дороги Z##TV",
             "road_uplift_not_found": "Підйом дороги: дані не знайдено",
             "base_fov_tv": "Базовий FOV##TV",
-            "reset_to_defaults_tv": "Скинути до значень за замовчуванням##TV",
             "not_available": "Об'єкт ТБ камери недоступний."
         },
         "free_camera": {
@@ -862,7 +866,6 @@
             "movement_speed": "Швидкість руху",
             "speed_freecam": "Швидкість",
             "movement_speed_not_found": "Швидкість руху: дані не знайдено",
-            "reset_to_defaults_freecam": "Скинути до значень за замовчуванням##FreeCam",
             "not_available": "Об'єкт вільної камери недоступний."
         },
         "debug": {

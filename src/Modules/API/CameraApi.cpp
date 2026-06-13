@@ -1301,6 +1301,123 @@ void CameraApi::T_Camera_SetInteriorShakeAnim(size_t index, float x, float y, fl
   }
 }
 
+// --- New Behind Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetBehindValidation(bool* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetValidation(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindValidation(bool val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetValidation(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBehindValidationSettings(float* out_radius, float* out_speed_pos, float* out_speed_neg) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetValidationSettings(out_radius, out_speed_pos, out_speed_neg);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindValidationSettings(float radius, float speed_pos, float speed_neg) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetValidationSettings(radius, speed_pos, speed_neg);
+  }
+}
+
+bool CameraApi::T_Camera_GetBehindSpeedFovChangeFactor(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetSpeedFovChangeFactor(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindSpeedFovChangeFactor(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetSpeedFovChangeFactor(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBehindShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindShakeAnimStep(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBehindShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBehindShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetBehindShakeAnimCount() {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    return behind->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetBehindShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    if (!out_x || !out_y || !out_z) return false;
+    behind->GetShakeAnim(index, *out_x, *out_y, *out_z);
+    return true;
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBehindShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BehindCamera);
+  if (auto* behind = dynamic_cast<GameCameraBehind*>(pCamera)) {
+    behind->SetShakeAnim(index, x, y, z);
+  }
+}
+
 
 // --- FinalFOV Trampolines ---
 bool CameraApi::T_Camera_GetInteriorFinalFov(float* out_horiz, float* out_vert) {
@@ -1609,6 +1726,23 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetInteriorShakeAnimCount = &T_Camera_GetInteriorShakeAnimCount;
   camera_api->Cam_GetInteriorShakeAnim = &T_Camera_GetInteriorShakeAnim;
   camera_api->Cam_SetInteriorShakeAnim = &T_Camera_SetInteriorShakeAnim;
+
+  // New Behind Advanced Settings
+  camera_api->Cam_GetBehindValidation = &T_Camera_GetBehindValidation;
+  camera_api->Cam_SetBehindValidation = &T_Camera_SetBehindValidation;
+  camera_api->Cam_GetBehindValidationSettings = &T_Camera_GetBehindValidationSettings;
+  camera_api->Cam_SetBehindValidationSettings = &T_Camera_SetBehindValidationSettings;
+  camera_api->Cam_GetBehindSpeedFovChangeFactor = &T_Camera_GetBehindSpeedFovChangeFactor;
+  camera_api->Cam_SetBehindSpeedFovChangeFactor = &T_Camera_SetBehindSpeedFovChangeFactor;
+  camera_api->Cam_GetBehindShakeAnimStep = &T_Camera_GetBehindShakeAnimStep;
+  camera_api->Cam_SetBehindShakeAnimStep = &T_Camera_SetBehindShakeAnimStep;
+  camera_api->Cam_GetBehindShakeAnimScaleMin = &T_Camera_GetBehindShakeAnimScaleMin;
+  camera_api->Cam_SetBehindShakeAnimScaleMin = &T_Camera_SetBehindShakeAnimScaleMin;
+  camera_api->Cam_GetBehindShakeAnimScaleMax = &T_Camera_GetBehindShakeAnimScaleMax;
+  camera_api->Cam_SetBehindShakeAnimScaleMax = &T_Camera_SetBehindShakeAnimScaleMax;
+  camera_api->Cam_GetBehindShakeAnimCount = &T_Camera_GetBehindShakeAnimCount;
+  camera_api->Cam_GetBehindShakeAnim = &T_Camera_GetBehindShakeAnim;
+  camera_api->Cam_SetBehindShakeAnim = &T_Camera_SetBehindShakeAnim;
 }
 
 }  // namespace Modules::API

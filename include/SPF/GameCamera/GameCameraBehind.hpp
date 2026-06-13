@@ -47,6 +47,18 @@ class GameCameraBehind : public IGameCamera {
     float dynamic_offset_speed_max = 0.0f;       // 0x4B8
     float dynamic_offset_laziness_speed = 0.0f;  // 0x4BC
 
+    // Validation / Collision
+    bool validation = false;
+    float validation_radius = 0.0f;
+    float validation_speed_positive = 0.0f;
+    float validation_speed_negative = 0.0f;
+    float speed_fov_change_factor = 0.0f;
+
+    // Shake
+    float shake_anim_step = 0.0f;
+    float shake_anim_scale_min = 0.0f;
+    float shake_anim_scale_max = 0.0f;
+
     // FOV
     float fov_base = 0.0f;
     float fov_horiz_final = 0.0f;
@@ -65,6 +77,8 @@ class GameCameraBehind : public IGameCamera {
   void StoreDefaultState() override;
   void ResetToDefaults() override;
 
+  const CameraData& GetDefaults() const { return m_defaultCameraData; }
+
   // --- Public API for Behind Camera ---
   bool GetLiveState(float* out_pitch, float* out_yaw, float* out_zoom) const;
   bool GetDistanceSettings(float* out_min, float* out_max, float* out_trailer_max_offset, float* out_def, float* out_trailer_def, float* out_change_speed,
@@ -75,12 +89,35 @@ class GameCameraBehind : public IGameCamera {
   bool GetFov(float* out_fov) const;
   bool GetFinalFov(float* out_horiz, float* out_vert) const;
 
+  // Validation
+  bool GetValidation(bool* out_enabled) const;
+  bool GetValidationSettings(float* out_radius, float* out_speed_pos, float* out_speed_neg) const;
+  bool GetSpeedFovChangeFactor(float* out_val) const;
+
+  // Shake
+  bool GetShakeAnimStep(float* out_val) const;
+  bool GetShakeAnimScaleMin(float* out_val) const;
+  bool GetShakeAnimScaleMax(float* out_val) const;
+  size_t GetShakeAnimCount() const;
+  void GetShakeAnim(size_t index, float& x, float& y, float& z) const;
+
   void SetLiveState(float pitch, float yaw, float zoom);
   void SetDistanceSettings(float min, float max, float trailer_max_offset, float def, float trailer_def, float change_speed, float laziness);
   void SetElevationSettings(float azimuth_laziness, float min, float max, float def, float trailer_def, float height_limit);
   void SetPivot(float x, float y, float z);
   void SetDynamicOffset(float max, float speed_min, float speed_max, float laziness);
   void SetFov(float fov);
+
+  // Validation Setters
+  void SetValidation(bool enabled);
+  void SetValidationSettings(float radius, float speed_pos, float speed_neg);
+  void SetSpeedFovChangeFactor(float val);
+
+  // Shake Setters
+  void SetShakeAnimStep(float val);
+  void SetShakeAnimScaleMin(float val);
+  void SetShakeAnimScaleMax(float val);
+  void SetShakeAnim(size_t index, float x, float y, float z);
 
  private:
   // Pointer to the raw game camera object.
@@ -89,6 +126,7 @@ class GameCameraBehind : public IGameCamera {
   CameraData m_cameraData;
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
+  bool m_defaultsSaved = false;
 };
 }  // namespace GameCamera
 SPF_NS_END

@@ -158,8 +158,20 @@ class CameraWindow : public BaseWindow {
     std::string m_locDynOffsetLaziness;
     std::string m_locDynamicOffsetNotFound;
     std::string m_locBaseFovBehind;
-    std::string m_locResetToDefaultsBehind;
     std::string m_locBehindCameraNotAvailable;
+
+    // Behind Camera - Advanced (v1.2)
+    std::string m_locBehindValidation;
+    std::string m_locBehindValidationRadius;
+    std::string m_locBehindValidationSpeedPos;
+    std::string m_locBehindValidationSpeedNeg;
+    std::string m_locBehindSpeedFovFactor;
+    std::string m_locBehindShakeSettings;
+    std::string m_locBehindShakeAnimStep;
+    std::string m_locBehindShakeAnimScaleMin;
+    std::string m_locBehindShakeAnimScaleMax;
+    std::string m_locBehindShakeAnimationArray;
+    std::string m_locBehindCollisionSettings;
 
     // Top Camera
     std::string m_locHeightZoom;
@@ -174,12 +186,10 @@ class CameraWindow : public BaseWindow {
     std::string m_locBackwardOffset;
     std::string m_locDynamicOffsetNotFoundTop;
     std::string m_locBaseFovTop;
-    std::string m_locResetToDefaultsTop;
     std::string m_locTopCameraNotAvailable;
 
     // Cabin Camera
     std::string m_locBaseFovCabin;
-    std::string m_locResetToDefaultsCabin;
     std::string m_locCabinCameraNotAvailable;
 
     // Window Camera
@@ -202,7 +212,6 @@ class CameraWindow : public BaseWindow {
     std::string m_locDefaultUdWindow;
     std::string m_locRotationDefaultsNotFoundWindow;
     std::string m_locBaseFovWindow;
-    std::string m_locResetToDefaultsWindow;
     std::string m_locWindowCameraNotAvailable;
 
     // Bumper Camera
@@ -212,7 +221,6 @@ class CameraWindow : public BaseWindow {
     std::string m_locOffsetZBumper;
     std::string m_locOffsetNotFoundBumper;
     std::string m_locBaseFovBumper;
-    std::string m_locResetToDefaultsBumper;
     std::string m_locBumperCameraNotAvailable;
 
     // Wheel Camera
@@ -222,7 +230,6 @@ class CameraWindow : public BaseWindow {
     std::string m_locOffsetZWheel;
     std::string m_locOffsetNotFoundWheel;
     std::string m_locBaseFovWheel;
-    std::string m_locResetToDefaultsWheel;
     std::string m_locWheelCameraNotAvailable;
 
     // TV Camera
@@ -240,7 +247,6 @@ class CameraWindow : public BaseWindow {
     std::string m_locRoadUpliftZTV;
     std::string m_locRoadUpliftNotFoundTV;
     std::string m_locBaseFovTV;
-    std::string m_locResetToDefaultsTV;
     std::string m_locTVCameraNotAvailable;
 
     // Free Camera
@@ -264,7 +270,6 @@ class CameraWindow : public BaseWindow {
     std::string m_locMovementSpeedFreeCam;
     std::string m_locSpeedFreeCam;
     std::string m_locMovementSpeedNotFoundFreeCam;
-    std::string m_locResetToDefaultsFreeCam;
     std::string m_locFreeCameraNotAvailable;
 
     // Debug Tab

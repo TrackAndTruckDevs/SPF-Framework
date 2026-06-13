@@ -149,6 +149,35 @@ void GameDataCameraService::Shutdown() {
     m_viewport_y1_offset = 0;
     m_viewport_y2_offset = 0;
 
+    m_behind_live_pitch_offset = 0;
+    m_behind_live_yaw_offset = 0;
+    m_behind_live_zoom_offset = 0;
+    m_behind_distance_min_offset = 0;
+    m_behind_distance_max_offset = 0;
+    m_behind_distance_trailer_max_offset = 0;
+    m_behind_distance_default_offset = 0;
+    m_behind_distance_trailer_default_offset = 0;
+    m_behind_distance_change_speed_offset = 0;
+    m_behind_distance_laziness_speed_offset = 0;
+    m_behind_azimuth_laziness_speed_offset = 0;
+    m_behind_elevation_min_offset = 0;
+    m_behind_elevation_max_offset = 0;
+    m_behind_elevation_default_offset = 0;
+    m_behind_elevation_trailer_default_offset = 0;
+    m_behind_height_limit_offset = 0;
+    m_behind_pivot_x_offset = 0;
+    m_behind_pivot_y_offset = 0;
+    m_behind_pivot_z_offset = 0;
+    m_behind_dynamic_offset_max_offset = 0;
+    m_behind_dynamic_offset_speed_min_offset = 0;
+    m_behind_dynamic_offset_speed_max_offset = 0;
+    m_behind_dynamic_offset_laziness_speed_offset = 0;
+    m_behind_validation_offset = 0;
+    m_behind_validation_speed_positive_offset = 0;
+    m_behind_validation_speed_negative_offset = 0;
+    m_behind_validation_radius_offset = 0;
+    m_behind_speed_fov_change_factor_offset = 0;
+
     m_top_min_height_offset = 0;
     m_top_max_height_offset = 0;
     m_top_speed_offset = 0;

@@ -1400,6 +1400,52 @@ typedef bool (*SPF_Camera_GetInteriorShakeAnim_t)(size_t index, float* out_x, fl
 typedef void (*SPF_Camera_SetInteriorShakeAnim_t)(size_t index, float x, float y, float z);
 
 
+// --- New Behind Advanced Settings ---
+
+/**
+ * @brief Gets/Sets the validation (collision) state for the behind camera.
+ */
+typedef bool (*SPF_Camera_GetBehindValidation_t)(bool* out_val);
+typedef void (*SPF_Camera_SetBehindValidation_t)(bool val);
+
+/**
+ * @brief Gets/Sets validation settings (radius, speed pos, speed neg).
+ */
+typedef bool (*SPF_Camera_GetBehindValidationSettings_t)(float* out_radius, float* out_speed_pos, float* out_speed_neg);
+typedef void (*SPF_Camera_SetBehindValidationSettings_t)(float radius, float speed_pos, float speed_neg);
+
+/**
+ * @brief Gets/Sets the speed FOV change factor.
+ */
+typedef bool (*SPF_Camera_GetBehindSpeedFovChangeFactor_t)(float* out_val);
+typedef void (*SPF_Camera_SetBehindSpeedFovChangeFactor_t)(float val);
+
+/**
+ * @brief Gets/Sets the shake animation step for the behind camera.
+ */
+typedef bool (*SPF_Camera_GetBehindShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetBehindShakeAnimStep_t)(float val);
+
+/**
+ * @brief Gets/Sets the shake animation scale (min/max).
+ */
+typedef bool (*SPF_Camera_GetBehindShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetBehindShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetBehindShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetBehindShakeAnimScaleMax_t)(float val);
+
+/**
+ * @brief Gets the number of points in the behind camera shake animation.
+ */
+typedef size_t (*SPF_Camera_GetBehindShakeAnimCount_t)();
+
+/**
+ * @brief Gets/Sets specific points in the behind camera shake animation.
+ */
+typedef bool (*SPF_Camera_GetBehindShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetBehindShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -1887,6 +1933,35 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the shake animation. */
     SPF_Camera_GetInteriorShakeAnim_t Cam_GetInteriorShakeAnim;
     SPF_Camera_SetInteriorShakeAnim_t Cam_SetInteriorShakeAnim;
+
+    // --- New Behind Advanced Settings ---
+    /** @brief Gets/Sets the behind camera validation state. See `SPF_Camera_GetBehindValidation_t`. */
+    SPF_Camera_GetBehindValidation_t Cam_GetBehindValidation;
+    SPF_Camera_SetBehindValidation_t Cam_SetBehindValidation;
+
+    /** @brief Gets/Sets validation settings. See `SPF_Camera_GetBehindValidationSettings_t`. */
+    SPF_Camera_GetBehindValidationSettings_t Cam_GetBehindValidationSettings;
+    SPF_Camera_SetBehindValidationSettings_t Cam_SetBehindValidationSettings;
+
+    /** @brief Gets/Sets speed FOV change factor. See `SPF_Camera_GetBehindSpeedFovChangeFactor_t`. */
+    SPF_Camera_GetBehindSpeedFovChangeFactor_t Cam_GetBehindSpeedFovChangeFactor;
+    SPF_Camera_SetBehindSpeedFovChangeFactor_t Cam_SetBehindSpeedFovChangeFactor;
+
+    /** @brief Gets/Sets the behind camera shake animation step. */
+    SPF_Camera_GetBehindShakeAnimStep_t Cam_GetBehindShakeAnimStep;
+    SPF_Camera_SetBehindShakeAnimStep_t Cam_SetBehindShakeAnimStep;
+
+    /** @brief Gets/Sets the behind camera shake animation scale (min/max). */
+    SPF_Camera_GetBehindShakeAnimScaleMin_t Cam_GetBehindShakeAnimScaleMin;
+    SPF_Camera_SetBehindShakeAnimScaleMin_t Cam_SetBehindShakeAnimScaleMin;
+    SPF_Camera_GetBehindShakeAnimScaleMax_t Cam_GetBehindShakeAnimScaleMax;
+    SPF_Camera_SetBehindShakeAnimScaleMax_t Cam_SetBehindShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the behind camera shake animation. */
+    SPF_Camera_GetBehindShakeAnimCount_t Cam_GetBehindShakeAnimCount;
+    /** @brief Gets/Sets specific points in the behind camera shake animation. */
+    SPF_Camera_GetBehindShakeAnim_t Cam_GetBehindShakeAnim;
+    SPF_Camera_SetBehindShakeAnim_t Cam_SetBehindShakeAnim;
 
 } SPF_Camera_API;
 

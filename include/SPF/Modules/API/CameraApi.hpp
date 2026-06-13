@@ -241,6 +241,23 @@ class CameraApi {
   static size_t T_Camera_GetInteriorShakeAnimCount();
   static bool T_Camera_GetInteriorShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetInteriorShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New Behind Advanced Settings Trampolines ---
+  static bool T_Camera_GetBehindValidation(bool* out_val);
+  static void T_Camera_SetBehindValidation(bool val);
+  static bool T_Camera_GetBehindValidationSettings(float* out_radius, float* out_speed_pos, float* out_speed_neg);
+  static void T_Camera_SetBehindValidationSettings(float radius, float speed_pos, float speed_neg);
+  static bool T_Camera_GetBehindSpeedFovChangeFactor(float* out_val);
+  static void T_Camera_SetBehindSpeedFovChangeFactor(float val);
+  static bool T_Camera_GetBehindShakeAnimStep(float* out_val);
+  static void T_Camera_SetBehindShakeAnimStep(float val);
+  static bool T_Camera_GetBehindShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetBehindShakeAnimScaleMin(float val);
+  static bool T_Camera_GetBehindShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetBehindShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetBehindShakeAnimCount();
+  static bool T_Camera_GetBehindShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetBehindShakeAnim(size_t index, float x, float y, float z);
 };
 }  // namespace Modules::API
 SPF_NS_END

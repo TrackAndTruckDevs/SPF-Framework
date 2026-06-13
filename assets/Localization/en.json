@@ -756,8 +756,18 @@
             "dyn_offset_laziness": "Dyn. Offset Laziness",
             "dynamic_offset_not_found": "Dynamic Offset: data not found",
             "base_fov_behind": "Base FOV##Behind",
-            "reset_to_defaults_behind": "Reset to Defaults##Behind",
-            "not_available": "Behind camera object not available."
+            "not_available": "Behind camera object not available.",
+            "collision_settings": "Collision Settings",
+            "validation": "Enable Collision",
+            "validation_radius": "Collision Radius",
+            "validation_speed_pos": "Collision Speed (Pos)",
+            "validation_speed_neg": "Collision Speed (Neg)",
+            "speed_fov_factor": "Speed FOV Factor",
+            "shake_settings": "Shake & Handshake Settings",
+            "shake_anim_step": "Shake Animation Step",
+            "shake_anim_scale_min": "Min Shake Scale",
+            "shake_anim_scale_max": "Max Shake Scale",
+            "shake_animation_array": "Shake Animation Array"
         },
         "top_camera": {
             "height_zoom": "Height / Zoom",
@@ -772,12 +782,10 @@
             "backward_offset": "Backward Offset",
             "dynamic_offset_not_found": "Dynamic Offset: data not found",
             "base_fov_top": "Base FOV##Top",
-            "reset_to_defaults_top": "Reset to Defaults##Top",
             "not_available": "Top camera object not available."
         },
         "cabin_camera": {
             "base_fov_cabin": "Base FOV##Cabin",
-            "reset_to_defaults_cabin": "Reset to Defaults##Cabin",
             "not_available": "Cabin camera object not available."
         },
         "window_camera": {
@@ -800,7 +808,6 @@
             "default_ud_window": "Default U/D##Window",
             "rotation_defaults_not_found_window": "Rotation Defaults: data not found",
             "base_fov_window": "Base FOV##Window",
-            "reset_to_defaults_window": "Reset to Defaults##Window",
             "not_available": "Window camera object not available."
         },
         "bumper_camera": {
@@ -810,7 +817,6 @@
             "offset_z_bumper": "Offset Z##Bumper",
             "offset_not_found": "Offset: data not found",
             "base_fov_bumper": "Base FOV##Bumper",
-            "reset_to_defaults_bumper": "Reset to Defaults##Bumper",
             "not_available": "Bumper camera object not available."
         },
         "wheel_camera": {
@@ -820,7 +826,6 @@
             "offset_z_wheel": "Offset Z##Wheel",
             "offset_not_found": "Offset: data not found",
             "base_fov_wheel": "Base FOV##Wheel",
-            "reset_to_defaults_wheel": "Reset to Defaults##Wheel",
             "not_available": "Wheel camera object not available."
         },
         "tv_camera": {
@@ -838,7 +843,6 @@
             "road_uplift_z_tv": "Road Uplift Z##TV",
             "road_uplift_not_found": "Road Uplift: data not found",
             "base_fov_tv": "Base FOV##TV",
-            "reset_to_defaults_tv": "Reset to Defaults##TV",
             "not_available": "TV camera object not available."
         },
         "free_camera": {
@@ -862,7 +866,6 @@
             "movement_speed": "Movement Speed",
             "speed_freecam": "Speed",
             "movement_speed_not_found": "Movement Speed: data not found",
-            "reset_to_defaults_freecam": "Reset to Defaults##FreeCam",
             "not_available": "Free camera object not available."
         },
         "debug": {

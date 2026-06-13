@@ -135,6 +135,13 @@ class GameDataCameraService {
   intptr_t GetBehindDynamicOffsetSpeedMaxOffset() const { return m_behind_dynamic_offset_speed_max_offset; }
   intptr_t GetBehindDynamicOffsetLazinessSpeedOffset() const { return m_behind_dynamic_offset_laziness_speed_offset; }
 
+  // --- Behind Camera Validation Getters ---
+  intptr_t GetBehindValidationOffset() const { return m_behind_validation_offset; }
+  intptr_t GetBehindValidationSpeedPositiveOffset() const { return m_behind_validation_speed_positive_offset; }
+  intptr_t GetBehindValidationSpeedNegativeOffset() const { return m_behind_validation_speed_negative_offset; }
+  intptr_t GetBehindValidationRadiusOffset() const { return m_behind_validation_radius_offset; }
+  intptr_t GetBehindSpeedFovChangeFactorOffset() const { return m_behind_speed_fov_change_factor_offset; }
+
   // --- Top Camera Getters ---
   intptr_t GetTopMinHeightOffset() const { return m_top_min_height_offset; }
   intptr_t GetTopMaxHeightOffset() const { return m_top_max_height_offset; }
@@ -315,6 +322,13 @@ class GameDataCameraService {
   void SetBehindDynamicOffsetSpeedMinOffset(intptr_t val) { m_behind_dynamic_offset_speed_min_offset = val; }
   void SetBehindDynamicOffsetSpeedMaxOffset(intptr_t val) { m_behind_dynamic_offset_speed_max_offset = val; }
   void SetBehindDynamicOffsetLazinessSpeedOffset(intptr_t val) { m_behind_dynamic_offset_laziness_speed_offset = val; }
+
+  // --- Behind Camera Validation Setters ---
+  void SetBehindValidationOffset(intptr_t val) { m_behind_validation_offset = val; }
+  void SetBehindValidationSpeedPositiveOffset(intptr_t val) { m_behind_validation_speed_positive_offset = val; }
+  void SetBehindValidationSpeedNegativeOffset(intptr_t val) { m_behind_validation_speed_negative_offset = val; }
+  void SetBehindValidationRadiusOffset(intptr_t val) { m_behind_validation_radius_offset = val; }
+  void SetBehindSpeedFovChangeFactorOffset(intptr_t val) { m_behind_speed_fov_change_factor_offset = val; }
 
   // --- Top Camera Setters ---
   void SetTopMinHeightOffset(intptr_t val) { m_top_min_height_offset = val; }
@@ -523,6 +537,11 @@ class GameDataCameraService {
   intptr_t m_behind_dynamic_offset_speed_min_offset = 0;
   intptr_t m_behind_dynamic_offset_speed_max_offset = 0;
   intptr_t m_behind_dynamic_offset_laziness_speed_offset = 0;
+  intptr_t m_behind_validation_offset = 0;
+  intptr_t m_behind_validation_speed_positive_offset = 0;
+  intptr_t m_behind_validation_speed_negative_offset = 0;
+  intptr_t m_behind_validation_radius_offset = 0;
+  intptr_t m_behind_speed_fov_change_factor_offset = 0;
 
   // --- Top Camera Offsets ---
   intptr_t m_top_min_height_offset = 0;

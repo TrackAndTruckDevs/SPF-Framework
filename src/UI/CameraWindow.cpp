@@ -211,8 +211,19 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locDynOffsetLaziness = "camera_window.behind_camera.dyn_offset_laziness";
     m_locDynamicOffsetNotFound = "camera_window.behind_camera.dynamic_offset_not_found";
     m_locBaseFovBehind = "camera_window.behind_camera.base_fov_behind";
-    m_locResetToDefaultsBehind = "camera_window.behind_camera.reset_to_defaults_behind";
     m_locBehindCameraNotAvailable = "camera_window.behind_camera.not_available";
+
+    m_locBehindValidation = "camera_window.behind_camera.validation";
+    m_locBehindValidationRadius = "camera_window.behind_camera.validation_radius";
+    m_locBehindValidationSpeedPos = "camera_window.behind_camera.validation_speed_pos";
+    m_locBehindValidationSpeedNeg = "camera_window.behind_camera.validation_speed_neg";
+    m_locBehindSpeedFovFactor = "camera_window.behind_camera.speed_fov_factor";
+    m_locBehindShakeSettings = "camera_window.behind_camera.shake_settings";
+    m_locBehindShakeAnimStep = "camera_window.behind_camera.shake_anim_step";
+    m_locBehindShakeAnimScaleMin = "camera_window.behind_camera.shake_anim_scale_min";
+    m_locBehindShakeAnimScaleMax = "camera_window.behind_camera.shake_anim_scale_max";
+    m_locBehindShakeAnimationArray = "camera_window.behind_camera.shake_animation_array";
+    m_locBehindCollisionSettings = "camera_window.behind_camera.collision_settings";
 
     m_locHeightZoom = "camera_window.top_camera.height_zoom";
     m_locMinimumHeight = "camera_window.top_camera.minimum_height";
@@ -226,11 +237,9 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locBackwardOffset = "camera_window.top_camera.backward_offset";
     m_locDynamicOffsetNotFoundTop = "camera_window.top_camera.dynamic_offset_not_found";
     m_locBaseFovTop = "camera_window.top_camera.base_fov_top";
-    m_locResetToDefaultsTop = "camera_window.top_camera.reset_to_defaults_top";
     m_locTopCameraNotAvailable = "camera_window.top_camera.not_available";
 
     m_locBaseFovCabin = "camera_window.cabin_camera.base_fov_cabin";
-    m_locResetToDefaultsCabin = "camera_window.cabin_camera.reset_to_defaults_cabin";
     m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
 
     m_locHeadOffset = "camera_window.window_camera.head_offset";
@@ -252,7 +261,6 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locDefaultUdWindow = "camera_window.window_camera.default_ud_window";
     m_locRotationDefaultsNotFoundWindow = "camera_window.window_camera.rotation_defaults_not_found_window";
     m_locBaseFovWindow = "camera_window.window_camera.base_fov_window";
-    m_locResetToDefaultsWindow = "camera_window.window_camera.reset_to_defaults_window";
     m_locWindowCameraNotAvailable = "camera_window.window_camera.not_available";
 
     m_locOffsetBumper = "camera_window.bumper_camera.offset";
@@ -261,7 +269,6 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locOffsetZBumper = "camera_window.bumper_camera.offset_z_bumper";
     m_locOffsetNotFoundBumper = "camera_window.bumper_camera.offset_not_found";
     m_locBaseFovBumper = "camera_window.bumper_camera.base_fov_bumper";
-    m_locResetToDefaultsBumper = "camera_window.bumper_camera.reset_to_defaults_bumper";
     m_locBumperCameraNotAvailable = "camera_window.bumper_camera.not_available";
 
     m_locOffsetWheel = "camera_window.wheel_camera.offset";
@@ -270,7 +277,6 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locOffsetZWheel = "camera_window.wheel_camera.offset_z_wheel";
     m_locOffsetNotFoundWheel = "camera_window.wheel_camera.offset_not_found";
     m_locBaseFovWheel = "camera_window.wheel_camera.base_fov_wheel";
-    m_locResetToDefaultsWheel = "camera_window.wheel_camera.reset_to_defaults_wheel";
     m_locWheelCameraNotAvailable = "camera_window.wheel_camera.not_available";
 
     m_locDistanceTV = "camera_window.tv_camera.distance";
@@ -287,7 +293,6 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locRoadUpliftZTV = "camera_window.tv_camera.road_uplift_z_tv";
     m_locRoadUpliftNotFoundTV = "camera_window.tv_camera.road_uplift_not_found";
     m_locBaseFovTV = "camera_window.tv_camera.base_fov_tv";
-    m_locResetToDefaultsTV = "camera_window.tv_camera.reset_to_defaults_tv";
     m_locTVCameraNotAvailable = "camera_window.tv_camera.not_available";
 
     m_locPositionFreeCam = "camera_window.free_camera.position";
@@ -310,7 +315,6 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locMovementSpeedFreeCam = "camera_window.free_camera.movement_speed";
     m_locSpeedFreeCam = "camera_window.free_camera.speed_freecam";
     m_locMovementSpeedNotFoundFreeCam = "camera_window.free_camera.movement_speed_not_found";
-    m_locResetToDefaultsFreeCam = "camera_window.free_camera.reset_to_defaults_freecam";
     m_locFreeCameraNotAvailable = "camera_window.free_camera.not_available";
 
     m_locCurrentModeDebug = "camera_window.debug.current_mode";
@@ -931,111 +935,81 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabBehindCamera).c_str(), nullptr, behindTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::BehindCamera);
       if (auto* behindCam = dynamic_cast<GameCameraBehind*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locLiveState).c_str());
-        float pitch, yaw, zoom;
-        if (behindCam->GetLiveState(&pitch, &yaw, &zoom)) {
-          bool liveChanged = false;
-          liveChanged |= ImGui::SliderFloat(loc.Get(m_locLivePitch).c_str(), &pitch, -1.57f, 1.57f, "%.4f");
-          liveChanged |= ImGui::SliderFloat(loc.Get(m_locLiveYaw).c_str(), &yaw, -3.14f, 3.14f, "%.4f");
-          liveChanged |= ImGui::SliderFloat(loc.Get(m_locLiveZoom).c_str(), &zoom, 0.0f, 50.0f, "%.1f");
-          if (liveChanged) {
-            behindCam->SetLiveState(pitch, yaw, zoom);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locLiveStateNotFound).c_str());
+        auto& defaults = behindCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovBehind), [&](float* fov){ return behindCam->GetFov(fov); }, [&](float fov){ behindCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return behindCam->GetFinalFov(h_fov, v_fov); });
+        
+        drawHeader(loc.Get(m_locLiveState));
+        drawFloat(loc.Get(m_locLivePitch), [&](float* p){ float y, z; return behindCam->GetLiveState(p, &y, &z); }, [&](float p){ float cp, y, z; behindCam->GetLiveState(&cp, &y, &z); behindCam->SetLiveState(p, y, z); }, -1.57f, 1.57f, "%.4f", defaults.live_pitch);
+        drawFloat(loc.Get(m_locLiveYaw), [&](float* y){ float p, z; return behindCam->GetLiveState(&p, y, &z); }, [&](float y){ float p, cy, z; behindCam->GetLiveState(&p, &cy, &z); behindCam->SetLiveState(p, y, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw);
+        drawFloat(loc.Get(m_locLiveZoom), [&](float* z){ float p, y; return behindCam->GetLiveState(&p, &y, z); }, [&](float z){ float p, y, cz; behindCam->GetLiveState(&p, &y, &cz); behindCam->SetLiveState(p, y, z); }, 0.0f, 50.0f, "%.1f", defaults.live_zoom);
+
+        drawHeader(loc.Get(m_locDistanceZoomSettings));
+        drawFloat(loc.Get(m_locMinDistance), [&](float* v){ float mx, tm, d, td, s, l; return behindCam->GetDistanceSettings(v, &mx, &tm, &d, &td, &s, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(v, mx, tm, d, td, s, l); }, 0.0f, 50.0f, "%.1f", defaults.distance_min);
+        drawFloat(loc.Get(m_locMaxDistance), [&](float* v){ float mi, tm, d, td, s, l; return behindCam->GetDistanceSettings(&mi, v, &tm, &d, &td, &s, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, v, tm, d, td, s, l); }, 0.0f, 50.0f, "%.1f", defaults.distance_max);
+        drawFloat(loc.Get(m_locTrailerMaxOffset), [&](float* v){ float mi, mx, d, td, s, l; return behindCam->GetDistanceSettings(&mi, &mx, v, &d, &td, &s, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, mx, v, d, td, s, l); }, 0.0f, 10.0f, "%.1f", defaults.distance_trailer_max_offset);
+        drawFloat(loc.Get(m_locDefaultDistance), [&](float* v){ float mi, mx, tm, td, s, l; return behindCam->GetDistanceSettings(&mi, &mx, &tm, v, &td, &s, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, mx, tm, v, td, s, l); }, 0.0f, 50.0f, "%.1f", defaults.distance_default);
+        drawFloat(loc.Get(m_locTrailerDefaultDist), [&](float* v){ float mi, mx, tm, d, s, l; return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, v, &s, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, mx, tm, d, v, s, l); }, 0.0f, 50.0f, "%.1f", defaults.distance_trailer_default);
+        drawFloat(loc.Get(m_locZoomSpeed), [&](float* v){ float mi, mx, tm, d, td, l; return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, v, &l); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, mx, tm, d, td, v, l); }, 0.1f, 5.0f, "%.2f", defaults.distance_change_speed);
+        drawFloat(loc.Get(m_locDistanceLaziness), [&](float* v){ float mi, mx, tm, d, td, s; return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, v); }, [&](float v){ float mi, mx, tm, d, td, s, l; behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, &l); behindCam->SetDistanceSettings(mi, mx, tm, d, td, s, v); }, 0.1f, 10.0f, "%.2f", defaults.distance_laziness_speed);
+
+        drawHeader(loc.Get(m_locElevationPitchSettings));
+        drawFloat(loc.Get(m_locAzimuthLaziness), [&](float* v){ float mi, mx, d, td, h; return behindCam->GetElevationSettings(v, &mi, &mx, &d, &td, &h); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(v, mi, mx, d, td, h); }, 0.1f, 10.0f, "%.2f", defaults.azimuth_laziness_speed);
+        drawFloat(loc.Get(m_locMinElevation), [&](float* v){ float al, mx, d, td, h; return behindCam->GetElevationSettings(&al, v, &mx, &d, &td, &h); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(al, v, mx, d, td, h); }, -90.0f, 90.0f, "%.1f", defaults.elevation_min);
+        drawFloat(loc.Get(m_locMaxElevation), [&](float* v){ float al, mi, d, td, h; return behindCam->GetElevationSettings(&al, &mi, v, &d, &td, &h); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(al, mi, v, d, td, h); }, 0.0f, 90.0f, "%.1f", defaults.elevation_max);
+        drawFloat(loc.Get(m_locDefaultElevation), [&](float* v){ float al, mi, mx, td, h; return behindCam->GetElevationSettings(&al, &mi, &mx, v, &td, &h); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(al, mi, mx, v, td, h); }, 0.0f, 90.0f, "%.1f", defaults.elevation_default);
+        drawFloat(loc.Get(m_locTrailerDefaultElev), [&](float* v){ float al, mi, mx, d, h; return behindCam->GetElevationSettings(&al, &mi, &mx, &d, v, &h); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(al, mi, mx, d, v, h); }, 0.0f, 90.0f, "%.1f", defaults.elevation_trailer_default);
+        drawFloat(loc.Get(m_locHeightLimit), [&](float* v){ float al, mi, mx, d, td; return behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, v); }, [&](float v){ float al, mi, mx, d, td, h; behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, &h); behindCam->SetElevationSettings(al, mi, mx, d, td, v); }, 0.0f, 50.0f, "%.1f", defaults.height_limit);
+
+        drawHeader(loc.Get(m_locPivotOffset));
+        drawVector3(loc.Get(m_locPivotOffset), loc.Get(m_locPivotX).c_str(), loc.Get(m_locPivotY).c_str(), loc.Get(m_locPivotZ).c_str(),
+                   [&](float* x, float* y, float* z){ return behindCam->GetPivot(x, y, z); },
+                   [&](float x, float y, float z){ behindCam->SetPivot(x, y, z); }, -5.0f, 5.0f, ImVec4(defaults.pivot_x, defaults.pivot_y, defaults.pivot_z, 0));
+
+        drawHeader(loc.Get(m_locDynamicOffset));
+        drawFloat(loc.Get(m_locMaxDynamicOffset), [&](float* v){ float s1, s2, l; return behindCam->GetDynamicOffset(v, &s1, &s2, &l); }, [&](float v){ float m, s1, s2, l; behindCam->GetDynamicOffset(&m, &s1, &s2, &l); behindCam->SetDynamicOffset(v, s1, s2, l); }, 0.0f, 10.0f, "%.2f", defaults.dynamic_offset_max);
+        drawFloat(loc.Get(m_locDynOffsetSpeedMin), [&](float* v){ float m, s2, l; return behindCam->GetDynamicOffset(&m, v, &s2, &l); }, [&](float v){ float m, s1, s2, l; behindCam->GetDynamicOffset(&m, &s1, &s2, &l); behindCam->SetDynamicOffset(m, v, s2, l); }, 0.0f, 100.0f, "%.1f", defaults.dynamic_offset_speed_min);
+        drawFloat(loc.Get(m_locDynOffsetSpeedMax), [&](float* v){ float m, s1, l; return behindCam->GetDynamicOffset(&m, &s1, v, &l); }, [&](float v){ float m, s1, s2, l; behindCam->GetDynamicOffset(&m, &s1, &s2, &l); behindCam->SetDynamicOffset(m, s1, v, l); }, 0.0f, 100.0f, "%.1f", defaults.dynamic_offset_speed_max);
+        drawFloat(loc.Get(m_locDynOffsetLaziness), [&](float* v){ float m, s1, s2; return behindCam->GetDynamicOffset(&m, &s1, &s2, v); }, [&](float v){ float m, s1, s2, l; behindCam->GetDynamicOffset(&m, &s1, &s2, &l); behindCam->SetDynamicOffset(m, s1, s2, v); }, 0.1f, 5.0f, "%.2f", defaults.dynamic_offset_laziness_speed);
+
+        drawHeader(loc.Get(m_locBehindCollisionSettings));
+        drawBool(loc.Get(m_locBehindValidation), [&](bool* v){ return behindCam->GetValidation(v); }, [&](bool v){ behindCam->SetValidation(v); });
+        drawFloat(loc.Get(m_locBehindValidationRadius), [&](float* v){ float s1, s2; return behindCam->GetValidationSettings(v, &s1, &s2); }, [&](float v){ float r, s1, s2; behindCam->GetValidationSettings(&r, &s1, &s2); behindCam->SetValidationSettings(v, s1, s2); }, 0.0f, 5.0f, "%.3f", defaults.validation_radius);
+        drawFloat(loc.Get(m_locBehindValidationSpeedPos), [&](float* v){ float r, s2; return behindCam->GetValidationSettings(&r, v, &s2); }, [&](float v){ float r, s1, s2; behindCam->GetValidationSettings(&r, &s1, &s2); behindCam->SetValidationSettings(r, v, s2); }, 0.0f, 10.0f, "%.3f", defaults.validation_speed_positive);
+        drawFloat(loc.Get(m_locBehindValidationSpeedNeg), [&](float* v){ float r, s1; return behindCam->GetValidationSettings(&r, &s1, v); }, [&](float v){ float r, s1, s2; behindCam->GetValidationSettings(&r, &s1, &s2); behindCam->SetValidationSettings(r, s1, v); }, 0.0f, 10.0f, "%.3f", defaults.validation_speed_negative);
+        drawFloat(loc.Get(m_locBehindSpeedFovFactor), [&](float* v){ return behindCam->GetSpeedFovChangeFactor(v); }, [&](float v){ behindCam->SetSpeedFovChangeFactor(v); }, 0.0f, 1.0f, "%.4f", defaults.speed_fov_change_factor);
+
+        drawHeader(loc.Get(m_locBehindShakeSettings));
+        drawFloat(loc.Get(m_locBehindShakeAnimStep), [&](float* v){ return behindCam->GetShakeAnimStep(v); }, [&](float v){ behindCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locBehindShakeAnimScaleMin).c_str(), loc.Get(m_locBehindShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = behindCam->GetShakeAnimScaleMin(s_min); bool r2 = behindCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ behindCam->SetShakeAnimScaleMin(s_min); behindCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locBehindShakeAnimationArray));
+        size_t shake_count = behindCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_behind = 0;
+            if (selected_shake_index_behind >= (int)shake_count) selected_shake_index_behind = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_behind);
+            drawCenteredCombo("##ShakeComboBehind", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_behind == (int)i)) selected_shake_index_behind = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ behindCam->GetShakeAnim(selected_shake_index_behind, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ behindCam->SetShakeAnim(selected_shake_index_behind, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
+
+        ImGui::Spacing();
         ImGui::Separator();
-
-        ImGui::Text("%s", loc.Get(m_locDistanceZoomSettings).c_str());
-        float dist_min, dist_max, dist_trailer_max, dist_def, dist_trailer_def, dist_speed, dist_lazy;
-        if (behindCam->GetDistanceSettings(&dist_min, &dist_max, &dist_trailer_max, &dist_def, &dist_trailer_def, &dist_speed, &dist_lazy)) {
-          bool distChanged = false;
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locMinDistance).c_str(), &dist_min, 0.0f, 50.0f, "%.1f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locMaxDistance).c_str(), &dist_max, 0.0f, 50.0f, "%.1f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locTrailerMaxOffset).c_str(), &dist_trailer_max, 0.0f, 10.0f, "%.1f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultDistance).c_str(), &dist_def, 0.0f, 50.0f, "%.1f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locTrailerDefaultDist).c_str(), &dist_trailer_def, 0.0f, 50.0f, "%.1f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locZoomSpeed).c_str(), &dist_speed, 0.1f, 5.0f, "%.2f");
-          distChanged |= ImGui::SliderFloat(loc.Get(m_locDistanceLaziness).c_str(), &dist_lazy, 0.1f, 10.0f, "%.2f");
-          if (distChanged) {
-            behindCam->SetDistanceSettings(dist_min, dist_max, dist_trailer_max, dist_def, dist_trailer_def, dist_speed, dist_lazy);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locDistanceZoomSettingsNotFound).c_str());
-        }
-        ImGui::Separator();
-
-        ImGui::Text("%s", loc.Get(m_locElevationPitchSettings).c_str());
-        float elev_min, elev_max, elev_def, elev_trailer_def, height_limit, azimuth_lazy;
-        if (behindCam->GetElevationSettings(&azimuth_lazy, &elev_min, &elev_max, &elev_def, &elev_trailer_def, &height_limit)) {
-          bool elevChanged = false;
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locAzimuthLaziness).c_str(), &azimuth_lazy, 0.1f, 10.0f, "%.2f");
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locMinElevation).c_str(), &elev_min, -90.0f, 90.0f, "%.1f");
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locMaxElevation).c_str(), &elev_max, 0.0f, 90.0f, "%.1f");
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultElevation).c_str(), &elev_def, 0.0f, 90.0f, "%.1f");
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locTrailerDefaultElev).c_str(), &elev_trailer_def, 0.0f, 90.0f, "%.1f");
-          elevChanged |= ImGui::SliderFloat(loc.Get(m_locHeightLimit).c_str(), &height_limit, 0.0f, 50.0f, "%.1f");
-          if (elevChanged) {
-            behindCam->SetElevationSettings(azimuth_lazy, elev_min, elev_max, elev_def, elev_trailer_def, height_limit);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locElevationPitchSettingsNotFound).c_str());
-        }
-        ImGui::Separator();
-
-        ImGui::Text("%s", loc.Get(m_locPivotOffset).c_str());
-        float pivot_x, pivot_y, pivot_z;
-        if (behindCam->GetPivot(&pivot_x, &pivot_y, &pivot_z)) {
-          bool pivotChanged = false;
-          pivotChanged |= ImGui::SliderFloat(loc.Get(m_locPivotX).c_str(), &pivot_x, -5.0f, 5.0f, "%.2f");
-          pivotChanged |= ImGui::SliderFloat(loc.Get(m_locPivotY).c_str(), &pivot_y, -5.0f, 5.0f, "%.2f");
-          pivotChanged |= ImGui::SliderFloat(loc.Get(m_locPivotZ).c_str(), &pivot_z, -5.0f, 5.0f, "%.2f");
-          if (pivotChanged) {
-            behindCam->SetPivot(pivot_x, pivot_y, pivot_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locPivotOffsetNotFound).c_str());
-        }
-        ImGui::Separator();
-
-        ImGui::Text("%s", loc.Get(m_locDynamicOffset).c_str());
-        float dyn_max, dyn_speed_min, dyn_speed_max, dyn_lazy;
-        if (behindCam->GetDynamicOffset(&dyn_max, &dyn_speed_min, &dyn_speed_max, &dyn_lazy)) {
-          bool dynChanged = false;
-          dynChanged |= ImGui::SliderFloat(loc.Get(m_locMaxDynamicOffset).c_str(), &dyn_max, 0.0f, 10.0f, "%.2f");
-          dynChanged |= ImGui::SliderFloat(loc.Get(m_locDynOffsetSpeedMin).c_str(), &dyn_speed_min, 0.0f, 100.0f, "%.1f");
-          dynChanged |= ImGui::SliderFloat(loc.Get(m_locDynOffsetSpeedMax).c_str(), &dyn_speed_max, 0.0f, 100.0f, "%.1f");
-          dynChanged |= ImGui::SliderFloat(loc.Get(m_locDynOffsetLaziness).c_str(), &dyn_lazy, 0.1f, 5.0f, "%.2f");
-          if (dynChanged) {
-            behindCam->SetDynamicOffset(dyn_max, dyn_speed_min, dyn_speed_max, dyn_lazy);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locDynamicOffsetNotFound).c_str());
-        }
-        ImGui::Separator();
-
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (behindCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovBehind).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            behindCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (behindCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
-        ImGui::Separator();
-
-        if (Button(loc.Get(m_locResetToDefaultsBehind).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           behindCam->ResetToDefaults();
-        }
+    }
       } else {
         ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
       }
@@ -1106,7 +1080,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsTop).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           topCam->ResetToDefaults();
         }
       } else {
@@ -1140,7 +1114,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsCabin).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           cabinCam->ResetToDefaults();
         }
       } else {
@@ -1230,7 +1204,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsWindow).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           windowCam->ResetToDefaults();
         }
       } else {
@@ -1279,7 +1253,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsBumper).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           bumperCam->ResetToDefaults();
         }
       } else {
@@ -1328,7 +1302,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsWheel).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           wheelCam->ResetToDefaults();
         }
       } else {
@@ -1403,7 +1377,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsTV).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           tvCam->ResetToDefaults();
         }
       } else {
@@ -1489,7 +1463,7 @@ void CameraWindow::RenderContent() {
         }
 
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaultsFreeCam).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           freeCam->ResetToDefaults();
         }
       } else {

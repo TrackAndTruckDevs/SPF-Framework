@@ -91,6 +91,24 @@ void GameCameraBehind::StoreDefaultState() {
   float fov_val;
   if (GetFov(&fov_val)) m_defaultCameraData.fov_base = fov_val;
 
+  bool validation;
+  if (GetValidation(&validation)) m_defaultCameraData.validation = validation;
+
+  float val_radius, val_speed_pos, val_speed_neg;
+  if (GetValidationSettings(&val_radius, &val_speed_pos, &val_speed_neg)) {
+    m_defaultCameraData.validation_radius = val_radius;
+    m_defaultCameraData.validation_speed_positive = val_speed_pos;
+    m_defaultCameraData.validation_speed_negative = val_speed_neg;
+  }
+
+  float speed_fov;
+  if (GetSpeedFovChangeFactor(&speed_fov)) m_defaultCameraData.speed_fov_change_factor = speed_fov;
+
+  float shake_step, shake_min, shake_max;
+  if (GetShakeAnimStep(&shake_step)) m_defaultCameraData.shake_anim_step = shake_step;
+  if (GetShakeAnimScaleMin(&shake_min)) m_defaultCameraData.shake_anim_scale_min = shake_min;
+  if (GetShakeAnimScaleMax(&shake_max)) m_defaultCameraData.shake_anim_scale_max = shake_max;
+
   m_defaultsSaved = true;
   logger->Info("Default camera state has been stored.");
 }
@@ -121,6 +139,12 @@ void GameCameraBehind::ResetToDefaults() {
                    m_defaultCameraData.dynamic_offset_speed_max,
                    m_defaultCameraData.dynamic_offset_laziness_speed);
   SetFov(m_defaultCameraData.fov_base);
+  SetValidation(m_defaultCameraData.validation);
+  SetValidationSettings(m_defaultCameraData.validation_radius, m_defaultCameraData.validation_speed_positive, m_defaultCameraData.validation_speed_negative);
+  SetSpeedFovChangeFactor(m_defaultCameraData.speed_fov_change_factor);
+  SetShakeAnimStep(m_defaultCameraData.shake_anim_step);
+  SetShakeAnimScaleMin(m_defaultCameraData.shake_anim_scale_min);
+  SetShakeAnimScaleMax(m_defaultCameraData.shake_anim_scale_max);
 }
 
 void GameCameraBehind::SetLiveState(float pitch, float yaw, float zoom) {
@@ -264,6 +288,86 @@ void GameCameraBehind::SetFov(float fov) {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraBehind");
     logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
   }
+}
+
+void GameCameraBehind::SetValidation(bool enabled) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetBehindValidationOffset();
+  if (offset) {
+    *reinterpret_cast<bool*>(pCam + offset) = enabled;
+  }
+}
+
+void GameCameraBehind::SetValidationSettings(float radius, float speed_pos, float speed_neg) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto radius_offset = gameData.GetBehindValidationRadiusOffset();
+  auto speed_pos_offset = gameData.GetBehindValidationSpeedPositiveOffset();
+  auto speed_neg_offset = gameData.GetBehindValidationSpeedNegativeOffset();
+  if (radius_offset && speed_pos_offset && speed_neg_offset) {
+    *reinterpret_cast<float*>(pCam + radius_offset) = radius;
+    *reinterpret_cast<float*>(pCam + speed_pos_offset) = speed_pos;
+    *reinterpret_cast<float*>(pCam + speed_neg_offset) = speed_neg;
+  }
+}
+
+void GameCameraBehind::SetSpeedFovChangeFactor(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetBehindSpeedFovChangeFactorOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraBehind::SetShakeAnimStep(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraBehind::SetShakeAnimScaleMin(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraBehind::SetShakeAnimScaleMax(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraBehind::SetShakeAnim(size_t index, float x, float y, float z) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return;
+
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return;
+
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  pVec[0] = x;
+  pVec[1] = y;
+  pVec[2] = z;
 }
 
 // --- New Safe Getters ---
@@ -417,6 +521,109 @@ bool GameCameraBehind::GetFinalFov(float* out_horiz, float* out_vert) const {
     return true;
   }
   return false;
+}
+
+bool GameCameraBehind::GetValidation(bool* out_enabled) const {
+  if (!out_enabled || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetBehindValidationOffset();
+  if (offset) {
+    *out_enabled = *reinterpret_cast<bool*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraBehind::GetValidationSettings(float* out_radius, float* out_speed_pos, float* out_speed_neg) const {
+  if (!out_radius || !out_speed_pos || !out_speed_neg || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto radius_offset = gameData.GetBehindValidationRadiusOffset();
+  auto speed_pos_offset = gameData.GetBehindValidationSpeedPositiveOffset();
+  auto speed_neg_offset = gameData.GetBehindValidationSpeedNegativeOffset();
+  if (radius_offset && speed_pos_offset && speed_neg_offset) {
+    *out_radius = *reinterpret_cast<float*>(pCam + radius_offset);
+    *out_speed_pos = *reinterpret_cast<float*>(pCam + speed_pos_offset);
+    *out_speed_neg = *reinterpret_cast<float*>(pCam + speed_neg_offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraBehind::GetSpeedFovChangeFactor(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetBehindSpeedFovChangeFactorOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraBehind::GetShakeAnimStep(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraBehind::GetShakeAnimScaleMin(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraBehind::GetShakeAnimScaleMax(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+size_t GameCameraBehind::GetShakeAnimCount() const {
+  if (!m_pCameraObject) return 0;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (offset) {
+    return *reinterpret_cast<size_t*>(pCam + offset + 16);
+  }
+  return 0;
+}
+
+void GameCameraBehind::GetShakeAnim(size_t index, float& x, float& y, float& z) const {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return;
+
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return;
+
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  x = pVec[0];
+  y = pVec[1];
+  z = pVec[2];
 }
 }  // namespace GameCamera
 SPF_NS_END

@@ -301,6 +301,41 @@ Gets or sets the dynamic offset that changes based on vehicle speed.
 **`Cam_GetBehindFov(float* fov)` / `Cam_SetBehindFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the behind camera.
 
+#### Behind Advanced Settings
+
+Advanced parameters for the third-person chase camera, including collision (validation) and shake effects.
+
+---
+**`Cam_GetBehindValidation(bool* out_val)` / `Cam_SetBehindValidation(bool val)`**
+Gets or sets whether camera-to-world collision detection is enabled for the behind camera.
+
+---
+**`Cam_GetBehindValidationSettings(float* out_radius, float* out_speed_pos, float* out_speed_neg)`**
+**`Cam_SetBehindValidationSettings(float radius, float speed_pos, float speed_neg)`**
+Gets or sets the parameters for the collision solver. `radius` is the sphere radius used for intersection tests, while `speed_pos` and `speed_neg` control the smoothing of the collision recovery.
+
+---
+**`Cam_GetBehindSpeedFovChangeFactor(float* out_val)` / `Cam_SetBehindSpeedFovChangeFactor(float val)`**
+Gets or sets how much the FOV increases dynamically based on the vehicle's speed.
+
+---
+**`Cam_GetBehindShakeAnimStep(float* out_val)` / `Cam_SetBehindShakeAnimStep(float val)`**
+Gets or sets the animation step (speed) for the behind camera shake.
+
+---
+**`Cam_GetBehindShakeAnimScaleMin(float* out_val)` / `Cam_SetBehindShakeAnimScaleMin(float val)`**
+**`Cam_GetBehindShakeAnimScaleMax(float* out_val)` / `Cam_SetBehindShakeAnimScaleMax(float val)`**
+Gets or sets the intensity scale range for the behind camera's procedural vibrations.
+
+---
+**`Cam_GetBehindShakeAnimCount()`**
+Returns the number of points in the behind camera's shake animation sequence.
+
+---
+**`Cam_GetBehindShakeAnim(size_t index, float* out_x, float* out_y, float* out_z)`**
+**`Cam_SetBehindShakeAnim(size_t index, float x, float y, float z)`**
+Gets or sets a specific XYZ coordinate point in the shake animation sequence.
+
 <br>
 
 ### Top-Down Camera (`SPF_CAMERA_TOP_BASIC`)
