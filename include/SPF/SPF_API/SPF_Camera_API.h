@@ -1135,6 +1135,271 @@ typedef uintptr_t (*SPF_Camera_GetCameraParamsObjectPtr_t)();
 typedef bool (*SPF_Camera_Anim_Prepare_t)();
 
 
+// --- New Interior Advanced settings ---
+
+/**
+ * @brief Checks if the interior camera is currently "outside" (e.g., leaning out).
+ * @param[out] out_val Pointer to store the boolean result.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorOutside_t)(bool* out_val);
+
+/**
+ * @brief Sets whether the interior camera is "outside".
+ * @param val True if outside, false if inside.
+ */
+typedef void (*SPF_Camera_SetInteriorOutside_t)(bool val);
+
+/**
+ * @brief Gets the near clipping plane distance for the interior camera.
+ * @param[out] out_val Pointer to store the distance.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorNearPlane_t)(float* out_val);
+
+/**
+ * @brief Sets the near clipping plane distance for the interior camera.
+ * @param val The new distance.
+ */
+typedef void (*SPF_Camera_SetInteriorNearPlane_t)(float val);
+
+/**
+ * @brief Gets the far clipping plane distance for the interior camera.
+ * @param[out] out_val Pointer to store the distance.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorFarPlane_t)(float* out_val);
+
+/**
+ * @brief Sets the far clipping plane distance for the interior camera.
+ * @param val The new distance.
+ */
+typedef void (*SPF_Camera_SetInteriorFarPlane_t)(float val);
+
+/**
+ * @brief Gets the mouse sensitivity for the interior camera.
+ * @param[out] out_val Pointer to store the sensitivity value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorMouseSensitivity_t)(float* out_val);
+
+/**
+ * @brief Sets the mouse sensitivity for the interior camera.
+ * @param val The new sensitivity value.
+ */
+typedef void (*SPF_Camera_SetInteriorMouseSensitivity_t)(float val);
+
+/**
+ * @brief Gets the animation step for the cabin shake effect.
+ * @param[out] out_val Pointer to store the step value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorShakeAnimStep_t)(float* out_val);
+
+/**
+ * @brief Sets the animation step for the cabin shake effect.
+ * @param val The new step value.
+ */
+typedef void (*SPF_Camera_SetInteriorShakeAnimStep_t)(float val);
+
+/**
+ * @brief Gets the minimum scale for the cabin shake effect.
+ * @param[out] out_val Pointer to store the scale value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorShakeAnimScaleMin_t)(float* out_val);
+
+/**
+ * @brief Sets the minimum scale for the cabin shake effect.
+ * @param val The new scale value.
+ */
+typedef void (*SPF_Camera_SetInteriorShakeAnimScaleMin_t)(float val);
+
+/**
+ * @brief Gets the maximum scale for the cabin shake effect.
+ * @param[out] out_val Pointer to store the scale value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorShakeAnimScaleMax_t)(float* out_val);
+
+/**
+ * @brief Sets the maximum scale for the cabin shake effect.
+ * @param val The new scale value.
+ */
+typedef void (*SPF_Camera_SetInteriorShakeAnimScaleMax_t)(float val);
+
+/**
+ * @brief Gets the limit for the "hand shake" (living hands) effect.
+ * @param[out] out_val Pointer to store the limit value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorHandShakeLimit_t)(float* out_val);
+
+/**
+ * @brief Sets the limit for the "hand shake" effect.
+ * @param val The new limit value.
+ */
+typedef void (*SPF_Camera_SetInteriorHandShakeLimit_t)(float val);
+
+/**
+ * @brief Gets the speed for the "hand shake" effect.
+ * @param[out] out_val Pointer to store the speed value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorHandShakeSpeed_t)(float* out_val);
+
+/**
+ * @brief Sets the speed for the "hand shake" effect.
+ * @param val The new speed value.
+ */
+typedef void (*SPF_Camera_SetInteriorHandShakeSpeed_t)(float val);
+
+/**
+ * @brief Gets the FOV factor used during camera zoom.
+ * @param[out] out_val Pointer to store the factor value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorZoomFovFactor_t)(float* out_val);
+
+/**
+ * @brief Sets the FOV factor for camera zoom.
+ * @param val The new factor value.
+ */
+typedef void (*SPF_Camera_SetInteriorZoomFovFactor_t)(float val);
+
+/**
+ * @brief Gets the zoom speed for the interior camera.
+ * @param[out] out_val Pointer to store the speed value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorZoomSpeed_t)(float* out_val);
+
+/**
+ * @brief Sets the zoom speed for the interior camera.
+ * @param val The new speed value.
+ */
+typedef void (*SPF_Camera_SetInteriorZoomSpeed_t)(float val);
+
+
+// --- Azimuth Overrides ---
+
+/**
+ * @brief Gets the total number of azimuth override zones.
+ * @return The number of zones.
+ */
+typedef size_t (*SPF_Camera_GetInteriorAzimuthOverridesCount_t)();
+
+/**
+ * @brief Gets the raw memory address of an azimuth override object.
+ * @param index The zero-based index of the override.
+ * @return The memory address, or NULL if invalid.
+ */
+typedef void* (*SPF_Camera_GetInteriorAzimuthOverrideAddress_t)(size_t index);
+
+/**
+ * @brief Gets the "outside" flag for a specific azimuth override.
+ * @param index The index of the override.
+ * @param[out] out_val Pointer to store the result.
+ * @return True on success.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideOutside_t)(size_t index, bool* out_val);
+
+/**
+ * @brief Sets the "outside" flag for an azimuth override.
+ */
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideOutside_t)(size_t index, bool val);
+
+/**
+ * @brief Gets the starting azimuth (angle) for an override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartAzimuth_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartAzimuth_t)(size_t index, float val);
+
+/**
+ * @brief Gets the ending azimuth (angle) for an override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndAzimuth_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndAzimuth_t)(size_t index, float val);
+
+/**
+ * @brief Gets the upward rotation limit at the start of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartUpLimit_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartUpLimit_t)(size_t index, float val);
+
+/**
+ * @brief Gets the upward rotation limit at the end of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndUpLimit_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndUpLimit_t)(size_t index, float val);
+
+/**
+ * @brief Gets the downward rotation limit at the start of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartDownLimit_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartDownLimit_t)(size_t index, float val);
+
+/**
+ * @brief Gets the downward rotation limit at the end of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndDownLimit_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndDownLimit_t)(size_t index, float val);
+
+/**
+ * @brief Gets the default up/down rotation at the start of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartUpDownDefault_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartUpDownDefault_t)(size_t index, float val);
+
+/**
+ * @brief Gets the default up/down rotation at the end of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndUpDownDefault_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndUpDownDefault_t)(size_t index, float val);
+
+/**
+ * @brief Gets the default left/right rotation at the start of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartLeftRightDefault_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartLeftRightDefault_t)(size_t index, float val);
+
+/**
+ * @brief Gets the default left/right rotation at the end of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndLeftRightDefault_t)(size_t index, float* out_val);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndLeftRightDefault_t)(size_t index, float val);
+
+/**
+ * @brief Gets the head offset (X, Y, Z) at the start of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideStartHeadOffset_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideStartHeadOffset_t)(size_t index, float x, float y, float z);
+
+/**
+ * @brief Gets the head offset (X, Y, Z) at the end of the override zone.
+ */
+typedef bool (*SPF_Camera_GetInteriorAzimuthOverrideEndHeadOffset_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetInteriorAzimuthOverrideEndHeadOffset_t)(size_t index, float x, float y, float z);
+
+
+// --- Shake Animation ---
+
+/**
+ * @brief Gets the number of points in the cabin shake animation.
+ */
+typedef size_t (*SPF_Camera_GetInteriorShakeAnimCount_t)();
+
+/**
+ * @brief Gets a specific point (X, Y, Z) from the shake animation.
+ */
+typedef bool (*SPF_Camera_GetInteriorShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+
+/**
+ * @brief Sets a specific point (X, Y, Z) in the shake animation.
+ */
+typedef void (*SPF_Camera_SetInteriorShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -1530,6 +1795,98 @@ typedef struct SPF_Camera_API {
      * @return The uintptr_t memory address, or 0 if the pointer is invalid.
      */
     SPF_Camera_GetDebugObjectAddress_t Cam_GetDebugObjectAddress;
+
+    // --- New Interior Advanced Settings ---
+    /** @brief Gets/Sets the interior camera "outside" flag. See `SPF_Camera_GetInteriorOutside_t`. */
+    SPF_Camera_GetInteriorOutside_t Cam_GetInteriorOutside;
+    SPF_Camera_SetInteriorOutside_t Cam_SetInteriorOutside;
+
+    /** @brief Gets/Sets the near clipping plane for the interior camera. */
+    SPF_Camera_GetInteriorNearPlane_t Cam_GetInteriorNearPlane;
+    SPF_Camera_SetInteriorNearPlane_t Cam_SetInteriorNearPlane;
+
+    /** @brief Gets/Sets the far clipping plane for the interior camera. */
+    SPF_Camera_GetInteriorFarPlane_t Cam_GetInteriorFarPlane;
+    SPF_Camera_SetInteriorFarPlane_t Cam_SetInteriorFarPlane;
+
+    /** @brief Gets/Sets mouse sensitivity for the interior camera. */
+    SPF_Camera_GetInteriorMouseSensitivity_t Cam_GetInteriorMouseSensitivity;
+    SPF_Camera_SetInteriorMouseSensitivity_t Cam_SetInteriorMouseSensitivity;
+
+    /** @brief Gets/Sets the shake animation step. */
+    SPF_Camera_GetInteriorShakeAnimStep_t Cam_GetInteriorShakeAnimStep;
+    SPF_Camera_SetInteriorShakeAnimStep_t Cam_SetInteriorShakeAnimStep;
+
+    /** @brief Gets/Sets the shake animation scale (min/max). */
+    SPF_Camera_GetInteriorShakeAnimScaleMin_t Cam_GetInteriorShakeAnimScaleMin;
+    SPF_Camera_SetInteriorShakeAnimScaleMin_t Cam_SetInteriorShakeAnimScaleMin;
+    SPF_Camera_GetInteriorShakeAnimScaleMax_t Cam_GetInteriorShakeAnimScaleMax;
+    SPF_Camera_SetInteriorShakeAnimScaleMax_t Cam_SetInteriorShakeAnimScaleMax;
+
+    /** @brief Gets/Sets the hand shake limit/speed. */
+    SPF_Camera_GetInteriorHandShakeLimit_t Cam_GetInteriorHandShakeLimit;
+    SPF_Camera_SetInteriorHandShakeLimit_t Cam_SetInteriorHandShakeLimit;
+    SPF_Camera_GetInteriorHandShakeSpeed_t Cam_GetInteriorHandShakeSpeed;
+    SPF_Camera_SetInteriorHandShakeSpeed_t Cam_SetInteriorHandShakeSpeed;
+
+    /** @brief Gets/Sets the zoom FOV factor/speed. */
+    SPF_Camera_GetInteriorZoomFovFactor_t Cam_GetInteriorZoomFovFactor;
+    SPF_Camera_SetInteriorZoomFovFactor_t Cam_SetInteriorZoomFovFactor;
+    SPF_Camera_GetInteriorZoomSpeed_t Cam_GetInteriorZoomSpeed;
+    SPF_Camera_SetInteriorZoomSpeed_t Cam_SetInteriorZoomSpeed;
+
+    // --- Azimuth Overrides ---
+    /** @brief Gets the number of azimuth override zones. */
+    SPF_Camera_GetInteriorAzimuthOverridesCount_t Cam_GetInteriorAzimuthOverridesCount;
+    /** @brief Gets the raw memory address of an azimuth override zone object. */
+    SPF_Camera_GetInteriorAzimuthOverrideAddress_t Cam_GetInteriorAzimuthOverrideAddress;
+
+    /** @brief Gets/Sets the outside flag for an azimuth override zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideOutside_t Cam_GetInteriorAzimuthOverrideOutside;
+    SPF_Camera_SetInteriorAzimuthOverrideOutside_t Cam_SetInteriorAzimuthOverrideOutside;
+
+    /** @brief Gets/Sets start/end azimuth for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartAzimuth_t Cam_GetInteriorAzimuthOverrideStartAzimuth;
+    SPF_Camera_SetInteriorAzimuthOverrideStartAzimuth_t Cam_SetInteriorAzimuthOverrideStartAzimuth;
+    SPF_Camera_GetInteriorAzimuthOverrideEndAzimuth_t Cam_GetInteriorAzimuthOverrideEndAzimuth;
+    SPF_Camera_SetInteriorAzimuthOverrideEndAzimuth_t Cam_SetInteriorAzimuthOverrideEndAzimuth;
+
+    /** @brief Gets/Sets upward rotation limits for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartUpLimit_t Cam_GetInteriorAzimuthOverrideStartUpLimit;
+    SPF_Camera_SetInteriorAzimuthOverrideStartUpLimit_t Cam_SetInteriorAzimuthOverrideStartUpLimit;
+    SPF_Camera_GetInteriorAzimuthOverrideEndUpLimit_t Cam_GetInteriorAzimuthOverrideEndUpLimit;
+    SPF_Camera_SetInteriorAzimuthOverrideEndUpLimit_t Cam_SetInteriorAzimuthOverrideEndUpLimit;
+
+    /** @brief Gets/Sets downward rotation limits for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartDownLimit_t Cam_GetInteriorAzimuthOverrideStartDownLimit;
+    SPF_Camera_SetInteriorAzimuthOverrideStartDownLimit_t Cam_SetInteriorAzimuthOverrideStartDownLimit;
+    SPF_Camera_GetInteriorAzimuthOverrideEndDownLimit_t Cam_GetInteriorAzimuthOverrideEndDownLimit;
+    SPF_Camera_SetInteriorAzimuthOverrideEndDownLimit_t Cam_SetInteriorAzimuthOverrideEndDownLimit;
+
+    /** @brief Gets/Sets default up/down rotation for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartUpDownDefault_t Cam_GetInteriorAzimuthOverrideStartUpDownDefault;
+    SPF_Camera_SetInteriorAzimuthOverrideStartUpDownDefault_t Cam_SetInteriorAzimuthOverrideStartUpDownDefault;
+    SPF_Camera_GetInteriorAzimuthOverrideEndUpDownDefault_t Cam_GetInteriorAzimuthOverrideEndUpDownDefault;
+    SPF_Camera_SetInteriorAzimuthOverrideEndUpDownDefault_t Cam_SetInteriorAzimuthOverrideEndUpDownDefault;
+
+    /** @brief Gets/Sets default left/right rotation for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartLeftRightDefault_t Cam_GetInteriorAzimuthOverrideStartLeftRightDefault;
+    SPF_Camera_SetInteriorAzimuthOverrideStartLeftRightDefault_t Cam_SetInteriorAzimuthOverrideStartLeftRightDefault;
+    SPF_Camera_GetInteriorAzimuthOverrideEndLeftRightDefault_t Cam_GetInteriorAzimuthOverrideEndLeftRightDefault;
+    SPF_Camera_SetInteriorAzimuthOverrideEndLeftRightDefault_t Cam_SetInteriorAzimuthOverrideEndLeftRightDefault;
+
+    /** @brief Gets/Sets head offsets for a zone. */
+    SPF_Camera_GetInteriorAzimuthOverrideStartHeadOffset_t Cam_GetInteriorAzimuthOverrideStartHeadOffset;
+    SPF_Camera_SetInteriorAzimuthOverrideStartHeadOffset_t Cam_SetInteriorAzimuthOverrideStartHeadOffset;
+    SPF_Camera_GetInteriorAzimuthOverrideEndHeadOffset_t Cam_GetInteriorAzimuthOverrideEndHeadOffset;
+    SPF_Camera_SetInteriorAzimuthOverrideEndHeadOffset_t Cam_SetInteriorAzimuthOverrideEndHeadOffset;
+
+    // --- Shake Animation ---
+    /** @brief Gets the number of points in the shake animation sequence. */
+    SPF_Camera_GetInteriorShakeAnimCount_t Cam_GetInteriorShakeAnimCount;
+    /** @brief Gets/Sets specific points in the shake animation. */
+    SPF_Camera_GetInteriorShakeAnim_t Cam_GetInteriorShakeAnim;
+    SPF_Camera_SetInteriorShakeAnim_t Cam_SetInteriorShakeAnim;
 
 } SPF_Camera_API;
 

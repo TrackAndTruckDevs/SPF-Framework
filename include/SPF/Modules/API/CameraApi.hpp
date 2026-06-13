@@ -182,6 +182,65 @@ class CameraApi {
 
   // --- Object Targeting & Inspection Trampolines ---
   static uintptr_t T_Camera_GetDebugObjectAddress(void* ptr);
+
+  // --- New Interior Advanced Settings Trampolines ---
+  static bool T_Camera_GetInteriorOutside(bool* out_val);
+  static void T_Camera_SetInteriorOutside(bool val);
+  static bool T_Camera_GetInteriorNearPlane(float* out_val);
+  static void T_Camera_SetInteriorNearPlane(float val);
+  static bool T_Camera_GetInteriorFarPlane(float* out_val);
+  static void T_Camera_SetInteriorFarPlane(float val);
+  static bool T_Camera_GetInteriorMouseSensitivity(float* out_val);
+  static void T_Camera_SetInteriorMouseSensitivity(float val);
+  static bool T_Camera_GetInteriorShakeAnimStep(float* out_val);
+  static void T_Camera_SetInteriorShakeAnimStep(float val);
+  static bool T_Camera_GetInteriorShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetInteriorShakeAnimScaleMin(float val);
+  static bool T_Camera_GetInteriorShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetInteriorShakeAnimScaleMax(float val);
+  static bool T_Camera_GetInteriorHandShakeLimit(float* out_val);
+  static void T_Camera_SetInteriorHandShakeLimit(float val);
+  static bool T_Camera_GetInteriorHandShakeSpeed(float* out_val);
+  static void T_Camera_SetInteriorHandShakeSpeed(float val);
+  static bool T_Camera_GetInteriorZoomFovFactor(float* out_val);
+  static void T_Camera_SetInteriorZoomFovFactor(float val);
+  static bool T_Camera_GetInteriorZoomSpeed(float* out_val);
+  static void T_Camera_SetInteriorZoomSpeed(float val);
+
+  // --- Azimuth Overrides Trampolines ---
+  static size_t T_Camera_GetInteriorAzimuthOverridesCount();
+  static void* T_Camera_GetInteriorAzimuthOverrideAddress(size_t index);
+  static bool T_Camera_GetInteriorAzimuthOverrideOutside(size_t index, bool* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideOutside(size_t index, bool val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartAzimuth(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideStartAzimuth(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndAzimuth(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideEndAzimuth(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartUpLimit(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideStartUpLimit(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndUpLimit(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideEndUpLimit(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartDownLimit(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideStartDownLimit(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndDownLimit(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideEndDownLimit(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartUpDownDefault(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideStartUpDownDefault(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndUpDownDefault(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideEndUpDownDefault(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartLeftRightDefault(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideStartLeftRightDefault(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndLeftRightDefault(size_t index, float* out_val);
+  static void T_Camera_SetInteriorAzimuthOverrideEndLeftRightDefault(size_t index, float val);
+  static bool T_Camera_GetInteriorAzimuthOverrideStartHeadOffset(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetInteriorAzimuthOverrideStartHeadOffset(size_t index, float x, float y, float z);
+  static bool T_Camera_GetInteriorAzimuthOverrideEndHeadOffset(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetInteriorAzimuthOverrideEndHeadOffset(size_t index, float x, float y, float z);
+
+  // --- Shake Animation Trampolines ---
+  static size_t T_Camera_GetInteriorShakeAnimCount();
+  static bool T_Camera_GetInteriorShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetInteriorShakeAnim(size_t index, float x, float y, float z);
 };
 }  // namespace Modules::API
 SPF_NS_END

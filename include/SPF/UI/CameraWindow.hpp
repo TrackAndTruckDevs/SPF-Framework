@@ -38,6 +38,7 @@ class CameraWindow : public BaseWindow {
     std::string m_locCurrentCamera;
     std::string m_locCameraWorldCoordinates;
     std::string m_locCameraWorldCoordinatesNotFound;
+    std::string m_locDataNotFound;
     std::string m_locSelectCamera;
     std::string m_locInterior;
     std::string m_locBehind;
@@ -71,23 +72,56 @@ class CameraWindow : public BaseWindow {
     std::string m_locSeatLr;
     std::string m_locSeatUd;
     std::string m_locSeatFb;
-    std::string m_locSeatPositionNotFound;
     std::string m_locHeadRotation;
     std::string m_locYawLr;
     std::string m_locPitchUd;
-    std::string m_locHeadRotationNotFound;
     std::string m_locMouseRotationLimits;
     std::string m_locLeftLimit;
     std::string m_locRightLimit;
     std::string m_locUpLimit;
     std::string m_locDownLimit;
-    std::string m_locRotationLimitsNotFound;
     std::string m_locRotationDefaults;
     std::string m_locDefaultLr;
     std::string m_locDefaultUd;
-    std::string m_locRotationDefaultsNotFound;
     std::string m_locResetToDefaults;
     std::string m_locInteriorCameraNotAvailable;
+    std::string m_locDefaultValuePrefix;
+
+    // Interior Camera - Advanced (v1.2)
+    std::string m_locNearPlane;
+    std::string m_locFarPlane;
+    std::string m_locMouseSensitivity;
+    std::string m_locShakeAnimStep;
+    std::string m_locShakeAnimScaleMin;
+    std::string m_locShakeAnimScaleMax;
+    std::string m_locHandShakeLimit;
+    std::string m_locHandShakeSpeed;
+    std::string m_locZoomFovFactor;
+    std::string m_locZoomSpeedInterior;
+    std::string m_locAzimuthOverrides;
+    std::string m_locRangeStartAzimuth;
+    std::string m_locRangeEndAzimuth;
+    std::string m_locZoneIsOutside;
+    std::string m_locStartUpLimit;
+    std::string m_locEndUpLimit;
+    std::string m_locStartDownLimit;
+    std::string m_locEndDownLimit;
+    std::string m_locStartUpDownDefault;
+    std::string m_locEndUpDownDefault;
+    std::string m_locStartLeftRightDefault;
+    std::string m_locEndLeftRightDefault;
+    std::string m_locStartHeadOffset;
+    std::string m_locEndHeadOffset;
+    std::string m_locShakeAnimationArray;
+    std::string m_locPointX;
+    std::string m_locPointY;
+    std::string m_locPointZ;
+    std::string m_locSelectRange;
+    std::string m_locSelectFrame;
+    std::string m_locAdvancedCoreSettings;
+    std::string m_locShakeSettings;
+    std::string m_locInteriorLogicSettings;
+    std::string m_locAzimuthRangeDetails;
 
     // Behind Camera
     std::string m_locLiveState;

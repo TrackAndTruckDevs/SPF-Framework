@@ -216,7 +216,7 @@ uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* 
 }
 
 size_t PatternFinder::GetSizeFromTypeId(uint64_t typeId) {
-    static const std::unordered_map<uint64_t, size_t> kTypeSizeMap = {{0x05,4},{0x09,12},{0x39,4},{0x3E,8},{0x3B,8}};
+    static const std::unordered_map<uint64_t, size_t> kTypeSizeMap = {{0x05,4},{0x09,12},{0x0A,8},{0x39,4},{0x3E,8},{0x3B,8}};
     auto it = kTypeSizeMap.find(typeId);
     return (it != kTypeSizeMap.end()) ? it->second : 0;
 }

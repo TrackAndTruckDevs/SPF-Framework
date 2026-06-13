@@ -177,6 +177,101 @@ Gets or sets the maximum rotation angles for the interior camera view.
 **`Cam_GetInteriorRotationDefaults(float* lr, float* ud)` / `Cam_SetInteriorRotationDefaults(float lr, float ud)`**
 Gets or sets the default rotation values (left/right and up/down) that the camera resets to.
 
+#### Interior Advanced Settings
+
+Advanced parameters for the cabin camera, including clipping planes and physics-based effects.
+
+---
+**`Cam_GetInteriorOutside(bool* out_val)` / `Cam_SetInteriorOutside(bool val)`**
+Gets or sets whether the camera is considered to be "outside" the cabin (e.g., when leaning out the window).
+
+---
+**`Cam_GetInteriorNearPlane(float* out_val)` / `Cam_SetInteriorNearPlane(float val)`**
+**`Cam_GetInteriorFarPlane(float* out_val)` / `Cam_SetInteriorFarPlane(float val)`**
+Gets or sets the near and far clipping plane distances for the interior rendering.
+
+---
+**`Cam_GetInteriorMouseSensitivity(float* out_val)` / `Cam_SetInteriorMouseSensitivity(float val)`**
+Gets or sets the input sensitivity when controlling the interior camera.
+
+---
+**`Cam_GetInteriorShakeAnimStep(float* out_val)` / `Cam_SetInteriorShakeAnimStep(float val)`**
+Gets or sets the step (speed) of the cabin shake animation.
+
+---
+**`Cam_GetInteriorShakeAnimScaleMin(float* out_val)` / `Cam_SetInteriorShakeAnimScaleMin(float val)`**
+**`Cam_GetInteriorShakeAnimScaleMax(float* out_val)` / `Cam_SetInteriorShakeAnimScaleMax(float val)`**
+Gets or sets the minimum and maximum intensity scale for the shake animation.
+
+---
+**`Cam_GetInteriorHandShakeLimit(float* out_val)` / `Cam_SetInteriorHandShakeLimit(float val)`**
+**`Cam_GetInteriorHandShakeSpeed(float* out_val)` / `Cam_SetInteriorHandShakeSpeed(float val)`**
+Gets or sets the limits and speed for the "living hands" (hand shake) procedural effect.
+
+---
+**`Cam_GetInteriorZoomFovFactor(float* out_val)` / `Cam_SetInteriorZoomFovFactor(float val)`**
+**`Cam_GetInteriorZoomSpeed(float* out_val)` / `Cam_SetInteriorZoomSpeed(float val)`**
+Gets or sets the FOV multiplier and the transition speed used when zooming the interior camera.
+
+<br>
+
+#### Azimuth Overrides (Interior)
+
+Azimuth overrides allow the game to change rotation limits and head offsets dynamically based on the current horizontal angle (azimuth) of the camera. This is used, for example, to change limits when the driver looks at the side mirrors.
+
+---
+**`Cam_GetInteriorAzimuthOverridesCount()`**
+Returns the number of override zones defined for the interior camera.
+
+---
+**`Cam_GetInteriorAzimuthOverrideAddress(size_t index)`**
+Returns the raw memory address of the override object at the specified index.
+
+---
+**`Cam_GetInteriorAzimuthOverrideOutside(size_t index, bool* out_val)` / `Cam_SetInteriorAzimuthOverrideOutside(size_t index, bool val)`**
+Gets or sets the "outside" flag for a specific zone.
+
+---
+**`Cam_GetInteriorAzimuthOverrideStartAzimuth(size_t index, float* out_val)` / `Cam_SetInteriorAzimuthOverrideStartAzimuth(size_t index, float val)`**
+**`Cam_GetInteriorAzimuthOverrideEndAzimuth(size_t index, float* out_val)` / `Cam_SetInteriorAzimuthOverrideEndAzimuth(size_t index, float val)`**
+Gets or sets the angular range (in radians) for the override zone.
+
+---
+**`Cam_GetInteriorAzimuthOverrideStartUpLimit(...)` / `Cam_SetInteriorAzimuthOverrideEndUpLimit(...)`**
+**`Cam_GetInteriorAzimuthOverrideStartDownLimit(...)` / `Cam_SetInteriorAzimuthOverrideEndDownLimit(...)`**
+Gets or sets the vertical rotation limits at the start and end of the zone. The values are interpolated between the start and end azimuths.
+
+---
+**`Cam_GetInteriorAzimuthOverrideStartUpDownDefault(...)` / `Cam_SetInteriorAzimuthOverrideEndUpDownDefault(...)`**
+**`Cam_GetInteriorAzimuthOverrideStartLeftRightDefault(...)` / `Cam_SetInteriorAzimuthOverrideEndLeftRightDefault(...)`**
+Gets or sets the default rotation values within the override zone.
+
+---
+**`Cam_GetInteriorAzimuthOverrideStartHeadOffset(size_t index, float* out_x, float* out_y, float* out_z)`**
+**`Cam_SetInteriorAzimuthOverrideStartHeadOffset(size_t index, float x, float y, float z)`**
+**`Cam_GetInteriorAzimuthOverrideEndHeadOffset(...)` / `Cam_SetInteriorAzimuthOverrideEndHeadOffset(...)`**
+Gets or sets the 3D head offset at the start and end of the override zone.
+
+<br>
+
+#### Shake Animation (Interior)
+
+The shake animation is a sequence of points used to simulate cabin vibrations.
+
+---
+**`Cam_GetInteriorShakeAnimCount()`**
+Returns the number of points in the shake animation sequence.
+
+---
+**`Cam_GetInteriorShakeAnim(size_t index, float* out_x, float* out_y, float* out_z)`**
+Retrieves the XYZ coordinates of a specific animation point.
+
+---
+**`Cam_SetInteriorShakeAnim(size_t index, float x, float y, float z)`**
+Sets the XYZ coordinates of a specific animation point.
+
+<br>
+
 
 ### Behind Camera (`SPF_CAMERA_BEHIND`)
 

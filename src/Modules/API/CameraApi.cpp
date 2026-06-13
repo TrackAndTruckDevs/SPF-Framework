@@ -892,7 +892,415 @@ bool CameraApi::T_Camera_Anim_Prepare() {
 }
 
 // --- Object Targeting & Inspection Trampolines ---
-uintptr_t CameraApi::T_Camera_GetDebugObjectAddress(void* ptr) { return reinterpret_cast<uintptr_t>(ptr); }
+uintptr_t CameraApi::T_Camera_GetDebugObjectAddress(void* ptr) {
+  return reinterpret_cast<uintptr_t>(ptr);
+}
+
+// --- New Interior Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetInteriorOutside(bool* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetOutside(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorOutside(bool val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetOutside(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorNearPlane(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetNearPlane(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorNearPlane(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetNearPlane(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorFarPlane(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetFarPlane(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorFarPlane(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetFarPlane(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorMouseSensitivity(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetMouseSensitivity(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorMouseSensitivity(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetMouseSensitivity(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorShakeAnimStep(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetShakeAnimScaleMax(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorHandShakeLimit(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetHandShakeLimit(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorHandShakeLimit(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetHandShakeLimit(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorHandShakeSpeed(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetHandShakeSpeed(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorHandShakeSpeed(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetHandShakeSpeed(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorZoomFovFactor(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetZoomFovFactor(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorZoomFovFactor(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetZoomFovFactor(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorZoomSpeed(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetZoomSpeed(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorZoomSpeed(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetZoomSpeed(val);
+  }
+}
+
+// --- Azimuth Overrides Trampolines ---
+
+size_t CameraApi::T_Camera_GetInteriorAzimuthOverridesCount() {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverridesCount();
+  }
+  return 0;
+}
+
+void* CameraApi::T_Camera_GetInteriorAzimuthOverrideAddress(size_t index) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideAddress(index);
+  }
+  return nullptr;
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideOutside(size_t index, bool* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideOutside(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideOutside(size_t index, bool val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideOutside(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartAzimuth(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartAzimuth(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartAzimuth(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartAzimuth(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndAzimuth(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndAzimuth(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndAzimuth(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndAzimuth(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartUpLimit(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartUpLimit(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartUpLimit(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartUpLimit(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndUpLimit(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndUpLimit(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndUpLimit(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndUpLimit(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartDownLimit(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartDownLimit(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartDownLimit(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartDownLimit(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndDownLimit(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndDownLimit(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndDownLimit(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndDownLimit(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartUpDownDefault(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartUpDownDefault(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartUpDownDefault(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartUpDownDefault(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndUpDownDefault(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndUpDownDefault(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndUpDownDefault(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndUpDownDefault(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartLeftRightDefault(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartLeftRightDefault(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartLeftRightDefault(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartLeftRightDefault(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndLeftRightDefault(size_t index, float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndLeftRightDefault(index, out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndLeftRightDefault(size_t index, float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndLeftRightDefault(index, val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideStartHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideStartHeadOffset(index, out_x, out_y, out_z);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideStartHeadOffset(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideStartHeadOffset(index, x, y, z);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorAzimuthOverrideEndHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetAzimuthOverrideEndHeadOffset(index, out_x, out_y, out_z);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorAzimuthOverrideEndHeadOffset(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetAzimuthOverrideEndHeadOffset(index, x, y, z);
+  }
+}
+
+// --- Shake Animation Trampolines ---
+
+size_t CameraApi::T_Camera_GetInteriorShakeAnimCount() {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetInteriorShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetShakeAnim(index, out_x, out_y, out_z);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetShakeAnim(index, x, y, z);
+  }
+}
+
 
 // --- FinalFOV Trampolines ---
 bool CameraApi::T_Camera_GetInteriorFinalFov(float* out_horiz, float* out_vert) {
@@ -1142,6 +1550,65 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
 
   // Object Targeting
   camera_api->Cam_GetDebugObjectAddress = &T_Camera_GetDebugObjectAddress;
+
+  // New Interior Advanced Settings
+  camera_api->Cam_GetInteriorOutside = &T_Camera_GetInteriorOutside;
+  camera_api->Cam_SetInteriorOutside = &T_Camera_SetInteriorOutside;
+  camera_api->Cam_GetInteriorNearPlane = &T_Camera_GetInteriorNearPlane;
+  camera_api->Cam_SetInteriorNearPlane = &T_Camera_SetInteriorNearPlane;
+  camera_api->Cam_GetInteriorFarPlane = &T_Camera_GetInteriorFarPlane;
+  camera_api->Cam_SetInteriorFarPlane = &T_Camera_SetInteriorFarPlane;
+  camera_api->Cam_GetInteriorMouseSensitivity = &T_Camera_GetInteriorMouseSensitivity;
+  camera_api->Cam_SetInteriorMouseSensitivity = &T_Camera_SetInteriorMouseSensitivity;
+  camera_api->Cam_GetInteriorShakeAnimStep = &T_Camera_GetInteriorShakeAnimStep;
+  camera_api->Cam_SetInteriorShakeAnimStep = &T_Camera_SetInteriorShakeAnimStep;
+  camera_api->Cam_GetInteriorShakeAnimScaleMin = &T_Camera_GetInteriorShakeAnimScaleMin;
+  camera_api->Cam_SetInteriorShakeAnimScaleMin = &T_Camera_SetInteriorShakeAnimScaleMin;
+  camera_api->Cam_GetInteriorShakeAnimScaleMax = &T_Camera_GetInteriorShakeAnimScaleMax;
+  camera_api->Cam_SetInteriorShakeAnimScaleMax = &T_Camera_SetInteriorShakeAnimScaleMax;
+  camera_api->Cam_GetInteriorHandShakeLimit = &T_Camera_GetInteriorHandShakeLimit;
+  camera_api->Cam_SetInteriorHandShakeLimit = &T_Camera_SetInteriorHandShakeLimit;
+  camera_api->Cam_GetInteriorHandShakeSpeed = &T_Camera_GetInteriorHandShakeSpeed;
+  camera_api->Cam_SetInteriorHandShakeSpeed = &T_Camera_SetInteriorHandShakeSpeed;
+  camera_api->Cam_GetInteriorZoomFovFactor = &T_Camera_GetInteriorZoomFovFactor;
+  camera_api->Cam_SetInteriorZoomFovFactor = &T_Camera_SetInteriorZoomFovFactor;
+  camera_api->Cam_GetInteriorZoomSpeed = &T_Camera_GetInteriorZoomSpeed;
+  camera_api->Cam_SetInteriorZoomSpeed = &T_Camera_SetInteriorZoomSpeed;
+
+  // Azimuth Overrides
+  camera_api->Cam_GetInteriorAzimuthOverridesCount = &T_Camera_GetInteriorAzimuthOverridesCount;
+  camera_api->Cam_GetInteriorAzimuthOverrideAddress = &T_Camera_GetInteriorAzimuthOverrideAddress;
+  camera_api->Cam_GetInteriorAzimuthOverrideOutside = &T_Camera_GetInteriorAzimuthOverrideOutside;
+  camera_api->Cam_SetInteriorAzimuthOverrideOutside = &T_Camera_SetInteriorAzimuthOverrideOutside;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartAzimuth = &T_Camera_GetInteriorAzimuthOverrideStartAzimuth;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartAzimuth = &T_Camera_SetInteriorAzimuthOverrideStartAzimuth;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndAzimuth = &T_Camera_GetInteriorAzimuthOverrideEndAzimuth;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndAzimuth = &T_Camera_SetInteriorAzimuthOverrideEndAzimuth;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartUpLimit = &T_Camera_GetInteriorAzimuthOverrideStartUpLimit;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartUpLimit = &T_Camera_SetInteriorAzimuthOverrideStartUpLimit;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndUpLimit = &T_Camera_GetInteriorAzimuthOverrideEndUpLimit;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndUpLimit = &T_Camera_SetInteriorAzimuthOverrideEndUpLimit;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartDownLimit = &T_Camera_GetInteriorAzimuthOverrideStartDownLimit;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartDownLimit = &T_Camera_SetInteriorAzimuthOverrideStartDownLimit;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndDownLimit = &T_Camera_GetInteriorAzimuthOverrideEndDownLimit;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndDownLimit = &T_Camera_SetInteriorAzimuthOverrideEndDownLimit;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartUpDownDefault = &T_Camera_GetInteriorAzimuthOverrideStartUpDownDefault;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartUpDownDefault = &T_Camera_SetInteriorAzimuthOverrideStartUpDownDefault;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndUpDownDefault = &T_Camera_GetInteriorAzimuthOverrideEndUpDownDefault;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndUpDownDefault = &T_Camera_SetInteriorAzimuthOverrideEndUpDownDefault;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartLeftRightDefault = &T_Camera_GetInteriorAzimuthOverrideStartLeftRightDefault;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartLeftRightDefault = &T_Camera_SetInteriorAzimuthOverrideStartLeftRightDefault;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndLeftRightDefault = &T_Camera_GetInteriorAzimuthOverrideEndLeftRightDefault;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndLeftRightDefault = &T_Camera_SetInteriorAzimuthOverrideEndLeftRightDefault;
+  camera_api->Cam_GetInteriorAzimuthOverrideStartHeadOffset = &T_Camera_GetInteriorAzimuthOverrideStartHeadOffset;
+  camera_api->Cam_SetInteriorAzimuthOverrideStartHeadOffset = &T_Camera_SetInteriorAzimuthOverrideStartHeadOffset;
+  camera_api->Cam_GetInteriorAzimuthOverrideEndHeadOffset = &T_Camera_GetInteriorAzimuthOverrideEndHeadOffset;
+  camera_api->Cam_SetInteriorAzimuthOverrideEndHeadOffset = &T_Camera_SetInteriorAzimuthOverrideEndHeadOffset;
+
+  // Shake Animation
+  camera_api->Cam_GetInteriorShakeAnimCount = &T_Camera_GetInteriorShakeAnimCount;
+  camera_api->Cam_GetInteriorShakeAnim = &T_Camera_GetInteriorShakeAnim;
+  camera_api->Cam_SetInteriorShakeAnim = &T_Camera_SetInteriorShakeAnim;
 }
 
 }  // namespace Modules::API

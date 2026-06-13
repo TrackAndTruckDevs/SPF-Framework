@@ -17,12 +17,15 @@ void GameCameraInterior::OnActivate() {
   // Get the raw camera object pointer when this camera becomes active
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // GetStandardManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
   uintptr_t pStandardManager = gameData.GetStandardManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
+    if (m_pCameraObject) {
+      logger->Debug("DIAGNOSTIC: Interior Camera Object Address: 0x{:X}", reinterpret_cast<uintptr_t>(m_pCameraObject));
+    }
   }
 }
 
@@ -178,9 +181,53 @@ void GameCameraInterior::StoreDefaultState() {
     m_defaultCameraData.mouse_ud_default = ud_def;
   }
 
+  // --- Capture Advanced Camera Data (v1.2) ---
+  float val;
+  if (GetNearPlane(&val)) m_defaultCameraData.near_plane = val;
+  if (GetFarPlane(&val)) m_defaultCameraData.far_plane = val;
+  if (GetMouseSensitivity(&val)) m_defaultCameraData.mouse_sensitivity = val;
+  if (GetShakeAnimStep(&val)) m_defaultCameraData.shake_step = val;
+  if (GetShakeAnimScaleMin(&val)) m_defaultCameraData.shake_min = val;
+  if (GetShakeAnimScaleMax(&val)) m_defaultCameraData.shake_max = val;
+  
+  if (GetHandShakeLimit(&val)) m_defaultCameraData.hand_shake_limit = val;
+  if (GetHandShakeSpeed(&val)) m_defaultCameraData.hand_shake_speed = val;
+  
+  if (GetZoomFovFactor(&val)) m_defaultCameraData.zoom_fov_factor = val;
+  if (GetZoomSpeed(&val)) m_defaultCameraData.zoom_speed = val;
+
+  // --- Store Array Defaults ---
+  m_defaultCameraData.azimuth_overrides_defaults.clear();
+  size_t azimuth_count = GetAzimuthOverridesCount();
+  for (size_t i = 0; i < azimuth_count; ++i) {
+      CameraData::AzimuthRangeData range = {};
+      GetAzimuthOverrideStartAzimuth(i, &range.start_azimuth);
+      GetAzimuthOverrideEndAzimuth(i, &range.end_azimuth);
+      GetAzimuthOverrideOutside(i, &range.outside);
+      GetAzimuthOverrideStartUpLimit(i, &range.start_up_limit);
+      GetAzimuthOverrideEndUpLimit(i, &range.end_up_limit);
+      GetAzimuthOverrideStartDownLimit(i, &range.start_down_limit);
+      GetAzimuthOverrideEndDownLimit(i, &range.end_down_limit);
+      GetAzimuthOverrideStartUpDownDefault(i, &range.start_up_down_default);
+      GetAzimuthOverrideEndUpDownDefault(i, &range.end_up_down_default);
+      GetAzimuthOverrideStartLeftRightDefault(i, &range.start_left_right_default);
+      GetAzimuthOverrideEndLeftRightDefault(i, &range.end_left_right_default);
+      GetAzimuthOverrideStartHeadOffset(i, &range.start_head_x, &range.start_head_y, &range.start_head_z);
+      GetAzimuthOverrideEndHeadOffset(i, &range.end_head_x, &range.end_head_y, &range.end_head_z);
+      m_defaultCameraData.azimuth_overrides_defaults.push_back(range);
+  }
+
+  m_defaultCameraData.shake_anim_defaults.clear();
+  size_t shake_count = GetShakeAnimCount();
+  for (size_t i = 0; i < shake_count; ++i) {
+      CameraData::Vec3 point = {};
+      GetShakeAnim(i, &point.x, &point.y, &point.z);
+      m_defaultCameraData.shake_anim_defaults.push_back(point);
+  }
+
   // Mark defaults as saved
   m_defaultsSaved = true;
-  logger->Info("Default camera state has been stored.");
+  logger->Info("Default camera state has been stored (including arrays).");
 }
 
 void GameCameraInterior::ResetToDefaults() {
@@ -191,12 +238,54 @@ void GameCameraInterior::ResetToDefaults() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
   logger->Info("Resetting camera state to defaults...");
 
-  // Use the existing Set... methods to apply the default values
   SetSeatPosition(m_defaultCameraData.seat_pos_x, m_defaultCameraData.seat_pos_y, m_defaultCameraData.seat_pos_z);
   SetHeadRotation(m_defaultCameraData.yaw, m_defaultCameraData.pitch);
   SetFov(m_defaultCameraData.fov_base);
   SetRotationLimits(m_defaultCameraData.limit_left, m_defaultCameraData.limit_right, m_defaultCameraData.limit_up, m_defaultCameraData.limit_down);
   SetRotationDefaults(m_defaultCameraData.mouse_lr_default, m_defaultCameraData.mouse_ud_default);
+
+  // --- Reset Advanced Data ---
+  SetNearPlane(m_defaultCameraData.near_plane);
+  SetFarPlane(m_defaultCameraData.far_plane);
+  SetMouseSensitivity(m_defaultCameraData.mouse_sensitivity);
+  SetShakeAnimStep(m_defaultCameraData.shake_step);
+  SetShakeAnimScaleMin(m_defaultCameraData.shake_min);
+  SetShakeAnimScaleMax(m_defaultCameraData.shake_max);
+  SetHandShakeLimit(m_defaultCameraData.hand_shake_limit);
+  SetHandShakeSpeed(m_defaultCameraData.hand_shake_speed);
+  SetZoomFovFactor(m_defaultCameraData.zoom_fov_factor);
+  SetZoomSpeed(m_defaultCameraData.zoom_speed);
+
+  // --- Restore Array Defaults ---
+  size_t current_azimuth_count = GetAzimuthOverridesCount();
+  size_t saved_azimuth_count = m_defaultCameraData.azimuth_overrides_defaults.size();
+  size_t azimuth_restore_count = (current_azimuth_count < saved_azimuth_count) ? current_azimuth_count : saved_azimuth_count;
+
+  for (size_t i = 0; i < azimuth_restore_count; ++i) {
+      const auto& range = m_defaultCameraData.azimuth_overrides_defaults[i];
+      SetAzimuthOverrideStartAzimuth(i, range.start_azimuth);
+      SetAzimuthOverrideEndAzimuth(i, range.end_azimuth);
+      SetAzimuthOverrideOutside(i, range.outside);
+      SetAzimuthOverrideStartUpLimit(i, range.start_up_limit);
+      SetAzimuthOverrideEndUpLimit(i, range.end_up_limit);
+      SetAzimuthOverrideStartDownLimit(i, range.start_down_limit);
+      SetAzimuthOverrideEndDownLimit(i, range.end_down_limit);
+      SetAzimuthOverrideStartUpDownDefault(i, range.start_up_down_default);
+      SetAzimuthOverrideEndUpDownDefault(i, range.end_up_down_default);
+      SetAzimuthOverrideStartLeftRightDefault(i, range.start_left_right_default);
+      SetAzimuthOverrideEndLeftRightDefault(i, range.end_left_right_default);
+      SetAzimuthOverrideStartHeadOffset(i, range.start_head_x, range.start_head_y, range.start_head_z);
+      SetAzimuthOverrideEndHeadOffset(i, range.end_head_x, range.end_head_y, range.end_head_z);
+  }
+
+  size_t current_shake_count = GetShakeAnimCount();
+  size_t saved_shake_count = m_defaultCameraData.shake_anim_defaults.size();
+  size_t shake_restore_count = (current_shake_count < saved_shake_count) ? current_shake_count : saved_shake_count;
+
+  for (size_t i = 0; i < shake_restore_count; ++i) {
+      const auto& point = m_defaultCameraData.shake_anim_defaults[i];
+      SetShakeAnim(i, point.x, point.y, point.z);
+  }
 }
 
 // --- New Safe Getters ---
@@ -329,5 +418,653 @@ bool GameCameraInterior::GetRotationDefaults(float* out_lr, float* out_ud) const
   }
   return false;
 }
+
+bool GameCameraInterior::GetOutside(bool* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorOutsideOffset();
+
+  if (offset) {
+    // The bool type in reflection has a size of 4 bytes (0x39), so we read it as uint32_t
+    *out_val = (*reinterpret_cast<uint32_t*>(pCam + offset) != 0);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetOutside(bool val) {
+  if (!m_pCameraObject) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorOutsideOffset();
+
+  if (offset) {
+    // Write as a 4-byte integer
+    *reinterpret_cast<uint32_t*>(pCam + offset) = val ? 1 : 0;
+  }
+}
+
+bool GameCameraInterior::GetNearPlane(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetNearPlaneOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetNearPlane(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetNearPlaneOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetFarPlane(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetFarPlaneOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetFarPlane(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetFarPlaneOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetMouseSensitivity(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetMouseSensitivityOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetMouseSensitivity(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetMouseSensitivityOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetShakeAnimStep(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetShakeAnimStep(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetShakeAnimScaleMin(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetShakeAnimScaleMin(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetShakeAnimScaleMax(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetShakeAnimScaleMax(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetHandShakeLimit(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetHandShakeLimitOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetHandShakeLimit(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetHandShakeLimitOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetHandShakeSpeed(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetHandShakeSpeedOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetHandShakeSpeed(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetHandShakeSpeedOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetZoomFovFactor(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetZoomFovFactorOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetZoomFovFactor(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetZoomFovFactorOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetZoomSpeed(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetZoomSpeedOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetZoomSpeed(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetZoomSpeedOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+// --- Public API for Azimuth Overrides ---
+
+size_t GameCameraInterior::GetAzimuthOverridesCount() const {
+  if (!m_pCameraObject) return 0;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetInteriorAzimuthOverridesOffset();
+  if (!offset) return 0;
+
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  // Number of elements lies behind the offset: azimuthOverrides + 16
+  return static_cast<size_t>(*reinterpret_cast<uint64_t*>(pCam + offset + 16));
+}
+
+void* GameCameraInterior::GetAzimuthOverrideAddress(size_t index) const {
+  if (!m_pCameraObject) return nullptr;
+  if (index >= GetAzimuthOverridesCount()) return nullptr;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetInteriorAzimuthOverridesOffset();
+  if (!offset) return nullptr;
+
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  // The pointer to the beginning of the array lies at the offset: azimuthOverrides + 8
+  void** data = *reinterpret_cast<void***>(pCam + offset + 8);
+  if (!data) return nullptr;
+
+  return data[index];
+}
+
+//start_azimuth
+bool GameCameraInterior::GetAzimuthOverrideStartAzimuth(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartAzimuthOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartAzimuth(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartAzimuthOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//end_azimuth
+bool GameCameraInterior::GetAzimuthOverrideEndAzimuth(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndAzimuthOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndAzimuth(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndAzimuthOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//outside
+bool GameCameraInterior::GetAzimuthOverrideOutside(size_t index, bool* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeOutsideOffset();
+  if (!offset) return false;
+
+  // The bool type in reflection has a size of 4 bytes (0x39), so we read it as uint32_t
+  *out_val = (*reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(addr) + offset) != 0);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideOutside(size_t index, bool val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeOutsideOffset();
+  if (!offset) return;
+
+  // Write as a 4-byte integer
+  *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(addr) + offset) = val ? 1 : 0;
+}
+
+//start_up_limit
+bool GameCameraInterior::GetAzimuthOverrideStartUpLimit(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartUpLimitOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartUpLimit(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartUpLimitOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//end_up_limit
+bool GameCameraInterior::GetAzimuthOverrideEndUpLimit(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndUpLimitOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndUpLimit(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndUpLimitOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//start_down_limit
+bool GameCameraInterior::GetAzimuthOverrideStartDownLimit(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartDownLimitOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartDownLimit(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartDownLimitOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//end_down_limit
+bool GameCameraInterior::GetAzimuthOverrideEndDownLimit(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndDownLimitOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndDownLimit(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndDownLimitOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//start_up_down_default
+bool GameCameraInterior::GetAzimuthOverrideStartUpDownDefault(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartUpDownDefaultOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartUpDownDefault(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartUpDownDefaultOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//end_up_down_default
+bool GameCameraInterior::GetAzimuthOverrideEndUpDownDefault(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndUpDownDefaultOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndUpDownDefault(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndUpDownDefaultOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//start_left_right_default
+bool GameCameraInterior::GetAzimuthOverrideStartLeftRightDefault(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartLeftRightDefaultOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartLeftRightDefault(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartLeftRightDefaultOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//end_left_right_default
+bool GameCameraInterior::GetAzimuthOverrideEndLeftRightDefault(size_t index, float* out_val) const {
+  if (!out_val) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndLeftRightDefaultOffset();
+  if (!offset) return false;
+
+  *out_val = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndLeftRightDefault(size_t index, float val) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndLeftRightDefaultOffset();
+  if (!offset) return;
+
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
+}
+
+//start_head_offset_offset
+bool GameCameraInterior::GetAzimuthOverrideStartHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) const {
+  if (!out_x || !out_y || !out_z) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartHeadOffsetOffset();
+  if (!offset) return false;
+
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(addr) + offset;
+  *out_x = *reinterpret_cast<float*>(ptr);
+  *out_y = *reinterpret_cast<float*>(ptr + 4);
+  *out_z = *reinterpret_cast<float*>(ptr + 8);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideStartHeadOffset(size_t index, float x, float y, float z) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeStartHeadOffsetOffset();
+  if (!offset) return;
+
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(addr) + offset;
+  *reinterpret_cast<float*>(ptr) = x;
+  *reinterpret_cast<float*>(ptr + 4) = y;
+  *reinterpret_cast<float*>(ptr + 8) = z;
+}
+
+//end_head_offset_offset
+bool GameCameraInterior::GetAzimuthOverrideEndHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) const {
+  if (!out_x || !out_y || !out_z) return false;
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndHeadOffsetOffset();
+  if (!offset) return false;
+
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(addr) + offset;
+  *out_x = *reinterpret_cast<float*>(ptr);
+  *out_y = *reinterpret_cast<float*>(ptr + 4);
+  *out_z = *reinterpret_cast<float*>(ptr + 8);
+  return true;
+}
+
+void GameCameraInterior::SetAzimuthOverrideEndHeadOffset(size_t index, float x, float y, float z) {
+  void* addr = GetAzimuthOverrideAddress(index);
+  if (!addr) return;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetAzimuthRangeEndHeadOffsetOffset();
+  if (!offset) return;
+
+  uintptr_t ptr = reinterpret_cast<uintptr_t>(addr) + offset;
+  *reinterpret_cast<float*>(ptr) = x;
+  *reinterpret_cast<float*>(ptr + 4) = y;
+  *reinterpret_cast<float*>(ptr + 8) = z;
+}
+
+// --- Public API for Shake Animation ---
+
+size_t GameCameraInterior::GetShakeAnimCount() const {
+  if (!m_pCameraObject) return 0;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return 0;
+
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  // SCS vector structure: [ptr(0), capacity(8), count(16)]
+  return static_cast<size_t>(*reinterpret_cast<uint64_t*>(pCam + offset + 16));
+}
+
+bool GameCameraInterior::GetShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) const {
+  if (!m_pCameraObject || index >= GetShakeAnimCount()) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return false;
+
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  // Based on memory dump, the data pointer is at offset + 8
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return false;
+
+  // Packed float3 (12 bytes per element)
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  
+  if (out_x) *out_x = pVec[0];
+  if (out_y) *out_y = pVec[1];
+  if (out_z) *out_z = pVec[2];
+
+  return true;
+}
+
+void GameCameraInterior::SetShakeAnim(size_t index, float x, float y, float z) {
+  if (!m_pCameraObject || index >= GetShakeAnimCount()) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return;
+
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  // Based on memory dump, the data pointer is at offset + 8
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return;
+
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  pVec[0] = x;
+  pVec[1] = y;
+  pVec[2] = z;
+}
+
 }  // namespace GameCamera
 SPF_NS_END

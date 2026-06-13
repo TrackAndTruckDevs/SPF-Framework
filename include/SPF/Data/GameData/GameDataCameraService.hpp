@@ -35,6 +35,16 @@ class GameDataCameraService {
   void UpdateFinders();
 
   // --- Public Getters ---
+  intptr_t GetCameraFovOffset() const { return m_camera_fov_offset; }
+  intptr_t GetNearPlaneOffset() const { return m_near_plane_offset; }
+  intptr_t GetFarPlaneOffset() const { return m_far_plane_offset; }
+  intptr_t GetMouseSensitivityOffset() const { return m_mouse_sensitivity_offset; }
+  intptr_t GetShakeAnimStepOffset() const { return m_shake_anim_step_offset; }
+  intptr_t GetShakeAnimScaleMinOffset() const { return m_shake_anim_scale_min_offset; }
+  intptr_t GetShakeAnimScaleMaxOffset() const { return m_shake_anim_scale_max_offset; }
+  intptr_t GetShakeAnimOffset() const { return m_shake_anim_offset; }
+  intptr_t GetHandShakeLimitOffset() const { return m_hand_shake_limit_offset; }
+  intptr_t GetHandShakeSpeedOffset() const { return m_hand_shake_speed_offset; }
   uintptr_t GetStandardManagerPtrAddr() const { return m_pStandardManagerPtrAddr; }
 
   /**
@@ -72,11 +82,28 @@ class GameDataCameraService {
   intptr_t GetInteriorLimitRightOffset() const { return m_interior_limit_right_offset; }
   intptr_t GetInteriorLimitUpOffset() const { return m_interior_limit_up_offset; }
   intptr_t GetInteriorLimitDownOffset() const { return m_interior_limit_down_offset; }
+  intptr_t GetInteriorOutsideOffset() const { return m_interior_outside_offset; }
   intptr_t GetFovBaseOffset() const { return m_fov_base_offset; }
   intptr_t GetFovHorizFinalOffset() const { return m_fov_horiz_final_offset; }
   intptr_t GetFovVertFinalOffset() const { return m_fov_vert_final_offset; }
   intptr_t GetInteriorMouseLRDefaultOffset() const { return m_interior_mouse_lr_default; }
   intptr_t GetInteriorMouseUDDefaultOffset() const { return m_interior_mouse_ud_default; }
+  intptr_t GetInteriorAzimuthOverridesOffset() const { return m_interior_azimuth_overrides_offset; }
+  intptr_t GetZoomFovFactorOffset() const { return m_zoom_fov_factor_offset; }
+  intptr_t GetZoomSpeedOffset() const { return m_zoom_speed_offset; }
+  intptr_t GetAzimuthRangeOutsideOffset() const { return m_azimuth_range_outside_offset; }
+  intptr_t GetAzimuthRangeStartAzimuthOffset() const { return m_azimuth_range_start_azimuth_offset; }
+  intptr_t GetAzimuthRangeEndAzimuthOffset() const { return m_azimuth_range_end_azimuth_offset; }
+  intptr_t GetAzimuthRangeStartUpLimitOffset() const { return m_azimuth_range_start_up_limit_offset; }
+  intptr_t GetAzimuthRangeEndUpLimitOffset() const { return m_azimuth_range_end_up_limit_offset; }
+  intptr_t GetAzimuthRangeStartDownLimitOffset() const { return m_azimuth_range_start_down_limit_offset; }
+  intptr_t GetAzimuthRangeEndDownLimitOffset() const { return m_azimuth_range_end_down_limit_offset; }
+  intptr_t GetAzimuthRangeStartUpDownDefaultOffset() const { return m_azimuth_range_start_up_down_default_offset; }
+  intptr_t GetAzimuthRangeEndUpDownDefaultOffset() const { return m_azimuth_range_end_up_down_default_offset; }
+  intptr_t GetAzimuthRangeStartLeftRightDefaultOffset() const { return m_azimuth_range_start_left_right_default_offset; }
+  intptr_t GetAzimuthRangeEndLeftRightDefaultOffset() const { return m_azimuth_range_end_left_right_default_offset; }
+  intptr_t GetAzimuthRangeStartHeadOffsetOffset() const { return m_azimuth_range_start_head_offset_offset; }
+  intptr_t GetAzimuthRangeEndHeadOffsetOffset() const { return m_azimuth_range_end_head_offset_offset; }
   uintptr_t GetCameraParamsObjectPtr() const { return m_pCameraParamsObject; }
   intptr_t GetViewportX1Offset() const { return m_viewport_x1_offset; }
   intptr_t GetViewportX2Offset() const { return m_viewport_x2_offset; }
@@ -207,7 +234,17 @@ class GameDataCameraService {
   void* GetUpdateAnimatedFlightFunc() const { return m_pfnUpdateAnimatedFlight; }
   intptr_t GetAnimationTimerOffset() const { return m_animationTimerOffset; }
 
-  // --- Public Setters (for use by ICameraDataFinder implementations) ---
+  // --- Public Setters (for use by ICameraDataFinder implementations)
+  void SetCameraFovOffset(intptr_t val) { m_camera_fov_offset = val; }
+  void SetNearPlaneOffset(intptr_t val) { m_near_plane_offset = val; }
+  void SetFarPlaneOffset(intptr_t val) { m_far_plane_offset = val; }
+  void SetMouseSensitivityOffset(intptr_t val) { m_mouse_sensitivity_offset = val; }
+  void SetShakeAnimStepOffset(intptr_t val) { m_shake_anim_step_offset = val; }
+  void SetShakeAnimScaleMinOffset(intptr_t val) { m_shake_anim_scale_min_offset = val; }
+  void SetShakeAnimScaleMaxOffset(intptr_t val) { m_shake_anim_scale_max_offset = val; }
+  void SetShakeAnimOffset(intptr_t val) { m_shake_anim_offset = val; }
+  void SetHandShakeLimitOffset(intptr_t val) { m_hand_shake_limit_offset = val; }
+  void SetHandShakeSpeedOffset(intptr_t val) { m_hand_shake_speed_offset = val; }
   void SetStandardManagerPtrAddr(uintptr_t val) { m_pStandardManagerPtrAddr = val; }
   void SetStandardManagerAdjustment(intptr_t val) { m_standardManagerAdjustment = val; }
   void SetCoreOffsetsFound(bool val) { m_coreOffsetsFound = val; }
@@ -224,6 +261,7 @@ class GameDataCameraService {
   void SetInteriorLimitRightOffset(intptr_t val) { m_interior_limit_right_offset = val; }
   void SetInteriorLimitUpOffset(intptr_t val) { m_interior_limit_up_offset = val; }
   void SetInteriorLimitDownOffset(intptr_t val) { m_interior_limit_down_offset = val; }
+  void SetInteriorOutsideOffset(intptr_t val) { m_interior_outside_offset = val; }
   // --- Shared FOV Setters (for FovDataFinder) ---
   void SetFovBaseOffset(intptr_t val) { m_fov_base_offset = val; }  // Shared
   void SetFovHorizFinalOffset(intptr_t val) { m_fov_horiz_final_offset = val; }  // Shared
@@ -231,6 +269,22 @@ class GameDataCameraService {
 
   void SetInteriorMouseLRDefaultOffset(intptr_t val) { m_interior_mouse_lr_default = val; }
   void SetInteriorMouseUDDefaultOffset(intptr_t val) { m_interior_mouse_ud_default = val; }
+  void SetInteriorAzimuthOverridesOffset(intptr_t val) { m_interior_azimuth_overrides_offset = val; }
+  void SetZoomFovFactorOffset(intptr_t val) { m_zoom_fov_factor_offset = val; }
+  void SetZoomSpeedOffset(intptr_t val) { m_zoom_speed_offset = val; }
+  void SetAzimuthRangeOutsideOffset(intptr_t val) { m_azimuth_range_outside_offset = val; }
+  void SetAzimuthRangeStartAzimuthOffset(intptr_t val) { m_azimuth_range_start_azimuth_offset = val; }
+  void SetAzimuthRangeEndAzimuthOffset(intptr_t val) { m_azimuth_range_end_azimuth_offset = val; }
+  void SetAzimuthRangeStartUpLimitOffset(intptr_t val) { m_azimuth_range_start_up_limit_offset = val; }
+  void SetAzimuthRangeEndUpLimitOffset(intptr_t val) { m_azimuth_range_end_up_limit_offset = val; }
+  void SetAzimuthRangeStartDownLimitOffset(intptr_t val) { m_azimuth_range_start_down_limit_offset = val; }
+  void SetAzimuthRangeEndDownLimitOffset(intptr_t val) { m_azimuth_range_end_down_limit_offset = val; }
+  void SetAzimuthRangeStartUpDownDefaultOffset(intptr_t val) { m_azimuth_range_start_up_down_default_offset = val; }
+  void SetAzimuthRangeEndUpDownDefaultOffset(intptr_t val) { m_azimuth_range_end_up_down_default_offset = val; }
+  void SetAzimuthRangeStartLeftRightDefaultOffset(intptr_t val) { m_azimuth_range_start_left_right_default_offset = val; }
+  void SetAzimuthRangeEndLeftRightDefaultOffset(intptr_t val) { m_azimuth_range_end_left_right_default_offset = val; }
+  void SetAzimuthRangeStartHeadOffsetOffset(intptr_t val) { m_azimuth_range_start_head_offset_offset = val; }
+  void SetAzimuthRangeEndHeadOffsetOffset(intptr_t val) { m_azimuth_range_end_head_offset_offset = val; }
   void SetCameraParamsObjectPtr(uintptr_t val) { m_pCameraParamsObject = val; }
   void SetViewportX1Offset(intptr_t val) { m_viewport_x1_offset = val; }
   void SetViewportX2Offset(intptr_t val) { m_viewport_x2_offset = val; }
@@ -379,6 +433,16 @@ class GameDataCameraService {
   uintptr_t m_freecamContextOffset = 0;
 
   // --- Interior Camera Offsets ---
+  intptr_t m_camera_fov_offset = 0;
+  intptr_t m_near_plane_offset = 0;
+  intptr_t m_far_plane_offset = 0;
+  intptr_t m_mouse_sensitivity_offset = 0;
+  intptr_t m_shake_anim_step_offset = 0;
+  intptr_t m_shake_anim_scale_min_offset = 0;
+  intptr_t m_shake_anim_scale_max_offset = 0;
+  intptr_t m_shake_anim_offset = 0;
+  intptr_t m_hand_shake_limit_offset = 0;
+  intptr_t m_hand_shake_speed_offset = 0;
   intptr_t m_interior_seat_x_offset = 0;
   intptr_t m_interior_seat_y_offset = 0;
   intptr_t m_interior_seat_z_offset = 0;
@@ -388,11 +452,28 @@ class GameDataCameraService {
   intptr_t m_interior_limit_right_offset = 0;
   intptr_t m_interior_limit_up_offset = 0;
   intptr_t m_interior_limit_down_offset = 0;
+  intptr_t m_interior_outside_offset = 0;
   intptr_t m_fov_base_offset = 0;
   intptr_t m_fov_horiz_final_offset = 0;
   intptr_t m_fov_vert_final_offset = 0;
   intptr_t m_interior_mouse_lr_default = 0;
   intptr_t m_interior_mouse_ud_default = 0;
+  intptr_t m_interior_azimuth_overrides_offset = 0;
+  intptr_t m_azimuth_range_outside_offset = 0;
+  intptr_t m_azimuth_range_start_azimuth_offset = 0;
+  intptr_t m_azimuth_range_end_azimuth_offset = 0;
+  intptr_t m_azimuth_range_start_up_limit_offset = 0;
+  intptr_t m_azimuth_range_end_up_limit_offset = 0;
+  intptr_t m_azimuth_range_start_down_limit_offset = 0;
+  intptr_t m_azimuth_range_end_down_limit_offset = 0;
+  intptr_t m_azimuth_range_start_up_down_default_offset = 0;
+  intptr_t m_azimuth_range_end_up_down_default_offset = 0;
+  intptr_t m_azimuth_range_start_left_right_default_offset = 0;
+  intptr_t m_azimuth_range_end_left_right_default_offset = 0;
+  intptr_t m_azimuth_range_start_head_offset_offset = 0;
+  intptr_t m_azimuth_range_end_head_offset_offset = 0;
+  intptr_t m_zoom_fov_factor_offset = 0;
+  intptr_t m_zoom_speed_offset = 0;
 
   // --- Free Camera Offsets ---
   intptr_t m_freecam_pos_x_offset = 0;

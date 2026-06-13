@@ -1,5 +1,8 @@
 #include "SPF/UI/CameraWindow.hpp"
 #include "SPF/UI/UIElements.hpp"
+#include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
+#include "SPF/UI/Icons.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -92,6 +95,7 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locCurrentCamera = "camera_window.current_camera";
     m_locCameraWorldCoordinates = "camera_window.camera_world_coordinates";
     m_locCameraWorldCoordinatesNotFound = "camera_window.camera_world_coordinates_not_found";
+    m_locDataNotFound = "camera_window.data_not_found";
     m_locSelectCamera = "camera_window.select_camera";
     m_locInterior = "camera_window.interior";
     m_locBehind = "camera_window.behind";
@@ -123,23 +127,55 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locSeatLr = "camera_window.interior_camera.seat_lr";
     m_locSeatUd = "camera_window.interior_camera.seat_ud";
     m_locSeatFb = "camera_window.interior_camera.seat_fb";
-    m_locSeatPositionNotFound = "camera_window.interior_camera.seat_position_not_found";
     m_locHeadRotation = "camera_window.interior_camera.head_rotation";
     m_locYawLr = "camera_window.interior_camera.yaw_lr";
     m_locPitchUd = "camera_window.interior_camera.pitch_ud";
-    m_locHeadRotationNotFound = "camera_window.interior_camera.head_rotation_not_found";
     m_locMouseRotationLimits = "camera_window.interior_camera.mouse_rotation_limits";
     m_locLeftLimit = "camera_window.interior_camera.left_limit";
     m_locRightLimit = "camera_window.interior_camera.right_limit";
     m_locUpLimit = "camera_window.interior_camera.up_limit";
     m_locDownLimit = "camera_window.interior_camera.down_limit";
-    m_locRotationLimitsNotFound = "camera_window.interior_camera.rotation_limits_not_found";
     m_locRotationDefaults = "camera_window.interior_camera.rotation_defaults";
     m_locDefaultLr = "camera_window.interior_camera.default_lr";
     m_locDefaultUd = "camera_window.interior_camera.default_ud";
-    m_locRotationDefaultsNotFound = "camera_window.interior_camera.rotation_defaults_not_found";
     m_locResetToDefaults = "camera_window.interior_camera.reset_to_defaults";
     m_locInteriorCameraNotAvailable = "camera_window.interior_camera.not_available";
+    m_locDefaultValuePrefix = "camera_window.default_value_prefix";
+
+    m_locNearPlane = "camera_window.interior_camera.near_plane";
+    m_locFarPlane = "camera_window.interior_camera.far_plane";
+    m_locMouseSensitivity = "camera_window.interior_camera.mouse_sensitivity";
+    m_locShakeAnimStep = "camera_window.interior_camera.shake_anim_step";
+    m_locShakeAnimScaleMin = "camera_window.interior_camera.shake_anim_scale_min";
+    m_locShakeAnimScaleMax = "camera_window.interior_camera.shake_anim_scale_max";
+    m_locHandShakeLimit = "camera_window.interior_camera.hand_shake_limit";
+    m_locHandShakeSpeed = "camera_window.interior_camera.hand_shake_speed";
+    m_locZoomFovFactor = "camera_window.interior_camera.zoom_fov_factor";
+    m_locZoomSpeedInterior = "camera_window.interior_camera.zoom_speed_interior";
+    m_locAzimuthOverrides = "camera_window.interior_camera.azimuth_overrides";
+    m_locRangeStartAzimuth = "camera_window.interior_camera.range_start_azimuth";
+    m_locRangeEndAzimuth = "camera_window.interior_camera.range_end_azimuth";
+    m_locZoneIsOutside = "camera_window.interior_camera.zone_is_outside";
+    m_locStartUpLimit = "camera_window.interior_camera.start_up_limit";
+    m_locEndUpLimit = "camera_window.interior_camera.end_up_limit";
+    m_locStartDownLimit = "camera_window.interior_camera.start_down_limit";
+    m_locEndDownLimit = "camera_window.interior_camera.end_down_limit";
+    m_locStartUpDownDefault = "camera_window.interior_camera.start_up_down_default";
+    m_locEndUpDownDefault = "camera_window.interior_camera.end_up_down_default";
+    m_locStartLeftRightDefault = "camera_window.interior_camera.start_left_right_default";
+    m_locEndLeftRightDefault = "camera_window.interior_camera.end_left_right_default";
+    m_locStartHeadOffset = "camera_window.interior_camera.start_head_offset";
+    m_locEndHeadOffset = "camera_window.interior_camera.end_head_offset";
+    m_locShakeAnimationArray = "camera_window.interior_camera.shake_animation_array";
+    m_locPointX = "camera_window.interior_camera.point_x";
+    m_locPointY = "camera_window.interior_camera.point_y";
+    m_locPointZ = "camera_window.interior_camera.point_z";
+    m_locSelectRange = "camera_window.interior_camera.select_range";
+    m_locSelectFrame = "camera_window.interior_camera.select_frame";
+    m_locAdvancedCoreSettings = "camera_window.interior_camera.advanced_core_settings";
+    m_locShakeSettings = "camera_window.interior_camera.shake_settings";
+    m_locInteriorLogicSettings = "camera_window.interior_camera.interior_logic_settings";
+    m_locAzimuthRangeDetails = "camera_window.interior_camera.azimuth_range_details";
 
     m_locLiveState = "camera_window.behind_camera.live_state";
     m_locLivePitch = "camera_window.behind_camera.live_pitch";
@@ -381,6 +417,282 @@ const char* CameraWindow::GetWindowTitle() const {
 void CameraWindow::RenderContent() {
   auto& loc = LocalizationManager::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  
+  // --- Standardized UI Helpers ---
+  
+  auto drawContainerBg = [&](float width, float height) {
+      ImVec2 p_min = ImGui::GetCursorScreenPos();
+      ImVec2 p_max = ImVec2(p_min.x + width, p_min.y + height);
+      ImGui::GetWindowDrawList()->AddRectFilled(p_min, p_max, ImColor(255, 255, 255, 12), 4.0f);
+  };
+
+  const float GLOBAL_SLIDER_WIDTH_FACTOR = 0.65f;
+  const float GLOBAL_COMBO_WIDTH_FACTOR = 0.60f;
+  const float GLOBAL_CONTAINER_WIDTH_FACTOR = 0.75f;
+
+  // 1. Float Slider Helper (Slider centered, label on the right, in a container)
+  auto drawFloat = [&](const std::string& label, auto getter, auto setter, float min_val, float max_val, const char* format = "%.3f", std::optional<float> default_val = std::nullopt) {
+    float current_value;
+    if (getter(&current_value)) {
+      ImGui::PushID(label.c_str());
+      float availWidth = ImGui::GetContentRegionAvail().x;
+      float containerWidth = availWidth * GLOBAL_CONTAINER_WIDTH_FACTOR;
+      float containerHeight = ImGui::GetFrameHeight() + 8.0f;
+      float startX = (availWidth - containerWidth) * 0.5f;
+
+      ImGui::Dummy(ImVec2(0, 2.0f)); // Top margin
+      ImGui::SetCursorPosX(startX);
+      drawContainerBg(containerWidth, containerHeight);
+      
+      ImGui::BeginGroup();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f); // Padding
+
+      float sliderWidth = containerWidth * GLOBAL_SLIDER_WIDTH_FACTOR;
+      float sliderStartX = startX + (containerWidth - sliderWidth) * 0.5f;
+
+      // Draw default value hint on the left (Aligned left with offset 10)
+      if (default_val.has_value()) {
+          char val_buf[32];
+          snprintf(val_buf, sizeof(val_buf), format, default_val.value());
+          std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+          float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
+
+          ImGui::SetCursorPosX(startX + 25.0f);
+          
+          if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().Color(Colors::LIGHT_GRAY).HoverColor(Colors::GOLD), ImVec2(iconWidth + 8.0f, 0))) {
+              setter(default_val.value());
+          }
+          if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+
+          ImGui::SameLine();
+          Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
+          ImGui::SameLine();
+      }
+
+      ImGui::SetCursorPosX(sliderStartX);
+      ImGui::SetNextItemWidth(sliderWidth);
+      std::string id = "##" + label;
+      if (ImGui::SliderFloat(id.c_str(), &current_value, min_val, max_val, format)) setter(current_value);
+      
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Regular(), "%s", label.c_str());
+      
+      ImGui::EndGroup();
+      ImGui::Dummy(ImVec2(0, 2.0f)); // Bottom margin
+      ImGui::PopID();
+    } else {
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+    }
+  };
+
+  // 2. Vector3 Helper (Stacked vertically in ONE container, labels on the right)
+  auto drawVector3 = [&](const std::string& header, const char* label_x, const char* label_y, const char* label_z, auto getter, auto setter, float min_val, float max_val, std::optional<ImVec4> default_vals = std::nullopt, const char* format = "%.3f") {
+    float x, y, z;
+    if (getter(&x, &y, &z)) {
+      ImGui::PushID(header.c_str());
+      bool changed = false;
+      float availWidth = ImGui::GetContentRegionAvail().x;
+      float containerWidth = availWidth * GLOBAL_CONTAINER_WIDTH_FACTOR;
+      float rowHeight = ImGui::GetFrameHeight() + 4.0f;
+      float containerHeight = (rowHeight * 3.0f) + 12.0f;
+      float startX = (availWidth - containerWidth) * 0.5f;
+
+      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::SetCursorPosX(startX);
+      drawContainerBg(containerWidth, containerHeight);
+      
+      ImGui::BeginGroup();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f); // Top Padding
+
+      auto renderComponent = [&](const char* label, float* val, std::optional<float> def_val, int comp_idx) {
+          ImGui::PushID(comp_idx);
+          float sliderWidth = containerWidth * GLOBAL_SLIDER_WIDTH_FACTOR;
+          float sliderStartX = startX + (containerWidth - sliderWidth) * 0.5f;
+
+          if (def_val.has_value()) {
+              char val_buf[32];
+              snprintf(val_buf, sizeof(val_buf), format, def_val.value());
+              std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+              float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
+
+              ImGui::SetCursorPosX(startX + 25.0f);
+              
+              if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().Color(Colors::LIGHT_GRAY).HoverColor(Colors::GOLD), ImVec2(iconWidth + 8.0f, 0))) {
+                  *val = def_val.value();
+                  setter(x, y, z);
+              }
+              if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+
+              ImGui::SameLine();
+              Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
+              ImGui::SameLine();
+          }
+
+          ImGui::SetCursorPosX(sliderStartX);
+          ImGui::SetNextItemWidth(sliderWidth);
+          bool res = ImGui::SliderFloat("##slider", val, min_val, max_val, format);
+          ImGui::SameLine();
+          Typography::Text(TextStyle::Regular(), "%s", label);
+          ImGui::PopID();
+          return res;
+      };
+
+      changed |= renderComponent(label_x, &x, default_vals ? std::optional<float>(default_vals->x) : std::nullopt, 0);
+      changed |= renderComponent(label_y, &y, default_vals ? std::optional<float>(default_vals->y) : std::nullopt, 1);
+      changed |= renderComponent(label_z, &z, default_vals ? std::optional<float>(default_vals->z) : std::nullopt, 2);
+
+      ImGui::EndGroup();
+      ImGui::Dummy(ImVec2(0, 2.0f));
+      
+      if (changed) setter(x, y, z);
+      ImGui::PopID();
+    } else {
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), loc.Get(m_locDataNotFound).c_str());
+    }
+  };
+
+  // 3. Vector2 Helper (Stacked vertically in ONE container, labels on the right)
+  auto drawVector2 = [&](const std::string& header, const char* label_1, const char* label_2, auto getter, auto setter, float min_val, float max_val, bool is_rotation = false, std::optional<ImVec2> default_vals = std::nullopt, const char* format = "%.1f") {
+    float v1, v2;
+    if (getter(&v1, &v2)) {
+      ImGui::PushID(header.c_str());
+      bool changed = false;
+      
+      if (is_rotation) {
+        v1 = v1 * 57.29578f;
+        v2 = v2 * 57.29578f;
+      }
+
+      float availWidth = ImGui::GetContentRegionAvail().x;
+      float containerWidth = availWidth * GLOBAL_CONTAINER_WIDTH_FACTOR;
+      float rowHeight = ImGui::GetFrameHeight() + 4.0f;
+      float containerHeight = (rowHeight * 2.0f) + 12.0f;
+      float startX = (availWidth - containerWidth) * 0.5f;
+
+      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::SetCursorPosX(startX);
+      drawContainerBg(containerWidth, containerHeight);
+      
+      ImGui::BeginGroup();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f); // Top Padding
+
+      auto renderComponent = [&](const char* label, float* val, std::optional<float> def_val, int comp_idx) {
+          ImGui::PushID(comp_idx);
+          float sliderWidth = containerWidth * GLOBAL_SLIDER_WIDTH_FACTOR;
+          float sliderStartX = startX + (containerWidth - sliderWidth) * 0.5f;
+
+          if (def_val.has_value()) {
+              float d_val = def_val.value();
+              if (is_rotation) d_val *= 57.29578f;
+              char val_buf[32];
+              snprintf(val_buf, sizeof(val_buf), format, d_val);
+              std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+              float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
+
+              ImGui::SetCursorPosX(startX + 25.0f);
+              
+              if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().Color(Colors::LIGHT_GRAY).HoverColor(Colors::GOLD), ImVec2(iconWidth + 8.0f, 0))) {
+                  *val = d_val;
+                  if (is_rotation) {
+                      setter(v1 * 0.0174533f, v2 * 0.0174533f);
+                  } else {
+                      setter(v1, v2);
+                  }
+              }
+              if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+
+              ImGui::SameLine();
+              Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
+              ImGui::SameLine();
+          }
+
+          ImGui::SetCursorPosX(sliderStartX);
+          ImGui::SetNextItemWidth(sliderWidth);
+          bool res = ImGui::SliderFloat("##slider", val, min_val, max_val, format);
+          ImGui::SameLine();
+          Typography::Text(TextStyle::Regular(), "%s", label);
+          ImGui::PopID();
+          return res;
+      };
+
+      changed |= renderComponent(label_1, &v1, default_vals ? std::optional<float>(default_vals->x) : std::nullopt, 0);
+      changed |= renderComponent(label_2, &v2, default_vals ? std::optional<float>(default_vals->y) : std::nullopt, 1);
+
+      ImGui::EndGroup();
+      ImGui::Dummy(ImVec2(0, 2.0f));
+      
+      if (changed) {
+        if (is_rotation) {
+          setter(v1 * 0.0174533f, v2 * 0.0174533f);
+        } else {
+          setter(v1, v2);
+        }
+      }
+      ImGui::PopID();
+    } else {
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), loc.Get(m_locDataNotFound).c_str());
+    }
+  };
+
+  // 4. Boolean Checkbox Helper
+  auto drawBool = [&](const std::string& label, auto getter, auto setter) {
+    bool current_state;
+    if (getter(&current_state)) {
+      float availWidth = ImGui::GetContentRegionAvail().x;
+      float containerWidth = availWidth * GLOBAL_CONTAINER_WIDTH_FACTOR;
+      float containerHeight = ImGui::GetFrameHeight() + 8.0f;
+      float startX = (availWidth - containerWidth) * 0.5f;
+
+      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::SetCursorPosX(startX);
+      drawContainerBg(containerWidth, containerHeight);
+
+      ImGui::BeginGroup();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+
+      float checkWidth = ImGui::GetFrameHeight();
+      float labelWidth = ImGui::CalcTextSize(label.c_str()).x;
+      float totalWidth = checkWidth + ImGui::GetStyle().ItemInnerSpacing.x + labelWidth;
+      
+      ImGui::SetCursorPosX(startX + (containerWidth - totalWidth) * 0.5f);
+      if (ImGui::Checkbox(label.c_str(), &current_state)) setter(current_state);
+      
+      ImGui::EndGroup();
+      ImGui::Dummy(ImVec2(0, 2.0f));
+    } else {
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+    }
+  };
+
+  // 5. Centered Combo Helper
+  auto drawCenteredCombo = [&](const char* id, const std::string& current_label, auto render_items) {
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    float comboWidth = availWidth * GLOBAL_COMBO_WIDTH_FACTOR;
+    ImGui::SetCursorPosX((availWidth - comboWidth) * 0.5f);
+    ImGui::SetNextItemWidth(comboWidth);
+    if (ImGui::BeginCombo(id, current_label.c_str())) {
+        render_items();
+        ImGui::EndCombo();
+    }
+  };
+
+  // 5. Read-Only Data Helper
+  auto drawReadOnly = [&](const std::string& label, const char* format, auto getter) {
+    float value_1, value_2 = 0.0f;
+    if (getter(&value_1, &value_2)) {
+      Typography::Text(TextStyle::Regular().Align(TextAlign::Center), format, value_1, value_2);
+    } else {
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+    }
+  };
+
+  // 6. Centered Section Header
+  auto drawHeader = [&](const std::string& label) {
+    ImGui::Spacing();
+    Typography::Text(TextStyle::Bold().Color(Colors::LIGHT_BLUE).Align(TextAlign::Center).Separator(true), "%s", label.c_str());
+    ImGui::Spacing();
+  };
+
   auto current_cam_type = m_gameCameraService.GetCurrentCameraType();
   ImGui::Text(loc.Get(m_locCurrentCamera).c_str(), GameCameraTypeToString(current_cam_type), static_cast<int>(current_cam_type));
 
@@ -463,79 +775,145 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabInteriorCamera).c_str(), nullptr, interiorTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::InteriorCamera);
       if (auto* interiorCam = dynamic_cast<GameCameraInterior*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (interiorCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFov).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            interiorCam->SetFov(fov);
-          }
+        auto& defaults = interiorCam->GetDefaults();
+        
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFov), [&](float* fov){ return interiorCam->GetFov(fov); }, [&](float fov){ interiorCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return interiorCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locSeatPosition));
+        drawVector3(loc.Get(m_locSeatPosition), loc.Get(m_locSeatLr).c_str(), loc.Get(m_locSeatUd).c_str(), loc.Get(m_locSeatFb).c_str(),
+                   [&](float* seat_x, float* seat_y, float* seat_z){ return interiorCam->GetSeatPosition(seat_x, seat_y, seat_z); },
+                   [&](float seat_x, float seat_y, float seat_z){ interiorCam->SetSeatPosition(seat_x, seat_y, seat_z); }, -1.5f, 1.5f, ImVec4(defaults.seat_pos_x, defaults.seat_pos_y, defaults.seat_pos_z, 0));
+
+        drawHeader(loc.Get(m_locHeadRotation));
+        drawVector2(loc.Get(m_locHeadRotation), loc.Get(m_locYawLr).c_str(), loc.Get(m_locPitchUd).c_str(),
+                   [&](float* head_yaw, float* head_pitch){ return interiorCam->GetHeadRotation(head_yaw, head_pitch); },
+                   [&](float head_yaw, float head_pitch){ interiorCam->SetHeadRotation(head_yaw, head_pitch); }, -180.0f, 180.0f, true, ImVec2(defaults.yaw, defaults.pitch));
+
+        drawHeader(loc.Get(m_locMouseRotationLimits));
+        drawVector2("Horizontal Limits", loc.Get(m_locLeftLimit).c_str(), loc.Get(m_locRightLimit).c_str(),
+                   [&](float* left, float* right){ float u, d; return interiorCam->GetRotationLimits(left, right, &u, &d); },
+                   [&](float left, float right){ float l, r, u, d; interiorCam->GetRotationLimits(&l, &r, &u, &d); interiorCam->SetRotationLimits(left, right, u, d); }, -360.0f, 360.0f, false, ImVec2(defaults.limit_left, defaults.limit_right));
+        drawVector2("Vertical Limits", loc.Get(m_locUpLimit).c_str(), loc.Get(m_locDownLimit).c_str(),
+                   [&](float* up, float* down){ float l, r; return interiorCam->GetRotationLimits(&l, &r, up, down); },
+                   [&](float up, float down){ float l, r, u, d; interiorCam->GetRotationLimits(&l, &r, &u, &d); interiorCam->SetRotationLimits(l, r, up, down); }, -180.0f, 180.0f, false, ImVec2(defaults.limit_up, defaults.limit_down));
+
+        drawHeader(loc.Get(m_locRotationDefaults));
+        drawVector2(loc.Get(m_locRotationDefaults), loc.Get(m_locDefaultLr).c_str(), loc.Get(m_locDefaultUd).c_str(),
+                   [&](float* default_lr, float* default_ud){ return interiorCam->GetRotationDefaults(default_lr, default_ud); },
+                   [&](float default_lr, float default_ud){ interiorCam->SetRotationDefaults(default_lr, default_ud); }, -360.0f, 360.0f, false, ImVec2(defaults.mouse_lr_default, defaults.mouse_ud_default));
+
+        drawHeader(loc.Get(m_locAdvancedCoreSettings));
+        drawFloat(loc.Get(m_locNearPlane), [&](float* near_plane){ return interiorCam->GetNearPlane(near_plane); }, [&](float near_plane){ interiorCam->SetNearPlane(near_plane); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
+        drawFloat(loc.Get(m_locFarPlane), [&](float* far_plane){ return interiorCam->GetFarPlane(far_plane); }, [&](float far_plane){ interiorCam->SetFarPlane(far_plane); }, 100.0f, 10000.0f, "%.0f", defaults.far_plane);
+        drawFloat(loc.Get(m_locMouseSensitivity), [&](float* sensitivity){ return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity){ interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
+
+        drawHeader(loc.Get(m_locInteriorLogicSettings));
+        drawFloat(loc.Get(m_locZoomFovFactor), [&](float* zoom_factor){ return interiorCam->GetZoomFovFactor(zoom_factor); }, [&](float zoom_factor){ interiorCam->SetZoomFovFactor(zoom_factor); }, 0.0f, 1.0f, "%.3f", defaults.zoom_fov_factor);
+        drawFloat(loc.Get(m_locZoomSpeedInterior), [&](float* zoom_speed){ return interiorCam->GetZoomSpeed(zoom_speed); }, [&](float zoom_speed){ interiorCam->SetZoomSpeed(zoom_speed); }, 0.0f, 10.0f, "%.3f", defaults.zoom_speed);
+
+        drawHeader(loc.Get(m_locAzimuthOverrides));
+        size_t azimuth_count = interiorCam->GetAzimuthOverridesCount();
+        if (azimuth_count > 0) {
+            static int selected_azimuth_index = 0;
+            if (selected_azimuth_index >= (int)azimuth_count) selected_azimuth_index = 0;
+
+            const GameCameraInterior::CameraData::AzimuthRangeData* az_defaults = nullptr;
+            if (selected_azimuth_index < (int)defaults.azimuth_overrides_defaults.size()) {
+                az_defaults = &defaults.azimuth_overrides_defaults[selected_azimuth_index];
+            }
+
+            std::string combo_label = loc.Get(m_locSelectRange) + " " + std::to_string(selected_azimuth_index);
+            float start_azimuth, end_azimuth;
+            if (interiorCam->GetAzimuthOverrideStartAzimuth(selected_azimuth_index, &start_azimuth) && interiorCam->GetAzimuthOverrideEndAzimuth(selected_azimuth_index, &end_azimuth)) {
+                combo_label += " [" + std::to_string((int)start_azimuth) + " : " + std::to_string((int)end_azimuth) + "]";
+            }
+
+            drawCenteredCombo("##AzimuthCombo", combo_label, [&](){
+                for (size_t i = 0; i < azimuth_count; ++i) {
+                    std::string item_name = loc.Get(m_locSelectRange) + " " + std::to_string(i);
+                    float cur_start, cur_end;
+                    if (interiorCam->GetAzimuthOverrideStartAzimuth(i, &cur_start) && interiorCam->GetAzimuthOverrideEndAzimuth(i, &cur_end)) {
+                        item_name += " (" + std::to_string((int)cur_start) + " to " + std::to_string((int)cur_end) + ")";
+                    }
+                    if (ImGui::Selectable(item_name.c_str(), selected_azimuth_index == (int)i)) selected_azimuth_index = (int)i;
+                }
+            });
+
+            drawVector2(loc.Get(m_locAzimuthOverrides), loc.Get(m_locRangeStartAzimuth).c_str(), loc.Get(m_locRangeEndAzimuth).c_str(),
+                       [&](float* start, float* end){ bool r1 = interiorCam->GetAzimuthOverrideStartAzimuth(selected_azimuth_index, start); bool r2 = interiorCam->GetAzimuthOverrideEndAzimuth(selected_azimuth_index, end); return r1 && r2; },
+                       [&](float start, float end){ interiorCam->SetAzimuthOverrideStartAzimuth(selected_azimuth_index, start); interiorCam->SetAzimuthOverrideEndAzimuth(selected_azimuth_index, end); }, -180.0f, 180.0f, false,
+                       az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_azimuth, az_defaults->end_azimuth)) : std::nullopt);
+            
+            drawBool(loc.Get(m_locZoneIsOutside), [&](bool* val){ return interiorCam->GetAzimuthOverrideOutside(selected_azimuth_index, val); }, [&](bool val){ interiorCam->SetAzimuthOverrideOutside(selected_azimuth_index, val); });
+            
+            drawVector2("Up Limits", loc.Get(m_locStartUpLimit).c_str(), loc.Get(m_locEndUpLimit).c_str(),
+                       [&](float* start, float* end){ bool r1 = interiorCam->GetAzimuthOverrideStartUpLimit(selected_azimuth_index, start); bool r2 = interiorCam->GetAzimuthOverrideEndUpLimit(selected_azimuth_index, end); return r1 && r2; },
+                       [&](float start, float end){ interiorCam->SetAzimuthOverrideStartUpLimit(selected_azimuth_index, start); interiorCam->SetAzimuthOverrideEndUpLimit(selected_azimuth_index, end); }, -90.0f, 90.0f, false,
+                       az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_up_limit, az_defaults->end_up_limit)) : std::nullopt);
+            drawVector2("Down Limits", loc.Get(m_locStartDownLimit).c_str(), loc.Get(m_locEndDownLimit).c_str(),
+                       [&](float* start, float* end){ bool r1 = interiorCam->GetAzimuthOverrideStartDownLimit(selected_azimuth_index, start); bool r2 = interiorCam->GetAzimuthOverrideEndDownLimit(selected_azimuth_index, end); return r1 && r2; },
+                       [&](float start, float end){ interiorCam->SetAzimuthOverrideStartDownLimit(selected_azimuth_index, start); interiorCam->SetAzimuthOverrideEndDownLimit(selected_azimuth_index, end); }, -90.0f, 90.0f, false,
+                       az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_down_limit, az_defaults->end_down_limit)) : std::nullopt);
+
+            drawVector2("Up-Down Defaults", loc.Get(m_locStartUpDownDefault).c_str(), loc.Get(m_locEndUpDownDefault).c_str(),
+                       [&](float* start, float* end){ bool r1 = interiorCam->GetAzimuthOverrideStartUpDownDefault(selected_azimuth_index, start); bool r2 = interiorCam->GetAzimuthOverrideEndUpDownDefault(selected_azimuth_index, end); return r1 && r2; },
+                       [&](float start, float end){ interiorCam->SetAzimuthOverrideStartUpDownDefault(selected_azimuth_index, start); interiorCam->SetAzimuthOverrideEndUpDownDefault(selected_azimuth_index, end); }, -90.0f, 90.0f, false,
+                       az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_up_down_default, az_defaults->end_up_down_default)) : std::nullopt);
+            drawVector2("Left-Right Defaults", loc.Get(m_locStartLeftRightDefault).c_str(), loc.Get(m_locEndLeftRightDefault).c_str(),
+                       [&](float* start, float* end){ bool r1 = interiorCam->GetAzimuthOverrideStartLeftRightDefault(selected_azimuth_index, start); bool r2 = interiorCam->GetAzimuthOverrideEndLeftRightDefault(selected_azimuth_index, end); return r1 && r2; },
+                       [&](float start, float end){ interiorCam->SetAzimuthOverrideStartLeftRightDefault(selected_azimuth_index, start); interiorCam->SetAzimuthOverrideEndLeftRightDefault(selected_azimuth_index, end); }, -360.0f, 360.0f, false,
+                       az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_left_right_default, az_defaults->end_left_right_default)) : std::nullopt);
+
+            drawVector3(loc.Get(m_locStartHeadOffset), "X", "Y", "Z",
+                       [&](float* x, float* y, float* z){ return interiorCam->GetAzimuthOverrideStartHeadOffset(selected_azimuth_index, x, y, z); },
+                       [&](float x, float y, float z){ interiorCam->SetAzimuthOverrideStartHeadOffset(selected_azimuth_index, x, y, z); }, -1.5f, 1.5f,
+                       az_defaults ? std::optional<ImVec4>(ImVec4(az_defaults->start_head_x, az_defaults->start_head_y, az_defaults->start_head_z, 0)) : std::nullopt);
+            
+            drawVector3(loc.Get(m_locEndHeadOffset), "X", "Y", "Z",
+                       [&](float* x, float* y, float* z){ return interiorCam->GetAzimuthOverrideEndHeadOffset(selected_azimuth_index, x, y, z); },
+                       [&](float x, float y, float z){ interiorCam->SetAzimuthOverrideEndHeadOffset(selected_azimuth_index, x, y, z); }, -1.5f, 1.5f,
+                       az_defaults ? std::optional<ImVec4>(ImVec4(az_defaults->end_head_x, az_defaults->end_head_y, az_defaults->end_head_z, 0)) : std::nullopt);
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (interiorCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
+            Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locAzimuthOverrides).c_str(), loc.Get(m_locDataNotFound).c_str());
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locSeatPosition).c_str());
-        float seat_x, seat_y, seat_z;
-        if (interiorCam->GetSeatPosition(&seat_x, &seat_y, &seat_z)) {
-          bool seatChanged = false;
-          seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatLr).c_str(), &seat_x, -1.5f, 1.5f, "%.3f");
-          seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatUd).c_str(), &seat_y, -0.2f, 0.2f, "%.3f");
-          seatChanged |= ImGui::SliderFloat(loc.Get(m_locSeatFb).c_str(), &seat_z, -0.5f, 0.5f, "%.3f");
-          if (seatChanged) {
-            interiorCam->SetSeatPosition(seat_x, seat_y, seat_z);
-          }
+        drawHeader(loc.Get(m_locShakeSettings));
+        drawFloat(loc.Get(m_locShakeAnimStep), [&](float* shake_step){ return interiorCam->GetShakeAnimStep(shake_step); }, [&](float shake_step){ interiorCam->SetShakeAnimStep(shake_step); }, 0.0f, 1.0f, "%.4f", defaults.shake_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locShakeAnimScaleMin).c_str(), loc.Get(m_locShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = interiorCam->GetShakeAnimScaleMin(s_min); bool r2 = interiorCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ interiorCam->SetShakeAnimScaleMin(s_min); interiorCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_min, defaults.shake_max), "%.4f");
+        drawFloat(loc.Get(m_locHandShakeLimit), [&](float* shake_limit){ return interiorCam->GetHandShakeLimit(shake_limit); }, [&](float shake_limit){ interiorCam->SetHandShakeLimit(shake_limit); }, 0.0f, 1.0f, "%.4f", defaults.hand_shake_limit);
+        drawFloat(loc.Get(m_locHandShakeSpeed), [&](float* shake_speed){ return interiorCam->GetHandShakeSpeed(shake_speed); }, [&](float shake_speed){ interiorCam->SetHandShakeSpeed(shake_speed); }, 0.0f, 10.0f, "%.3f", defaults.hand_shake_speed);
+        
+        drawHeader(loc.Get(m_locShakeAnimationArray));
+        size_t shake_count = interiorCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index = 0;
+            if (selected_shake_index >= (int)shake_count) selected_shake_index = 0;
+
+            const GameCameraInterior::CameraData::Vec3* shake_def = nullptr;
+            if (selected_shake_index < (int)defaults.shake_anim_defaults.size()) {
+                shake_def = &defaults.shake_anim_defaults[selected_shake_index];
+            }
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index);
+            drawCenteredCombo("##ShakeCombo", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index == (int)i)) selected_shake_index = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ return interiorCam->GetShakeAnim(selected_shake_index, x, y, z); },
+                       [&](float x, float y, float z){ interiorCam->SetShakeAnim(selected_shake_index, x, y, z); }, -5.0f, 5.0f,
+                       shake_def ? std::optional<ImVec4>(ImVec4(shake_def->x, shake_def->y, shake_def->z, 0)) : std::nullopt, "%.5f");
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locSeatPositionNotFound).c_str());
+            Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locShakeAnimationArray).c_str(), loc.Get(m_locDataNotFound).c_str());
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locHeadRotation).c_str());
-        float yaw, pitch;
-        if (interiorCam->GetHeadRotation(&yaw, &pitch)) {
-          bool rotChanged = false;
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locYawLr).c_str(), &yaw, -3.14159f, 3.14159f, "%.3f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locPitchUd).c_str(), &pitch, -1.57079f, 1.57079f, "%.3f");
-          if (rotChanged) {
-            interiorCam->SetHeadRotation(yaw, pitch);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locHeadRotationNotFound).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locMouseRotationLimits).c_str());
-        float lim_l, lim_r, lim_u, lim_d;
-        if (interiorCam->GetRotationLimits(&lim_l, &lim_r, &lim_u, &lim_d)) {
-          bool limitChanged = false;
-          limitChanged |= ImGui::SliderFloat(loc.Get(m_locLeftLimit).c_str(), &lim_l, -360.0f, 360.0f, "%.1f");
-          limitChanged |= ImGui::SliderFloat(loc.Get(m_locRightLimit).c_str(), &lim_r, -360.0f, 360.0f, "%.1f");
-          limitChanged |= ImGui::SliderFloat(loc.Get(m_locUpLimit).c_str(), &lim_u, -180.0f, 180.0f, "%.1f");
-          limitChanged |= ImGui::SliderFloat(loc.Get(m_locDownLimit).c_str(), &lim_d, -180.0f, 180.0f, "%.1f");
-          if (limitChanged) {
-            interiorCam->SetRotationLimits(lim_l, lim_r, lim_u, lim_d);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locRotationLimitsNotFound).c_str());
-        }
-
-        float mouse_lr_default, mouse_ud_default;
-        if (interiorCam->GetRotationDefaults(&mouse_lr_default, &mouse_ud_default)) {
-          bool defaultsChanged = false;
-          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultLr).c_str(), &mouse_lr_default, -360.0f, 360.0f, "%.1f");
-          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultUd).c_str(), &mouse_ud_default, -90.0f, 90.0f, "%.1f");
-          if (defaultsChanged) {
-            interiorCam->SetRotationDefaults(mouse_lr_default, mouse_ud_default);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locRotationDefaultsNotFound).c_str());
-        }
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           interiorCam->ResetToDefaults();

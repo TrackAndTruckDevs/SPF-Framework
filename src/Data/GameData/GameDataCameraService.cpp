@@ -126,6 +126,7 @@ void GameDataCameraService::Shutdown() {
     m_interior_limit_right_offset = 0;
     m_interior_limit_up_offset = 0;
     m_interior_limit_down_offset = 0;
+    m_interior_outside_offset = 0;
     m_fov_base_offset = 0;
     m_fov_horiz_final_offset = 0;
     m_fov_vert_final_offset = 0;
