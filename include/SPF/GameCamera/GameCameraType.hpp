@@ -15,6 +15,7 @@ enum class GameCameraType {
   WheelCamera = 6,
   TopCamera = 7,
   TVCamera = 9,
+  PhotoCamera = 13,
   Unknown = -1,
 };
 }  // namespace GameCamera

@@ -29,6 +29,7 @@ class HooksApi {
   static float Memory_ReadFloat(uintptr_t address);
   static uintptr_t Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 
+  static uintptr_t Hook_FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature);
   static uintptr_t Hook_FindString(const char* str);
   static uintptr_t Hook_FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange);
   static uintptr_t Hook_GetFunctionStart(uintptr_t address);

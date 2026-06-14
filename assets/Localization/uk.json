@@ -652,6 +652,7 @@
         "data_not_found": ": дані не знайдено",
         "tabs": {
             "interior_camera": "Камера в салоні",
+            "photo_camera": "Фото Камера",                
             "behind_camera": "Камера позаду",
             "top_camera": "Камера зверху",
             "cabin_camera": "Камера кабіни",
@@ -720,6 +721,17 @@
             "shake_settings": "Налаштування тряски та тремтіння",
             "interior_logic_settings": "Логіка інтер'єру та зуму",
             "azimuth_range_details": "Параметри вибраної зони"
+        },
+        "photo_camera": {
+            "live_state": "Поточний стан",
+            "live_pitch": "Тангаж (В/Н)",
+            "live_yaw": "Рискання (Л/П)",
+            "live_roll": "Крен",
+            "live_zoom": "Зум (Відстань)",
+            "position": "Позиція камери (Світ)",
+            "base_fov": "Базовий FOV",
+            "not_available": "Об'єкт фотокамери недоступний.",
+            "fov_zoom": "FOV / Зум"
         },
         "behind_camera": {
             "live_state": "Поточний стан",

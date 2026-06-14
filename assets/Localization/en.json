@@ -652,6 +652,7 @@
         "data_not_found": ": data not found",
         "tabs": {
             "interior_camera": "Interior Camera",
+            "photo_camera": "Photo Camera",            
             "behind_camera": "Behind Camera",
             "top_camera": "Top Camera",
             "cabin_camera": "Cabin Camera",
@@ -721,6 +722,17 @@
             "interior_logic_settings": "Interior & Zoom Logic",
             "azimuth_range_details": "Selected Zone Parameters"
         },
+        "photo_camera": {
+            "live_state": "Live State",
+            "live_pitch": "Pitch",
+            "live_yaw": "Yaw",
+            "live_roll": "Roll",
+            "live_zoom": "Zoom (Distance)",
+            "position": "Camera Position (World)",
+            "base_fov": "Base FOV",
+            "not_available": "Photo camera object not available.",
+            "fov_zoom": "FOV / Zoom"
+        },        
         "behind_camera": {
             "live_state": "Live State",
             "live_pitch": "Live Pitch",

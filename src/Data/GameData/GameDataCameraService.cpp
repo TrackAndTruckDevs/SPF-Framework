@@ -2,7 +2,7 @@
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
-// Include the new finder implementations
+// Include all finder implementations
 #include "SPF/Data/GameData/Finders/CoreCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/FreeCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/InteriorCameraDataFinder.hpp"
@@ -15,6 +15,7 @@
 #include "SPF/Data/GameData/Finders/BumperCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/WheelCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/TVCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/PhotoCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/DebugCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/DebugCameraStateDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/DebugCameraAnimationDataFinder.hpp"
@@ -23,6 +24,7 @@
 
 SPF_NS_BEGIN
 namespace Data::GameData {
+
 GameDataCameraService::GameDataCameraService() = default;
 
 GameDataCameraService& GameDataCameraService::GetInstance() {
@@ -43,6 +45,7 @@ void GameDataCameraService::RegisterFinders() {
   m_dataFinders.push_back(std::make_unique<Finders::BumperCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::WheelCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::TVCameraDataFinder>());
+  m_dataFinders.push_back(std::make_unique<Finders::PhotoCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraStateDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraAnimationDataFinder>());
@@ -50,42 +53,82 @@ void GameDataCameraService::RegisterFinders() {
 
 void GameDataCameraService::Initialize() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
-  logger->Info("Initializing Game Data (Camera) Service...");
+  logger->Info("Initializing Camera Data Service...");
 
+  m_verifiedCameras.clear();
   RegisterFinders();
 
-  m_isInitialized = false;     // Initially not ready, will be set by TryFindAllOffsets
-  m_coreOffsetsFound = false;  // Reset core offsets status
-  logger->Info("Game Data (Camera) Service initialization finished. Waiting for critical offsets.");
+  m_isInitialized = false;
+  m_coreOffsetsFound = false;
+  
+  logger->Info("Camera Data Service logic registered. Starting pattern scan sequence.");
 }
 
 bool GameDataCameraService::TryFindAllOffsets() {
-  if (m_isInitialized) return true;  // Already found everything
+  if (m_isInitialized) return true;
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
-  bool all_critical_found_this_pass = true;
+  bool all_critical_found = true;
 
   for (const auto& finder : m_dataFinders) {
-    if (!finder->IsReady())  // Only try to find if not already ready
-    {
+    if (!finder->IsReady()) {
       if (finder->TryFindOffsets(*this)) {
-        logger->Info("-> Finder '{}' succeeded.", finder->GetName());
+        logger->Info("[Success] Finder '{}' completed successfully.", finder->GetName());
       } else {
-        logger->Warn("-> Finder '{}' failed. Will retry.", finder->GetName());
+        // Log failure for every finder so we know exactly what's missing
+        logger->Warn("[Failed] Finder '{}' could not resolve all patterns. Will retry on next tick.", finder->GetName());
+        
+        // CoreCameraDataFinder is mandatory. Without it, we can't even find the manager.
         if (strcmp(finder->GetName(), "CoreCameraDataFinder") == 0) {
-          all_critical_found_this_pass = false;  // Core finder is critical
+          logger->Critical("CRITICAL FAILURE: CoreCameraDataFinder is missing! Camera system is offline.");
+          all_critical_found = false;
         }
       }
     }
   }
 
-  if (all_critical_found_this_pass && m_coreOffsetsFound) {  // Check m_coreOffsetsFound explicitly
+  // We are ready only if the core system is found
+  if (all_critical_found && m_coreOffsetsFound) {
     m_isInitialized = true;
-    logger->Info("All critical camera offsets found. Service is fully initialized.");
+    logger->Info("Camera Data Service successfully initialized (Core found).");
     return true;
+  } else {
+    // Report detailed failure status at the end of the pass
+    logger->Error("Camera Data Service NOT ready. Status -> CriticalFinders: {}, CoreOffsetsFlag: {}", 
+                  all_critical_found ? "OK" : "FAILED", 
+                  m_coreOffsetsFound ? "OK" : "FALSE");
   }
 
   return m_isInitialized;
+}
+
+void GameDataCameraService::RegisterDiscoveredAddress(int slotIndex, uintptr_t address) {
+  m_discoveredAddresses[slotIndex] = address;
+}
+
+uintptr_t GameDataCameraService::GetDiscoveredAddress(int slotIndex) const {
+  auto it = m_discoveredAddresses.find(slotIndex);
+  if (it != m_discoveredAddresses.end()) {
+    return it->second;
+  }
+  return 0;
+}
+
+void GameDataCameraService::RegisterVerifiedCamera(GameCamera::GameCameraType type, uintptr_t address) {
+  m_verifiedCameras[type] = address;
+}
+
+uintptr_t GameDataCameraService::GetVerifiedCamera(GameCamera::GameCameraType type) const {
+  auto it = m_verifiedCameras.find(type);
+  if (it != m_verifiedCameras.end()) {
+    return it->second;
+  }
+  return 0;
+}
+
+void GameDataCameraService::UpdateFinders() {
+  if (m_isInitialized) return;
+  TryFindAllOffsets();
 }
 
 bool GameDataCameraService::IsFinderReady(const char* name) const {
@@ -94,153 +137,186 @@ bool GameDataCameraService::IsFinderReady(const char* name) const {
       return finder->IsReady();
     }
   }
-  return false;  // Finder with that name not found
+  return false;
 }
 
 bool GameDataCameraService::AreAllFindersReady() const {
   for (const auto& finder : m_dataFinders) {
-    if (!finder->IsReady()) {
-      return false;
-    }
+    if (!finder->IsReady()) return false;
   }
   return true;
 }
 
 void GameDataCameraService::Shutdown() {
-  if (m_isInitialized) {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
-    logger->Info("Uninstalling Game Data (Camera) Service...");
-    m_isInitialized = false;
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
+  logger->Info("Shutting down Camera Data Service and clearing all cache...");
 
-    // Clear all data members to their initial state
-    m_pStandardManagerPtrAddr = 0;
-    m_activeCameraIdOffset = 0;
-    m_pFreecamGlobalObjectPtr = nullptr;
-    m_freecamContextOffset = 0;
-    m_interior_seat_x_offset = 0;
-    m_interior_seat_y_offset = 0;
-    m_interior_seat_z_offset = 0;
-    m_interior_yaw_offset = 0;
-    m_interior_pitch_offset = 0;
-    m_interior_limit_left_offset = 0;
-    m_interior_limit_right_offset = 0;
-    m_interior_limit_up_offset = 0;
-    m_interior_limit_down_offset = 0;
-    m_interior_outside_offset = 0;
-    m_fov_base_offset = 0;
-    m_fov_horiz_final_offset = 0;
-    m_fov_vert_final_offset = 0;
-    m_interior_mouse_lr_default = 0;
-    m_interior_mouse_ud_default = 0;
+  m_isInitialized = false;
+  m_coreOffsetsFound = false;
+  m_verifiedCameras.clear();
+  m_dataFinders.clear();
 
-    m_freecam_pos_x_offset = 0;
-    m_freecam_pos_y_offset = 0;
-    m_freecam_pos_z_offset = 0;
-    m_freecam_mouse_x_offset = 0;
-    m_freecam_mouse_y_offset = 0;
-    m_freecam_roll_offset = 0;
-    m_pFreeCamSpeed = nullptr;
-
-    m_pCameraWorldCoordinatesPtr = nullptr;
-
-    m_pCameraParamsObject = 0;
-    m_viewport_x1_offset = 0;
-    m_viewport_x2_offset = 0;
-    m_viewport_y1_offset = 0;
-    m_viewport_y2_offset = 0;
-
-    m_behind_live_pitch_offset = 0;
-    m_behind_live_yaw_offset = 0;
-    m_behind_live_zoom_offset = 0;
-    m_behind_distance_min_offset = 0;
-    m_behind_distance_max_offset = 0;
-    m_behind_distance_trailer_max_offset = 0;
-    m_behind_distance_default_offset = 0;
-    m_behind_distance_trailer_default_offset = 0;
-    m_behind_distance_change_speed_offset = 0;
-    m_behind_distance_laziness_speed_offset = 0;
-    m_behind_azimuth_laziness_speed_offset = 0;
-    m_behind_elevation_min_offset = 0;
-    m_behind_elevation_max_offset = 0;
-    m_behind_elevation_default_offset = 0;
-    m_behind_elevation_trailer_default_offset = 0;
-    m_behind_height_limit_offset = 0;
-    m_behind_pivot_x_offset = 0;
-    m_behind_pivot_y_offset = 0;
-    m_behind_pivot_z_offset = 0;
-    m_behind_dynamic_offset_max_offset = 0;
-    m_behind_dynamic_offset_speed_min_offset = 0;
-    m_behind_dynamic_offset_speed_max_offset = 0;
-    m_behind_dynamic_offset_laziness_speed_offset = 0;
-    m_behind_validation_offset = 0;
-    m_behind_validation_speed_positive_offset = 0;
-    m_behind_validation_speed_negative_offset = 0;
-    m_behind_validation_radius_offset = 0;
-    m_behind_speed_fov_change_factor_offset = 0;
-
-    m_top_min_height_offset = 0;
-    m_top_max_height_offset = 0;
-    m_top_speed_offset = 0;
-    m_top_x_offset_forward_offset = 0;
-    m_top_x_offset_backward_offset = 0;
-
-    m_window_head_offset_x = 0;
-    m_window_head_offset_y = 0;
-    m_window_head_offset_z = 0;
-    m_window_live_yaw = 0;
-    m_window_live_pitch = 0;
-    m_window_mouse_left_limit = 0;
-    m_window_mouse_right_limit = 0;
-    m_window_mouse_lr_default = 0;
-    m_window_mouse_up_limit = 0;
-    m_window_mouse_down_limit = 0;
-    m_window_mouse_ud_default = 0;
-
-    m_bumper_offset_x = 0;
-    m_bumper_offset_y = 0;
-    m_bumper_offset_z = 0;
-
-    m_wheel_offset_x = 0;
-    m_wheel_offset_y = 0;
-    m_wheel_offset_z = 0;
-
-    m_tv_max_distance = 0;
-    m_tv_prefab_uplift_x = 0;
-    m_tv_prefab_uplift_y = 0;
-    m_tv_prefab_uplift_z = 0;
-    m_tv_road_uplift_x = 0;
-    m_tv_road_uplift_y = 0;
-    m_tv_road_uplift_z = 0;
-
-    m_pDebugCameraContext = 0;
-    m_pfnSetDebugCameraMode = nullptr;
-    m_pfnSetSelectedActor = nullptr;
-    m_pfnSetPositionLock = nullptr;
-    m_pfnSetRotationLock = nullptr;
-    m_pfnSetOrbitMode = nullptr;
-
-    m_pfnSetHudVisibility = nullptr;
-    m_pfnSetDebugHudPosition = nullptr;
-    m_hudVisibleOffset = 0;
-    m_hudPositionOffset = 0;
-    m_gameUiVisibleOffset = 0;
-
-    // Clear state data
-    m_pfnAddCameraState = nullptr;
-    m_stateContextOffset = 0;
-    m_pfnCycleSavedState = nullptr;
-    m_pfnApplyState = nullptr;
-    m_stateArrayOffset = 0;
-    m_stateCountOffset = 0;
-    m_stateCurrentIndexOffset = 0;
-
-    // Clear animation data
-    m_pfnUpdateAnimatedFlight = nullptr;
-    m_animationTimerOffset = 0;
-
-    // Clear the finders vector
-    m_dataFinders.clear();
-  }
+  // Reset ALL internal pointers and offsets to 0
+  m_pCameraManagerPtrAddr = 0;
+  m_cameraManagerAdjustment = 0;
+  m_cameraArrayOffset = 0;
+  m_activeCameraIdOffset = 0;
+  m_pFreeCamSpeed = nullptr;
+  m_pCameraWorldCoordinatesPtr = nullptr;
+  m_camera_fov_offset = 0;
+  m_near_plane_offset = 0;
+  m_far_plane_offset = 0;
+  m_mouse_sensitivity_offset = 0;
+  m_shake_anim_step_offset = 0;
+  m_shake_anim_scale_min_offset = 0;
+  m_shake_anim_scale_max_offset = 0;
+  m_shake_anim_offset = 0;
+  m_hand_shake_limit_offset = 0;
+  m_hand_shake_speed_offset = 0;
+  m_fov_base_offset = 0;
+  m_fov_horiz_final_offset = 0;
+  m_fov_vert_final_offset = 0;
+  m_interior_seat_x_offset = 0;
+  m_interior_seat_y_offset = 0;
+  m_interior_seat_z_offset = 0;
+  m_interior_yaw_offset = 0;
+  m_interior_pitch_offset = 0;
+  m_interior_limit_left_offset = 0;
+  m_interior_limit_right_offset = 0;
+  m_interior_limit_up_offset = 0;
+  m_interior_limit_down_offset = 0;
+  m_interior_outside_offset = 0;
+  m_interior_mouse_lr_default = 0;
+  m_interior_mouse_ud_default = 0;
+  m_interior_azimuth_overrides_offset = 0;
+  m_zoom_fov_factor_offset = 0;
+  m_zoom_speed_offset = 0;
+  m_azimuth_range_outside_offset = 0;
+  m_azimuth_range_start_azimuth_offset = 0;
+  m_azimuth_range_end_azimuth_offset = 0;
+  m_azimuth_range_start_up_limit_offset = 0;
+  m_azimuth_range_end_up_limit_offset = 0;
+  m_azimuth_range_start_down_limit_offset = 0;
+  m_azimuth_range_end_down_limit_offset = 0;
+  m_azimuth_range_start_up_down_default_offset = 0;
+  m_azimuth_range_end_up_down_default_offset = 0;
+  m_azimuth_range_start_left_right_default_offset = 0;
+  m_azimuth_range_end_left_right_default_offset = 0;
+  m_azimuth_range_start_head_offset_offset = 0;
+  m_azimuth_range_end_head_offset_offset = 0;
+  m_pCameraParamsObject = 0;
+  m_viewport_x1_offset = 0;
+  m_viewport_x2_offset = 0;
+  m_viewport_y1_offset = 0;
+  m_viewport_y2_offset = 0;
+  m_behind_live_pitch_offset = 0;
+  m_behind_live_yaw_offset = 0;
+  m_behind_live_zoom_offset = 0;
+  m_behind_distance_min_offset = 0;
+  m_behind_distance_max_offset = 0;
+  m_behind_distance_trailer_max_offset = 0;
+  m_behind_distance_default_offset = 0;
+  m_behind_distance_trailer_default_offset = 0;
+  m_behind_distance_change_speed_offset = 0;
+  m_behind_distance_laziness_speed_offset = 0;
+  m_behind_azimuth_laziness_speed_offset = 0;
+  m_behind_elevation_min_offset = 0;
+  m_behind_elevation_max_offset = 0;
+  m_behind_elevation_default_offset = 0;
+  m_behind_elevation_trailer_default_offset = 0;
+  m_behind_height_limit_offset = 0;
+  m_behind_pivot_x_offset = 0;
+  m_behind_pivot_y_offset = 0;
+  m_behind_pivot_z_offset = 0;
+  m_behind_dynamic_offset_max_offset = 0;
+  m_behind_dynamic_offset_speed_min_offset = 0;
+  m_behind_dynamic_offset_speed_max_offset = 0;
+  m_behind_dynamic_offset_laziness_speed_offset = 0;
+  m_behind_validation_offset = 0;
+  m_behind_validation_speed_positive_offset = 0;
+  m_behind_validation_speed_negative_offset = 0;
+  m_behind_validation_radius_offset = 0;
+  m_behind_speed_fov_change_factor_offset = 0;
+  m_top_min_height_offset = 0;
+  m_top_max_height_offset = 0;
+  m_top_speed_offset = 0;
+  m_top_x_offset_forward_offset = 0;
+  m_top_x_offset_backward_offset = 0;
+  m_window_head_offset_x = 0;
+  m_window_head_offset_y = 0;
+  m_window_head_offset_z = 0;
+  m_window_live_yaw = 0;
+  m_window_live_pitch = 0;
+  m_window_mouse_left_limit = 0;
+  m_window_mouse_right_limit = 0;
+  m_window_mouse_lr_default = 0;
+  m_window_mouse_up_limit = 0;
+  m_window_mouse_down_limit = 0;
+  m_window_mouse_ud_default = 0;
+  m_bumper_offset_x = 0;
+  m_bumper_offset_y = 0;
+  m_bumper_offset_z = 0;
+  m_wheel_offset_x = 0;
+  m_wheel_offset_y = 0;
+  m_wheel_offset_z = 0;
+  m_tv_max_distance = 0;
+  m_tv_prefab_uplift_x = 0;
+  m_tv_prefab_uplift_y = 0;
+  m_tv_prefab_uplift_z = 0;
+  m_tv_road_uplift_x = 0;
+  m_tv_road_uplift_y = 0;
+  m_tv_road_uplift_z = 0;
+  m_photo_live_pitch_offset = 0;
+  m_photo_live_yaw_offset = 0;
+  m_photo_live_roll_offset = 0;
+  m_photo_live_zoom_offset = 0;
+  m_photo_pos_x_offset = 0;
+  m_photo_pos_y_offset = 0;
+  m_photo_pos_z_offset = 0;
+  m_freecam_pos_x_offset = 0;
+  m_freecam_pos_y_offset = 0;
+  m_freecam_pos_z_offset = 0;
+  m_freecam_quat_x_offset = 0;
+  m_freecam_quat_y_offset = 0;
+  m_freecam_quat_z_offset = 0;
+  m_freecam_quat_w_offset = 0;
+  m_freecam_internal_value_offset = 0;
+  m_freecam_mouse_x_offset = 0;
+  m_freecam_mouse_y_offset = 0;
+  m_freecam_roll_offset = 0;
+  m_pDebugCameraContext = 0;
+  m_pfnSetDebugCameraMode = nullptr;
+  m_pfnSetSelectedActor = nullptr;
+  m_pfnSetPositionLock = nullptr;
+  m_pfnSetRotationLock = nullptr;
+  m_pfnSetOrbitMode = nullptr;
+  m_pCacheableCvarObject = 0;
+  m_cvarValueOffset = 0;
+  m_debugCameraModeOffset = 0;
+  m_debugPosLockOffset = 0;
+  m_debugRotLockOffset = 0;
+  m_debugOrbitOffset = 0;
+  m_debugSelectedObjectPtrOffset = 0;
+  m_debugOrbitSpeedOffset = 0;
+  m_debugHoveredObjectPtrOffset = 0;
+  m_pfnSetHudVisibility = nullptr;
+  m_pfnSetDebugHudPosition = nullptr;
+  m_hudVisibleOffset = 0;
+  m_hudPositionOffset = 0;
+  m_gameUiVisibleOffset = 0;
+  m_pfnAddCameraState = nullptr;
+  m_stateContextOffset = 0;
+  m_stateManagerOffset = 0;
+  m_pfnCycleSavedState = nullptr;
+  m_pfnApplyState = nullptr;
+  m_pfnLoadStatesFromFile = nullptr;
+  m_pfnOpenFileForCameraState = nullptr;
+  m_pfnFormatAndWriteCameraState = nullptr;
+  m_stateArrayOffset = 0;
+  m_stateCountOffset = 0;
+  m_stateCurrentIndexOffset = 0;
+  m_pfnUpdateAnimatedFlight = nullptr;
+  m_animationTimerOffset = 0;
 }
 
 }  // namespace Data::GameData

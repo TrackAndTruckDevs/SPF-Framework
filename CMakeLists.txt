@@ -201,6 +201,7 @@ add_library(SPF SHARED
     "src/Data/GameData/Finders/ViewportDataFinder.cpp"
     "src/Data/GameData/Finders/BehindCameraDataFinder.cpp"
     "src/Data/GameData/Finders/TopCameraDataFinder.cpp"
+    "src/Data/GameData/Finders/PhotoCameraDataFinder.cpp"
     "src/Data/GameData/Finders/CabinCameraDataFinder.cpp"
     "src/Data/GameData/Finders/WindowCameraDataFinder.cpp"
     "src/Data/GameData/Finders/BumperCameraDataFinder.cpp"
@@ -241,6 +242,7 @@ add_library(SPF SHARED
 
     "src/GameCamera/GameCameraManager.cpp"
     "src/GameCamera/GameCameraInterior.cpp"
+    "src/GameCamera/GameCameraPhoto.cpp"
     "src/GameCamera/GameCameraBehind.cpp"
     "src/GameCamera/GameCameraTop.cpp"
     "src/GameCamera/GameCameraCabin.cpp"

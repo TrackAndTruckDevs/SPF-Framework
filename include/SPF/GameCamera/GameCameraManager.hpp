@@ -49,6 +49,13 @@ class GameCameraManager : public Hooks::IHook {
   GameCameraType GetCurrentCameraType();
   void Update(float dt);
 
+  /**
+   * @brief Retrieves a verified pointer to a specific camera object.
+   * Performs a 'Lazy Verification': compares the result from the game function 
+   * against the raw array address and caches the result.
+   */
+  uintptr_t GetVerifiedCameraObject(GameCameraType cameraType);
+
   IGameCamera* GetCamera(GameCameraType cameraType);
   GameCameraDebug* GetDebugCamera();
   GameCameraDebugState* GetDebugStateCamera();

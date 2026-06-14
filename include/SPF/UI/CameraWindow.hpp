@@ -42,6 +42,7 @@ class CameraWindow : public BaseWindow {
     std::string m_locSelectCamera;
     std::string m_locInterior;
     std::string m_locBehind;
+    std::string m_locPhoto;
     std::string m_locTop;
     std::string m_locCabin;
     std::string m_locWindow;
@@ -53,6 +54,7 @@ class CameraWindow : public BaseWindow {
     std::string m_locTabInteriorCamera;
     std::string m_locTabBehindCamera;
     std::string m_locTabTopCamera;
+    std::string m_locTabPhotoCamera;
     std::string m_locTabCabinCamera;
     std::string m_locTabWindowCamera;
     std::string m_locTabBumperCamera;
@@ -86,6 +88,17 @@ class CameraWindow : public BaseWindow {
     std::string m_locResetToDefaults;
     std::string m_locInteriorCameraNotAvailable;
     std::string m_locDefaultValuePrefix;
+
+    // Photo Camera
+    std::string m_locPhotoLiveState;
+    std::string m_locPhotoLivePitch;
+    std::string m_locPhotoLiveYaw;
+    std::string m_locPhotoLiveRoll;
+    std::string m_locPhotoLiveZoom;
+    std::string m_locPhotoPosition;
+    std::string m_locPhotoBaseFov;
+    std::string m_locPhotoNotAvailable;
+    std::string m_locPhotoFovZoom;
 
     // Interior Camera - Advanced (v1.2)
     std::string m_locNearPlane;

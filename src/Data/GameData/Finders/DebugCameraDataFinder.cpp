@@ -173,8 +173,8 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto& cameraHooks = Hooks::CameraHooks::GetInstance();
   uintptr_t pfnGetCamObj = reinterpret_cast<uintptr_t>(cameraHooks.GetGetCameraObjectFunc());
   
-  // GetStandardManager() handles the pointer dereferencing and version-specific adjustments (like v1.59).
-  uintptr_t pStandardManager = owner.GetStandardManager();
+  // GetCameraManager() handles the pointer dereferencing and version-specific adjustments (like v1.59).
+  uintptr_t pStandardManager = owner.GetCameraManager();
 
   if (pStandardManager && pfnGetCamObj) {
     /*
@@ -189,6 +189,25 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
        * 48 8B 41 08       - MOV RAX, [RCX + 0x08]
        * 
        * Combined offset = 0x30 + 0x08 = 0x38.
+       * 
+       * STRUCTURE OF THE CAMERA ARRAY (pDebugCameraContext at StandardManager + 0x38):
+       * This is a pointer to an array of pointers (context) managed by the game engine.
+       * Each offset corresponds to a GameCameraType ID:
+       * 
+       * +0x00: DeveloperFreeCamera (ID 0)
+       * +0x08: BehindCamera        (ID 1)
+       * +0x10: InteriorCamera      (ID 2)
+       * +0x18: BumperCamera        (ID 3)
+       * +0x20: WindowCamera        (ID 4)
+       * +0x28: CabinCamera         (ID 5)
+       * +0x30: WheelCamera         (ID 6)
+       * +0x38: TopCamera           (ID 7)
+       * +0x40: ???                 (ID 8)
+       * +0x48: TVCamera            (ID 9)
+       * +0x50: ???                 (ID 10)
+       * +0x58: ???                 (ID 11)
+       * +0x60: ???                 (ID 12)
+       * +0x68: PhotoCamera         (ID 13)
        */
       const char* p_array_logic = "48 83 C1 ?? ?? ?? ?? ?? 73 ?? 48 8B 41 ??";
       uintptr_t addr = Utils::PatternFinder::Find(pfnGetCamObj, 128, p_array_logic);

@@ -21,6 +21,7 @@ void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
     api->Memory_GetRipAddress = &Utils::PatternFinder::GetRipAddress;
 
     // ABI Extension (v1.1)
+    api->Hook_FindBackward = &HooksApi::Hook_FindBackward;
     api->Hook_FindString = &HooksApi::Hook_FindString;
     api->Hook_FindFunctionByString = &HooksApi::Hook_FindFunctionByString;
     // ABI Extension (Advanced Lookup)
@@ -75,6 +76,10 @@ float HooksApi::Memory_ReadFloat(uintptr_t address) {
 
 uintptr_t HooksApi::Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
     return Utils::PatternFinder::GetRipAddress(instructionAddr, offsetPos, instructionSize);
+}
+
+uintptr_t HooksApi::Hook_FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature) {
+    return Utils::PatternFinder::FindBackward(startAddress, searchRange, signature);
 }
 
 uintptr_t HooksApi::Hook_FindString(const char* str) {

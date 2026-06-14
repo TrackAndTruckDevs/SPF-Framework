@@ -14,8 +14,8 @@ void GameCameraTV::OnActivate() {
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   
-  // GetStandardManager() handles pointer dereferencing and version-specific adjustments.
-  uintptr_t pStandardManager = gameData.GetStandardManager();
+  // GetCameraManager() handles pointer dereferencing and version-specific adjustments.
+  uintptr_t pStandardManager = gameData.GetCameraManager();
   
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));

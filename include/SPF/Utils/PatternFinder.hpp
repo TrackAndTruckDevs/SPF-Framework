@@ -56,6 +56,17 @@ class PatternFinder {
   static uintptr_t Find(uintptr_t base, size_t size, const char* signature);
 
   /**
+   * @brief Searches for a pattern backwards from a base address.
+   * Moves the starting point step-by-step backwards, but performs forward matching.
+   * 
+   * @param startAddress The address where the backward search starts.
+   * @param searchRange How many bytes to look back from the startAddress.
+   * @param signature Hex string pattern to search for.
+   * @return uintptr_t The address of the found pattern, or 0.
+   */
+  static uintptr_t FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature);
+
+  /**
    * @brief Performs an optimized search for a raw byte sequence in a memory block.
    * 
    * @param base Starting address of the memory range.
@@ -281,7 +292,7 @@ class PatternFinder {
   /**
    * @brief Core backtracking engine for signature matching.
    */
-  static bool MatchInternal(const uint8_t* data, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen);
+  static bool MatchInternal(const uint8_t* data, size_t dataSize, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen);
   
   /**
    * @brief Parses a hex signature string into internal matcher rules.

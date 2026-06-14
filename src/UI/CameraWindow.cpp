@@ -18,6 +18,7 @@
 #include "SPF/GameCamera/GameCameraWheel.hpp"
 #include "SPF/GameCamera/GameCameraTV.hpp"
 #include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/GameCamera/GameCameraPhoto.hpp"
 #include "SPF/GameCamera/DebugCameraMode.hpp"
 #include "SPF/GameCamera/DebugHudPosition.hpp"
 #include "SPF/Utils/Vec3.hpp"
@@ -99,6 +100,7 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locSelectCamera = "camera_window.select_camera";
     m_locInterior = "camera_window.interior";
     m_locBehind = "camera_window.behind";
+    m_locPhoto = "camera_window.photo";
     m_locTop = "camera_window.top";
     m_locCabin = "camera_window.cabin";
     m_locWindow = "camera_window.window";
@@ -109,13 +111,26 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locTabInteriorCamera = "camera_window.tabs.interior_camera";
     m_locTabBehindCamera = "camera_window.tabs.behind_camera";
     m_locTabTopCamera = "camera_window.tabs.top_camera";
+    m_locTabPhotoCamera = "camera_window.tabs.photo_camera";
     m_locTabCabinCamera = "camera_window.tabs.cabin_camera";
+
     m_locTabWindowCamera = "camera_window.tabs.window_camera";
     m_locTabBumperCamera = "camera_window.tabs.bumper_camera";
     m_locTabWheelCamera = "camera_window.tabs.wheel_camera";
     m_locTabTVCamera = "camera_window.tabs.tv_camera";
     m_locTabFreeCamera = "camera_window.tabs.free_camera";
     m_locTabDebug = "camera_window.tabs.debug";
+
+    // Photo Camera keys
+    m_locPhotoLiveState = "camera_window.photo_camera.live_state";
+    m_locPhotoLivePitch = "camera_window.photo_camera.live_pitch";
+    m_locPhotoLiveYaw = "camera_window.photo_camera.live_yaw";
+    m_locPhotoLiveRoll = "camera_window.photo_camera.live_roll";
+    m_locPhotoLiveZoom = "camera_window.photo_camera.live_zoom";
+    m_locPhotoPosition = "camera_window.photo_camera.position";
+    m_locPhotoBaseFov = "camera_window.photo_camera.base_fov";
+    m_locPhotoNotAvailable = "camera_window.photo_camera.not_available";
+    m_locPhotoFovZoom = "camera_window.photo_camera.fov_zoom";
 
     m_locFovZoom = "camera_window.interior_camera.fov_zoom";
     m_locBaseFov = "camera_window.interior_camera.base_fov";
@@ -719,6 +734,12 @@ void CameraWindow::RenderContent() {
     m_activeTabType = GameCameraType::InteriorCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
+  if (Button(loc.Get(m_locPhoto).c_str())) {
+    m_gameCameraService.SwitchTo(GameCameraType::PhotoCamera);
+    m_needsTabSwitch = true;
+    m_activeTabType = GameCameraType::PhotoCamera;
+  }
+  ImGui::SameLine(0.0f, 5.0f);
   if (Button(loc.Get(m_locBehind).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BehindCamera);
     m_needsTabSwitch = true;
@@ -924,6 +945,40 @@ void CameraWindow::RenderContent() {
         }
       } else {
         ImGui::TextDisabled("%s", loc.Get(m_locInteriorCameraNotAvailable).c_str());
+      }
+      ImGui::EndTabItem();
+    }
+
+    ImGuiTabItemFlags photoTabFlags = ImGuiTabItemFlags_None;
+    if (m_needsTabSwitch && m_activeTabType == GameCameraType::PhotoCamera) {
+      photoTabFlags = ImGuiTabItemFlags_SetSelected;
+    }
+    if (ImGui::BeginTabItem(loc.Get(m_locTabPhotoCamera).c_str(), nullptr, photoTabFlags)) {
+      auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::PhotoCamera);
+      if (auto* photoCam = dynamic_cast<GameCameraPhoto*>(pCamera)) {
+        auto& defaults = photoCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locLiveState));
+        drawFloat(loc.Get(m_locLivePitch), [&](float* p){ float y, r, z; return photoCam->GetLiveState(p, &y, &r, &z); }, [&](float p){ float cp, y, r, z; photoCam->GetLiveState(&cp, &y, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_pitch);
+        drawFloat(loc.Get(m_locLiveYaw), [&](float* y){ float p, r, z; return photoCam->GetLiveState(&p, y, &r, &z); }, [&](float y){ float p, cy, r, z; photoCam->GetLiveState(&p, &cy, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw);
+        drawFloat(loc.Get(m_locRollFreeCam), [&](float* r){ float p, y, z; return photoCam->GetLiveState(&p, &y, r, &z); }, [&](float r){ float p, y, cr, z; photoCam->GetLiveState(&p, &y, &cr, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_roll);
+        drawFloat(loc.Get(m_locLiveZoom), [&](float* z){ float p, y, r; return photoCam->GetLiveState(&p, &y, &r, z); }, [&](float z){ float p, y, r, cz; photoCam->GetLiveState(&p, &y, &r, &cz); photoCam->SetLiveState(p, y, r, z); }, 0.0f, 100.0f, "%.1f", defaults.live_zoom);
+
+        drawHeader(loc.Get(m_locPositionFreeCam));
+        drawVector3(loc.Get(m_locPositionFreeCam), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return photoCam->GetPosition(x, y, z); },
+                   [&](float x, float y, float z){ photoCam->SetPosition(x, y, z); }, -50000.0f, 50000.0f, ImVec4(defaults.pos_x, defaults.pos_y, defaults.pos_z, 0));
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFov), [&](float* fov){ return photoCam->GetFov(fov); }, [&](float fov){ photoCam->SetFov(fov); }, 1.0f, 120.0f, "%.1f", defaults.camera_fov);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+          photoCam->ResetToDefaults();
+        }
+      } else {
+        ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
       }
       ImGui::EndTabItem();
     }

@@ -239,6 +239,16 @@ Finds a function by its byte signature and installs a hook.
 Finds a byte pattern in the game's memory and returns the address. Supports the full signature syntax including ranges and wildcards.
 
 ---
+### `uintptr_t Hook_FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature)`
+Finds a byte pattern by searching backwards from a starting address.
+
+*   **Parameters:**
+    *   `startAddress`: The memory address to start the backward search from.
+    *   `searchRange`: The maximum number of bytes to search backwards.
+    *   `signature`: The byte pattern to look for.
+*   **Returns**: The memory address where the pattern starts, or `0` if not found.
+
+---
 ### `bool Hook_IsEnabled(SPF_Hook_Handle* h)`
 Checks if a hook is currently enabled in the configuration.
 

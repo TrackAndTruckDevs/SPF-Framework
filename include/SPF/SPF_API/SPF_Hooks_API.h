@@ -164,6 +164,16 @@ typedef float (*SPF_Memory_ReadFloat_t)(uintptr_t address);
 typedef uintptr_t (*SPF_Memory_GetRipAddress_t)(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 
 /**
+ * @brief Finds a byte pattern by searching backwards from a starting address.
+ * 
+ * @param startAddress The address to start the backward search from.
+ * @param searchRange The maximum number of bytes to search backwards.
+ * @param signature The byte pattern to look for.
+ * @return The memory address where the pattern starts, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_FindBackward_t)(uintptr_t startAddress, size_t searchRange, const char* signature);
+
+/**
  * @brief Finds the address of a null-terminated string in the game module.
  * @param str The string to look for.
  * @return The memory address of the string, or 0 if not found.
@@ -417,6 +427,11 @@ typedef struct {
     SPF_Memory_ReadInt64_t Memory_ReadInt64;
     SPF_Memory_ReadFloat_t Memory_ReadFloat;
     SPF_Memory_GetRipAddress_t Memory_GetRipAddress;
+
+    /**
+     * @brief Finds a byte pattern by searching backwards from a starting address.
+     */
+    SPF_Hook_FindBackward_t Hook_FindBackward;
 
     /**
      * @brief Finds the memory address of a null-terminated string in the module.

@@ -1,4 +1,5 @@
 #include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -11,23 +12,17 @@ GameCameraFree::GameCameraFree() {
 
 void GameCameraFree::OnActivate() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraFree");
-  logger->Info("Activating Free Camera.");
+  logger->Info("[CameraSystem] Activating Free Camera (ID 0).");
 
-  // Get the raw camera object pointer when this camera becomes active
-  auto& hooks = Hooks::CameraHooks::GetInstance();
-  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
-  // GetStandardManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
-  uintptr_t pStandardManager = gameData.GetStandardManager();
-  
-  if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
-    m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
-    
-    if (m_pCameraObject) {
-      logger->Info("GameCameraFree object base address successfully obtained: {:#x}", (uintptr_t)m_pCameraObject);
-    } else {
-      logger->Error("GameCameraFree: Resolved object pointer is null.");
-    }
+  // Use the manager to get a verified object pointer.
+  // This performs lazy verification (Function vs Array) and caches the result.
+  auto& manager = GameCameraManager::GetInstance();
+  m_pCameraObject = reinterpret_cast<void*>(manager.GetVerifiedCameraObject(GetType()));
+
+  if (m_pCameraObject) {
+    logger->Info("[CameraSystem] Free Camera object resolved at 0x{:X}", reinterpret_cast<uintptr_t>(m_pCameraObject));
+  } else {
+    logger->Error("[CameraSystem] FAILED to resolve Free Camera object pointer.");
   }
 }
 
@@ -39,12 +34,11 @@ void GameCameraFree::OnDeactivate() {
 
 void GameCameraFree::Update(float dt) {
   if (!m_pCameraObject) {
-    return;  // Do nothing if the camera object isn't resolved
+    auto& manager = GameCameraManager::GetInstance();
+    m_pCameraObject = reinterpret_cast<void*>(manager.GetVerifiedCameraObject(GetType()));
   }
 
-  // The new design reads data directly in the Get... methods,
-  // so this per-frame update is no longer necessary for populating local data.
-  // It can be used for other per-frame logic if needed in the future.
+  if (!m_pCameraObject) return;
 }
 
 void GameCameraFree::SetPosition(float x, float y, float z) {
@@ -119,7 +113,7 @@ void GameCameraFree::SetFov(float fov) {
 
 void GameCameraFree::SetSpeed(float speed) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  float* speed_ptr = gameData.GetFreeCamSpeedPtr();
+  float* speed_ptr = gameData.GetFlySpeedPtr();
   if (speed_ptr) {
     *speed_ptr = speed;
   } else {
@@ -259,7 +253,7 @@ bool GameCameraFree::GetSpeed(float* out_speed) const {
   if (!out_speed) return false;
 
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  float* speed_ptr = gameData.GetFreeCamSpeedPtr();
+  float* speed_ptr = gameData.GetFlySpeedPtr();
 
   if (speed_ptr) {
     *out_speed = *speed_ptr;

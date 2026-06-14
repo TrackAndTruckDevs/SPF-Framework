@@ -96,15 +96,68 @@ uintptr_t PatternFinder::Find(const char* signature) {
 uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature) {
   auto signatureVec = SignatureToVector(signature);
   if (signatureVec.empty() || base == 0 || size == 0) return 0;
+
+  // Follow JMP thunk if present at the start address
+  uint8_t* pBase = reinterpret_cast<uint8_t*>(base);
+  if (pBase[0] == 0xE9) { // JMP rel32
+    uintptr_t target = GetRipAddress(base, 1, 5);
+    if (target) {
+        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+        logger->Info("Find: Following JMP thunk from 0x{:X} to 0x{:X}", base, target);
+        base = target;
+    }
+  }
+
   size_t minLen = 0;
   for (const auto& m : signatureVec) minLen += m.minCount;
   if (size < minLen) return 0;
 
   const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
+  const auto& first = signatureVec[0];
+
   for (uintptr_t i = 0; i <= size - minLen; ++i) {
-    size_t dummy;
-    if (MatchInternal(data + i, signatureVec, 0, 0, dummy)) return base + i;
+    // Optimization: Skip bytes that don't match the first matcher
+    if (first.type == ByteMatcher::EXACT) {
+        const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
+        if (!found) break;
+        i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
+    } else if (!first.Matches(data[i])) {
+        continue;
+    }
+
+    size_t matchLen = 0;
+    if (MatchInternal(data + i, size - i, signatureVec, 0, 0, matchLen)) return base + i;
   }
+  return 0;
+}
+
+uintptr_t PatternFinder::FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature) {
+  auto signatureVec = SignatureToVector(signature);
+  if (signatureVec.empty() || startAddress == 0 || searchRange == 0) return 0;
+
+  size_t patternLen = 0;
+  for (const auto& m : signatureVec) patternLen += m.minCount;
+
+  /*
+   * BACKWARD SEARCH LOGIC:
+   * We iterate through memory by moving the START point of our comparison window backwards.
+   * However, for each start point, we perform a standard FORWARD match of the signature.
+   * 
+   * Example: Signature "48 8D" (LEA)
+   * Memory: [48] [8D] [0D] [AA] [BB] <--- startAddress
+   * 1. Start at [BB]: Does not match "48 8D"
+   * 2. Move to [AA]: Does not match
+   * 3. ...
+   * 4. Move to [48]: [48][8D] matches! Result = address of [48].
+   */
+  for (uintptr_t i = 0; i < searchRange; ++i) {
+    uintptr_t currentStart = startAddress - i;
+    size_t matchLen = 0;
+    if (MatchInternal(reinterpret_cast<const uint8_t*>(currentStart), searchRange - i, signatureVec, 0, 0, matchLen)) {
+      return currentStart;
+    }
+  }
+
   return 0;
 }
 
@@ -148,10 +201,10 @@ uintptr_t PatternFinder::FindChain(const std::vector<std::string>& signatures, s
   if (searchLimit < searchBase + firstMinLen) return 0;
 
   for (uintptr_t i = searchBase; i <= searchLimit - firstMinLen; ++i) {
-    size_t dummy;
-    if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[0], 0, 0, dummy)) {
+    size_t matchLen = 0;
+    if (MatchInternal(reinterpret_cast<const uint8_t*>(i), searchLimit - i, compiledSigs[0], 0, 0, matchLen)) {
         if (compiledSigs.size() == 1) return i;
-        if (FindChainRecursive(compiledSigs, 1, i + dummy, maxGap, searchLimit)) return i;
+        if (FindChainRecursive(compiledSigs, 1, i + matchLen, maxGap, searchLimit)) return i;
     }
   }
   return 0;
@@ -368,23 +421,44 @@ uintptr_t PatternFinder::FindChainRecursive(const std::vector<std::vector<ByteMa
     for (const auto& m : compiledSigs[sigIdx]) minLen += m.minCount;
     if (end < currentBase + minLen) return 0;
     for (uintptr_t i = currentBase; i <= end - minLen; ++i) {
-        size_t dummy;
-        if (MatchInternal(reinterpret_cast<uint8_t*>(i), compiledSigs[sigIdx], 0, 0, dummy)) {
-            if (sigIdx == compiledSigs.size() - 1 || FindChainRecursive(compiledSigs, sigIdx + 1, i + dummy, maxGap, searchLimit)) return i;
+        size_t matchLen = 0;
+        if (MatchInternal(reinterpret_cast<const uint8_t*>(i), searchLimit - i, compiledSigs[sigIdx], 0, 0, matchLen)) {
+            if (sigIdx == compiledSigs.size() - 1 || FindChainRecursive(compiledSigs, sigIdx + 1, i + matchLen, maxGap, searchLimit)) return i;
         }
     }
     return 0;
 }
 
-bool PatternFinder::MatchInternal(const uint8_t* data, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen) {
-  if (matcherIdx == matchers.size()) { matchLen = dataIdx; return true; }
-  const auto& m = matchers[matcherIdx];
-  for (int count = m.minCount; count <= m.maxCount; ++count) {
-    bool match = true;
-    for (int i = 0; i < count; ++i) { if (!m.Matches(data[dataIdx + i])) { match = false; break; } }
-    if (match && MatchInternal(data, matchers, dataIdx + count, matcherIdx + 1, matchLen)) return true;
-    if (m.minCount == m.maxCount) break;
+bool PatternFinder::MatchInternal(const uint8_t* data, size_t dataSize, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen) {
+  // Base case: all matchers satisfied
+  if (matcherIdx == matchers.size()) { 
+    matchLen = dataIdx; 
+    return true; 
   }
+
+  const auto& m = matchers[matcherIdx];
+  
+  // Quick bound check for current matcher
+  if (dataIdx + m.minCount > dataSize) return false;
+
+  // Handle standard matchers (EXACT, RANGE, fixed WILDCARD)
+  if (m.minCount == m.maxCount) {
+    for (int i = 0; i < m.minCount; ++i) {
+      if (!m.Matches(data[dataIdx + i])) return false;
+    }
+    return MatchInternal(data, dataSize, matchers, dataIdx + m.minCount, matcherIdx + 1, matchLen);
+  }
+
+  // Handle variable wildcards with backtracking (e.g. [0-4?])
+  for (int count = m.minCount; count <= m.maxCount; ++count) {
+    if (dataIdx + count > dataSize) break;
+    
+    // We already know wildcard matches any byte, so we just recurse
+    if (MatchInternal(data, dataSize, matchers, dataIdx + count, matcherIdx + 1, matchLen)) {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -394,19 +468,43 @@ std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const s
   std::string part;
   static const std::regex rangeRegex(R"(\[([0-9A-Fa-f]{1,2})-([0-9A-Fa-f]{1,2})\])");
   static const std::regex countRegex(R"(\[([0-9]+)-([0-9]+)\?\])");
+  
   while (ss >> part) {
-    if (part == "?" || part == "??") matchers.push_back({ByteMatcher::WILDCARD, 0, 0, 1, 1});
-    else {
+    if (part == "?" || part == "??") {
+      ByteMatcher bm;
+      bm.type = ByteMatcher::WILDCARD;
+      bm.min = 0;
+      bm.max = 0;
+      bm.minCount = 1;
+      bm.maxCount = 1;
+      matchers.push_back(bm);
+    } else {
       std::smatch m;
-      std::string sPart = part;
-      if (std::regex_match(sPart, m, countRegex)) {
-        matchers.push_back({ByteMatcher::WILDCARD, 0, 0, std::stoi(m[1].str()), std::stoi(m[2].str())});
-      }
-      else if (std::regex_match(sPart, m, rangeRegex)) {
-        matchers.push_back({ByteMatcher::RANGE, (uint8_t)std::stoi(m[1].str(), nullptr, 16), (uint8_t)std::stoi(m[2].str(), nullptr, 16), 1, 1});
-      }
-      else {
-        matchers.push_back({ByteMatcher::EXACT, (uint8_t)std::stoi(sPart, nullptr, 16), (uint8_t)std::stoi(sPart, nullptr, 16), 1, 1});
+      if (std::regex_match(part, m, countRegex)) {
+        ByteMatcher bm;
+        bm.type = ByteMatcher::WILDCARD;
+        bm.min = 0;
+        bm.max = 0;
+        bm.minCount = std::stoi(m[1].str());
+        bm.maxCount = std::stoi(m[2].str());
+        matchers.push_back(bm);
+      } else if (std::regex_match(part, m, rangeRegex)) {
+        ByteMatcher bm;
+        bm.type = ByteMatcher::RANGE;
+        bm.min = (uint8_t)std::stoi(m[1].str(), nullptr, 16);
+        bm.max = (uint8_t)std::stoi(m[2].str(), nullptr, 16);
+        bm.minCount = 1;
+        bm.maxCount = 1;
+        matchers.push_back(bm);
+      } else {
+        ByteMatcher bm;
+        bm.type = ByteMatcher::EXACT;
+        uint8_t val = (uint8_t)std::stoi(part, nullptr, 16);
+        bm.min = val;
+        bm.max = val;
+        bm.minCount = 1;
+        bm.maxCount = 1;
+        matchers.push_back(bm);
       }
     }
   }
@@ -417,11 +515,24 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
   auto sections = GetModuleSections(moduleName);
   size_t minLen = 0;
   for (const auto& m : signature) minLen += m.minCount;
+  
+  const auto& first = signature[0];
+
   for (const auto& sec : sections) {
     if (sec.size < minLen) continue;
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
+
     for (uintptr_t i = 0; i <= sec.size - minLen; ++i) {
-      size_t dummy;
-      if (MatchInternal(reinterpret_cast<uint8_t*>(sec.base + i), signature, 0, 0, dummy)) return sec.base + i;
+      if (first.type == ByteMatcher::EXACT) {
+          const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
+          if (!found) break;
+          i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
+      } else if (!first.Matches(data[i])) {
+          continue;
+      }
+
+      size_t matchLen = 0;
+      if (MatchInternal(data + i, sec.size - i, signature, 0, 0, matchLen)) return sec.base + i;
     }
   }
   return 0;

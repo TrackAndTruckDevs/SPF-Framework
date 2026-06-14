@@ -10,7 +10,7 @@ CameraHooks::CameraHooks() : m_signature("48 89 5c ? ? 48 89 ? ? ? ? 48 81 ec 90
 
 // Internal signature for the secondary camera function.
 namespace {
-const char* GET_CAMERA_OBJECT_SIG = "48 83 EC 48 4C 63 C2 4C 3B 41 40";
+const char* GET_CAMERA_OBJECT_SIG = "48 83 ? ? 4C ? ? 4C 3B ? ? ? ? ? ? 48";
 const char* UPDATE_CAMERA_PROJECTION_SIG = "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 70 0F B6 41 2C 48 8D 51 3C F3";
 const char* DEBUG_CAMERA_HANDLE_INPUT_SIG = "55 56 48 8D ? ? ? FF FF 48 81 EC ? ? ? ? 80 B9";
 }  // namespace
@@ -87,9 +87,8 @@ bool CameraHooks::Install() {
   // --- 4. Find DebugCamera_HandleInput ---
   uintptr_t handleInputAddr = Utils::PatternFinder::Find(DEBUG_CAMERA_HANDLE_INPUT_SIG);
   if (handleInputAddr) {
-    // The signature matches at PUSH RBP. The actual function starts 7 bytes before that.
-    const intptr_t offset_to_start = -7;
-    m_debugCameraHandleInputFunc = handleInputAddr + offset_to_start;
+    // The signature matches at PUSH RBP. We use GetFunctionStart to find the entry point reliably.
+    m_debugCameraHandleInputFunc = Utils::PatternFinder::GetFunctionStart(handleInputAddr);
     logger->Info("Found 'DebugCamera_HandleInput' function at address: {:#x}", (uintptr_t)m_debugCameraHandleInputFunc);
   } else {
     logger->Warn("'DebugCamera_HandleInput' function not found. Some free camera features (like mouse look) may be unavailable.");

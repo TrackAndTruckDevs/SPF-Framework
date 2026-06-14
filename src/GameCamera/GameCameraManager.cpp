@@ -11,6 +11,7 @@
 #include "SPF/GameCamera/GameCameraWheel.hpp"
 #include "SPF/GameCamera/GameCameraTV.hpp"
 #include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/GameCamera/GameCameraPhoto.hpp"
 
 #include <Windows.h>
 #include <memory>
@@ -87,9 +88,7 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   if (!GameDataCameraService::GetInstance().IsReady()) return;
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
-  if (!m_isReady) {
-    return;
-  }
+  if (!m_isReady) return;
 
   // Deactivate the current camera if it exists
   if (m_activeCamera) {
@@ -97,7 +96,7 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
     m_activeCamera = nullptr;
   }
 
-  // Find and activate the new camera if it's one of our managed C++ objects
+  // Find and activate the new C++ camera object
   auto it = m_cameras.find(cameraType);
   if (it != m_cameras.end()) {
     m_activeCamera = it->second.get();
@@ -107,55 +106,58 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   } else {
     // If the camera is not in our map, it's a simple camera managed by the game itself.
     // We don't have a C++ object for it, so m_activeCamera will be nullptr.
-    logger->Info("Switching to a game-managed camera: {}", static_cast<int>(cameraType));
+    logger->Info("[CameraSystem] Switching to a game-managed camera: {}", static_cast<int>(cameraType));
   }
 
-  // --- Low-level game call ---
-  // This part is the same as before, telling the game engine to switch.
+  // --- Native Engine Call ---
+  // We tell the game to switch the active camera.
+  // Both gameplay cameras and the Developer Free Camera (ID 0) 
+  // are initialized using the main Camera Manager as the context.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  uintptr_t standardManagerPtr = gameData.GetStandardManager();
+  uintptr_t cameraManagerAddr = gameData.GetCameraManager();
 
-  if (!standardManagerPtr) {
-    logger->Error("SwitchTo failed: StandardManager is null.");
+  if (!cameraManagerAddr) {
+    logger->Error("[CameraSystem] SwitchTo failed: Camera Manager is null.");
     return;
   }
 
   uint32_t cameraID = static_cast<uint32_t>(cameraType);
 
   if (cameraType != GameCameraType::DeveloperFreeCamera) {
-    m_initializeCameraFunc(standardManagerPtr, cameraID);
-  } else  // Special case for Free Camera (ID 0)
-  {
-    // --- Free Camera Initialization Context ---
-    // The free camera requires a special "initialization context" to be passed to the
-    // native InitializeCamera function, unlike other cameras that just use the StandardManager pointer.
-    // The following logic resolves this special context pointer.
-
-    // 1. Get the actual, adjusted pointer to the global object related to the free camera system.
-    // Handles v1.59+ pointer adjustments (e.g. -16 offset).
+    // Standard gameplay cameras are part of the game's main camera array and
+    // are initialized using the main Camera Manager pointer as the context.
+    m_initializeCameraFunc(cameraManagerAddr, cameraID);
+  } else {
+    // --- Special case for Developer Free Camera (ID 0) ---
+    // Why this is necessary:
+    // Unlike standard cameras, the ID 0 camera is a specialized developer tool 
+    // in the Prism engine. It does not belong to the standard manager's array 
+    // in the same way. Passing the standard Camera Manager pointer here would 
+    // cause a crash because the engine expects a specific "Freecam Context" 
+    // structure. We resolve this context by reading a specific offset from 
+    // the Freecam Global Object.
     uintptr_t base_obj = gameData.GetFreecamGlobalObject();
     if (!base_obj) {
-      logger->Error("SwitchTo(0) failed: Freecam global object is not available.");
+      logger->Error("[CameraSystem] SwitchTo(0) failed: Freecam global object is null.");
       return;
     }
 
-    // 2. Calculate the final initialization context pointer.
-    // This involves dereferencing the global object base and adding a specific offset.
-    uintptr_t freeCamInitContext = 0;
     uintptr_t context_offset = gameData.GetFreecamContextOffset();
-
-    freeCamInitContext = *(uintptr_t*)(base_obj + context_offset);
-
-    if (!freeCamInitContext) {
-      logger->Error("SwitchTo(0) failed: Could not resolve freeCamInitContext.");
+    if (context_offset == 0) {
+      logger->Error("[CameraSystem] SwitchTo(0) failed: Freecam context offset is missing.");
       return;
     }
 
-    // 3. Call the native function with the special context.
-    // IMPORTANT: `freeCamInitContext` is NOT the camera object pointer used for reading data (like position).
-    // It is a temporary context used only for this initialization call.
+    uintptr_t freeCamInitContext = *reinterpret_cast<uintptr_t*>(base_obj + context_offset);
+    if (!freeCamInitContext) {
+      logger->Error("[CameraSystem] SwitchTo(0) failed: Resolved init context is null.");
+      return;
+    }
+
     m_initializeCameraFunc(freeCamInitContext, 0);
   }
+  
+  logger->Info("[CameraSystem] Switched to camera ID: {}", cameraID);
 }
 
 GameCameraType GameCameraManager::GetCurrentCameraType() {
@@ -166,8 +168,8 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
   // Get data fresh from the source services to ensure it's valid.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   
-  // GetStandardManager() handles the pointer dereferencing and version-specific adjustments.
-  uintptr_t standardManagerPtr = gameData.GetStandardManager();
+  // GetCameraManager() handles the pointer dereferencing and version-specific adjustments.
+  uintptr_t standardManagerPtr = gameData.GetCameraManager();
   intptr_t camera_id_offset = gameData.GetActiveCameraIdOffset();
 
   // Explicit safety checks for the manager pointer and the ID offset.
@@ -187,6 +189,44 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
   }
 
   return static_cast<GameCameraType>(*(uint32_t*)addressOfCameraId);
+}
+
+uintptr_t GameCameraManager::GetVerifiedCameraObject(GameCameraType cameraType) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  
+  // 1. Check if we already verified and cached this address
+  uintptr_t verifiedAddr = gameData.GetVerifiedCamera(cameraType);
+  if (verifiedAddr != 0) return verifiedAddr;
+
+  // 2. Not cached yet. Perform lazy verification (Function call vs Array discovery)
+  auto& hooks = Hooks::CameraHooks::GetInstance();
+  auto getCamObjFunc = hooks.GetGetCameraObjectFunc();
+  if (!getCamObjFunc) return 0;
+
+  uintptr_t managerAddr = gameData.GetCameraManager();
+  if (!managerAddr) return 0;
+
+  uint32_t id = static_cast<uint32_t>(cameraType);
+  uintptr_t addrFromFunc = reinterpret_cast<uintptr_t>(getCamObjFunc((void*)managerAddr, id));
+  uintptr_t addrFromArray = gameData.GetDiscoveredAddress(static_cast<int>(id));
+
+  // 3. Compare results and log any discrepancies
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+  
+  if (addrFromFunc != 0) {
+    if (addrFromArray != 0 && addrFromFunc != addrFromArray) {
+      logger->Warn("[CameraSystem] Verification MISMATCH for Camera ID {}. Function: 0x{:X}, Array: 0x{:X}. Trusting Function result.", 
+                   id, addrFromFunc, addrFromArray);
+    }
+    
+    // Register the final verified address in the service cache
+    gameData.RegisterVerifiedCamera(cameraType, addrFromFunc);
+    
+    // Logic check passed (either matched or function provided valid non-null address)
+    return addrFromFunc;
+  }
+
+  return 0;
 }
 
 void GameCameraManager::Update(float dt) {
@@ -272,6 +312,10 @@ void GameCameraManager::RegisterCameras() {
   auto freeCam = std::make_unique<GameCameraFree>();
   m_cameras[freeCam->GetType()] = std::move(freeCam);
   logger->Info("  -> Registered {}", typeid(GameCameraFree).name());
+
+  auto photoCam = std::make_unique<GameCameraPhoto>();
+  m_cameras[photoCam->GetType()] = std::move(photoCam);
+  logger->Info("  -> Registered {}", typeid(GameCameraPhoto).name());
 
   // Future cameras will be registered here...
 }
