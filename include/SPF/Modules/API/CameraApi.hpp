@@ -290,6 +290,21 @@ class CameraApi {
   static size_t T_Camera_GetCabinShakeAnimCount();
   static bool T_Camera_GetCabinShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetCabinShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New Window Advanced Settings Trampolines ---
+  static bool T_Camera_GetWindowRelativeHeadtrackingAzimuth(bool* out_val);
+  static void T_Camera_SetWindowRelativeHeadtrackingAzimuth(bool val);
+  static bool T_Camera_GetWindowAutoCenterMoveDirection(int32_t* out_val);
+  static void T_Camera_SetWindowAutoCenterMoveDirection(int32_t val);
+  static bool T_Camera_GetWindowShakeAnimStep(float* out_val);
+  static void T_Camera_SetWindowShakeAnimStep(float val);
+  static bool T_Camera_GetWindowShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetWindowShakeAnimScaleMin(float val);
+  static bool T_Camera_GetWindowShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetWindowShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetWindowShakeAnimCount();
+  static bool T_Camera_GetWindowShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetWindowShakeAnim(size_t index, float x, float y, float z);
   };
   }  // namespace Modules::API
   SPF_NS_END

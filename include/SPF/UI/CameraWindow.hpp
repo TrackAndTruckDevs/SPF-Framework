@@ -247,6 +247,13 @@ class CameraWindow : public BaseWindow {
     std::string m_locDefaultUdWindow;
     std::string m_locRotationDefaultsNotFoundWindow;
     std::string m_locBaseFovWindow;
+    std::string m_locWindowRelativeHeadtrackingAzimuth;
+    std::string m_locWindowAutoCenterMoveDirection;
+    std::string m_locWindowShakeSettings;
+    std::string m_locWindowShakeAnimStep;
+    std::string m_locWindowShakeAnimScaleMin;
+    std::string m_locWindowShakeAnimScaleMax;
+    std::string m_locWindowShakeAnimationArray;
     std::string m_locWindowCameraNotAvailable;
 
     // Bumper Camera

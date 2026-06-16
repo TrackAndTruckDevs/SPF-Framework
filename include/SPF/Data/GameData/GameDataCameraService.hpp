@@ -203,6 +203,8 @@ class GameDataCameraService {
   intptr_t GetWindowMouseUpLimitOffset() const { return m_window_mouse_up_limit; }
   intptr_t GetWindowMouseDownLimitOffset() const { return m_window_mouse_down_limit; }
   intptr_t GetWindowMouseUDDefaultOffset() const { return m_window_mouse_ud_default; }
+  intptr_t GetWindowRelativeHeadtrackingAzimuthOffset() const { return m_window_relative_headtracking_azimuth; }
+  intptr_t GetWindowAutoCenterMoveDirectionOffset() const { return m_window_auto_center_move_direction; }
   intptr_t GetBumperOffsetXOffset() const { return m_bumper_offset_x; }
   intptr_t GetBumperOffsetYOffset() const { return m_bumper_offset_y; }
   intptr_t GetBumperOffsetZOffset() const { return m_bumper_offset_z; }
@@ -380,6 +382,8 @@ class GameDataCameraService {
   void SetWindowMouseUpLimitOffset(intptr_t val) { m_window_mouse_up_limit = val; }
   void SetWindowMouseDownLimitOffset(intptr_t val) { m_window_mouse_down_limit = val; }
   void SetWindowMouseUDDefaultOffset(intptr_t val) { m_window_mouse_ud_default = val; }
+  void SetWindowRelativeHeadtrackingAzimuthOffset(intptr_t val) { m_window_relative_headtracking_azimuth = val; }
+  void SetWindowAutoCenterMoveDirectionOffset(intptr_t val) { m_window_auto_center_move_direction = val; }
   void SetBumperOffsetXOffset(intptr_t val) { m_bumper_offset_x = val; }
   void SetBumperOffsetYOffset(intptr_t val) { m_bumper_offset_y = val; }
   void SetBumperOffsetZOffset(intptr_t val) { m_bumper_offset_z = val; }
@@ -604,6 +608,8 @@ class GameDataCameraService {
   intptr_t m_window_mouse_up_limit = 0;
   intptr_t m_window_mouse_down_limit = 0;
   intptr_t m_window_mouse_ud_default = 0;
+  intptr_t m_window_relative_headtracking_azimuth = 0;
+  intptr_t m_window_auto_center_move_direction = 0;
   intptr_t m_bumper_offset_x = 0;
   intptr_t m_bumper_offset_y = 0;
   intptr_t m_bumper_offset_z = 0;

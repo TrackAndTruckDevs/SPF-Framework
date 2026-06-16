@@ -406,6 +406,14 @@ This section covers the simpler, fixed-position cameras.
 
 This camera exposes functions to get and set the head offset (`GetWindowHeadOffset`/`SetWindowHeadOffset`), live rotation (`GetWindowLiveRotation`/`SetWindowLiveRotation`), rotation limits (`GetWindowRotationLimits`/`SetWindowRotationLimits`), default rotation (`GetWindowRotationDefaults`/`SetWindowRotationDefaults`), and Field of View (`GetWindowFov`/`SetWindowFov`).
 
+It also supports advanced logic and shake animation control:
+*   **`Cam_GetWindowRelativeHeadtrackingAzimuth`/`Cam_SetWindowRelativeHeadtrackingAzimuth`**: Control whether headtracking uses relative azimuth.
+*   **`Cam_GetWindowAutoCenterMoveDirection`/`Cam_SetWindowAutoCenterMoveDirection`**: Control the auto-center movement direction.
+*   **`Cam_GetWindowShakeAnimStep`/`Cam_SetWindowShakeAnimStep`**: Control the shake speed.
+*   **`Cam_GetWindowShakeAnimScaleMin/Max`**: Control the shake intensity range.
+*   **`Cam_GetWindowShakeAnimCount`**: Get the number of shake animation points.
+*   **`Cam_GetWindowShakeAnim/Cam_SetWindowShakeAnim`**: Get or set specific 3D points in the animation array.
+
 ---
 **Bumper Camera (`SPF_CAMERA_BUMPER`)**
 

@@ -1543,6 +1543,46 @@ typedef bool (*SPF_Camera_GetCabinShakeAnim_t)(size_t index, float* out_x, float
 typedef void (*SPF_Camera_SetCabinShakeAnim_t)(size_t index, float x, float y, float z);
 
 
+// --- New Window Camera Advanced Settings ---
+
+/**
+ * @brief Gets/Sets the relative headtracking azimuth state for the window camera.
+ */
+typedef bool (*SPF_Camera_GetWindowRelativeHeadtrackingAzimuth_t)(bool* out_val);
+typedef void (*SPF_Camera_SetWindowRelativeHeadtrackingAzimuth_t)(bool val);
+
+/**
+ * @brief Gets/Sets the auto center move direction for the window camera.
+ */
+typedef bool (*SPF_Camera_GetWindowAutoCenterMoveDirection_t)(int32_t* out_val);
+typedef void (*SPF_Camera_SetWindowAutoCenterMoveDirection_t)(int32_t val);
+
+/**
+ * @brief Gets/Sets the shake animation step for the window camera.
+ */
+typedef bool (*SPF_Camera_GetWindowShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetWindowShakeAnimStep_t)(float val);
+
+/**
+ * @brief Gets/Sets the shake animation scale (min/max) for the window camera.
+ */
+typedef bool (*SPF_Camera_GetWindowShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetWindowShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetWindowShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetWindowShakeAnimScaleMax_t)(float val);
+
+/**
+ * @brief Gets the number of points in the window camera shake animation.
+ */
+typedef size_t (*SPF_Camera_GetWindowShakeAnimCount_t)();
+
+/**
+ * @brief Gets/Sets specific points in the window camera shake animation.
+ */
+typedef bool (*SPF_Camera_GetWindowShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetWindowShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -2113,6 +2153,31 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the cabin camera shake animation. */
     SPF_Camera_GetCabinShakeAnim_t Cam_GetCabinShakeAnim;
     SPF_Camera_SetCabinShakeAnim_t Cam_SetCabinShakeAnim;
+
+    // --- New Window Camera Advanced Settings ---
+    /** @brief Gets/Sets the window camera relative headtracking azimuth. */
+    SPF_Camera_GetWindowRelativeHeadtrackingAzimuth_t Cam_GetWindowRelativeHeadtrackingAzimuth;
+    SPF_Camera_SetWindowRelativeHeadtrackingAzimuth_t Cam_SetWindowRelativeHeadtrackingAzimuth;
+
+    /** @brief Gets/Sets the window camera auto center move direction. */
+    SPF_Camera_GetWindowAutoCenterMoveDirection_t Cam_GetWindowAutoCenterMoveDirection;
+    SPF_Camera_SetWindowAutoCenterMoveDirection_t Cam_SetWindowAutoCenterMoveDirection;
+
+    /** @brief Gets/Sets the window camera shake animation step. */
+    SPF_Camera_GetWindowShakeAnimStep_t Cam_GetWindowShakeAnimStep;
+    SPF_Camera_SetWindowShakeAnimStep_t Cam_SetWindowShakeAnimStep;
+
+    /** @brief Gets/Sets the window camera shake animation scale (min/max). */
+    SPF_Camera_GetWindowShakeAnimScaleMin_t Cam_GetWindowShakeAnimScaleMin;
+    SPF_Camera_SetWindowShakeAnimScaleMin_t Cam_SetWindowShakeAnimScaleMin;
+    SPF_Camera_GetWindowShakeAnimScaleMax_t Cam_GetWindowShakeAnimScaleMax;
+    SPF_Camera_SetWindowShakeAnimScaleMax_t Cam_SetWindowShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the window camera shake animation. */
+    SPF_Camera_GetWindowShakeAnimCount_t Cam_GetWindowShakeAnimCount;
+    /** @brief Gets/Sets specific points in the window camera shake animation. */
+    SPF_Camera_GetWindowShakeAnim_t Cam_GetWindowShakeAnim;
+    SPF_Camera_SetWindowShakeAnim_t Cam_SetWindowShakeAnim;
 
 } SPF_Camera_API;
 

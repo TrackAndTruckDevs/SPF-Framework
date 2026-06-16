@@ -1713,6 +1713,109 @@ void CameraApi::T_Camera_SetCabinShakeAnim(size_t index, float x, float y, float
   }
 }
 
+// --- Window Camera Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetWindowRelativeHeadtrackingAzimuth(bool* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetRelativeHeadtrackingAzimuth(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowRelativeHeadtrackingAzimuth(bool val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetRelativeHeadtrackingAzimuth(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWindowAutoCenterMoveDirection(int32_t* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetAutoCenterMoveDirection(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowAutoCenterMoveDirection(int32_t val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetAutoCenterMoveDirection(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWindowShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowShakeAnimStep(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWindowShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWindowShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetWindowShakeAnimCount() {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    return cam->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetWindowShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    if (out_x && out_y && out_z) {
+      cam->GetShakeAnim(index, *out_x, *out_y, *out_z);
+      return true;
+    }
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWindowShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WindowCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWindow*>(pCamera)) {
+    cam->SetShakeAnim(index, x, y, z);
+  }
+}
+
 // --- API Filling Function ---
 void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   if (!camera_api) return;
@@ -1996,6 +2099,21 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetCabinShakeAnimCount = &T_Camera_GetCabinShakeAnimCount;
   camera_api->Cam_GetCabinShakeAnim = &T_Camera_GetCabinShakeAnim;
   camera_api->Cam_SetCabinShakeAnim = &T_Camera_SetCabinShakeAnim;
+
+  // Window Advanced
+  camera_api->Cam_GetWindowRelativeHeadtrackingAzimuth = &T_Camera_GetWindowRelativeHeadtrackingAzimuth;
+  camera_api->Cam_SetWindowRelativeHeadtrackingAzimuth = &T_Camera_SetWindowRelativeHeadtrackingAzimuth;
+  camera_api->Cam_GetWindowAutoCenterMoveDirection = &T_Camera_GetWindowAutoCenterMoveDirection;
+  camera_api->Cam_SetWindowAutoCenterMoveDirection = &T_Camera_SetWindowAutoCenterMoveDirection;
+  camera_api->Cam_GetWindowShakeAnimStep = &T_Camera_GetWindowShakeAnimStep;
+  camera_api->Cam_SetWindowShakeAnimStep = &T_Camera_SetWindowShakeAnimStep;
+  camera_api->Cam_GetWindowShakeAnimScaleMin = &T_Camera_GetWindowShakeAnimScaleMin;
+  camera_api->Cam_SetWindowShakeAnimScaleMin = &T_Camera_SetWindowShakeAnimScaleMin;
+  camera_api->Cam_GetWindowShakeAnimScaleMax = &T_Camera_GetWindowShakeAnimScaleMax;
+  camera_api->Cam_SetWindowShakeAnimScaleMax = &T_Camera_SetWindowShakeAnimScaleMax;
+  camera_api->Cam_GetWindowShakeAnimCount = &T_Camera_GetWindowShakeAnimCount;
+  camera_api->Cam_GetWindowShakeAnim = &T_Camera_GetWindowShakeAnim;
+  camera_api->Cam_SetWindowShakeAnim = &T_Camera_SetWindowShakeAnim;
 }
 
 }  // namespace Modules::API

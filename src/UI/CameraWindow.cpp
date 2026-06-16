@@ -303,6 +303,13 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locDefaultUdWindow = "camera_window.window_camera.default_ud_window";
     m_locRotationDefaultsNotFoundWindow = "camera_window.window_camera.rotation_defaults_not_found_window";
     m_locBaseFovWindow = "camera_window.window_camera.base_fov_window";
+    m_locWindowRelativeHeadtrackingAzimuth = "camera_window.window_camera.relative_headtracking_azimuth";
+    m_locWindowAutoCenterMoveDirection = "camera_window.window_camera.auto_center_move_direction";
+    m_locWindowShakeSettings = "camera_window.window_camera.shake_settings";
+    m_locWindowShakeAnimStep = "camera_window.window_camera.shake_anim_step";
+    m_locWindowShakeAnimScaleMin = "camera_window.window_camera.shake_anim_scale_min";
+    m_locWindowShakeAnimScaleMax = "camera_window.window_camera.shake_anim_scale_max";
+    m_locWindowShakeAnimationArray = "camera_window.window_camera.shake_animation_array";
     m_locWindowCameraNotAvailable = "camera_window.window_camera.not_available";
 
     m_locOffsetBumper = "camera_window.bumper_camera.offset";
@@ -1229,79 +1236,64 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabWindowCamera).c_str(), nullptr, windowTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::WindowCamera);
       if (auto* windowCam = dynamic_cast<GameCameraWindow*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locHeadOffset).c_str());
-        float head_offset_x, head_offset_y, head_offset_z;
-        if (windowCam->GetHeadOffset(&head_offset_x, &head_offset_y, &head_offset_z)) {
-          bool headChanged = false;
-          headChanged |= ImGui::SliderFloat(loc.Get(m_locHeadXWindow).c_str(), &head_offset_x, -1.0f, 1.0f, "%.3f");
-          headChanged |= ImGui::SliderFloat(loc.Get(m_locHeadYWindow).c_str(), &head_offset_y, -1.0f, 1.0f, "%.3f");
-          headChanged |= ImGui::SliderFloat(loc.Get(m_locHeadZWindow).c_str(), &head_offset_z, -1.0f, 1.0f, "%.3f");
-          if (headChanged) {
-            windowCam->SetHeadOffset(head_offset_x, head_offset_y, head_offset_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locHeadOffsetNotFound).c_str());
+        auto& defaults = windowCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovWindow), [&](float* fov){ return windowCam->GetFov(fov); }, [&](float fov){ windowCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return windowCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locHeadOffset));
+        drawVector3(loc.Get(m_locHeadOffset), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return windowCam->GetHeadOffset(x, y, z); },
+                   [&](float x, float y, float z){ windowCam->SetHeadOffset(x, y, z); }, -1.5f, 1.5f, ImVec4(defaults.head_offset_x, defaults.head_offset_y, defaults.head_offset_z, 0));
+
+        drawHeader(loc.Get(m_locLiveRotation));
+        drawVector2(loc.Get(m_locLiveRotation), loc.Get(m_locLiveYawWindow).c_str(), loc.Get(m_locLivePitchWindow).c_str(),
+                   [&](float* yaw, float* pitch){ return windowCam->GetLiveRotation(yaw, pitch); },
+                   [&](float yaw, float pitch){ windowCam->SetLiveRotation(yaw, pitch); }, -3.14159f, 3.14159f, false, ImVec2(defaults.live_yaw, defaults.live_pitch), "%.4f");
+
+        drawHeader(loc.Get(m_locMouseRotationLimits));
+        drawVector2("Horizontal Limits", loc.Get(m_locLeftLimitWindow).c_str(), loc.Get(m_locRightLimitWindow).c_str(),
+                   [&](float* left, float* right){ float u, d; return windowCam->GetRotationLimits(left, right, &u, &d); },
+                   [&](float left, float right){ float l, r, u, d; windowCam->GetRotationLimits(&l, &r, &u, &d); windowCam->SetRotationLimits(left, right, u, d); }, -360.0f, 360.0f, false, ImVec2(defaults.mouse_left_limit, defaults.mouse_right_limit));
+        drawVector2("Vertical Limits", loc.Get(m_locUpLimitWindow).c_str(), loc.Get(m_locDownLimitWindow).c_str(),
+                   [&](float* up, float* down){ float l, r; return windowCam->GetRotationLimits(&l, &r, up, down); },
+                   [&](float up, float down){ float l, r, u, d; windowCam->GetRotationLimits(&l, &r, &u, &d); windowCam->SetRotationLimits(l, r, up, down); }, -180.0f, 180.0f, false, ImVec2(defaults.mouse_up_limit, defaults.mouse_down_limit));
+
+        drawHeader(loc.Get(m_locRotationDefaults));
+        drawVector2(loc.Get(m_locRotationDefaults), loc.Get(m_locDefaultLrWindow).c_str(), loc.Get(m_locDefaultUdWindow).c_str(),
+                   [&](float* lr, float* ud){ return windowCam->GetRotationDefaults(lr, ud); },
+                   [&](float lr, float ud){ windowCam->SetRotationDefaults(lr, ud); }, -360.0f, 360.0f, false, ImVec2(defaults.mouse_lr_default, defaults.mouse_ud_default));
+
+        drawHeader(loc.Get(m_locInteriorLogicSettings));
+        drawBool(loc.Get(m_locWindowRelativeHeadtrackingAzimuth), [&](bool* v){ return windowCam->GetRelativeHeadtrackingAzimuth(v); }, [&](bool v){ windowCam->SetRelativeHeadtrackingAzimuth(v); });
+        drawFloat(loc.Get(m_locWindowAutoCenterMoveDirection), [&](float* v){ int32_t raw; bool r = windowCam->GetAutoCenterMoveDirection(&raw); if(r) *v = static_cast<float>(raw); return r; }, [&](float v){ windowCam->SetAutoCenterMoveDirection(static_cast<int32_t>(v)); }, 0.0f, 2.0f, "%.0f", static_cast<float>(defaults.auto_center_move_direction));
+
+        drawHeader(loc.Get(m_locWindowShakeSettings));
+        drawFloat(loc.Get(m_locWindowShakeAnimStep), [&](float* v){ return windowCam->GetShakeAnimStep(v); }, [&](float v){ windowCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locWindowShakeAnimScaleMin).c_str(), loc.Get(m_locWindowShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = windowCam->GetShakeAnimScaleMin(s_min); bool r2 = windowCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ windowCam->SetShakeAnimScaleMin(s_min); windowCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locWindowShakeAnimationArray));
+        size_t shake_count = windowCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_window = 0;
+            if (selected_shake_index_window >= (int)shake_count) selected_shake_index_window = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_window);
+            drawCenteredCombo("##ShakeComboWindow", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_window == (int)i)) selected_shake_index_window = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ windowCam->GetShakeAnim(selected_shake_index_window, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ windowCam->SetShakeAnim(selected_shake_index_window, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locLiveRotation).c_str());
-        float live_yaw, live_pitch;
-        if (windowCam->GetLiveRotation(&live_yaw, &live_pitch)) {
-          bool rotChanged = false;
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locLiveYawWindow).c_str(), &live_yaw, -3.14159f, 3.14159f, "%.3f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locLivePitchWindow).c_str(), &live_pitch, -1.57079f, 1.57079f, "%.3f");
-          if (rotChanged) {
-            windowCam->SetLiveRotation(live_yaw, live_pitch);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locLiveRotationNotFound).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locMouseRotationLimitsDefaults).c_str());
-        float mouse_left_limit, mouse_right_limit, mouse_up_limit, mouse_down_limit;
-        if (windowCam->GetRotationLimits(&mouse_left_limit, &mouse_right_limit, &mouse_up_limit, &mouse_down_limit)) {
-          bool limitsChanged = false;
-          limitsChanged |= ImGui::SliderFloat(loc.Get(m_locLeftLimitWindow).c_str(), &mouse_left_limit, -360.0f, 360.0f, "%.1f");
-          limitsChanged |= ImGui::SliderFloat(loc.Get(m_locRightLimitWindow).c_str(), &mouse_right_limit, -360.0f, 360.0f, "%.1f");
-          limitsChanged |= ImGui::SliderFloat(loc.Get(m_locUpLimitWindow).c_str(), &mouse_up_limit, -90.0f, 90.0f, "%.1f");
-          limitsChanged |= ImGui::SliderFloat(loc.Get(m_locDownLimitWindow).c_str(), &mouse_down_limit, -180.0f, 90.0f, "%.1f");
-          if (limitsChanged) {
-            windowCam->SetRotationLimits(mouse_left_limit, mouse_right_limit, mouse_up_limit, mouse_down_limit);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locRotationLimitsNotFoundWindow).c_str());
-        }
-        float mouse_lr_default, mouse_ud_default;
-        if (windowCam->GetRotationDefaults(&mouse_lr_default, &mouse_ud_default)) {
-          bool defaultsChanged = false;
-          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultLrWindow).c_str(), &mouse_lr_default, 0.0f, 360.0f, "%.1f");
-          defaultsChanged |= ImGui::SliderFloat(loc.Get(m_locDefaultUdWindow).c_str(), &mouse_ud_default, -90.0f, 90.0f, "%.1f");
-          if (defaultsChanged) {
-            windowCam->SetRotationDefaults(mouse_lr_default, mouse_ud_default);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locRotationDefaultsNotFoundWindow).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (windowCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovWindow).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            windowCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (windowCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           windowCam->ResetToDefaults();
