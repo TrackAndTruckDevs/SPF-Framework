@@ -419,12 +419,25 @@ It also supports advanced logic and shake animation control:
 
 This camera allows you to get and set the XYZ offset from the vehicle's bumper (`GetBumperOffset`/`SetBumperOffset`) and its Field of View (`GetBumperFov`/`SetBumperFov`).
 
+It also supports advanced shake animation control:
+*   **`Cam_GetBumperShakeAnimStep`/`Cam_SetBumperShakeAnimStep`**: Control the shake speed.
+*   **`Cam_GetBumperShakeAnimScaleMin/Max`**: Control the shake intensity range.
+*   **`Cam_GetBumperShakeAnimCount`**: Get the number of shake animation points.
+*   **`Cam_GetBumperShakeAnim/Cam_SetBumperShakeAnim`**: Get or set specific 3D points in the animation array.
+
 ---
 **Wheel Camera (`SPF_CAMERA_WHEEL`)**
 
-Similarly, this camera allows getting and setting the XYZ offset from the vehicle's wheel (`GetWheelOffset`/`SetWheelOffset`) and its Field of View (`GetWheelFov`/`SetWheelFov`).
+This camera allows you to get and set the XYZ offset from the vehicle's wheel (`GetWheelOffset`/`SetWheelOffset`) and its Field of View (`GetWheelFov`/`SetWheelFov`).
+
+It also supports advanced shake animation control:
+*   **`Cam_GetWheelShakeAnimStep`/`Cam_SetWheelShakeAnimStep`**: Control the shake speed.
+*   **`Cam_GetWheelShakeAnimScaleMin/Max`**: Control the shake intensity range.
+*   **`Cam_GetWheelShakeAnimCount`**: Get the number of shake animation points.
+*   **`Cam_GetWheelShakeAnim/Cam_SetWheelShakeAnim`**: Get or set specific 3D points in the animation array.
 
 ---
+
 **Cabin Camera (`SPF_CAMERA_CABIN`)**
 
 This camera exposes functions to get and set its base Field of View (`GetCabinFov`/`SetCabinFov`).

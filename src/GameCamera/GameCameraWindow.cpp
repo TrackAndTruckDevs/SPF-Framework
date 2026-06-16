@@ -280,6 +280,9 @@ void GameCameraWindow::SetHeadOffset(float x, float y, float z) {
     *reinterpret_cast<float*>(pCam + x_off) = x;
     *reinterpret_cast<float*>(pCam + y_off) = y;
     *reinterpret_cast<float*>(pCam + z_off) = z;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set head offset: one or more offsets are missing.");
   }
 }
 
@@ -292,6 +295,9 @@ void GameCameraWindow::SetLiveRotation(float yaw, float pitch) {
   if (yaw_off && pitch_off) {
     *reinterpret_cast<float*>(pCam + yaw_off) = yaw;
     *reinterpret_cast<float*>(pCam + pitch_off) = pitch;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set live rotation: one or more offsets are missing.");
   }
 }
 
@@ -308,6 +314,9 @@ void GameCameraWindow::SetRotationLimits(float left, float right, float up, floa
     *reinterpret_cast<float*>(pCam + r_off) = right;
     *reinterpret_cast<float*>(pCam + u_off) = up;
     *reinterpret_cast<float*>(pCam + d_off) = down;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set rotation limits: one or more offsets are missing.");
   }
 }
 
@@ -320,6 +329,9 @@ void GameCameraWindow::SetRotationDefaults(float lr, float ud) {
   if (lr_off && ud_off) {
     *reinterpret_cast<float*>(pCam + lr_off) = lr;
     *reinterpret_cast<float*>(pCam + ud_off) = ud;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set rotation defaults: one or more offsets are missing.");
   }
 }
 
@@ -328,7 +340,12 @@ void GameCameraWindow::SetRelativeHeadtrackingAzimuth(bool val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetWindowRelativeHeadtrackingAzimuthOffset();
-  if (off) *reinterpret_cast<bool*>(pCam + off) = val;
+  if (off) {
+    *reinterpret_cast<bool*>(pCam + off) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set relative headtracking azimuth: offset is missing.");
+  }
 }
 
 void GameCameraWindow::SetAutoCenterMoveDirection(int32_t val) {
@@ -336,7 +353,12 @@ void GameCameraWindow::SetAutoCenterMoveDirection(int32_t val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetWindowAutoCenterMoveDirectionOffset();
-  if (off) *reinterpret_cast<int32_t*>(pCam + off) = val;
+  if (off) {
+    *reinterpret_cast<int32_t*>(pCam + off) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set auto center move direction: offset is missing.");
+  }
 }
 
 void GameCameraWindow::SetFov(float fov) {
@@ -357,6 +379,9 @@ void GameCameraWindow::SetFov(float fov) {
     float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_off) - *reinterpret_cast<float*>(pCameraParamsObject + x1_off);
     float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_off) - *reinterpret_cast<float*>(pCameraParamsObject + y1_off);
     pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
   }
 }
 
@@ -365,7 +390,12 @@ void GameCameraWindow::SetShakeAnimStep(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimStepOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off) {
+    *reinterpret_cast<float*>(pCam + off) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set shake animation step: offset is missing.");
+  }
 }
 
 void GameCameraWindow::SetShakeAnimScaleMin(float val) {
@@ -373,7 +403,12 @@ void GameCameraWindow::SetShakeAnimScaleMin(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimScaleMinOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off) {
+    *reinterpret_cast<float*>(pCam + off) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set shake animation scale min: offset is missing.");
+  }
 }
 
 void GameCameraWindow::SetShakeAnimScaleMax(float val) {
@@ -381,7 +416,12 @@ void GameCameraWindow::SetShakeAnimScaleMax(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimScaleMaxOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off) {
+    *reinterpret_cast<float*>(pCam + off) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set shake animation scale max: offset is missing.");
+  }
 }
 
 void GameCameraWindow::SetShakeAnim(size_t index, float x, float y, float z) {
@@ -389,7 +429,11 @@ void GameCameraWindow::SetShakeAnim(size_t index, float x, float y, float z) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimOffset();
-  if (!off) return;
+  if (!off) {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
+    logger->Warn("Cannot set shake animation point: offset is missing.");
+    return;
+  }
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + off + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));

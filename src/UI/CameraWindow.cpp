@@ -318,6 +318,11 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locOffsetZBumper = "camera_window.bumper_camera.offset_z_bumper";
     m_locOffsetNotFoundBumper = "camera_window.bumper_camera.offset_not_found";
     m_locBaseFovBumper = "camera_window.bumper_camera.base_fov_bumper";
+    m_locBumperShakeSettings = "camera_window.bumper_camera.shake_settings";
+    m_locBumperShakeAnimStep = "camera_window.bumper_camera.shake_anim_step";
+    m_locBumperShakeAnimScaleMin = "camera_window.bumper_camera.shake_anim_scale_min";
+    m_locBumperShakeAnimScaleMax = "camera_window.bumper_camera.shake_anim_scale_max";
+    m_locBumperShakeAnimationArray = "camera_window.bumper_camera.shake_animation_array";
     m_locBumperCameraNotAvailable = "camera_window.bumper_camera.not_available";
 
     m_locOffsetWheel = "camera_window.wheel_camera.offset";
@@ -326,6 +331,11 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locOffsetZWheel = "camera_window.wheel_camera.offset_z_wheel";
     m_locOffsetNotFoundWheel = "camera_window.wheel_camera.offset_not_found";
     m_locBaseFovWheel = "camera_window.wheel_camera.base_fov_wheel";
+    m_locWheelShakeSettings = "camera_window.wheel_camera.shake_settings";
+    m_locWheelShakeAnimStep = "camera_window.wheel_camera.shake_anim_step";
+    m_locWheelShakeAnimScaleMin = "camera_window.wheel_camera.shake_anim_scale_min";
+    m_locWheelShakeAnimScaleMax = "camera_window.wheel_camera.shake_anim_scale_max";
+    m_locWheelShakeAnimationArray = "camera_window.wheel_camera.shake_animation_array";
     m_locWheelCameraNotAvailable = "camera_window.wheel_camera.not_available";
 
     m_locDistanceTV = "camera_window.tv_camera.distance";
@@ -1311,38 +1321,42 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabBumperCamera).c_str(), nullptr, bumperTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::BumperCamera);
       if (auto* bumperCam = dynamic_cast<GameCameraBumper*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locOffsetBumper).c_str());
-        float offset_x, offset_y, offset_z;
-        if (bumperCam->GetOffset(&offset_x, &offset_y, &offset_z)) {
-          bool offsetChanged = false;
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetXBumper).c_str(), &offset_x, -5.0f, 5.0f, "%.2f");
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetYBumper).c_str(), &offset_y, -5.0f, 5.0f, "%.2f");
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetZBumper).c_str(), &offset_z, -5.0f, 5.0f, "%.2f");
-          if (offsetChanged) {
-            bumperCam->SetOffset(offset_x, offset_y, offset_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locOffsetNotFoundBumper).c_str());
+        auto& defaults = bumperCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovBumper), [&](float* fov){ return bumperCam->GetFov(fov); }, [&](float fov){ bumperCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return bumperCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locOffsetBumper));
+        drawVector3(loc.Get(m_locOffsetBumper), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return bumperCam->GetOffset(x, y, z); },
+                   [&](float x, float y, float z){ bumperCam->SetOffset(x, y, z); }, -10.0f, 10.0f, ImVec4(defaults.offset_x, defaults.offset_y, defaults.offset_z, 0));
+
+        drawHeader(loc.Get(m_locBumperShakeSettings));
+        drawFloat(loc.Get(m_locBumperShakeAnimStep), [&](float* v){ return bumperCam->GetShakeAnimStep(v); }, [&](float v){ bumperCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locBumperShakeAnimScaleMin).c_str(), loc.Get(m_locBumperShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = bumperCam->GetShakeAnimScaleMin(s_min); bool r2 = bumperCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ bumperCam->SetShakeAnimScaleMin(s_min); bumperCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locBumperShakeAnimationArray));
+        size_t shake_count = bumperCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_bumper = 0;
+            if (selected_shake_index_bumper >= (int)shake_count) selected_shake_index_bumper = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_bumper);
+            drawCenteredCombo("##ShakeComboBumper", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_bumper == (int)i)) selected_shake_index_bumper = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ bumperCam->GetShakeAnim(selected_shake_index_bumper, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ bumperCam->SetShakeAnim(selected_shake_index_bumper, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (bumperCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovBumper).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            bumperCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (bumperCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           bumperCam->ResetToDefaults();
@@ -1360,38 +1374,42 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabWheelCamera).c_str(), nullptr, wheelTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::WheelCamera);
       if (auto* wheelCam = dynamic_cast<GameCameraWheel*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locOffsetWheel).c_str());
-        float offset_x, offset_y, offset_z;
-        if (wheelCam->GetOffset(&offset_x, &offset_y, &offset_z)) {
-          bool offsetChanged = false;
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetXWheel).c_str(), &offset_x, -5.0f, 5.0f, "%.2f");
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetYWheel).c_str(), &offset_y, -5.0f, 5.0f, "%.2f");
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locOffsetZWheel).c_str(), &offset_z, -5.0f, 5.0f, "%.2f");
-          if (offsetChanged) {
-            wheelCam->SetOffset(offset_x, offset_y, offset_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locOffsetNotFoundWheel).c_str());
+        auto& defaults = wheelCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovWheel), [&](float* fov){ return wheelCam->GetFov(fov); }, [&](float fov){ wheelCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return wheelCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locOffsetWheel));
+        drawVector3(loc.Get(m_locOffsetWheel), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return wheelCam->GetOffset(x, y, z); },
+                   [&](float x, float y, float z){ wheelCam->SetOffset(x, y, z); }, -10.0f, 10.0f, ImVec4(defaults.offset_x, defaults.offset_y, defaults.offset_z, 0));
+
+        drawHeader(loc.Get(m_locWheelShakeSettings));
+        drawFloat(loc.Get(m_locWheelShakeAnimStep), [&](float* v){ return wheelCam->GetShakeAnimStep(v); }, [&](float v){ wheelCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locWheelShakeAnimScaleMin).c_str(), loc.Get(m_locWheelShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = wheelCam->GetShakeAnimScaleMin(s_min); bool r2 = wheelCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ wheelCam->SetShakeAnimScaleMin(s_min); wheelCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locWheelShakeAnimationArray));
+        size_t shake_count = wheelCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_wheel = 0;
+            if (selected_shake_index_wheel >= (int)shake_count) selected_shake_index_wheel = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_wheel);
+            drawCenteredCombo("##ShakeComboWheel", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_wheel == (int)i)) selected_shake_index_wheel = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ wheelCam->GetShakeAnim(selected_shake_index_wheel, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ wheelCam->SetShakeAnim(selected_shake_index_wheel, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (wheelCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovWheel).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            wheelCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (wheelCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           wheelCam->ResetToDefaults();

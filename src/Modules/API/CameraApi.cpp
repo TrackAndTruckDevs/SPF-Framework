@@ -1816,6 +1816,152 @@ void CameraApi::T_Camera_SetWindowShakeAnim(size_t index, float x, float y, floa
   }
 }
 
+// --- Bumper Camera Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetBumperShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    return cam->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBumperShakeAnimStep(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    cam->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBumperShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    return cam->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBumperShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    cam->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetBumperShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    return cam->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBumperShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    cam->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetBumperShakeAnimCount() {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    return cam->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetBumperShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    if (out_x && out_y && out_z) {
+      cam->GetShakeAnim(index, *out_x, *out_y, *out_z);
+      return true;
+    }
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetBumperShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::BumperCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraBumper*>(pCamera)) {
+    cam->SetShakeAnim(index, x, y, z);
+  }
+}
+
+// --- Wheel Camera Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetWheelShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    return cam->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWheelShakeAnimStep(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    cam->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWheelShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    return cam->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWheelShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    cam->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetWheelShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    return cam->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWheelShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    cam->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetWheelShakeAnimCount() {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    return cam->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetWheelShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    if (out_x && out_y && out_z) {
+      cam->GetShakeAnim(index, *out_x, *out_y, *out_z);
+      return true;
+    }
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetWheelShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::WheelCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraWheel*>(pCamera)) {
+    cam->SetShakeAnim(index, x, y, z);
+  }
+}
+
 // --- API Filling Function ---
 void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   if (!camera_api) return;
@@ -2114,6 +2260,28 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetWindowShakeAnimCount = &T_Camera_GetWindowShakeAnimCount;
   camera_api->Cam_GetWindowShakeAnim = &T_Camera_GetWindowShakeAnim;
   camera_api->Cam_SetWindowShakeAnim = &T_Camera_SetWindowShakeAnim;
+
+  // Bumper Shake
+  camera_api->Cam_GetBumperShakeAnimStep = &T_Camera_GetBumperShakeAnimStep;
+  camera_api->Cam_SetBumperShakeAnimStep = &T_Camera_SetBumperShakeAnimStep;
+  camera_api->Cam_GetBumperShakeAnimScaleMin = &T_Camera_GetBumperShakeAnimScaleMin;
+  camera_api->Cam_SetBumperShakeAnimScaleMin = &T_Camera_SetBumperShakeAnimScaleMin;
+  camera_api->Cam_GetBumperShakeAnimScaleMax = &T_Camera_GetBumperShakeAnimScaleMax;
+  camera_api->Cam_SetBumperShakeAnimScaleMax = &T_Camera_SetBumperShakeAnimScaleMax;
+  camera_api->Cam_GetBumperShakeAnimCount = &T_Camera_GetBumperShakeAnimCount;
+  camera_api->Cam_GetBumperShakeAnim = &T_Camera_GetBumperShakeAnim;
+  camera_api->Cam_SetBumperShakeAnim = &T_Camera_SetBumperShakeAnim;
+
+  // Wheel Shake
+  camera_api->Cam_GetWheelShakeAnimStep = &T_Camera_GetWheelShakeAnimStep;
+  camera_api->Cam_SetWheelShakeAnimStep = &T_Camera_SetWheelShakeAnimStep;
+  camera_api->Cam_GetWheelShakeAnimScaleMin = &T_Camera_GetWheelShakeAnimScaleMin;
+  camera_api->Cam_SetWheelShakeAnimScaleMin = &T_Camera_SetWheelShakeAnimScaleMin;
+  camera_api->Cam_GetWheelShakeAnimScaleMax = &T_Camera_GetWheelShakeAnimScaleMax;
+  camera_api->Cam_SetWheelShakeAnimScaleMax = &T_Camera_SetWheelShakeAnimScaleMax;
+  camera_api->Cam_GetWheelShakeAnimCount = &T_Camera_GetWheelShakeAnimCount;
+  camera_api->Cam_GetWheelShakeAnim = &T_Camera_GetWheelShakeAnim;
+  camera_api->Cam_SetWheelShakeAnim = &T_Camera_SetWheelShakeAnim;
 }
 
 }  // namespace Modules::API

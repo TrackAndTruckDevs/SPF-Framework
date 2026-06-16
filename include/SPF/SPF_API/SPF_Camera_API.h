@@ -1583,6 +1583,46 @@ typedef bool (*SPF_Camera_GetWindowShakeAnim_t)(size_t index, float* out_x, floa
 typedef void (*SPF_Camera_SetWindowShakeAnim_t)(size_t index, float x, float y, float z);
 
 
+// --- New Bumper Camera Shake Settings ---
+
+/** @brief Gets/Sets the shake animation step for the bumper camera. */
+typedef bool (*SPF_Camera_GetBumperShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetBumperShakeAnimStep_t)(float val);
+
+/** @brief Gets/Sets the shake animation scale (min/max) for the bumper camera. */
+typedef bool (*SPF_Camera_GetBumperShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetBumperShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetBumperShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetBumperShakeAnimScaleMax_t)(float val);
+
+/** @brief Gets the number of points in the bumper camera shake animation. */
+typedef size_t (*SPF_Camera_GetBumperShakeAnimCount_t)();
+
+/** @brief Gets/Sets specific points in the bumper camera shake animation. */
+typedef bool (*SPF_Camera_GetBumperShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetBumperShakeAnim_t)(size_t index, float x, float y, float z);
+
+
+// --- New Wheel Camera Shake Settings ---
+
+/** @brief Gets/Sets the shake animation step for the wheel camera. */
+typedef bool (*SPF_Camera_GetWheelShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetWheelShakeAnimStep_t)(float val);
+
+/** @brief Gets/Sets the shake animation scale (min/max) for the wheel camera. */
+typedef bool (*SPF_Camera_GetWheelShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetWheelShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetWheelShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetWheelShakeAnimScaleMax_t)(float val);
+
+/** @brief Gets the number of points in the wheel camera shake animation. */
+typedef size_t (*SPF_Camera_GetWheelShakeAnimCount_t)();
+
+/** @brief Gets/Sets specific points in the wheel camera shake animation. */
+typedef bool (*SPF_Camera_GetWheelShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetWheelShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -2178,6 +2218,40 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the window camera shake animation. */
     SPF_Camera_GetWindowShakeAnim_t Cam_GetWindowShakeAnim;
     SPF_Camera_SetWindowShakeAnim_t Cam_SetWindowShakeAnim;
+
+    // --- New Bumper Camera Shake Settings ---
+    /** @brief Gets/Sets the bumper camera shake animation step. */
+    SPF_Camera_GetBumperShakeAnimStep_t Cam_GetBumperShakeAnimStep;
+    SPF_Camera_SetBumperShakeAnimStep_t Cam_SetBumperShakeAnimStep;
+
+    /** @brief Gets/Sets the bumper camera shake animation scale (min/max). */
+    SPF_Camera_GetBumperShakeAnimScaleMin_t Cam_GetBumperShakeAnimScaleMin;
+    SPF_Camera_SetBumperShakeAnimScaleMin_t Cam_SetBumperShakeAnimScaleMin;
+    SPF_Camera_GetBumperShakeAnimScaleMax_t Cam_GetBumperShakeAnimScaleMax;
+    SPF_Camera_SetBumperShakeAnimScaleMax_t Cam_SetBumperShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the bumper camera shake animation. */
+    SPF_Camera_GetBumperShakeAnimCount_t Cam_GetBumperShakeAnimCount;
+    /** @brief Gets/Sets specific points in the bumper camera shake animation. */
+    SPF_Camera_GetBumperShakeAnim_t Cam_GetBumperShakeAnim;
+    SPF_Camera_SetBumperShakeAnim_t Cam_SetBumperShakeAnim;
+
+    // --- New Wheel Camera Shake Settings ---
+    /** @brief Gets/Sets the wheel camera shake animation step. */
+    SPF_Camera_GetWheelShakeAnimStep_t Cam_GetWheelShakeAnimStep;
+    SPF_Camera_SetWheelShakeAnimStep_t Cam_SetWheelShakeAnimStep;
+
+    /** @brief Gets/Sets the wheel camera shake animation scale (min/max). */
+    SPF_Camera_GetWheelShakeAnimScaleMin_t Cam_GetWheelShakeAnimScaleMin;
+    SPF_Camera_SetWheelShakeAnimScaleMin_t Cam_SetWheelShakeAnimScaleMin;
+    SPF_Camera_GetWheelShakeAnimScaleMax_t Cam_GetWheelShakeAnimScaleMax;
+    SPF_Camera_SetWheelShakeAnimScaleMax_t Cam_SetWheelShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the wheel camera shake animation. */
+    SPF_Camera_GetWheelShakeAnimCount_t Cam_GetWheelShakeAnimCount;
+    /** @brief Gets/Sets specific points in the wheel camera shake animation. */
+    SPF_Camera_GetWheelShakeAnim_t Cam_GetWheelShakeAnim;
+    SPF_Camera_SetWheelShakeAnim_t Cam_SetWheelShakeAnim;
 
 } SPF_Camera_API;
 

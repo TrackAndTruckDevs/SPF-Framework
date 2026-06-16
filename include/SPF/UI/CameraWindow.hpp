@@ -263,6 +263,11 @@ class CameraWindow : public BaseWindow {
     std::string m_locOffsetZBumper;
     std::string m_locOffsetNotFoundBumper;
     std::string m_locBaseFovBumper;
+    std::string m_locBumperShakeSettings;
+    std::string m_locBumperShakeAnimStep;
+    std::string m_locBumperShakeAnimScaleMin;
+    std::string m_locBumperShakeAnimScaleMax;
+    std::string m_locBumperShakeAnimationArray;
     std::string m_locBumperCameraNotAvailable;
 
     // Wheel Camera
@@ -272,6 +277,11 @@ class CameraWindow : public BaseWindow {
     std::string m_locOffsetZWheel;
     std::string m_locOffsetNotFoundWheel;
     std::string m_locBaseFovWheel;
+    std::string m_locWheelShakeSettings;
+    std::string m_locWheelShakeAnimStep;
+    std::string m_locWheelShakeAnimScaleMin;
+    std::string m_locWheelShakeAnimScaleMax;
+    std::string m_locWheelShakeAnimationArray;
     std::string m_locWheelCameraNotAvailable;
 
     // TV Camera

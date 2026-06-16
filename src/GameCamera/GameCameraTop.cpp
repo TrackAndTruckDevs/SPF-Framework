@@ -32,9 +32,6 @@ void GameCameraTop::OnDeactivate() {
 
 void GameCameraTop::Update(float dt) {
   if (!m_pCameraObject) return;
-
-  // The new design reads data directly in the Get... methods,
-  // so this per-frame update is no longer necessary for populating local data.
 }
 
 void GameCameraTop::StoreDefaultState() {
@@ -128,6 +125,9 @@ void GameCameraTop::SetHeight(float min, float max) {
   if (min_offset && max_offset) {
     *reinterpret_cast<float*>(pCam + min_offset) = min;
     *reinterpret_cast<float*>(pCam + max_offset) = max;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set height: one or more offsets are missing.");
   }
 }
 
@@ -138,6 +138,9 @@ void GameCameraTop::SetSpeed(float speed) {
   auto speed_offset = gameData.GetTopSpeedOffset();
   if (speed_offset) {
     *reinterpret_cast<float*>(pCam + speed_offset) = speed;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set speed: offset is missing.");
   }
 }
 
@@ -150,6 +153,9 @@ void GameCameraTop::SetOffsets(float forward, float backward) {
   if (forward_offset && backward_offset) {
     *reinterpret_cast<float*>(pCam + forward_offset) = forward;
     *reinterpret_cast<float*>(pCam + backward_offset) = backward;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set lateral offsets: one or more offsets are missing.");
   }
 }
 
@@ -162,6 +168,9 @@ void GameCameraTop::SetOffsetsZ(float forward, float backward) {
   if (fwd_off && bwd_off) {
     *reinterpret_cast<float*>(pCam + fwd_off) = forward;
     *reinterpret_cast<float*>(pCam + bwd_off) = backward;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set longitudinal offsets: one or more offsets are missing.");
   }
 }
 
@@ -174,6 +183,9 @@ void GameCameraTop::SetAdaptiveSettings(float factor, bool use_adaptive) {
   if (fact_off && use_off) {
     *reinterpret_cast<float*>(pCam + fact_off) = factor;
     *reinterpret_cast<bool*>(pCam + use_off) = use_adaptive;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set adaptive settings: one or more offsets are missing.");
   }
 }
 
@@ -186,6 +198,9 @@ void GameCameraTop::SetPlaneSettings(float near_p, float far_p) {
   if (near_off && far_off) {
     *reinterpret_cast<float*>(pCam + near_off) = near_p;
     *reinterpret_cast<float*>(pCam + far_off) = far_p;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set plane settings: one or more offsets are missing.");
   }
 }
 
@@ -207,6 +222,9 @@ void GameCameraTop::SetFov(float fov) {
     float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + x1_offset);
     float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + y1_offset);
     pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
   }
 }
 
@@ -217,6 +235,9 @@ void GameCameraTop::SetValidation(bool enabled) {
   auto offset = gameData.GetTopValidationOffset();
   if (offset) {
     *reinterpret_cast<bool*>(pCam + offset) = enabled;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set validation: offset is missing.");
   }
 }
 
@@ -229,6 +250,9 @@ void GameCameraTop::SetValidationSettings(float speed_pos, float speed_neg) {
   if (speed_pos_offset && speed_neg_offset) {
     *reinterpret_cast<float*>(pCam + speed_pos_offset) = speed_pos;
     *reinterpret_cast<float*>(pCam + speed_neg_offset) = speed_neg;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set validation settings: one or more offsets are missing.");
   }
 }
 
@@ -239,6 +263,9 @@ void GameCameraTop::SetShakeAnimStep(float val) {
   auto offset = gameData.GetShakeAnimStepOffset();
   if (offset) {
     *reinterpret_cast<float*>(pCam + offset) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set shake animation step: offset is missing.");
   }
 }
 
@@ -249,6 +276,9 @@ void GameCameraTop::SetShakeAnimScaleMin(float val) {
   auto offset = gameData.GetShakeAnimScaleMinOffset();
   if (offset) {
     *reinterpret_cast<float*>(pCam + offset) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set shake animation scale min: offset is missing.");
   }
 }
 
@@ -259,6 +289,9 @@ void GameCameraTop::SetShakeAnimScaleMax(float val) {
   auto offset = gameData.GetShakeAnimScaleMaxOffset();
   if (offset) {
     *reinterpret_cast<float*>(pCam + offset) = val;
+  } else {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set shake animation scale max: offset is missing.");
   }
 }
 
@@ -267,7 +300,11 @@ void GameCameraTop::SetShakeAnim(size_t index, float x, float y, float z) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto offset = gameData.GetShakeAnimOffset();
-  if (!offset) return;
+  if (!offset) {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTop");
+    logger->Warn("Cannot set shake animation point: offset is missing.");
+    return;
+  }
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));

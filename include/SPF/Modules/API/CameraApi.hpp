@@ -305,6 +305,28 @@ class CameraApi {
   static size_t T_Camera_GetWindowShakeAnimCount();
   static bool T_Camera_GetWindowShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetWindowShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New Bumper Advanced Settings Trampolines ---
+  static bool T_Camera_GetBumperShakeAnimStep(float* out_val);
+  static void T_Camera_SetBumperShakeAnimStep(float val);
+  static bool T_Camera_GetBumperShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetBumperShakeAnimScaleMin(float val);
+  static bool T_Camera_GetBumperShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetBumperShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetBumperShakeAnimCount();
+  static bool T_Camera_GetBumperShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetBumperShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New Wheel Advanced Settings Trampolines ---
+  static bool T_Camera_GetWheelShakeAnimStep(float* out_val);
+  static void T_Camera_SetWheelShakeAnimStep(float val);
+  static bool T_Camera_GetWheelShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetWheelShakeAnimScaleMin(float val);
+  static bool T_Camera_GetWheelShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetWheelShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetWheelShakeAnimCount();
+  static bool T_Camera_GetWheelShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetWheelShakeAnim(size_t index, float x, float y, float z);
   };
   }  // namespace Modules::API
   SPF_NS_END
