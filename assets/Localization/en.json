@@ -815,7 +815,12 @@
         },
         "cabin_camera": {
             "base_fov_cabin": "Base FOV##Cabin",
-            "not_available": "Cabin camera object not available."
+            "not_available": "Cabin camera object not available.",
+            "shake_settings": "Shake Settings",
+            "shake_anim_step": "Shake Animation Step",
+            "shake_anim_scale_min": "Min Shake Scale",
+            "shake_anim_scale_max": "Max Shake Scale",
+            "shake_animation_array": "Shake Animation Array"
         },
         "window_camera": {
             "head_offset": "Head Offset",

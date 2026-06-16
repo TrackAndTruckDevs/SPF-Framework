@@ -30,10 +30,6 @@ void GameCameraCabin::OnDeactivate() {
 
 void GameCameraCabin::Update(float dt) {
   if (!m_pCameraObject) return;
-
-  // The new design reads data directly in the Get... methods,
-  // so this per-frame update is no longer necessary for populating local data.
-  // It can be used for other per-frame logic if needed in the future.
 }
 
 void GameCameraCabin::SetFov(float fov) {
@@ -42,8 +38,7 @@ void GameCameraCabin::SetFov(float fov) {
   auto& hooks = Hooks::CameraHooks::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
 
-  // Get all required data first
-  auto fov_base_offset = gameData.GetFovBaseOffset();  // Re-uses interior FOV offset
+  auto fov_base_offset = gameData.GetFovBaseOffset();
   auto pfnUpdateCameraProjection = hooks.GetUpdateCameraProjectionFunc();
   uintptr_t pCameraParamsObject = gameData.GetCameraParamsObjectPtr();
   auto x1_offset = gameData.GetViewportX1Offset();
@@ -51,20 +46,11 @@ void GameCameraCabin::SetFov(float fov) {
   auto y1_offset = gameData.GetViewportY1Offset();
   auto y2_offset = gameData.GetViewportY2Offset();
 
-  // Check if everything is available
   if (fov_base_offset && pfnUpdateCameraProjection && pCameraParamsObject && x1_offset && x2_offset && y1_offset && y2_offset) {
-    // 1. Set the base FOV value
     *reinterpret_cast<float*>(pCam + fov_base_offset) = fov;
-
-    // 2. Calculate viewport parameters
     float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + x1_offset);
     float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + y1_offset);
-
-    // 3. Call the game's function to make the FOV change take effect
     pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
-  } else {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraCabin");
-    logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
   }
 }
 
@@ -74,9 +60,13 @@ void GameCameraCabin::StoreDefaultState() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraCabin");
   logger->Info("Storing default camera state...");
 
-  // Populate m_defaultCameraData directly from game memory using safe getters
   float fov_val;
   if (GetFov(&fov_val)) m_defaultCameraData.fov_base = fov_val;
+
+  float shake_step, shake_min, shake_max;
+  if (GetShakeAnimStep(&shake_step)) m_defaultCameraData.shake_anim_step = shake_step;
+  if (GetShakeAnimScaleMin(&shake_min)) m_defaultCameraData.shake_anim_scale_min = shake_min;
+  if (GetShakeAnimScaleMax(&shake_max)) m_defaultCameraData.shake_anim_scale_max = shake_max;
 
   m_defaultsSaved = true;
   logger->Info("Default camera state has been stored.");
@@ -89,19 +79,16 @@ void GameCameraCabin::ResetToDefaults() {
   logger->Info("Resetting camera state to defaults...");
 
   SetFov(m_defaultCameraData.fov_base);
+  SetShakeAnimStep(m_defaultCameraData.shake_anim_step);
+  SetShakeAnimScaleMin(m_defaultCameraData.shake_anim_scale_min);
+  SetShakeAnimScaleMax(m_defaultCameraData.shake_anim_scale_max);
 }
 
-// --- New Safe Getters ---
-
 bool GameCameraCabin::GetFov(float* out_fov) const {
-  if (!out_fov) return false;
-  if (!m_pCameraObject) return false;
-
+  if (!out_fov || !m_pCameraObject) return false;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
-
-  auto fov_base_offset = gameData.GetFovBaseOffset();  // Re-uses interior fov
-
+  auto fov_base_offset = gameData.GetFovBaseOffset();
   if (fov_base_offset) {
     *out_fov = *reinterpret_cast<float*>(pCam + fov_base_offset);
     return true;
@@ -110,21 +97,122 @@ bool GameCameraCabin::GetFov(float* out_fov) const {
 }
 
 bool GameCameraCabin::GetFinalFov(float* out_horiz, float* out_vert) const {
-  if (!out_horiz || !out_vert) return false;
-  if (!m_pCameraObject) return false;
-
+  if (!out_horiz || !out_vert || !m_pCameraObject) return false;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
-
-  auto horiz_offset = gameData.GetFovHorizFinalOffset();  // Shared offset
-  auto vert_offset = gameData.GetFovVertFinalOffset();    // Shared offset
-
+  auto horiz_offset = gameData.GetFovHorizFinalOffset();
+  auto vert_offset = gameData.GetFovVertFinalOffset();
   if (horiz_offset && vert_offset) {
     *out_horiz = *reinterpret_cast<float*>(pCam + horiz_offset);
     *out_vert = *reinterpret_cast<float*>(pCam + vert_offset);
     return true;
   }
   return false;
+}
+
+bool GameCameraCabin::GetShakeAnimStep(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraCabin::GetShakeAnimScaleMin(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+bool GameCameraCabin::GetShakeAnimScaleMax(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+size_t GameCameraCabin::GetShakeAnimCount() const {
+  if (!m_pCameraObject) return 0;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (offset) {
+    return *reinterpret_cast<size_t*>(pCam + offset + 16);
+  }
+  return 0;
+}
+
+void GameCameraCabin::GetShakeAnim(size_t index, float& x, float& y, float& z) const {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return;
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return;
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  x = pVec[0];
+  y = pVec[1];
+  z = pVec[2];
+}
+
+void GameCameraCabin::SetShakeAnimStep(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimStepOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraCabin::SetShakeAnimScaleMin(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMinOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraCabin::SetShakeAnimScaleMax(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimScaleMaxOffset();
+  if (offset) {
+    *reinterpret_cast<float*>(pCam + offset) = val;
+  }
+}
+
+void GameCameraCabin::SetShakeAnim(size_t index, float x, float y, float z) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetShakeAnimOffset();
+  if (!offset) return;
+  uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
+  if (!pData) return;
+  float* pVec = reinterpret_cast<float*>(pData + (index * 12));
+  pVec[0] = x;
+  pVec[1] = y;
+  pVec[2] = z;
 }
 }  // namespace GameCamera
 SPF_NS_END

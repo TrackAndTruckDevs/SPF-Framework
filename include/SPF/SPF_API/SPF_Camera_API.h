@@ -1515,6 +1515,33 @@ typedef size_t (*SPF_Camera_GetTopShakeAnimCount_t)();
 typedef bool (*SPF_Camera_GetTopShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
 typedef void (*SPF_Camera_SetTopShakeAnim_t)(size_t index, float x, float y, float z);
 
+// --- New Cabin Camera Shake Settings ---
+
+/**
+ * @brief Gets/Sets the shake animation step for the cabin camera.
+ */
+typedef bool (*SPF_Camera_GetCabinShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetCabinShakeAnimStep_t)(float val);
+
+/**
+ * @brief Gets/Sets the shake animation scale (min/max) for the cabin camera.
+ */
+typedef bool (*SPF_Camera_GetCabinShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetCabinShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetCabinShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetCabinShakeAnimScaleMax_t)(float val);
+
+/**
+ * @brief Gets the number of points in the cabin camera shake animation.
+ */
+typedef size_t (*SPF_Camera_GetCabinShakeAnimCount_t)();
+
+/**
+ * @brief Gets/Sets specific points in the cabin camera shake animation.
+ */
+typedef bool (*SPF_Camera_GetCabinShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetCabinShakeAnim_t)(size_t index, float x, float y, float z);
+
 
 
 /**
@@ -2069,6 +2096,23 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the top camera shake animation. */
     SPF_Camera_GetTopShakeAnim_t Cam_GetTopShakeAnim;
     SPF_Camera_SetTopShakeAnim_t Cam_SetTopShakeAnim;
+
+    // --- New Cabin Camera Shake Settings ---
+    /** @brief Gets/Sets the cabin camera shake animation step. */
+    SPF_Camera_GetCabinShakeAnimStep_t Cam_GetCabinShakeAnimStep;
+    SPF_Camera_SetCabinShakeAnimStep_t Cam_SetCabinShakeAnimStep;
+
+    /** @brief Gets/Sets the cabin camera shake animation scale (min/max). */
+    SPF_Camera_GetCabinShakeAnimScaleMin_t Cam_GetCabinShakeAnimScaleMin;
+    SPF_Camera_SetCabinShakeAnimScaleMin_t Cam_SetCabinShakeAnimScaleMin;
+    SPF_Camera_GetCabinShakeAnimScaleMax_t Cam_GetCabinShakeAnimScaleMax;
+    SPF_Camera_SetCabinShakeAnimScaleMax_t Cam_SetCabinShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the cabin camera shake animation. */
+    SPF_Camera_GetCabinShakeAnimCount_t Cam_GetCabinShakeAnimCount;
+    /** @brief Gets/Sets specific points in the cabin camera shake animation. */
+    SPF_Camera_GetCabinShakeAnim_t Cam_GetCabinShakeAnim;
+    SPF_Camera_SetCabinShakeAnim_t Cam_SetCabinShakeAnim;
 
 } SPF_Camera_API;
 

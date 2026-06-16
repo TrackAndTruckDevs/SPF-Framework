@@ -1638,7 +1638,81 @@ void CameraApi::T_Camera_SetTopShakeAnim(size_t index, float x, float y, float z
   if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
     cam->SetShakeAnim(index, x, y, z);
   }
-}  
+}
+
+// --- Cabin Camera Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetCabinShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    return cam->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetCabinShakeAnimStep(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    cam->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetCabinShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    return cam->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetCabinShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    cam->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetCabinShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    return cam->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetCabinShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    cam->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetCabinShakeAnimCount() {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    return cam->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetCabinShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    if (out_x && out_y && out_z) {
+      cam->GetShakeAnim(index, *out_x, *out_y, *out_z);
+      return true;
+    }
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetCabinShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::CabinCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraCabin*>(pCamera)) {
+    cam->SetShakeAnim(index, x, y, z);
+  }
+}
+
 // --- API Filling Function ---
 void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   if (!camera_api) return;
@@ -1911,6 +1985,18 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetTopShakeAnimCount = &T_Camera_GetTopShakeAnimCount;
   camera_api->Cam_GetTopShakeAnim = &T_Camera_GetTopShakeAnim;
   camera_api->Cam_SetTopShakeAnim = &T_Camera_SetTopShakeAnim;
+
+  // --- New Cabin Camera Shake Settings ---
+  camera_api->Cam_GetCabinShakeAnimStep = &T_Camera_GetCabinShakeAnimStep;
+  camera_api->Cam_SetCabinShakeAnimStep = &T_Camera_SetCabinShakeAnimStep;
+  camera_api->Cam_GetCabinShakeAnimScaleMin = &T_Camera_GetCabinShakeAnimScaleMin;
+  camera_api->Cam_SetCabinShakeAnimScaleMin = &T_Camera_SetCabinShakeAnimScaleMin;
+  camera_api->Cam_GetCabinShakeAnimScaleMax = &T_Camera_GetCabinShakeAnimScaleMax;
+  camera_api->Cam_SetCabinShakeAnimScaleMax = &T_Camera_SetCabinShakeAnimScaleMax;
+  camera_api->Cam_GetCabinShakeAnimCount = &T_Camera_GetCabinShakeAnimCount;
+  camera_api->Cam_GetCabinShakeAnim = &T_Camera_GetCabinShakeAnim;
+  camera_api->Cam_SetCabinShakeAnim = &T_Camera_SetCabinShakeAnim;
 }
+
 }  // namespace Modules::API
 SPF_NS_END

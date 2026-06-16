@@ -421,6 +421,12 @@ Similarly, this camera allows getting and setting the XYZ offset from the vehicl
 
 This camera exposes functions to get and set its base Field of View (`GetCabinFov`/`SetCabinFov`).
 
+It also supports advanced shake animation control:
+*   **`Cam_GetCabinShakeAnimStep`/`Cam_SetCabinShakeAnimStep`**: Control the shake speed.
+*   **`Cam_GetCabinShakeAnimScaleMin/Max`**: Control the shake intensity range.
+*   **`Cam_GetCabinShakeAnimCount`**: Get the number of shake animation points.
+*   **`Cam_GetCabinShakeAnim/Cam_SetCabinShakeAnim`**: Get or set specific 3D points in the animation array.
+
 ---
 **TV Camera (`SPF_CAMERA_TV`)**
 

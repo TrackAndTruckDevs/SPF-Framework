@@ -279,6 +279,17 @@ class CameraApi {
   static size_t T_Camera_GetTopShakeAnimCount();
   static bool T_Camera_GetTopShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetTopShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New Cabin Advanced Settings Trampolines ---
+  static bool T_Camera_GetCabinShakeAnimStep(float* out_val);
+  static void T_Camera_SetCabinShakeAnimStep(float val);
+  static bool T_Camera_GetCabinShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetCabinShakeAnimScaleMin(float val);
+  static bool T_Camera_GetCabinShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetCabinShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetCabinShakeAnimCount();
+  static bool T_Camera_GetCabinShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetCabinShakeAnim(size_t index, float x, float y, float z);
   };
   }  // namespace Modules::API
   SPF_NS_END

@@ -220,6 +220,11 @@ class CameraWindow : public BaseWindow {
 
     // Cabin Camera
     std::string m_locBaseFovCabin;
+    std::string m_locCabinShakeSettings;
+    std::string m_locCabinShakeAnimStep;
+    std::string m_locCabinShakeAnimScaleMin;
+    std::string m_locCabinShakeAnimScaleMax;
+    std::string m_locCabinShakeAnimationArray;
     std::string m_locCabinCameraNotAvailable;
 
     // Window Camera

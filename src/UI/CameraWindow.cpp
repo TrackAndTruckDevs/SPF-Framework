@@ -276,6 +276,12 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locTopCollisionSettings = "camera_window.top_camera.collision_settings";
 
     m_locBaseFovCabin = "camera_window.cabin_camera.base_fov_cabin";
+    m_locCabinShakeSettings = "camera_window.cabin_camera.shake_settings";
+    m_locCabinShakeAnimStep = "camera_window.cabin_camera.shake_anim_step";
+    m_locCabinShakeAnimScaleMin = "camera_window.cabin_camera.shake_anim_scale_min";
+    m_locCabinShakeAnimScaleMax = "camera_window.cabin_camera.shake_anim_scale_max";
+    m_locCabinShakeAnimationArray = "camera_window.cabin_camera.shake_animation_array";
+    m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
     m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
 
     m_locHeadOffset = "camera_window.window_camera.head_offset";
@@ -1175,23 +1181,37 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabCabinCamera).c_str(), nullptr, cabinTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::CabinCamera);
       if (auto* cabinCam = dynamic_cast<GameCameraCabin*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (cabinCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovCabin).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            cabinCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (cabinCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
+        auto& defaults = cabinCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovCabin), [&](float* fov){ return cabinCam->GetFov(fov); }, [&](float fov){ cabinCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return cabinCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locCabinShakeSettings));
+        drawFloat(loc.Get(m_locCabinShakeAnimStep), [&](float* v){ return cabinCam->GetShakeAnimStep(v); }, [&](float v){ cabinCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locCabinShakeAnimScaleMin).c_str(), loc.Get(m_locCabinShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = cabinCam->GetShakeAnimScaleMin(s_min); bool r2 = cabinCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ cabinCam->SetShakeAnimScaleMin(s_min); cabinCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locCabinShakeAnimationArray));
+        size_t shake_count = cabinCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_cabin = 0;
+            if (selected_shake_index_cabin >= (int)shake_count) selected_shake_index_cabin = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_cabin);
+            drawCenteredCombo("##ShakeComboCabin", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_cabin == (int)i)) selected_shake_index_cabin = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ cabinCam->GetShakeAnim(selected_shake_index_cabin, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ cabinCam->SetShakeAnim(selected_shake_index_cabin, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           cabinCam->ResetToDefaults();
