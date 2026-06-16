@@ -894,7 +894,12 @@
             "road_uplift_z_tv": "Road Uplift Z",
             "road_uplift_not_found": "Road Uplift: data not found",
             "base_fov_tv": "Base FOV",
-            "not_available": "TV camera object not available."
+            "not_available": "TV camera object not available.",
+            "shake_settings": "Shake Settings",
+            "shake_anim_step": "Shake Animation Step",
+            "shake_anim_scale_min": "Min Shake Scale",
+            "shake_anim_scale_max": "Max Shake Scale",
+            "shake_animation_array": "Shake Animation Array"            
         },
         "free_camera": {
             "position": "Position",

@@ -4,75 +4,87 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <Windows.h>
+#include <chrono>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
-namespace {
-/*
- * ConfigureTVCamera (Ghidra: FUN_14099bd60)
- * Signature provided by user for the TV camera configuration function.
- */
-const char* CONFIGURE_TV_CAMERA_SIG = "48 8B C4 48 89 58 08 48 89 70 10 48 89 78 18 55 48 8D 68 A1 48 81 EC D0 00 00 00 48 8B B9 E0 03 00";
-}  // namespace
+using namespace Utils;
 
 bool TVCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for TV Camera offsets (Dynamic Search)...");
+  auto start = std::chrono::high_resolution_clock::now();
+  logger->Info("--- STARTING TV CAMERA OFFSET SEARCH (Reflection) ---");
 
-  uintptr_t pfnConfigure = Utils::PatternFinder::Find(CONFIGURE_TV_CAMERA_SIG);
-  if (!pfnConfigure) {
-    logger->Error("CRITICAL: Failed to find signature for ConfigureTVCamera function.");
-    return false;
-  }
-
+  const char* CLASS_NAME_TV = "vehicle_tv_camera";
+  const char* CLASS_NAME_CORE_CAMERA = "core_camera";
   bool all_found = true;
-  const size_t SEARCH_RANGE = 4096;
 
-  /*
-   * ANCHOR #1: TV Camera Parameters Block
-   * We find the base offset (max_distance = 0x478) and calculate others as they are sequential.
-   * Expected offsets for v1.58: 478, 47C, 480, 484, 488, 48C, 490
-   * 
-   * Sequence: ADDSS XMM6, XMM0; MOVSS XMM0, [RBX + 0x478]; MULSS XMM0, XMM0
-   */
-  const char* p_tv_base = "F3 0F 58 F0 F3 0F 10 83 ?? ?? ?? ?? F3 0F 59 C0";
-  uintptr_t addr = Utils::PatternFinder::Find(pfnConfigure, SEARCH_RANGE, p_tv_base);
-  
-  if (addr) {
-    int32_t base = Utils::PatternFinder::ReadInt32(addr + 8); // 478
-
-    if (Utils::PatternFinder::IsSaneOffset(base)) {
-      // 1. Max Distance (0x478)
-      owner.SetTVMaxDistanceOffset(base);
-      
-      // 2. Prefab Uplift X, Y, Z (0x47C, 0x480, 0x484)
-      owner.SetTVPrefabUpliftXOffset(base + 4);
-      owner.SetTVPrefabUpliftYOffset(base + 8);
-      owner.SetTVPrefabUpliftZOffset(base + 12);
-
-      // 3. Road Uplift X, Y, Z (0x488, 0x48C, 0x490)
-      owner.SetTVRoadUpliftXOffset(base + 16);
-      owner.SetTVRoadUpliftYOffset(base + 20);
-      owner.SetTVRoadUpliftZOffset(base + 24);
-
-      logger->Debug("TV Anchors: MaxDist=0x{:X}, PrefabX=0x{:X}, PrefabY=0x{:X}, PrefabZ=0x{:X}, RoadX=0x{:X}, RoadY=0x{:X}, RoadZ=0x{:X}", 
-                   base, base + 4, base + 8, base + 12, base + 16, base + 20, base + 24);
-    } else {
-      logger->Error("TV Camera base offset INVALID (0x{:X})", base);
-      all_found = false;
+  // Lambda helper to safely extract, validate, and log offsets from the SCS Reflection Table
+  auto getAttr = [&](const char* className, const char* name) -> uintptr_t {
+    uintptr_t off = PatternFinder::FindAttributeOffset(className, name);
+    if (off && PatternFinder::IsSaneOffset(static_cast<int32_t>(off))) {
+      logger->Debug("1.[REFLECTION] Verified '{}'::'{}' at offset 0x{:X}", className, name, off);
+      return off;
     }
-  } else {
-    logger->Error("FAILED to find TV offsets anchor block in ConfigureTVCamera.");
+    logger->Error("1.[REFLECTION] FAILED to find or validate '{}'::'{}' (Offset: 0x{:X})", className, name, off);
     all_found = false;
+    return 0;
+  };
+
+  // --- Step 1: Find vehicle_tv_camera SII Attributes ---
+  
+  uintptr_t maxDist = getAttr(CLASS_NAME_TV, "max_distance");
+  if (maxDist) owner.SetTVMaxDistanceOffset(static_cast<intptr_t>(maxDist));
+
+  uintptr_t prefabUplift = getAttr(CLASS_NAME_TV, "prefab_uplift");
+  if (prefabUplift) {
+    owner.SetTVPrefabUpliftXOffset(static_cast<intptr_t>(prefabUplift));
+    owner.SetTVPrefabUpliftYOffset(static_cast<intptr_t>(prefabUplift + 4));
+    owner.SetTVPrefabUpliftZOffset(static_cast<intptr_t>(prefabUplift + 8));
   }
 
-  m_isReady = all_found;
-  if (all_found) {
-    logger->Info("Successfully found all 7 TV Camera offsets dynamically.");
-  } else {
-    logger->Error("Failed to find one or more TV Camera offsets.");
+  uintptr_t roadUplift = getAttr(CLASS_NAME_TV, "road_uplift");
+  if (roadUplift) {
+    owner.SetTVRoadUpliftXOffset(static_cast<intptr_t>(roadUplift));
+    owner.SetTVRoadUpliftYOffset(static_cast<intptr_t>(roadUplift + 4));
+    owner.SetTVRoadUpliftZOffset(static_cast<intptr_t>(roadUplift + 8));
   }
-  return all_found;
+
+  // --- Step 2: Find core_camera SII Attributes ---
+
+  uintptr_t camFov = getAttr(CLASS_NAME_CORE_CAMERA, "camera_fov");
+  if (camFov) owner.SetCameraFovOffset(static_cast<intptr_t>(camFov));
+
+  uintptr_t shakeAnimStep = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_step");
+  if (shakeAnimStep) owner.SetShakeAnimStepOffset(static_cast<intptr_t>(shakeAnimStep));
+
+  uintptr_t shakeAnimScaleMin = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_scale_min");
+  if (shakeAnimScaleMin) owner.SetShakeAnimScaleMinOffset(static_cast<intptr_t>(shakeAnimScaleMin));
+
+  uintptr_t shakeAnimScaleMax = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_scale_max");
+  if (shakeAnimScaleMax) owner.SetShakeAnimScaleMaxOffset(static_cast<intptr_t>(shakeAnimScaleMax));
+
+  uintptr_t shakeAnim = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim");
+  if (shakeAnim) owner.SetShakeAnimOffset(static_cast<intptr_t>(shakeAnim));
+
+  // --- Final Readiness Check ---
+  m_isReady = all_found && (owner.GetTVMaxDistanceOffset() != 0 &&
+                           owner.GetCameraFovOffset() != 0 &&
+                           owner.GetShakeAnimStepOffset() != 0 &&
+                           owner.GetShakeAnimScaleMinOffset() != 0 &&
+                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
+                           owner.GetShakeAnimOffset() != 0);
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+  if (m_isReady) {
+    logger->Info("--- TV CAMERA OFFSETS FOUND. TVCameraDataFinder is ready. ({} ms) ---", duration);
+  } else {
+    logger->Error("FAILED to initialize one or more TV Camera offsets. ({} ms)", duration);
+  }
+
+  return m_isReady;
 }
 
 }  // namespace Data::GameData::Finders

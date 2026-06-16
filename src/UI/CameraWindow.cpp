@@ -352,6 +352,11 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locRoadUpliftZTV = "camera_window.tv_camera.road_uplift_z_tv";
     m_locRoadUpliftNotFoundTV = "camera_window.tv_camera.road_uplift_not_found";
     m_locBaseFovTV = "camera_window.tv_camera.base_fov_tv";
+    m_locTVShakeSettings = "camera_window.tv_camera.shake_settings";
+    m_locTVShakeAnimStep = "camera_window.tv_camera.shake_anim_step";
+    m_locTVShakeAnimScaleMin = "camera_window.tv_camera.shake_anim_scale_min";
+    m_locTVShakeAnimScaleMax = "camera_window.tv_camera.shake_anim_scale_max";
+    m_locTVShakeAnimationArray = "camera_window.tv_camera.shake_animation_array";
     m_locTVCameraNotAvailable = "camera_window.tv_camera.not_available";
 
     m_locPositionFreeCam = "camera_window.free_camera.position";
@@ -1427,64 +1432,50 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabTVCamera).c_str(), nullptr, tvTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::TVCamera);
       if (auto* tvCam = dynamic_cast<GameCameraTV*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locDistanceTV).c_str());
-        float max_distance;
-        if (tvCam->GetMaxDistance(&max_distance)) {
-          if (ImGui::SliderFloat(loc.Get(m_locMaxDistanceTV).c_str(), &max_distance, 0.0f, 100.0f, "%.1f")) {
-            tvCam->SetMaxDistance(max_distance);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locDistanceNotFoundTV).c_str());
+        auto& defaults = tvCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovTV), [&](float* fov){ return tvCam->GetFov(fov); }, [&](float fov){ tvCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return tvCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locDistanceTV));
+        drawFloat(loc.Get(m_locMaxDistanceTV), [&](float* v){ return tvCam->GetMaxDistance(v); }, [&](float v){ tvCam->SetMaxDistance(v); }, 0.0f, 500.0f, "%.1f", defaults.max_distance);
+
+        drawHeader(loc.Get(m_locPrefabUpliftTV));
+        drawVector3(loc.Get(m_locPrefabUpliftTV), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return tvCam->GetPrefabUplift(x, y, z); },
+                   [&](float x, float y, float z){ tvCam->SetPrefabUplift(x, y, z); }, -20.0f, 20.0f, ImVec4(defaults.prefab_uplift_x, defaults.prefab_uplift_y, defaults.prefab_uplift_z, 0));
+
+        drawHeader(loc.Get(m_locRoadUpliftTV));
+        drawVector3(loc.Get(m_locRoadUpliftTV), "X", "Y", "Z",
+                   [&](float* x, float* y, float* z){ return tvCam->GetRoadUplift(x, y, z); },
+                   [&](float x, float y, float z){ tvCam->SetRoadUplift(x, y, z); }, -20.0f, 20.0f, ImVec4(defaults.road_uplift_x, defaults.road_uplift_y, defaults.road_uplift_z, 0));
+
+        drawHeader(loc.Get(m_locTVShakeSettings));
+        drawFloat(loc.Get(m_locTVShakeAnimStep), [&](float* v){ return tvCam->GetShakeAnimStep(v); }, [&](float v){ tvCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locTVShakeAnimScaleMin).c_str(), loc.Get(m_locTVShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = tvCam->GetShakeAnimScaleMin(s_min); bool r2 = tvCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ tvCam->SetShakeAnimScaleMin(s_min); tvCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locTVShakeAnimationArray));
+        size_t shake_count = tvCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_tv = 0;
+            if (selected_shake_index_tv >= (int)shake_count) selected_shake_index_tv = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_tv);
+            drawCenteredCombo("##ShakeComboTV", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_tv == (int)i)) selected_shake_index_tv = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ tvCam->GetShakeAnim(selected_shake_index_tv, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ tvCam->SetShakeAnim(selected_shake_index_tv, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locPrefabUpliftTV).c_str());
-        float prefab_uplift_x, prefab_uplift_y, prefab_uplift_z;
-        if (tvCam->GetPrefabUplift(&prefab_uplift_x, &prefab_uplift_y, &prefab_uplift_z)) {
-          bool prefabChanged = false;
-          prefabChanged |= ImGui::SliderFloat(loc.Get(m_locPrefabUpliftXTV).c_str(), &prefab_uplift_x, -10.0f, 10.0f, "%.2f");
-          prefabChanged |= ImGui::SliderFloat(loc.Get(m_locPrefabUpliftYTV).c_str(), &prefab_uplift_y, -10.0f, 10.0f, "%.2f");
-          prefabChanged |= ImGui::SliderFloat(loc.Get(m_locPrefabUpliftZTV).c_str(), &prefab_uplift_z, -10.0f, 10.0f, "%.2f");
-          if (prefabChanged) {
-            tvCam->SetPrefabUplift(prefab_uplift_x, prefab_uplift_y, prefab_uplift_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locPrefabUpliftNotFoundTV).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locRoadUpliftTV).c_str());
-        float road_uplift_x, road_uplift_y, road_uplift_z;
-        if (tvCam->GetRoadUplift(&road_uplift_x, &road_uplift_y, &road_uplift_z)) {
-          bool roadChanged = false;
-          roadChanged |= ImGui::SliderFloat(loc.Get(m_locRoadUpliftXTV).c_str(), &road_uplift_x, -10.0f, 10.0f, "%.2f");
-          roadChanged |= ImGui::SliderFloat(loc.Get(m_locRoadUpliftYTV).c_str(), &road_uplift_y, -10.0f, 10.0f, "%.2f");
-          roadChanged |= ImGui::SliderFloat(loc.Get(m_locRoadUpliftZTV).c_str(), &road_uplift_z, -10.0f, 10.0f, "%.2f");
-          if (roadChanged) {
-            tvCam->SetRoadUplift(road_uplift_x, road_uplift_y, road_uplift_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locRoadUpliftNotFoundTV).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (tvCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovTV).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            tvCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (tvCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           tvCam->ResetToDefaults();

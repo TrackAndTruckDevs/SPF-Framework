@@ -327,6 +327,17 @@ class CameraApi {
   static size_t T_Camera_GetWheelShakeAnimCount();
   static bool T_Camera_GetWheelShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetWheelShakeAnim(size_t index, float x, float y, float z);
+
+  // --- New TV Advanced Settings Trampolines ---
+  static bool T_Camera_GetTVShakeAnimStep(float* out_val);
+  static void T_Camera_SetTVShakeAnimStep(float val);
+  static bool T_Camera_GetTVShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetTVShakeAnimScaleMin(float val);
+  static bool T_Camera_GetTVShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetTVShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetTVShakeAnimCount();
+  static bool T_Camera_GetTVShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetTVShakeAnim(size_t index, float x, float y, float z);
   };
   }  // namespace Modules::API
   SPF_NS_END

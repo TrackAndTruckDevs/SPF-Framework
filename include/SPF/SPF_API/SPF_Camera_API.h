@@ -1623,6 +1623,26 @@ typedef bool (*SPF_Camera_GetWheelShakeAnim_t)(size_t index, float* out_x, float
 typedef void (*SPF_Camera_SetWheelShakeAnim_t)(size_t index, float x, float y, float z);
 
 
+// --- New TV Camera Shake Settings ---
+
+/** @brief Gets/Sets the shake animation step for the TV camera. */
+typedef bool (*SPF_Camera_GetTVShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetTVShakeAnimStep_t)(float val);
+
+/** @brief Gets/Sets the shake animation scale (min/max) for the TV camera. */
+typedef bool (*SPF_Camera_GetTVShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetTVShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetTVShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetTVShakeAnimScaleMax_t)(float val);
+
+/** @brief Gets the number of points in the TV camera shake animation. */
+typedef size_t (*SPF_Camera_GetTVShakeAnimCount_t)();
+
+/** @brief Gets/Sets specific points in the TV camera shake animation. */
+typedef bool (*SPF_Camera_GetTVShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetTVShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -2252,6 +2272,23 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the wheel camera shake animation. */
     SPF_Camera_GetWheelShakeAnim_t Cam_GetWheelShakeAnim;
     SPF_Camera_SetWheelShakeAnim_t Cam_SetWheelShakeAnim;
+
+    // --- New TV Camera Shake Settings ---
+    /** @brief Gets/Sets the TV camera shake animation step. */
+    SPF_Camera_GetTVShakeAnimStep_t Cam_GetTVShakeAnimStep;
+    SPF_Camera_SetTVShakeAnimStep_t Cam_SetTVShakeAnimStep;
+
+    /** @brief Gets/Sets the TV camera shake animation scale (min/max). */
+    SPF_Camera_GetTVShakeAnimScaleMin_t Cam_GetTVShakeAnimScaleMin;
+    SPF_Camera_SetTVShakeAnimScaleMin_t Cam_SetTVShakeAnimScaleMin;
+    SPF_Camera_GetTVShakeAnimScaleMax_t Cam_GetTVShakeAnimScaleMax;
+    SPF_Camera_SetTVShakeAnimScaleMax_t Cam_SetTVShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the TV camera shake animation. */
+    SPF_Camera_GetTVShakeAnimCount_t Cam_GetTVShakeAnimCount;
+    /** @brief Gets/Sets specific points in the TV camera shake animation. */
+    SPF_Camera_GetTVShakeAnim_t Cam_GetTVShakeAnim;
+    SPF_Camera_SetTVShakeAnim_t Cam_SetTVShakeAnim;
 
 } SPF_Camera_API;
 

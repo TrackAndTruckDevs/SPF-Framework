@@ -299,6 +299,11 @@ class CameraWindow : public BaseWindow {
     std::string m_locRoadUpliftZTV;
     std::string m_locRoadUpliftNotFoundTV;
     std::string m_locBaseFovTV;
+    std::string m_locTVShakeSettings;
+    std::string m_locTVShakeAnimStep;
+    std::string m_locTVShakeAnimScaleMin;
+    std::string m_locTVShakeAnimScaleMax;
+    std::string m_locTVShakeAnimationArray;
     std::string m_locTVCameraNotAvailable;
 
     // Free Camera

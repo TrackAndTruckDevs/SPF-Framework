@@ -453,6 +453,12 @@ It also supports advanced shake animation control:
 
 The TV camera API allows you to control its maximum distance (`GetTVMaxDistance`/`SetTVMaxDistance`), its uplift near prefabs (`GetTVPrefabUplift`/`SetTVPrefabUplift`) and on roads (`GetTVRoadUplift`/`SetTVRoadUplift`), and its Field of View (`GetTVFov`/`SetTVFov`).
 
+It also supports advanced shake animation control:
+*   **`Cam_GetTVShakeAnimStep`/`Cam_SetTVShakeAnimStep`**: Control the shake speed.
+*   **`Cam_GetTVShakeAnimScaleMin/Max`**: Control the shake intensity range.
+*   **`Cam_GetTVShakeAnimCount`**: Get the number of shake animation points.
+*   **`Cam_GetTVShakeAnim/Cam_SetTVShakeAnim`**: Get or set specific 3D points in the animation array.
+
 
 <br>
 
