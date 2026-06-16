@@ -83,6 +83,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t pManagerPtrAddr = Utils::PatternFinder::GetRipAddress(addrManager, 3, 7);
     if (pManagerPtrAddr) {
       owner.SetCameraManagerPtrAddr(pManagerPtrAddr);
+      logger->Info("[CameraSystem] STATIC BASE POINTER: 0x{:X}", pManagerPtrAddr);
       
       // --- Dynamic Pointer Adjustment Detection ---
       /*

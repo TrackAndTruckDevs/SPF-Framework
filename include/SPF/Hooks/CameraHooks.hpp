@@ -21,6 +21,8 @@ class CameraHooks : public IHook {
   using InitializeCameraFunc = void (*)(uintptr_t, uint32_t);
   using GetCameraObjectFunc = void* (*)(void* manager, int index);
   using UpdateCameraProjectionFunc = void (*)(void* pCameraObject, float width, float height);
+  // using ExecuteCommandFunc = void (__fastcall*)(void* processor, int* cmd_ptr); //for Photo Camera
+  // using ActivateCameraByIDFunc = void (__fastcall*)(uintptr_t cameraManager, float blendTime); //for Photo Camera
 
  public:
   static CameraHooks& GetInstance();
@@ -47,9 +49,11 @@ class CameraHooks : public IHook {
   InitializeCameraFunc GetInitializeCameraFunc() const { return m_initializeCameraFunc; }
   GetCameraObjectFunc GetGetCameraObjectFunc() const { return m_getCameraObjectFunc; }
   UpdateCameraProjectionFunc GetUpdateCameraProjectionFunc() const { return m_updateCameraProjectionFunc; }
+  // ExecuteCommandFunc GetExecuteCommandFunc() const { return m_executeCommandFunc; } //for Photo Camera
+  // ActivateCameraByIDFunc GetActivateCameraByIDFunc() const { return m_activateCameraByIDFunc; } //for Photo Camera
   uintptr_t GetDebugCameraHandleInputFunc() const { return m_debugCameraHandleInputFunc; }
 
- private:
+  private:
   CameraHooks();
   ~CameraHooks() = default;
 
@@ -64,6 +68,8 @@ class CameraHooks : public IHook {
   InitializeCameraFunc m_initializeCameraFunc = nullptr;
   GetCameraObjectFunc m_getCameraObjectFunc = nullptr;
   UpdateCameraProjectionFunc m_updateCameraProjectionFunc = nullptr;
+  // ExecuteCommandFunc m_executeCommandFunc = nullptr; //for Photo Camera
+  // ActivateCameraByIDFunc m_activateCameraByIDFunc = nullptr; //for Photo Camera
   uintptr_t m_debugCameraHandleInputFunc = 0;
 };
 }  // namespace Hooks

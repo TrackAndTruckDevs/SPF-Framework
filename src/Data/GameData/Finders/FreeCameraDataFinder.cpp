@@ -167,7 +167,8 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
           if (pGlobalObjPtr && Utils::PatternFinder::IsSaneOffset(contextOff)) {
             owner.SetFreecamGlobalObjectPtr(pGlobalObjPtr);
             owner.SetFreecamContextOffset(contextOff);
-            logger->Debug("[FreeCamera] Resolved GlobalObjPtr=0x{:X}, ContextOffset=0x{:X}", (uintptr_t)pGlobalObjPtr, contextOff);
+            logger->Info("[FreeCamera] STATIC FREECAM POINTER: 0x{:X}", (uintptr_t)pGlobalObjPtr);
+            logger->Debug("[FreeCamera] Resolved ContextOffset: 0x{:X}", contextOff);
           } else {
             logger->Error("[FreeCamera] FAILED to resolve Freecam data from UpdateGameSession.");
             all_found = false;

@@ -90,15 +90,15 @@ class CameraWindow : public BaseWindow {
     std::string m_locDefaultValuePrefix;
 
     // Photo Camera
-    std::string m_locPhotoLiveState;
-    std::string m_locPhotoLivePitch;
-    std::string m_locPhotoLiveYaw;
-    std::string m_locPhotoLiveRoll;
-    std::string m_locPhotoLiveZoom;
-    std::string m_locPhotoPosition;
-    std::string m_locPhotoBaseFov;
-    std::string m_locPhotoNotAvailable;
-    std::string m_locPhotoFovZoom;
+    // std::string m_locPhotoLiveState;
+    // std::string m_locPhotoLivePitch;
+    // std::string m_locPhotoLiveYaw;
+    // std::string m_locPhotoLiveRoll;
+    // std::string m_locPhotoLiveZoom;
+    // std::string m_locPhotoPosition;
+    // std::string m_locPhotoBaseFov;
+    // std::string m_locPhotoNotAvailable;
+    // std::string m_locPhotoFovZoom;
 
     // Interior Camera - Advanced (v1.2)
     std::string m_locNearPlane;
@@ -195,11 +195,28 @@ class CameraWindow : public BaseWindow {
     std::string m_locMovementSpeed;
     std::string m_locMovementNotFound;
     std::string m_locDynamicOffsetTop;
-    std::string m_locForwardOffset;
-    std::string m_locBackwardOffset;
+    std::string m_locForwardOffsetX;
+    std::string m_locBackwardOffsetX;
+    std::string m_locForwardOffsetZ;
+    std::string m_locBackwardOffsetZ;
     std::string m_locDynamicOffsetNotFoundTop;
     std::string m_locBaseFovTop;
     std::string m_locTopCameraNotAvailable;
+    std::string m_locTopNearPlane;
+    std::string m_locTopFarPlane;
+    std::string m_locTopValidation;
+    std::string m_locTopValidationSpeedPos;
+    std::string m_locTopValidationSpeedNeg;
+    std::string m_locTopShakeSettings;
+    std::string m_locTopShakeAnimStep;
+    std::string m_locTopShakeAnimScaleMin;
+    std::string m_locTopShakeAnimScaleMax;
+    std::string m_locTopShakeAnimationArray;
+    std::string m_locTopAdaptiveSettings;
+    std::string m_locTopHeightFactor;
+    std::string m_locTopUseAdaptive;
+    std::string m_locTopDistanceSettings;
+    std::string m_locTopCollisionSettings;
 
     // Cabin Camera
     std::string m_locBaseFovCabin;

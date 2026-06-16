@@ -258,6 +258,27 @@ class CameraApi {
   static size_t T_Camera_GetBehindShakeAnimCount();
   static bool T_Camera_GetBehindShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetBehindShakeAnim(size_t index, float x, float y, float z);
-};
-}  // namespace Modules::API
-SPF_NS_END
+
+  // --- New Top Advanced Settings Trampolines ---
+  static bool T_Camera_GetTopOffsetsZ(float* forward, float* backward);
+  static void T_Camera_SetTopOffsetsZ(float forward, float backward);
+  static bool T_Camera_GetTopAdaptiveSettings(float* out_factor, bool* out_use_adaptive);
+  static void T_Camera_SetTopAdaptiveSettings(float factor, bool use_adaptive);
+  static bool T_Camera_GetTopPlaneSettings(float* out_near, float* out_far);
+  static void T_Camera_SetTopPlaneSettings(float near_p, float far_p);
+  static bool T_Camera_GetTopValidation(bool* out_val);
+  static void T_Camera_SetTopValidation(bool val);
+  static bool T_Camera_GetTopValidationSettings(float* out_speed_pos, float* out_speed_neg);
+  static void T_Camera_SetTopValidationSettings(float speed_pos, float speed_neg);
+  static bool T_Camera_GetTopShakeAnimStep(float* out_val);
+  static void T_Camera_SetTopShakeAnimStep(float val);
+  static bool T_Camera_GetTopShakeAnimScaleMin(float* out_val);
+  static void T_Camera_SetTopShakeAnimScaleMin(float val);
+  static bool T_Camera_GetTopShakeAnimScaleMax(float* out_val);
+  static void T_Camera_SetTopShakeAnimScaleMax(float val);
+  static size_t T_Camera_GetTopShakeAnimCount();
+  static bool T_Camera_GetTopShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
+  static void T_Camera_SetTopShakeAnim(size_t index, float x, float y, float z);
+  };
+  }  // namespace Modules::API
+  SPF_NS_END

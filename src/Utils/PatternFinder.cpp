@@ -246,16 +246,56 @@ uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* 
         logger->Info("FindAttributeOffset: Harvesting class '{}'...", className);
         std::vector<uintptr_t> allClassAttrs = FindDataPointers(entryOwner);
         auto& classMap = instance.m_reflectionCache[className];
+        
+        // Get data sections once for faster validation
+        auto sections = GetModuleSections(nullptr);
+        auto isInDataSection = [&](uintptr_t addr) {
+            for (const auto& s : sections) {
+                if (s.name == ".data" || s.name == ".rdata" || s.name == "DATA") {
+                    if (addr >= s.base && addr < s.base + s.size) return true;
+                }
+            }
+            return false;
+        };
+
         for (uintptr_t pOwnerPtr : allClassAttrs) {
+            // Hard Validation:
+            // 1. Must be 8-byte aligned (pointers in reflection table always are)
+            if (pOwnerPtr % 8 != 0) continue;
+            // 2. Must be in a valid data section to avoid hitting code or stack
+            if (!isInDataSection(pOwnerPtr)) continue;
+
             uintptr_t pNamePtr = pOwnerPtr - 8;
+            
+            // 3. Safety check for the pointer address itself
+            MEMORY_BASIC_INFORMATION mbi;
+            if (VirtualQuery(reinterpret_cast<void*>(pNamePtr), &mbi, sizeof(mbi)) == 0) continue;
+            if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
+
             uintptr_t nameAddr = *reinterpret_cast<uintptr_t*>(pNamePtr);
-            if (!nameAddr || nameAddr < 0x10000) continue;
+            if (!nameAddr || nameAddr < 0x10000 || nameAddr > 0x00007FFFFFFFFFFF) continue;
+            
             try {
               const char* fName = reinterpret_cast<const char*>(nameAddr);
+              
+              // 4. Double check if nameAddr is readable
+              if (VirtualQuery(fName, &mbi, sizeof(mbi)) == 0) continue;
+              if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
+
+              // Safe check for printable string
               if (fName[0] >= 0x20 && fName[0] <= 0x7E) {
                 int32_t off = ReadInt32(pNamePtr - 24);
                 if (off == 0) off = static_cast<int32_t>(GetSizeFromTypeId(*reinterpret_cast<uint64_t*>(pNamePtr - 16)));
-                if (IsSaneOffset(off)) classMap[fName] = static_cast<uintptr_t>(off);
+                
+                if (IsSaneOffset(off)) {
+                   std::string attrName;
+                   for(int k=0; k<128; ++k) {
+                       if (fName[k] == 0) break;
+                       if (fName[k] < 0x20 || fName[k] > 0x7E) { attrName.clear(); break; }
+                       attrName += fName[k];
+                   }
+                   if (!attrName.empty()) classMap[attrName] = static_cast<uintptr_t>(off);
+                }
               }
             } catch (...) {}
         }

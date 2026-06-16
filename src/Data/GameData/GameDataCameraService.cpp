@@ -45,7 +45,7 @@ void GameDataCameraService::RegisterFinders() {
   m_dataFinders.push_back(std::make_unique<Finders::BumperCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::WheelCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::TVCameraDataFinder>());
-  m_dataFinders.push_back(std::make_unique<Finders::PhotoCameraDataFinder>());
+  // m_dataFinders.push_back(std::make_unique<Finders::PhotoCameraDataFinder>());  //for Photo Camera
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraStateDataFinder>());
   m_dataFinders.push_back(std::make_unique<Finders::DebugCameraAnimationDataFinder>());
@@ -242,6 +242,15 @@ void GameDataCameraService::Shutdown() {
   m_top_speed_offset = 0;
   m_top_x_offset_forward_offset = 0;
   m_top_x_offset_backward_offset = 0;
+  m_top_offset_forward_offset = 0;
+  m_top_offset_backward_offset = 0;
+  m_top_camera_height_factor_offset = 0;
+  m_top_use_adaptive_camera_height_offset = 0;
+  m_top_near_plane_offset = 0;
+  m_top_far_plane_offset = 0;
+  m_top_validation_offset = 0;
+  m_top_validation_speed_positive_offset = 0;
+  m_top_validation_speed_negative_offset = 0;
   m_window_head_offset_x = 0;
   m_window_head_offset_y = 0;
   m_window_head_offset_z = 0;
@@ -266,13 +275,13 @@ void GameDataCameraService::Shutdown() {
   m_tv_road_uplift_x = 0;
   m_tv_road_uplift_y = 0;
   m_tv_road_uplift_z = 0;
-  m_photo_live_pitch_offset = 0;
-  m_photo_live_yaw_offset = 0;
-  m_photo_live_roll_offset = 0;
-  m_photo_live_zoom_offset = 0;
-  m_photo_pos_x_offset = 0;
-  m_photo_pos_y_offset = 0;
-  m_photo_pos_z_offset = 0;
+  // m_photo_live_pitch_offset = 0;
+  // m_photo_live_yaw_offset = 0;
+  // m_photo_live_roll_offset = 0;
+  // m_photo_live_zoom_offset = 0;
+  // m_photo_pos_x_offset = 0;
+  // m_photo_pos_y_offset = 0;
+  // m_photo_pos_z_offset = 0;
   m_freecam_pos_x_offset = 0;
   m_freecam_pos_y_offset = 0;
   m_freecam_pos_z_offset = 0;

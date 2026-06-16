@@ -122,15 +122,15 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locTabDebug = "camera_window.tabs.debug";
 
     // Photo Camera keys
-    m_locPhotoLiveState = "camera_window.photo_camera.live_state";
-    m_locPhotoLivePitch = "camera_window.photo_camera.live_pitch";
-    m_locPhotoLiveYaw = "camera_window.photo_camera.live_yaw";
-    m_locPhotoLiveRoll = "camera_window.photo_camera.live_roll";
-    m_locPhotoLiveZoom = "camera_window.photo_camera.live_zoom";
-    m_locPhotoPosition = "camera_window.photo_camera.position";
-    m_locPhotoBaseFov = "camera_window.photo_camera.base_fov";
-    m_locPhotoNotAvailable = "camera_window.photo_camera.not_available";
-    m_locPhotoFovZoom = "camera_window.photo_camera.fov_zoom";
+    // m_locPhotoLiveState = "camera_window.photo_camera.live_state";
+    // m_locPhotoLivePitch = "camera_window.photo_camera.live_pitch";
+    // m_locPhotoLiveYaw = "camera_window.photo_camera.live_yaw";
+    // m_locPhotoLiveRoll = "camera_window.photo_camera.live_roll";
+    // m_locPhotoLiveZoom = "camera_window.photo_camera.live_zoom";
+    // m_locPhotoPosition = "camera_window.photo_camera.position";
+    // m_locPhotoBaseFov = "camera_window.photo_camera.base_fov";
+    // m_locPhotoNotAvailable = "camera_window.photo_camera.not_available";
+    // m_locPhotoFovZoom = "camera_window.photo_camera.fov_zoom";
 
     m_locFovZoom = "camera_window.interior_camera.fov_zoom";
     m_locBaseFov = "camera_window.interior_camera.base_fov";
@@ -247,12 +247,33 @@ CameraWindow::CameraWindow(const std::string& owner, const std::string& name, Ga
     m_locMovement = "camera_window.top_camera.movement";
     m_locMovementSpeed = "camera_window.top_camera.movement_speed";
     m_locMovementNotFound = "camera_window.top_camera.movement_not_found";
+
     m_locDynamicOffsetTop = "camera_window.top_camera.dynamic_offset";
-    m_locForwardOffset = "camera_window.top_camera.forward_offset";
-    m_locBackwardOffset = "camera_window.top_camera.backward_offset";
+    m_locForwardOffsetX = "camera_window.top_camera.forward_offset_x";
+    m_locBackwardOffsetX = "camera_window.top_camera.backward_offset_x";
+    m_locForwardOffsetZ = "camera_window.top_camera.forward_offset_z";
+    m_locBackwardOffsetZ = "camera_window.top_camera.backward_offset_z";
     m_locDynamicOffsetNotFoundTop = "camera_window.top_camera.dynamic_offset_not_found";
+
     m_locBaseFovTop = "camera_window.top_camera.base_fov_top";
+
     m_locTopCameraNotAvailable = "camera_window.top_camera.not_available";
+
+    m_locTopNearPlane = "camera_window.top_camera.near_plane";
+    m_locTopFarPlane = "camera_window.top_camera.far_plane";
+    m_locTopValidation = "camera_window.top_camera.validation";
+    m_locTopValidationSpeedPos = "camera_window.top_camera.validation_speed_pos";
+    m_locTopValidationSpeedNeg = "camera_window.top_camera.validation_speed_neg";
+    m_locTopShakeSettings = "camera_window.top_camera.shake_settings";
+    m_locTopShakeAnimStep = "camera_window.top_camera.shake_anim_step";
+    m_locTopShakeAnimScaleMin = "camera_window.top_camera.shake_anim_scale_min";
+    m_locTopShakeAnimScaleMax = "camera_window.top_camera.shake_anim_scale_max";
+    m_locTopShakeAnimationArray = "camera_window.top_camera.shake_animation_array";
+    m_locTopAdaptiveSettings = "camera_window.top_camera.adaptive_settings";
+    m_locTopHeightFactor = "camera_window.top_camera.height_factor";
+    m_locTopUseAdaptive = "camera_window.top_camera.use_adaptive";
+    m_locTopDistanceSettings = "camera_window.top_camera.distance_settings";
+    m_locTopCollisionSettings = "camera_window.top_camera.collision_settings";
 
     m_locBaseFovCabin = "camera_window.cabin_camera.base_fov_cabin";
     m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
@@ -733,12 +754,12 @@ void CameraWindow::RenderContent() {
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::InteriorCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locPhoto).c_str())) {
-    m_gameCameraService.SwitchTo(GameCameraType::PhotoCamera);
-    m_needsTabSwitch = true;
-    m_activeTabType = GameCameraType::PhotoCamera;
-  }
+  // ImGui::SameLine(0.0f, 5.0f); //for Photo Camera
+  // if (Button(loc.Get(m_locPhoto).c_str())) {
+  //   m_gameCameraService.SwitchTo(GameCameraType::PhotoCamera);
+  //   m_needsTabSwitch = true;
+  //   m_activeTabType = GameCameraType::PhotoCamera;
+  // }
   ImGui::SameLine(0.0f, 5.0f);
   if (Button(loc.Get(m_locBehind).c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BehindCamera);
@@ -949,39 +970,39 @@ void CameraWindow::RenderContent() {
       ImGui::EndTabItem();
     }
 
-    ImGuiTabItemFlags photoTabFlags = ImGuiTabItemFlags_None;
-    if (m_needsTabSwitch && m_activeTabType == GameCameraType::PhotoCamera) {
-      photoTabFlags = ImGuiTabItemFlags_SetSelected;
-    }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabPhotoCamera).c_str(), nullptr, photoTabFlags)) {
-      auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::PhotoCamera);
-      if (auto* photoCam = dynamic_cast<GameCameraPhoto*>(pCamera)) {
-        auto& defaults = photoCam->GetDefaults();
+    // ImGuiTabItemFlags photoTabFlags = ImGuiTabItemFlags_None;  //for Photo Camera
+    // if (m_needsTabSwitch && m_activeTabType == GameCameraType::PhotoCamera) {
+    //   photoTabFlags = ImGuiTabItemFlags_SetSelected;
+    // }
+    // if (ImGui::BeginTabItem(loc.Get(m_locTabPhotoCamera).c_str(), nullptr, photoTabFlags)) {
+    //   auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::PhotoCamera);
+    //   if (auto* photoCam = dynamic_cast<GameCameraPhoto*>(pCamera)) {
+    //     auto& defaults = photoCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locLiveState));
-        drawFloat(loc.Get(m_locLivePitch), [&](float* p){ float y, r, z; return photoCam->GetLiveState(p, &y, &r, &z); }, [&](float p){ float cp, y, r, z; photoCam->GetLiveState(&cp, &y, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_pitch);
-        drawFloat(loc.Get(m_locLiveYaw), [&](float* y){ float p, r, z; return photoCam->GetLiveState(&p, y, &r, &z); }, [&](float y){ float p, cy, r, z; photoCam->GetLiveState(&p, &cy, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw);
-        drawFloat(loc.Get(m_locRollFreeCam), [&](float* r){ float p, y, z; return photoCam->GetLiveState(&p, &y, r, &z); }, [&](float r){ float p, y, cr, z; photoCam->GetLiveState(&p, &y, &cr, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_roll);
-        drawFloat(loc.Get(m_locLiveZoom), [&](float* z){ float p, y, r; return photoCam->GetLiveState(&p, &y, &r, z); }, [&](float z){ float p, y, r, cz; photoCam->GetLiveState(&p, &y, &r, &cz); photoCam->SetLiveState(p, y, r, z); }, 0.0f, 100.0f, "%.1f", defaults.live_zoom);
+    //     drawHeader(loc.Get(m_locLiveState));
+    //     drawFloat(loc.Get(m_locLivePitch), [&](float* p){ float y, r, z; return photoCam->GetLiveState(p, &y, &r, &z); }, [&](float p){ float cp, y, r, z; photoCam->GetLiveState(&cp, &y, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_pitch);
+    //     drawFloat(loc.Get(m_locLiveYaw), [&](float* y){ float p, r, z; return photoCam->GetLiveState(&p, y, &r, &z); }, [&](float y){ float p, cy, r, z; photoCam->GetLiveState(&p, &cy, &r, &z); photoCam->SetLiveState(p, y, r, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw);
+    //     drawFloat(loc.Get(m_locRollFreeCam), [&](float* r){ float p, y, z; return photoCam->GetLiveState(&p, &y, r, &z); }, [&](float r){ float p, y, cr, z; photoCam->GetLiveState(&p, &y, &cr, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_roll);
+    //     drawFloat(loc.Get(m_locLiveZoom), [&](float* z){ float p, y, r; return photoCam->GetLiveState(&p, &y, &r, z); }, [&](float z){ float p, y, r, cz; photoCam->GetLiveState(&p, &y, &r, &cz); photoCam->SetLiveState(p, y, r, z); }, 0.0f, 100.0f, "%.1f", defaults.live_zoom);
 
-        drawHeader(loc.Get(m_locPositionFreeCam));
-        drawVector3(loc.Get(m_locPositionFreeCam), "X", "Y", "Z",
-                   [&](float* x, float* y, float* z){ return photoCam->GetPosition(x, y, z); },
-                   [&](float x, float y, float z){ photoCam->SetPosition(x, y, z); }, -50000.0f, 50000.0f, ImVec4(defaults.pos_x, defaults.pos_y, defaults.pos_z, 0));
+    //     drawHeader(loc.Get(m_locPositionFreeCam));
+    //     drawVector3(loc.Get(m_locPositionFreeCam), "X", "Y", "Z",
+    //                [&](float* x, float* y, float* z){ return photoCam->GetPosition(x, y, z); },
+    //                [&](float x, float y, float z){ photoCam->SetPosition(x, y, z); }, -50000.0f, 50000.0f, ImVec4(defaults.pos_x, defaults.pos_y, defaults.pos_z, 0));
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFov), [&](float* fov){ return photoCam->GetFov(fov); }, [&](float fov){ photoCam->SetFov(fov); }, 1.0f, 120.0f, "%.1f", defaults.camera_fov);
+    //     drawHeader(loc.Get(m_locFovZoom));
+    //     drawFloat(loc.Get(m_locBaseFov), [&](float* fov){ return photoCam->GetFov(fov); }, [&](float fov){ photoCam->SetFov(fov); }, 1.0f, 120.0f, "%.1f", defaults.camera_fov);
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
-          photoCam->ResetToDefaults();
-        }
-      } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
-      }
-      ImGui::EndTabItem();
-    }
+    //     ImGui::Spacing();
+    //     ImGui::Separator();
+    //     if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+    //       photoCam->ResetToDefaults();
+    //     }
+    //   } else {
+    //     ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
+    //   }
+    //   ImGui::EndTabItem();
+    // }
 
     ImGuiTabItemFlags behindTabFlags = ImGuiTabItemFlags_None;
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::BehindCamera) {
@@ -1078,62 +1099,65 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabTopCamera).c_str(), nullptr, topTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::TopCamera);
       if (auto* topCam = dynamic_cast<GameCameraTop*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locHeightZoom).c_str());
-        float min_h, max_h;
-        if (topCam->GetHeight(&min_h, &max_h)) {
-          bool heightChanged = false;
-          heightChanged |= ImGui::SliderFloat(loc.Get(m_locMinimumHeight).c_str(), &min_h, 1.0f, 50.0f, "%.1f");
-          heightChanged |= ImGui::SliderFloat(loc.Get(m_locMaximumHeight).c_str(), &max_h, 1.0f, 100.0f, "%.1f");
-          if (heightChanged) {
-            topCam->SetHeight(min_h, max_h);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locHeightZoomNotFound).c_str());
+        auto& defaults = topCam->GetDefaults();
+
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovTop), [&](float* fov){ return topCam->GetFov(fov); }, [&](float fov){ topCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return topCam->GetFinalFov(h_fov, v_fov); });
+
+        drawHeader(loc.Get(m_locHeightZoom));
+        drawFloat(loc.Get(m_locMinimumHeight), [&](float* v){ float mx; return topCam->GetHeight(v, &mx); }, [&](float v){ float mi, mx; topCam->GetHeight(&mi, &mx); topCam->SetHeight(v, mx); }, 1.0f, 50.0f, "%.1f", defaults.minimum_height);
+        drawFloat(loc.Get(m_locMaximumHeight), [&](float* v){ float mi; return topCam->GetHeight(&mi, v); }, [&](float v){ float mi, mx; topCam->GetHeight(&mi, &mx); topCam->SetHeight(mi, v); }, 1.0f, 100.0f, "%.1f", defaults.maximum_height);
+
+        drawHeader(loc.Get(m_locMovement));
+        drawFloat(loc.Get(m_locMovementSpeed), [&](float* speed){ return topCam->GetSpeed(speed); }, [&](float speed){ topCam->SetSpeed(speed); }, 0.1f, 10.0f, "%.2f", defaults.speed);
+
+        drawHeader(loc.Get(m_locDynamicOffsetTop));
+        drawFloat(loc.Get(m_locForwardOffsetX), [&](float* v){ float b; return topCam->GetOffsets(v, &b); }, [&](float v){ float f, b; topCam->GetOffsets(&f, &b); topCam->SetOffsets(v, b); }, -20.0f, 20.0f, "%.2f", defaults.x_offset_forward);
+        drawFloat(loc.Get(m_locBackwardOffsetX), [&](float* v){ float f; return topCam->GetOffsets(&f, v); }, [&](float v){ float f, b; topCam->GetOffsets(&f, &b); topCam->SetOffsets(f, v); }, -20.0f, 20.0f, "%.2f", defaults.x_offset_backward);
+
+        drawHeader(loc.Get(m_locTopDistanceSettings));
+        drawFloat(loc.Get(m_locForwardOffsetZ), [&](float* v){ float b; return topCam->GetOffsetsZ(v, &b); }, [&](float v){ float f, b; topCam->GetOffsetsZ(&f, &b); topCam->SetOffsetsZ(v, b); }, -20.0f, 20.0f, "%.2f", defaults.offset_forward);
+        drawFloat(loc.Get(m_locBackwardOffsetZ), [&](float* v){ float f; return topCam->GetOffsetsZ(&f, v); }, [&](float v){ float f, b; topCam->GetOffsetsZ(&f, &b); topCam->SetOffsetsZ(f, v); }, -20.0f, 20.0f, "%.2f", defaults.offset_backward);
+
+        drawHeader(loc.Get(m_locTopAdaptiveSettings));
+        drawBool(loc.Get(m_locTopUseAdaptive), [&](bool* v){ float f; return topCam->GetAdaptiveSettings(&f, v); }, [&](bool v){ float f; bool u; topCam->GetAdaptiveSettings(&f, &u); topCam->SetAdaptiveSettings(f, v); });
+        drawFloat(loc.Get(m_locTopHeightFactor), [&](float* v){ bool u; return topCam->GetAdaptiveSettings(v, &u); }, [&](float v){ float f; bool u; topCam->GetAdaptiveSettings(&f, &u); topCam->SetAdaptiveSettings(v, u); }, 0.0f, 5.0f, "%.2f", defaults.camera_height_factor);
+
+        drawHeader(loc.Get(m_locAdvancedCoreSettings));
+        drawFloat(loc.Get(m_locTopNearPlane), [&](float* v){ float f; return topCam->GetPlaneSettings(v, &f); }, [&](float v){ float n, f; topCam->GetPlaneSettings(&n, &f); topCam->SetPlaneSettings(v, f); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
+        drawFloat(loc.Get(m_locTopFarPlane), [&](float* v){ float n; return topCam->GetPlaneSettings(&n, v); }, [&](float v){ float n, f; topCam->GetPlaneSettings(&n, &f); topCam->SetPlaneSettings(n, v); }, 10.0f, 1000.0f, "%.1f", defaults.far_plane);
+
+        drawHeader(loc.Get(m_locTopCollisionSettings));
+        drawBool(loc.Get(m_locTopValidation), [&](bool* v){ return topCam->GetValidation(v); }, [&](bool v){ topCam->SetValidation(v); });
+        drawFloat(loc.Get(m_locTopValidationSpeedPos), [&](float* v){ float s2; return topCam->GetValidationSettings(v, &s2); }, [&](float v){ float s1, s2; topCam->GetValidationSettings(&s1, &s2); topCam->SetValidationSettings(v, s2); }, 0.0f, 10.0f, "%.3f", defaults.validation_speed_positive);
+        drawFloat(loc.Get(m_locTopValidationSpeedNeg), [&](float* v){ float s1; return topCam->GetValidationSettings(&s1, v); }, [&](float v){ float s1, s2; topCam->GetValidationSettings(&s1, &s2); topCam->SetValidationSettings(s1, v); }, 0.0f, 10.0f, "%.3f", defaults.validation_speed_negative);
+
+        drawHeader(loc.Get(m_locTopShakeSettings));
+        drawFloat(loc.Get(m_locTopShakeAnimStep), [&](float* v){ return topCam->GetShakeAnimStep(v); }, [&](float v){ topCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawVector2("Shake Scale Range", loc.Get(m_locTopShakeAnimScaleMin).c_str(), loc.Get(m_locTopShakeAnimScaleMax).c_str(),
+                   [&](float* s_min, float* s_max){ bool r1 = topCam->GetShakeAnimScaleMin(s_min); bool r2 = topCam->GetShakeAnimScaleMax(s_max); return r1 && r2; },
+                   [&](float s_min, float s_max){ topCam->SetShakeAnimScaleMin(s_min); topCam->SetShakeAnimScaleMax(s_max); }, 0.0f, 0.1f, false, ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max), "%.4f");
+
+        drawHeader(loc.Get(m_locTopShakeAnimationArray));
+        size_t shake_count = topCam->GetShakeAnimCount();
+        if (shake_count > 0) {
+            static int selected_shake_index_top = 0;
+            if (selected_shake_index_top >= (int)shake_count) selected_shake_index_top = 0;
+
+            std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_top);
+            drawCenteredCombo("##ShakeComboTop", shake_label, [&](){
+                for (size_t i = 0; i < shake_count; ++i) {
+                    if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_top == (int)i)) selected_shake_index_top = (int)i;
+                }
+            });
+
+            drawVector3(loc.Get(m_locSelectFrame), loc.Get(m_locPointX).c_str(), loc.Get(m_locPointY).c_str(), loc.Get(m_locPointZ).c_str(),
+                       [&](float* x, float* y, float* z){ topCam->GetShakeAnim(selected_shake_index_top, *x, *y, *z); return true; },
+                       [&](float x, float y, float z){ topCam->SetShakeAnim(selected_shake_index_top, x, y, z); }, -5.0f, 5.0f, std::nullopt, "%.5f");
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locMovement).c_str());
-        float speed;
-        if (topCam->GetSpeed(&speed)) {
-          if (ImGui::SliderFloat(loc.Get(m_locMovementSpeed).c_str(), &speed, 0.1f, 10.0f, "%.2f")) {
-            topCam->SetSpeed(speed);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locMovementNotFound).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locDynamicOffsetTop).c_str());
-        float offset_f, offset_b;
-        if (topCam->GetOffsets(&offset_f, &offset_b)) {
-          bool offsetChanged = false;
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locForwardOffset).c_str(), &offset_f, -20.0f, 20.0f, "%.2f");
-          offsetChanged |= ImGui::SliderFloat(loc.Get(m_locBackwardOffset).c_str(), &offset_b, -20.0f, 20.0f, "%.2f");
-          if (offsetChanged) {
-            topCam->SetOffsets(offset_f, offset_b);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locDynamicOffsetNotFoundTop).c_str());
-        }
-
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (topCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovTop).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            topCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (topCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
-
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           topCam->ResetToDefaults();

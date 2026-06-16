@@ -12,7 +12,9 @@ CameraHooks::CameraHooks() : m_signature("48 89 5c ? ? 48 89 ? ? ? ? 48 81 ec 90
 namespace {
 const char* GET_CAMERA_OBJECT_SIG = "48 83 ? ? 4C ? ? 4C 3B ? ? ? ? ? ? 48";
 const char* UPDATE_CAMERA_PROJECTION_SIG = "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 70 0F B6 41 2C 48 8D 51 3C F3";
+//const char* EXECUTE_COMMAND_SIG = "48 89 5c ? ? 48 89 ? ? ? ? 48 83 ? ? 48 69 ? ? ? ? ? ? ? ? ? 48 8b ? ? ? ? ? 48 8b f2"; //for Photo Camera 
 const char* DEBUG_CAMERA_HANDLE_INPUT_SIG = "55 56 48 8D ? ? ? FF FF 48 81 EC ? ? ? ? 80 B9";
+//const char* ACTIVATE_CAMERA_BY_ID_SIG = "40 53 48 83 ec 50 83 79 ? ? 48 8b d9 0f ? ? ? ? 0f 28 f1";  //for Photo Camera
 }  // namespace
 
 CameraHooks& CameraHooks::GetInstance() {
@@ -94,6 +96,30 @@ bool CameraHooks::Install() {
     logger->Warn("'DebugCamera_HandleInput' function not found. Some free camera features (like mouse look) may be unavailable.");
     // This is not critical enough to fail the entire installation.
   }
+//  //for Photo Camera
+//   // --- 5. Find ExecuteCommand ---
+//   uintptr_t execCmdAddr = Utils::PatternFinder::Find(EXECUTE_COMMAND_SIG);
+//   if (execCmdAddr) {
+//     m_executeCommandFunc = reinterpret_cast<ExecuteCommandFunc>(execCmdAddr);
+//     logger->Info("Found 'ExecuteCommand' function at address: {:#x}", execCmdAddr);
+//   } else {
+//     logger->Critical("'ExecuteCommand' function not found! UI commands will be unavailable.");
+//     Uninstall();
+//     return false;
+//   }
+//  //for Photo Camera
+//   // --- 6. Find ActivateCameraByID ---
+//   uintptr_t activateByIDAddr = Utils::PatternFinder::Find(ACTIVATE_CAMERA_BY_ID_SIG);
+//   if (activateByIDAddr) {
+//     m_activateCameraByIDFunc = reinterpret_cast<ActivateCameraByIDFunc>(activateByIDAddr);
+//     logger->Info("Found 'ActivateCameraByID' function at address: {:#x}", activateByIDAddr);
+//   } else {
+//     logger->Warn("'ActivateCameraByID' function not found. Cleanup logic for Photo Mode will be unavailable.");
+//   }
+
+//   logger->Info("Core camera functions installed successfully.");
+//   return true;
+
 
   logger->Info("Core camera functions installed successfully.");
   return true;
@@ -106,6 +132,8 @@ void CameraHooks::Uninstall() {
     m_initializeCameraFunc = nullptr;
     m_getCameraObjectFunc = nullptr;
     m_updateCameraProjectionFunc = nullptr;
+    // m_executeCommandFunc = nullptr; //for Photo Camera
+    // m_activateCameraByIDFunc = nullptr; //for Photo Camera
     m_debugCameraHandleInputFunc = 0;
   }
 }

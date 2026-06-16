@@ -183,6 +183,15 @@ class GameDataCameraService {
   intptr_t GetTopSpeedOffset() const { return m_top_speed_offset; }
   intptr_t GetTopXOffsetForwardOffset() const { return m_top_x_offset_forward_offset; }
   intptr_t GetTopXOffsetBackwardOffset() const { return m_top_x_offset_backward_offset; }
+  intptr_t GetTopOffsetForwardOffset() const { return m_top_offset_forward_offset; }
+  intptr_t GetTopOffsetBackwardOffset() const { return m_top_offset_backward_offset; }
+  intptr_t GetTopCameraHeightFactorOffset() const { return m_top_camera_height_factor_offset; }
+  intptr_t GetTopUseAdaptiveCameraHeightOffset() const { return m_top_use_adaptive_camera_height_offset; }
+  intptr_t GetTopNearPlaneOffset() const { return m_top_near_plane_offset; }
+  intptr_t GetTopFarPlaneOffset() const { return m_top_far_plane_offset; }
+  intptr_t GetTopValidationOffset() const { return m_top_validation_offset; }
+  intptr_t GetTopValidationSpeedPositiveOffset() const { return m_top_validation_speed_positive_offset; }
+  intptr_t GetTopValidationSpeedNegativeOffset() const { return m_top_validation_speed_negative_offset; }
   intptr_t GetWindowHeadOffsetXOffset() const { return m_window_head_offset_x; }
   intptr_t GetWindowHeadOffsetYOffset() const { return m_window_head_offset_y; }
   intptr_t GetWindowHeadOffsetZOffset() const { return m_window_head_offset_z; }
@@ -351,6 +360,15 @@ class GameDataCameraService {
   void SetTopSpeedOffset(intptr_t val) { m_top_speed_offset = val; }
   void SetTopXOffsetForwardOffset(intptr_t val) { m_top_x_offset_forward_offset = val; }
   void SetTopXOffsetBackwardOffset(intptr_t val) { m_top_x_offset_backward_offset = val; }
+  void SetTopOffsetForwardOffset(intptr_t val) { m_top_offset_forward_offset = val; }
+  void SetTopOffsetBackwardOffset(intptr_t val) { m_top_offset_backward_offset = val; }
+  void SetTopCameraHeightFactorOffset(intptr_t val) { m_top_camera_height_factor_offset = val; }
+  void SetTopUseAdaptiveCameraHeightOffset(intptr_t val) { m_top_use_adaptive_camera_height_offset = val; }
+  void SetTopNearPlaneOffset(intptr_t val) { m_top_near_plane_offset = val; }
+  void SetTopFarPlaneOffset(intptr_t val) { m_top_far_plane_offset = val; }
+  void SetTopValidationOffset(intptr_t val) { m_top_validation_offset = val; }
+  void SetTopValidationSpeedPositiveOffset(intptr_t val) { m_top_validation_speed_positive_offset = val; }
+  void SetTopValidationSpeedNegativeOffset(intptr_t val) { m_top_validation_speed_negative_offset = val; }
   void SetWindowHeadOffsetXOffset(intptr_t val) { m_window_head_offset_x = val; }
   void SetWindowHeadOffsetYOffset(intptr_t val) { m_window_head_offset_y = val; }
   void SetWindowHeadOffsetZOffset(intptr_t val) { m_window_head_offset_z = val; }
@@ -566,6 +584,15 @@ class GameDataCameraService {
   intptr_t m_top_speed_offset = 0;
   intptr_t m_top_x_offset_forward_offset = 0;
   intptr_t m_top_x_offset_backward_offset = 0;
+  intptr_t m_top_offset_forward_offset = 0;
+  intptr_t m_top_offset_backward_offset = 0;
+  intptr_t m_top_camera_height_factor_offset = 0;
+  intptr_t m_top_use_adaptive_camera_height_offset = 0;
+  intptr_t m_top_near_plane_offset = 0;
+  intptr_t m_top_far_plane_offset = 0;
+  intptr_t m_top_validation_offset = 0;
+  intptr_t m_top_validation_speed_positive_offset = 0;
+  intptr_t m_top_validation_speed_negative_offset = 0;
   intptr_t m_window_head_offset_x = 0;
   intptr_t m_window_head_offset_y = 0;
   intptr_t m_window_head_offset_z = 0;

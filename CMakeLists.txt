@@ -21,6 +21,7 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
     # 2. Force /MT in global compiler flags for older dependencies or manual logic
+    # Also replace /EHs or /EHsc with /EHa to catch SEH exceptions without D9025 warnings
     set(variables 
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS_MINSIZEREL
         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_MINSIZEREL
@@ -29,9 +30,14 @@ if(MSVC)
         if(${variable} MATCHES "/MD")
             string(REPLACE "/MD" "/MT" ${variable} "${${variable}}")
         endif()
+        if(${variable} MATCHES "/EHsc")
+            string(REPLACE "/EHsc" "/EHa" ${variable} "${${variable}}")
+        elseif(${variable} MATCHES "/EHs")
+            string(REPLACE "/EHs" "/EHa" ${variable} "${${variable}}")
+        endif()
     endforeach()
     
-    # Add /utf-8 flag to avoid encoding issues
+    # Add /utf-8 flag to avoid encoding issues.
     add_compile_options(/utf-8)
 endif()
 # --- End of Global MSVC Runtime Configuration ---

@@ -1492,6 +1492,153 @@ bool CameraApi::T_Camera_GetFreeFinalFov(float* out_horiz, float* out_vert) {
   return false;
 }
 
+// --- Top Camera Advanced Settings Trampolines ---
+
+bool CameraApi::T_Camera_GetTopOffsetsZ(float* forward, float* backward) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetOffsetsZ(forward, backward);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopOffsetsZ(float forward, float backward) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetOffsetsZ(forward, backward);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopAdaptiveSettings(float* out_factor, bool* out_use_adaptive) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetAdaptiveSettings(out_factor, out_use_adaptive);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopAdaptiveSettings(float factor, bool use_adaptive) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetAdaptiveSettings(factor, use_adaptive);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopPlaneSettings(float* out_near, float* out_far) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetPlaneSettings(out_near, out_far);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopPlaneSettings(float near_p, float far_p) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetPlaneSettings(near_p, far_p);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopValidation(bool* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetValidation(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopValidation(bool val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetValidation(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopValidationSettings(float* out_speed_pos, float* out_speed_neg) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetValidationSettings(out_speed_pos, out_speed_neg);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopValidationSettings(float speed_pos, float speed_neg) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetValidationSettings(speed_pos, speed_neg);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopShakeAnimStep(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetShakeAnimStep(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopShakeAnimStep(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetShakeAnimStep(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopShakeAnimScaleMin(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetShakeAnimScaleMin(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopShakeAnimScaleMin(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetShakeAnimScaleMin(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetTopShakeAnimScaleMax(float* out_val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetShakeAnimScaleMax(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopShakeAnimScaleMax(float val) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetShakeAnimScaleMax(val);
+  }
+}
+
+size_t CameraApi::T_Camera_GetTopShakeAnimCount() {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    return cam->GetShakeAnimCount();
+  }
+  return 0;
+}
+
+bool CameraApi::T_Camera_GetTopShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    if (out_x && out_y && out_z) {
+      cam->GetShakeAnim(index, *out_x, *out_y, *out_z);
+      return true;
+    }
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetTopShakeAnim(size_t index, float x, float y, float z) {
+  auto* pCamera = GameCamera::GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::TopCamera);
+  if (auto* cam = dynamic_cast<GameCamera::GameCameraTop*>(pCamera)) {
+    cam->SetShakeAnim(index, x, y, z);
+  }
+}  
 // --- API Filling Function ---
 void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   if (!camera_api) return;
@@ -1743,7 +1890,27 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_GetBehindShakeAnimCount = &T_Camera_GetBehindShakeAnimCount;
   camera_api->Cam_GetBehindShakeAnim = &T_Camera_GetBehindShakeAnim;
   camera_api->Cam_SetBehindShakeAnim = &T_Camera_SetBehindShakeAnim;
-}
 
+  // --- New Top Camera Advanced Settings ---
+  camera_api->Cam_GetTopOffsetsZ = &T_Camera_GetTopOffsetsZ;
+  camera_api->Cam_SetTopOffsetsZ = &T_Camera_SetTopOffsetsZ;
+  camera_api->Cam_GetTopAdaptiveSettings = &T_Camera_GetTopAdaptiveSettings;
+  camera_api->Cam_SetTopAdaptiveSettings = &T_Camera_SetTopAdaptiveSettings;
+  camera_api->Cam_GetTopPlaneSettings = &T_Camera_GetTopPlaneSettings;
+  camera_api->Cam_SetTopPlaneSettings = &T_Camera_SetTopPlaneSettings;
+  camera_api->Cam_GetTopValidation = &T_Camera_GetTopValidation;
+  camera_api->Cam_SetTopValidation = &T_Camera_SetTopValidation;
+  camera_api->Cam_GetTopValidationSettings = &T_Camera_GetTopValidationSettings;
+  camera_api->Cam_SetTopValidationSettings = &T_Camera_SetTopValidationSettings;
+  camera_api->Cam_GetTopShakeAnimStep = &T_Camera_GetTopShakeAnimStep;
+  camera_api->Cam_SetTopShakeAnimStep = &T_Camera_SetTopShakeAnimStep;
+  camera_api->Cam_GetTopShakeAnimScaleMin = &T_Camera_GetTopShakeAnimScaleMin;
+  camera_api->Cam_SetTopShakeAnimScaleMin = &T_Camera_SetTopShakeAnimScaleMin;
+  camera_api->Cam_GetTopShakeAnimScaleMax = &T_Camera_GetTopShakeAnimScaleMax;
+  camera_api->Cam_SetTopShakeAnimScaleMax = &T_Camera_SetTopShakeAnimScaleMax;
+  camera_api->Cam_GetTopShakeAnimCount = &T_Camera_GetTopShakeAnimCount;
+  camera_api->Cam_GetTopShakeAnim = &T_Camera_GetTopShakeAnim;
+  camera_api->Cam_SetTopShakeAnim = &T_Camera_SetTopShakeAnim;
+}
 }  // namespace Modules::API
 SPF_NS_END

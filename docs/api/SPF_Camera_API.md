@@ -358,6 +358,43 @@ Gets or sets the maximum forward and backward offset limits for the camera.
 **`Cam_GetTopFov(float* fov)` / `Cam_SetTopFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the top-down camera.
 
+---
+**`Cam_GetTopOffsetsZ(float* forward, float* backward)` / `Cam_SetTopOffsetsZ(float forward, float backward)`**
+Gets or sets the longitudinal (Z-axis) offsets for the top-down camera.
+
+---
+**`Cam_GetTopAdaptiveSettings(float* out_factor, bool* out_use_adaptive)` / `Cam_SetTopAdaptiveSettings(float factor, bool use_adaptive)`**
+Gets or sets adaptive height settings for the top camera.
+
+---
+**`Cam_GetTopPlaneSettings(float* out_near, float* out_far)` / `Cam_SetTopPlaneSettings(float near_p, float far_p)`**
+Gets or sets near and far clipping planes for the top camera.
+
+---
+**`Cam_GetTopValidation(bool* out_val)` / `Cam_SetTopValidation(bool val)`**
+Gets or sets validation (collision) state for the top camera.
+
+---
+**`Cam_GetTopValidationSettings(float* out_speed_pos, float* out_speed_neg)` / `Cam_SetTopValidationSettings(float speed_pos, float speed_neg)`**
+Gets or sets validation settings (speed positive/negative) for the top camera.
+
+---
+**`Cam_GetTopShakeAnimStep(float* out_val)` / `Cam_SetTopShakeAnimStep(float val)`**
+Gets or sets the shake animation step for the top camera.
+
+---
+**`Cam_GetTopShakeAnimScaleMin(float* out_val)` / `Cam_SetTopShakeAnimScaleMin(float val)`**
+**`Cam_GetTopShakeAnimScaleMax(float* out_val)` / `Cam_SetTopShakeAnimScaleMax(float val)`**
+Gets or sets the minimum and maximum intensity scale for the top camera shake animation.
+
+---
+**`Cam_GetTopShakeAnimCount()`**
+Gets the number of points in the top camera shake animation array.
+
+---
+**`Cam_GetTopShakeAnim(size_t index, float* out_x, float* out_y, float* out_z)` / `Cam_SetTopShakeAnim(size_t index, float x, float y, float z)`**
+Gets or sets specific points in the top camera shake animation.
+
 <br>
 
 ### Other Vehicle-Mounted Cameras

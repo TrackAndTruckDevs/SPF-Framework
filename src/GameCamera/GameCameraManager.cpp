@@ -123,6 +123,87 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
 
   uint32_t cameraID = static_cast<uint32_t>(cameraType);
 
+
+
+  /**
+ * TODO: Implement Photo Camera functionality.
+ *
+ * CURRENT STATUS:
+ * - Activation: SUCCESSFUL. Setting HUD state to 12 enables the mode.
+ *   Example: *reinterpret_cast<int*>(pHudManager + 0x10) = 12;
+ * - Deactivation: NOT WORKING via this pointer.
+ * - Observations: Setting this value to 1 or other IDs triggers menus/different UI states.
+ *
+ * NEXT STEPS:
+ * - Need to find and hook the function that handles the 'Escape' key (UI exit logic)
+ *   to properly restore the game state and UI.
+ */
+  // // --- Photo Camera Cleanup Logic ---
+  // // If we are switching AWAY from Photo Mode, we must ensure its slot (13) is cleared.
+  // if (GetCurrentCameraType() == GameCameraType::PhotoCamera && cameraType != GameCameraType::PhotoCamera) {
+  //     auto& hooks = Hooks::CameraHooks::GetInstance();
+  //     auto activateByIDFunc = hooks.GetActivateCameraByIDFunc();
+      
+  //     if (activateByIDFunc && cameraManagerAddr) {
+  //         logger->Info("[CameraSystem] Exiting Photo Mode. Triggering cleanup for slot 13.");
+          
+  //         // Force the system to acknowledge slot 13 as current to trigger занулення in FUN_1404f0450
+  //         *reinterpret_cast<int32_t*>(cameraManagerAddr + 0x18) = 13;
+          
+  //         // Set target ID and call activation
+  //         *reinterpret_cast<int32_t*>(cameraManagerAddr + 0x14) = cameraID;
+  //         activateByIDFunc(cameraManagerAddr, 0.0f);
+          
+  //         // Return HUD to driving state (0)
+  //         uintptr_t base_obj = gameData.GetFreecamGlobalObject();
+  //         uintptr_t context_offset = gameData.GetFreecamContextOffset();
+  //         if (base_obj && context_offset) {
+  //             uintptr_t pController = *reinterpret_cast<uintptr_t*>(base_obj + context_offset);
+  //             if (pController) {
+  //                 uintptr_t pHudManager = *reinterpret_cast<uintptr_t*>(pController + 0x30);
+  //                 if (pHudManager) *reinterpret_cast<int*>(pHudManager + 0x10) = 0;
+  //             }
+  //         }
+  //         return; 
+  //     }
+  // }
+
+  // if (cameraType == GameCameraType::PhotoCamera) {
+  //   // --- Special case: Photo Camera Clean Entry ---
+  //   // Simply switching to ID 12/13 isn't enough to initialize the UI.
+  //   // We must manually set the HUD state and trigger the ENTER command.
+  //   auto& hooks = Hooks::CameraHooks::GetInstance();
+  //   auto execCmdFunc = hooks.GetExecuteCommandFunc();
+    
+  //   if (execCmdFunc) {
+  //     uintptr_t base_obj = gameData.GetFreecamGlobalObject();
+  //     uintptr_t context_offset = gameData.GetFreecamContextOffset();
+      
+  //     if (base_obj && context_offset) {
+  //       uintptr_t pController = *reinterpret_cast<uintptr_t*>(base_obj + context_offset);
+  //       if (pController && !IsBadReadPtr((void*)pController, 8)) {
+  //         uintptr_t pHudManager = *reinterpret_cast<uintptr_t*>(pController + 0x30);
+  //         if (pHudManager && !IsBadReadPtr((void*)pHudManager, 8)) {
+  //           // 1. Force state 12 (Photo Camera initialization state)
+  //           *reinterpret_cast<int*>(pHudManager + 0x10) = 12;
+
+  //           // 2. Send ENTER command (9) to trigger the ProcessModeLogic
+  //           void* pCommandProcessor = *reinterpret_cast<void**>(pHudManager + 0x50);
+  //           if (pCommandProcessor && !IsBadReadPtr(pCommandProcessor, 8)) {
+  //             int cmd = 9; 
+  //             logger->Debug("[CameraSystem] Initializing Photo Entry (9). Processor: {:#x}", (uintptr_t)pCommandProcessor);
+  //             execCmdFunc(pCommandProcessor, &cmd);
+              
+  //             // IMPORTANT: Command 9 already handles camera initialization.
+  //             // We MUST return here to prevent the crash in m_initializeCameraFunc.
+  //             return; 
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
   if (cameraType != GameCameraType::DeveloperFreeCamera) {
     // Standard gameplay cameras are part of the game's main camera array and
     // are initialized using the main Camera Manager pointer as the context.

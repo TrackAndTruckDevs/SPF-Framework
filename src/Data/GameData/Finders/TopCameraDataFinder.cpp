@@ -4,92 +4,132 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <Windows.h>
+#include <chrono>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
-namespace {
-/*
- * TopCamera_UpdateParams (Ghidra: part of FUN_14099b7f0)
- * Unique sequence in the movement/height calculation block.
- * Expected offsets for v1.58: 480 (MinH), 484 (MaxH), 488 (Speed), 478 (Fwd), 47C (Bwd)
- */
-const char* TOP_CAMERA_PARAMS_ANCHOR_SIG = "48 8D 83 ?? ?? ?? ?? 0F 2F 00 F3 0F 10 ?? ?? F3 0F ?? ?? F3 0F 5C ?? ??";
-}  // namespace
+using namespace Utils;
 
 bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for Top Camera offsets (Strict Local Search)...");
+  auto start = std::chrono::high_resolution_clock::now();
+  logger->Info("--- STARTING TOP CAMERA OFFSET SEARCH (Reflection) ---");
 
-  uintptr_t addr = Utils::PatternFinder::Find(TOP_CAMERA_PARAMS_ANCHOR_SIG);
-  if (!addr) {
-    logger->Error("CRITICAL: Could not find unique anchor for Top Camera offsets.");
-    return false;
-  }
-
+  const char* CLASS_NAME_TOP = "vehicle_top_camera";
+  const char* CLASS_NAME_VEHICLE_CAM = "vehicle_camera";
+  const char* CLASS_NAME_CORE_CAMERA = "core_camera";
   bool all_found = true;
-  uintptr_t search_base = addr - 1024;
 
-  // 1. Min Height is part of the anchor LEA RAX, [RBX + offset]
-  int32_t minH = Utils::PatternFinder::ReadInt32(addr + 3);
+  // Lambda helper to safely extract, validate, and log offsets from the SCS Reflection Table
+  auto getAttr = [&](const char* className, const char* name) -> uintptr_t {
+    uintptr_t off = PatternFinder::FindAttributeOffset(className, name);
+    if (off && PatternFinder::IsSaneOffset(static_cast<int32_t>(off))) {
+      logger->Debug("1.[REFLECTION] Verified '{}'::'{}' at offset 0x{:X}", className, name, off);
+      return off;
+    }
+    logger->Error("1.[REFLECTION] FAILED to find or validate '{}'::'{}' (Offset: 0x{:X})", className, name, off);
+    all_found = false;
+    return 0;
+  };
 
-  // 2. Max Height: search for the assignment block near the end of the function
-  // Pattern: MOVSS reg, [RBX + offset]; COMISS; JC; MOVAPS
-  uintptr_t addr_maxH = Utils::PatternFinder::Find(addr, 512, "F3 0F 10 ?? ?? ?? ?? ?? 0F 2F ??");
-  int32_t maxH = addr_maxH ? Utils::PatternFinder::ReadInt32(addr_maxH + 4) : 0;
-
-  // 3. Speed: search backward using the user-provided robust signature
-  // 1.58: ... F3 44 0F 59 93 [488]
-  // 1.57: ... F3 44 0F 59 93 [480]
-  uintptr_t addr_speed = Utils::PatternFinder::Find(search_base, 1024, "48 8b ?? ff 90 ?? ?? ?? ?? f3 0f 10 83 ?? ?? ?? ?? f3 44 0f 59 93 ?? ?? ?? ??");
-  int32_t speed = addr_speed ? Utils::PatternFinder::ReadInt32(addr_speed + 22) : 0;
-
-  // 4. Find X-Forward (0x478/0x470)
-  uintptr_t addr_fwd = Utils::PatternFinder::Find(search_base, 1024, "F3 0F 10 8B ?? ?? ?? ?? 41 0F 2E CB 75 ??");
+  // --- Step 1: Find vehicle_top_camera SII Attributes ---
   
-  // 5. Find X-Backward (0x47C/0x474)
-  uintptr_t addr_bwd = Utils::PatternFinder::Find(search_base, 1024, "41 0F 2E D3 75 ?? F3 0F 10 83 ?? ?? ?? ?? 41 0F 2E C3");
+  uintptr_t minH = getAttr(CLASS_NAME_TOP, "minimum_height");
+  if (minH) owner.SetTopMinHeightOffset(static_cast<intptr_t>(minH));
 
-  if (Utils::PatternFinder::IsSaneOffset(minH)) {
-    owner.SetTopMinHeightOffset(minH);
-    logger->Debug("Top: MinHeight=0x{:X}", minH);
-  } else { logger->Error("Top: MinHeight INVALID (0x{:X})", minH); all_found = false; }
+  uintptr_t maxH = getAttr(CLASS_NAME_TOP, "maximum_height");
+  if (maxH) owner.SetTopMaxHeightOffset(static_cast<intptr_t>(maxH));
 
-  if (Utils::PatternFinder::IsSaneOffset(maxH)) {
-    owner.SetTopMaxHeightOffset(maxH);
-    logger->Debug("Top: MaxHeight=0x{:X}", maxH);
-  } else { logger->Error("Top: MaxHeight INVALID (0x{:X})", maxH); all_found = false; }
+  uintptr_t speed = getAttr(CLASS_NAME_TOP, "speed");
+  if (speed) owner.SetTopSpeedOffset(static_cast<intptr_t>(speed));
 
-  if (addr_speed) {
-    if (Utils::PatternFinder::IsSaneOffset(speed)) {
-      owner.SetTopSpeedOffset(speed);
-      logger->Debug("Top: Speed=0x{:X}", speed);
-    } else { logger->Error("Top: Speed INVALID (0x{:X})", speed); all_found = false; }
-  } else { logger->Error("FAILED to find Speed anchor"); all_found = false; }
+  uintptr_t xFwd = getAttr(CLASS_NAME_TOP, "x_offset_forward");
+  if (xFwd) owner.SetTopXOffsetForwardOffset(static_cast<intptr_t>(xFwd));
 
-  if (addr_fwd) {
-    int32_t fwd = Utils::PatternFinder::ReadInt32(addr_fwd + 4);
-    if (Utils::PatternFinder::IsSaneOffset(fwd)) {
-      owner.SetTopXOffsetForwardOffset(fwd);
-      logger->Debug("Top: X-Forward=0x{:X}", fwd);
-    } else { logger->Error("Top: X-Forward INVALID (0x{:X})", fwd); all_found = false; }
-  } else { logger->Error("FAILED to find X-Forward anchor"); all_found = false; }
+  uintptr_t xBwd = getAttr(CLASS_NAME_TOP, "x_offset_backward");
+  if (xBwd) owner.SetTopXOffsetBackwardOffset(static_cast<intptr_t>(xBwd));
 
-  if (addr_bwd) {
-    int32_t bwd = Utils::PatternFinder::ReadInt32(addr_bwd + 10);
-    if (Utils::PatternFinder::IsSaneOffset(bwd)) {
-      owner.SetTopXOffsetBackwardOffset(bwd);
-      logger->Debug("Top: X-Backward=0x{:X}", bwd);
-    } else { logger->Error("Top: X-Backward INVALID (0x{:X})", bwd); all_found = false; }
-  } else { logger->Error("FAILED to find X-Backward anchor"); all_found = false; }
+  uintptr_t fwd = getAttr(CLASS_NAME_TOP, "offset_forward");
+  if (fwd) owner.SetTopOffsetForwardOffset(static_cast<intptr_t>(fwd));
 
-  m_isReady = all_found;
-  if (all_found) {
-    logger->Info("Successfully found all 5 Top Camera offsets dynamically.");
+  uintptr_t bwd = getAttr(CLASS_NAME_TOP, "offset_backward");
+  if (bwd) owner.SetTopOffsetBackwardOffset(static_cast<intptr_t>(bwd));
+
+  uintptr_t heightFactor = getAttr(CLASS_NAME_TOP, "camera_height_factor");
+  if (heightFactor) owner.SetTopCameraHeightFactorOffset(static_cast<intptr_t>(heightFactor));
+
+  uintptr_t useAdaptive = getAttr(CLASS_NAME_TOP, "use_adaptive_camera_height");
+  if (useAdaptive) owner.SetTopUseAdaptiveCameraHeightOffset(static_cast<intptr_t>(useAdaptive));
+
+  // --- Step 2: Find vehicle_camera SII Attributes ---
+
+  uintptr_t validation = getAttr(CLASS_NAME_VEHICLE_CAM, "validation");
+  if (validation) owner.SetTopValidationOffset(static_cast<intptr_t>(validation));
+
+  uintptr_t valSpdPos = getAttr(CLASS_NAME_VEHICLE_CAM, "validation_speed_positive");
+  if (valSpdPos) owner.SetTopValidationSpeedPositiveOffset(static_cast<intptr_t>(valSpdPos));
+
+  uintptr_t valSpdNeg = getAttr(CLASS_NAME_VEHICLE_CAM, "validation_speed_negative");
+  if (valSpdNeg) owner.SetTopValidationSpeedNegativeOffset(static_cast<intptr_t>(valSpdNeg));
+
+  // --- Step 3: Find core_camera SII Attributes ---
+
+  uintptr_t nearP = getAttr(CLASS_NAME_CORE_CAMERA, "near_plane");
+  if (nearP) owner.SetTopNearPlaneOffset(static_cast<intptr_t>(nearP));
+
+  uintptr_t farP = getAttr(CLASS_NAME_CORE_CAMERA, "far_plane");
+  if (farP) owner.SetTopFarPlaneOffset(static_cast<intptr_t>(farP));
+
+  uintptr_t camFov = getAttr(CLASS_NAME_CORE_CAMERA, "camera_fov");
+  if (camFov) owner.SetCameraFovOffset(static_cast<intptr_t>(camFov));
+
+  uintptr_t mouseSens = getAttr(CLASS_NAME_CORE_CAMERA, "mouse_sensitivity");
+  if (mouseSens) owner.SetMouseSensitivityOffset(static_cast<intptr_t>(mouseSens));
+
+  uintptr_t shakeAnimStep = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_step");
+  if (shakeAnimStep) owner.SetShakeAnimStepOffset(static_cast<intptr_t>(shakeAnimStep));
+
+  uintptr_t shakeAnimScaleMin = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_scale_min");
+  if (shakeAnimScaleMin) owner.SetShakeAnimScaleMinOffset(static_cast<intptr_t>(shakeAnimScaleMin));
+
+  uintptr_t shakeAnimScaleMax = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim_scale_max");
+  if (shakeAnimScaleMax) owner.SetShakeAnimScaleMaxOffset(static_cast<intptr_t>(shakeAnimScaleMax));
+
+  uintptr_t shakeAnim = getAttr(CLASS_NAME_CORE_CAMERA, "shake_anim");
+  if (shakeAnim) owner.SetShakeAnimOffset(static_cast<intptr_t>(shakeAnim));
+
+  // --- Final Readiness Check ---
+  m_isReady = all_found && (owner.GetTopMinHeightOffset() != 0 &&
+                           owner.GetTopMaxHeightOffset() != 0 &&
+                           owner.GetTopSpeedOffset() != 0 &&
+                           owner.GetTopXOffsetForwardOffset() != 0 &&
+                           owner.GetTopXOffsetBackwardOffset() != 0 &&
+                           owner.GetTopOffsetForwardOffset() != 0 &&
+                           owner.GetTopOffsetBackwardOffset() != 0 &&
+                           owner.GetTopCameraHeightFactorOffset() != 0 &&
+                           owner.GetTopUseAdaptiveCameraHeightOffset() != 0 &&
+                           owner.GetTopNearPlaneOffset() != 0 &&
+                           owner.GetTopFarPlaneOffset() != 0 &&
+                           owner.GetTopValidationOffset() != 0 &&
+                           owner.GetTopValidationSpeedPositiveOffset() != 0 &&
+                           owner.GetTopValidationSpeedNegativeOffset() != 0 &&
+                           owner.GetCameraFovOffset() != 0 &&
+                           owner.GetMouseSensitivityOffset() != 0 &&
+                           owner.GetShakeAnimStepOffset() != 0 &&
+                           owner.GetShakeAnimScaleMinOffset() != 0 &&
+                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
+                           owner.GetShakeAnimOffset() != 0);
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+  if (m_isReady) {
+    logger->Info("--- TOP CAMERA OFFSETS FOUND. TopCameraDataFinder is ready. ({} ms) ---", duration);
   } else {
-    logger->Warn("Failed to find one or more Top Camera offsets accurately.");
+    logger->Error("FAILED to initialize one or more Top Camera offsets. ({} ms)", duration);
   }
 
-  return all_found;
+  return m_isReady;
 }
 
 }  // namespace Data::GameData::Finders

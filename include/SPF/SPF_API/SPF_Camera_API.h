@@ -1446,6 +1446,76 @@ typedef bool (*SPF_Camera_GetBehindShakeAnim_t)(size_t index, float* out_x, floa
 typedef void (*SPF_Camera_SetBehindShakeAnim_t)(size_t index, float x, float y, float z);
 
 
+// --- New Top Camera Advanced Settings ---
+
+/**
+ * @brief Gets the longitudinal (Z-axis) offsets for the top-down camera.
+ */
+typedef bool (*SPF_Camera_GetTopOffsetsZ_t)(float* forward, float* backward);
+
+/**
+ * @brief Sets the longitudinal (Z-axis) offsets for the top-down camera.
+ */
+typedef void (*SPF_Camera_SetTopOffsetsZ_t)(float forward, float backward);
+
+/**
+ * @brief Gets adaptive height settings for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopAdaptiveSettings_t)(float* out_factor, bool* out_use_adaptive);
+
+/**
+ * @brief Sets adaptive height settings for the top camera.
+ */
+typedef void (*SPF_Camera_SetTopAdaptiveSettings_t)(float factor, bool use_adaptive);
+
+/**
+ * @brief Gets near and far clipping planes for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopPlaneSettings_t)(float* out_near, float* out_far);
+
+/**
+ * @brief Sets near and far clipping planes for the top camera.
+ */
+typedef void (*SPF_Camera_SetTopPlaneSettings_t)(float near_p, float far_p);
+
+/**
+ * @brief Gets/Sets validation (collision) state for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopValidation_t)(bool* out_val);
+typedef void (*SPF_Camera_SetTopValidation_t)(bool val);
+
+/**
+ * @brief Gets/Sets validation settings (speed positive/negative) for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopValidationSettings_t)(float* out_speed_pos, float* out_speed_neg);
+typedef void (*SPF_Camera_SetTopValidationSettings_t)(float speed_pos, float speed_neg);
+
+/**
+ * @brief Gets/Sets the shake animation step for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopShakeAnimStep_t)(float* out_val);
+typedef void (*SPF_Camera_SetTopShakeAnimStep_t)(float val);
+
+/**
+ * @brief Gets/Sets the shake animation scale (min/max) for the top camera.
+ */
+typedef bool (*SPF_Camera_GetTopShakeAnimScaleMin_t)(float* out_val);
+typedef void (*SPF_Camera_SetTopShakeAnimScaleMin_t)(float val);
+typedef bool (*SPF_Camera_GetTopShakeAnimScaleMax_t)(float* out_val);
+typedef void (*SPF_Camera_SetTopShakeAnimScaleMax_t)(float val);
+
+/**
+ * @brief Gets the number of points in the top camera shake animation.
+ */
+typedef size_t (*SPF_Camera_GetTopShakeAnimCount_t)();
+
+/**
+ * @brief Gets/Sets specific points in the top camera shake animation.
+ */
+typedef bool (*SPF_Camera_GetTopShakeAnim_t)(size_t index, float* out_x, float* out_y, float* out_z);
+typedef void (*SPF_Camera_SetTopShakeAnim_t)(size_t index, float x, float y, float z);
+
+
 
 /**
  * @struct SPF_Camera_API
@@ -1962,6 +2032,43 @@ typedef struct SPF_Camera_API {
     /** @brief Gets/Sets specific points in the behind camera shake animation. */
     SPF_Camera_GetBehindShakeAnim_t Cam_GetBehindShakeAnim;
     SPF_Camera_SetBehindShakeAnim_t Cam_SetBehindShakeAnim;
+
+    // --- New Top Camera Advanced Settings ---
+    /** @brief Gets/Sets the top camera longitudinal offsets. */
+    SPF_Camera_GetTopOffsetsZ_t Cam_GetTopOffsetsZ;
+    SPF_Camera_SetTopOffsetsZ_t Cam_SetTopOffsetsZ;
+
+    /** @brief Gets/Sets adaptive height settings. */
+    SPF_Camera_GetTopAdaptiveSettings_t Cam_GetTopAdaptiveSettings;
+    SPF_Camera_SetTopAdaptiveSettings_t Cam_SetTopAdaptiveSettings;
+
+    /** @brief Gets/Sets near and far clipping planes. */
+    SPF_Camera_GetTopPlaneSettings_t Cam_GetTopPlaneSettings;
+    SPF_Camera_SetTopPlaneSettings_t Cam_SetTopPlaneSettings;
+
+    /** @brief Gets/Sets validation state. */
+    SPF_Camera_GetTopValidation_t Cam_GetTopValidation;
+    SPF_Camera_SetTopValidation_t Cam_SetTopValidation;
+
+    /** @brief Gets/Sets validation settings. */
+    SPF_Camera_GetTopValidationSettings_t Cam_GetTopValidationSettings;
+    SPF_Camera_SetTopValidationSettings_t Cam_SetTopValidationSettings;
+
+    /** @brief Gets/Sets the shake animation step. */
+    SPF_Camera_GetTopShakeAnimStep_t Cam_GetTopShakeAnimStep;
+    SPF_Camera_SetTopShakeAnimStep_t Cam_SetTopShakeAnimStep;
+
+    /** @brief Gets/Sets the shake animation scale (min/max). */
+    SPF_Camera_GetTopShakeAnimScaleMin_t Cam_GetTopShakeAnimScaleMin;
+    SPF_Camera_SetTopShakeAnimScaleMin_t Cam_SetTopShakeAnimScaleMin;
+    SPF_Camera_GetTopShakeAnimScaleMax_t Cam_GetTopShakeAnimScaleMax;
+    SPF_Camera_SetTopShakeAnimScaleMax_t Cam_SetTopShakeAnimScaleMax;
+
+    /** @brief Gets the number of points in the top camera shake animation. */
+    SPF_Camera_GetTopShakeAnimCount_t Cam_GetTopShakeAnimCount;
+    /** @brief Gets/Sets specific points in the top camera shake animation. */
+    SPF_Camera_GetTopShakeAnim_t Cam_GetTopShakeAnim;
+    SPF_Camera_SetTopShakeAnim_t Cam_SetTopShakeAnim;
 
 } SPF_Camera_API;
 
