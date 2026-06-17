@@ -10,6 +10,7 @@
 #include <sstream>
 #include <regex>
 #include <algorithm>
+#include <chrono>
 
 SPF_NS_BEGIN
 namespace Utils {
@@ -235,7 +236,10 @@ uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* 
     instance.m_stringCache[attributeName] = attrStrAddrs;
   }
 
-  if (attrStrAddrs.empty()) return 0;
+  if (attrStrAddrs.empty()) {
+      logger->Error("FindAttributeOffset: String for attribute '{}' NOT FOUND in memory", attributeName);
+      return 0;
+  }
 
   for (uintptr_t attrStrAddr : attrStrAddrs) {
     std::vector<uintptr_t> allAttrXrefs = FindDataPointers(attrStrAddr);
@@ -243,7 +247,7 @@ uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* 
       /* [xref-24]:Offset, [xref-16]:TypeID, [xref]:NamePtr, [xref+8]:OwnerPtr */
       uintptr_t entryOwner = *reinterpret_cast<uintptr_t*>(xref + 8);
       if (PointerLeadsToString(entryOwner, className)) {
-        logger->Info("FindAttributeOffset: Harvesting class '{}'...", className);
+        logger->Debug("FindAttributeOffset: Harvesting class '{}'...", className);
         std::vector<uintptr_t> allClassAttrs = FindDataPointers(entryOwner);
         auto& classMap = instance.m_reflectionCache[className];
         
@@ -305,6 +309,8 @@ uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* 
       }
     }
   }
+  
+  logger->Error("FindAttributeOffset: FAILED to find attribute '{}' in class '{}'", attributeName, className);
   return 0;
 }
 
@@ -344,23 +350,50 @@ uintptr_t PatternFinder::GetFunctionEnd(uintptr_t address) {
   return 0;
 }
 std::vector<uintptr_t> PatternFinder::FindXrefs(uintptr_t targetAddr, const char* moduleName) {
-  std::vector<uintptr_t> xrefs;
+  auto& instance = GetInstance();
+  std::string modKey = moduleName ? moduleName : "";
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+
+  // Check if cache for this module exists
+  if (instance.m_xrefCache.count(modKey)) {
+    auto& modCache = instance.m_xrefCache[modKey];
+    return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
+  }
+
+  // Build XREF cache for the module
+  auto startCache = std::chrono::high_resolution_clock::now();
+  logger->Debug("Building XREF cache for module '{}' (one-time scan)...", modKey);
+  
+  auto& modCache = instance.m_xrefCache[modKey];
   auto sections = GetModuleSections(moduleName);
+  
   for (const auto& sec : sections) {
-    if (sec.size < 7 || sec.name == ".pdata") continue;
+    if (sec.name != ".text" && sec.name != "CODE" && sec.name != "INIT") continue;
+    if (sec.size < 7) continue;
+
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
     for (uintptr_t i = 0; i <= sec.size - 7; ++i) {
-      uint8_t* p = (uint8_t*)(sec.base + i);
+      const uint8_t* p = data + i;
       if ((p[0] >= 0x48 && p[0] <= 0x4F) && (p[1] == 0x8D || p[1] == 0x8B) && (p[2] & 0x07) == 0x05) {
-        if (GetRipAddress(sec.base + i, 3, 7) == targetAddr) xrefs.push_back(sec.base + i);
+        uintptr_t ripTarget = GetRipAddress(sec.base + i, 3, 7);
+        if (ripTarget) {
+            modCache[ripTarget].push_back(sec.base + i);
+        }
       }
     }
   }
-  return xrefs;
+
+  auto endCache = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endCache - startCache).count();
+  logger->Info("XREF cache for '{}' ready: {} entries found in {} ms", modKey.empty() ? "main" : modKey, modCache.size(), ms);
+
+  return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
 }
 
 std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, const char* moduleName) {
   auto& instance = GetInstance();
   if (instance.m_pointerCache.count(targetAddr)) return instance.m_pointerCache[targetAddr];
+  auto start = std::chrono::high_resolution_clock::now();
   std::vector<uintptr_t> pointers;
   auto sections = GetModuleSections(moduleName);
   for (const auto& sec : sections) {
@@ -371,6 +404,11 @@ std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, con
     }
   }
   instance.m_pointerCache[targetAddr] = pointers;
+  auto end = std::chrono::high_resolution_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  if (ms > 5) {
+     Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Debug("FindDataPointers for 0x{:X} took {} ms", targetAddr, ms);
+  }
   return pointers;
 }
 
@@ -399,6 +437,8 @@ uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStar
 
 uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
   if (!str) return 0;
+  auto startFunc = std::chrono::high_resolution_clock::now();
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
   
   // Find ALL occurrences of the string in memory
   auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
@@ -416,6 +456,12 @@ uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, c
         auto indirect = FindXrefs(ptrAddr);
         allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
     }
+  }
+
+  auto endFunc = std::chrono::high_resolution_clock::now();
+  auto msTotal = std::chrono::duration_cast<std::chrono::milliseconds>(endFunc - startFunc).count();
+  if (msTotal > 10) {
+      logger->Debug("FindFunctionByString('{}') took {} ms", str, msTotal);
   }
 
   if (allXrefs.empty()) return 0;

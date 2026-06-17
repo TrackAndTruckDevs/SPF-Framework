@@ -316,6 +316,7 @@ class PatternFinder {
   std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache; ///< className -> {attrName -> offset}
   std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;      ///< string -> [addresses]
   std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;       ///< targetAddr -> [pointer_locations]
+  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache; ///< moduleName -> {targetAddr -> [xref_locations]}
   std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache; ///< moduleName -> [sections]
 };
 

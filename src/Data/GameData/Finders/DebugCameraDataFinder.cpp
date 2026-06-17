@@ -199,38 +199,45 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         uintptr_t posLockCall = Utils::PatternFinder::Find(scanPos, 2048, togglePattern);
         if (posLockCall) {
           int32_t off = Utils::PatternFinder::ReadInt32(posLockCall + 3);
-          uintptr_t pfn = Utils::PatternFinder::GetRipAddress(posLockCall + 11, 1, 5);
+          // Locate the specific SETZ + CALL sequence within the matched block to find the function address.
+          uintptr_t addrSetzCall = Utils::PatternFinder::Find(posLockCall, 20, "0F 94 [C0-C7] E8");
+          uintptr_t pfn = addrSetzCall ? Utils::PatternFinder::GetRipAddress(addrSetzCall + 3, 1, 5) : 0;
+          
           if (Utils::PatternFinder::IsSaneOffset(off) && pfn) {
             owner.SetDebugPosLockOffset(off);
             owner.SetSetPositionLockFunc(reinterpret_cast<void*>(pfn));
             logger->Info("--- Found SetPositionLock at 0x{:X} (Offset: 0x{:X})", pfn, off);
             scanPos = posLockCall + 16;
-          } else { logger->Error("SetPositionLock data INVALID"); all_found = false; }
+          } else { logger->Error("SetPositionLock data INVALID (pfn: 0x{:X})", pfn); all_found = false; }
         } else { logger->Error("FAILED to find SetPositionLock call site"); all_found = false; }
 
         // --- 2. SetRotationLock ---
         uintptr_t rotLockCall = Utils::PatternFinder::Find(scanPos, 512, togglePattern);
         if (rotLockCall) {
           int32_t off = Utils::PatternFinder::ReadInt32(rotLockCall + 3);
-          uintptr_t pfn = Utils::PatternFinder::GetRipAddress(rotLockCall + 11, 1, 5);
+          uintptr_t addrSetzCall = Utils::PatternFinder::Find(rotLockCall, 20, "0F 94 [C0-C7] E8");
+          uintptr_t pfn = addrSetzCall ? Utils::PatternFinder::GetRipAddress(addrSetzCall + 3, 1, 5) : 0;
+
           if (Utils::PatternFinder::IsSaneOffset(off) && pfn) {
             owner.SetDebugRotLockOffset(off);
             owner.SetSetRotationLockFunc(reinterpret_cast<void*>(pfn));
             logger->Info("--- Found SetRotationLock at 0x{:X} (Offset: 0x{:X})", pfn, off);
             scanPos = rotLockCall + 16;
-          } else { logger->Error("SetRotationLock data INVALID"); all_found = false; }
+          } else { logger->Error("SetRotationLock data INVALID (pfn: 0x{:X})", pfn); all_found = false; }
         } else { logger->Error("FAILED to find SetRotationLock call site"); all_found = false; }
 
         // --- 3. SetOrbitMode ---
         uintptr_t orbitCall = Utils::PatternFinder::Find(scanPos, 512, togglePattern);
         if (orbitCall) {
           int32_t off = Utils::PatternFinder::ReadInt32(orbitCall + 3);
-          uintptr_t pfn = Utils::PatternFinder::GetRipAddress(orbitCall + 11, 1, 5);
+          uintptr_t addrSetzCall = Utils::PatternFinder::Find(orbitCall, 20, "0F 94 [C0-C7] E8");
+          uintptr_t pfn = addrSetzCall ? Utils::PatternFinder::GetRipAddress(addrSetzCall + 3, 1, 5) : 0;
+
           if (Utils::PatternFinder::IsSaneOffset(off) && pfn) {
             owner.SetDebugOrbitOffset(off);
             owner.SetSetOrbitModeFunc(reinterpret_cast<void*>(pfn));
             logger->Info("--- Found SetOrbitMode at 0x{:X} (Offset: 0x{:X})", pfn, off);
-          } else { logger->Error("SetOrbitMode data INVALID"); all_found = false; }
+          } else { logger->Error("SetOrbitMode data INVALID (pfn: 0x{:X})", pfn); all_found = false; }
         } else { logger->Error("FAILED to find SetOrbitMode call site"); all_found = false; }
 
       // 1.2.3 Find HUD Visibility (0x540) and HUD Position (0x454) offsets
@@ -318,7 +325,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    */
   uintptr_t posLockUsage = Utils::PatternFinder::FindFunctionByString(POS_LOCK_STR, false);
   if (posLockUsage) {
-    uintptr_t addrLock = Utils::PatternFinder::FindBackward(posLockUsage, 64, "45 [38-39] [86-8E]");
+    uintptr_t addrLock = Utils::PatternFinder::FindBackward(posLockUsage, 64, "45 [38-39]");
     if (addrLock) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrLock + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
@@ -341,7 +348,7 @@ bool DebugCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    */
   uintptr_t orbitUsage = Utils::PatternFinder::FindFunctionByString(ORBIT_STR, false);
   if (orbitUsage) {
-    uintptr_t addrOrbit = Utils::PatternFinder::FindBackward(orbitUsage, 64, "45 [38-39] [86-8E]");
+    uintptr_t addrOrbit = Utils::PatternFinder::FindBackward(orbitUsage, 64, "45 [38-39]");
     if (addrOrbit) {
       int32_t off = Utils::PatternFinder::ReadInt32(addrOrbit + 3);
       if (Utils::PatternFinder::IsSaneOffset(off)) {
