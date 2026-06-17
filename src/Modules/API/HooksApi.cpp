@@ -26,6 +26,7 @@ void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
     api->Hook_FindFunctionByString = &HooksApi::Hook_FindFunctionByString;
     // ABI Extension (Advanced Lookup)
     api->Hook_GetFunctionStart = &HooksApi::Hook_GetFunctionStart;
+    api->Hook_GetFunctionEnd   = &HooksApi::Hook_GetFunctionEnd;
     api->Hook_FindChain = &HooksApi::Hook_FindChain;
     api->Hook_FindVTable = &HooksApi::Hook_FindVTable;
     api->Hook_GetVTableFunction = &HooksApi::Hook_GetVTableFunction;
@@ -92,6 +93,10 @@ uintptr_t HooksApi::Hook_FindFunctionByString(const char* str, bool findStart, c
 
 uintptr_t HooksApi::Hook_GetFunctionStart(uintptr_t address) {
     return Utils::PatternFinder::GetFunctionStart(address);
+}
+
+uintptr_t HooksApi::Hook_GetFunctionEnd(uintptr_t address) {
+    return Utils::PatternFinder::GetFunctionEnd(address);
 }
 
 uintptr_t HooksApi::Hook_FindChain(const char** signatures, size_t count, size_t maxGap, uintptr_t startAddress, size_t searchRange) {

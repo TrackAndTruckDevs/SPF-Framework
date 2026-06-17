@@ -151,6 +151,14 @@ class PatternFinder {
   static uintptr_t GetFunctionStart(uintptr_t address);
 
   /**
+   * @brief Determines the end address of the function containing the given address.
+   * 
+   * @param address Any address inside the function.
+   * @return uintptr_t Address of the function's last byte (or start of the next function), or 0.
+   */
+  static uintptr_t GetFunctionEnd(uintptr_t address);
+
+  /**
    * @brief Finds all instructions that reference a target address (RIP-relative).
    * 
    * @param targetAddr The absolute address being referenced.

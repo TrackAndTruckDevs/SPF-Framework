@@ -70,6 +70,30 @@ Finds the starting address of a function containing the given address.
     *   `address`: Any valid memory address within the target function (e.g., an address found via pattern scanning).
 *   **Returns**: The address of the function's first instruction, or `0` if not found.
 
+---
+### `uintptr_t Hook_GetFunctionEnd(uintptr_t address)`
+Finds the end address of a function containing the given address.
+
+*   **Details**: Uses Windows Runtime Function Tables (`.pdata`) for 100% accuracy on x64. Returns the address of the byte immediately following the last instruction of the function.
+*   **Parameters:**
+    *   `address`: Any valid memory address within the target function.
+*   **Returns**: The absolute address immediately following the function, or `0` if not found.
+
+### Function Boundaries Example
+You can use both functions to determine the exact memory range of a specific game function.
+
+```cpp
+uintptr_t midAddr = api->hooks->Hook_FindPattern("B8 6D C1 16 6C");
+
+if (midAddr) {
+    uintptr_t start = api->hooks->Hook_GetFunctionStart(midAddr);
+    uintptr_t end = api->hooks->Hook_GetFunctionEnd(midAddr);
+    size_t funcSize = end - start;
+    
+    Log("Function range: 0x%p - 0x%p (Size: %llu bytes)", start, end, funcSize);
+}
+```
+
 ### Function Start Example
 If you find a unique instruction in the middle of a large function, you can instantly get the function's entry point to install a hook.
 

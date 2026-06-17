@@ -33,6 +33,7 @@ class HooksApi {
   static uintptr_t Hook_FindString(const char* str);
   static uintptr_t Hook_FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange);
   static uintptr_t Hook_GetFunctionStart(uintptr_t address);
+  static uintptr_t Hook_GetFunctionEnd(uintptr_t address);
   static uintptr_t Hook_FindChain(const char** signatures, size_t count, size_t maxGap, uintptr_t startAddress, size_t searchRange);
   static uintptr_t Hook_FindVTable(const char* signature, int offsetPos, int instructionSize);
   static uintptr_t Hook_GetVTableFunction(uintptr_t vtableAddr, int index);

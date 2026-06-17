@@ -326,7 +326,7 @@ uintptr_t PatternFinder::GetFunctionStart(uintptr_t address) {
   for (uintptr_t addr = candidate; addr > candidate - 0x2000; --addr) {
     if (addr <= 1) break;
     uint8_t* p = reinterpret_cast<uint8_t*>(addr);
-    if (((p[-1] == 0xCC || p[-1] == 0x90) && (p[-2] == 0xCC || p[-2] == 0x90)) || 
+    if (((p[-1] == 0xCC || p[-1] == 0x90) && (p[-2] == 0xCC || p[-2] == 0x90)) ||
         ((p[0] == 0x48 && p[1] == 0x8B && p[2] == 0xC4) || (p[0] == 0x40 && p[1] == 0x53))) {
       if (addr % 8 == 0) return addr;
     }
@@ -334,6 +334,15 @@ uintptr_t PatternFinder::GetFunctionStart(uintptr_t address) {
   return candidate;
 }
 
+uintptr_t PatternFinder::GetFunctionEnd(uintptr_t address) {
+  if (address == 0) return 0;
+  DWORD64 imageBase = 0;
+  PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
+  if (funcEntry && imageBase) {
+    return static_cast<uintptr_t>(imageBase + funcEntry->EndAddress);
+  }
+  return 0;
+}
 std::vector<uintptr_t> PatternFinder::FindXrefs(uintptr_t targetAddr, const char* moduleName) {
   std::vector<uintptr_t> xrefs;
   auto sections = GetModuleSections(moduleName);
@@ -389,16 +398,32 @@ uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStar
 }
 
 uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
-  uintptr_t sAddr = FindString(str);
-  if (!sAddr) return 0;
-  std::vector<uintptr_t> allXrefs = FindXrefs(sAddr);
-  std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
-  for (uintptr_t ptrAddr : ptrs) {
-      auto indirect = FindXrefs(ptrAddr);
-      allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
+  if (!str) return 0;
+  
+  // Find ALL occurrences of the string in memory
+  auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
+  if (stringAddrs.empty()) return 0;
+
+  std::vector<uintptr_t> allXrefs;
+  for (uintptr_t sAddr : stringAddrs) {
+    // Get direct XREFs (LEA/MOV [REG], [RIP+offset])
+    std::vector<uintptr_t> xrefs = FindXrefs(sAddr);
+    allXrefs.insert(allXrefs.end(), xrefs.begin(), xrefs.end());
+    
+    // Get indirect pointers (data pointers to this string)
+    std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
+    for (uintptr_t ptrAddr : ptrs) {
+        auto indirect = FindXrefs(ptrAddr);
+        allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
+    }
   }
+
+  if (allXrefs.empty()) return 0;
+
   for (uintptr_t xref : allXrefs) {
-    if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) return findStart ? GetFunctionStart(xref) : xref;
+    if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) {
+        return findStart ? GetFunctionStart(xref) : xref;
+    }
   }
   return 0;
 }
@@ -422,9 +447,24 @@ bool PatternFinder::IsSaneOffset(int32_t offset) { return offset > 0 && offset <
 
 uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
   if (!str) return 0;
+  size_t len = strlen(str);
   // Scan ALL sections for generic strings for reliability, but use high-performance memchr
-  auto results = FindAllRawInternal(moduleName, (const uint8_t*)str, strlen(str), false);
-  return results.empty() ? 0 : results[0];
+  auto results = FindAllRawInternal(moduleName, (const uint8_t*)str, len, false);
+  if (results.empty()) return 0;
+
+  // Prioritize exact (null-terminated) matches to avoid substring false positives (e.g. "abc" inside "abc.sii")
+  auto sections = GetModuleSections(moduleName);
+  for (uintptr_t addr : results) {
+    for (const auto& sec : sections) {
+      if (addr >= sec.base && addr + len < sec.base + sec.size) {
+        if (reinterpret_cast<const char*>(addr)[len] == '\0') return addr;
+        break; // Found the section, move to next result
+      }
+    }
+  }
+  
+  // Fallback to the first occurrence if no null-terminated match is found
+  return results[0];
 }
 
 std::vector<PatternFinder::MemorySection> PatternFinder::GetModuleSections(const char* moduleName) {

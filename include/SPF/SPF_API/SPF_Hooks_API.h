@@ -202,6 +202,17 @@ typedef uintptr_t (*SPF_Hook_FindFunctionByString_t)(const char* str, bool findS
 typedef uintptr_t (*SPF_Hook_GetFunctionStart_t)(uintptr_t address);
 
 /**
+ * @brief Finds the end address of a function containing the given address.
+ *
+ * @details Uses Windows Runtime Function Tables (.pdata) for 100% accuracy on x64.
+ *          Returns the address of the byte immediately following the last instruction.
+ *
+ * @param address Any address within the function (e.g., found via pattern).
+ * @return The address immediately following the function, or 0 if not found.
+ */
+typedef uintptr_t (*SPF_Hook_GetFunctionEnd_t)(uintptr_t address);
+
+/**
  * @brief Finds a sequence of patterns that appear close to each other.
  *
  * @details Useful when the compiler inserts padding, NOPs, or minor logic (like log calls)
@@ -461,6 +472,17 @@ typedef struct {
      * @return The absolute address of the function's first instruction, or 0 if not found.
      */
     SPF_Hook_GetFunctionStart_t Hook_GetFunctionStart;
+
+    /**
+     * @brief Finds the end address of a function containing the given address.
+     * 
+     * @details Uses Windows Runtime Function Tables (.pdata) for 100% accuracy on x64.
+     *          Returns the address of the byte immediately following the last instruction.
+     * 
+     * @param address Any memory address within the function.
+     * @return The absolute address immediately following the function, or 0 if not found.
+     */
+    SPF_Hook_GetFunctionEnd_t Hook_GetFunctionEnd;
 
     /**
      * @brief Finds a sequence of patterns that appear close to each other in memory.
