@@ -127,37 +127,59 @@ namespace System {
     bool Version::operator>(const Version& other) const {
         if (major != other.major) return major > other.major;
         if (minor != other.minor) return minor > other.minor;
-        return patch > other.patch;
+        if (patch != other.patch) return patch > other.patch;
+        return revision > other.revision;
     }
 
     bool Version::operator<(const Version& other) const {
         if (major != other.major) return major < other.major;
         if (minor != other.minor) return minor < other.minor;
-        return patch < other.patch;
+        if (patch != other.patch) return patch < other.patch;
+        return revision < other.revision;
     }
 
     bool Version::operator==(const Version& other) const {
-        return major == other.major && minor == other.minor && patch == other.patch;
+        return major == other.major && minor == other.minor && patch == other.patch && revision == other.revision;
+    }
+
+    std::string Version::ToString() const {
+        if (revision > 0) {
+            return fmt::format("{}.{}.{}.{}", major, minor, patch, revision);
+        }
+        return fmt::format("{}.{}.{}", major, minor, patch);
     }
 
     // More robust implementation of FromString
     std::optional<Version> Version::FromString(const std::string& versionStr) {
+        if (versionStr.empty()) return std::nullopt;
+
+        // Find the first digit in the string to skip prefixes like "v", "vers", etc.
+        size_t firstDigit = versionStr.find_first_of("0123456789");
+        if (firstDigit == std::string::npos) return std::nullopt;
+
+        const char* start = versionStr.c_str() + firstDigit;
         Version v;
-        // This will parse the beginning of the string for "X.Y.Z" and ignore any suffixes like "-beta", ".123", etc.
-        if (sscanf_s(versionStr.c_str(), "%d.%d.%d", &v.major, &v.minor, &v.patch) >= 3) {
+        
+        // Attempt to parse up to 4 components: major.minor.patch.revision
+        if (sscanf_s(start, "%d.%d.%d.%d", &v.major, &v.minor, &v.patch, &v.revision) >= 4) {
             return v;
         }
-        // Attempt to parse just major.minor if patch is missing
-        if (sscanf_s(versionStr.c_str(), "%d.%d", &v.major, &v.minor) >= 2) {
+        if (sscanf_s(start, "%d.%d.%d", &v.major, &v.minor, &v.patch) >= 3) {
+            v.revision = 0;
+            return v;
+        }
+        if (sscanf_s(start, "%d.%d", &v.major, &v.minor) >= 2) {
             v.patch = 0;
+            v.revision = 0;
             return v;
         }
-        // Attempt to parse just major if minor/patch are missing
-        if (sscanf_s(versionStr.c_str(), "%d", &v.major) >= 1) {
+        if (sscanf_s(start, "%d", &v.major) >= 1) {
             v.minor = 0;
             v.patch = 0;
+            v.revision = 0;
             return v;
         }
+
         return std::nullopt;
     }
 
@@ -451,6 +473,80 @@ namespace System {
                 logger->Error("Error in TrackUsageAsync: {}", e.what());
             }
             promise->set_value();
+        }).detach();
+
+        return future;
+    }
+
+    std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAsync(const std::string& owner, const std::string& repo) {
+        auto promise = std::make_shared<std::promise<ApiResult<GithubReleaseInfo>>>();
+        std::future<ApiResult<GithubReleaseInfo>> future = promise->get_future();
+
+        std::thread([promise, owner, repo]() {
+            auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
+            ApiResult<GithubReleaseInfo> apiResult;
+
+            try {
+                logger->Debug("Checking GitHub for latest release of {}/{}...", owner, repo);
+
+                // GitHub API for latest tags (more reliable for non-release versions)
+                std::string url = fmt::format("https://api.github.com/repos/{}/{}/tags?per_page=1", owner, repo);
+
+                cpr::Response r = cpr::Get(cpr::Url{url},
+                                           cpr::Header{{"Accept", "application/vnd.github.v3+json"},
+                                                       {"User-Agent", "SPF-Framework-Updater"}},
+                                           cpr::Timeout{10000},
+                                           cpr::ConnectTimeout{5000});
+
+                if (r.error.code != cpr::ErrorCode::OK) {
+                    logger->Error("GitHub API Network Error: {} (Repo: {}/{})", r.error.message, owner, repo);
+                    apiResult.success = false;
+                    apiResult.errorMessage = "api.error.no_internet";
+                    promise->set_value(apiResult);
+                    return;
+                }
+
+                if (r.status_code == 200) {
+                    json responseBody = json::parse(r.text);
+                    GithubReleaseInfo info;
+                    
+                    if (responseBody.is_array() && !responseBody.empty()) {
+                        const auto& latestTag = responseBody[0];
+                        info.tagName = latestTag.value("name", "");
+                        // For tags, we point to the releases/tag page which usually exists or redirects correctly
+                        info.htmlUrl = fmt::format("https://github.com/{}/{}/releases/tag/{}", owner, repo, info.tagName);
+                        info.body = ""; // Tags don't have a body like releases do
+                    }
+
+                    apiResult.success = !info.tagName.empty();
+                    apiResult.data = info;
+                    
+                    std::string remaining = r.header["X-RateLimit-Remaining"];
+                    logger->Debug("GitHub API Success: Found tag '{}' for {}/{} (Remaining: {})", info.tagName, owner, repo, remaining);
+                } else {
+                    std::string remaining = r.header["X-RateLimit-Remaining"];
+                    logger->Warn("GitHub API Error: HTTP {} (Repo: {}/{}, Remaining: {})", r.status_code, owner, repo, remaining);
+                    logger->Debug("GitHub Response Body: {}", r.text);
+                    
+                    if (r.status_code == 404) {
+                        apiResult.success = false;
+                        apiResult.errorMessage = "api.error.content_not_found";
+                    } else if (r.status_code == 403) {
+                        apiResult.success = false;
+                        apiResult.errorMessage = "api.error.rate_limit";
+                    } else {
+                        apiResult.success = false;
+                        apiResult.errorMessage = "api.error.generic";
+                    }
+                }
+
+            } catch (const std::exception& e) {
+                logger->Error("GitHub API Error: {}", e.what());
+                apiResult.success = false;
+                apiResult.errorMessage = "api.error.generic";
+            }
+
+            promise->set_value(apiResult);
         }).detach();
 
         return future;

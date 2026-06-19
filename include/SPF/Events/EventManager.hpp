@@ -87,6 +87,7 @@ class EventManager {
     Utils::Signal<void(const System::OnUpdateCheckCompleted&)> OnUpdateCheckCompleted;
     Utils::Signal<void(const System::OnPatronsFetchCompleted&)> OnPatronsFetchCompleted;
     Utils::Signal<void(const System::OnUsageTrackingCompleted&)> OnUsageTrackingCompleted;
+    Utils::Signal<void(const System::OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
 
     // --- SCS Input Events ---
     Utils::Signal<void(const Input::InputDeviceActivityChanged&)> OnInputDeviceActivityChanged;

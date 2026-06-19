@@ -21,7 +21,7 @@ inline const ManifestData& GetFrameworkManifestData() {
       .info =
           {
               .name = "SPF Framework",
-              .version = "1.1.10",
+              .version = "1.1.9",
               .author = "Track'n'Truck Devs",
               .descriptionKey = "description.detailed",  // key in the translation file
               .descriptionLiteral = "",                  // if there is no translation, you can write a description here
@@ -51,9 +51,11 @@ inline const ManifestData& GetFrameworkManifestData() {
               "framework": {
                 "connect": true,
                 "framework_instance_id": "",
-                "version": ""
+                "version": "",
+                "developer_mode": false
               },
-              "notification_duration": 3.0
+              "notification_duration": 3.0,
+              "show_update_notifications": true
             }
         )json"),
       // .logging
@@ -150,7 +152,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .isDocked = true,
                               .dockPriority = 3,
                               .allowUndocking = true,
-                              .autoScroll = true,
+                              .autoScroll = true
                           }},
                          {"telemetry_window",
                           {
@@ -165,6 +167,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 4,
                               .allowUndocking = true,
                               .autoScroll = false,
+                              .isDeveloperOnly = true
                           }},
                          {"hooks_window",
                           {
@@ -179,6 +182,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 5,
                               .allowUndocking = false,
                               .autoScroll = false,
+                              .isDeveloperOnly = true
                           }},
                          {"game_console_window",
                           {
@@ -193,6 +197,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 6,
                               .allowUndocking = true,
                               .autoScroll = false,
+                              .isDeveloperOnly = true
                           }},
                          {"camera_window",
                           {
@@ -207,6 +212,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 7,
                               .allowUndocking = false,
                               .autoScroll = false,
+                              .isDeveloperOnly = true
                           }},
                           {"gameworld_window",
                           {
@@ -221,21 +227,23 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .dockPriority = 8,
                               .allowUndocking = false,
                               .autoScroll = false,
+                              .isDeveloperOnly = true
                           }},
-                         {"climate_window",
-                          {
-                              .isVisible = true,
-                              .isInteractive = false,
-                              .posX = 0,
-                              .posY = 0,
-                              .sizeW = 0,
-                              .sizeH = 0,
-                              .isCollapsed = false,
-                              .isDocked = true,
-                              .dockPriority = 9,
-                              .allowUndocking = false,
-                              .autoScroll = false,
-                          }},
+                        //  {"climate_window",
+                        //   {
+                        //       .isVisible = true,
+                        //       .isInteractive = false,
+                        //       .posX = 0,
+                        //       .posY = 0,
+                        //       .sizeW = 0,
+                        //       .sizeH = 0,
+                        //       .isCollapsed = false,
+                        //       .isDocked = true,
+                        //       .dockPriority = 9,
+                        //       .allowUndocking = false,
+                        //       .autoScroll = false,
+                        //       .isDeveloperOnly = true
+                        //   }},
                          {"info_window",
                           {
                               .isVisible = true,
@@ -248,7 +256,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                               .isDocked = true,
                               .dockPriority = 10,
                               .allowUndocking = false,
-                              .autoScroll = false,
+                              .autoScroll = false
                           }}}},
         
         // --- Metadata for framework's own settings ---
@@ -256,6 +264,8 @@ inline const ManifestData& GetFrameworkManifestData() {
             {"plugin_states", "settings_window.setting_names.settings.plugin_states.title", "settings_window.setting_names.settings.plugin_states.description", true},
             {"hook_states", "settings_window.setting_names.settings.hook_states.title", "settings_window.setting_names.settings.hook_states.description", true},
             {"framework", std::nullopt, std::nullopt, true},
+            {"framework.developer_mode", std::nullopt, std::nullopt, true},
+            {"show_update_notifications", "settings_window.setting_names.settings.show_update_notifications.title", "settings_window.setting_names.settings.show_update_notifications.description", false},
             {"notification_duration", "settings_window.setting_names.settings.notification_duration.title", "settings_window.setting_names.settings.notification_duration.description", false, "slider", nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")}
         },
         .keybindsMetadata = {

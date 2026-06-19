@@ -21,6 +21,8 @@ class BaseWindow : public IWindow {
   const std::string& GetWindowId() const final;
   const std::string& GetComponentName() const final;
   bool IsVisible() const final;
+  bool IsDeveloperOnly() const final;
+  bool IsPersistent() const override;
   bool IsDocked() const;
   bool IsInteractive() const override;
   bool IsFocused() const override;
@@ -58,6 +60,7 @@ class BaseWindow : public IWindow {
   bool m_isInteractive = true;
   bool m_is_docked = false;
   bool m_autoScroll = false;
+  bool m_isDeveloperOnly = false;
   float m_posX = 100.0f;
   float m_posY = 100.0f;
   float m_sizeW = 300.0f;

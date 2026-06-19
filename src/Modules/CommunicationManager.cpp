@@ -152,6 +152,43 @@ namespace Modules {
                 RequestTrackUsage();
             }
         }
+
+        // 6. Check Plugin Update futures
+        {
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            for (auto it = m_pluginUpdateFutures.begin(); it != m_pluginUpdateFutures.end();) {
+                if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    std::string pluginId = it->first;
+                    System::ApiResult<System::GithubReleaseInfo> result = it->second.get();
+                    
+                    if (result.success && result.data) {
+                        const auto& allComponents = m_configService.GetAllComponentInfo();
+                        if (allComponents.count(pluginId) > 0) {
+                            const auto& info = allComponents.at(pluginId);
+                            auto currentVer = System::Version::FromString(info.version.value_or("0.0.0"));
+                            auto latestVer = System::Version::FromString(result.data->tagName);
+
+                            if (currentVer && latestVer && *latestVer > *currentVer) {
+                                logger->Info("Update detected for plugin {}: {} -> {}", pluginId, currentVer->ToString(), latestVer->ToString());
+                                
+                                Events::System::OnPluginUpdateAvailable e;
+                                e.pluginId = pluginId;
+                                e.pluginName = info.name.value_or(pluginId);
+                                e.currentVersion = info.version.value_or("0.0.0");
+                                e.latestVersion = result.data->tagName;
+                                e.downloadUrl = result.data->htmlUrl;
+                                
+                                m_eventManager.System.OnPluginUpdateAvailable.Call(e);
+                                OnPluginUpdateAvailable.Call(e);
+                            }
+                        }
+                    }
+                    it = m_pluginUpdateFutures.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
     }
 
     void CommunicationManager::EnsurePermission() {
@@ -213,6 +250,70 @@ namespace Modules {
 
         m_updateState.status = ResourceStatus::Loading;
         m_updateFuture = m_apiService.FetchUpdateInfoAsync(*it->second.websiteUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, channel, currentLang);
+    }
+
+    void CommunicationManager::RequestPluginUpdateChecks() {
+        EnsurePermission();
+        if (!m_connectionAllowed) return;
+
+        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("CommunicationManager");
+        const auto& allComponents = m_configService.GetAllComponentInfo();
+        auto now = std::chrono::steady_clock::now();
+
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        for (const auto& [id, info] : allComponents) {
+            if (info.isFramework || !info.isEnabled || !info.githubUrl || info.githubUrl->empty()) continue;
+
+            // Cooldown check (1 hour)
+            if (m_lastPluginCheckTimes.count(id) > 0) {
+                auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(now - m_lastPluginCheckTimes[id]);
+                if (elapsed < std::chrono::minutes(60)) {
+                    logger->Debug("Plugin {}: Skipping GitHub check (last check was {} min ago)", id, elapsed.count());
+                    continue;
+                }
+            }
+
+            // Skip if already checking
+            if (m_pluginUpdateFutures.count(id) > 0) continue;
+
+            auto repo = ParseGithubUrl(*info.githubUrl);
+            if (!repo) {
+                logger->Warn("Plugin {}: Failed to parse GitHub URL: {}", id, *info.githubUrl);
+                continue;
+            }
+
+            logger->Debug("Plugin {}: Requesting update check from GitHub ({}/{})...", id, repo->owner, repo->repo);
+            m_pluginUpdateFutures[id] = m_apiService.FetchGithubLatestReleaseAsync(repo->owner, repo->repo);
+            m_lastPluginCheckTimes[id] = now;
+        }
+    }
+
+    std::optional<CommunicationManager::GithubRepo> CommunicationManager::ParseGithubUrl(const std::string& url) {
+        // Simple parser for https://github.com/owner/repo
+        std::string marker = "github.com/";
+        size_t pos = url.find(marker);
+        if (pos == std::string::npos) return std::nullopt;
+
+        std::string path = url.substr(pos + marker.length());
+        // Remove trailing slashes
+        while (!path.empty() && (path.back() == '/' || path.back() == ' ')) path.pop_back();
+
+        size_t slashPos = path.find('/');
+        if (slashPos == std::string::npos) return std::nullopt;
+
+        GithubRepo repo;
+        repo.owner = path.substr(0, slashPos);
+        repo.repo = path.substr(slashPos + 1);
+
+        // If repo still contains a slash (e.g. owner/repo/issues), take only the repo part
+        size_t nextSlash = repo.repo.find('/');
+        if (nextSlash != std::string::npos) {
+            repo.repo = repo.repo.substr(0, nextSlash);
+        }
+
+        if (repo.owner.empty() || repo.repo.empty()) return std::nullopt;
+
+        return repo;
     }
 
     void CommunicationManager::RequestReleaseNotesFetch() {

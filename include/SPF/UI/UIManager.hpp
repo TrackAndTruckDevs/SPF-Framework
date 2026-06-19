@@ -12,6 +12,7 @@
 #include "SPF/Modules/ITelemetryService.hpp" // Added include for ITelemetryService
 
 #include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <vector>
@@ -86,6 +87,8 @@ class UIManager : public Config::IConfigurable {
   void SetRenderer(Rendering::Renderer* renderer) { m_renderer = renderer; }
   Rendering::Renderer* GetRenderer() const { return m_renderer; }
 
+  void ApplyDeveloperMode(bool enabled);
+
   std::map<std::string, nlohmann::ordered_json> GetAllWindowSettings() const;
 
   void NotifyInputCaptured(const Input::InputCaptured& e);
@@ -96,6 +99,9 @@ class UIManager : public Config::IConfigurable {
   void NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
   void NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
   void NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
+  void NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e);
+
+  const Events::System::OnPluginUpdateAvailable* GetPluginUpdate(const std::string& pluginId) const;
 
   void ToggleMouseOverridden();
   void SetMouseOverride(bool overridden) { m_isMouseControlOverridden = overridden; }
@@ -202,9 +208,12 @@ class UIManager : public Config::IConfigurable {
 
   std::shared_ptr<NotificationWindow> m_notificationWindow;
 
+  std::unordered_map<std::string, Events::System::OnPluginUpdateAvailable> m_pluginUpdates;
+
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginDidLoad&)>> m_onPluginDidLoadSink;
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>> m_onPluginWillBeUnloadedSink;
   std::unique_ptr<Utils::Sink<void(const System::ChangelogData&)>> m_onReleaseNotesReceivedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>> m_onPluginUpdateAvailableSink;
 };
 }  // namespace UI
 

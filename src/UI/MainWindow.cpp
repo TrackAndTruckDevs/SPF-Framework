@@ -152,6 +152,9 @@ MainWindow::MainWindow(Events::EventManager& eventManager, Input::InputManager& 
       m_locFaqA5("manual_popup.q5_answer"),
       m_locFaqQ6("manual_popup.q6_question"),
       m_locFaqA6("manual_popup.q6_answer"),
+      // Developer Mode
+      m_locDeveloperMode("main_window.common.developer_mode"),
+      m_locUserMode("main_window.common.user_mode"),
       // Game Status and Performance
       m_locGameStatusRunningGame("main_window.game_status.running_game_label"),
       m_locGameStatusCurrentVersion("main_window.game_status.current_version_label"),
@@ -164,6 +167,7 @@ MainWindow::MainWindow(Events::EventManager& eventManager, Input::InputManager& 
       m_locTooltipFpsAvg("main_window.performance.tooltip_fps_avg"),
       m_locTooltipFpsRollMinMax("main_window.performance.tooltip_fps_roll_minmax"),
       m_locTooltipFpsGblMinMax("main_window.performance.tooltip_fps_gbl_minmax") {
+  m_isDeveloperMode = m_configService.GetValue("framework", "settings.framework.developer_mode", false).get<bool>();
   m_keyBindsManager.RegisterAction("framework.ui.main_window.toggle", [this]() { ToggleVisibility(); });
 }
 
@@ -216,24 +220,7 @@ bool RenderStyledMenuItem(const char* icon, const std::string& label, const std:
 void MainWindow::RenderContent() {
   auto& loc = LocalizationManager::GetInstance();
 
-  // --- Initial API Calls on First Open ---
-  if (IsVisible() && !m_wasVisibleLastFrame) {
-    if (!m_updateCheckInitiated) {
-      if (!m_frameworkVersion.empty()) {
-        m_eventManager.System.OnRequestUpdateCheck.Call({});
-      } else {
-        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("MainWindow");
-        logger->Warn("Framework version is not specified in the manifest. Update check will be skipped.");
-      }
-      m_updateCheckInitiated = true;
-    }
-    if (!m_patronsFetchInitiated) {
-      m_eventManager.System.OnRequestPatronsFetch.Call({});
-      m_patronsFetchInitiated = true;
-    }
-  }
-
-// --- Framework Header ---
+  // --- Framework Header ---
   if (!m_frameworkName.empty()) {
     // --- 1. Title (Name and Version) ---
     std::string title = m_frameworkName + " v" + m_frameworkVersion;
@@ -321,6 +308,61 @@ void MainWindow::RenderContent() {
     if (Button(ICON_FA_BARS, TextStyle::DefaultButton())) {
       ImGui::OpenPopup("HamburgerMenu");
     }  
+  }
+
+  // --- Mode Toggle Row (Centered on new line) ---
+  {
+    const float toggle_switch_width = 46.0f;
+    const float toggle_switch_height = 20.0f;
+    const float toggle_radius = toggle_switch_height * 0.5f;
+
+    ImVec2 userLabelSize = Typography::CalcTextSize(loc.Get(m_locUserMode).c_str(), TextStyle::Bold());
+    ImVec2 devLabelSize = Typography::CalcTextSize(loc.Get(m_locDeveloperMode).c_str(), TextStyle::Bold());
+    const float toggle_group_width = userLabelSize.x + toggle_switch_width + devLabelSize.x + ImGui::GetStyle().ItemSpacing.x * 4.0f;
+
+    ImGui::Spacing();
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - toggle_group_width) * 0.5f);
+    
+    ImGui::BeginGroup();
+    {
+        // User Mode Label
+        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::WHITE : Colors::GOLD), "%s", loc.Get(m_locUserMode).c_str());
+        ImGui::SameLine();
+
+        // Switch
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        ImGui::InvisibleButton("##mode_toggle", ImVec2(toggle_switch_width, toggle_switch_height));
+        const bool is_hovered = ImGui::IsItemHovered();
+        if (ImGui::IsItemClicked()) {
+            m_isDeveloperMode = !m_isDeveloperMode;
+            m_configService.SetValue("framework", "settings.framework.developer_mode", m_isDeveloperMode);
+            m_configService.SaveAllDirty();
+            UIManager::GetInstance().ApplyDeveloperMode(m_isDeveloperMode);
+        }
+
+        // Background
+        ImVec4 bg_col = is_hovered ? ImVec4(0.25f, 0.25f, 0.25f, 1.0f) : ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+        draw_list->AddRectFilled(p, ImVec2(p.x + toggle_switch_width, p.y + toggle_switch_height), ImGui::GetColorU32(bg_col), toggle_radius);
+        
+        // Outline
+        ImVec4 outline_col = Colors::WHITE; outline_col.w = is_hovered ? 0.3f : 0.15f;
+        draw_list->AddRect(p, ImVec2(p.x + toggle_switch_width, p.y + toggle_switch_height), ImGui::GetColorU32(outline_col), toggle_radius);
+
+        // Oval Knob
+        float knob_w = toggle_switch_width * 0.45f;
+        float knob_h = toggle_switch_height - 4.0f;
+        float knob_x = m_isDeveloperMode ? (p.x + toggle_switch_width - knob_w - 2.0f) : (p.x + 2.0f);
+        float knob_y = p.y + 2.0f;
+        
+        ImVec4 knob_color = m_isDeveloperMode ? Colors::ORANGE : Colors::BLUE;
+        draw_list->AddRectFilled(ImVec2(knob_x, knob_y), ImVec2(knob_x + knob_w, knob_y + knob_h), ImGui::GetColorU32(knob_color), toggle_radius);
+        
+        ImGui::SameLine();
+        // Developer Mode Label
+        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::GOLD : Colors::WHITE), "%s", loc.Get(m_locDeveloperMode).c_str());
+    }
+    ImGui::EndGroup();
   }
 
     // --- Game Info ---

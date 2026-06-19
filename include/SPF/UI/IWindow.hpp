@@ -21,6 +21,8 @@ class IWindow {
   virtual const std::string& GetWindowId() const = 0;
   virtual const std::string& GetComponentName() const = 0;
   virtual bool IsVisible() const = 0;
+  virtual bool IsDeveloperOnly() const = 0;
+  virtual bool IsPersistent() const = 0;
   virtual bool IsInteractive() const = 0;
   virtual bool IsFocused() const = 0;
 

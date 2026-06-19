@@ -46,6 +46,7 @@ namespace System {
 struct OnUpdateCheckCompleted;
 struct OnPatronsFetchCompleted;
 struct OnUsageTrackingCompleted;
+struct OnPluginUpdateAvailable;
 }  // namespace System
 }  // namespace Events
 namespace Utils {
@@ -215,7 +216,6 @@ class Core {
   void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
   void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
   void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
-
   void ProcessHookDependenciesForPlugin(const std::string& pluginName, bool isEnabled);
 
   // --- Init/Shutdown Helpers ---

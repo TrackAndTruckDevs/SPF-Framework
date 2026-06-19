@@ -23,6 +23,10 @@ const std::string& BaseWindow::GetComponentName() const { return m_componentName
 
 bool BaseWindow::IsVisible() const { return m_isVisible; }
 
+bool BaseWindow::IsDeveloperOnly() const { return m_isDeveloperOnly; }
+
+bool BaseWindow::IsPersistent() const { return true; }
+
 bool BaseWindow::IsInteractive() const { return m_isInteractive; }
 
 bool BaseWindow::IsFocused() const { return m_isFocused; }
@@ -73,11 +77,8 @@ const char* BaseWindow::GetWindowTitle() const {
 bool BaseWindow::IsConfiguredAsDockable() const { return m_isConfiguredAsDockable; }
 
 void BaseWindow::ApplySettings(const nlohmann::ordered_json& settings) {
-  m_validSettingKeys.clear();
-
-  m_isConfiguredAsDockable = settings.contains("is_docked");
-
-  if (m_isConfiguredAsDockable) {
+  if (settings.contains("is_docked")) {
+    m_isConfiguredAsDockable = true;
     m_is_docked = settings.value("is_docked", m_is_docked);
     m_validSettingKeys.insert("is_docked");
   }
@@ -97,6 +98,10 @@ void BaseWindow::ApplySettings(const nlohmann::ordered_json& settings) {
   if (settings.contains("auto_scroll")) {
     m_autoScroll = settings.value("auto_scroll", m_autoScroll);
     m_validSettingKeys.insert("auto_scroll");
+  }
+  if (settings.contains("is_developer_only")) {
+    m_isDeveloperOnly = settings.value("is_developer_only", m_isDeveloperOnly);
+    m_validSettingKeys.insert("is_developer_only");
   }
   if (settings.contains("pos_x")) {
     m_posX = settings.value("pos_x", m_posX);
@@ -151,6 +156,14 @@ nlohmann::ordered_json BaseWindow::GetCurrentSettings() const {
 
   if (m_validSettingKeys.count("auto_scroll")) {
     settings["auto_scroll"] = m_autoScroll;
+  }
+
+  if (m_validSettingKeys.count("allow_undocking")) {
+    settings["allow_undocking"] = m_allowUndocking;
+  }
+
+  if (m_validSettingKeys.count("is_developer_only")) {
+    settings["is_developer_only"] = m_isDeveloperOnly;
   }
 
   if (!m_is_docked) {

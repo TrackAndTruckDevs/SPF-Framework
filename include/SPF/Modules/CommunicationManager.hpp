@@ -66,6 +66,11 @@ namespace Modules {
         void RequestPatronsFetch(bool forceRefresh = false);
 
         /**
+         * @brief Requests an update check for all enabled plugins that have a GitHub URL.
+         */
+        void RequestPluginUpdateChecks();
+
+        /**
          * @brief Requests release notes for the current framework version.
          */
         void RequestReleaseNotesFetch();
@@ -79,6 +84,7 @@ namespace Modules {
         // --- Signals ---
         Utils::Signal<void(const System::UpdateInfo&)> OnUpdateInfoReceived;
         Utils::Signal<void(const System::ChangelogData&)> OnReleaseNotesReceived;
+        Utils::Signal<void(const Events::System::OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
 
     private:
         // --- Event Handlers ---
@@ -92,6 +98,9 @@ namespace Modules {
         void EnsurePermission();
 
         bool ShouldPerformRequest(ResourceStatus status, std::chrono::steady_clock::time_point lastErrorTime, bool forceRefresh);
+
+        struct GithubRepo { std::string owner; std::string repo; };
+        std::optional<GithubRepo> ParseGithubUrl(const std::string& url);
 
         Events::EventManager& m_eventManager;
         System::ApiService& m_apiService;
@@ -107,10 +116,13 @@ namespace Modules {
         std::map<std::string, bool> m_lastSentPlugins;
         bool m_hasInitialTrackingSent = false;
 
-        // --- Cache States ---
         ResourceState<System::UpdateInfo> m_updateState;
         ResourceState<std::vector<System::Patron>> m_patronsState;
         ResourceState<System::ChangelogData> m_releaseNotesState;
+        
+        // Key: pluginId, Value: Future for GitHub update check
+        std::map<std::string, std::future<System::ApiResult<System::GithubReleaseInfo>>> m_pluginUpdateFutures;
+        std::map<std::string, std::chrono::steady_clock::time_point> m_lastPluginCheckTimes;
         std::mutex m_stateMutex;
 
         // --- Futures for async processing ---

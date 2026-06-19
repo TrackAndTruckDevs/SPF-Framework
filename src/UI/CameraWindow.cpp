@@ -1493,75 +1493,37 @@ void CameraWindow::RenderContent() {
     if (ImGui::BeginTabItem(loc.Get(m_locTabFreeCamera).c_str(), nullptr, freeCamTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::DeveloperFreeCamera);
       if (auto* freeCam = dynamic_cast<GameCameraFree*>(pCamera)) {
-        ImGui::Text("%s", loc.Get(m_locPositionFreeCam).c_str());
-        float pos_x, pos_y, pos_z;
-        if (freeCam->GetPosition(&pos_x, &pos_y, &pos_z)) {
-          bool posChanged = false;
-          posChanged |= ImGui::SliderFloat(loc.Get(m_locPositionXFreeCam).c_str(), &pos_x, pos_x - 200.0f, pos_x + 200.0f, "%.2f");
-          posChanged |= ImGui::SliderFloat(loc.Get(m_locPositionYFreeCam).c_str(), &pos_y, pos_y - 200.0f, pos_y + 200.0f, "%.2f");
-          posChanged |= ImGui::SliderFloat(loc.Get(m_locPositionZFreeCam).c_str(), &pos_z, pos_z - 200.0f, pos_z + 200.0f, "%.2f");
-          if (posChanged) {
-            freeCam->SetPosition(pos_x, pos_y, pos_z);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locPositionNotFoundFreeCam).c_str());
-        }
+        drawHeader(loc.Get(m_locPositionFreeCam));
+        drawVector3(loc.Get(m_locPositionFreeCam), loc.Get(m_locPositionXFreeCam).c_str(), loc.Get(m_locPositionYFreeCam).c_str(), loc.Get(m_locPositionZFreeCam).c_str(),
+                   [&](float* x, float* y, float* z){ return freeCam->GetPosition(x, y, z); },
+                   [&](float x, float y, float z){ freeCam->SetPosition(x, y, z); }, -50000.0f, 50000.0f);
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locOrientationFreeCam).c_str());
-        float mouse_x, mouse_y, roll;
-        if (freeCam->GetOrientation(&mouse_x, &mouse_y, &roll)) {
-          bool rotChanged = false;
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseHorizontalFreeCam).c_str(), &mouse_x, 0.0f, 6.28318f, "%.4f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locMouseVerticalFreeCam).c_str(), &mouse_y, 0.0f, 6.28318f, "%.4f");
-          rotChanged |= ImGui::SliderFloat(loc.Get(m_locRollFreeCam).c_str(), &roll, -1.57079f, 1.57079f, "%.4f");
-          if (rotChanged) {
-            freeCam->SetOrientation(mouse_x, mouse_y, roll);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locOrientationNotFoundFreeCam).c_str());
-        }
+        drawHeader(loc.Get(m_locOrientationFreeCam));
+        drawVector2(loc.Get(m_locOrientationFreeCam), loc.Get(m_locMouseHorizontalFreeCam).c_str(), loc.Get(m_locMouseVerticalFreeCam).c_str(),
+                   [&](float* mx, float* my){ float r; return freeCam->GetOrientation(mx, my, &r); },
+                   [&](float mx, float my){ float r; float cmx, cmy; freeCam->GetOrientation(&cmx, &cmy, &r); freeCam->SetOrientation(mx, my, r); }, -360.0f, 360.0f, true, std::nullopt, "%.1f");
+        
+        drawFloat(loc.Get(m_locRollFreeCam), 
+                 [&](float* r){ float mx, my; bool res = freeCam->GetOrientation(&mx, &my, r); if(res) *r *= 57.29578f; return res; }, 
+                 [&](float r){ float mx, my, cr; freeCam->GetOrientation(&mx, &my, &cr); freeCam->SetOrientation(mx, my, r * 0.0174533f); }, 
+                 -180.0f, 180.0f, "%.1f");
 
-        ImGui::Text("%s", loc.Get(m_locQuaternionFreeCam).c_str());
+        drawHeader(loc.Get(m_locQuaternionFreeCam));
         float qx, qy, qz, qw;
         if (freeCam->GetQuaternion(&qx, &qy, &qz, &qw)) {
-          ImGui::Text(loc.Get(m_locQuaternionXFreeCam).c_str(), qx);
-          ImGui::Text(loc.Get(m_locQuaternionYFreeCam).c_str(), qy);
-          ImGui::Text(loc.Get(m_locQuaternionZFreeCam).c_str(), qz);
-          ImGui::Text(loc.Get(m_locQuaternionWFreeCam).c_str(), qw);
+            Typography::Text(TextStyle::Regular().Align(TextAlign::Center), "X: %.4f, Y: %.4f, Z: %.4f, W: %.4f", qx, qy, qz, qw);
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locQuaternionNotFoundFreeCam).c_str());
+            Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locQuaternionFreeCam).c_str(), loc.Get(m_locDataNotFound).c_str());
         }
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locFovZoom).c_str());
-        float fov;
-        if (freeCam->GetFov(&fov)) {
-          if (ImGui::SliderFloat(loc.Get(m_locBaseFovFreeCam).c_str(), &fov, 20.0f, 120.0f, "%.1f")) {
-            freeCam->SetFov(fov);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locBaseFovNotFound).c_str());
-        }
-        float h_fov, v_fov;
-        if (freeCam->GetFinalFov(&h_fov, &v_fov)) {
-          ImGui::Text(loc.Get(m_locFinalHFov).c_str(), h_fov);
-          ImGui::Text(loc.Get(m_locFinalVFov).c_str(), v_fov);
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locFinalFovNotFound).c_str());
-        }
+        drawHeader(loc.Get(m_locFovZoom));
+        drawFloat(loc.Get(m_locBaseFovFreeCam), [&](float* fov){ return freeCam->GetFov(fov); }, [&](float fov){ freeCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f");
+        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov){ return freeCam->GetFinalFov(h_fov, v_fov); });
 
-        ImGui::Separator();
-        ImGui::Text("%s", loc.Get(m_locMovementSpeedFreeCam).c_str());
-        float speed;
-        if (freeCam->GetSpeed(&speed)) {
-          if (ImGui::SliderFloat(loc.Get(m_locSpeedFreeCam).c_str(), &speed, 0.1f, 500.0f, "%.1f")) {
-            freeCam->SetSpeed(speed);
-          }
-        } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locMovementSpeedNotFoundFreeCam).c_str());
-        }
+        drawHeader(loc.Get(m_locMovementSpeedFreeCam));
+        drawFloat(loc.Get(m_locSpeedFreeCam), [&](float* speed){ return freeCam->GetSpeed(speed); }, [&](float speed){ freeCam->SetSpeed(speed); }, 0.1f, 500.0f, "%.1f");
 
+        ImGui::Spacing();
         ImGui::Separator();
         if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           freeCam->ResetToDefaults();
@@ -1821,7 +1783,7 @@ void CameraWindow::RenderContent() {
               ImGui::Text("%s", loc.Get(m_locHUDPositionDebug).c_str());
               if (Button(loc.Get(m_locTopLeftDebug).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                 debugCam->SetHudPosition(DebugHudPosition::TopLeft);
-              }
+                }
               ImGui::SameLine();
               if (Button(loc.Get(m_locBottomLeftDebug).c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::BottomLeft);
@@ -2121,8 +2083,8 @@ void CameraWindow::RenderContent() {
                   } else {
                     ImGui::Text("%s", loc.Get(m_locActiveStateNone).c_str());
                   }
+                  }
                 }
-              }
 
               ImGui::Separator();
 
@@ -2148,7 +2110,7 @@ void CameraWindow::RenderContent() {
                       }
                       if (is_selected) {
                         ImGui::SetItemDefaultFocus();
-                      }
+                    }
                     }
                     ImGui::EndCombo();
                   }

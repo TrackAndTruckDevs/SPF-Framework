@@ -48,21 +48,7 @@ SPF_Notification_Handle NotificationWindow::ShowEx(const SPF_Notification_Params
         }
     }
 
-    // Replace logic for TOP notifications
-    if (params.mode == SPF_NOTIF_MODE_TOP) {
-        auto it = std::find_if(m_notifications.begin(), m_notifications.end(), 
-                               [](const NotificationData& n) { return n.mode == SPF_NOTIF_MODE_TOP; });
-        if (it != m_notifications.end()) {
-            it->message = processedMessage;
-            it->type = (int)params.type;
-            it->duration = params.duration;
-            it->startTime = std::chrono::steady_clock::now();
-            it->customColor = ImVec4(params.r, params.g, params.b, params.a);
-            it->customIcon = params.custom_icon ? params.custom_icon : "";
-            it->isProgrammatic = (params.duration == 0.0f);
-            return reinterpret_cast<SPF_Notification_Handle>(it->handle);
-        }
-    }
+
 
     NotificationData notif;
     notif.message = processedMessage;
@@ -109,6 +95,18 @@ void NotificationWindow::Hide(SPF_Notification_Handle handle) {
 
 void NotificationWindow::RenderContent() {
     auto now = std::chrono::steady_clock::now();
+
+    // Keep non-active TOP notifications from expiring while waiting in queue
+    bool foundActiveTop = false;
+    for (auto& notif : m_notifications) {
+        if (notif.mode == SPF_NOTIF_MODE_TOP) {
+            if (!foundActiveTop) {
+                foundActiveTop = true;
+            } else {
+                notif.startTime = now;
+            }
+        }
+    }
     
     // 1. Handle "Click outside" to close STICKY notifications
     bool clickedOutside = ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1);

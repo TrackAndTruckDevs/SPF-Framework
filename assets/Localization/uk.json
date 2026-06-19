@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Увімкніть 'connect' у файлі налаштувань.",
         "version_label": "Ваша версія ",
         "update_checking": "Перевірка оновлень...",
+        "update_available_notification": "### {}\n Доступне нове оновлення **{}**\n Щоб дізнатись більше перейдіть на сайт",
         "menu": {
             "manual": "Інструкція / FAQ",
             "about": "Про нас / Контакти",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Увімкніть хук 'Game Console' у вікні 'Хуки', щоб використовувати цю функцію.",
             "shutdown": "Вимкнути фреймворк",
             "open_plugins_folder": "Відкрити папку з плагінами"
+        },
+        "common": {
+            "developer_mode": "Режим розробника",
+            "user_mode": "Режим користувача"
         },
         "game_status": {
             "running_game_label": "Запущена гра:",
@@ -92,7 +97,8 @@
             "info": "Інформація про плагін",
             "description": "Опис",
             "settings": "Налаштування",
-            "restart_sdk": "Перезапустіть SDK для активації віртуальних пристроїв введення"
+            "restart_sdk": "Перезапустіть SDK для активації віртуальних пристроїв введення",
+            "update_available": "Перейти на сайт"
         },
         "info_popup": {
             "author": "Автор:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "потребує SPF Framework версії:",
-            "virt_input_restart_required": "Потрібен перезапуск для віртуального введення"
+            "virt_input_restart_required": "Потрібен перезапуск для віртуального введення",
+            "update_available": "Доступна нова версія {}, подробиці: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Тривалість сповіщень",
                     "description": "Встановлює, як довго (у секундах) тимчасові спливаючі сповіщення залишаються на екрані."
+                },
+                "show_update_notifications": {
+                    "title": "Сповіщати про оновлення",
+                    "description": "При доступному оновленні фраймворка або плагінів, ви будете бачити сповіщення."
                 }
             }
         },
@@ -767,7 +778,7 @@
             "dyn_offset_speed_max": "Макс. швидкість дин. зміщення (км/год)",
             "dyn_offset_laziness": "Інерція дин. зміщення",
             "dynamic_offset_not_found": "Динамічне зміщення: дані не знайдено",
-            "base_fov_behind": "Базовий FOV##Behind",
+            "base_fov_behind": "Базовий FOV",
             "not_available": "Об'єкт камери позаду недоступний.",
             "collision_settings": "Налаштування колізій",
             "validation": "Увімкнути колізії",
@@ -795,7 +806,7 @@
             "forward_offset_z": "Зміщення вперед (Z)",
             "backward_offset_z": "Зміщення назад (Z)",
             "dynamic_offset_not_found": "Динамічне зміщення: дані не знайдено",
-            "base_fov_top": "Базовий FOV##Top",
+            "base_fov_top": "Базовий FOV",
             "not_available": "Об'єкт камери зверху недоступний.",
             "near_plane": "Ближня площина відсікання",
             "far_plane": "Дальня площина відсікання",
@@ -814,7 +825,7 @@
             "collision_settings": "Налаштування колізій"
         },
         "cabin_camera": {
-            "base_fov_cabin": "Базовий FOV##Cabin",
+            "base_fov_cabin": "Базовий FOV",
             "not_available": "Об'єкт кабінної камери недоступний.",
             "shake_settings": "Налаштування тряски",
             "shake_anim_step": "Крок анімації тряски",
@@ -918,7 +929,7 @@
             "quaternion_z_freecam": "Z: %.4f",
             "quaternion_w_freecam": "W: %.4f",
             "quaternion_not_found": "Кватерніон: дані не знайдено",
-            "base_fov_freecam": "Базовий FOV##FreeCam",
+            "base_fov_freecam": "Базовий FOV",
             "movement_speed": "Швидкість руху",
             "speed_freecam": "Швидкість",
             "movement_speed_not_found": "Швидкість руху: дані не знайдено",

@@ -45,6 +45,7 @@ public:
      * @brief STICKY popups need interaction.
      */
     bool IsInteractive() const override;
+    bool IsPersistent() const final { return false; }
 
     void ApplySettings(const nlohmann::ordered_json& settings) override {}
     nlohmann::ordered_json GetCurrentSettings() const override { return nlohmann::ordered_json::object(); }

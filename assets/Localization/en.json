@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Enable 'connect' in the configuration file.",
         "version_label": "Your version ",
         "update_checking": "Checking for updates...",
+        "update_available_notification": "### {}\n New update available **{}**\n To learn more, visit the website",       
         "menu": {
             "manual": "Manual / FAQ",
             "about": "About Us / Contacts",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Enable the 'Game Console' hook in the Hooks window to use this feature.",
             "shutdown": "Shutdown Framework",
             "open_plugins_folder": "Open Plugins Folder"
+        },
+        "common": {
+            "developer_mode": "Developer mode",
+            "user_mode": "User mode"
         },
         "game_status": {
             "running_game_label": "Running Game:",
@@ -92,7 +97,8 @@
             "info": "Plugin Information",
             "description": "Description",
             "settings": "Settings",
-            "restart_sdk": "Restart SDK to activate virtual input devices"
+            "restart_sdk": "Restart SDK to activate virtual input devices",
+            "update_available": "Go to the website"
         },
         "info_popup": {
             "author": "Author:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Requires SPF Framework version:",
-            "virt_input_restart_required": "Restart required for virtual inputs"
+            "virt_input_restart_required": "Restart required for virtual inputs",
+            "update_available": "New version {} available, details: "
         }
     },
     "settings_window": {
@@ -233,7 +240,11 @@
                 "notification_duration": {
                     "title": "Notification Duration",
                     "description": "Sets how long (in seconds) the temporary pop-up notifications stay on screen."
-                }
+                },
+                "show_update_notifications": {
+                    "title": "Notify about updates",
+                    "description": "When a framework or plugin update is available, you will see a notification."
+				}
             }
         },
         "keybinds_drawer": {
@@ -767,7 +778,7 @@
             "dyn_offset_speed_max": "Dyn. Offset Speed Max (km/h)",
             "dyn_offset_laziness": "Dyn. Offset Laziness",
             "dynamic_offset_not_found": "Dynamic Offset: data not found",
-            "base_fov_behind": "Base FOV##Behind",
+            "base_fov_behind": "Base FOV",
             "not_available": "Behind camera object not available.",
             "collision_settings": "Collision Settings",
             "validation": "Enable Collision",
@@ -795,7 +806,7 @@
             "forward_offset_z": "Forward Offset (Z)",
             "backward_offset_z": "Backward Offset (Z)",
             "dynamic_offset_not_found": "Dynamic Offset: data not found",
-            "base_fov_top": "Base FOV##Top",
+            "base_fov_top": "Base FOV",
             "not_available": "Top camera object not available.",
             "near_plane": "Near Clipping Plane",
             "far_plane": "Far Clipping Plane",
@@ -814,7 +825,7 @@
             "collision_settings": "Collision Settings"
         },
         "cabin_camera": {
-            "base_fov_cabin": "Base FOV##Cabin",
+            "base_fov_cabin": "Base base_fov_top",
             "not_available": "Cabin camera object not available.",
             "shake_settings": "Shake Settings",
             "shake_anim_step": "Shake Animation Step",
@@ -918,7 +929,7 @@
             "quaternion_z_freecam": "Z: %.4f",
             "quaternion_w_freecam": "W: %.4f",
             "quaternion_not_found": "Quaternion: data not found",
-            "base_fov_freecam": "Base FOV##FreeCam",
+            "base_fov_freecam": "Base FOV",
             "movement_speed": "Movement Speed",
             "speed_freecam": "Speed",
             "movement_speed_not_found": "Movement Speed: data not found",

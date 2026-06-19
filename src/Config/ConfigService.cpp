@@ -289,6 +289,7 @@ nlohmann::ordered_json SerializeUI(const ManifestData& manifest, const ManifestD
         if (data.dockPriority.has_value()) addValueWithMeta("dock_priority", data.dockPriority.value());
         if (data.allowUndocking.has_value()) addValueWithMeta("allow_undocking", data.allowUndocking.value());
         if (data.autoScroll.has_value()) addValueWithMeta("auto_scroll", data.autoScroll.value());
+        if (data.isDeveloperOnly.has_value()) addValueWithMeta("is_developer_only", data.isDeveloperOnly.value());
 
         if (!window_j.empty()) windowsNode[name] = window_j;
     }

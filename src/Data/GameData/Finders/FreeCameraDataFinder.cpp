@@ -134,24 +134,21 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    * This retrieves the primary pointer and offset needed for stable activation.
    * 
    * Logic: 
-   * 1. Find the unique string "@@mandatory_break_soon@@".
-   * 2. Trace back to the start of UpdateGameSession() (Ghidra: 140852380).
+   * 1. Find the unique string "[used_vehicles] %Iu used truck offers have expired (%Iu offers valid)".
+   * 2. Trace back to the start of UpdateGameSession() (Ghidra: 1408523d0).
    * 3. Extract GlobalPtr and Context Offset from the prologue instructions.
    * 
-   * Ghidra Reference (v1.60 @ 14085238c):
-   * 14085238c 48 8b 3d ad 28 d0 02    MOV RDI, qword ptr [FreecamGlobalObjectPtr]
+   * Ghidra Reference (v1.60 @ 1408523d0):
+   * 1408523dc 48 8b 3d ad 28 d0 02    MOV RDI, qword ptr [FreecamGlobalObjectPtr]
    * ...
-   * 1408523a2 48 83 bf a8 31 00 00 00 CMP qword ptr [RDI + 0x31a8], 0x0
+   * 1408523f2 48 83 bf a8 31 00 00 00 CMP qword ptr [RDI + 0x31a8], 0x0
    * 
    * Targets: 
-   * - FreecamGlobalObjectPtr: The RIP-relative pointer at 14085238c.
-   * - ContextOffset: The 32-bit displacement (0x31A8) at 1408523a2.
+   * - FreecamGlobalObjectPtr: The RIP-relative pointer at 1408523dc.
+   * - ContextOffset: The 32-bit displacement (0x31A8) at 1408523f2.
    */
-  uintptr_t breakStrAddr = Utils::PatternFinder::FindString("@@mandatory_break_soon@@");
-  if (breakStrAddr) {
-    auto xrefs = Utils::PatternFinder::FindXrefs(breakStrAddr);
-    if (!xrefs.empty()) {
-      uintptr_t funcStart = Utils::PatternFinder::GetFunctionStart(xrefs[0]);
+  uintptr_t funcStart = Utils::PatternFinder::FindFunctionByString("[used_vehicles] %Iu used truck offers have expired (%Iu offers valid)", true);
+
       if (funcStart) {
         logger->Debug("[FreeCamera] Found UpdateGameSession at 0x{:X}", funcStart);
         
@@ -178,8 +175,6 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
           if (!cmpAddr) logger->Error("[FreeCamera] FAILED to find Context CMP anchor.");
           all_found = false;
         }
-      }
-    }
   } else {
     logger->Warn("[FreeCamera] FAILED to find 'mandatory_break_soon' anchor string.");
     all_found = false;

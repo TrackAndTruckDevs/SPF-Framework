@@ -19,11 +19,13 @@ namespace System {
             int major = 0;
             int minor = 0;
             int patch = 0;
+            int revision = 0;
     
             bool operator>(const Version& other) const;
             bool operator<(const Version& other) const;
             bool operator==(const Version& other) const;
             static std::optional<Version> FromString(const std::string& versionStr);
+            std::string ToString() const;
         };
     
         /**
@@ -93,6 +95,15 @@ namespace System {
         };
 
         /**
+         * @brief Holds information about a GitHub release.
+         */
+        struct GithubReleaseInfo {
+            std::string tagName;
+            std::string htmlUrl;
+            std::string body;
+        };
+
+        /**
          * @brief A service responsible for making remote API calls.
          *
          * This class provides an interface for fetching data from a remote server.
@@ -114,6 +125,9 @@ namespace System {
 
             // Asynchronously sends anonymous usage data and grouped logs.
             std::future<void> TrackUsageAsync(const std::string& baseUrl, std::string uuid, std::string sessionId, std::string buildHash, std::string version, std::string game, std::string gameVersion, std::map<std::string, bool> plugins, std::vector<LogReportEntry> logs);
+
+            // Asynchronously fetches the latest release from GitHub.
+            std::future<ApiResult<GithubReleaseInfo>> FetchGithubLatestReleaseAsync(const std::string& owner, const std::string& repo);
 
             /**
              * @brief Gets the last known status of the service.

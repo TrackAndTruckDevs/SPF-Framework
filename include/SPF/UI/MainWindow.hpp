@@ -193,6 +193,11 @@ class MainWindow : public BaseWindow {
   bool m_isAboutPopupOpen = false;
   bool m_isLegalPopupOpen = false;
   bool m_isShutdownPopupOpen = false;
+
+  // --- Developer Mode ---
+  bool m_isDeveloperMode = false;
+  std::string m_locDeveloperMode;
+  std::string m_locUserMode;
 };
 }  // namespace UI
 

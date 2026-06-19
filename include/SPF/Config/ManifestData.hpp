@@ -113,6 +113,7 @@ struct WindowData {
     std::optional<int> dockPriority;    ///< @brief Priority for ordering within a dock space.
     std::optional<bool> allowUndocking; ///< @brief Whether the user is allowed to undock the window.
     std::optional<bool> autoScroll;     ///< @brief Whether the window content should auto-scroll by default.
+    std::optional<bool> isDeveloperOnly; ///< @brief If true, the window is only available in developer mode.
 };
 
 /**

@@ -1,4 +1,5 @@
 #include "SPF/UI/PluginsWindow.hpp"
+#include "SPF/UI/UIManager.hpp"
 #include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/UI/UIStyle.hpp"
@@ -33,6 +34,8 @@ PluginsWindow::PluginsWindow(const std::string& componentName, const std::string
   m_locStatusIncompatible = "plugins_window.status.incompatible";
   m_locVirtInputRestartRequired = "plugins_window.status.virt_input_restart_required";
   m_locTooltipRestartSDK = "plugins_window.tooltips.restart_sdk";
+  m_locStatusUpdateAvailable = "plugins_window.status.update_available";
+  m_locTooltipUpdateAvailable = "plugins_window.tooltips.update_available";
 }
 
 const char* PluginsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_locTitle).c_str(); }
@@ -98,43 +101,115 @@ void PluginsWindow::RenderContent() {
       const std::string displayName = componentInfo.name.value_or(componentId);
       ImGui::TextUnformatted(displayName.c_str());
 
-      // --- Restart Required Warning (Virtual Input) ---
-      if (pluginManager.GetInputService() && pluginManager.GetInputService()->IsRestartRequiredForComponent(componentId)) {
-          const std::string warningText = loc.Get(m_locVirtInputRestartRequired);
-          
-          // Calculate total width for right-alignment: icon + spacing + text + spacing + reload_icon
+      // Calculate right-aligned status warnings
+      bool showRestart = pluginManager.GetInputService() && pluginManager.GetInputService()->IsRestartRequiredForComponent(componentId);
+      bool showIncompatible = !isCompatible;
+      const auto* updateInfo = UIManager::GetInstance().GetPluginUpdate(componentId);
+      bool showUpdate = (updateInfo != nullptr);
+
+      if (showRestart || showIncompatible || showUpdate) {
+        float totalRightWidth = 0.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float framePaddingX = ImGui::GetStyle().FramePadding.x;
+        
+        // Accumulate widths for active blocks
+        std::vector<float> blockWidths;
+        int activeBlocksCount = 0;
+
+        float restartWidth = 0.0f;
+        std::string warningText;
+        if (showRestart) {
+          warningText = loc.Get(m_locVirtInputRestartRequired);
           float warningIconWidth = Typography::CalcTextSize(ICON_FA_TRIANGLE_EXCLAMATION).x;
           float textWidth = Typography::CalcTextSize(warningText.c_str()).x;
-          float reloadIconWidth = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
-          float spacing = ImGui::GetStyle().ItemSpacing.x;
-          float totalWidth = warningIconWidth + spacing + textWidth + spacing + reloadIconWidth;
+          float reloadBtnWidth = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x + framePaddingX * 2.0f;
+          restartWidth = warningIconWidth + spacing + textWidth + spacing + reloadBtnWidth;
+          blockWidths.push_back(restartWidth);
+          activeBlocksCount++;
+        }
 
-          // Position to the right with 10px margin
-          ImGui::SameLine();
-          float currentPosX = ImGui::GetCursorPosX();
-          float availWidth = ImGui::GetContentRegionAvail().x;
-          ImGui::SetCursorPosX(currentPosX + availWidth - totalWidth - 10.0f);
+        float incompatibleWidth = 0.0f;
+        std::string incompatibleText;
+        if (showIncompatible) {
+          incompatibleText = loc.Get(m_locStatusIncompatible) + " " + componentInfo.incompatibilityReason.value_or("");
+          incompatibleWidth = Typography::CalcTextSize(incompatibleText.c_str(), TextStyle::Bold()).x;
+          blockWidths.push_back(incompatibleWidth);
+          activeBlocksCount++;
+        }
 
-          // 1. Yellow Warning Icon
+        float updateWidth = 0.0f;
+        std::string updateText;
+        if (showUpdate) {
+          updateText = loc.GetFormatted("framework", m_locStatusUpdateAvailable, updateInfo->latestVersion);
+          float updateTextWidth = Typography::CalcTextSize(updateText.c_str(), TextStyle::Bold()).x;
+          float githubBtnWidth = Typography::CalcTextSize(ICON_FA_GITHUB).x + framePaddingX * 2.0f;
+          updateWidth = updateTextWidth + spacing + githubBtnWidth;
+          blockWidths.push_back(updateWidth);
+          activeBlocksCount++;
+        }
+
+        // Sum up block widths and inter-block spacing (we use 15.0f spacing between different status items)
+        float blockSpacing = 15.0f;
+        for (float w : blockWidths) {
+          totalRightWidth += w;
+        }
+        if (activeBlocksCount > 1) {
+          totalRightWidth += blockSpacing * (activeBlocksCount - 1);
+        }
+
+        // Align cursor to the right
+        ImGui::SameLine();
+        float currentPosX = ImGui::GetCursorPosX();
+        float availWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::SetCursorPosX(currentPosX + availWidth - totalRightWidth - 10.0f);
+
+        // Render blocks in order
+        bool firstBlock = true;
+        auto drawBlockSpacing = [&]() {
+          if (!firstBlock) {
+            ImGui::SameLine(0, blockSpacing);
+          }
+          firstBlock = false;
+        };
+
+        // 1. Restart required
+        if (showRestart) {
+          drawBlockSpacing();
+          // Yellow Warning Icon
           Typography::Text(TextStyle::Regular().Color(Colors::YELLOW), ICON_FA_TRIANGLE_EXCLAMATION);
-          
-          // 2. Localized Text
+          // Localized Text
           ImGui::SameLine();
           Typography::Text(TextStyle::Regular().Color(Colors::WHITE), warningText.c_str());
-
-          // 3. Interactive Reload Icon (Gold on hover)
+          // Interactive Reload Icon
           ImGui::SameLine();
           if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::DefaultButton())) {
-              m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
+            m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
           }
           if (ImGui::IsItemHovered()) {
-              ImGui::SetTooltip("%s", loc.Get(m_locTooltipRestartSDK).c_str());
+            ImGui::SetTooltip("%s", loc.Get(m_locTooltipRestartSDK).c_str());
           }
-      }
+        }
 
-      if (!isCompatible) {
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::RED), "%s %s", loc.Get(m_locStatusIncompatible).c_str(), componentInfo.incompatibilityReason.value_or(""));
+        // 2. Incompatible warning
+        if (showIncompatible) {
+          drawBlockSpacing();
+          Typography::Text(TextStyle::Bold().Color(Colors::RED), "%s", incompatibleText.c_str());
+        }
+
+        // 3. Update Available warning
+        if (showUpdate) {
+          drawBlockSpacing();
+          // Orange text
+          Typography::Text(TextStyle::Bold().Color(Colors::ORANGE), "%s", updateText.c_str());
+          // Github Button
+          ImGui::SameLine();
+          if (Button(ICON_FA_GITHUB, TextStyle::DefaultButton().Color(Colors::WHITE).HoverColor(Colors::GOLD))) {
+            ShellExecute(NULL, "open", updateInfo->downloadUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
+          }
+          if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", loc.Get(m_locTooltipUpdateAvailable).c_str());
+          }
+        }
       }
 
       // --- Actions Column ---

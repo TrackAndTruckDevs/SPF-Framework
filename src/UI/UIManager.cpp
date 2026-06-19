@@ -16,6 +16,7 @@
 
 
 #include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include <SPF/UI/UIStyle.hpp>
 #include "SPF/UI/Icons.hpp"
@@ -78,7 +79,8 @@ UIManager::UIManager()
       m_communicationManager(nullptr),
       m_onPluginDidLoadSink(nullptr),        // will be initialized in Init()
       m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
-      m_onReleaseNotesReceivedSink(nullptr)  // will be initialized in Init()
+      m_onReleaseNotesReceivedSink(nullptr),  // will be initialized in Init()
+      m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
 }
@@ -98,10 +100,12 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_onPluginDidLoadSink = std::make_unique<Utils::Sink<void(const Events::OnPluginDidLoad&)>>(m_eventManager->System.OnPluginDidLoad);
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
   m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
+  m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
   m_onReleaseNotesReceivedSink->Connect<&UIManager::OnReleaseNotesReceived>(this);
+  m_onPluginUpdateAvailableSink->Connect<&UIManager::NotifyPluginUpdateAvailable>(this);
 }
 
 void UIManager::CloseFocusedWindow() {
@@ -210,6 +214,8 @@ void UIManager::Shutdown() {
   m_lastFocusedDockedWindowId.clear();
   m_wasShellVisibleLastFrame = false;
   m_isMouseControlOverridden = false;
+  m_notificationWindow.reset();
+  m_onPluginUpdateAvailableSink.reset();
 }
 
 void UIManager::RegisterWindow(std::shared_ptr<IWindow> window) {
@@ -241,10 +247,29 @@ void UIManager::RegisterWindow(std::shared_ptr<IWindow> window) {
   m_windows.push_back(std::move(window));
 }
 
+void UIManager::ApplyDeveloperMode(bool enabled) {
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+  if (logger) logger->Info("Applying {} mode...", (enabled ? "Developer" : "User"));
+
+  for (auto& window : m_windows) {
+    if (!window) continue;
+
+    if (window->IsDeveloperOnly()) {
+      auto* base = dynamic_cast<BaseWindow*>(window.get());
+      if (base) {
+          base->SetVisibility(enabled);
+          // Persist to config so it's saved correctly
+          m_configService->SetValue(window->GetComponentName(), "ui.windows." + window->GetWindowId() + ".is_visible", enabled);
+      }
+    }
+  }
+  m_configService->SaveAllDirty();
+}
+
 std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() const {
   std::map<std::string, nlohmann::ordered_json> allSettings;
   for (const auto& window : m_windows) {
-    if (!window) continue;
+    if (!window || !window->IsPersistent()) continue;
     // This structure assumes settings are grouped by component
     allSettings[window->GetComponentName()]["windows"][window->GetWindowId()] = window->GetCurrentSettings();
   }
@@ -274,6 +299,14 @@ void UIManager::HideNotification(SPF_Notification_Handle handle) {
     if (m_notificationWindow) {
         m_notificationWindow->Hide(handle);
     }
+}
+
+const Events::System::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
+    auto it = m_pluginUpdates.find(pluginId);
+    if (it != m_pluginUpdates.end()) {
+        return &it->second;
+    }
+    return nullptr;
 }
 
 void UIManager::PlayTransition(int type, float duration, bool reverse, int color) {
@@ -984,7 +1017,7 @@ void UIManager::DestroyWindowsForOwner(const std::string& owner) {
   // This ensures positions, sizes, and visibility are persisted to the config service.
   bool hasWindows = false;
   for (const auto& window : m_windows) {
-    if (window && window->GetComponentName() == owner) {
+    if (window && window->GetComponentName() == owner && window->IsPersistent()) {
       m_configService->SetValue(owner, "ui.windows." + window->GetWindowId(), window->GetCurrentSettings());
       hasWindows = true;
     }
@@ -1059,6 +1092,34 @@ void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e)
 }
 
 void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+    auto& loc = Localization::LocalizationManager::GetInstance();
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    if (e.result.success && e.result.data.has_value()) {
+        const auto& data = e.result.data.value();
+        logger->Debug("Update check completed. Available: {}", data.updateAvailable);
+
+        if (data.updateAvailable) {
+            bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+            logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
+
+            if (showNotifications) {
+                logger->Info("Showing update notification...");
+                std::string versionStr = "v." + e.result.data->latestVersion.full;
+                std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
+                SPF_Notification_Params params{};
+                params.message = updateMsg.c_str();
+                params.type = SPF_NOTIFICATION_INFO;
+                params.mode = SPF_NOTIF_MODE_TOP;
+                params.duration = 5.0f;
+                UIManager::GetInstance().ShowNotificationEx(&params);
+            } else {
+                logger->Debug("Update notifications are disabled in settings.");
+            }
+        }
+    } else if (!e.result.success) {
+        logger->Warn("Update check failed: {}", e.result.errorMessage.value_or("unknown error"));
+    }
+
     for (const auto& window : m_windows) {
         window->OnUpdateCheckCompleted(e);
     }
@@ -1073,6 +1134,31 @@ void UIManager::NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetch
 void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {
   
 }
+
+void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e) {
+    m_pluginUpdates[e.pluginId] = e;
+
+    auto& loc = Localization::LocalizationManager::GetInstance();
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    logger->Info("Update available for plugin {}: {} -> {}", e.pluginName, e.currentVersion, e.latestVersion);
+
+    bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+    logger->Debug("Update notifications enabled (Plugin): {}", showNotifications);
+
+    if (showNotifications) {
+                logger->Info("Showing update notification...");
+                std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", e.pluginName, e.latestVersion);
+                SPF_Notification_Params params{};
+                params.message = updateMsg.c_str();
+                params.type = SPF_NOTIFICATION_INFO;
+                params.mode = SPF_NOTIF_MODE_TOP;
+                params.duration = 5.0f;
+                UIManager::GetInstance().ShowNotificationEx(&params);
+            } else {
+                logger->Debug("Update notifications are disabled in settings.");
+            }
+}
+
 void UIManager::CreateAndRegisterFrameworkWindows() {
   // Ensure dependencies are valid
   assert(m_eventManager);
@@ -1151,6 +1237,16 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Notifications (Global)
   m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
   RegisterWindow(m_notificationWindow);
+
+  // Apply initial developer mode filter
+  bool initialDevMode = m_configService->GetValue("framework", "settings.framework.developer_mode", false).get<bool>();
+  ApplyDeveloperMode(initialDevMode);
+
+  // Trigger update check on startup
+  if (!System::EnvironmentManager::GetInstance().GetFrameworkInfo().version.empty()) {
+      m_eventManager->System.OnRequestUpdateCheck.Call({});
+      m_communicationManager->RequestPluginUpdateChecks();
+  }
 }
 
 }  // namespace UI

@@ -32,5 +32,16 @@ struct OnUsageTrackingCompleted {
     bool success;
 };
 
+/**
+ * @brief Fired when an update for a plugin is detected via GitHub.
+ */
+struct OnPluginUpdateAvailable {
+    std::string pluginId;
+    std::string pluginName;
+    std::string currentVersion;
+    std::string latestVersion;
+    std::string downloadUrl;
+};
+
 }  // namespace Events::System
 SPF_NS_END

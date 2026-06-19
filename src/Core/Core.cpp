@@ -98,8 +98,11 @@ Core::Core(HMODULE module)
       m_onRequestUpdateCheckSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>>(m_eventManager->System.OnRequestUpdateCheck)),
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
       m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
-      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
-      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
+      m_onPatronsFetchCompletedSink(
+          std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
+      m_onUsageTrackingCompletedSink(
+          std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted))
+      {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -126,6 +129,9 @@ void Core::Preload() {
     m_lifecycleState = LifecycleState::Stopped;  // Reset state on failure
     return;
   }
+
+  // Initialize EnvironmentManager early so framework information is available during UI initialization.
+  EnvironmentManager::GetInstance().Initialize(m_module);
 
   // Initialize services that do not depend on the game SDK.
   InitServices();
@@ -219,6 +225,11 @@ void Core::TryStartInitialization() {
   
   auto managersStartTime = std::chrono::steady_clock::now();
   InitManagersAndPlugins();
+
+  // 1. Bind core event handlers immediately after managers are initialized.
+  // This ensures that any events fired during UI or plugin initialization (like update checks) are handled.
+  m_logger->Info("-> [Init] Binding core event handlers...");
+  BindEventHandlers();
 
   // Preload plugins so they can create virtual input devices during their OnLoad phase.
   // This must happen before RegisterCreatedDevices().
@@ -552,13 +563,8 @@ void Core::InitHooks() {
   UIManager::GetInstance().SetRenderer(m_renderer.get());
   auto detectedAPI = m_renderer->GetDetectedAPI();
 
-  // 2. Bind core event handlers before any other systems start firing events.
-  m_logger->Info("-> [Init] Binding core event handlers...");
-  BindEventHandlers();
-
-  // 3. Initialize standalone services that don't depend on hooks.
+  // 2. Initialize standalone services that don't depend on hooks.
   m_logger->Info("-> [Init] Initializing standalone services...");
-  EnvironmentManager::GetInstance().Initialize(m_module);
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
@@ -950,6 +956,11 @@ void Core::OnRequestPluginStateChange(const Events::UI::RequestPluginStateChange
 
   // Also update the configuration to persist the state
   m_configService->SetValue("framework", "settings.plugin_states." + e.pluginName + ".enabled", e.enable);
+
+  // Trigger update check after enabling (isEnabled must be set first)
+  if (e.enable && m_communicationManager) {
+    m_communicationManager->RequestPluginUpdateChecks();
+  }
 }
 
 void Core::OnPluginWillBeUnloaded(const Events::OnPluginWillBeUnloaded& e) {

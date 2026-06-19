@@ -25,6 +25,8 @@ class WelcomeWindow : public IWindow {
   const std::string& GetWindowId() const override { return m_windowId; }
   const std::string& GetComponentName() const override { return m_componentName; }
   bool IsVisible() const override { return m_isVisible; }
+  bool IsDeveloperOnly() const override { return false; }
+  bool IsPersistent() const override { return false; }
   bool IsInteractive() const override { return true; }
   bool IsFocused() const override { return m_isFocused; }
   void Focus() override { m_isFocused = true; }
