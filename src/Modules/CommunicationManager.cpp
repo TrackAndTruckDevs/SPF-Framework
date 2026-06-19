@@ -278,7 +278,7 @@ namespace Modules {
 
             auto repo = ParseGithubUrl(*info.githubUrl);
             if (!repo) {
-                logger->Warn("Plugin {}: Failed to parse GitHub URL: {}", id, *info.githubUrl);
+                logger->Debug("Plugin {}: does not have GitHub URL: {}", id, *info.githubUrl);
                 continue;
             }
 

@@ -50,7 +50,6 @@ void GameWorldService::Shutdown() {
     m_mapScaleOffset = 0;
     m_globalWarpOffset = 0;
     m_pauseStatusOffset = 0;
-    m_frameCounterOffset = 0;
     m_realDeltaTimeOffset = 0;
     m_updateFnAddr = 0;
     m_globalHaltOffset = 0;
@@ -267,15 +266,6 @@ void GameWorldService::SetEngineHalt(bool halted) {
   *(int32_t*)(coreApp + m_trafficHaltOffset) = halted ? 1 : 0;
   
   m_pluginHalted = halted;
-}
-
-uint32_t GameWorldService::GetFrameCounter() {
-  if (!m_isInitialized || m_frameCounterOffset == 0) return 0;
-
-  uintptr_t coreApp = GameDataCameraService::GetInstance().GetCameraParamsObjectPtr();
-  if (!coreApp) return 0;
-
-  return *(uint32_t*)(coreApp + m_frameCounterOffset);
 }
 
 double GameWorldService::GetRealDeltaTime() {

@@ -520,42 +520,6 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
     }
 
     /*
-     * 4.3 [OFFSET: Frame Counter] (Updated for v1.60)
-     * This counter increments every frame within the engine update loop.
-     * Strategy: Match the load and store logic of the frame counter.
-     * 
-     * Ghidra 1.60 Analysis (Address: 140416a94):
-     * 140416a94 8b 89 3c 03 00 00  MOV  ECX, dword ptr [RCX + 0x33c]
-     * ...
-     * 140416ab2 41 89 87 3c 03 00 00  MOV  dword ptr [R15 + 0x33c], EAX
-     * 
-     * Chain Strategy:
-     * 1. MOV reg, [reg+off] -> 8B [80-BF] ?? ?? ?? ??
-     * 2. MOV [reg+off], reg -> [40-4F] 89 [80-BF] ?? ?? ?? ??
-     */
-    const std::vector<std::string> frameChain = {
-        "8B [80-BF] ?? ?? ?? ??", 
-        "[40-4F] 89 [80-BF] ?? ?? ?? ??"
-    };
-
-    addr = Utils::PatternFinder::FindChain(frameChain, 32, pfnCoreEngineLoop);
-    if (addr) {
-        // Extract offset 0x33C from the first instruction (MOV reg, [reg+...])
-        // Instruction format: 8B ModRM [OFFSET] (Offset is at +2)
-        int32_t frameOff = Utils::PatternFinder::ReadInt32(addr + 2);
-        if (Utils::PatternFinder::IsSaneOffset(frameOff)) {
-            owner.SetFrameCounterOffset(frameOff);
-            logger->Debug("4.3 [OFFSET: Frame Counter] Found: 0x{:X}", frameOff);
-        } else {
-            logger->Error("4.3 [OFFSET: Frame Counter] Offset (0x{:X}) is insane.", frameOff);
-            all_found = false;
-        }
-    } else {
-        logger->Error("4.3 [OFFSET: Frame Counter] FAILED to find logic chain.");
-        all_found = false;
-    }
-
-    /*
      * 5. [OFFSET: Engine Halt Counters] (Updated for v1.60)
      * These counters control the "frozen" state of the engine sub-systems.
      * Strategy: Match the entire complex decrement and state check logic block.

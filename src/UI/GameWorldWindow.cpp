@@ -199,9 +199,6 @@ void GameWorldWindow::RenderContent() {
     }
 
     ImGui::Spacing();
-    
-    uint32_t frameCount = m_worldService.GetFrameCounter();
-    Typography::Text(TextStyle::Regular(), loc.Get(m_locEngineFrameCounter).c_str(), frameCount);
 
     double deltaTime = m_worldService.GetRealDeltaTime();
     Typography::Text(TextStyle::Regular(), loc.Get(m_locEngineDeltaTime).c_str(), (float)deltaTime);

@@ -20,6 +20,7 @@
 #include "SPF/GameCamera/GameCameraFree.hpp"
 #include "SPF/Modules/API/CameraApi.hpp"
 #include "SPF/Modules/API/VehicleApi.hpp"
+#include "SPF/Modules/API/GameWorldApi.hpp"
 #include "SPF/Modules/API/UIApi.hpp"
 #include "SPF/Modules/API/LoggerApi.hpp"
 #include "SPF/Modules/API/LocalizationApi.hpp"
@@ -573,6 +574,7 @@ void PluginManager::FillAPIs() {
   API::HooksApi::FillHooksApi(&m_hooksAPI, &PluginManager::T_Hooks_Register);
   API::CameraApi::FillCameraAPI(&m_cameraAPI);
   API::VehicleApi::FillVehicleApi(&m_vehicleAPI);
+  API::GameWorldApi::FillGameWorldApi(&m_gameworldAPI);
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
@@ -608,6 +610,7 @@ void PluginManager::FillAPIs() {
     m_coreAPI.gamelog = &m_gameLogAPI;
     m_coreAPI.json_reader = &m_jsonReaderAPI;
     m_coreAPI.vehicle = &m_vehicleAPI;
+    m_coreAPI.gameworld = &m_gameworldAPI;
     m_coreAPI.environment = &m_environmentAPI;
     m_coreAPI.json_writer = &m_jsonWriterAPI;
     m_coreAPI.json_io = &m_jsonIOAPI;

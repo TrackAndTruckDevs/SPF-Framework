@@ -64,7 +64,7 @@ extern "C" {
 typedef struct SPF_Hook_Handle SPF_Hook_Handle;
 
 /**
- * @brief Typedef for the function that finds a function by signature and installs a hook.
+ * @brief Typedef for the function that finds a function by signature (or string reference) and installs a hook.
  *
  * @param pluginName The name of the calling plugin.
  * @param hookName A unique programmatic name for the hook (e.g., "MyPlugin_TrafficHook").
@@ -75,6 +75,8 @@ typedef struct SPF_Hook_Handle SPF_Hook_Handle;
  *                   address of the trampoline here. You must use this to call the
  *                   original function from your detour.
  * @param signature A string representing the byte pattern for the hook target.
+ *                  Can also start with "str:" prefix to look up the function by a unique
+ *                  string reference (e.g. "str:[msg] There were at least %u more nested messages...").
  * @param isEnabled The initial enabled state of the hook.
  * @return A handle to the hook, or NULL on failure. The framework manages the memory.
  */

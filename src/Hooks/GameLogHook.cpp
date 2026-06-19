@@ -80,7 +80,7 @@ SPF_NS_BEGIN
 namespace Hooks {
 
 GameLogHook::GameLogHook()
-    : BaseHook("GameLogHook", "Game Log", "89 4C 24 08 55 53 56 57 41 55 48 8B EC", "framework") {}
+    : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework") {}
 
 GameLogHook& GameLogHook::GetInstance() {
   static GameLogHook instance;

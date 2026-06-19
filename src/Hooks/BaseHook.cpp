@@ -55,12 +55,18 @@ bool BaseHook::Install() {
 
     logger->Info("Installing hook '{}' for the first time...", m_displayName);
 
-    uintptr_t address = Utils::PatternFinder::Find(m_signature.c_str());
+    uintptr_t address = 0;
+    if (m_signature.rfind("str:", 0) == 0) {
+        std::string targetStr = m_signature.substr(4);
+        address = Utils::PatternFinder::FindFunctionByString(targetStr.c_str());
+    } else {
+        address = Utils::PatternFinder::Find(m_signature.c_str());
+    }
     if (!address) {
-        logger->Error("Could not find signature for hook '{}' (signature: '{}'). Hook will not be installed.", m_name, m_signature);
+        logger->Error("Could not find address for hook '{}' (signature/string: '{}'). Hook will not be installed.", m_name, m_signature);
         return false;
     }
-    logger->Info("Found signature for hook '{}' at address: {:#x}", m_name, address);
+    logger->Info("Found address for hook '{}' at address: {:#x}", m_name, address);
 
     // logger->Info("Found '{}' signature at address: {:#x}", m_displayName, address);
 

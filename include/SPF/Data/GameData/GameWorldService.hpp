@@ -47,7 +47,6 @@ class GameWorldService {
   void SetRealPlaySecondsOffset(intptr_t val) { m_realPlaySecondsOffset = val; }
   void SetGlobalWarpOffset(intptr_t val) { m_globalWarpOffset = val; }
   void SetPauseStatusOffset(intptr_t val) { m_pauseStatusOffset = val; }
-  void SetFrameCounterOffset(intptr_t val) { m_frameCounterOffset = val; }
   void SetRealDeltaTimeOffset(intptr_t val) { m_realDeltaTimeOffset = val; }
   void SetSkyboxAutoUpdateOffset(intptr_t val) { m_skyboxAutoUpdateOffset = val; }
   void SetUpdateFnAddr(uintptr_t val) { m_updateFnAddr = val; }
@@ -74,7 +73,6 @@ class GameWorldService {
   bool IsGamePaused();
   void SetGamePaused(bool paused);
   void SetEngineHalt(bool halted);
-  uint32_t GetFrameCounter();
   double GetRealDeltaTime();
 
   // --- Time Calculation Helpers ---
@@ -115,8 +113,7 @@ class GameWorldService {
   intptr_t m_globalHaltOffset = 0;       
   intptr_t m_simulationHaltOffset = 0;   
   intptr_t m_trafficHaltOffset = 0;      
-
-  intptr_t m_frameCounterOffset = 0;     
+    
   intptr_t m_realDeltaTimeOffset = 0;    
 
   intptr_t m_skyboxAutoUpdateOffset = 0; 
