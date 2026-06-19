@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "설정 파일에서 'connect'를 활성화하십시오.",
         "version_label": "현재 버전 ",
         "update_checking": "업데이트 확인 중...",
+        "update_available_notification": "### {}\n 새로운 업데이트 **{}**를 이용할 수 있습니다\n 자세한 내용은 웹사이트를 방문해 주세요",
         "menu": {
             "manual": "매뉴얼 / FAQ",
             "about": "소개 / 연락처",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "이 기능을 사용하려면 후크 창에서 '게임 콘솔' 후크를 활성화하십시오.",
             "shutdown": "프레임워크 종료",
             "open_plugins_folder": "플러그인 폴더 열기"
+        },
+        "common": {
+            "developer_mode": "개발자 모드",
+            "user_mode": "사용자 모드"
         },
         "game_status": {
             "running_game_label": "실행 중인 게임:",
@@ -92,7 +97,8 @@
             "info": "플러그인 정보",
             "description": "설명",
             "settings": "설정",
-            "restart_sdk": "가상 입력 장치를 활성화하려면 SDK를 재시작하십시오"
+            "restart_sdk": "가상 입력 장치를 활성화하려면 SDK를 재시작하십시오",
+            "update_available": "웹사이트로 이동"
         },
         "info_popup": {
             "author": "제작자:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "필수 SPF 프레임워크 버전:",
-            "virt_input_restart_required": "가상 입력을 위해 재시작이 필요합니다"
+            "virt_input_restart_required": "가상 입력을 위해 재시작이 필요합니다",
+            "update_available": "새 버전 {}을 이용할 수 있습니다. 상세 정보: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "알림 지속 시간",
                     "description": "임시 팝업 알림이 화면에 머무는 시간(초)을 설정합니다."
+                },
+                "show_update_notifications": {
+                    "title": "업데이트 알림 표시",
+                    "description": "프레임워크나 플러그인의 업데이트가 있을 때 알림을 표시합니다."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "바퀴",
         "tv": "TV",
         "developer_free_camera": "개발자 자유 카메라 (ID 0)",
+        "default_value_prefix": "기본값",
+        "data_not_found": ": 데이터를 찾을 수 없습니다",
         "tabs": {
             "interior_camera": "실내 카메라",
+            "photo_camera": "포토 카메라",
             "behind_camera": "후방 카메라",
             "top_camera": "상단 카메라",
             "cabin_camera": "캐빈 카메라",
@@ -671,23 +685,64 @@
             "seat_lr": "좌석 좌/우 (X)",
             "seat_ud": "좌석 상/하 (Y)",
             "seat_fb": "좌석 전/후 (Z)",
-            "seat_position_not_found": "좌석 위치: 데이터를 찾을 수 없음",
             "head_rotation": "머리 회전",
             "yaw_lr": "요 (좌/우)",
             "pitch_ud": "피치 (상/하)",
-            "head_rotation_not_found": "머리 회전: 데이터를 찾을 수 없음",
             "mouse_rotation_limits": "마우스 회전 제한",
             "left_limit": "왼쪽 제한",
             "right_limit": "오른쪽 제한",
             "up_limit": "위쪽 제한",
             "down_limit": "아래쪽 제한",
-            "rotation_limits_not_found": "회전 제한: 데이터를 찾을 수 없음",
             "rotation_defaults": "기본 회전",
             "default_lr": "기본 좌/우##실내",
             "default_ud": "기본 상/하##실내",
-            "rotation_defaults_not_found": "기본 회전: 데이터를 찾을 수 없음",
             "reset_to_defaults": "기본값으로 재설정",
-            "not_available": "실내 카메라 개체를 사용할 수 없습니다."
+            "not_available": "실내 카메라 개체를 사용할 수 없습니다.",
+            "near_plane": "근거리 클리핑 평면 (Near Plane)",
+            "far_plane": "원거리 클리핑 평면 (Far Plane)",
+            "mouse_sensitivity": "마우스 민감도",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "hand_shake_limit": "카메라 진동 진폭",
+            "hand_shake_speed": "카메라 진동 주파수",
+            "zoom_fov_factor": "줌 FOV 배율",
+            "zoom_speed_interior": "줌 속도",
+            "azimuth_overrides": "다이내믹 존 (Azimuth Overrides)",
+            "range_start_azimuth": "존 방위각 시작",
+            "range_end_azimuth": "존 방위각 종료",
+            "zone_is_outside": "캡 외측 구역",
+            "start_up_limit": "상한 제한 (시작)",
+            "end_up_limit": "상한 제한 (종료)",
+            "start_down_limit": "하한 제한 (시작)",
+            "end_down_limit": "하한 제한 (종료)",
+            "start_up_down_default": "기본 상/하 (시작)",
+            "end_up_down_default": "기본 상/하 (종료)",
+            "start_left_right_default": "기본 좌/우 (시작)",
+            "end_left_right_default": "기본 좌/우 (종료)",
+            "start_head_offset": "헤드 오프셋 (시작)",
+            "end_head_offset": "헤드 오프셋 (종료)",
+            "shake_animation_array": "흔들림 애니메이션 배열",
+            "point_x": "좌표 X",
+            "point_y": "좌표 Y",
+            "point_z": "좌표 Z",
+            "select_range": "구역 선택",
+            "select_frame": "프레임 선택",
+            "advanced_core_settings": "고급 코어 설정",
+            "shake_settings": "흔들림 및 진동 설정",
+            "interior_logic_settings": "인테리어 및 줌 로직",
+            "azimuth_range_details": "선택한 구역 파라미터"
+        },
+        "photo_camera": {
+            "live_state": "현재 상태",
+            "live_pitch": "피치 / Pitch (상/하)",
+            "live_yaw": "요 / Yaw (좌/우)",
+            "live_roll": "롤 / Roll",
+            "live_zoom": "줌 (거리)",
+            "position": "카메라 위치 (월드)",
+            "base_fov": "기본 FOV",
+            "not_available": "포토 카메라 오브젝트를 사용할 수 없습니다.",
+            "fov_zoom": "FOV / 줌"
         },
         "behind_camera": {
             "live_state": "실시간 상태",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "동적 오프셋 지연",
             "dynamic_offset_not_found": "동적 오프셋: 데이터를 찾을 수 없음",
             "base_fov_behind": "기본 시야각##후방",
-            "reset_to_defaults_behind": "기본값으로 재설정##후방",
-            "not_available": "후방 카메라 개체를 사용할 수 없습니다."
+            "not_available": "후방 카메라 개체를 사용할 수 없습니다.",
+            "collision_settings": "충돌 설정",
+            "validation": "충돌 활성화",
+            "validation_radius": "충돌 반경",
+            "validation_speed_pos": "충돌 속도 (정방향)",
+            "validation_speed_neg": "충돌 속도 (역방향)",
+            "speed_fov_factor": "속도별 FOV 계수",
+            "shake_settings": "흔들림 및 진동 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "top_camera": {
             "height_zoom": "높이 / 줌",
@@ -736,17 +801,37 @@
             "movement_speed": "이동 속도",
             "movement_not_found": "이동: 데이터를 찾을 수 없음",
             "dynamic_offset": "동적 오프셋",
-            "forward_offset": "전방 오프셋",
-            "backward_offset": "후방 오프셋",
+            "forward_offset_x": "전방 오프셋 (X)",
+            "backward_offset_x": "후방 오프셋 (X)",
+            "forward_offset_z": "전방 오프셋 (Z)",
+            "backward_offset_z": "후방 오프셋 (Z)",
             "dynamic_offset_not_found": "동적 오프셋: 데이터를 찾을 수 없음",
             "base_fov_top": "기본 시야각##상단",
-            "reset_to_defaults_top": "기본값으로 재설정##상단",
-            "not_available": "상단 카메라 개체를 사용할 수 없습니다."
+            "not_available": "상단 카메라 개체를 사용할 수 없습니다.",
+            "near_plane": "근거리 클리핑 평면",
+            "far_plane": "원거리 클리핑 평면",
+            "validation": "충돌 활성화",
+            "validation_speed_pos": "충돌 속도 (정방향)",
+            "validation_speed_neg": "충돌 속도 (역방향)",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열",
+            "adaptive_settings": "적응형 높이 설정",
+            "height_factor": "높이 계수",
+            "use_adaptive": "적응형 높이 사용",
+            "distance_settings": "동적 종방향 오프셋 (Z)",
+            "collision_settings": "충돌 설정"
         },
         "cabin_camera": {
             "base_fov_cabin": "기본 시야각##캐빈",
-            "reset_to_defaults_cabin": "기본값으로 재설정##캐빈",
-            "not_available": "캐빈 카메라 개체를 사용할 수 없습니다."
+            "not_available": "캐빈 카메라 개체를 사용할 수 없습니다.",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "window_camera": {
             "head_offset": "헤드 오프셋",
@@ -768,8 +853,14 @@
             "default_ud_window": "기본 상/하##창문",
             "rotation_defaults_not_found_window": "기본 회전: 데이터를 찾을 수 없음",
             "base_fov_window": "기본 시야각##창문",
-            "reset_to_defaults_window": "기본값으로 재설정##창문",
-            "not_available": "창문 카메라 개체를 사용할 수 없습니다."
+            "not_available": "창문 카메라 개체를 사용할 수 없습니다.",
+            "relative_headtracking_azimuth": "상대적 헤드트래킹 방위각",
+            "auto_center_move_direction": "이동 시 자동 중앙 정렬 방향",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "bumper_camera": {
             "offset": "오프셋",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "오프셋 Z##범퍼",
             "offset_not_found": "오프셋: 데이터를 찾을 수 없음",
             "base_fov_bumper": "기본 시야각##범퍼",
-            "reset_to_defaults_bumper": "기본값으로 재설정##범퍼",
-            "not_available": "범퍼 카메라 개체를 사용할 수 없습니다."
+            "not_available": "범퍼 카메라 개체를 사용할 수 없습니다.",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "wheel_camera": {
             "offset": "오프셋",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "오프셋 Z##바퀴",
             "offset_not_found": "오프셋: 데이터를 찾을 수 없음",
             "base_fov_wheel": "기본 시야각##바퀴",
-            "reset_to_defaults_wheel": "기본값으로 재설정##바퀴",
-            "not_available": "바퀴 카메라 개체를 사용할 수 없습니다."
+            "not_available": "바퀴 카메라 개체를 사용할 수 없습니다.",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "tv_camera": {
             "distance": "거리",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "도로 융기 Z##TV",
             "road_uplift_not_found": "도로 융기: 데이터를 찾을 수 없음",
             "base_fov_tv": "기본 시야각##TV",
-            "reset_to_defaults_tv": "기본값으로 재설정##TV",
-            "not_available": "TV 카메라 개체를 사용할 수 없습니다."
+            "not_available": "TV 카메라 개체를 사용할 수 없습니다.",
+            "shake_settings": "흔들림 설정",
+            "shake_anim_step": "흔들림 애니메이션 단계",
+            "shake_anim_scale_min": "최소 흔들림 배율",
+            "shake_anim_scale_max": "최대 흔들림 배율",
+            "shake_animation_array": "흔들림 애니메이션 배열"
         },
         "free_camera": {
             "position": "위치",
@@ -830,7 +933,6 @@
             "movement_speed": "이동 속도",
             "speed_freecam": "속도",
             "movement_speed_not_found": "이동 속도: 데이터를 찾을 수 없음",
-            "reset_to_defaults_freecam": "기본값으로 재설정##자유 카메라",
             "not_available": "자유 카메라 개체를 사용할 수 없습니다."
         },
         "debug": {

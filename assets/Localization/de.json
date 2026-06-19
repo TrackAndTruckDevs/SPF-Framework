@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Aktivieren Sie 'connect' in der Konfigurationsdatei.",
         "version_label": "Ihre Version ",
         "update_checking": "Suche nach Updates...",
+        "update_available_notification": "### {}\n Neues Update verfügbar **{}**\n Für weitere Informationen besuchen Sie bitte die Website",
         "menu": {
             "manual": "Handbuch / FAQ",
             "about": "Über uns / Kontakte",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Aktivieren Sie den 'Game Console'-Hook im Hooks-Fenster, um diese Funktion zu nutzen.",
             "shutdown": "Framework herunterfahren",
             "open_plugins_folder": "Plugin-Ordner öffnen"
+        },
+        "common": {
+            "developer_mode": "Entwicklermodus",
+            "user_mode": "Benutzermodus"
         },
         "game_status": {
             "running_game_label": "Running Game:",
@@ -92,7 +97,8 @@
             "info": "Plugin-Informationen",
             "description": "Beschreibung",
             "settings": "Einstellungen",
-            "restart_sdk": "SDK neu starten, um virtuelle Eingabegeräte zu aktivieren"
+            "restart_sdk": "SDK neu starten, um virtuelle Eingabegeräte zu aktivieren",
+            "update_available": "Zur Website gehen"
         },
         "info_popup": {
             "author": "Autor:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Benötigt version SPF Framework:",
-            "virt_input_restart_required": "Neustart für virtuelle Eingaben erforderlich"
+            "virt_input_restart_required": "Neustart für virtuelle Eingaben erforderlich",
+            "update_available": "Neue Version {} verfügbar, Details: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Benachrichtigungsdauer",
                     "description": "Legt fest, wie lange (in Sekunden) die temporären Pop-up-Benachrichtigungen auf dem Bildschirm bleiben."
+                },
+                "show_update_notifications": {
+                    "title": "Benachrichtigungen über Updates",
+                    "description": "Sie erhalten Benachrichtigungen, wenn Updates für das Framework oder die Plugins verfügbar sind."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Rad",
         "tv": "TV",
         "developer_free_camera": "Entwickler-Freikamera (ID 0)",
+        "default_value_prefix": "Standard",
+        "data_not_found": ": Keine Daten gefunden",
         "tabs": {
             "interior_camera": "Innenkamera",
+            "photo_camera": "Fotokamera",
             "behind_camera": "Verfolgerkamera",
             "top_camera": "Draufsichtkamera",
             "cabin_camera": "Kabinenkamera",
@@ -671,23 +685,64 @@
             "seat_lr": "Sitz L/R (X)",
             "seat_ud": "Sitz O/U (Y)",
             "seat_fb": "Sitz V/H (Z)",
-            "seat_position_not_found": "Sitzposition: Daten nicht gefunden",
             "head_rotation": "Kopfdrehung",
             "yaw_lr": "Gieren (L/R)",
             "pitch_ud": "Nicken (O/U)",
-            "head_rotation_not_found": "Kopfdrehung: Daten nicht gefunden",
             "mouse_rotation_limits": "Mausrotationsgrenzen",
             "left_limit": "Grenze links",
             "right_limit": "Grenze rechts",
             "up_limit": "Grenze oben",
             "down_limit": "Grenze unten",
-            "rotation_limits_not_found": "Rotationsgrenzen: Daten nicht gefunden",
             "rotation_defaults": "Standard-Rotation",
             "default_lr": "Standard L/R##Innenansicht",
             "default_ud": "Standard O/U##Innenansicht",
-            "rotation_defaults_not_found": "Standard-Rotation: Daten nicht gefunden",
             "reset_to_defaults": "Auf Standard zurücksetzen",
-            "not_available": "Innenkamera-Objekt nicht verfügbar."
+            "not_available": "Innenkamera-Objekt nicht verfügbar.",
+            "near_plane": "Nahe Clipping-Ebene",
+            "far_plane": "Ferne Clipping-Ebene",
+            "mouse_sensitivity": "Mausempfindlichkeit",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "hand_shake_limit": "Kameravibrationsamplitude",
+            "hand_shake_speed": "Kameravibrationsfrequenz",
+            "zoom_fov_factor": "Zoom-FOV-Multiplikator",
+            "zoom_speed_interior": "Zoom-Geschwindigkeit",
+            "azimuth_overrides": "Dynamische Zonen (Azimuth Overrides)",
+            "range_start_azimuth": "Zonen-Azimut Beginn",
+            "range_end_azimuth": "Zonen-Azimut Ende",
+            "zone_is_outside": "Zone außerhalb der Kabine",
+            "start_up_limit": "Oberes Limit (Beginn)",
+            "end_up_limit": "Oberes Limit (Ende)",
+            "start_down_limit": "Unteres Limit (Beginn)",
+            "end_down_limit": "Unteres Limit (Ende)",
+            "start_up_down_default": "Standard O/U (Beginn)",
+            "end_up_down_default": "Standard O/U (Ende)",
+            "start_left_right_default": "Standard L/R (Beginn)",
+            "end_left_right_default": "Standard L/R (Ende)",
+            "start_head_offset": "Kopfversatz (Beginn)",
+            "end_head_offset": "Kopfversatz (Ende)",
+            "shake_animation_array": "Wackelanimations-Array",
+            "point_x": "Punkt X",
+            "point_y": "Punkt Y",
+            "point_z": "Punkt Z",
+            "select_range": "Zone auswählen",
+            "select_frame": "Frame auswählen",
+            "advanced_core_settings": "Erweiterte Kerneinstellungen",
+            "shake_settings": "Wackel- und Zittereinstellungen",
+            "interior_logic_settings": "Innenraum- und Zoomlogik",
+            "azimuth_range_details": "Parameter der ausgewählten Zone"
+        },
+        "photo_camera": {
+            "live_state": "Aktueller Zustand",
+            "live_pitch": "Neigung / Pitch (O/U)",
+            "live_yaw": "Drehung / Yaw (L/R)",
+            "live_roll": "Rollen / Roll",
+            "live_zoom": "Zoom (Distanz)",
+            "position": "Kameraposition (Welt)",
+            "base_fov": "Basis-FOV",
+            "not_available": "Fotokamera-Objekt nicht verfügbar.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Live-Zustand",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Dyn. Offset Trägheit",
             "dynamic_offset_not_found": "Dynamischer Offset: Daten nicht gefunden",
             "base_fov_behind": "Basis-FOV##Verfolger",
-            "reset_to_defaults_behind": "Auf Standard zurücksetzen##Verfolger",
-            "not_available": "Verfolgerkamera-Objekt nicht verfügbar."
+            "not_available": "Verfolgerkamera-Objekt nicht verfügbar.",
+            "collision_settings": "Kollisionseinstellungen",
+            "validation": "Kollision aktivieren",
+            "validation_radius": "Kollisionsradius",
+            "validation_speed_pos": "Kollisionsgeschwindigkeit (Pos)",
+            "validation_speed_neg": "Kollisionsgeschwindigkeit (Neg)",
+            "speed_fov_factor": "Geschwindigkeitsabhängiger FOV-Faktor",
+            "shake_settings": "Wackel- und Zittereinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "top_camera": {
             "height_zoom": "Höhe / Zoom",
@@ -736,17 +801,37 @@
             "movement_speed": "Bewegungsgeschwindigkeit",
             "movement_not_found": "Bewegung: Daten nicht gefunden",
             "dynamic_offset": "Dynamischer Offset",
-            "forward_offset": "Vorwärts-Offset",
-            "backward_offset": "Rückwärts-Offset",
+            "forward_offset_x": "Versatz vorwärts (X)",
+            "backward_offset_x": "Versatz rückwärts (X)",
+            "forward_offset_z": "Versatz vorwärts (Z)",
+            "backward_offset_z": "Versatz rückwärts (Z)",
             "dynamic_offset_not_found": "Dynamischer Offset: Daten nicht gefunden",
             "base_fov_top": "Basis-FOV##Draufsicht",
-            "reset_to_defaults_top": "Auf Standard zurücksetzen##Draufsicht",
-            "not_available": "Draufsichtkamera-Objekt nicht verfügbar."
+            "not_available": "Draufsichtkamera-Objekt nicht verfügbar.",
+            "near_plane": "Nahe Clipping-Ebene",
+            "far_plane": "Ferne Clipping-Ebene",
+            "validation": "Kollision aktivieren",
+            "validation_speed_pos": "Kollisionsgeschwindigkeit (Pos)",
+            "validation_speed_neg": "Kollisionsgeschwindigkeit (Neg)",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array",
+            "adaptive_settings": "Einstellungen für adaptive Höhe",
+            "height_factor": "Höhenfaktor",
+            "use_adaptive": "Adaptive Höhe verwenden",
+            "distance_settings": "Dynamischer Längsversatz (Z)",
+            "collision_settings": "Kollisionseinstellungen"
         },
         "cabin_camera": {
             "base_fov_cabin": "Basis-FOV##Kabine",
-            "reset_to_defaults_cabin": "Auf Standard zurücksetzen##Kabine",
-            "not_available": "Kabinenkamera-Objekt nicht verfügbar."
+            "not_available": "Kabinenkamera-Objekt nicht verfügbar.",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "window_camera": {
             "head_offset": "Kopf-Offset",
@@ -768,8 +853,14 @@
             "default_ud_window": "Standard O/U##Fenster",
             "rotation_defaults_not_found_window": "Standard-Rotation: Daten nicht gefunden",
             "base_fov_window": "Basis-FOV##Fenster",
-            "reset_to_defaults_window": "Auf Standard zurücksetzen##Fenster",
-            "not_available": "Fensterkamera-Objekt nicht verfügbar."
+            "not_available": "Fensterkamera-Objekt nicht verfügbar.",
+            "relative_headtracking_azimuth": "Relativer Headtracking-Azimut",
+            "auto_center_move_direction": "Autozentrierungsrichtung bei Bewegung",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "bumper_camera": {
             "offset": "Offset",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Offset Z##Stoßstange",
             "offset_not_found": "Offset: Daten nicht gefunden",
             "base_fov_bumper": "Basis-FOV##Stoßstange",
-            "reset_to_defaults_bumper": "Auf Standard zurücksetzen##Stoßstange",
-            "not_available": "Stoßstangenkamera-Objekt nicht verfügbar."
+            "not_available": "Stoßstangenkamera-Objekt nicht verfügbar.",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "wheel_camera": {
             "offset": "Offset",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Offset Z##Rad",
             "offset_not_found": "Offset: Daten nicht gefunden",
             "base_fov_wheel": "Basis-FOV##Rad",
-            "reset_to_defaults_wheel": "Auf Standard zurücksetzen##Rad",
-            "not_available": "Radkamera-Objekt nicht verfügbar."
+            "not_available": "Radkamera-Objekt nicht verfügbar.",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "tv_camera": {
             "distance": "Entfernung",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Straßen-Anhebung Z##TV",
             "road_uplift_not_found": "Straßen-Anhebung: Daten nicht gefunden",
             "base_fov_tv": "Basis-FOV##TV",
-            "reset_to_defaults_tv": "Auf Standard zurücksetzen##TV",
-            "not_available": "TV-Kamera-Objekt nicht verfügbar."
+            "not_available": "TV-Kamera-Objekt nicht verfügbar.",
+            "shake_settings": "Wackeleinstellungen",
+            "shake_anim_step": "Schrittgröße der Wackelanimation",
+            "shake_anim_scale_min": "Min. Skalierung des Wackelns",
+            "shake_anim_scale_max": "Max. Skalierung des Wackelns",
+            "shake_animation_array": "Wackelanimations-Array"
         },
         "free_camera": {
             "position": "Position",
@@ -830,7 +933,6 @@
             "movement_speed": "Bewegungsgeschwindigkeit",
             "speed_freecam": "Geschwindigkeit",
             "movement_speed_not_found": "Bewegungsgeschwindigkeit: Daten nicht gefunden",
-            "reset_to_defaults_freecam": "Auf Standard zurücksetzen##FreieKamera",
             "not_available": "Freies Kameraobjekt nicht verfügbar."
         },
         "debug": {

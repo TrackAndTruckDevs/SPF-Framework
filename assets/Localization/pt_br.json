@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Habilite 'connect' no arquivo de configuração.",
         "version_label": "Sua versão ",
         "update_checking": "Verificando atualizações...",
+        "update_available_notification": "### {}\n Nova atualização disponível **{}**\n Para saber mais, acesse o site",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "Sobre Nós / Contatos",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Habilite o hook 'Game Console' na janela de Hooks para usar este recurso.",
             "shutdown": "Desligar Framework",
             "open_plugins_folder": "Abrir Pasta de Plugins"
+        },
+        "common": {
+            "developer_mode": "Modo desenvolvedor",
+            "user_mode": "Modo usuário"
         },
         "game_status": {
             "running_game_label": "Jogo em Execução:",
@@ -92,7 +97,8 @@
             "info": "Informações do Plugin",
             "description": "Descrição",
             "settings": "Configurações",
-            "restart_sdk": "Reinicie o SDK para ativar dispositivos de entrada virtuais"
+            "restart_sdk": "Reinicie o SDK para ativar dispositivos de entrada virtuais",
+            "update_available": "Ir para o site"
         },
         "info_popup": {
             "author": "Autor:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Requer a versão SPF Framework:",
-            "virt_input_restart_required": "Reinicialização necessária para entradas virtuais"
+            "virt_input_restart_required": "Reinicialização necessária para entradas virtuais",
+            "update_available": "Nova versão {} disponível, detalhes: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Duração da Notificação",
                     "description": "Define por quanto tempo (em segundos) as notificações pop-up temporárias permanecem na tela."
+                },
+                "show_update_notifications": {
+                    "title": "Notificar sobre atualizações",
+                    "description": "Você receberá notificações quando houver atualizações disponíveis para o framework ou plugins."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Roda",
         "tv": "TV",
         "developer_free_camera": "Câmera Livre do Desenvolvedor (ID 0)",
+        "default_value_prefix": "Padrão",
+        "data_not_found": ": dados não encontrados",
         "tabs": {
             "interior_camera": "Câmera Interior",
+            "photo_camera": "Câmera fotográfica",
             "behind_camera": "Câmera Traseira",
             "top_camera": "Câmera Superior",
             "cabin_camera": "Câmera da Cabine",
@@ -671,23 +685,64 @@
             "seat_lr": "Assento E/D (X)",
             "seat_ud": "Assento C/B (Y)",
             "seat_fb": "Assento F/T (Z)",
-            "seat_position_not_found": "Posição do Assento: dados não encontrados",
             "head_rotation": "Rotação da Cabeça",
             "yaw_lr": "Yaw (E/D)",
             "pitch_ud": "Pitch (C/B)",
-            "head_rotation_not_found": "Rotação da Cabeça: dados não encontrados",
             "mouse_rotation_limits": "Limites de Rotação do Mouse",
             "left_limit": "Limite Esquerdo",
             "right_limit": "Limite Direito",
             "up_limit": "Limite Superior",
             "down_limit": "Limite Inferior",
-            "rotation_limits_not_found": "Limites de Rotação: dados não encontrados",
             "rotation_defaults": "Padrões de Rotação",
             "default_lr": "Padrão E/D##Interior",
             "default_ud": "Padrão C/B##Interior",
-            "rotation_defaults_not_found": "Padrões de Rotação: dados não encontrados",
             "reset_to_defaults": "Restaurar Padrões",
-            "not_available": "Objeto da câmera interior não disponível."
+            "not_available": "Objeto da câmera interior não disponível.",
+            "near_plane": "Plano de corte próximo (Near Plane)",
+            "far_plane": "Plano de corte distante (Far Plane)",
+            "mouse_sensitivity": "Sensibilidade do mouse",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "hand_shake_limit": "Amplitude de vibração da câmera",
+            "hand_shake_speed": "Frequência de vibração da câmera",
+            "zoom_fov_factor": "Multiplicador de FOV do zoom",
+            "zoom_speed_interior": "Velocidade do zoom",
+            "azimuth_overrides": "Zonas dinâmicas (Azimuth Overrides)",
+            "range_start_azimuth": "Início do azimute da zona",
+            "range_end_azimuth": "Fim do azimute da zona",
+            "zone_is_outside": "Zona fora da cabine",
+            "start_up_limit": "Limite superior (Início)",
+            "end_up_limit": "Limite superior (Fim)",
+            "start_down_limit": "Limite inferior (Início)",
+            "end_down_limit": "Limite inferior (Fim)",
+            "start_up_down_default": "Padrão C/B (Início)",
+            "end_up_down_default": "Padrão C/B (Fim)",
+            "start_left_right_default": "Padrão E/D (Início)",
+            "end_left_right_default": "Padrão E/D (Fim)",
+            "start_head_offset": "Deslocamento da cabeça (Início)",
+            "end_head_offset": "Deslocamento da cabeça (Fim)",
+            "shake_animation_array": "Matriz de animação de balanço",
+            "point_x": "Ponto X",
+            "point_y": "Ponto Y",
+            "point_z": "Ponto Z",
+            "select_range": "Selecionar zona",
+            "select_frame": "Selecionar quadro (Frame)",
+            "advanced_core_settings": "Configurações avançadas do núcleo",
+            "shake_settings": "Configurações de balanço e trepidação",
+            "interior_logic_settings": "Lógica interna e de zoom",
+            "azimuth_range_details": "Parâmetros da zona selecionada"
+        },
+        "photo_camera": {
+            "live_state": "Estado atual",
+            "live_pitch": "Inclinação / Pitch (C/B)",
+            "live_yaw": "Rotação / Yaw (E/D)",
+            "live_roll": "Rolamento / Roll",
+            "live_zoom": "Zoom (Distância)",
+            "position": "Posição da câmera (Mundo)",
+            "base_fov": "FOV base",
+            "not_available": "O objeto da câmera fotográfica não está disponível.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Estado ao Vivo",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Lentidão do Desl. Din.",
             "dynamic_offset_not_found": "Deslocamento Dinâmico: dados não encontrados",
             "base_fov_behind": "FOV Base##Behind",
-            "reset_to_defaults_behind": "Restaurar Padrões##Behind",
-            "not_available": "Objeto da câmera traseira não disponível."
+            "not_available": "Objeto da câmera traseira não disponível.",
+            "collision_settings": "Configurações de colisão",
+            "validation": "Ativar colisões",
+            "validation_radius": "Raio de colisão",
+            "validation_speed_pos": "Velocidade de colisão (Pos)",
+            "validation_speed_neg": "Velocidade de colisão (Neg)",
+            "speed_fov_factor": "Fator de FOV por velocidade",
+            "shake_settings": "Configurações de balanço e trepidação",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "top_camera": {
             "height_zoom": "Altura / Zoom",
@@ -736,17 +801,37 @@
             "movement_speed": "Velocidade de Movimento",
             "movement_not_found": "Movimento: dados não encontrados",
             "dynamic_offset": "Deslocamento Dinâmico",
-            "forward_offset": "Deslocamento Frontal",
-            "backward_offset": "Deslocamento Traseiro",
+            "forward_offset_x": "Deslocamento para frente (X)",
+            "backward_offset_x": "Deslocamento para trás (X)",
+            "forward_offset_z": "Deslocamento para frente (Z)",
+            "backward_offset_z": "Deslocamento para trás (Z)",
             "dynamic_offset_not_found": "Deslocamento Dinâmico: dados não encontrados",
             "base_fov_top": "FOV Base##Top",
-            "reset_to_defaults_top": "Restaurar Padrões##Top",
-            "not_available": "Objeto da câmera superior não disponível."
+            "not_available": "Objeto da câmera superior não disponível.",
+            "near_plane": "Plano de corte próximo",
+            "far_plane": "Plano de corte distante",
+            "validation": "Ativar colisões",
+            "validation_speed_pos": "Velocidade de colisão (Pos)",
+            "validation_speed_neg": "Velocidade de colisão (Neg)",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço",
+            "adaptive_settings": "Configurações de altura adaptativa",
+            "height_factor": "Fator de altura",
+            "use_adaptive": "Usar altura adaptativa",
+            "distance_settings": "Deslocamento longitudinal dinâmico (Z)",
+            "collision_settings": "Configurações de colisão"
         },
         "cabin_camera": {
             "base_fov_cabin": "FOV Base##Cabin",
-            "reset_to_defaults_cabin": "Restaurar Padrões##Cabin",
-            "not_available": "Objeto da câmera da cabine não disponível."
+            "not_available": "Objeto da câmera da cabine não disponível.",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "window_camera": {
             "head_offset": "Deslocamento da Cabeça",
@@ -768,8 +853,14 @@
             "default_ud_window": "Padrão C/B##Window",
             "rotation_defaults_not_found_window": "Padrões de Rotação: dados não encontrados",
             "base_fov_window": "FOV Base##Window",
-            "reset_to_defaults_window": "Restaurar Padrões##Window",
-            "not_available": "Objeto da câmera da janela não disponível."
+            "not_available": "Objeto da câmera da janela não disponível.",
+            "relative_headtracking_azimuth": "Azimute relativo do headtracking",
+            "auto_center_move_direction": "Direção do autocentralização ao mover",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "bumper_camera": {
             "offset": "Deslocamento",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Deslocamento Z##Bumper",
             "offset_not_found": "Deslocamento: dados não encontrados",
             "base_fov_bumper": "FOV Base##Bumper",
-            "reset_to_defaults_bumper": "Restaurar Padrões##Bumper",
-            "not_available": "Objeto da câmera do para-choque não disponível."
+            "not_available": "Objeto da câmera do para-choque não disponível.",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "wheel_camera": {
             "offset": "Deslocamento",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Deslocamento Z##Wheel",
             "offset_not_found": "Deslocamento: dados não encontrados",
             "base_fov_wheel": "FOV Base##Wheel",
-            "reset_to_defaults_wheel": "Restaurar Padrões##Wheel",
-            "not_available": "Objeto da câmera da roda não disponível."
+            "not_available": "Objeto da câmera da roda não disponível.",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "tv_camera": {
             "distance": "Distância",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Elevação da Estrada Z##TV",
             "road_uplift_not_found": "Elevação da Estrada: dados não encontrados",
             "base_fov_tv": "FOV Base##TV",
-            "reset_to_defaults_tv": "Restaurar Padrões##TV",
-            "not_available": "Objeto da câmera de TV não disponível."
+            "not_available": "Objeto da câmera de TV não disponível.",
+            "shake_settings": "Configurações de balanço",
+            "shake_anim_step": "Passo da animação de balanço",
+            "shake_anim_scale_min": "Escala mín. de balanço",
+            "shake_anim_scale_max": "Escala máx. de balanço",
+            "shake_animation_array": "Matriz de animação de balanço"
         },
         "free_camera": {
             "position": "Posição",
@@ -830,7 +933,6 @@
             "movement_speed": "Velocidade de Movimento",
             "speed_freecam": "Velocidade",
             "movement_speed_not_found": "Velocidade de Movimento: dados não encontrados",
-            "reset_to_defaults_freecam": "Restaurar Padrões##FreeCam",
             "not_available": "Objeto da câmera livre não disponível."
         },
         "debug": {

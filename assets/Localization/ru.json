@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Включите 'connect' в файле настроек.",
         "version_label": "Ваша версия ",
         "update_checking": "Проверка обновлений...",
+        "update_available_notification": "### {}\n Доступно новое обновление **{}**\n Чтобы узнать больше, перейдите на сайт",
         "menu": {
             "manual": "Руководство / FAQ",
             "about": "О нас / Контакты",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Включите хук 'Game Console' в окне Hooks, чтобы использовать эту функцию.",
             "shutdown": "Выключить фреймворк",
             "open_plugins_folder": "Открыть папку с плагинами"
+        },
+        "common": {
+            "developer_mode": "Режим разработчика",
+            "user_mode": "Режим пользователя"
         },
         "game_status": {
             "running_game_label": "Запущенная игра:",
@@ -92,7 +97,8 @@
             "info": "Информация о плагине",
             "description": "Описание",
             "settings": "Настройки",
-            "restart_sdk": "Перезапустите SDK для активации виртуальных устройств ввода"
+            "restart_sdk": "Перезапустите SDK для активации виртуальных устройств ввода",
+            "update_available": "Перейти на сайт"
         },
         "info_popup": {
             "author": "Автор:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Требуется версия SPF Framework:",
-            "virt_input_restart_required": "Требуется перезапуск для виртуального ввода"
+            "virt_input_restart_required": "Требуется перезапуск для виртуального ввода",
+            "update_available": "Доступна новая версия {}, подробности: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Длительность уведомлений",
                     "description": "Устанавливает, как долго (в секундах) временные всплывающие уведомления остаются на экране."
+                },
+                "show_update_notifications": {
+                    "title": "Уведомлять об обновлениях",
+                    "description": "При доступном обновлении фреймворка или плагинов вы будете видеть уведомления."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Колесо",
         "tv": "ТВ",
         "developer_free_camera": "Свободная камера разработчика (ID 0)",
+        "default_value_prefix": "Дефолт",
+        "data_not_found": ": данные не найдены",
         "tabs": {
             "interior_camera": "Камера в салоне",
+            "photo_camera": "Фотокамера",
             "behind_camera": "Камера сзади",
             "top_camera": "Камера сверху",
             "cabin_camera": "Камера кабины",
@@ -671,23 +685,64 @@
             "seat_lr": "Сиденье Л/П (X)",
             "seat_ud": "Сиденье В/Н (Y)",
             "seat_fb": "Сиденье В/З (Z)",
-            "seat_position_not_found": "Положение сиденья: данные не найдены",
             "head_rotation": "Вращение головы",
             "yaw_lr": "Рыскание (Л/П)",
             "pitch_ud": "Тангаж (В/Н)",
-            "head_rotation_not_found": "Вращение головы: данные не найдены",
             "mouse_rotation_limits": "Ограничения вращения мыши",
             "left_limit": "Ограничение влево",
             "right_limit": "Ограничение вправо",
             "up_limit": "Ограничение вверх",
             "down_limit": "Ограничение вниз",
-            "rotation_limits_not_found": "Ограничения вращения: данные не найдены",
             "rotation_defaults": "Вращение по умолчанию",
             "default_lr": "По умолч. Л/П##Interior",
             "default_ud": "По умолч. В/Н##Interior",
-            "rotation_defaults_not_found": "Вращение по умолчанию: данные не найдены",
             "reset_to_defaults": "Сбросить по умолчанию",
-            "not_available": "Объект камеры в салоне недоступен."
+            "not_available": "Объект камеры в салоне недоступен.",
+            "near_plane": "Ближняя плоскость отсечения",
+            "far_plane": "Дальняя плоскость отсечения",
+            "mouse_sensitivity": "Чувствительность мыши",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "hand_shake_limit": "Амплитуда вибрации камеры",
+            "hand_shake_speed": "Частота вибрации камеры",
+            "zoom_fov_factor": "Множитель FOV зума",
+            "zoom_speed_interior": "Скорость зума",
+            "azimuth_overrides": "Динамические зоны (Azimuth Overrides)",
+            "range_start_azimuth": "Начало азимута зоны",
+            "range_end_azimuth": "Конец азимута зоны",
+            "zone_is_outside": "Зона снаружи кабины",
+            "start_up_limit": "Верхний лимит (Начало)",
+            "end_up_limit": "Верхний лимит (Конец)",
+            "start_down_limit": "Нижний лимит (Начало)",
+            "end_down_limit": "Нижний лимит (Конец)",
+            "start_up_down_default": "Дефолт В/Н (Начало)",
+            "end_up_down_default": "Дефолт В/Н (Конец)",
+            "start_left_right_default": "Дефолт Л/П (Начало)",
+            "end_left_right_default": "Дефолт Л/П (Конец)",
+            "start_head_offset": "Смещение головы (Начало)",
+            "end_head_offset": "Смещение головы (Конец)",
+            "shake_animation_array": "Массив анимации тряски",
+            "point_x": "Точка X",
+            "point_y": "Точка Y",
+            "point_z": "Точка Z",
+            "select_range": "Выбрать зону",
+            "select_frame": "Выбрать кадр",
+            "advanced_core_settings": "Расширенные настройки ядра",
+            "shake_settings": "Настройки тряски и дрожания",
+            "interior_logic_settings": "Логика интерьера и зума",
+            "azimuth_range_details": "Параметры выбранной зоны"
+        },
+        "photo_camera": {
+            "live_state": "Текущее состояние",
+            "live_pitch": "Тангаж (В/Н)",
+            "live_yaw": "Рыскание (Л/П)",
+            "live_roll": "Крен",
+            "live_zoom": "Зум (Дистанция)",
+            "position": "Позиция камеры (Мир)",
+            "base_fov": "Базовый FOV",
+            "not_available": "Объект фотокамеры недоступен.",
+            "fov_zoom": "FOV / Зум"
         },
         "behind_camera": {
             "live_state": "Текущее состояние",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Инерция дин. смещения",
             "dynamic_offset_not_found": "Динамическое смещение: данные не найдены",
             "base_fov_behind": "Базовый FOV##Behind",
-            "reset_to_defaults_behind": "Сбросить по умолчанию##Behind",
-            "not_available": "Объект камеры сзади недоступен."
+            "not_available": "Объект камеры сзади недоступен.",
+            "collision_settings": "Настройки коллизий",
+            "validation": "Включить коллизии",
+            "validation_radius": "Радиус коллизии",
+            "validation_speed_pos": "Скорость коллизии (Поз)",
+            "validation_speed_neg": "Скорость коллизии (Нег)",
+            "speed_fov_factor": "Фактор FOV от скорости",
+            "shake_settings": "Настройки тряски и дрожания",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "top_camera": {
             "height_zoom": "Высота / Зум",
@@ -736,17 +801,37 @@
             "movement_speed": "Скорость перемещения",
             "movement_not_found": "Перемещение: данные не найдены",
             "dynamic_offset": "Динамическое смещение",
-            "forward_offset": "Смещение вперёд",
-            "backward_offset": "Смещение назад",
+            "forward_offset_x": "Смещение вперед (X)",
+            "backward_offset_x": "Смещение назад (X)",
+            "forward_offset_z": "Смещение вперед (Z)",
+            "backward_offset_z": "Смещение назад (Z)",
             "dynamic_offset_not_found": "Динамическое смещение: данные не найдены",
             "base_fov_top": "Базовый FOV##Top",
-            "reset_to_defaults_top": "Сбросить по умолчанию##Top",
-            "not_available": "Объект камеры сверху недоступен."
+            "not_available": "Объект камеры сверху недоступен.",
+            "near_plane": "Ближняя плоскость отсечения",
+            "far_plane": "Дальняя плоскость отсечения",
+            "validation": "Включить коллизии",
+            "validation_speed_pos": "Скорость коллизии (Поз)",
+            "validation_speed_neg": "Скорость коллизии (Нег)",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски",
+            "adaptive_settings": "Настройки адаптивной высоты",
+            "height_factor": "Фактор высоты",
+            "use_adaptive": "Использовать адаптивную высоту",
+            "distance_settings": "Динамическое продольное смещение (Z)",
+            "collision_settings": "Настройки коллизий"
         },
         "cabin_camera": {
             "base_fov_cabin": "Базовый FOV##Cabin",
-            "reset_to_defaults_cabin": "Сбросить по умолчанию##Cabin",
-            "not_available": "Объект камеры кабины недоступен."
+            "not_available": "Объект камеры кабины недоступен.",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "window_camera": {
             "head_offset": "Смещение головы",
@@ -768,8 +853,14 @@
             "default_ud_window": "По умолч. В/Н##Window",
             "rotation_defaults_not_found_window": "Вращение по умолчанию: данные не найдены",
             "base_fov_window": "Базовый FOV##Window",
-            "reset_to_defaults_window": "Сбросить по умолчанию##Window",
-            "not_available": "Объект камеры из окна недоступен."
+            "not_available": "Объект камеры из окна недоступен.",
+            "relative_headtracking_azimuth": "Относительный азимут отслеживания головы",
+            "auto_center_move_direction": "Направление автоцентрирования при движении",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "bumper_camera": {
             "offset": "Смещение",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Смещение Z##Bumper",
             "offset_not_found": "Смещение: данные не найдены",
             "base_fov_bumper": "Базовый FOV##Bumper",
-            "reset_to_defaults_bumper": "Сбросить по умолчанию##Bumper",
-            "not_available": "Объект камеры с бампера недоступен."
+            "not_available": "Объект камеры с бампера недоступен.",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "wheel_camera": {
             "offset": "Смещение",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Смещение Z##Wheel",
             "offset_not_found": "Смещение: данные не найдены",
             "base_fov_wheel": "Базовый FOV##Wheel",
-            "reset_to_defaults_wheel": "Сбросить по умолчанию##Wheel",
-            "not_available": "Объект камеры с колеса недоступен."
+            "not_available": "Объект камеры с колеса недоступен.",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "tv_camera": {
             "distance": "Расстояние",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Подъем дороги Z##TV",
             "road_uplift_not_found": "Подъем дороги: данные не найдены",
             "base_fov_tv": "Базовый FOV##TV",
-            "reset_to_defaults_tv": "Сбросить по умолчанию##TV",
-            "not_available": "Объект ТВ камеры недоступен."
+            "not_available": "Объект ТВ камеры недоступен.",
+            "shake_settings": "Настройки тряски",
+            "shake_anim_step": "Шаг анимации тряски",
+            "shake_anim_scale_min": "Мин. масштаб тряски",
+            "shake_anim_scale_max": "Макс. масштаб тряски",
+            "shake_animation_array": "Массив анимации тряски"
         },
         "free_camera": {
             "position": "Позиция",
@@ -830,7 +933,6 @@
             "movement_speed": "Скорость перемещения",
             "speed_freecam": "Скорость",
             "movement_speed_not_found": "Скорость перемещения: данные не найдены",
-            "reset_to_defaults_freecam": "Сбросить по умолчанию##FreeCam",
             "not_available": "Объект свободной камеры недоступен."
         },
         "debug": {

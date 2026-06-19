@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Habilite 'connect' en el archivo de configuración.",
         "version_label": "Tu versión ",
         "update_checking": "Buscando actualizaciones...",
+        "update_available_notification": "### {}\n Nueva actualización disponible **{}**\n Para saber más, visite el sitio web",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "Sobre nosotros / Contactos",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Habilita el hook 'Game Console' en la ventana de Hooks para usar esta función.",
             "shutdown": "Apagar framework",
             "open_plugins_folder": "Abrir carpeta de plugins"
+        },
+        "common": {
+            "developer_mode": "Modo desarrollador",
+            "user_mode": "Modo usuario"
         },
         "game_status": {
             "running_game_label": "Juego en ejecución:",
@@ -92,7 +97,8 @@
             "info": "Información del plugin",
             "description": "Descripción",
             "settings": "Ajustes",
-            "restart_sdk": "Reinicie el SDK para activar los dispositivos de entrada virtuales"
+            "restart_sdk": "Reinicie el SDK para activar los dispositivos de entrada virtuales",
+            "update_available": "Ir al sitio web"
         },
         "info_popup": {
             "author": "Autor:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Requiere la versión SPF Framework:",
-            "virt_input_restart_required": "Se requiere reiniciar para las entradas virtuales"
+            "virt_input_restart_required": "Se requiere reiniciar para las entradas virtuales",
+            "update_available": "Nueva versión {} disponible, detalles: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Duración de las notificaciones",
                     "description": "Establece cuánto tiempo (en segundos) permanecen en pantalla las notificaciones emergentes temporales."
+                },
+                "show_update_notifications": {
+                    "title": "Notificar sobre actualizaciones",
+                    "description": "Recibirá notificaciones cuando haya actualizaciones disponibles para el framework o los plugins."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Rueda",
         "tv": "TV",
         "developer_free_camera": "Cámara libre de desarrollador (ID 0)",
+        "default_value_prefix": "Por defecto",
+        "data_not_found": ": datos no encontrados",
         "tabs": {
             "interior_camera": "Cámara interior",
+            "photo_camera": "Cámara fotográfica",
             "behind_camera": "Cámara trasera",
             "top_camera": "Cámara superior",
             "cabin_camera": "Cámara de cabina",
@@ -671,23 +685,64 @@
             "seat_lr": "Asiento I/D (X)",
             "seat_ud": "Asiento Ar/Ab (Y)",
             "seat_fb": "Asiento Ad/At (Z)",
-            "seat_position_not_found": "Posición del asiento: datos no encontrados",
             "head_rotation": "Rotación de la cabeza",
             "yaw_lr": "Guiñada (I/D)",
             "pitch_ud": "Cabeceo (Ar/Ab)",
-            "head_rotation_not_found": "Rotación de la cabeza: datos no encontrados",
             "mouse_rotation_limits": "Límites de rotación del ratón",
             "left_limit": "Límite izquierdo",
             "right_limit": "Límite derecho",
             "up_limit": "Límite superior",
             "down_limit": "Límite inferior",
-            "rotation_limits_not_found": "Límites de rotación: datos no encontrados",
             "rotation_defaults": "Valores predeterminados de rotación",
             "default_lr": "Predeterminado I/D##Interior",
             "default_ud": "Predeterminado Ar/Ab##Interior",
-            "rotation_defaults_not_found": "Valores predeterminados de rotación: datos no encontrados",
             "reset_to_defaults": "Restablecer valores predeterminados",
-            "not_available": "Objeto de cámara interior no disponible."
+            "not_available": "Objeto de cámara interior no disponible.",
+            "near_plane": "Plano de recorte cercano (Near Plane)",
+            "far_plane": "Plano de recorte lejano (Far Plane)",
+            "mouse_sensitivity": "Sensibilidad del ratón",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "hand_shake_limit": "Amplitud de vibración de la cámara",
+            "hand_shake_speed": "Frecuencia de vibración de la cámara",
+            "zoom_fov_factor": "Multiplicador de FOV del zoom",
+            "zoom_speed_interior": "Velocidad del zoom",
+            "azimuth_overrides": "Zonas dinámicas (Azimuth Overrides)",
+            "range_start_azimuth": "Inicio del azimut de zona",
+            "range_end_azimuth": "Fin del azimut de zona",
+            "zone_is_outside": "Zona fuera de la cabina",
+            "start_up_limit": "Límite superior (Inicio)",
+            "end_up_limit": "Límite superior (Fin)",
+            "start_down_limit": "Límite inferior (Inicio)",
+            "end_down_limit": "Límite inferior (Fin)",
+            "start_up_down_default": "Por defecto A/B (Inicio)",
+            "end_up_down_default": "Por defecto A/B (Fin)",
+            "start_left_right_default": "Por defecto I/D (Inicio)",
+            "end_left_right_default": "Por defecto I/D (Fin)",
+            "start_head_offset": "Desplazamiento de cabeza (Inicio)",
+            "end_head_offset": "Desplazamiento de cabeza (Fin)",
+            "shake_animation_array": "Matriz de animación de vibración",
+            "point_x": "Punto X",
+            "point_y": "Punto Y",
+            "point_z": "Punto Z",
+            "select_range": "Seleccionar zona",
+            "select_frame": "Seleccionar fotograma",
+            "advanced_core_settings": "Configuración avanzada del núcleo",
+            "shake_settings": "Ajustes de vibración y temblor",
+            "interior_logic_settings": "Lógica de interior y zoom",
+            "azimuth_range_details": "Parámetros de la zona seleccionada"
+        },
+        "photo_camera": {
+            "live_state": "Estado actual",
+            "live_pitch": "Cabeceo / Pitch (A/B)",
+            "live_yaw": "Guiñada / Yaw (I/D)",
+            "live_roll": "Alabeo / Roll",
+            "live_zoom": "Zoom (Distancia)",
+            "position": "Posición de cámara (Mundo)",
+            "base_fov": "FOV base",
+            "not_available": "El objeto de cámara fotográfica no está disponible.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Estado en vivo",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Inercia del desplazamiento din.",
             "dynamic_offset_not_found": "Desplazamiento dinámico: datos no encontrados",
             "base_fov_behind": "CDV base##Trasera",
-            "reset_to_defaults_behind": "Restablecer valores predeterminados##Trasera",
-            "not_available": "Objeto de cámara trasera no disponible."
+            "not_available": "Objeto de cámara trasera no disponible.",
+            "collision_settings": "Configuración de colisiones",
+            "validation": "Activar colisiones",
+            "validation_radius": "Radio de colisión",
+            "validation_speed_pos": "Velocidad de colisión (Pos)",
+            "validation_speed_neg": "Velocidad de colisión (Neg)",
+            "speed_fov_factor": "Factor FOV por velocidad",
+            "shake_settings": "Ajustes de vibración y temblor",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "top_camera": {
             "height_zoom": "Altura / Zoom",
@@ -736,17 +801,37 @@
             "movement_speed": "Velocidad de movimiento",
             "movement_not_found": "Movimiento: datos no encontrados",
             "dynamic_offset": "Desplazamiento dinámico",
-            "forward_offset": "Desplazamiento hacia adelante",
-            "backward_offset": "Desplazamiento hacia atrás",
+            "forward_offset_x": "Desplazamiento adelante (X)",
+            "backward_offset_x": "Desplazamiento atrás (X)",
+            "forward_offset_z": "Desplazamiento adelante (Z)",
+            "backward_offset_z": "Desplazamiento atrás (Z)",
             "dynamic_offset_not_found": "Desplazamiento dinámico: datos no encontrados",
             "base_fov_top": "CDV base##Superior",
-            "reset_to_defaults_top": "Restablecer valores predeterminados##Superior",
-            "not_available": "Objeto de cámara superior no disponible."
+            "not_available": "Objeto de cámara superior no disponible.",
+            "near_plane": "Plano de recorte cercano",
+            "far_plane": "Plano de recorte lejano",
+            "validation": "Activar colisiones",
+            "validation_speed_pos": "Velocidad de colisión (Pos)",
+            "validation_speed_neg": "Velocidad de colisión (Neg)",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración",
+            "adaptive_settings": "Ajustes de altura adaptativa",
+            "height_factor": "Factor de altura",
+            "use_adaptive": "Usar altura adaptativa",
+            "distance_settings": "Desplazamiento longitudinal dinámico (Z)",
+            "collision_settings": "Configuración de colisiones"
         },
         "cabin_camera": {
             "base_fov_cabin": "CDV base##Cabina",
-            "reset_to_defaults_cabin": "Restablecer valores predeterminados##Cabina",
-            "not_available": "Objeto de cámara de cabina no disponible."
+            "not_available": "Objeto de cámara de cabina no disponible.",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "window_camera": {
             "head_offset": "Desplazamiento de la cabeza",
@@ -768,8 +853,14 @@
             "default_ud_window": "Predeterminado Ar/Ab##Ventana",
             "rotation_defaults_not_found_window": "Valores predeterminados de rotación: datos no encontrados",
             "base_fov_window": "CDV base##Ventana",
-            "reset_to_defaults_window": "Restablecer valores predeterminados##Ventana",
-            "not_available": "Objeto de cámara de ventana no disponible."
+            "not_available": "Objeto de cámara de ventana no disponible.",
+            "relative_headtracking_azimuth": "Azimut relativo de seguimiento de cabeza",
+            "auto_center_move_direction": "Dirección de autocentrado en movimiento",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "bumper_camera": {
             "offset": "Desplazamiento",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Desplazamiento Z##Parachoques",
             "offset_not_found": "Desplazamiento: datos no encontrados",
             "base_fov_bumper": "CDV base##Parachoques",
-            "reset_to_defaults_bumper": "Restablecer valores predeterminados##Parachoques",
-            "not_available": "Objeto de cámara de parachoques no disponible."
+            "not_available": "Objeto de cámara de parachoques no disponible.",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "wheel_camera": {
             "offset": "Desplazamiento",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Desplazamiento Z##Rueda",
             "offset_not_found": "Desplazamiento: datos no encontrados",
             "base_fov_wheel": "CDV base##Rueda",
-            "reset_to_defaults_wheel": "Restablecer valores predeterminados##Rueda",
-            "not_available": "Objeto de cámara de rueda no disponible."
+            "not_available": "Objeto de cámara de rueda no disponible.",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "tv_camera": {
             "distance": "Distancia",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Elevación carretera Z##TV",
             "road_uplift_not_found": "Elevación de la carretera: datos no encontrados",
             "base_fov_tv": "CDV base##TV",
-            "reset_to_defaults_tv": "Restablecer valores predeterminados##TV",
-            "not_available": "Objeto de cámara de TV no disponible."
+            "not_available": "Objeto de cámara de TV no disponible.",
+            "shake_settings": "Ajustes de vibración",
+            "shake_anim_step": "Paso de la animación de vibración",
+            "shake_anim_scale_min": "Escala mín. de vibración",
+            "shake_anim_scale_max": "Escala máx. de vibración",
+            "shake_animation_array": "Matriz de animación de vibración"
         },
         "free_camera": {
             "position": "Posición",
@@ -830,7 +933,6 @@
             "movement_speed": "Velocidad de movimiento",
             "speed_freecam": "Velocidad",
             "movement_speed_not_found": "Velocidad de movimiento: datos no encontrados",
-            "reset_to_defaults_freecam": "Restablecer valores predeterminados##CámaraLibre",
             "not_available": "Objeto de cámara libre no disponible."
         },
         "debug": {

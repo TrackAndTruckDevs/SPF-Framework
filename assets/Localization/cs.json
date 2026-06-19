@@ -659,11 +659,11 @@
         "wheel": "Kolo",
         "tv": "TV",
         "developer_free_camera": "Volná kamera vývojáře (ID 0)",
-        "default_value_prefix" : "Výchozí",
+        "default_value_prefix": "Výchozí",
         "data_not_found": ": data nenalezena",
         "tabs": {
             "interior_camera": "Kamera interiéru",
-            "photo_camera": "Fotoaparát",          
+            "photo_camera": "Fotoaparát",
             "behind_camera": "Kamera za vozidlem",
             "top_camera": "Kamera shora",
             "cabin_camera": "Kamera v kabině",
@@ -742,7 +742,7 @@
             "position": "Pozice kamery (Svět)",
             "base_fov": "Základní FOV",
             "not_available": "Objekt fotoaparátu není dostupný.",
-            "fov_zoom": "FOV / Přiblížení"            
+            "fov_zoom": "FOV / Přiblížení"
         },
         "behind_camera": {
             "live_state": "Živý stav",
@@ -801,8 +801,8 @@
             "movement_speed": "Rychlost pohybu",
             "movement_not_found": "Pohyb: data nenalezena",
             "dynamic_offset": "Dynamické odsazení",
-            "forward_offset": "Přední odsazení",
-            "backward_offset": "Zadní odsazení",
+            "forward_offset_x": "Posun vpřed (X)",
+            "backward_offset_x": "Posun vzad (X)",
             "forward_offset_z": "Posun vpřed (Z)",
             "backward_offset_z": "Posun zpět (Z)",
             "dynamic_offset_not_found": "Dynamické odsazení: data nenalezena",
@@ -822,7 +822,7 @@
             "height_factor": "Faktor výšky",
             "use_adaptive": "Použít adaptivní výšku",
             "distance_settings": "Dynamický podélný posun (Z)",
-            "collision_settings": "Nastavení kolizí"           
+            "collision_settings": "Nastavení kolizí"
         },
         "cabin_camera": {
             "base_fov_cabin": "Základní FOV",
@@ -874,7 +874,7 @@
             "shake_anim_step": "Krok animace otřesu",
             "shake_anim_scale_min": "Min. měřítko otřesu",
             "shake_anim_scale_max": "Max. měřítko otřesu",
-            "shake_animation_array": "Pole animace otřesu"         
+            "shake_animation_array": "Pole animace otřesu"
         },
         "wheel_camera": {
             "offset": "Odsazení",
@@ -888,7 +888,7 @@
             "shake_anim_step": "Krok animace otřesu",
             "shake_anim_scale_min": "Min. měřítko otřesu",
             "shake_anim_scale_max": "Max. měřítko otřesu",
-            "shake_animation_array": "Pole animace otřesu"          
+            "shake_animation_array": "Pole animace otřesu"
         },
         "tv_camera": {
             "distance": "Vzdálenost",
@@ -910,7 +910,7 @@
             "shake_anim_step": "Krok animace otřesu",
             "shake_anim_scale_min": "Min. měřítko otřesu",
             "shake_anim_scale_max": "Max. měřítko otřesu",
-            "shake_animation_array": "Pole animace otřesu"         
+            "shake_animation_array": "Pole animace otřesu"
         },
         "free_camera": {
             "position": "Pozice",

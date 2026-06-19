@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Yapılandırma dosyasında 'connect' özelliğini etkinleştirin.",
         "version_label": "Sizin sürümünüz ",
         "update_checking": "Güncellemeler kontrol ediliyor...",
+        "update_available_notification": "### {}\n Yeni Güncelleme Mevcut **{}**\n Daha fazla bilgi için lütfen web sitesini ziyaret edin",
         "menu": {
             "manual": "Kılavuz / SSS",
             "about": "Hakkımızda / İletişim",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Bu özelliği kullanmak için Kancalar penceresinde 'Oyun Konsolu' kancasını etkinleştirin.",
             "shutdown": "Çatıyı Kapat",
             "open_plugins_folder": "Eklentiler Klasörünü Aç"
+        },
+        "common": {
+            "developer_mode": "Geliştirici Modu",
+            "user_mode": "Kullanıcı Modu"
         },
         "game_status": {
             "running_game_label": "Çalışan Oyun:",
@@ -92,7 +97,8 @@
             "info": "Eklenti Bilgisi",
             "description": "Açıklama",
             "settings": "Ayarlar",
-            "restart_sdk": "Sanal giriş cihazlarını etkinleştirmek için SDK'yı yeniden başlatın"
+            "restart_sdk": "Sanal giriş cihazlarını etkinleştirmek için SDK'yı yeniden başlatın",
+            "update_available": "Web Sitesine Git"
         },
         "info_popup": {
             "author": "Yazar:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Oyun sürümü SPF Framework:",
-            "virt_input_restart_required": "Sanal girişler için yeniden başlatma gerekli"
+            "virt_input_restart_required": "Sanal girişler için yeniden başlatma gerekli",
+            "update_available": "Yeni sürüm {} mevcut, detaylar: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Bildirim Süresi",
                     "description": "Geçici açılır bildirimlerin ekranda ne kadar süreyle (saniye cinsinden) kalacağını ayarlar."
+                },
+                "show_update_notifications": {
+                    "title": "Güncelleme Bildirimleri",
+                    "description": "Framework veya eklentiler için yeni güncellemeler yayınlandığında bildirim alırsınız."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Tekerlek",
         "tv": "TV",
         "developer_free_camera": "Geliştirici Serbest Kamerası (ID 0)",
+        "default_value_prefix": "Varsayılan",
+        "data_not_found": ": Veri bulunamadı",
         "tabs": {
             "interior_camera": "İç Kamera",
+            "photo_camera": "Fotoğraf Kamerası",
             "behind_camera": "Arka Kamera",
             "top_camera": "Üst Kamera",
             "cabin_camera": "Kabin Kamerası",
@@ -671,23 +685,64 @@
             "seat_lr": "Koltuk S/S (X)",
             "seat_ud": "Koltuk Y/A (Y)",
             "seat_fb": "Koltuk Ö/A (Z)",
-            "seat_position_not_found": "Koltuk Konumu: veri bulunamadı",
             "head_rotation": "Baş Dönüşü",
             "yaw_lr": "Yalpalanma (S/S)",
             "pitch_ud": "Yükseklik (Y/A)",
-            "head_rotation_not_found": "Baş Dönüşü: veri bulunamadı",
             "mouse_rotation_limits": "Fare Dönüş Limitleri",
             "left_limit": "Sol Limit",
             "right_limit": "Sağ Limit",
             "up_limit": "Yukarı Limit",
             "down_limit": "Aşağı Limit",
-            "rotation_limits_not_found": "Dönüş Limitleri: veri bulunamadı",
             "rotation_defaults": "Varsayılan Dönüşler",
             "default_lr": "Varsayılan S/S##İç",
             "default_ud": "Varsayılan Y/A##İç",
-            "rotation_defaults_not_found": "Varsayılan Dönüşler: veri bulunamadı",
             "reset_to_defaults": "Varsayılanlara Sıfırla",
-            "not_available": "İç kamera nesnesi kullanılamıyor."
+            "not_available": "İç kamera nesnesi kullanılamıyor.",
+            "near_plane": "Yakın Kırpma Düzlemi (Near Plane)",
+            "far_plane": "Uzak Kırpma Düzlemi (Far Plane)",
+            "mouse_sensitivity": "Fare Hassasiyeti",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "hand_shake_limit": "Kamera Titreşim Genliği",
+            "hand_shake_speed": "Kamera Titreşim Frekansı",
+            "zoom_fov_factor": "Zoom FOV Çarpanı",
+            "zoom_speed_interior": "Zoom Hızı",
+            "azimuth_overrides": "Dinamik Bölgeler (Azimuth Overrides)",
+            "range_start_azimuth": "Bölge Azimutu Başlangıcı",
+            "range_end_azimuth": "Bölge Azimutu Bitişi",
+            "zone_is_outside": "Kabin Dışındaki Bölge",
+            "start_up_limit": "Üst Sınır (Başlangıç)",
+            "end_up_limit": "Üst Sınır (Bitiş)",
+            "start_down_limit": "Alt Sınır (Başlangıç)",
+            "end_down_limit": "Alt Sınır (Bitiş)",
+            "start_up_down_default": "Varsayılan Y/A (Başlangıç)",
+            "end_up_down_default": "Varsayılan Y/A (Bitiş)",
+            "start_left_right_default": "Varsayılan S/S (Başlangıç)",
+            "end_left_right_default": "Varsayılan S/S (Bitiş)",
+            "start_head_offset": "Kafa Ofseti (Başlangıç)",
+            "end_head_offset": "Kafa Ofseti (Bitiş)",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi",
+            "point_x": "X Noktası",
+            "point_y": "Y Noktası",
+            "point_z": "Z Noktası",
+            "select_range": "Bölge Seç",
+            "select_frame": "Kare (Frame) Seç",
+            "advanced_core_settings": "Gelişmiş Çekirdek Ayarları",
+            "shake_settings": "Sarsıntı ve Titreşim Ayarları",
+            "interior_logic_settings": "İç Mekan ve Zoom Mantığı",
+            "azimuth_range_details": "Seçilen Bölgenin Parametreleri"
+        },
+        "photo_camera": {
+            "live_state": "Mevcut Durum",
+            "live_pitch": "Yunuslama / Pitch (Y/A)",
+            "live_yaw": "Sapma / Yaw (S/S)",
+            "live_roll": "Yatış / Roll",
+            "live_zoom": "Zoom (Mesafe)",
+            "position": "Kamera Pozisyonu (Dünya)",
+            "base_fov": "Temel FOV",
+            "not_available": "Fotoğraf kamerası nesnesi mevcut değil.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Canlı Durum",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Dinamik Ofset Tembelliği",
             "dynamic_offset_not_found": "Dinamik Ofset: veri bulunamadı",
             "base_fov_behind": "Temel FOV##Arka",
-            "reset_to_defaults_behind": "Varsayılanlara Sıfırla##Arka",
-            "not_available": "Arka kamera nesnesi kullanılamıyor."
+            "not_available": "Arka kamera nesnesi kullanılamıyor.",
+            "collision_settings": "Çarpışma Ayarları",
+            "validation": "Çarpışmayı Aktif Et",
+            "validation_radius": "Çarpışma Yarıçapı",
+            "validation_speed_pos": "Çarpışma Hızı (Pozitif)",
+            "validation_speed_neg": "Çarpışma Hızı (Negatif)",
+            "speed_fov_factor": "Hıza Bağlı FOV Faktörü",
+            "shake_settings": "Sarsıntı ve Titreşim Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "top_camera": {
             "height_zoom": "Yükseklik / Yakınlaştırma",
@@ -736,17 +801,37 @@
             "movement_speed": "Hareket Hızı",
             "movement_not_found": "Hareket: veri bulunamadı",
             "dynamic_offset": "Dinamik Ofset",
-            "forward_offset": "İleri Ofset",
-            "backward_offset": "Geri Ofset",
+            "forward_offset_x": "İleri Ofset (X)",
+            "backward_offset_x": "Geri Ofset (X)",
+            "forward_offset_z": "İleri Ofset (Z)",
+            "backward_offset_z": "Geri Ofset (Z)",
             "dynamic_offset_not_found": "Dinamik Ofset: veri bulunamadı",
             "base_fov_top": "Temel FOV##Üst",
-            "reset_to_defaults_top": "Varsayılanlara Sıfırla##Üst",
-            "not_available": "Üst kamera nesnesi kullanılamıyor."
+            "not_available": "Üst kamera nesnesi kullanılamıyor.",
+            "near_plane": "Yakın Kırpma Düzlemi",
+            "far_plane": "Uzak Kırpma Düzlemi",
+            "validation": "Çarpışmayı Aktif Et",
+            "validation_speed_pos": "Çarpışma Hızı (Pozitif)",
+            "validation_speed_neg": "Çarpışma Hızı (Negatif)",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi",
+            "adaptive_settings": "Adaptif Yükseklik Ayarları",
+            "height_factor": "Yükseklik Faktörü",
+            "use_adaptive": "Adaptif Yükseklik Kullan",
+            "distance_settings": "Dinamik Boylamsal Ofset (Z)",
+            "collision_settings": "Çarpışma Ayarları"
         },
         "cabin_camera": {
             "base_fov_cabin": "Temel FOV##Kabin",
-            "reset_to_defaults_cabin": "Varsayılanlara Sıfırla##Kabin",
-            "not_available": "Kabin kamera nesnesi kullanılamıyor."
+            "not_available": "Kabin kamera nesnesi kullanılamıyor.",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "window_camera": {
             "head_offset": "Baş Ofseti",
@@ -768,8 +853,14 @@
             "default_ud_window": "Varsayılan Y/A##Pencere",
             "rotation_defaults_not_found_window": "Varsayılan Dönüşler: veri bulunamadı",
             "base_fov_window": "Temel FOV##Pencere",
-            "reset_to_defaults_window": "Varsayılanlara Sıfırla##Pencere",
-            "not_available": "Pencere kamera nesnesi kullanılamıyor."
+            "not_available": "Pencere kamera nesnesi kullanılamıyor.",
+            "relative_headtracking_azimuth": "Göreceli Headtracking Azimutu",
+            "auto_center_move_direction": "Hareket Halinde Otomatik Merkezleme Yönü",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "bumper_camera": {
             "offset": "Ofset",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Ofset Z##Tampon",
             "offset_not_found": "Ofset: veri bulunamadı",
             "base_fov_bumper": "Temel FOV##Tampon",
-            "reset_to_defaults_bumper": "Varsayılanlara Sıfırla##Tampon",
-            "not_available": "Tampon kamera nesnesi kullanılamıyor."
+            "not_available": "Tampon kamera nesnesi kullanılamıyor.",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "wheel_camera": {
             "offset": "Ofset",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Ofset Z##Tekerlek",
             "offset_not_found": "Ofset: veri bulunamadı",
             "base_fov_wheel": "Temel FOV##Tekerlek",
-            "reset_to_defaults_wheel": "Varsayılanlara Sıfırla##Tekerlek",
-            "not_available": "Tekerlek kamera nesnesi kullanılamıyor."
+            "not_available": "Tekerlek kamera nesnesi kullanılamıyor.",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "tv_camera": {
             "distance": "Mesafe",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Yol Yükselmesi Z##TV",
             "road_uplift_not_found": "Yol Yükselmesi: veri bulunamadı",
             "base_fov_tv": "Temel FOV##TV",
-            "reset_to_defaults_tv": "Varsayılanlara Sıfırla##TV",
-            "not_available": "TV kamera nesnesi kullanılamıyor."
+            "not_available": "TV kamera nesnesi kullanılamıyor.",
+            "shake_settings": "Sarsıntı Ayarları",
+            "shake_anim_step": "Sarsıntı Animasyonu Adım Boyutu",
+            "shake_anim_scale_min": "Min. Sarsıntı Ölçeği",
+            "shake_anim_scale_max": "Max. Sarsıntı Ölçeği",
+            "shake_animation_array": "Sarsıntı Animasyonu Dizisi"
         },
         "free_camera": {
             "position": "Konum",
@@ -830,7 +933,6 @@
             "movement_speed": "Hareket Hızı",
             "speed_freecam": "Hız",
             "movement_speed_not_found": "Hareket Hızı: veri bulunamadı",
-            "reset_to_defaults_freecam": "Varsayılanlara Sıfırla##Serbest Kamera",
             "not_available": "Serbest kamera nesnesi kullanılamıyor."
         },
         "debug": {

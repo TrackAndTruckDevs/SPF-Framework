@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "設定ファイルで 'connect' を有効にしてください。",
         "version_label": "あなたのバージョン ",
         "update_checking": "アップデートを確認中...",
+        "update_available_notification": "### {}\n 新しいアップデートが利用可能です：**{}**\n 詳細については、ウェブサイトをご覧ください",
         "menu": {
             "manual": "マニュアル / FAQ",
             "about": "私たちについて / 連絡先",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "この機能を使用するには、「フック」ウィンドウで「ゲームコンソール」フックを有効にしてください。",
             "shutdown": "フレームワークをシャットダウン",
             "open_plugins_folder": "プラグインフォルダを開く"
+        },
+        "common": {
+            "developer_mode": "デベロッパーモード",
+            "user_mode": "ユーザーモード"
         },
         "game_status": {
             "running_game_label": "実行中のゲーム：",
@@ -92,7 +97,8 @@
             "info": "プラグイン情報",
             "description": "説明",
             "settings": "設定",
-            "restart_sdk": "仮想入力デバイスを有効にするにはSDKを再起動してください"
+            "restart_sdk": "仮想入力デバイスを有効にするにはSDKを再起動してください",
+            "update_available": "ウェブサイトへ移動"
         },
         "info_popup": {
             "author": "作者：",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "必要なSPFフレームワークのバージョン",
-            "virt_input_restart_required": "仮想入力には再起動が必要です"
+            "virt_input_restart_required": "仮想入力には再起動が必要です",
+            "update_available": "新しいバージョン {} が利用可能です。詳細："
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "通知の表示時間",
                     "description": "一時的なポップアップ通知が画面に表示される時間（秒単位）を設定します。"
+                },
+                "show_update_notifications": {
+                    "title": "アップデートの通知",
+                    "description": "フレームワークやプラグインのアップデートが利用可能な場合、通知が表示されます。"
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "車輪",
         "tv": "テレビ",
         "developer_free_camera": "開発者自由カメラ (ID 0)",
+        "default_value_prefix": "デフォルト",
+        "data_not_found": "：データが見つかりません",
         "tabs": {
             "interior_camera": "内部カメラ",
+            "photo_camera": "フォトカメラ",
             "behind_camera": "後方カメラ",
             "top_camera": "上方カメラ",
             "cabin_camera": "キャビンカメラ",
@@ -671,23 +685,64 @@
             "seat_lr": "座席左右 (X)",
             "seat_ud": "座席上下 (Y)",
             "seat_fb": "座席前後 (Z)",
-            "seat_position_not_found": "座席位置: データが見つかりません",
             "head_rotation": "頭の回転",
             "yaw_lr": "ヨー (左右)",
             "pitch_ud": "ピッチ (上下)",
-            "head_rotation_not_found": "頭の回転: データが見つかりません",
             "mouse_rotation_limits": "マウス回転制限",
             "left_limit": "左制限",
             "right_limit": "右制限",
             "up_limit": "上制限",
             "down_limit": "下制限",
-            "rotation_limits_not_found": "回転制限: データが見つかりません",
             "rotation_defaults": "デフォルト回転",
             "default_lr": "デフォルト左右##内部",
             "default_ud": "デフォルト上下##内部",
-            "rotation_defaults_not_found": "デフォルト回転: データが見つかりません",
             "reset_to_defaults": "デフォルトにリセット",
-            "not_available": "内部カメラオブジェクトは利用できません。"
+            "not_available": "内部カメラオブジェクトは利用できません。",
+            "near_plane": "ニアクリップ面 (Near Plane)",
+            "far_plane": "ファークリップ面 (Far Plane)",
+            "mouse_sensitivity": "マウス感度",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "hand_shake_limit": "カメラ振動の振幅",
+            "hand_shake_speed": "カメラ振動の周波数",
+            "zoom_fov_factor": "ズームFOV倍率",
+            "zoom_speed_interior": "ズーム速度",
+            "azimuth_overrides": "ダイナミックゾーン (Azimuth Overrides)",
+            "range_start_azimuth": "ゾーン方位角の開始",
+            "range_end_azimuth": "ゾーン方位角の終了",
+            "zone_is_outside": "キャビン外のゾーン",
+            "start_up_limit": "上限制限（開始）",
+            "end_up_limit": "上限制限（終了）",
+            "start_down_limit": "下限制限（開始）",
+            "end_down_limit": "下限制限（終了）",
+            "start_up_down_default": "デフォルト上下（開始）",
+            "end_up_down_default": "デフォルト上下（終了）",
+            "start_left_right_default": "デフォルト左右（開始）",
+            "end_left_right_default": "デフォルト左右（終了）",
+            "start_head_offset": "ヘッドオフセット（開始）",
+            "end_head_offset": "ヘッドオフセット（終了）",
+            "shake_animation_array": "手ブレアニメーション配列",
+            "point_x": "ポイントX",
+            "point_y": "ポイントY",
+            "point_z": "ポイントZ",
+            "select_range": "ゾーンの選択",
+            "select_frame": "フレームの選択",
+            "advanced_core_settings": "高度なコア設定",
+            "shake_settings": "手ブレ・振動設定",
+            "interior_logic_settings": "インテリア＆ズームロジック",
+            "azimuth_range_details": "選択されたゾーンのパラメータ"
+        },
+        "photo_camera": {
+            "live_state": "現在の状態",
+            "live_pitch": "ピッチ / Pitch (上下)",
+            "live_yaw": "ヨー / Yaw (左右)",
+            "live_roll": "ロール / Roll",
+            "live_zoom": "ズーム (距離)",
+            "position": "カメラ位置 (ワールド)",
+            "base_fov": "ベースFOV",
+            "not_available": "フォトカメラのオブジェクトは利用できません。",
+            "fov_zoom": "FOV / ズーム"
         },
         "behind_camera": {
             "live_state": "ライブ状態",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "動的オフセットの不感帯",
             "dynamic_offset_not_found": "動的オフセット: データが見つかりません",
             "base_fov_behind": "基本視野角##後方",
-            "reset_to_defaults_behind": "デフォルトにリセット##後方",
-            "not_available": "後方カメラオブジェクトは利用できません。"
+            "not_available": "後方カメラオブジェクトは利用できません。",
+            "collision_settings": "コリジョン設定",
+            "validation": "コリジョンを有効化",
+            "validation_radius": "コリジョン半径",
+            "validation_speed_pos": "コリジョン速度 (正方向)",
+            "validation_speed_neg": "コリジョン速度 (負方向)",
+            "speed_fov_factor": "速度によるFOV係数",
+            "shake_settings": "手ブレ・振動設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "top_camera": {
             "height_zoom": "高さ / ズーム",
@@ -736,17 +801,37 @@
             "movement_speed": "移動速度",
             "movement_not_found": "移動: データが見つかりません",
             "dynamic_offset": "動的オフセット",
-            "forward_offset": "前方オフセット",
-            "backward_offset": "後方オフセット",
+            "forward_offset_x": "前方オフセット (X)",
+            "backward_offset_x": "後方オフセット (X)",
+            "forward_offset_z": "前方オフセット (Z)",
+            "backward_offset_z": "後方オフセット (Z)",
             "dynamic_offset_not_found": "動的オフセット: データが見つかりません",
             "base_fov_top": "基本視野角##上方",
-            "reset_to_defaults_top": "デフォルトにリセット##上方",
-            "not_available": "上方カメラオブジェクトは利用できません。"
+            "not_available": "上方カメラオブジェクトは利用できません。",
+            "near_plane": "ニアクリップ面",
+            "far_plane": "ファークリップ面",
+            "validation": "コリジョンを有効化",
+            "validation_speed_pos": "コリジョン速度 (正方向)",
+            "validation_speed_neg": "コリジョン速度 (負方向)",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列",
+            "adaptive_settings": "適応的高度の設定",
+            "height_factor": "高度係数",
+            "use_adaptive": "適応的高度を使用",
+            "distance_settings": "ダイナミック縦方向オフセット (Z)",
+            "collision_settings": "コリジョン設定"
         },
         "cabin_camera": {
             "base_fov_cabin": "基本視野角##キャビン",
-            "reset_to_defaults_cabin": "デフォルトにリセット##キャビン",
-            "not_available": "キャビンカメラオブジェクトは利用できません。"
+            "not_available": "キャビンカメラオブジェクトは利用できません。",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "window_camera": {
             "head_offset": "ヘッドオフセット",
@@ -768,8 +853,14 @@
             "default_ud_window": "デフォルト上下##窓",
             "rotation_defaults_not_found_window": "デフォルト回転: データが見つかりません",
             "base_fov_window": "基本視野角##窓",
-            "reset_to_defaults_window": "デフォルトにリセット##窓",
-            "not_available": "窓カメラオブジェクトは利用できません。"
+            "not_available": "窓カメラオブジェクトは利用できません。",
+            "relative_headtracking_azimuth": "相対ヘッドトラッキング方位角",
+            "auto_center_move_direction": "移動時の自動センター方向",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "bumper_camera": {
             "offset": "オフセット",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "オフセット Z##バンパー",
             "offset_not_found": "オフセット: データが見つかりません",
             "base_fov_bumper": "基本視野角##バンパー",
-            "reset_to_defaults_bumper": "デフォルトにリセット##バンパー",
-            "not_available": "バンパーカメラオブジェクトは利用できません。"
+            "not_available": "バンパーカメラオブジェクトは利用できません。",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "wheel_camera": {
             "offset": "オフセット",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "オフセット Z##車輪",
             "offset_not_found": "オフセット: データが見つかりません",
             "base_fov_wheel": "基本視野角##車輪",
-            "reset_to_defaults_wheel": "デフォルトにリセット##車輪",
-            "not_available": "車輪カメラオブジェクトは利用できません。"
+            "not_available": "車輪カメラオブジェクトは利用できません。",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "tv_camera": {
             "distance": "距離",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "道路隆起 Z##テレビ",
             "road_uplift_not_found": "道路隆起: データが見つかりません",
             "base_fov_tv": "基本視野角##テレビ",
-            "reset_to_defaults_tv": "デフォルトにリセット##テレビ",
-            "not_available": "テレビカメラオブジェクトは利用できません。"
+            "not_available": "テレビカメラオブジェクトは利用できません。",
+            "shake_settings": "手ブレ設定",
+            "shake_anim_step": "手ブレアニメーションのステップ",
+            "shake_anim_scale_min": "最小手ブレスケール",
+            "shake_anim_scale_max": "最大手ブレスケール",
+            "shake_animation_array": "手ブレアニメーション配列"
         },
         "free_camera": {
             "position": "位置",
@@ -830,7 +933,6 @@
             "movement_speed": "移動速度",
             "speed_freecam": "速度",
             "movement_speed_not_found": "移動速度: データが見つかりません",
-            "reset_to_defaults_freecam": "デフォルトにリセット##自由カメラ",
             "not_available": "自由カメラオブジェクトは利用できません。"
         },
         "debug": {

@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Schakel 'connect' in het configuratiebestand in.",
         "version_label": "Jouw versie ",
         "update_checking": "Controleren op updates...",
+        "update_available_notification": "### {}\n Nieuwe update beschikbaar **{}**\n Ga naar de website voor meer informatie",
         "menu": {
             "manual": "Handleiding / FAQ",
             "about": "Over Ons / Contact",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Activeer de 'Game Console' hook in het Hooks-venster om deze functie te gebruiken.",
             "shutdown": "Framework Afsluiten",
             "open_plugins_folder": "Open Plugin Map"
+        },
+        "common": {
+            "developer_mode": "Ontwikkelaarsmodus",
+            "user_mode": "Gebruikersmodus"
         },
         "game_status": {
             "running_game_label": "Lopend Spel:",
@@ -92,7 +97,8 @@
             "info": "Plugin Informatie",
             "description": "Beschrijving",
             "settings": "Instellingen",
-            "restart_sdk": "Start de SDK opnieuw op om virtuele invoerapparaten te activeren"
+            "restart_sdk": "Start de SDK opnieuw op om virtuele invoerapparaten te activeren",
+            "update_available": "Naar website gaan"
         },
         "info_popup": {
             "author": "Auteur:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Vereist SPF Framework:",
-            "virt_input_restart_required": "Opnieuw opstarten vereist voor virtuele invoer"
+            "virt_input_restart_required": "Opnieuw opstarten vereist voor virtuele invoer",
+            "update_available": "Nieuwe versie {} beschikbaar, details: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Meldingsduur",
                     "description": "Stelt in hoe lang (in seconden) de tijdelijke pop-upmeldingen op het scherm blijven staan."
+                },
+                "show_update_notifications": {
+                    "title": "Meldingen over updates",
+                    "description": "Je ontvangt meldingen wanneer er updates beschikbaar zijn voor het framework of de plug-ins."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Wiel",
         "tv": "TV",
         "developer_free_camera": "Ontwikkelaar Vrije Camera (ID 0)",
+        "default_value_prefix": "Standaard",
+        "data_not_found": ": geen gegevens gevonden",
         "tabs": {
             "interior_camera": "Interieurcamera",
+            "photo_camera": "Fotocamera",
             "behind_camera": "Achteruitrijcamera",
             "top_camera": "Bovenaanzichtcamera",
             "cabin_camera": "Cabinecamera",
@@ -671,23 +685,64 @@
             "seat_lr": "Stoel L/R (X)",
             "seat_ud": "Stoel O/N (Y)",
             "seat_fb": "Stoel V/A (Z)",
-            "seat_position_not_found": "Stoelpositie: gegevens niet gevonden",
             "head_rotation": "Hoofdrotatie",
             "yaw_lr": "Gieren (L/R)",
             "pitch_ud": "Stampen (O/N)",
-            "head_rotation_not_found": "Hoofdrotatie: gegevens niet gevonden",
             "mouse_rotation_limits": "Muis Rotatielimieten",
             "left_limit": "Linkerlimiet",
             "right_limit": "Rechterlimiet",
             "up_limit": "Bovenlimiet",
             "down_limit": "Onderlimiet",
-            "rotation_limits_not_found": "Rotatielimieten: gegevens niet gevonden",
             "rotation_defaults": "Standaard Rotatie",
             "default_lr": "Standaard L/R##Interior",
             "default_ud": "Standaard O/N##Interior",
-            "rotation_defaults_not_found": "Standaard Rotatie: gegevens niet gevonden",
             "reset_to_defaults": "Herstel naar Standaard",
-            "not_available": "Interieurcamera-object niet beschikbaar."
+            "not_available": "Interieurcamera-object niet beschikbaar.",
+            "near_plane": "Nabij clipping-vlak (Near Plane)",
+            "far_plane": "Ver clipping-vlak (Far Plane)",
+            "mouse_sensitivity": "Muasgevoeligheid",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "hand_shake_limit": "Trillingsamplitude camera",
+            "hand_shake_speed": "Trillingsfrequentie camera",
+            "zoom_fov_factor": "Zoom FOV-vermenigvuldiger",
+            "zoom_speed_interior": "Zoomsnelheid",
+            "azimuth_overrides": "Dynamische zones (Azimuth Overrides)",
+            "range_start_azimuth": "Begin azimut van zone",
+            "range_end_azimuth": "Einde azimut van zone",
+            "zone_is_outside": "Zone buiten de cabine",
+            "start_up_limit": "Bovenlimiet (Begin)",
+            "end_up_limit": "Bovenlimiet (Einde)",
+            "start_down_limit": "Onderlimiet (Begin)",
+            "end_down_limit": "Onderlimiet (Einde)",
+            "start_up_down_default": "Standaard B/O (Begin)",
+            "end_up_down_default": "Standaard B/O (Einde)",
+            "start_left_right_default": "Standaard L/R (Begin)",
+            "end_left_right_default": "Standaard L/R (Einde)",
+            "start_head_offset": "Hoofdverschuiving (Begin)",
+            "end_head_offset": "Hoofdverschuiving (Einde)",
+            "shake_animation_array": "Array voor schudanimatie",
+            "point_x": "Punt X",
+            "point_y": "Punt Y",
+            "point_z": "Punt Z",
+            "select_range": "Zone selecteren",
+            "select_frame": "Frame selecteren",
+            "advanced_core_settings": "Geavanceerde kerninstellingen",
+            "shake_settings": "Instellingen voor schudden en trillen",
+            "interior_logic_settings": "Interieur- en zoomlogica",
+            "azimuth_range_details": "Parameters van geselecteerde zone"
+        },
+        "photo_camera": {
+            "live_state": "Huidige status",
+            "live_pitch": "Stampen / Pitch (B/O)",
+            "live_yaw": "Gieren / Yaw (L/R)",
+            "live_roll": "Rollen / Roll",
+            "live_zoom": "Zoom (Afstand)",
+            "position": "Camerapositie (Wereld)",
+            "base_fov": "Basis FOV",
+            "not_available": "Fotocamera-object niet beschikbaar.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Live Status",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Dyn. Offset Traagheid",
             "dynamic_offset_not_found": "Dynamische Offset: gegevens niet gevonden",
             "base_fov_behind": "Basis FOV##Behind",
-            "reset_to_defaults_behind": "Herstel naar Standaard##Behind",
-            "not_available": "Achteruitrijcamera-object niet beschikbaar."
+            "not_available": "Achteruitrijcamera-object niet beschikbaar.",
+            "collision_settings": "Instellingen voor collisies",
+            "validation": "Collisies inschakelen",
+            "validation_radius": "Collisieradius",
+            "validation_speed_pos": "Collisiesnelheid (Pos)",
+            "validation_speed_neg": "Collisiesnelheid (Neg)",
+            "speed_fov_factor": "FOV-factor op basis van snelheid",
+            "shake_settings": "Instellingen voor schudden en trillen",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "top_camera": {
             "height_zoom": "Hoogte / Zoom",
@@ -736,17 +801,37 @@
             "movement_speed": "Bewegingssnelheid",
             "movement_not_found": "Beweging: gegevens niet gevonden",
             "dynamic_offset": "Dynamische Offset",
-            "forward_offset": "Voorwaartse Offset",
-            "backward_offset": "Achterwaartse Offset",
+            "forward_offset_x": "Verschuiving voorwaarts (X)",
+            "backward_offset_x": "Verschuiving achterwaarts (X)",
+            "forward_offset_z": "Verschuiving voorwaarts (Z)",
+            "backward_offset_z": "Verschuiving achterwaarts (Z)",
             "dynamic_offset_not_found": "Dynamische Offset: gegevens niet gevonden",
             "base_fov_top": "Basis FOV##Top",
-            "reset_to_defaults_top": "Herstel naar Standaard##Top",
-            "not_available": "Bovenaanzichtcamera-object niet beschikbaar."
+            "not_available": "Bovenaanzichtcamera-object niet beschikbaar.",
+            "near_plane": "Nabij clipping-vlak",
+            "far_plane": "Ver clipping-vlak",
+            "validation": "Collisies inschakelen",
+            "validation_speed_pos": "Collisiesnelheid (Pos)",
+            "validation_speed_neg": "Collisiesnelheid (Neg)",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie",
+            "adaptive_settings": "Instellingen voor adaptieve hoogte",
+            "height_factor": "Hoogtefactor",
+            "use_adaptive": "Adaptieve hoogte gebruiken",
+            "distance_settings": "Dynamische longitudinale verschuiving (Z)",
+            "collision_settings": "Instellingen voor collisies"
         },
         "cabin_camera": {
             "base_fov_cabin": "Basis FOV##Cabin",
-            "reset_to_defaults_cabin": "Herstel naar Standaard##Cabin",
-            "not_available": "Cabinecamera-object niet beschikbaar."
+            "not_available": "Cabinecamera-object niet beschikbaar.",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "window_camera": {
             "head_offset": "Hoofd Offset",
@@ -768,8 +853,14 @@
             "default_ud_window": "Standaard O/N##Window",
             "rotation_defaults_not_found_window": "Standaard Rotatie: gegevens niet gevonden",
             "base_fov_window": "Basis FOV##Window",
-            "reset_to_defaults_window": "Herstel naar Standaard##Window",
-            "not_available": "Raamcamera-object niet beschikbaar."
+            "not_available": "Raamcamera-object niet beschikbaar.",
+            "relative_headtracking_azimuth": "Relatieve headtracking-azimut",
+            "auto_center_move_direction": "Richting van autocentrering bij beweging",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "bumper_camera": {
             "offset": "Offset",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Offset Z##Bumper",
             "offset_not_found": "Offset: gegevens niet gevonden",
             "base_fov_bumper": "Basis FOV##Bumper",
-            "reset_to_defaults_bumper": "Herstel naar Standaard##Bumper",
-            "not_available": "Bumpercamera-object niet beschikbaar."
+            "not_available": "Bumpercamera-object niet beschikbaar.",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "wheel_camera": {
             "offset": "Offset",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Offset Z##Wheel",
             "offset_not_found": "Offset: gegevens niet gevonden",
             "base_fov_wheel": "Basis FOV##Wheel",
-            "reset_to_defaults_wheel": "Herstel naar Standaard##Wheel",
-            "not_available": "Wielcamera-object niet beschikbaar."
+            "not_available": "Wielcamera-object niet beschikbaar.",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "tv_camera": {
             "distance": "Afstand",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Weg Verhoging Z##TV",
             "road_uplift_not_found": "Weg Verhoging: gegevens niet gevonden",
             "base_fov_tv": "Basis FOV##TV",
-            "reset_to_defaults_tv": "Herstel naar Standaard##TV",
-            "not_available": "TV-camera-object niet beschikbaar."
+            "not_available": "TV-camera-object niet beschikbaar.",
+            "shake_settings": "Instellingen voor schudden",
+            "shake_anim_step": "Stapgrootte van schudanimatie",
+            "shake_anim_scale_min": "Min. schaal van schudden",
+            "shake_anim_scale_max": "Max. schaal van schudden",
+            "shake_animation_array": "Array voor schudanimatie"
         },
         "free_camera": {
             "position": "Positie",
@@ -830,7 +933,6 @@
             "movement_speed": "Bewegingssnelheid",
             "speed_freecam": "Snelheid",
             "movement_speed_not_found": "Bewegingssnelheid: gegevens niet gevonden",
-            "reset_to_defaults_freecam": "Herstel naar Standaard##FreeCam",
             "not_available": "Vrije camera-object niet beschikbaar."
         },
         "debug": {

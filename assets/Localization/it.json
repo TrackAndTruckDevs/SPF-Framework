@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "Abilita 'connect' nel file di configurazione.",
         "version_label": "La tua versione ",
         "update_checking": "Verifica degli aggiornamenti in corso...",
+        "update_available_notification": "### {}\n Nuovo aggiornamento disponibile **{}**\n Per saperne di più, visita il sito web",
         "menu": {
             "manual": "Manuale / FAQ",
             "about": "Chi siamo / Contatti",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "Abilita l'hook 'Game Console' nella finestra Hooks per usare questa funzione.",
             "shutdown": "Arresta Framework",
             "open_plugins_folder": "Apri Cartella Plugin"
+        },
+        "common": {
+            "developer_mode": "Modalità sviluppatore",
+            "user_mode": "Modalità utente"
         },
         "game_status": {
             "running_game_label": "Gioco in esecuzione:",
@@ -92,7 +97,8 @@
             "info": "Informazioni Plugin",
             "description": "Descrizione",
             "settings": "Impostazioni",
-            "restart_sdk": "Riavvia l'SDK per attivare i dispositivi di input virtuali"
+            "restart_sdk": "Riavvia l'SDK per attivare i dispositivi di input virtuali",
+            "update_available": "Vai al sito web"
         },
         "info_popup": {
             "author": "Autore:",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "Richiede versione SPF Framework:",
-            "virt_input_restart_required": "Riavvio richiesto per gli input virtuali"
+            "virt_input_restart_required": "Riavvio richiesto per gli input virtuali",
+            "update_available": "Nuova versione {} disponibile, dettagli: "
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "Durata delle notifiche",
                     "description": "Imposta per quanto tempo (in secondi) le notifiche pop-up temporanee rimangono sullo schermo."
+                },
+                "show_update_notifications": {
+                    "title": "Notifiche di aggiornamento",
+                    "description": "Riceverai delle notifiche quando saranno disponibili aggiornamenti per il framework o per i plugin."
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "Ruota",
         "tv": "TV",
         "developer_free_camera": "Fotocamera Libera Sviluppatore (ID 0)",
+        "default_value_prefix": "Predefinito",
+        "data_not_found": ": dati non trovati",
         "tabs": {
             "interior_camera": "Fotocamera Interna",
+            "photo_camera": "Foto camera",
             "behind_camera": "Fotocamera Posteriore",
             "top_camera": "Fotocamera dall'Alto",
             "cabin_camera": "Fotocamera Cabina",
@@ -671,23 +685,64 @@
             "seat_lr": "Sedile S/D (X)",
             "seat_ud": "Sedile A/B (Y)",
             "seat_fb": "Sedile Av/In (Z)",
-            "seat_position_not_found": "Posizione Sedile: dati non trovati",
             "head_rotation": "Rotazione Testa",
             "yaw_lr": "Imbardata (S/D)",
             "pitch_ud": "Beccheggio (A/B)",
-            "head_rotation_not_found": "Rotazione Testa: dati non trovati",
             "mouse_rotation_limits": "Limiti Rotazione Mouse",
             "left_limit": "Limite Sinistra",
             "right_limit": "Limite Destra",
             "up_limit": "Limite Su",
             "down_limit": "Limite Giù",
-            "rotation_limits_not_found": "Limiti Rotazione: dati non trovati",
             "rotation_defaults": "Predefiniti Rotazione",
             "default_lr": "Predefinito S/D##Interior",
             "default_ud": "Predefinito A/B##Interior",
-            "rotation_defaults_not_found": "Predefiniti Rotazione: dati non trovati",
             "reset_to_defaults": "Ripristina Predefiniti",
-            "not_available": "Oggetto fotocamera interna non disponibile."
+            "not_available": "Oggetto fotocamera interna non disponibile.",
+            "near_plane": "Piano di ritaglio vicino (Near Plane)",
+            "far_plane": "Piano di ritaglio lontano (Far Plane)",
+            "mouse_sensitivity": "Sensibilità del mouse",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "hand_shake_limit": "Ampiezza vibrazione telecamera",
+            "hand_shake_speed": "Frequenza vibrazione telecamera",
+            "zoom_fov_factor": "Moltiplicatore FOV dello zoom",
+            "zoom_speed_interior": "Velocità dello zoom",
+            "azimuth_overrides": "Zone dinamiche (Azimuth Overrides)",
+            "range_start_azimuth": "Inizio azimut della zona",
+            "range_end_azimuth": "Fine azimut della zona",
+            "zone_is_outside": "Zona esterna alla cabina",
+            "start_up_limit": "Limite superiore (Inizio)",
+            "end_up_limit": "Limite superiore (Fine)",
+            "start_down_limit": "Limite inferiore (Inizio)",
+            "end_down_limit": "Limite inferiore (Fine)",
+            "start_up_down_default": "Predefinito S/G (Inizio)",
+            "end_up_down_default": "Predefinito S/G (Fine)",
+            "start_left_right_default": "Predefinito S/D (Inizio)",
+            "end_left_right_default": "Predefinito S/D (Fine)",
+            "start_head_offset": "Disallineamento testa (Inizio)",
+            "end_head_offset": "Disallineamento testa (Fine)",
+            "shake_animation_array": "Array animazione oscillazione",
+            "point_x": "Punto X",
+            "point_y": "Punto Y",
+            "point_z": "Punto Z",
+            "select_range": "Seleziona zona",
+            "select_frame": "Seleziona fotogramma (Frame)",
+            "advanced_core_settings": "Impostazioni avanzate del core",
+            "shake_settings": "Impostazioni oscillazione e vibrazione",
+            "interior_logic_settings": "Logica interni e zoom",
+            "azimuth_range_details": "Parametri della zona selezionata"
+        },
+        "photo_camera": {
+            "live_state": "Stato attuale",
+            "live_pitch": "Beccheggio / Pitch (S/G)",
+            "live_yaw": "Imbardata / Yaw (S/D)",
+            "live_roll": "Rollio / Roll",
+            "live_zoom": "Zoom (Distanza)",
+            "position": "Posizione telecamera (Mondo)",
+            "base_fov": "FOV base",
+            "not_available": "Oggetto foto camera non disponibile.",
+            "fov_zoom": "FOV / Zoom"
         },
         "behind_camera": {
             "live_state": "Stato in Tempo Reale",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "Lentezza Offset Din.",
             "dynamic_offset_not_found": "Offset Dinamico: dati non trovati",
             "base_fov_behind": "FOV Base##Behind",
-            "reset_to_defaults_behind": "Ripristina Predefiniti##Behind",
-            "not_available": "Oggetto fotocamera posteriore non disponibile."
+            "not_available": "Oggetto fotocamera posteriore non disponibile.",
+            "collision_settings": "Impostazioni collisioni",
+            "validation": "Attiva collisioni",
+            "validation_radius": "Raggio di collisione",
+            "validation_speed_pos": "Velocità collisione (Pos)",
+            "validation_speed_neg": "Velocità collisione (Neg)",
+            "speed_fov_factor": "Fattore FOV basato sulla velocità",
+            "shake_settings": "Impostazioni oscillazione e vibrazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "top_camera": {
             "height_zoom": "Altezza / Zoom",
@@ -736,17 +801,37 @@
             "movement_speed": "Velocità Movimento",
             "movement_not_found": "Movimento: dati non trovati",
             "dynamic_offset": "Offset Dinamico",
-            "forward_offset": "Offset Anteriore",
-            "backward_offset": "Offset Posteriore",
+            "forward_offset_x": "Disallineamento avanti (X)",
+            "backward_offset_x": "Disallineamento indietro (X)",
+            "forward_offset_z": "Disallineamento avanti (Z)",
+            "backward_offset_z": "Disallineamento indietro (Z)",
             "dynamic_offset_not_found": "Offset Dinamico: dati non trovati",
             "base_fov_top": "FOV Base##Top",
-            "reset_to_defaults_top": "Ripristina Predefiniti##Top",
-            "not_available": "Oggetto fotocamera dall'alto non disponibile."
+            "not_available": "Oggetto fotocamera dall'alto non disponibile.",
+            "near_plane": "Piano di ritaglio vicino",
+            "far_plane": "Piano di ritaglio lontano",
+            "validation": "Attiva collisioni",
+            "validation_speed_pos": "Velocità collisione (Pos)",
+            "validation_speed_neg": "Velocità collisione (Neg)",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione",
+            "adaptive_settings": "Impostazioni altezza adattiva",
+            "height_factor": "Fattore altezza",
+            "use_adaptive": "Usa altezza adattiva",
+            "distance_settings": "Disallineamento longitudinale dinamico (Z)",
+            "collision_settings": "Impostazioni collisioni"
         },
         "cabin_camera": {
             "base_fov_cabin": "FOV Base##Cabin",
-            "reset_to_defaults_cabin": "Ripristina Predefiniti##Cabin",
-            "not_available": "Oggetto fotocamera cabina non disponibile."
+            "not_available": "Oggetto fotocamera cabina non disponibile.",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "window_camera": {
             "head_offset": "Offset Testa",
@@ -768,8 +853,14 @@
             "default_ud_window": "Predefinito A/B##Window",
             "rotation_defaults_not_found_window": "Predefiniti Rotazione: dati non trovati",
             "base_fov_window": "FOV Base##Window",
-            "reset_to_defaults_window": "Ripristina Predefiniti##Window",
-            "not_available": "Oggetto fotocamera finestrino non disponibile."
+            "not_available": "Oggetto fotocamera finestrino non disponibile.",
+            "relative_headtracking_azimuth": "Azimut relativo headtracking",
+            "auto_center_move_direction": "Direzione autocentramento in movimento",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "bumper_camera": {
             "offset": "Offset",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "Offset Z##Bumper",
             "offset_not_found": "Offset: dati non trovati",
             "base_fov_bumper": "FOV Base##Bumper",
-            "reset_to_defaults_bumper": "Ripristina Predefiniti##Bumper",
-            "not_available": "Oggetto fotocamera paraurti non disponibile."
+            "not_available": "Oggetto fotocamera paraurti non disponibile.",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "wheel_camera": {
             "offset": "Offset",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "Offset Z##Wheel",
             "offset_not_found": "Offset: dati non trovati",
             "base_fov_wheel": "FOV Base##Wheel",
-            "reset_to_defaults_wheel": "Ripristina Predefiniti##Wheel",
-            "not_available": "Oggetto fotocamera ruota non disponibile."
+            "not_available": "Oggetto fotocamera ruota non disponibile.",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "tv_camera": {
             "distance": "Distanza",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "Sollevamento Strada Z##TV",
             "road_uplift_not_found": "Sollevamento Strada: dati non trovati",
             "base_fov_tv": "FOV Base##TV",
-            "reset_to_defaults_tv": "Ripristina Predefiniti##TV",
-            "not_available": "Oggetto fotocamera TV non disponibile."
+            "not_available": "Oggetto fotocamera TV non disponibile.",
+            "shake_settings": "Impostazioni oscillazione",
+            "shake_anim_step": "Passo dell'animazione di oscillazione",
+            "shake_anim_scale_min": "Scala min. oscillazione",
+            "shake_anim_scale_max": "Scala max. oscillazione",
+            "shake_animation_array": "Array animazione oscillazione"
         },
         "free_camera": {
             "position": "Posizione",
@@ -830,7 +933,6 @@
             "movement_speed": "Velocità Movimento",
             "speed_freecam": "Velocità",
             "movement_speed_not_found": "Velocità Movimento: dati non trovati",
-            "reset_to_defaults_freecam": "Ripristina Predefiniti##FreeCam",
             "not_available": "Oggetto fotocamera libera non disponibile."
         },
         "debug": {

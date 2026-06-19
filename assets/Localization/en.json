@@ -23,7 +23,7 @@
         "connect_disabled_tooltip": "Enable 'connect' in the configuration file.",
         "version_label": "Your version ",
         "update_checking": "Checking for updates...",
-        "update_available_notification": "### {}\n New update available **{}**\n To learn more, visit the website",       
+        "update_available_notification": "### {}\n New update available **{}**\n To learn more, visit the website",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "About Us / Contacts",
@@ -244,7 +244,7 @@
                 "show_update_notifications": {
                     "title": "Notify about updates",
                     "description": "When a framework or plugin update is available, you will see a notification."
-				}
+                }
             }
         },
         "keybinds_drawer": {
@@ -659,11 +659,11 @@
         "wheel": "Wheel",
         "tv": "TV",
         "developer_free_camera": "Developer Free Camera (ID 0)",
-        "default_value_prefix" : "Default",
+        "default_value_prefix": "Default",
         "data_not_found": ": data not found",
         "tabs": {
             "interior_camera": "Interior Camera",
-            "photo_camera": "Photo Camera",            
+            "photo_camera": "Photo Camera",
             "behind_camera": "Behind Camera",
             "top_camera": "Top Camera",
             "cabin_camera": "Cabin Camera",
@@ -743,7 +743,7 @@
             "base_fov": "Base FOV",
             "not_available": "Photo camera object not available.",
             "fov_zoom": "FOV / Zoom"
-        },        
+        },
         "behind_camera": {
             "live_state": "Live State",
             "live_pitch": "Live Pitch",
@@ -910,7 +910,7 @@
             "shake_anim_step": "Shake Animation Step",
             "shake_anim_scale_min": "Min Shake Scale",
             "shake_anim_scale_max": "Max Shake Scale",
-            "shake_animation_array": "Shake Animation Array"            
+            "shake_animation_array": "Shake Animation Array"
         },
         "free_camera": {
             "position": "Position",
@@ -1080,7 +1080,7 @@
     },
     "climate_window": {
         "title": "Climate & Weather"
-    },    
+    },
     "info_window": {
         "title": "Environment Information",
         "tabs": {

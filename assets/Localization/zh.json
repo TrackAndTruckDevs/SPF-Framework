@@ -23,6 +23,7 @@
         "connect_disabled_tooltip": "请在配置文件中启用 'connect'。",
         "version_label": "您的版本 ",
         "update_checking": "正在检查更新...",
+        "update_available_notification": "### {}\n 发现新版本 **{}**\n 欲知更多信息，请访问官方网站",
         "menu": {
             "manual": "手册 / 常见问题",
             "about": "关于我们 / 联系方式",
@@ -31,6 +32,10 @@
             "reload_disabled_tooltip": "在“钩子”窗口中启用“游戏控制台”钩子才能使用此功能。",
             "shutdown": "关闭框架",
             "open_plugins_folder": "打开插件文件夹"
+        },
+        "common": {
+            "developer_mode": "开发者模式",
+            "user_mode": "用户模式"
         },
         "game_status": {
             "running_game_label": "正在运行的游戏：",
@@ -92,7 +97,8 @@
             "info": "插件信息",
             "description": "描述",
             "settings": "设置",
-            "restart_sdk": "重启 SDK 以激活虚拟输入设备"
+            "restart_sdk": "重启 SDK 以激活虚拟输入设备",
+            "update_available": "前往官方网站"
         },
         "info_popup": {
             "author": "作者：",
@@ -100,7 +106,8 @@
         },
         "status": {
             "incompatible": "所需的 SPF 框架版本",
-            "virt_input_restart_required": "虚拟输入需要重启"
+            "virt_input_restart_required": "虚拟输入需要重启",
+            "update_available": "新版本 {} 已可用，详情："
         }
     },
     "settings_window": {
@@ -233,6 +240,10 @@
                 "notification_duration": {
                     "title": "通知持续时间",
                     "description": "设置临时弹出通知在屏幕上停留的时间（以秒为单位）。"
+                },
+                "show_update_notifications": {
+                    "title": "更新通知",
+                    "description": "当框架或插件有可用更新时，您将收到通知。"
                 }
             }
         },
@@ -648,8 +659,11 @@
         "wheel": "车轮",
         "tv": "电视",
         "developer_free_camera": "开发者自由摄像头 (ID 0)",
+        "default_value_prefix": "默认",
+        "data_not_found": "：未找到数据",
         "tabs": {
             "interior_camera": "内部摄像头",
+            "photo_camera": "拍照相机",
             "behind_camera": "后方摄像头",
             "top_camera": "上方摄像头",
             "cabin_camera": "驾驶室摄像头",
@@ -671,23 +685,64 @@
             "seat_lr": "座椅左/右 (X)",
             "seat_ud": "座椅上/下 (Y)",
             "seat_fb": "座椅前/后 (Z)",
-            "seat_position_not_found": "座椅位置: 数据未找到",
             "head_rotation": "头部旋转",
             "yaw_lr": "偏航 (左/右)",
             "pitch_ud": "俯仰 (上/下)",
-            "head_rotation_not_found": "头部旋转: 数据未找到",
             "mouse_rotation_limits": "鼠标旋转限制",
             "left_limit": "左限制",
             "right_limit": "右限制",
             "up_limit": "上限制",
             "down_limit": "下限制",
-            "rotation_limits_not_found": "旋转限制: 数据未找到",
             "rotation_defaults": "默认旋转",
             "default_lr": "默认左/右##内部",
             "default_ud": "默认上/下##内部",
-            "rotation_defaults_not_found": "默认旋转: 数据未找到",
             "reset_to_defaults": "重置为默认",
-            "not_available": "内部摄像头对象不可用。"
+            "not_available": "内部摄像头对象不可用。",
+            "near_plane": "近裁剪平面 (Near Plane)",
+            "far_plane": "远裁剪平面 (Far Plane)",
+            "mouse_sensitivity": "鼠标灵敏度",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "hand_shake_limit": "相机震动幅度",
+            "hand_shake_speed": "相机震动频率",
+            "zoom_fov_factor": "缩放 FOV 倍数",
+            "zoom_speed_interior": "缩放速度",
+            "azimuth_overrides": "动态区域 (Azimuth Overrides)",
+            "range_start_azimuth": "区域方位角起点",
+            "range_end_azimuth": "区域方位角终点",
+            "zone_is_outside": "驾驶室外区域",
+            "start_up_limit": "上限限制 (起点)",
+            "end_up_limit": "上限限制 (终点)",
+            "start_down_limit": "下限限制 (起点)",
+            "end_down_limit": "下限限制 (终点)",
+            "start_up_down_default": "默认上/下 (起点)",
+            "end_up_down_default": "默认上/下 (终点)",
+            "start_left_right_default": "默认左/右 (起点)",
+            "end_left_right_default": "默认左/右 (终点)",
+            "start_head_offset": "头部偏移 (起点)",
+            "end_head_offset": "头部偏移 (终点)",
+            "shake_animation_array": "抖动动画数组",
+            "point_x": "坐标点 X",
+            "point_y": "坐标点 Y",
+            "point_z": "坐标点 Z",
+            "select_range": "选择区域",
+            "select_frame": "选择帧 (Frame)",
+            "advanced_core_settings": "高级核心设置",
+            "shake_settings": "抖动与震动设置",
+            "interior_logic_settings": "内饰与缩放逻辑",
+            "azimuth_range_details": "所选区域 canned 参数"
+        },
+        "photo_camera": {
+            "live_state": "当前状态",
+            "live_pitch": "俯仰角 / Pitch (上/下)",
+            "live_yaw": "偏航角 / Yaw (左/右)",
+            "live_roll": "翻滚角 / Roll",
+            "live_zoom": "缩放 (距离)",
+            "position": "相机位置 (世界坐标)",
+            "base_fov": "基础 FOV",
+            "not_available": "拍照相机对象不可用。",
+            "fov_zoom": "FOV / 缩放"
         },
         "behind_camera": {
             "live_state": "实时状态",
@@ -724,8 +779,18 @@
             "dyn_offset_laziness": "动态偏移延迟",
             "dynamic_offset_not_found": "动态偏移: 数据未找到",
             "base_fov_behind": "基本视野##后方",
-            "reset_to_defaults_behind": "重置为默认##后方",
-            "not_available": "后方摄像头对象不可用。"
+            "not_available": "后方摄像头对象不可用。",
+            "collision_settings": "碰撞设置",
+            "validation": "启用碰撞",
+            "validation_radius": "碰撞半径",
+            "validation_speed_pos": "碰撞速度 (正向)",
+            "validation_speed_neg": "碰撞速度 (反向)",
+            "speed_fov_factor": "速度关联 FOV 系数",
+            "shake_settings": "抖动与震动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "top_camera": {
             "height_zoom": "高度 / 缩放",
@@ -736,17 +801,37 @@
             "movement_speed": "移动速度",
             "movement_not_found": "移动: 数据未找到",
             "dynamic_offset": "动态偏移",
-            "forward_offset": "向前偏移",
-            "backward_offset": "向后偏移",
+            "forward_offset_x": "向前偏移 (X)",
+            "backward_offset_x": "向后偏移 (X)",
+            "forward_offset_z": "向前偏移 (Z)",
+            "backward_offset_z": "向后偏移 (Z)",
             "dynamic_offset_not_found": "动态偏移: 数据未找到",
             "base_fov_top": "基本视野##上方",
-            "reset_to_defaults_top": "重置为默认##上方",
-            "not_available": "上方摄像头对象不可用。"
+            "not_available": "上方摄像头对象不可用。",
+            "near_plane": "近裁剪平面",
+            "far_plane": "远裁剪平面",
+            "validation": "启用碰撞",
+            "validation_speed_pos": "碰撞速度 (正向)",
+            "validation_speed_neg": "碰撞速度 (反向)",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组",
+            "adaptive_settings": "自适应高度设置",
+            "height_factor": "高度系数",
+            "use_adaptive": "使用自适应高度",
+            "distance_settings": "动态纵向偏移 (Z)",
+            "collision_settings": "碰撞设置"
         },
         "cabin_camera": {
             "base_fov_cabin": "基本视野##驾驶室",
-            "reset_to_defaults_cabin": "重置为默认##驾驶室",
-            "not_available": "驾驶室摄像头对象不可用。"
+            "not_available": "驾驶室摄像头对象不可用。",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "window_camera": {
             "head_offset": "头部偏移",
@@ -768,8 +853,14 @@
             "default_ud_window": "默认上/下##车窗",
             "rotation_defaults_not_found_window": "默认旋转: 数据未找到",
             "base_fov_window": "基本视野##车窗",
-            "reset_to_defaults_window": "重置为默认##车窗",
-            "not_available": "车窗摄像头对象不可用。"
+            "not_available": "车窗摄像头对象不可用。",
+            "relative_headtracking_azimuth": "相对头部追踪方位角",
+            "auto_center_move_direction": "移动时自动居中方向",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "bumper_camera": {
             "offset": "偏移",
@@ -778,8 +869,12 @@
             "offset_z_bumper": "偏移 Z##保险杠",
             "offset_not_found": "偏移: 数据未找到",
             "base_fov_bumper": "基本视野##保险杠",
-            "reset_to_defaults_bumper": "重置为默认##保险杠",
-            "not_available": "保险杠摄像头对象不可用。"
+            "not_available": "保险杠摄像头对象不可用。",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "wheel_camera": {
             "offset": "偏移",
@@ -788,8 +883,12 @@
             "offset_z_wheel": "偏移 Z##车轮",
             "offset_not_found": "偏移: 数据未找到",
             "base_fov_wheel": "基本视野##车轮",
-            "reset_to_defaults_wheel": "重置为默认##车轮",
-            "not_available": "车轮摄像头对象不可用。"
+            "not_available": "车轮摄像头对象不可用。",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "tv_camera": {
             "distance": "距离",
@@ -806,8 +905,12 @@
             "road_uplift_z_tv": "道路抬升 Z##电视",
             "road_uplift_not_found": "道路抬升: 数据未找到",
             "base_fov_tv": "基本视野##电视",
-            "reset_to_defaults_tv": "重置为默认##电视",
-            "not_available": "电视摄像头对象不可用。"
+            "not_available": "电视摄像头对象不可用。",
+            "shake_settings": "抖动设置",
+            "shake_anim_step": "抖动动画步长",
+            "shake_anim_scale_min": "最小抖动缩放",
+            "shake_anim_scale_max": "最大抖动缩放",
+            "shake_animation_array": "抖动动画数组"
         },
         "free_camera": {
             "position": "位置",
@@ -830,7 +933,6 @@
             "movement_speed": "移动速度",
             "speed_freecam": "速度",
             "movement_speed_not_found": "移动速度: 数据未找到",
-            "reset_to_defaults_freecam": "重置为默认##自由摄像头",
             "not_available": "自由摄像头对象不可用。"
         },
         "debug": {
