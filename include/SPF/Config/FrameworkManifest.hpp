@@ -21,7 +21,7 @@ inline const ManifestData& GetFrameworkManifestData() {
       .info =
           {
               .name = "SPF Framework",
-              .version = "1.1.10",
+              .version = "1.2.0",
               .author = "Track'n'Truck Devs",
               .descriptionKey = "description.detailed",  // key in the translation file
               .descriptionLiteral = "",                  // if there is no translation, you can write a description here
