@@ -1,18 +1,22 @@
 #include "SPF/Telemetry/GameDataProcessor.hpp"
-#include "SPF/System/EnvironmentManager.hpp"
-#include <cstring>
 
-#include "SPF/Logging/Logger.hpp"
-#include "SPF/Telemetry/GameContext.hpp"
-#include "SPF/Telemetry/ConfigAttributeReader.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
+#include "SPF/Telemetry/ConfigAttributeReader.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+
+#include <cstdint>
+#include <cstring>
 
 SPF_NS_BEGIN
 namespace Telemetry {
 using namespace SPF::Logging;
 
-GameDataProcessor::GameDataProcessor(Logger& logger, GameContext& context, Events::EventManager& eventManager)
-    : m_logger(logger), m_context(context), m_eventManager(eventManager) {}
+GameDataProcessor::GameDataProcessor(Logger& logger, GameContext& context, Events::EventManager& eventManager) : m_logger(logger), m_context(context), m_eventManager(eventManager) {}
 
 void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const scs_params) {
   m_gameState.game_id = m_context.GetGame();
@@ -28,7 +32,7 @@ void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const
   // Telemetry Plugin SDK Version
   m_gameState.telemetry_plugin_version_major = SCS_GET_MAJOR_VERSION(SCS_TELEMETRY_VERSION_CURRENT);
   m_gameState.telemetry_plugin_version_minor = SCS_GET_MINOR_VERSION(SCS_TELEMETRY_VERSION_CURRENT);
-  
+
   // Game-specific Telemetry SDK Version
   if (m_context.IsETS2()) {
     m_gameState.telemetry_game_version_major = SCS_GET_MAJOR_VERSION(SCS_TELEMETRY_EUT2_GAME_VERSION_CURRENT);
@@ -39,15 +43,13 @@ void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const
   }
 
   m_logger.Info("GameDataProcessor initialized for {}.", m_gameState.game_name);
-  m_logger.Info(
-    "Versions: Game {}.{}, Telemetry SDK {}.{}, Game-specific SDK {}.{}",
-    m_gameState.scs_game_version_major,
-    m_gameState.scs_game_version_minor,
-    m_gameState.telemetry_plugin_version_major,
-    m_gameState.telemetry_plugin_version_minor,
-    m_gameState.telemetry_game_version_major,
-    m_gameState.telemetry_game_version_minor
-  );
+  m_logger.Info("Versions: Game {}.{}, Telemetry SDK {}.{}, Game-specific SDK {}.{}",
+                m_gameState.scs_game_version_major,
+                m_gameState.scs_game_version_minor,
+                m_gameState.telemetry_plugin_version_major,
+                m_gameState.telemetry_plugin_version_minor,
+                m_gameState.telemetry_game_version_major,
+                m_gameState.telemetry_game_version_minor);
 }
 
 void GameDataProcessor::Shutdown() { m_gameWorldReadyNotified = false; }

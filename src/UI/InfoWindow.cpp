@@ -1,19 +1,29 @@
 #include "SPF/UI/InfoWindow.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/Icons.hpp"
-#include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
+
 #include "imgui.h"
+
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <stringapiset.h>
+#include <winnls.h>
 
 SPF_NS_BEGIN
 namespace UI {
 using namespace System;
 using namespace Localization;
 
-InfoWindow::InfoWindow(const std::string& componentName, const std::string& windowId)
-    : BaseWindow(componentName, windowId) {
+InfoWindow::InfoWindow(const std::string& componentName, const std::string& windowId) : BaseWindow(componentName, windowId) {
   // Main Window & Tabs
   m_locTitle = "info_window.title";
   m_locFrameworkTab = "info_window.tabs.framework";
@@ -68,9 +78,7 @@ InfoWindow::InfoWindow(const std::string& componentName, const std::string& wind
   m_locStatusDllNotLoaded = "info_window.status.dll_not_loaded";
 }
 
-const char* InfoWindow::GetWindowTitle() const {
-  return LocalizationManager::GetInstance().Get(m_locTitle).c_str();
-}
+const char* InfoWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_locTitle).c_str(); }
 
 void InfoWindow::RenderContent() {
   auto& loc = LocalizationManager::GetInstance();
@@ -103,7 +111,7 @@ void InfoWindow::RenderContent() {
 void InfoWindow::RenderFrameworkTab() {
   auto& loc = LocalizationManager::GetInstance();
   const auto& info = EnvironmentManager::GetInstance().GetFrameworkInfo();
-  
+
   ImGui::Spacing();
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locFrameworkVersion).c_str());
   ImGui::SameLine();
@@ -144,8 +152,7 @@ void InfoWindow::RenderGameTab() {
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameIsSteam).c_str());
   ImGui::SameLine();
-  Typography::Text(TextStyle::Regular().Color(info.isSteamVersion ? Colors::GREEN : Colors::RED), 
-                   "%s", info.isSteamVersion ? "Yes" : "No");
+  Typography::Text(TextStyle::Regular().Color(info.isSteamVersion ? Colors::GREEN : Colors::RED), "%s", info.isSteamVersion ? "Yes" : "No");
 
   const auto& status = EnvironmentManager::GetInstance().GetStatus();
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameActiveProfile).c_str());
@@ -166,9 +173,9 @@ void InfoWindow::RenderGameTab() {
     std::string cmd;
     const std::wstring& wcmd = info.commandLine;
     if (!wcmd.empty()) {
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wcmd[0], (int)wcmd.size(), NULL, 0, NULL, NULL);
-        cmd.resize(size_needed);
-        WideCharToMultiByte(CP_UTF8, 0, &wcmd[0], (int)wcmd.size(), &cmd[0], size_needed, NULL, NULL);
+      int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wcmd[0], (int)wcmd.size(), NULL, 0, NULL, NULL);
+      cmd.resize(size_needed);
+      WideCharToMultiByte(CP_UTF8, 0, &wcmd[0], (int)wcmd.size(), &cmd[0], size_needed, NULL, NULL);
     }
     ImGui::TextWrapped("%s", cmd.c_str());
     ImGui::TreePop();
@@ -178,13 +185,13 @@ void InfoWindow::RenderGameTab() {
 void InfoWindow::RenderPathsTab() {
   auto& loc = LocalizationManager::GetInstance();
   ImGui::Spacing();
-  
+
   auto drawPath = [&](const std::string& key, const std::filesystem::path& path) {
     Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s:", loc.Get(key).c_str());
     if (path.empty()) {
-        Typography::Text(TextStyle::Regular().Color(Colors::RED), "%s", loc.Get(m_locPathNotFound).c_str());
+      Typography::Text(TextStyle::Regular().Color(Colors::RED), "%s", loc.Get(m_locPathNotFound).c_str());
     } else {
-        ImGui::TextWrapped("%s", path.u8string().c_str());
+      ImGui::TextWrapped("%s", (const char*)path.u8string().c_str());
     }
     ImGui::Spacing();
   };
@@ -195,7 +202,7 @@ void InfoWindow::RenderPathsTab() {
   drawPath(m_locPathScsMusic, info.musicPath);
   drawPath(m_locPathScsScreenshots, info.screenshotPath);
   drawPath(m_locPathCurrentProfile, PathManager::GetCurrentProfilePath());
-  
+
   ImGui::Separator();
   ImGui::Spacing();
   Typography::Text(TextStyle::H3().Color(Colors::GOLD), "Framework Paths");
@@ -233,13 +240,11 @@ void InfoWindow::RenderStatusTab() {
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locStatusVr).c_str());
   ImGui::SameLine();
-  Typography::Text(TextStyle::Regular().Color(status.isVR ? Colors::GREEN : Colors::GRAY), 
-                   "%s", status.isVR ? loc.Get(m_locStatusActive).c_str() : loc.Get(m_locStatusInactive).c_str());
+  Typography::Text(TextStyle::Regular().Color(status.isVR ? Colors::GREEN : Colors::GRAY), "%s", status.isVR ? loc.Get(m_locStatusActive).c_str() : loc.Get(m_locStatusInactive).c_str());
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locStatusTobii).c_str());
   ImGui::SameLine();
-  Typography::Text(TextStyle::Regular().Color(status.isTobiiActive ? Colors::GREEN : Colors::GRAY), 
-                   "%s", status.isTobiiActive ? loc.Get(m_locStatusDllLoaded).c_str() : loc.Get(m_locStatusDllNotLoaded).c_str());
+  Typography::Text(TextStyle::Regular().Color(status.isTobiiActive ? Colors::GREEN : Colors::GRAY), "%s", status.isTobiiActive ? loc.Get(m_locStatusDllLoaded).c_str() : loc.Get(m_locStatusDllNotLoaded).c_str());
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locStatusMultiplayer).c_str());
   ImGui::SameLine();
@@ -247,8 +252,7 @@ void InfoWindow::RenderStatusTab() {
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locStatusSteamOverlay).c_str());
   ImGui::SameLine();
-  Typography::Text(TextStyle::Regular().Color(status.isSteamOverlayActive ? Colors::GREEN : Colors::GRAY), 
-                   "%s", status.isSteamOverlayActive ? loc.Get(m_locStatusDllLoaded).c_str() : loc.Get(m_locStatusDllNotLoaded).c_str());
+  Typography::Text(TextStyle::Regular().Color(status.isSteamOverlayActive ? Colors::GREEN : Colors::GRAY), "%s", status.isSteamOverlayActive ? loc.Get(m_locStatusDllLoaded).c_str() : loc.Get(m_locStatusDllNotLoaded).c_str());
 }
 
 }  // namespace UI

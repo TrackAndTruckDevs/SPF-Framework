@@ -1,8 +1,18 @@
 #include "SPF/System/PathManager.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstdint>
+#include <cstring>
+#include <filesystem>
+#include <libloaderapi.h>
+#include <minwindef.h>
 #include <stdexcept>
+#include <string>
 
 SPF_NS_BEGIN
 namespace System {
@@ -21,26 +31,24 @@ std::string PathManager::m_cachedProfileName;
 std::filesystem::path PathManager::m_cachedProfilePath;
 
 namespace {
-    // Simple sanity check for pointers in user-mode x64 space
-    bool IsValidPointer(uintptr_t p) {
-        return p >= 0x10000 && p < 0x00007FFFFFFFFFFF;
-    }
+// Simple sanity check for pointers in user-mode x64 space
+bool IsValidPointer(uintptr_t p) { return p >= 0x10000 && p < 0x00007FFFFFFFFFFF; }
 
-    /**
-     * Converts a display string to its HEX representation.
-     * Used by the game to generate profile folder names.
-     */
-    std::string StringToHex(const std::string& input) {
-        static const char hex_digits[] = "0123456789abcdef";
-        std::string output;
-        output.reserve(input.length() * 2);
-        for (unsigned char c : input) {
-            output.push_back(hex_digits[c >> 4]);
-            output.push_back(hex_digits[c & 15]);
-        }
-        return output;
-    }
+/**
+ * Converts a display string to its HEX representation.
+ * Used by the game to generate profile folder names.
+ */
+std::string StringToHex(const std::string& input) {
+  static const char hex_digits[] = "0123456789abcdef";
+  std::string output;
+  output.reserve(input.length() * 2);
+  for (unsigned char c : input) {
+    output.push_back(hex_digits[c >> 4]);
+    output.push_back(hex_digits[c & 15]);
+  }
+  return output;
 }
+}  // namespace
 
 void PathManager::Init(HMODULE module) {
   wchar_t path[MAX_PATH];
@@ -123,18 +131,18 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
    */
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PathManager");
   auto& ufs = Data::GameData::GameObjectFileSystemService::GetInstance();
-  
+
   if (!ufs.AreAllFindersReady()) return "";
 
   // 0. Check if active profile offsets were found during research
   if (ufs.GetGamePtrAddr() == 0 || ufs.GetProfileHandleOffset() == 0) {
-      return "";
+    return "";
   }
 
   // 1. Access the global Game object
   uintptr_t* ppGame = reinterpret_cast<uintptr_t*>(ufs.GetGamePtrAddr());
   if (!ppGame || !IsValidPointer(*ppGame)) return "";
-  
+
   // Apply v1.59+ adjustment to the base game pointer
   uintptr_t g_Game = *ppGame + ufs.GetGamePtrAdjustment();
 
@@ -149,7 +157,7 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
 
   // SMART CACHE: Re-calculate only if the profile pointer has changed
   if (profile == m_lastProfileAddr && !m_cachedProfilePath.empty()) {
-      return m_cachedProfilePath;
+    return m_cachedProfilePath;
   }
 
   logger->Debug("Profile change detected. Old: {:#x}, New: {:#x}", m_lastProfileAddr, profile);
@@ -160,10 +168,10 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
   // 4. Extract Display Name and Profile Type using dynamic offsets
   const char** ppDisplayName = reinterpret_cast<const char**>(profile + sessionService.GetProfileDisplayNameOffset());
   if (!ppDisplayName || !IsValidPointer((uintptr_t)*ppDisplayName)) {
-      logger->Error("GetCurrentProfilePath: DisplayName pointer is invalid.");
-      return "";
+    logger->Error("GetCurrentProfilePath: DisplayName pointer is invalid.");
+    return "";
   }
-  
+
   const char* displayName = *ppDisplayName;
   logger->Debug("GetCurrentProfilePath: Resolved DisplayName: '{}'", displayName);
 
@@ -171,10 +179,14 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
 
   // 5. Determine subdirectory based on profile type (Logic from SetProfileBasePath)
   std::string profilesSubDir = "profiles";
-  if (profileType == 4) profilesSubDir = "steam_profiles";
-  else if (profileType == 0) profilesSubDir = "preview_profiles";
-  else if (profileType == 1) profilesSubDir = "academy_profiles";
-  else if (profileType == 2) profilesSubDir = "demo_profiles";
+  if (profileType == 4)
+    profilesSubDir = "steam_profiles";
+  else if (profileType == 0)
+    profilesSubDir = "preview_profiles";
+  else if (profileType == 1)
+    profilesSubDir = "academy_profiles";
+  else if (profileType == 2)
+    profilesSubDir = "demo_profiles";
 
   // 6. Resolve the root physical path of /home
   std::string homePhysical = ResolveVirtualPath("/home");
@@ -192,7 +204,7 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
 }
 
 std::string PathManager::GetCurrentProfileName() {
-  // Always call GetCurrentProfilePath to ensure the cache is refreshed 
+  // Always call GetCurrentProfilePath to ensure the cache is refreshed
   // if the game has switched to a different profile object.
   GetCurrentProfilePath();
   return m_cachedProfileName;
@@ -209,7 +221,7 @@ std::string PathManager::ResolveVirtualPath(const char* virtualPath) {
   static bool hasLoggedUfsTree = false;
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PathManager");
   auto& ufs = Data::GameData::GameObjectFileSystemService::GetInstance();
-  
+
   if (!ufs.AreAllFindersReady()) return "";
 
   uintptr_t managersArrayPtr = *reinterpret_cast<uintptr_t*>(ufs.GetDevicesArrayAddr());
@@ -227,35 +239,35 @@ std::string PathManager::ResolveVirtualPath(const char* virtualPath) {
     if (!currentNode || currentNode == anchorAddr) continue;
 
     for (int i = 0; i < 512; ++i) {
-        if (currentNode == anchorAddr || !IsValidPointer(currentNode)) break;
+      if (currentNode == anchorAddr || !IsValidPointer(currentNode)) break;
 
-        uintptr_t vpathObjAddr = currentNode + ufs.GetNodeVPathOffset();
-        const char* vpathStr = *reinterpret_cast<const char**>(vpathObjAddr + ufs.GetStringBufferOffset());
-        
-        if (vpathStr && IsValidPointer((uintptr_t)vpathStr)) {
-            uintptr_t deviceAddr = *reinterpret_cast<uintptr_t*>(currentNode + ufs.GetNodeDeviceOffset());
-            const char* physPath = nullptr;
-            if (deviceAddr && IsValidPointer(deviceAddr)) {
-                physPath = *reinterpret_cast<const char**>(deviceAddr + ufs.GetPhysicalDevicePathOffset());
-            }
+      uintptr_t vpathObjAddr = currentNode + ufs.GetNodeVPathOffset();
+      const char* vpathStr = *reinterpret_cast<const char**>(vpathObjAddr + ufs.GetStringBufferOffset());
 
-            // Log the UFS tree only once for diagnostics
-            if (!hasLoggedUfsTree) {
-                logger->Trace("[UFS Manager {}] Node {:#x}: Virtual='{}', Physical='{}'", m, currentNode, vpathStr, physPath ? physPath : "NULL");
-            }
-
-            if (strcmp(vpathStr, virtualPath) == 0) {
-                if (physPath && IsValidPointer((uintptr_t)physPath)) {
-                    hasLoggedUfsTree = true; // Mark as logged after first successful match
-                    return std::filesystem::path(physPath).make_preferred().string();
-                }
-            }
+      if (vpathStr && IsValidPointer((uintptr_t)vpathStr)) {
+        uintptr_t deviceAddr = *reinterpret_cast<uintptr_t*>(currentNode + ufs.GetNodeDeviceOffset());
+        const char* physPath = nullptr;
+        if (deviceAddr && IsValidPointer(deviceAddr)) {
+          physPath = *reinterpret_cast<const char**>(deviceAddr + ufs.GetPhysicalDevicePathOffset());
         }
-        currentNode = *reinterpret_cast<uintptr_t*>(currentNode);
+
+        // Log the UFS tree only once for diagnostics
+        if (!hasLoggedUfsTree) {
+          logger->Trace("[UFS Manager {}] Node {:#x}: Virtual='{}', Physical='{}'", m, currentNode, vpathStr, physPath ? physPath : "NULL");
+        }
+
+        if (strcmp(vpathStr, virtualPath) == 0) {
+          if (physPath && IsValidPointer((uintptr_t)physPath)) {
+            hasLoggedUfsTree = true;  // Mark as logged after first successful match
+            return std::filesystem::path(physPath).make_preferred().string();
+          }
+        }
+      }
+      currentNode = *reinterpret_cast<uintptr_t*>(currentNode);
     }
   }
 
-  hasLoggedUfsTree = true; // Also mark as logged if we scanned all but found nothing
+  hasLoggedUfsTree = true;  // Also mark as logged if we scanned all but found nothing
   return "";
 }
 

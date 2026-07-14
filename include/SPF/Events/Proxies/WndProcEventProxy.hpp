@@ -1,11 +1,13 @@
 #pragma once
 
-#include <Windows.h>
-#include <memory>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Events/EventProxyBase.hpp"
-#include "SPF/Namespace.hpp"
 #include "SPF/Utils/Signal.hpp"
+
+#include <memory>
+#include <minwindef.h>
+#include <windef.h>
 
 // Forward-declarations
 SPF_NS_BEGIN

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Hooks/IHook.hpp"
-#include "SPF/Logging/Logger.hpp"
+
+#include <cstdint>
 #include <string>
-#include "MinHook.h"
 
 SPF_NS_BEGIN
 namespace Hooks {
@@ -62,7 +64,6 @@ class BaseHook : public IHook {
   std::string m_ownerName = "framework";
 
  private:
-
   // --- Hook Configuration (from constructor) ---
   std::string m_name;
   std::string m_displayName;

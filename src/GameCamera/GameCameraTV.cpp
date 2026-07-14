@@ -1,7 +1,14 @@
 #include "SPF/GameCamera/GameCameraTV.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -13,9 +20,9 @@ void GameCameraTV::OnActivate() {
 
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   uintptr_t pStandardManager = gameData.GetCameraManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }
@@ -282,7 +289,9 @@ void GameCameraTV::GetShakeAnim(size_t index, float& x, float& y, float& z) cons
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + off + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
-  x = pVec[0]; y = pVec[1]; z = pVec[2];
+  x = pVec[0];
+  y = pVec[1];
+  z = pVec[2];
 }
 
 void GameCameraTV::SetShakeAnimStep(float val) {
@@ -290,7 +299,8 @@ void GameCameraTV::SetShakeAnimStep(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimStepOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off)
+    *reinterpret_cast<float*>(pCam + off) = val;
   else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTV");
     logger->Warn("Cannot set shake animation step: offset is missing.");
@@ -302,7 +312,8 @@ void GameCameraTV::SetShakeAnimScaleMin(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimScaleMinOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off)
+    *reinterpret_cast<float*>(pCam + off) = val;
   else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTV");
     logger->Warn("Cannot set shake animation scale min: offset is missing.");
@@ -314,7 +325,8 @@ void GameCameraTV::SetShakeAnimScaleMax(float val) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto off = gameData.GetShakeAnimScaleMaxOffset();
-  if (off) *reinterpret_cast<float*>(pCam + off) = val;
+  if (off)
+    *reinterpret_cast<float*>(pCam + off) = val;
   else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraTV");
     logger->Warn("Cannot set shake animation scale max: offset is missing.");
@@ -334,7 +346,9 @@ void GameCameraTV::SetShakeAnim(size_t index, float x, float y, float z) {
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + off + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
-  pVec[0] = x; pVec[1] = y; pVec[2] = z;
+  pVec[0] = x;
+  pVec[1] = y;
+  pVec[2] = z;
 }
 }  // namespace GameCamera
 SPF_NS_END

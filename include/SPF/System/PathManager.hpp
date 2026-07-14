@@ -1,8 +1,11 @@
 #pragma once
 
-#include <filesystem>
-#include <Windows.h>
 #include "SPF/Namespace.hpp"
+
+#include <cstdint>
+#include <filesystem>
+#include <minwindef.h>
+#include <string>
 
 SPF_NS_BEGIN
 namespace System {

@@ -1,9 +1,19 @@
-#include <Windows.h>  // Pre-include for safety
-
 #include "SPF/Modules/GamepadInput.hpp"
-#include "SPF/System/GamepadButtonMapping.hpp"
-#include "SPF/Input/InputManager.hpp"  // Include the InputManager
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Input/InputEvents.hpp"
+#include "SPF/Input/InputManager.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
+#include "SPF/System/GamepadButton.hpp"
+#include "SPF/System/GamepadButtonMapping.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
+#include <string>
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -19,10 +29,7 @@ bool GamepadInput::IsTriggeredBy(const Input::GamepadEvent& event) const {
   return event.button == m_button;
 }
 
-nlohmann::ordered_json GamepadInput::ToJson() const {
-  return {{"type", "gamepad"},
-          {"key", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}};
-}
+nlohmann::ordered_json GamepadInput::ToJson() const { return {{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}}; }
 
 std::string GamepadInput::GetDisplayName() const {
   // Get the globally detected device type from the InputManager
@@ -36,17 +43,11 @@ bool GamepadInput::IsValid() const { return m_button != System::GamepadButton::U
 
 InputType GamepadInput::GetType() const { return InputType::Gamepad; }
 
-uint32_t GamepadInput::GetHardwareCode() const {
-    return 0x02000000 | static_cast<uint32_t>(m_button);
-}
+uint32_t GamepadInput::GetHardwareCode() const { return 0x02000000 | static_cast<uint32_t>(m_button); }
 
-bool GamepadInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
-    return pressedCodes.count(GetHardwareCode()) > 0;
-}
+bool GamepadInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
-bool GamepadInput::InvolvesHardwareCode(uint32_t code) const {
-    return GetHardwareCode() == code;
-}
+bool GamepadInput::InvolvesHardwareCode(uint32_t code) const { return GetHardwareCode() == code; }
 
 bool GamepadInput::IsSameAs(const IBindableInput& other) const {
   if (other.GetType() != InputType::Gamepad) {
@@ -57,9 +58,7 @@ bool GamepadInput::IsSameAs(const IBindableInput& other) const {
   return this->m_button == otherGamepadInput.m_button;
 }
 
-float GamepadInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const {
-    return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f;
-}
+float GamepadInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }
 
 }  // namespace Modules
 SPF_NS_END

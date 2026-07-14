@@ -1,38 +1,30 @@
 #pragma once
 
-// --- Framework ---
 #include "SPF/Namespace.hpp"
-#include "SPF/Input/InputEvents.hpp"
-#include "SPF/Events/EventManager.hpp"
-#include "SPF/Utils/Signal.hpp"
-#include "SPF/System/GamepadButtonMapping.hpp"  // For DeviceType
+
 #include "SPF/Config/EnumMappings.hpp"
-
-#include <set>    // For frame-based deduplication
-#include <mutex>  // For thread-safe deduplication
-
-#include <chrono>  // For time-based deduplication
-#include <map>     // For time-based deduplication
-
-// --- 3rd-party ---
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/System/GamepadButton.hpp"
+#include "SPF/System/GamepadButtonMapping.hpp"
+#include "SPF/System/Keyboard.hpp"
 #include "SPF/System/MouseButtonMapping.hpp"
+#include "SPF/Utils/Signal.hpp"
 
-// --- 3rd-party ---
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
 
-// --- Standard ---
-#include <vector>
-#include <string>
-#include <memory>
 #include <array>
-#include <optional>
-
-// --- System ---
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-#include <Xinput.h>  // For XINPUT_STATE and XUSER_MAX_COUNT
+#include <chrono>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <minwindef.h>
+#include <set>
+#include <string>
+#include <vector>
+#include <winnt.h>
+#include <xinput.h>
 
 SPF_NS_BEGIN
 
@@ -55,23 +47,23 @@ struct ButtonState {
   bool blockInput = false;
   bool longPressTriggered = false;
   std::chrono::steady_clock::time_point pressTimestamp;
-  uint8_t lastPriority = 255; // Lower is higher priority
+  uint8_t lastPriority = 255;  // Lower is higher priority
   uint64_t lastTimestamp = 0;
 };
 
 struct AxisState {
-    float value = 0.0f;
-    Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
-    bool emulationEnabled = false;
-    bool isAccumulator = false;
-    bool invert = false;
-    std::string side = "both";
-    float threshold = 0.5f;
-    float sensitivity = 1.0f;
-    float rangeMin = -1.0f;
-    float rangeMax = 1.0f;
-    uint8_t lastPriority = 255;
-    uint64_t lastTimestamp = 0;
+  float value = 0.0f;
+  Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
+  bool emulationEnabled = false;
+  bool isAccumulator = false;
+  bool invert = false;
+  std::string side = "both";
+  float threshold = 0.5f;
+  float sensitivity = 1.0f;
+  float rangeMin = -1.0f;
+  float rangeMax = 1.0f;
+  uint8_t lastPriority = 255;
+  uint64_t lastTimestamp = 0;
 };
 
 class InputManager {
@@ -88,7 +80,8 @@ class InputManager {
   void Shutdown();
 
   // --- Axis Configuration (Called by KeyBindsManager when config changes) ---
-  void SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold, float sensitivity = 1.0f, float rMin = -1.0f, float rMax = 1.0f);
+  void SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold,
+                         float sensitivity = 1.0f, float rMin = -1.0f, float rMax = 1.0f);
   void ResetAxisProperties();
 
   /**
@@ -126,7 +119,7 @@ class InputManager {
   void PublishMouseMove(const MouseMoveEvent& event);
   bool PublishMouseButton(const MouseButtonEvent& event, uint8_t priority = 2);
   bool PublishMouseWheel(const MouseWheelEvent& event, uint8_t priority = 2);
-  
+
   // New: Generic Axis Event Publishing
   // deviceType: 0x02 (Gamepad), 0x03 (Mouse), 0x04 (Joystick)
   // axisIndex: For Mouse (0=X, 1=Y, 2=WheelY). For Gamepad/Joystick (0..N)
@@ -159,7 +152,7 @@ class InputManager {
   bool IsMouseButtonBlocked(System::MouseButton button) const;
   bool IsJoystickButtonBlocked(int buttonIndex) const;
   bool IsGamepadButtonBlocked(System::GamepadButton button) const;
-  
+
   bool IsKeyboardCaptured() const;
   bool IsMouseCaptured() const;
 
@@ -179,7 +172,7 @@ class InputManager {
 
   bool ConsumeGamepadReleaseRequest(System::GamepadButton button);
   bool HasPendingGamepadRelease(System::GamepadButton button) const;
-  
+
   /**
    * @brief Checks if a key release event is a virtual one sent by the framework itself.
    * If the code is found in the pending set, it is removed and true is returned.
@@ -199,13 +192,13 @@ class InputManager {
   void ResetStateForCode(uint32_t code);
 
   // --- Device Detection ---
-    void UpdateDeviceType(UINT_PTR deviceId, const std::wstring& productName, DWORD vid, DWORD pid);
-    void RegisterXInputDevice(DWORD userIndex, BYTE subType);
-  
-    void SetXInputDeviceActive(bool isActive);
-    System::DeviceType GetDetectedGamepadType() const;
-    System::DeviceType GetXInputDeviceType(DWORD userIndex) const;
-    System::DeviceType GetDeviceType(UINT_PTR deviceId) const;
+  void UpdateDeviceType(UINT_PTR deviceId, const std::wstring& productName, DWORD vid, DWORD pid);
+  void RegisterXInputDevice(DWORD userIndex, BYTE subType);
+
+  void SetXInputDeviceActive(bool isActive);
+  System::DeviceType GetDetectedGamepadType() const;
+  System::DeviceType GetXInputDeviceType(DWORD userIndex) const;
+  System::DeviceType GetDeviceType(UINT_PTR deviceId) const;
 
  private:
   void UpdateCaptureUI();
@@ -228,20 +221,20 @@ class InputManager {
 
   std::set<uint32_t> m_currentlyPressedHardwareCodes;
   std::map<uint32_t, float> m_activeAxisValues;
-  std::map<uint32_t, float> m_accumulatorTargets; // Raw values for integration
+  std::map<uint32_t, float> m_accumulatorTargets;  // Raw values for integration
   std::chrono::steady_clock::time_point m_lastFrameTimestamp;
 
   // --- Chord Capture State ---
-  std::set<uint32_t> m_captureHeldCodes;      // Keys currently physically held
-  std::set<uint32_t> m_captureRecordedCodes;  // All keys that were part of this chord attempt
-  std::map<uint32_t, float> m_captureInitialAxisValues; // Snapshot of axes when capture starts
-  std::map<uint32_t, std::shared_ptr<Modules::IBindableInput>> m_captureCodeToInputMap; // To reconstruct inputs
+  std::set<uint32_t> m_captureHeldCodes;                                                 // Keys currently physically held
+  std::set<uint32_t> m_captureRecordedCodes;                                             // All keys that were part of this chord attempt
+  std::map<uint32_t, float> m_captureInitialAxisValues;                                  // Snapshot of axes when capture starts
+  std::map<uint32_t, std::shared_ptr<Modules::IBindableInput>> m_captureCodeToInputMap;  // To reconstruct inputs
   std::chrono::steady_clock::time_point m_lastCaptureReleaseTime;
   bool m_isWaitingForCaptureFinalize = false;
 
   // The central state machine for all inputs
   std::map<uint32_t, ButtonState> m_inputStates;
-  
+
   // State machine for analog axes (hardwareCode -> AxisState)
   std::map<uint32_t, AxisState> m_axisStates;
 
@@ -266,7 +259,7 @@ class InputManager {
   // Keys that were passed to the game (not blocked)
   // Used to send retroactive "Key Up" events if a blocking chord activates later.
   std::set<uint32_t> m_keysLeakedToGame;
-  
+
   // Keys for which we have sent a virtual "Key Up" event and are waiting for the message loop to process it.
   // Used to prevent the framework from reacting to its own fake events.
   std::set<uint32_t> m_pendingVirtualReleases;
@@ -301,9 +294,9 @@ class InputManager {
   void SetHoldState(uint32_t hardwareCode, PressType type);
 
   // --- Chord Capture State ---
-    std::map<UINT_PTR, System::DeviceType> m_dinputDeviceTypes;
-    std::array<System::DeviceType, 4> m_xinputDeviceTypes{};
-    bool m_isXInputDeviceActive = false;
+  std::map<UINT_PTR, System::DeviceType> m_dinputDeviceTypes;
+  std::array<System::DeviceType, 4> m_xinputDeviceTypes{};
+  bool m_isXInputDeviceActive = false;
 };
 
 }  // namespace Input

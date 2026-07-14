@@ -1,12 +1,14 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Events/SystemEvents.hpp"
-#include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
 
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
 #include <string>
-#include <nlohmann/json.hpp>
 
 SPF_NS_BEGIN
 namespace UI {

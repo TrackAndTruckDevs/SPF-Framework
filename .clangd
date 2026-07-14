@@ -1,0 +1,39 @@
+CompileFlags:
+  CompilationDatabase: build
+  Add:
+    - "--target=x86_64-w64-windows-gnu"
+    - "-DWINVER=0x0600"
+    - "-D_WIN32_WINNT=0x0600"
+    - "-isystem/usr/lib/gcc/x86_64-w64-mingw32/14-win32/include/c++"
+    - "-isystem/usr/lib/gcc/x86_64-w64-mingw32/14-win32/include/c++/x86_64-w64-mingw32"
+    - "-isystem/usr/lib/gcc/x86_64-w64-mingw32/14-win32/include/c++/backward"
+    - "-isystem/usr/lib/gcc/x86_64-w64-mingw32/14-win32/include-fixed"
+    - "-isystem/usr/x86_64-w64-mingw32/include"
+  Remove:
+    - "-fmodules-ts"
+    - "-fmodule-mapper=*"
+    - "-fdeps-format=*"
+
+Index:
+  Background: Build
+  StandardLibrary: true
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+
+Completion:
+  AllScopes: true
+  ArgumentLists: FullPlaceholders
+  HeaderInsertion: IWYU
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+  Designators: true
+  DefaultArguments: true
+  BlockEnd: true
+
+Hover:
+  ShowAKA: true

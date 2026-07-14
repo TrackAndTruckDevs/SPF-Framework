@@ -1,9 +1,12 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_JsonWriter_API.h"
 #include "SPF/Namespace.hpp"
 
-#include <nlohmann/json.hpp>
+#include "SPF/SPF_API/SPF_JsonReader_API.h"
+#include "SPF/SPF_API/SPF_JsonWriter_API.h"
+
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace Modules::API {

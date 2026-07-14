@@ -1,7 +1,9 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Handles/IHandle.hpp"
-#include "SPF/Modules/GameLogEventManager.hpp" // For GameLogCallback and UnregisterCallback
+#include "SPF/Modules/GameLogEventManager.hpp"  // For GameLogCallback and UnregisterCallback
 
 SPF_NS_BEGIN
 namespace Handles {
@@ -13,24 +15,24 @@ namespace Handles {
  * when the handle is destroyed, preventing dangling pointers and resource leaks.
  */
 struct GameLogCallbackHandle : public IHandle {
-    // Using GameLogEventManager's callback type for consistency
-    using GameLogCallback = Modules::GameLogEventManager::GameLogCallback;
+  // Using GameLogEventManager's callback type for consistency
+  using GameLogCallback = Modules::GameLogEventManager::GameLogCallback;
 
-    GameLogCallback callback;
-    void* user_data;
+  GameLogCallback callback;
+  void* user_data;
 
-    /**
-     * @brief Constructs a GameLogCallbackHandle.
-     * @param callback The callback function pointer.
-     * @param user_data The user-defined data associated with the callback.
-     */
-    GameLogCallbackHandle(GameLogCallback callback, void* user_data);
+  /**
+   * @brief Constructs a GameLogCallbackHandle.
+   * @param callback The callback function pointer.
+   * @param user_data The user-defined data associated with the callback.
+   */
+  GameLogCallbackHandle(GameLogCallback callback, void* user_data);
 
-    /**
-     * @brief Destroys the GameLogCallbackHandle and unregisters the callback.
-     */
-    ~GameLogCallbackHandle() override;
+  /**
+   * @brief Destroys the GameLogCallbackHandle and unregisters the callback.
+   */
+  ~GameLogCallbackHandle() override;
 };
 
-} // namespace Handles
+}  // namespace Handles
 SPF_NS_END

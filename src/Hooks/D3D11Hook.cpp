@@ -16,22 +16,30 @@
 // 5. **Hook and Cleanup**: With the function addresses, we use MinHook to place our hooks and then immediately
 //    release all the dummy objects. Our hooks will now be called whenever the *game's* swap chain calls Present.
 
-#include <SPF/Hooks/D3D11Hook.hpp>
+#include "SPF/Hooks/D3D11Hook.hpp"
 
-#include <windows.h>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/Windows.hpp"
+
+#include <corecrt.h>
+#include <cstddef>
 #include <d3d11.h>
+#include <libloaderapi.h>
 #include <memory>
-#include <wrl/client.h> // For ComPtr
-
 #include <MinHook.h>
-#include <SPF/Logging/LoggerFactory.hpp>
-#include <SPF/UI/MainWindow.hpp>
+#include <minwinbase.h>
+#include <minwindef.h>
+#include <windef.h>
+#include <winerror.h>
+#include <winnt.h>
+#include <wrl/client.h>  // For ComPtr
 
 SPF_NS_BEGIN
 
 namespace Hooks {
 using namespace SPF::Logging;
-using namespace SPF::UI;
 using Microsoft::WRL::ComPtr;
 
 namespace {
@@ -73,178 +81,176 @@ void RestoreWndProc() {
 }
 
 bool TryToHookExistingDevice() {
-    auto logger = GetLogger();
-    logger->Info("Attempting to hook an already existing D3D11 device...");
+  auto logger = GetLogger();
+  logger->Info("Attempting to hook an already existing D3D11 device...");
 
-    HWND hWnd = FindWindowA("prism3d", NULL);
-    if (hWnd == NULL) {
-        logger->Warn("Could not find game window with class 'prism3d'. Cannot hook existing device.");
-        return false;
-    }
-    logger->Info("Found game window with HWND: {0:p}", (void*)hWnd);
+  HWND hWnd = FindWindowA("prism3d", NULL);
+  if (hWnd == NULL) {
+    logger->Warn("Could not find game window with class 'prism3d'. Cannot hook existing device.");
+    return false;
+  }
+  logger->Info("Found game window with HWND: {0:p}", (void*)hWnd);
 
-    auto hD3D11 = GetModuleHandle(TEXT("d3d11.dll"));
-    if (!hD3D11) {
-        logger->Error("d3d11.dll is not loaded in this process.");
-        return false;
-    }
-	
-    using FnD3D11CreateDeviceAndSwapChainLocal = HRESULT(WINAPI*)(
-        IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*,
-        UINT, UINT, const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D11Device**,
-        D3D_FEATURE_LEVEL*, ID3D11DeviceContext**);
+  auto hD3D11 = GetModuleHandle(TEXT("d3d11.dll"));
+  if (!hD3D11) {
+    logger->Error("d3d11.dll is not loaded in this process.");
+    return false;
+  }
 
-    auto pD3D11CreateDeviceAndSwapChain = (FnD3D11CreateDeviceAndSwapChainLocal)GetProcAddress(hD3D11, "D3D11CreateDeviceAndSwapChain");
-    if (!pD3D11CreateDeviceAndSwapChain) {
-        logger->Error("Failed to get address of D3D11CreateDeviceAndSwapChain.");
-        return false;
-    }
+  using FnD3D11CreateDeviceAndSwapChainLocal =
+    HRESULT(WINAPI*)(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*, UINT, UINT, const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext**);
 
-    // 2. Create a dummy device and swapchain to get the vtable
-    D3D_FEATURE_LEVEL featureLevel;
-    DXGI_SWAP_CHAIN_DESC swapChainDesc;
-    ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
-    swapChainDesc.BufferCount = 1;
-    swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.OutputWindow = hWnd;
-    swapChainDesc.SampleDesc.Count = 1;
-    swapChainDesc.Windowed = TRUE;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+  auto pD3D11CreateDeviceAndSwapChain = (FnD3D11CreateDeviceAndSwapChainLocal)GetProcAddress(hD3D11, "D3D11CreateDeviceAndSwapChain");
+  if (!pD3D11CreateDeviceAndSwapChain) {
+    logger->Error("Failed to get address of D3D11CreateDeviceAndSwapChain.");
+    return false;
+  }
 
-    ComPtr<ID3D11Device> pDevice;
-    ComPtr<ID3D11DeviceContext> pContext;
-    ComPtr<IDXGISwapChain> pSwapChain;
-    
-    HRESULT hr = pD3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, &featureLevel, &pContext);
+  // 2. Create a dummy device and swapchain to get the vtable
+  D3D_FEATURE_LEVEL featureLevel;
+  DXGI_SWAP_CHAIN_DESC swapChainDesc;
+  ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+  swapChainDesc.BufferCount = 1;
+  swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  swapChainDesc.OutputWindow = hWnd;
+  swapChainDesc.SampleDesc.Count = 1;
+  swapChainDesc.Windowed = TRUE;
+  swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    if (FAILED(hr)) {
-        logger->Error("Failed to create dummy D3D11 device and swapchain. HRESULT: {:#x}", static_cast<unsigned int>(hr));
-        // ComPtr handles cleanup automatically
-        return false;
-    }
-    logger->Info("Dummy device and swapchain created successfully for v-table scraping.");
+  ComPtr<ID3D11Device> pDevice;
+  ComPtr<ID3D11DeviceContext> pContext;
+  ComPtr<IDXGISwapChain> pSwapChain;
 
-    // 3. Get vtable and function pointers
-    void** vtable = *reinterpret_cast<void***>(pSwapChain.Get());
-    g_pPresentTarget = vtable[8];
-    g_pResizeBuffersTarget = vtable[13];
-    
-    // 4. Dummy resources are released automatically by ComPtr going out of scope here.
-    logger->Info("Dummy resources released.");
+  HRESULT hr = pD3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL, 0, D3D11_SDK_VERSION, &swapChainDesc, &pSwapChain, &pDevice, &featureLevel, &pContext);
 
-    // 5. Hook the functions using the pointers we found
-    if (MH_CreateHook(g_pPresentTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_Present), reinterpret_cast<LPVOID*>(&o_Present)) != MH_OK) {
-        logger->Critical("Failed to create hook for existing IDXGISwapChain::Present.");
-        return false;
-    }
+  if (FAILED(hr)) {
+    logger->Error("Failed to create dummy D3D11 device and swapchain. HRESULT: {:#x}", static_cast<unsigned int>(hr));
+    // ComPtr handles cleanup automatically
+    return false;
+  }
+  logger->Info("Dummy device and swapchain created successfully for v-table scraping.");
 
-    if (MH_CreateHook(g_pResizeBuffersTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_ResizeBuffers), reinterpret_cast<LPVOID*>(&o_ResizeBuffers)) != MH_OK) {
-        logger->Critical("Failed to create hook for existing IDXGISwapChain::ResizeBuffers.");
-        MH_RemoveHook(g_pPresentTarget);
-        return false;
-    }
+  // 3. Get vtable and function pointers
+  void** vtable = *reinterpret_cast<void***>(pSwapChain.Get());
+  g_pPresentTarget = vtable[8];
+  g_pResizeBuffersTarget = vtable[13];
 
-    if (MH_EnableHook(g_pPresentTarget) != MH_OK || MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
-        logger->Critical("Failed to enable Present and/or ResizeBuffers hooks for existing device.");
-        // Attempt to clean up hooks that might have been created
-        if (g_pPresentTarget) MH_RemoveHook(g_pPresentTarget);
-        if (g_pResizeBuffersTarget) MH_RemoveHook(g_pResizeBuffersTarget);
-        return false;
-    }
-    
-    logger->Info("Successfully hooked Present and ResizeBuffers of existing device. Waiting for game to call them...");
-    return true;
+  // 4. Dummy resources are released automatically by ComPtr going out of scope here.
+  logger->Info("Dummy resources released.");
+
+  // 5. Hook the functions using the pointers we found
+  if (MH_CreateHook(g_pPresentTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_Present), reinterpret_cast<LPVOID*>(&o_Present)) != MH_OK) {
+    logger->Critical("Failed to create hook for existing IDXGISwapChain::Present.");
+    return false;
+  }
+
+  if (MH_CreateHook(g_pResizeBuffersTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_ResizeBuffers), reinterpret_cast<LPVOID*>(&o_ResizeBuffers)) != MH_OK) {
+    logger->Critical("Failed to create hook for existing IDXGISwapChain::ResizeBuffers.");
+    MH_RemoveHook(g_pPresentTarget);
+    return false;
+  }
+
+  if (MH_EnableHook(g_pPresentTarget) != MH_OK || MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
+    logger->Critical("Failed to enable Present and/or ResizeBuffers hooks for existing device.");
+    // Attempt to clean up hooks that might have been created
+    if (g_pPresentTarget) MH_RemoveHook(g_pPresentTarget);
+    if (g_pResizeBuffersTarget) MH_RemoveHook(g_pResizeBuffersTarget);
+    return false;
+  }
+
+  logger->Info("Successfully hooked Present and ResizeBuffers of existing device. Waiting for game to call them...");
+  return true;
 }
 }  // namespace
 
 // --- State Management ---
 namespace {
-    bool g_isCreated = false; // Is the hook created via MH_CreateHook?
+bool g_isCreated = false;  // Is the hook created via MH_CreateHook?
 }
 
 // --- Public API ---
 
 bool D3D11Hook::Install() {
-    auto logger = GetLogger();
-    if (g_isCreated) {
-        logger->Info("D3D11 hooks already created, ensuring they are enabled...");
-        if (g_pPresentTarget && MH_EnableHook(g_pPresentTarget) != MH_OK) {
-             logger->Error("Failed to re-enable D3D11 Present hook.");
-             return false;
-        }
-        if (g_pResizeBuffersTarget && MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
-            logger->Error("Failed to re-enable D3D11 ResizeBuffers hook.");
-            return false;
-        }
-        logger->Info("D3D11 hooks successfully re-enabled.");
-        return true;
+  auto logger = GetLogger();
+  if (g_isCreated) {
+    logger->Info("D3D11 hooks already created, ensuring they are enabled...");
+    if (g_pPresentTarget && MH_EnableHook(g_pPresentTarget) != MH_OK) {
+      logger->Error("Failed to re-enable D3D11 Present hook.");
+      return false;
     }
+    if (g_pResizeBuffersTarget && MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
+      logger->Error("Failed to re-enable D3D11 ResizeBuffers hook.");
+      return false;
+    }
+    logger->Info("D3D11 hooks successfully re-enabled.");
+    return true;
+  }
 
-    logger->Info("Installing D3D11 hooks for the first time...");
-    if (TryToHookExistingDevice()) {
-        logger->Info("Successfully created and enabled D3D11 hooks.");
-        g_isCreated = true;
-        return true;
-    }
-    
-    logger->Critical("Failed to install D3D11 hooks. The game's D3D11 device could not be found or hooked. ImGui functionality will not be available.");
-    return false;
+  logger->Info("Installing D3D11 hooks for the first time...");
+  if (TryToHookExistingDevice()) {
+    logger->Info("Successfully created and enabled D3D11 hooks.");
+    g_isCreated = true;
+    return true;
+  }
+
+  logger->Critical("Failed to install D3D11 hooks. The game's D3D11 device could not be found or hooked. ImGui functionality will not be available.");
+  return false;
 }
 
 void D3D11Hook::Uninstall() {
-    auto logger = GetLogger();
-    if (!g_isCreated) {
-        // logger->Warn("Attempted to uninstall D3D11 hooks, but they were never created.");
-        return;
-    }
-    logger->Info("Disabling D3D11 hooks...");
-    RestoreWndProc();
-    
-    if (g_pPresentTarget) MH_DisableHook(g_pPresentTarget);
-    if (g_pResizeBuffersTarget) MH_DisableHook(g_pResizeBuffersTarget);
-    
-    g_isInited = false;
-    g_needUpdateInfo = true;
+  auto logger = GetLogger();
+  if (!g_isCreated) {
+    // logger->Warn("Attempted to uninstall D3D11 hooks, but they were never created.");
+    return;
+  }
+  logger->Info("Disabling D3D11 hooks...");
+  RestoreWndProc();
 
-    logger->Info("D3D11 hooks disabled.");
+  if (g_pPresentTarget) MH_DisableHook(g_pPresentTarget);
+  if (g_pResizeBuffersTarget) MH_DisableHook(g_pResizeBuffersTarget);
+
+  g_isInited = false;
+  g_needUpdateInfo = true;
+
+  logger->Info("D3D11 hooks disabled.");
 }
 
 void D3D11Hook::Remove() {
-    auto logger = GetLogger();
-    if (!g_isCreated) {
-        // logger->Warn("Attempted to remove D3D11 hooks, but they were never created.");
-        return;
-    }
-    logger->Info("Removing D3D11 hooks for shutdown...");
-    RestoreWndProc();
+  auto logger = GetLogger();
+  if (!g_isCreated) {
+    // logger->Warn("Attempted to remove D3D11 hooks, but they were never created.");
+    return;
+  }
+  logger->Info("Removing D3D11 hooks for shutdown...");
+  RestoreWndProc();
 
-    // Disable and remove hooks using the stored target pointers
-    if (g_pPresentTarget) {
-        MH_DisableHook(g_pPresentTarget);
-        MH_RemoveHook(g_pPresentTarget);
-    }
-    if (g_pResizeBuffersTarget) {
-        MH_DisableHook(g_pResizeBuffersTarget);
-        MH_RemoveHook(g_pResizeBuffersTarget);
-    }
+  // Disable and remove hooks using the stored target pointers
+  if (g_pPresentTarget) {
+    MH_DisableHook(g_pPresentTarget);
+    MH_RemoveHook(g_pPresentTarget);
+  }
+  if (g_pResizeBuffersTarget) {
+    MH_DisableHook(g_pResizeBuffersTarget);
+    MH_RemoveHook(g_pResizeBuffersTarget);
+  }
 
-    // Reset state
-    g_pPresentTarget = nullptr;
-    g_pResizeBuffersTarget = nullptr;
-    o_Present = nullptr;
-    o_ResizeBuffers = nullptr;
+  // Reset state
+  g_pPresentTarget = nullptr;
+  g_pResizeBuffersTarget = nullptr;
+  o_Present = nullptr;
+  o_ResizeBuffers = nullptr;
 
-    g_isInited = false;
-    g_needUpdateInfo = true;
-    g_isCreated = false;
-    logger->Info("D3D11 hooks completely removed.");
+  g_isInited = false;
+  g_needUpdateInfo = true;
+  g_isCreated = false;
+  logger->Info("D3D11 hooks completely removed.");
 }
 
 bool D3D11Hook::IsInstalled() {
-    // A hook is considered "installed" as soon as it has been successfully created via MH_CreateHook.
-    // The g_isInited flag is for internal logic within the Present hook itself.
-    return g_isCreated;
+  // A hook is considered "installed" as soon as it has been successfully created via MH_CreateHook.
+  // The g_isInited flag is for internal logic within the Present hook itself.
+  return g_isCreated;
 }
 
 // --- Hook Implementations ---
@@ -280,7 +286,7 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
     }
   }
 
-  if(g_isInited) {
+  if (g_isInited) {
     D3D11Hook::OnPresent.Call(pSwapChain);
   }
 
@@ -291,7 +297,7 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_ResizeBuffers(IDXGISwapChain* pSwap
   GetLogger()->Debug("new_IDXGISwapChain_ResizeBuffers called. Firing OnBeforeResize and flagging for info update.");
 
   g_needUpdateInfo = true;
-  if(g_isInited) {
+  if (g_isInited) {
     D3D11Hook::OnBeforeResize.Call(pSwapChain, Width, Height);
   }
 

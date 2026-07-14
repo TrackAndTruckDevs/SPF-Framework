@@ -1,11 +1,15 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include "SPF/Telemetry/Sdk.hpp"
 
+#include "scssdk.h"
+#include "scssdk_input_device.h"
+#include "scssdk_input_event.h"
+
+#include <queue>
 #include <string>
 #include <vector>
-#include <queue>
+
 
 SPF_NS_BEGIN
 namespace Input::SCS {

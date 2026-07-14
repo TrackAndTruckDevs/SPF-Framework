@@ -1,8 +1,12 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Telemetry/SCS/Events.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
+
+#include <string>
+
 
 SPF_NS_BEGIN
 

@@ -1,12 +1,18 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Modules/IInputService.hpp"
-#include "SPF/Telemetry/Sdk.hpp"
+
+#include "scssdk.h"
+#include "scssdk_input_device.h"
+#include "scssdk_input_event.h"
 
 #include <memory>
-#include <vector>
-#include <string>
 #include <set>
+#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 

@@ -1,11 +1,15 @@
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
-#include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Namespace.hpp"
 
-#include <vector>
+#include "SPF/Hooks/HookManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
+
+#include "imgui.h"
+
 #include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -29,7 +33,7 @@ class GameConsoleWindow : public BaseWindow {
   Hooks::HookManager& m_hookManager;
   char m_commandBuffer[256] = {0};
   std::vector<std::string> m_history;
-  int m_historyPos = -1; // -1: new command, 0..history.size()-1: history index
+  int m_historyPos = -1;  // -1: new command, 0..history.size()-1: history index
 };
 }  // namespace UI
 

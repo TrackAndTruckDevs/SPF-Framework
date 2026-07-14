@@ -1,6 +1,12 @@
 #include "SPF/System/VirtualKeyMapping.hpp"
 
-#include <stdexcept>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/System/Keyboard.hpp"
+#include "SPF/Utils/Windows.hpp"
+
+#include <minwindef.h>
+#include <string>
 
 SPF_NS_BEGIN
 

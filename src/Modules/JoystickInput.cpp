@@ -1,59 +1,55 @@
-#include <SPF/Modules/JoystickInput.hpp>
-#include <SPF/System/JoystickButtonMapping.hpp>
+#include "SPF/Modules/JoystickInput.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
+#include "SPF/System/JoystickButtonMapping.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace Modules {
 
 JoystickInput::JoystickInput(const nlohmann::ordered_json& config) : m_buttonIndex(-1) {
-    if (config.contains("key") && config["key"].is_string()) {
-        m_buttonIndex = System::JoystickButtonMapping::GetInstance().FromString(config["key"].get<std::string>());
-    }
+  if (config.contains("key") && config["key"].is_string()) {
+    m_buttonIndex = System::JoystickButtonMapping::GetInstance().FromString(config["key"].get<std::string>());
+  }
 }
 
-bool JoystickInput::IsTriggeredBy(const Input::JoystickEvent& event) const {
-    return m_buttonIndex == event.buttonIndex;
-}
+bool JoystickInput::IsTriggeredBy(const Input::JoystickEvent& event) const { return m_buttonIndex == event.buttonIndex; }
 
-nlohmann::ordered_json JoystickInput::ToJson() const {
-    return {
-        {"type", "joystick"},
-        {"key", System::JoystickButtonMapping::GetInstance().ToString(m_buttonIndex)}
-    };
-}
+nlohmann::ordered_json JoystickInput::ToJson() const { return {{"type", "joystick"}, {"key", System::JoystickButtonMapping::GetInstance().ToString(m_buttonIndex)}}; }
 
-std::string JoystickInput::GetDisplayName() const {
-    return System::JoystickButtonMapping::GetInstance().GetButtonDisplayName(m_buttonIndex);
-}
+std::string JoystickInput::GetDisplayName() const { return System::JoystickButtonMapping::GetInstance().GetButtonDisplayName(m_buttonIndex); }
 
 bool JoystickInput::IsValid() const {
-    // Valid if the button index is within the typical DirectInput range.
-    return m_buttonIndex >= 0 && m_buttonIndex < 128;
+  // Valid if the button index is within the typical DirectInput range.
+  return m_buttonIndex >= 0 && m_buttonIndex < 128;
 }
 
-uint32_t JoystickInput::GetHardwareCode() const {
-    return 0x04000000 | static_cast<uint32_t>(m_buttonIndex);
-}
+uint32_t JoystickInput::GetHardwareCode() const { return 0x04000000 | static_cast<uint32_t>(m_buttonIndex); }
 
-bool JoystickInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
-    return pressedCodes.count(GetHardwareCode()) > 0;
-}
+bool JoystickInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
-bool JoystickInput::InvolvesHardwareCode(uint32_t code) const {
-    return GetHardwareCode() == code;
-}
+bool JoystickInput::InvolvesHardwareCode(uint32_t code) const { return GetHardwareCode() == code; }
 
 bool JoystickInput::IsSameAs(const IBindableInput& other) const {
-    if (other.GetType() != InputType::Joystick) {
-        return false;
-    }
+  if (other.GetType() != InputType::Joystick) {
+    return false;
+  }
 
-    const auto& otherJoystickInput = static_cast<const JoystickInput&>(other);
-    return this->m_buttonIndex == otherJoystickInput.m_buttonIndex;
+  const auto& otherJoystickInput = static_cast<const JoystickInput&>(other);
+  return this->m_buttonIndex == otherJoystickInput.m_buttonIndex;
 }
 
-float JoystickInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const {
-    return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f;
-}
+float JoystickInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }
 
-} // namespace Modules
+}  // namespace Modules
 SPF_NS_END

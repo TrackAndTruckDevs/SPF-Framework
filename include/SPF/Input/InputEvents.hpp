@@ -1,11 +1,17 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include "SPF/System/Keyboard.hpp"
+
 #include "SPF/System/GamepadButton.hpp"
-#include <nlohmann/json.hpp>
-#include <string>
+#include "SPF/System/Keyboard.hpp"
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -45,9 +51,9 @@ struct GamepadEvent {
 };
 
 struct JoystickEvent {
-    int buttonIndex = -1;
-    bool pressed = false;
-    PressType pressType = PressType::Short;
+  int buttonIndex = -1;
+  bool pressed = false;
+  PressType pressType = PressType::Short;
 };
 
 /**
@@ -79,18 +85,18 @@ struct InputCaptureCancelled {
  * @brief Fired by InputManager during a chord capture session to update the UI.
  */
 struct InputCaptureUpdate {
-    std::vector<std::shared_ptr<Modules::IBindableInput>> currentChordInputs; 
-    std::string actionFullName;
+  std::vector<std::shared_ptr<Modules::IBindableInput>> currentChordInputs;
+  std::string actionFullName;
 };
 
 /**
  * @brief Fired by Core when a captured key is already bound to another action.
  */
 struct InputCaptureConflict {
-  std::string actionFullName;                              // The action we are trying to rebind
-  std::shared_ptr<Modules::IBindableInput> capturedInput;  // The input that was activated
+  std::string actionFullName;                                                       // The action we are trying to rebind
+  std::shared_ptr<Modules::IBindableInput> capturedInput;                           // The input that was activated
   std::vector<std::pair<std::string, nlohmann::ordered_json>> conflictingBindings;  // Vector of {actionName, bindingJson}
-  nlohmann::ordered_json originalBinding;                          // The original binding object we are editing
+  nlohmann::ordered_json originalBinding;                                           // The original binding object we are editing
 };
 
 /**

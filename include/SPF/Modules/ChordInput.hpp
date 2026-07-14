@@ -1,8 +1,18 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
-#include <vector>
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -10,8 +20,8 @@ namespace Modules {
 /**
  * @class ChordInput
  * @brief Represents a combination of multiple physical inputs (a "chord").
- * 
- * This class acts as a container for multiple IBindableInput objects. 
+ *
+ * This class acts as a container for multiple IBindableInput objects.
  * An action is triggered only when all constituent inputs are active.
  */
 class ChordInput : public IBindableInput {
@@ -24,8 +34,8 @@ class ChordInput : public IBindableInput {
   std::vector<uint32_t> GetConstituentHardwareCodes() const;
 
   // --- IBindableInput Overrides ---
-  
-  // Note: For chords, triggering logic is more complex and handled by KeyBindsManager 
+
+  // Note: For chords, triggering logic is more complex and handled by KeyBindsManager
   // checking the full set of pressed keys. These are kept for interface compatibility.
   bool IsTriggeredBy(const Input::KeyboardEvent& event) const override;
   bool IsTriggeredBy(const Input::GamepadEvent& event) const override;
@@ -41,7 +51,7 @@ class ChordInput : public IBindableInput {
   std::string GetDisplayName() const override;
   bool IsValid() const override;
   InputType GetType() const override { return InputType::Chord; }
-  uint32_t GetHardwareCode() const override { return 0; } // Chords don't have a single code
+  uint32_t GetHardwareCode() const override { return 0; }  // Chords don't have a single code
 
  private:
   std::vector<std::unique_ptr<IBindableInput>> m_inputs;

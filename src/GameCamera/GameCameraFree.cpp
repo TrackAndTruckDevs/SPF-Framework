@@ -1,8 +1,14 @@
 #include "SPF/GameCamera/GameCameraFree.hpp"
-#include "SPF/GameCamera/GameCameraManager.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {

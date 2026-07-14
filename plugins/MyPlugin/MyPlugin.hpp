@@ -53,8 +53,7 @@
 // =================================================================================================
 // 2. Standard Library Includes
 // =================================================================================================
-#include <cstdint>  // For fixed-width integer types like int32_t, useful for consistent data sizes.
-
+// These headers are included for common C++ functionality. Only include what you need.
 // It's a strong best practice to wrap all your plugin's code in a unique namespace.
 // This prevents naming conflicts with the framework or other plugins that might be loaded.
 namespace MyPlugin {
@@ -196,11 +195,11 @@ void OnUnload();
 // void OnGameWorldReady();
 
 /**
-* @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
-* @details Uncomment this if your plugin defines custom settings in its manifest and needs to react
-*          to changes made by the user or other parts of the framework.
-* @param h The configuration context handle for this plugin.
-* @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
+ * @brief Called when a setting is changed externally (e.g., via the main settings UI or by another plugin).
+ * @details Uncomment this if your plugin defines custom settings in its manifest and needs to react
+ *          to changes made by the user or other parts of the framework.
+ * @param h The configuration context handle for this plugin.
+ * @param keyPath The full path to the setting that changed (e.g., "settings.some_bool").
  */
 // void OnSettingChanged(SPF_Config_Handle *h, const char *keyPath);
 

@@ -1,0 +1,446 @@
+{
+  "version": 12,
+  "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+
+  "configurePresets": [
+    {
+      "$comment": "=== BASE: MSVC via Visual Studio 2022 (Windows only) ===",
+      "name": "base-msvc",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "vs-release",
+      "inherits": "base-msvc",
+      "displayName": "VS 2022 \u00b7 Release",
+      "description": "Release build with Visual Studio 17 2022 targeting x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "vs-debug",
+      "hidden": true,
+      "inherits": "base-msvc",
+      "displayName": "VS 2022 \u00b7 Debug",
+      "description": "Debug build with Visual Studio 17 2022 targeting x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "vs-relwithdebinfo",
+      "hidden": true,
+      "inherits": "base-msvc",
+      "displayName": "VS 2022 \u00b7 RelWithDebInfo",
+      "description": "Release with Debug Info build with Visual Studio 17 2022 targeting x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "vs-minsizerel",
+      "hidden": true,
+      "inherits": "base-msvc",
+      "displayName": "VS 2022 \u00b7 MinSizeRel",
+      "description": "Minimum Size Release build with Visual Studio 17 2022 targeting x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+
+    {
+      "$comment": "=== BASE: MSVC via Ninja (Windows only) ===",
+      "name": "base-ninja-msvc",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Ninja",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "ninja-release",
+      "inherits": "base-ninja-msvc",
+      "displayName": "Ninja (MSVC) \u00b7 Release",
+      "description": "Release build with Ninja + MSVC on Windows (run from VS developer prompt)",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "hidden": true,
+      "inherits": "base-ninja-msvc",
+      "displayName": "Ninja (MSVC) \u00b7 Debug",
+      "description": "Debug build with Ninja + MSVC on Windows (run from VS developer prompt)",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "hidden": true,
+      "inherits": "base-ninja-msvc",
+      "displayName": "Ninja (MSVC) \u00b7 RelWithDebInfo",
+      "description": "Release with Debug Info build with Ninja + MSVC on Windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "ninja-minsizerel",
+      "hidden": true,
+      "inherits": "base-ninja-msvc",
+      "displayName": "Ninja (MSVC) \u00b7 MinSizeRel",
+      "description": "Minimum Size Release build with Ninja + MSVC on Windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+
+    {
+      "$comment": "=== BASE: MinGW via Ninja (Linux cross-compile) ===",
+      "name": "base-mingw-ninja",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-mingw.cmake",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "mingw-release",
+      "inherits": "base-mingw-ninja",
+      "displayName": "MinGW (Ninja) \u00b7 Release",
+      "description": "Cross-compile for Windows from Linux using Ninja + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "mingw-debug",
+      "hidden": true,
+      "inherits": "base-mingw-ninja",
+      "displayName": "MinGW (Ninja) \u00b7 Debug",
+      "description": "Debug cross-compile for Windows from Linux using Ninja + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "mingw-relwithdebinfo",
+      "hidden": true,
+      "inherits": "base-mingw-ninja",
+      "displayName": "MinGW (Ninja) \u00b7 RelWithDebInfo",
+      "description": "Cross-compile for Windows from Linux using Ninja + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "mingw-minsizerel",
+      "hidden": true,
+      "inherits": "base-mingw-ninja",
+      "displayName": "MinGW (Ninja) \u00b7 MinSizeRel",
+      "description": "Cross-compile for Windows from Linux using Ninja + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+
+    {
+      "$comment": "=== BASE: MinGW via Unix Makefiles (Linux cross-compile) ===",
+      "name": "base-mingw-make",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Unix Makefiles",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-mingw.cmake",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "mingw-make-release",
+      "inherits": "base-mingw-make",
+      "displayName": "MinGW (Make) \u00b7 Release",
+      "description": "Cross-compile for Windows from Linux using Unix Makefiles + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "mingw-make-debug",
+      "hidden": true,
+      "inherits": "base-mingw-make",
+      "displayName": "MinGW (Make) \u00b7 Debug",
+      "description": "Debug cross-compile for Windows from Linux using Unix Makefiles + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "mingw-make-relwithdebinfo",
+      "hidden": true,
+      "inherits": "base-mingw-make",
+      "displayName": "MinGW (Make) \u00b7 RelWithDebInfo",
+      "description": "Cross-compile for Windows from Linux using Unix Makefiles + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "mingw-make-minsizerel",
+      "hidden": true,
+      "inherits": "base-mingw-make",
+      "displayName": "MinGW (Make) \u00b7 MinSizeRel",
+      "description": "Cross-compile for Windows from Linux using Unix Makefiles + MinGW",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "$comment": "=== VS 2022 build presets ===",
+      "name": "vs-release",
+      "configurePreset": "vs-release",
+      "displayName": "Build: VS 2022 \u00b7 Release",
+      "description": "Build VS 2022 Release configuration",
+      "configuration": "Release"
+    },
+    {
+      "name": "vs-debug",
+      "hidden": true,
+      "configurePreset": "vs-debug",
+      "displayName": "Build: VS 2022 \u00b7 Debug",
+      "description": "Build VS 2022 Debug configuration",
+      "configuration": "Debug"
+    },
+    {
+      "name": "vs-relwithdebinfo",
+      "hidden": true,
+      "configurePreset": "vs-relwithdebinfo",
+      "displayName": "Build: VS 2022 \u00b7 RelWithDebInfo",
+      "description": "Build VS 2022 RelWithDebInfo configuration",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "vs-minsizerel",
+      "hidden": true,
+      "configurePreset": "vs-minsizerel",
+      "displayName": "Build: VS 2022 \u00b7 MinSizeRel",
+      "description": "Build VS 2022 MinSizeRel configuration",
+      "configuration": "MinSizeRel"
+    },
+
+    {
+      "$comment": "=== Ninja (MSVC) build presets ===",
+      "name": "ninja-release",
+      "configurePreset": "ninja-release",
+      "displayName": "Build: Ninja (MSVC) \u00b7 Release",
+      "description": "Build Ninja + MSVC Release"
+    },
+    {
+      "name": "ninja-debug",
+      "hidden": true,
+      "configurePreset": "ninja-debug",
+      "displayName": "Build: Ninja (MSVC) \u00b7 Debug",
+      "description": "Build Ninja + MSVC Debug"
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "hidden": true,
+      "configurePreset": "ninja-relwithdebinfo",
+      "displayName": "Build: Ninja (MSVC) \u00b7 RelWithDebInfo",
+      "description": "Build Ninja + MSVC RelWithDebInfo"
+    },
+    {
+      "name": "ninja-minsizerel",
+      "hidden": true,
+      "configurePreset": "ninja-minsizerel",
+      "displayName": "Build: Ninja (MSVC) \u00b7 MinSizeRel",
+      "description": "Build Ninja + MSVC MinSizeRel"
+    },
+
+    {
+      "$comment": "=== MinGW (Ninja) build presets ===",
+      "name": "mingw-release",
+      "configurePreset": "mingw-release",
+      "displayName": "Build: MinGW (Ninja) \u00b7 Release",
+      "description": "Build MinGW + Ninja Release"
+    },
+    {
+      "name": "mingw-debug",
+      "hidden": true,
+      "configurePreset": "mingw-debug",
+      "displayName": "Build: MinGW (Ninja) \u00b7 Debug",
+      "description": "Build MinGW + Ninja Debug"
+    },
+    {
+      "name": "mingw-relwithdebinfo",
+      "hidden": true,
+      "configurePreset": "mingw-relwithdebinfo",
+      "displayName": "Build: MinGW (Ninja) \u00b7 RelWithDebInfo",
+      "description": "Build MinGW + Ninja RelWithDebInfo"
+    },
+    {
+      "name": "mingw-minsizerel",
+      "hidden": true,
+      "configurePreset": "mingw-minsizerel",
+      "displayName": "Build: MinGW (Ninja) \u00b7 MinSizeRel",
+      "description": "Build MinGW + Ninja MinSizeRel"
+    },
+
+    {
+      "$comment": "=== MinGW (Unix Makefiles) build presets ===",
+      "name": "mingw-make-release",
+      "configurePreset": "mingw-make-release",
+      "displayName": "Build: MinGW (Make) \u00b7 Release",
+      "description": "Build MinGW + Unix Makefiles Release"
+    },
+    {
+      "name": "mingw-make-debug",
+      "hidden": true,
+      "configurePreset": "mingw-make-debug",
+      "displayName": "Build: MinGW (Make) \u00b7 Debug",
+      "description": "Build MinGW + Unix Makefiles Debug"
+    },
+    {
+      "name": "mingw-make-relwithdebinfo",
+      "hidden": true,
+      "configurePreset": "mingw-make-relwithdebinfo",
+      "displayName": "Build: MinGW (Make) \u00b7 RelWithDebInfo",
+      "description": "Build MinGW + Unix Makefiles RelWithDebInfo"
+    },
+    {
+      "name": "mingw-make-minsizerel",
+      "hidden": true,
+      "configurePreset": "mingw-make-minsizerel",
+      "displayName": "Build: MinGW (Make) \u00b7 MinSizeRel",
+      "description": "Build MinGW + Unix Makefiles MinSizeRel"
+    }
+  ],
+
+  "workflowPresets": [
+    {
+      "$comment": "=== VS 2022 workflows ===",
+      "name": "vs-release",
+      "displayName": "Workflow: VS 2022 \u00b7 Release",
+      "description": "Configure + build VS 2022 Release",
+      "steps": [
+        { "type": "configure", "name": "vs-release" },
+        { "type": "build", "name": "vs-release" }
+      ]
+    },
+    {
+      "name": "vs-debug",
+      "displayName": "Workflow: VS 2022 \u00b7 Debug",
+      "description": "Configure + build VS 2022 Debug",
+      "steps": [
+        { "type": "configure", "name": "vs-debug" },
+        { "type": "build", "name": "vs-debug" }
+      ]
+    },
+    {
+      "name": "vs-relwithdebinfo",
+      "displayName": "Workflow: VS 2022 \u00b7 RelWithDebInfo",
+      "description": "Configure + build VS 2022 RelWithDebInfo",
+      "steps": [
+        { "type": "configure", "name": "vs-relwithdebinfo" },
+        { "type": "build", "name": "vs-relwithdebinfo" }
+      ]
+    },
+
+    {
+      "$comment": "=== Ninja (MSVC) workflows ===",
+      "name": "ninja-release",
+      "displayName": "Workflow: Ninja (MSVC) \u00b7 Release",
+      "description": "Configure + build Ninja + MSVC Release",
+      "steps": [
+        { "type": "configure", "name": "ninja-release" },
+        { "type": "build", "name": "ninja-release" }
+      ]
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Workflow: Ninja (MSVC) \u00b7 Debug",
+      "description": "Configure + build Ninja + MSVC Debug",
+      "steps": [
+        { "type": "configure", "name": "ninja-debug" },
+        { "type": "build", "name": "ninja-debug" }
+      ]
+    },
+
+    {
+      "$comment": "=== MinGW (Ninja) workflows ===",
+      "name": "mingw-release",
+      "displayName": "Workflow: MinGW (Ninja) \u00b7 Release",
+      "description": "Configure + build MinGW + Ninja Release",
+      "steps": [
+        { "type": "configure", "name": "mingw-release" },
+        { "type": "build", "name": "mingw-release" }
+      ]
+    },
+    {
+      "name": "mingw-debug",
+      "displayName": "Workflow: MinGW (Ninja) \u00b7 Debug",
+      "description": "Configure + build MinGW + Ninja Debug",
+      "steps": [
+        { "type": "configure", "name": "mingw-debug" },
+        { "type": "build", "name": "mingw-debug" }
+      ]
+    },
+
+    {
+      "$comment": "=== MinGW (Unix Makefiles) workflows ===",
+      "name": "mingw-make-release",
+      "displayName": "Workflow: MinGW (Make) \u00b7 Release",
+      "description": "Configure + build MinGW + Unix Makefiles Release",
+      "steps": [
+        { "type": "configure", "name": "mingw-make-release" },
+        { "type": "build", "name": "mingw-make-release" }
+      ]
+    },
+    {
+      "name": "mingw-make-debug",
+      "displayName": "Workflow: MinGW (Make) \u00b7 Debug",
+      "description": "Configure + build MinGW + Unix Makefiles Debug",
+      "steps": [
+        { "type": "configure", "name": "mingw-make-debug" },
+        { "type": "build", "name": "mingw-make-debug" }
+      ]
+    }
+  ]
+}

@@ -1,10 +1,13 @@
 #include "SPF/Data/GameData/Finders/BumperCameraDataFinder.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
+
 #include <chrono>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -32,7 +35,7 @@ bool BumperCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   };
 
   // --- Step 1: Find vehicle_bumper_camera SII Attributes ---
-  
+
   uintptr_t cameraOff = getAttr(CLASS_NAME_BUMPER, "camera_offset");
   if (cameraOff) {
     owner.SetBumperOffsetXOffset(static_cast<intptr_t>(cameraOff));
@@ -58,12 +61,8 @@ bool BumperCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (shakeAnim) owner.SetShakeAnimOffset(static_cast<intptr_t>(shakeAnim));
 
   // --- Final Readiness Check ---
-  m_isReady = all_found && (owner.GetBumperOffsetXOffset() != 0 &&
-                           owner.GetCameraFovOffset() != 0 &&
-                           owner.GetShakeAnimStepOffset() != 0 &&
-                           owner.GetShakeAnimScaleMinOffset() != 0 &&
-                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
-                           owner.GetShakeAnimOffset() != 0);
+  m_isReady =
+    all_found && (owner.GetBumperOffsetXOffset() != 0 && owner.GetCameraFovOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 && owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetShakeAnimOffset() != 0);
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

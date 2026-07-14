@@ -1,6 +1,9 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
+
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {

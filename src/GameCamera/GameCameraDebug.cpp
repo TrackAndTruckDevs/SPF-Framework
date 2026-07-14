@@ -1,7 +1,14 @@
 #include "SPF/GameCamera/GameCameraDebug.hpp"
-// #include <Windows.h>
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/GameCamera/DebugCameraMode.hpp"
+#include "SPF/GameCamera/DebugHudPosition.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -385,7 +392,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   // 2. Resolve Image Array (device + 0x34A6C70) and Count (device + 0x34A6C78)
 //   uintptr_t arrayPtrAddr = device + 0x34A6C70;
 //   uintptr_t countAddr = device + 0x34A6C78;
-  
+
 //   if (IsBadReadPtr((void*)arrayPtrAddr, 8)) return 0;
 //   uintptr_t arrayBase = *(uintptr_t*)arrayPtrAddr;
 //   uintptr_t count = *(uintptr_t*)countAddr;
@@ -413,7 +420,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //     logger->Info("[DIAG] Array: 0x{:X}, Count: {}", arrayBase, count);
 //     logger->Info("[DIAG] Selected ID: {}, ImageObj: 0x{:X}", m_selectedTextureId, imageObjAddr);
 //     logger->Info("[DIAG] SRV: 0x{:X}", srv);
-    
+
 //     lastLoggedId = m_selectedTextureId;
 //     lastLoggedSrv = srv;
 //   }
@@ -470,7 +477,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   // 5. Final SRV via DX11 Pool (base + 0x333CEF0)
 //   uintptr_t device = *(uintptr_t*)(baseAddr + 0x333CEF0);
 //   if (!device) return 0;
-  
+
 //   uintptr_t dx11Array = *(uintptr_t*)(device + 0x34A6C70);
 //   uintptr_t dx11Count = *(uintptr_t*)(device + 0x34A6C78);
 //   if (stableId >= (int)dx11Count) return 0;
@@ -530,7 +537,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   // 5. Final SRV
 //   uintptr_t device = *(uintptr_t*)(baseAddr + 0x333CEF0);
 //   if (!device) return 0;
-  
+
 //   uintptr_t dx11Array = *(uintptr_t*)(device + 0x34A6C70);
 //   uintptr_t dx11Count = *(uintptr_t*)(device + 0x34A6C78);
 //   if (stableId >= (int)dx11Count) return 0;
@@ -542,7 +549,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 // uintptr_t GameCameraDebug::GetTextureSrvByPath(const std::string& path) const {
 //   uintptr_t baseAddr = (uintptr_t)GetModuleHandle(NULL);
 //   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraDebug");
-  
+
 //   // 1. Texture Manager (base + 0x333CBF8)
 //   uintptr_t texManagerPtr = baseAddr + 0x333CBF8;
 //   uintptr_t texManager = (texManagerPtr) ? *(uintptr_t*)texManagerPtr : 0;
@@ -554,12 +561,12 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   for (int i = 0; i < texLimit; i++) {
 //     uintptr_t texObj = texArray + (i * 0x78);
 //     char* namePtr = *(char**)(texObj + 0x18);
-    
+
 //     if (namePtr && !IsBadReadPtr(namePtr, 1)) {
 //        std::string currentPath(namePtr);
 //        if (currentPath == path || currentPath == ("aliases:" + path)) {
 //          unsigned short stableId = *(unsigned short*)(texObj + 0x74);
-         
+
 //          static unsigned short lastPathStableIds[32] = {0}; // Cache for a few paths
 //          // Simplistic path-to-index mapping for diagnostic logging
 //          size_t pathHash = std::hash<std::string>{}(path) % 32;
@@ -653,7 +660,7 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   uintptr_t texArray = (texManager) ? *(uintptr_t*)(texManager + 0x1994770) : 0;
 //   int texLimit = (texManager) ? *(int*)(texManager + 0x1994778) : 0;
 
-//   // 3. DX11 Pool для розмірів (Verified: base + 0x333CEF0)
+//   // 3. DX11 Pool (Verified: base + 0x333CEF0)
 //   uintptr_t device = *(uintptr_t*)(baseAddr + 0x333CEF0);
 //   uintptr_t dx11Array = (device) ? *(uintptr_t*)(device + 0x34A6C70) : 0;
 //   uintptr_t dx11Count = (device) ? *(uintptr_t*)(device + 0x34A6C78) : 0;

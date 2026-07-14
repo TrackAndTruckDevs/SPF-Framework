@@ -1,6 +1,11 @@
 #include "SPF/Modules/API/GameWorldApi.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameWorldService.hpp"
-#include <Windows.h>
+#include "SPF/SPF_API/SPF_GameWorld_API.h"
+
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Modules::API {

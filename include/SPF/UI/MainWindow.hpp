@@ -1,10 +1,19 @@
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
-#include "SPF/Events/SystemEvents.hpp"    //  For update and patrons completion events
-#include "SPF/Modules/CommunicationManager.hpp"  //  For CommunicationManager
-#include "SPF/System/ApiService.hpp"      //  For ApiResult, UpdateInfo, Patron
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Events/SystemEvents.hpp"  //  For update and patrons completion events
 #include "SPF/Hooks/HookManager.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"  //  For CommunicationManager
+#include "SPF/System/ApiService.hpp"             //  For ApiResult, UpdateInfo, Patron
+#include "SPF/UI/BaseWindow.hpp"
+
+#include "imgui.h"
+
+#include <optional>
+#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -26,8 +35,8 @@ class InputManager;
 namespace UI {
 class MainWindow : public BaseWindow {
  public:
-  MainWindow(Events::EventManager& eventManager, Input::InputManager& inputManager, Modules::KeyBindsManager& keyBindsManager,
-             Config::IConfigService& configService, Modules::ITelemetryService& telemetryService);
+  MainWindow(Events::EventManager& eventManager, Input::InputManager& inputManager, Modules::KeyBindsManager& keyBindsManager, Config::IConfigService& configService,
+             Modules::ITelemetryService& telemetryService);
 
   ImGuiID GetMainDockspaceID() const;
 
@@ -39,6 +48,7 @@ class MainWindow : public BaseWindow {
   //  Override base window event handlers
   void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) override;
   void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) override;
+
  private:
   void ToggleVisibility();
   void RenderPatronsPopup();
@@ -113,7 +123,7 @@ class MainWindow : public BaseWindow {
   std::string m_locUpdatePopupTitle;
   std::string m_locUpdateNoUpdate;
   std::string m_locUpdateAvailable;
-  std::string m_locUpdateSwitchToRelease; // For the "beta has ended" message
+  std::string m_locUpdateSwitchToRelease;  // For the "beta has ended" message
   std::string m_locUpdateDownloadLink;
   std::string m_locUpdateDownloadTooltip;
   std::string m_locUpdateDevNoteIntro;
@@ -153,7 +163,7 @@ class MainWindow : public BaseWindow {
   // Localization keys for menu popups
   std::string m_locManualPopupTitle;
   std::string m_locAboutFrameworkTitle;
-  //std::string m_locManualPopupContent;
+  // std::string m_locManualPopupContent;
   std::string m_locAboutPopupTitle;
   std::string m_locAboutUsTitle;
   std::string m_locAboutUsText;

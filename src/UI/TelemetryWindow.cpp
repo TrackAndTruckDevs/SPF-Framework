@@ -1,18 +1,30 @@
 #include "SPF/UI/TelemetryWindow.hpp"
-#include "SPF/Modules/ITelemetryService.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Modules/ITelemetryService.hpp"
 #include "SPF/Telemetry/SCS/Common.hpp"
-#include "SPF/Telemetry/SCS/Truck.hpp"
-#include "SPF/Telemetry/SCS/Trailer.hpp"
-#include "SPF/Telemetry/SCS/Job.hpp"
-#include "SPF/Telemetry/SCS/Navigation.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/SCS/Events.hpp"
 #include "SPF/Telemetry/SCS/Gearbox.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 
-#include <imgui.h>
-#include <fmt/core.h>
+#include "fmt/base.h"
+#include "fmt/core.h"
+#include "fmt/format.h"
+#include "imgui.h"
+
+#include <cstddef>
+#include <cstdint>
 #include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -51,7 +63,7 @@ TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::st
   m_specialEventsSink.Connect<&TelemetryWindow::OnSpecialEventsUpdate>(this);
   m_gameplayEventsSink.Connect<&TelemetryWindow::OnGameplayEventUpdate>(this);
   m_gearboxConstantsSink.Connect<&TelemetryWindow::OnGearboxConstantsUpdate>(this);
-  
+
   m_titleLocalizationKey = "telemetry_window.title";
 
   m_locTabGame = "telemetry_window.tabs.game";
@@ -267,8 +279,12 @@ TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::st
   m_locLabelEventTrainRoute = "telemetry_window.labels.event_train_route";
   m_locLabelEventTrainRouteTo = "telemetry_window.labels.event_train_route_to";
 
-  m_locDaysOfWeek = {"telemetry_window.days_of_week.monday",   "telemetry_window.days_of_week.tuesday", "telemetry_window.days_of_week.wednesday",
-                     "telemetry_window.days_of_week.thursday", "telemetry_window.days_of_week.friday",  "telemetry_window.days_of_week.saturday",
+  m_locDaysOfWeek = {"telemetry_window.days_of_week.monday",
+                     "telemetry_window.days_of_week.tuesday",
+                     "telemetry_window.days_of_week.wednesday",
+                     "telemetry_window.days_of_week.thursday",
+                     "telemetry_window.days_of_week.friday",
+                     "telemetry_window.days_of_week.saturday",
                      "telemetry_window.days_of_week.sunday"};
   m_locFormatDayHourMinute = "telemetry_window.formats.day_hour_minute";
   m_locFormatDaysHoursMinutes = "telemetry_window.formats.days_hours_minutes";
@@ -322,9 +338,7 @@ TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::st
 const char* TelemetryWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
 
 // Helper to display a vector
-void DisplayFVector(const char* label, const scs_value_fvector_t& vec) {
-  ImGui::Text("%s: (%.2f, %.2f, %.2f)", label, vec.x, vec.y, vec.z);
-}
+void DisplayFVector(const char* label, const scs_value_fvector_t& vec) { ImGui::Text("%s: (%.2f, %.2f, %.2f)", label, vec.x, vec.y, vec.z); }
 
 // Helper to display fplacement
 void DisplayFPlacement(const char* label, const scs_value_fplacement_t& p, const std::string& pos_format, const std::string& ori_format) {
@@ -413,10 +427,7 @@ void TelemetryWindow::RenderContent() {
         }
 
         if (commonData.next_rest_stop >= 0) {
-          ImGui::Text(loc.Get(m_locLabelNextRestStopTime).c_str(),
-                      day_to_string(commonData.next_rest_stop_time.DayOfWeek),
-                      commonData.next_rest_stop_time.Hour,
-                      commonData.next_rest_stop_time.Minute);
+          ImGui::Text(loc.Get(m_locLabelNextRestStopTime).c_str(), day_to_string(commonData.next_rest_stop_time.DayOfWeek), commonData.next_rest_stop_time.Hour, commonData.next_rest_stop_time.Minute);
         }
 
         ImGui::Separator();
@@ -466,16 +477,8 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(loc.Get(m_locLabelSpecialJob).c_str(), jobConstants.is_special_job ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
 
         ImGui::SeparatorText(loc.Get(m_locLabelRoute).c_str());
-        ImGui::Text(loc.Get(m_locLabelSource).c_str(),
-                    jobConstants.source_company.c_str(),
-                    jobConstants.source_company_id.c_str(),
-                    jobConstants.source_city.c_str(),
-                    jobConstants.source_city_id.c_str());
-        ImGui::Text(loc.Get(m_locLabelDestination).c_str(),
-                    jobConstants.destination_company.c_str(),
-                    jobConstants.destination_company_id.c_str(),
-                    jobConstants.destination_city.c_str(),
-                    jobConstants.destination_city_id.c_str());
+        ImGui::Text(loc.Get(m_locLabelSource).c_str(), jobConstants.source_company.c_str(), jobConstants.source_company_id.c_str(), jobConstants.source_city.c_str(), jobConstants.source_city_id.c_str());
+        ImGui::Text(loc.Get(m_locLabelDestination).c_str(), jobConstants.destination_company.c_str(), jobConstants.destination_company_id.c_str(), jobConstants.destination_city.c_str(), jobConstants.destination_city_id.c_str());
 
         ImGui::SeparatorText(loc.Get(m_locLabelTime).c_str());
         ImGui::Text(loc.Get(m_locLabelDeliveryDeadline).c_str(), jobConstants.delivery_time);
@@ -600,13 +603,8 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(loc.Get(m_locLabelEngineRpm).c_str(), truckData.engine_rpm);
         ImGui::Text(loc.Get(m_locLabelGear).c_str(), truckData.gear, truckData.displayed_gear);
         ImGui::Text(loc.Get(m_locLabelOdometer).c_str(), truckData.odometer);
-        ImGui::Text(loc.Get(m_locLabelCruiseControl).c_str(),
-                    truckData.cruise_control_speed > 0.0f ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str(),
-                    truckData.cruise_control_speed * 3.6f);
-        ImGui::Text(loc.Get(m_locLabelFuel).c_str(),
-                    truckData.fuel_amount,
-                    truckData.fuel_average_consumption,
-                    truckData.fuel_range);
+        ImGui::Text(loc.Get(m_locLabelCruiseControl).c_str(), truckData.cruise_control_speed > 0.0f ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str(), truckData.cruise_control_speed * 3.6f);
+        ImGui::Text(loc.Get(m_locLabelFuel).c_str(), truckData.fuel_amount, truckData.fuel_average_consumption, truckData.fuel_range);
         ImGui::Text(loc.Get(m_locLabelAdblue).c_str(), truckData.adblue_amount, truckData.adblue_average_consumption);
         ImGui::Text(loc.Get(m_locLabelOil).c_str(), truckData.oil_pressure, truckData.oil_temperature);
         ImGui::Text(loc.Get(m_locLabelWaterTemp).c_str(), truckData.water_temperature);
@@ -615,8 +613,7 @@ void TelemetryWindow::RenderContent() {
         ImGui::SeparatorText(loc.Get(m_locLabelDashboardWarnings).c_str());
         ImGui::Text(loc.Get(m_locLabelFuelWarnState).c_str(), truckData.fuel_warning ? loc.Get(m_locGenericWarn).c_str() : loc.Get(m_locGenericOk).c_str());
         ImGui::Text(loc.Get(m_locLabelAdblueWarnState).c_str(), truckData.adblue_warning ? loc.Get(m_locGenericWarn).c_str() : loc.Get(m_locGenericOk).c_str());
-        ImGui::Text(loc.Get(m_locLabelAirPressureWarnState).c_str(),
-                    truckData.air_pressure_warning ? loc.Get(m_locGenericWarn).c_str() : (truckData.air_pressure_emergency ? loc.Get(m_locGenericEmergency).c_str() : loc.Get(m_locGenericOk).c_str()));
+        ImGui::Text(loc.Get(m_locLabelAirPressureWarnState).c_str(), truckData.air_pressure_warning ? loc.Get(m_locGenericWarn).c_str() : (truckData.air_pressure_emergency ? loc.Get(m_locGenericEmergency).c_str() : loc.Get(m_locGenericOk).c_str()));
         ImGui::Text(loc.Get(m_locLabelOilPressureWarnState).c_str(), truckData.oil_pressure_warning ? loc.Get(m_locGenericWarn).c_str() : loc.Get(m_locGenericOk).c_str());
         ImGui::Text(loc.Get(m_locLabelWaterTempWarnState).c_str(), truckData.water_temperature_warning ? loc.Get(m_locGenericWarn).c_str() : loc.Get(m_locGenericOk).c_str());
         ImGui::Text(loc.Get(m_locLabelBatteryVoltageWarnState).c_str(), truckData.battery_voltage_warning ? loc.Get(m_locGenericWarn).c_str() : loc.Get(m_locGenericOk).c_str());
@@ -626,9 +623,8 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(loc.Get(m_locLabelEngineEnabled).c_str(), truckData.engine_enabled ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
         ImGui::Text(loc.Get(m_locLabelDifferentialLock).c_str(), truckData.differential_lock ? loc.Get(m_locGenericEngaged).c_str() : loc.Get(m_locGenericOff).c_str());
         ImGui::Text(loc.Get(m_locLabelWipers).c_str(), truckData.wipers ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
-        ImGui::Text(loc.Get(m_locLabelTruckLiftAxle).c_str(),
-                    truckData.lift_axle ? loc.Get(m_locGenericLifted).c_str() : loc.Get(m_locGenericDown).c_str(),
-                    truckData.lift_axle_indicator ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
+        ImGui::Text(
+          loc.Get(m_locLabelTruckLiftAxle).c_str(), truckData.lift_axle ? loc.Get(m_locGenericLifted).c_str() : loc.Get(m_locGenericDown).c_str(), truckData.lift_axle_indicator ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
         ImGui::Text(loc.Get(m_locLabelTrailerLiftAxle).c_str(),
                     truckData.trailer_lift_axle ? loc.Get(m_locGenericLifted).c_str() : loc.Get(m_locGenericDown).c_str(),
                     truckData.trailer_lift_axle_indicator ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
@@ -649,13 +645,9 @@ void TelemetryWindow::RenderContent() {
           if (status == 2) return loc.Get(m_locGenericFull).c_str();
           return loc.Get(m_locGenericOff).c_str();
         };
-        ImGui::Text(loc.Get(m_locLabelAuxLights).c_str(),
-                    aux_status_to_str(truckData.light_aux_front),
-                    aux_status_to_str(truckData.light_aux_roof),
-                    truckData.light_beacon ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
-        ImGui::Text(loc.Get(m_locLabelBrakeReverseLights).c_str(),
-                    truckData.light_brake ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str(),
-                    truckData.light_reverse ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
+        ImGui::Text(loc.Get(m_locLabelAuxLights).c_str(), aux_status_to_str(truckData.light_aux_front), aux_status_to_str(truckData.light_aux_roof), truckData.light_beacon ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
+        ImGui::Text(
+          loc.Get(m_locLabelBrakeReverseLights).c_str(), truckData.light_brake ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str(), truckData.light_reverse ? loc.Get(m_locGenericOn).c_str() : loc.Get(m_locGenericOff).c_str());
         ImGui::Text(loc.Get(m_locLabelDashboardBacklight).c_str(), truckData.dashboard_backlight);
 
         ImGui::SeparatorText(loc.Get(m_locLabelBrakes).c_str());
@@ -751,8 +743,7 @@ void TelemetryWindow::RenderContent() {
         if (!trailer.data.connected && trailer.constants.id.empty()) continue;
 
         const std::string& trailer_node_format = loc.Get(m_locLabelTrailerX);
-        std::string trailer_node_id =
-            fmt::format(fmt::runtime(trailer_node_format), i, trailer.constants.id.empty() ? loc.Get(m_locLabelTrailerNa).c_str() : trailer.constants.id.c_str());
+        std::string trailer_node_id = fmt::format(fmt::runtime(trailer_node_format), i, trailer.constants.id.empty() ? loc.Get(m_locLabelTrailerNa).c_str() : trailer.constants.id.c_str());
         if (ImGui::TreeNode(trailer_node_id.c_str())) {
           ImGui::Text(loc.Get(m_locLabelConnected).c_str(), trailer.data.connected ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
 
@@ -762,10 +753,7 @@ void TelemetryWindow::RenderContent() {
             ImGui::Text(loc.Get(m_locLabelId).c_str(), trailer.constants.id.c_str());
             ImGui::Text(loc.Get(m_locLabelName).c_str(), trailer.constants.name.c_str());
             ImGui::Text(loc.Get(m_locLabelTrailerBrand).c_str(), trailer.constants.brand.c_str(), trailer.constants.brand_id.c_str());
-            ImGui::Text(loc.Get(m_locLabelTrailerLicensePlate).c_str(),
-                        trailer.constants.license_plate.c_str(),
-                        trailer.constants.license_plate_country.c_str(),
-                        trailer.constants.license_plate_country_id.c_str());
+            ImGui::Text(loc.Get(m_locLabelTrailerLicensePlate).c_str(), trailer.constants.license_plate.c_str(), trailer.constants.license_plate_country.c_str(), trailer.constants.license_plate_country_id.c_str());
             ImGui::Text(loc.Get(m_locLabelBodyType).c_str(), trailer.constants.body_type.c_str());
             ImGui::Text(loc.Get(m_locLabelChainType).c_str(), trailer.constants.chain_type.c_str());
             ImGui::Text(loc.Get(m_locLabelCargoAccessoryId).c_str(), trailer.constants.cargo_accessory_id.c_str());
@@ -776,10 +764,7 @@ void TelemetryWindow::RenderContent() {
           std::string physics_pos_label = loc.Get(m_locLabelPhysicsPos) + "##Trailer" + std::to_string(i);
           if (ImGui::TreeNode(physics_pos_label.c_str())) {
             DisplayFVector(loc.Get(m_locLabelTrailerHookPos).c_str(), trailer.constants.hook_position);
-            ImGui::Text(loc.Get(m_locLabelTrailerWorldPos).c_str(),
-                        trailer.data.world_placement.position.x,
-                        trailer.data.world_placement.position.y,
-                        trailer.data.world_placement.position.z);
+            ImGui::Text(loc.Get(m_locLabelTrailerWorldPos).c_str(), trailer.data.world_placement.position.x, trailer.data.world_placement.position.y, trailer.data.world_placement.position.z);
             ImGui::Separator();
             DisplayFVector(loc.Get(m_locLabelLinearVelocity).c_str(), trailer.data.local_linear_velocity);
             DisplayFVector(loc.Get(m_locLabelAngularVelocity).c_str(), trailer.data.local_angular_velocity);
@@ -883,9 +868,8 @@ void TelemetryWindow::RenderContent() {
           const auto& data = gameplayEvents.job_delivered;
           ImGui::Text(loc.Get(m_locLabelEventJobDelivered).c_str(), data.revenue, data.earned_xp, data.cargo_damage * 100.0f);
           ImGui::Text(loc.Get(m_locLabelEventJobDeliveredDetails).c_str(), data.distance_km, data.delivery_time);
-          ImGui::Text(loc.Get(m_locLabelEventJobDeliveredFlags).c_str(),
-                      data.auto_park_used ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str(),
-                      data.auto_load_used ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
+          ImGui::Text(
+            loc.Get(m_locLabelEventJobDeliveredFlags).c_str(), data.auto_park_used ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str(), data.auto_load_used ? loc.Get(m_locGenericYes).c_str() : loc.Get(m_locGenericNo).c_str());
         } else if (lastEventId == SCS_TELEMETRY_GAMEPLAY_EVENT_job_cancelled) {
           const auto& data = gameplayEvents.job_cancelled;
           ImGui::Text(loc.Get(m_locLabelEventJobCancelled).c_str(), data.penalty);

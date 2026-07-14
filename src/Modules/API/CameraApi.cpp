@@ -1,21 +1,29 @@
 #include "SPF/Modules/API/CameraApi.hpp"
-#include "SPF/SPF_API/SPF_Camera_API.h"
 
-// Includes from PluginManager.cpp
-#include "SPF/GameCamera/GameCameraManager.hpp"
-#include "SPF/GameCamera/GameCameraDebug.hpp"
-#include "SPF/GameCamera/GameCameraInterior.hpp"
-#include "SPF/GameCamera/GameCameraBehind.hpp"
-#include "SPF/GameCamera/GameCameraTop.hpp"
-#include "SPF/GameCamera/GameCameraCabin.hpp"
-#include "SPF/GameCamera/GameCameraWindow.hpp"
-#include "SPF/GameCamera/GameCameraBumper.hpp"
-#include "SPF/GameCamera/GameCameraWheel.hpp"
-#include "SPF/GameCamera/GameCameraTV.hpp"
-#include "SPF/GameCamera/GameCameraFree.hpp"
-#include "SPF/Hooks/CameraHooks.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/GameCamera/DebugCameraMode.hpp"
+#include "SPF/GameCamera/DebugHudPosition.hpp"
+#include "SPF/GameCamera/GameCameraBehind.hpp"
+#include "SPF/GameCamera/GameCameraBumper.hpp"
+#include "SPF/GameCamera/GameCameraCabin.hpp"
+#include "SPF/GameCamera/GameCameraDebug.hpp"
+#include "SPF/GameCamera/GameCameraDebugState.hpp"
+#include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/GameCamera/GameCameraInterior.hpp"
+#include "SPF/GameCamera/GameCameraManager.hpp"
+#include "SPF/GameCamera/GameCameraTop.hpp"
+#include "SPF/GameCamera/GameCameraTV.hpp"
+#include "SPF/GameCamera/GameCameraType.hpp"
+#include "SPF/GameCamera/GameCameraWheel.hpp"
+#include "SPF/GameCamera/GameCameraWindow.hpp"
+#include "SPF/Hooks/CameraHooks.hpp"
+#include "SPF/SPF_API/SPF_Camera_API.h"
 #include "SPF/Utils/Vec3.hpp"
+
+#include <cstddef>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -892,9 +900,7 @@ bool CameraApi::T_Camera_Anim_Prepare() {
 }
 
 // --- Object Targeting & Inspection Trampolines ---
-uintptr_t CameraApi::T_Camera_GetDebugObjectAddress(void* ptr) {
-  return reinterpret_cast<uintptr_t>(ptr);
-}
+uintptr_t CameraApi::T_Camera_GetDebugObjectAddress(void* ptr) { return reinterpret_cast<uintptr_t>(ptr); }
 
 // --- New Interior Advanced Settings Trampolines ---
 
@@ -1417,7 +1423,6 @@ void CameraApi::T_Camera_SetBehindShakeAnim(size_t index, float x, float y, floa
     behind->SetShakeAnim(index, x, y, z);
   }
 }
-
 
 // --- FinalFOV Trampolines ---
 bool CameraApi::T_Camera_GetInteriorFinalFov(float* out_horiz, float* out_vert) {

@@ -1,28 +1,34 @@
 #pragma once
 
-#include <memory>
-#include <d3d12.h> // For ID3D12Device, ID3D12CommandQueue, ID3D12DescriptorHeap
-#include <dxgi1_4.h> // For IDXGISwapChain3
-#include <windows.h> // For UINT
-#include <wrl/client.h> // For ComPtr
+#include "SPF/Namespace.hpp"
 
-#include <vector>
-#include <mutex>
-
-#include <SPF/Renderer/RendererBase.hpp>
+#include "SPF/Renderer/ITexture.hpp"
+#include "SPF/Renderer/RendererBase.hpp"
 #include "SPF/Utils/Signal.hpp"
+
+#include <cstddef>
+#include <d3d12.h>    // For ID3D12Device, ID3D12CommandQueue, ID3D12DescriptorHeap
+#include <dxgi1_4.h>  // For IDXGISwapChain3
+#include <memory>
+#include <minwindef.h>
+#include <mutex>
+#include <vector>
+#include <winnt.h>
+#include <wrl/client.h>  // For ComPtr
 
 SPF_NS_BEGIN
 
 // Use ComPtr for managing COM object lifetimes
-template<typename T>
+template <typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 // Forward declarations are already handled by the includes
 namespace UI {
 class UIManager;
 }
-namespace Logging { class Logger; } // Already included Logger.hpp
+namespace Logging {
+class Logger;
+}  // namespace Logging
 
 namespace Rendering {
 
@@ -56,7 +62,7 @@ class D3D12RendererImpl : public RendererBase {
   ComPtr<ID3D12Device> m_pd3dDevice;
   ComPtr<ID3D12DescriptorHeap> m_pd3dSrvDescHeap;
   UINT m_srvDescriptorSize = 0;
-  UINT m_nextSrvIndex = 1; // 0 is reserved for ImGui font atlas
+  UINT m_nextSrvIndex = 1;  // 0 is reserved for ImGui font atlas
   static constexpr UINT MAX_SRV_DESCRIPTORS = 128;
 
   ComPtr<ID3D12DescriptorHeap> m_pd3dRtvDescHeap;

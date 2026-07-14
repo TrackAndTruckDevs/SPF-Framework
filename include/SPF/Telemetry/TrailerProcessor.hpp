@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vector>
-
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Telemetry/SCS/Trailer.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
+
+#include <vector>
+
 
 SPF_NS_BEGIN
 

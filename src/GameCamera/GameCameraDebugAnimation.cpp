@@ -1,7 +1,13 @@
 #include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"  // Required for ApplyState
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {

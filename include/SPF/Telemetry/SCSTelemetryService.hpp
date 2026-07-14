@@ -1,14 +1,24 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Telemetry/SCS/Common.hpp"
+#include "SPF/Telemetry/SCS/Controls.hpp"
+#include "SPF/Telemetry/SCS/Events.hpp"
+#include "SPF/Telemetry/SCS/Gearbox.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Utils/Signal.hpp"
+
+#include <chrono>
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "SPF/Namespace.hpp"
-#include "SPF/Modules/ITelemetryService.hpp"
-#include "SPF/Utils/Signal.hpp"
-#include "SPF/Telemetry/SCS/Gearbox.hpp"
-#include "SPF/Telemetry/Sdk.hpp"
-#include <chrono>
 
 SPF_NS_BEGIN
 

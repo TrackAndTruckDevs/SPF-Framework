@@ -1,19 +1,25 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include "SPF/Namespace.hpp"
+
+#include "fmt/base.h"
+#include "fmt/format.h"
+
+#include <atomic>
+#include <chrono>
+#include <cstddef>
+#include <fmt/chrono.h>
+#include <fmt/core.h>
+#include <functional>
+#include <iterator>
 #include <memory>
 #include <mutex>
-#include <chrono>
-#include <atomic>
+#include <source_location>
+#include <string>
 #include <thread>
 #include <unordered_map>
-#include <source_location>
-
-#include <fmt/core.h>
-#include <fmt/chrono.h>
-
-#include "SPF/Namespace.hpp"
+#include <utility>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -258,7 +264,7 @@ void Logger::Log(LogLevel level, fmt::string_view format_str, Args&&... args) {
 
   // Creating a message object
   LogMessage msg{
-      .timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
+    .timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
 
   // We lock the mutex and send a message to all "sinks"
   std::lock_guard<std::mutex> lock(m_mutex);

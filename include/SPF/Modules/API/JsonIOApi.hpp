@@ -1,7 +1,10 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_JsonIO_API.h"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/SPF_API/SPF_JsonIO_API.h"
+#include "SPF/SPF_API/SPF_JsonReader_API.h"
+
 
 SPF_NS_BEGIN
 namespace Modules::API {

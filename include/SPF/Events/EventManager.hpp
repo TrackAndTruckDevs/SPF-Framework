@@ -1,22 +1,23 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Events/ConfigEvents.hpp"
+#include "SPF/Events/EventProxyBase.hpp"
+#include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Events/SystemEvents.hpp"
+#include "SPF/Events/TelemetryEvents.hpp"
+#include "SPF/Events/UIEvents.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Utils/Signal.hpp"
+
 #include <memory>
 #include <vector>
-
-#include "SPF/Events/TelemetryEvents.hpp"
-#include "SPF/Events/PluginEvents.hpp"
-#include "SPF/Events/UIEvents.hpp"
-#include "SPF/Events/ConfigEvents.hpp"
-#include "SPF/Input/InputEvents.hpp"
-#include "SPF/Events/EventProxyBase.hpp"
-#include "SPF/Events/SystemEvents.hpp"
-#include "SPF/Namespace.hpp"
-#include "SPF/Utils/Signal.hpp"
 
 SPF_NS_BEGIN
 
 namespace Rendering {
-class Renderer; // Forward-declaration
+class Renderer;  // Forward-declaration
 }
 
 namespace Events {
@@ -101,7 +102,7 @@ class EventManager {
     // --- Telemetry Events ---
     Utils::Signal<void()> OnTelemetryFrameStart;
     Utils::Signal<void()> OnGameWorldReady;
-    Events::Telemetry::TelemetryEventSignals Telemetry; // New member for all telemetry signals
+    Events::Telemetry::TelemetryEventSignals Telemetry;  // New member for all telemetry signals
   };
 
  public:

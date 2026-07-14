@@ -1,9 +1,10 @@
 #include "SPF/Data/GameData/Finders/PhotoCameraDataFinder.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
 #include <chrono>
 
 SPF_NS_BEGIN

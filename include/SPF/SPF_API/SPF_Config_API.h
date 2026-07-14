@@ -1,47 +1,47 @@
-/**                                                                                               
-* @file SPF_Config_API.h                                                                          
-* @brief API for programmatic interaction with plugin-specific configuration files.               
-*                                                                                                 
-* @details This API provides a persistent key-value store for plugins. Settings are               
-* automatically stored in a JSON file (`settings.json`) located in the plugin's                   
-* dedicated directory (e.g., `plugins/MyPlugin/config/`).                                         
-*                                                                                                 
-* The API supports simple data types (int, bool, float, string) and provides advanced             
-* access to complex JSON structures through opaque handles.                                       
-*                                                                                                 
-* ================================================================================================
-* KEY CONCEPTS                                                                                    
-* ================================================================================================
-*                                                                                                 
-* 1. **Context-Based**: Every call requires a context handle (`SPF_Config_Handle`). Get it        
-*    once during `OnLoad` using `Cfg_GetContext()`.                                                   
-*                                                                                                 
-* 2. **JSON Paths**: Keys use dot-notation to traverse the configuration file.                    
-*    - "settings.my_value": Accesses a custom variable defined in the plugin's manifest.          
-*    - "logging.level": Accesses the standard framework logging level.                            
-*    - "ui.windows.MainWindow.is_visible": Accesses a specific window property.                   
-*                                                                                                 
-* 3. **Automatic Persistence**: Values set via `Cfg_Set...` are stored in memory and              
-*    automatically synchronized to disk on game shutdown or when the user saves                   
-*    settings in the framework UI.                                                                
-*                                                                                                 
-* 4. **Real-time Updates**: If a user changes a setting via the UI, your plugin can be            
-*    notified immediately if you implement the `OnSettingChanged` export.                         
-*                                                                                                 
-* ================================================================================================
-* USAGE EXAMPLE (C++)                                                                             
-* ================================================================================================
-* @code                                                                                           
-* // During initialization (OnLoad):                                                              
-* SPF_Config_Handle* h = api->Cfg_GetContext("MyPlugin");                                             
-*                                                                                                 
-* // Reading a value:                                                                             
-* int32_t speed = api->Cfg_GetInt32(h, "settings.max_speed", 90);                                 
-*                                                                                                 
-* // Writing a value:                                                                             
-* api->Cfg_SetBool(h, "settings.is_active", true);                                                
-* @endcode                                                                                        
-*/    
+/**
+ * @file SPF_Config_API.h
+ * @brief API for programmatic interaction with plugin-specific configuration files.
+ *
+ * @details This API provides a persistent key-value store for plugins. Settings are
+ * automatically stored in a JSON file (`settings.json`) located in the plugin's
+ * dedicated directory (e.g., `plugins/MyPlugin/config/`).
+ *
+ * The API supports simple data types (int, bool, float, string) and provides advanced
+ * access to complex JSON structures through opaque handles.
+ *
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ *
+ * 1. **Context-Based**: Every call requires a context handle (`SPF_Config_Handle`). Get it
+ *    once during `OnLoad` using `Cfg_GetContext()`.
+ *
+ * 2. **JSON Paths**: Keys use dot-notation to traverse the configuration file.
+ *    - "settings.my_value": Accesses a custom variable defined in the plugin's manifest.
+ *    - "logging.level": Accesses the standard framework logging level.
+ *    - "ui.windows.MainWindow.is_visible": Accesses a specific window property.
+ *
+ * 3. **Automatic Persistence**: Values set via `Cfg_Set...` are stored in memory and
+ *    automatically synchronized to disk on game shutdown or when the user saves
+ *    settings in the framework UI.
+ *
+ * 4. **Real-time Updates**: If a user changes a setting via the UI, your plugin can be
+ *    notified immediately if you implement the `OnSettingChanged` export.
+ *
+ * ================================================================================================
+ * USAGE EXAMPLE (C++)
+ * ================================================================================================
+ * @code
+ * // During initialization (OnLoad):
+ * SPF_Config_Handle* h = api->Cfg_GetContext("MyPlugin");
+ *
+ * // Reading a value:
+ * int32_t speed = api->Cfg_GetInt32(h, "settings.max_speed", 90);
+ *
+ * // Writing a value:
+ * api->Cfg_SetBool(h, "settings.is_active", true);
+ * @endcode
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -52,13 +52,13 @@ extern "C" {
 #endif
 
 // =================================================================================================
-// Types                                                                                            
+// Types
 // =================================================================================================
 
-/**                                                                                                 
- * @brief Opaque handle to the plugin's configuration context.                                      
- * @details The framework manages the memory for this handle. Do not attempt to free it.            
- */ 
+/**
+ * @brief Opaque handle to the plugin's configuration context.
+ * @details The framework manages the memory for this handle. Do not attempt to free it.
+ */
 typedef struct SPF_Config_Handle SPF_Config_Handle;
 
 /**
@@ -81,8 +81,8 @@ typedef struct SPF_JsonValue_Handle SPF_JsonValue_Handle;
  * Most settings defined in a plugin's manifest can be automatically managed and
  * edited by the user through the framework's main settings UI. To enable this,
  * you only need to call `api->SetAllowUserConfig(handle, true)` in your manifest builder
- * and list the relevant systems (e.g., "settings", "logging") in the manifest. 
- * 
+ * and list the relevant systems (e.g., "settings", "logging") in the manifest.
+ *
  * This `SPF_Config_API` should be used for cases where you need to programmatically
  * get or set configuration values from your C++ code, for example, in response to
  * in-game events, for settings that are not exposed in the UI, or for complex logic.
@@ -105,212 +105,212 @@ typedef struct SPF_JsonValue_Handle SPF_JsonValue_Handle;
  *     a setting is changed, allowing you to react in real-time.
  */
 typedef struct SPF_Config_API {
-    /**
-     * @brief Gets a configuration context handle for the plugin.
-     *
-     * @details This handle is the primary identifier for all subsequent config
-     *          calls. The framework uses it to associate the calls with the correct
-     *          `settings.json` file for your plugin. The framework manages the
-     *          memory of this handle; do not free it.
-     *
-     * @param pluginName The name of the plugin, which MUST match the name 
-     *                   declared in the manifest.
-     * @return A handle to the configuration context, or `NULL` if the plugin
-     *         could not be found or is not configured for user settings.
-     */
-    SPF_Config_Handle* (*Cfg_GetContext)(const char* pluginName);
+  /**
+   * @brief Gets a configuration context handle for the plugin.
+   *
+   * @details This handle is the primary identifier for all subsequent config
+   *          calls. The framework uses it to associate the calls with the correct
+   *          `settings.json` file for your plugin. The framework manages the
+   *          memory of this handle; do not free it.
+   *
+   * @param pluginName The name of the plugin, which MUST match the name
+   *                   declared in the manifest.
+   * @return A handle to the configuration context, or `NULL` if the plugin
+   *         could not be found or is not configured for user settings.
+   */
+  SPF_Config_Handle* (*Cfg_GetContext)(const char* pluginName);
 
-    // --- Value Getters ---
+  // --- Value Getters ---
 
-    /**
-     * @brief Retrieves a string value from the configuration.
-     *
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value. This must be a dot-separated path starting
-     *            with the configuration system name (e.g., "settings", "localization").
-     *            Examples: "settings.some_number", "localization.language".
-     * @param defaultValue A default value to return if the key is not found.
-     * @param[out] out_buffer A pointer to a character buffer to receive the string.
-     * @param buffer_size The size of the output buffer.
-     * @return The number of characters written to the buffer (excluding null
-     *         terminator). If the return value is >= `buffer_size`, the output
-     *         was truncated. Returns the length of `defaultValue` if the key
-     *         was not found.
-     */
-    int (*Cfg_GetString)(SPF_Config_Handle* h, const char* key, const char* defaultValue, char* out_buffer, int buffer_size);
+  /**
+   * @brief Retrieves a string value from the configuration.
+   *
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value. This must be a dot-separated path starting
+   *            with the configuration system name (e.g., "settings", "localization").
+   *            Examples: "settings.some_number", "localization.language".
+   * @param defaultValue A default value to return if the key is not found.
+   * @param[out] out_buffer A pointer to a character buffer to receive the string.
+   * @param buffer_size The size of the output buffer.
+   * @return The number of characters written to the buffer (excluding null
+   *         terminator). If the return value is >= `buffer_size`, the output
+   *         was truncated. Returns the length of `defaultValue` if the key
+   *         was not found.
+   */
+  int (*Cfg_GetString)(SPF_Config_Handle* h, const char* key, const char* defaultValue, char* out_buffer, int buffer_size);
 
-    /**
-     * @brief Retrieves an integer value from the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param defaultValue A default value to return if the key is not found.
-     * @return The integer value from the config, or `defaultValue` if not found.
-     */
-    int64_t (*Cfg_GetInt)(SPF_Config_Handle* h, const char* key, int64_t defaultValue);
+  /**
+   * @brief Retrieves an integer value from the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param defaultValue A default value to return if the key is not found.
+   * @return The integer value from the config, or `defaultValue` if not found.
+   */
+  int64_t (*Cfg_GetInt)(SPF_Config_Handle* h, const char* key, int64_t defaultValue);
 
-    /**
-     * @brief Retrieves a 32-bit integer value from the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value (e.g., "settings.my_count").
-     * @param defaultValue A default value to return if the key is not found.
-     * @return The 32-bit integer value from the config, or `defaultValue` if not found.
-     * @note This is a convenience function for interoperability with APIs that use `int` (like ImGui).
-     *       Be aware of potential data truncation if the stored value exceeds the 32-bit integer range.
-     */
-    int32_t (*Cfg_GetInt32)(SPF_Config_Handle* h, const char* key, int32_t defaultValue);
+  /**
+   * @brief Retrieves a 32-bit integer value from the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value (e.g., "settings.my_count").
+   * @param defaultValue A default value to return if the key is not found.
+   * @return The 32-bit integer value from the config, or `defaultValue` if not found.
+   * @note This is a convenience function for interoperability with APIs that use `int` (like ImGui).
+   *       Be aware of potential data truncation if the stored value exceeds the 32-bit integer range.
+   */
+  int32_t (*Cfg_GetInt32)(SPF_Config_Handle* h, const char* key, int32_t defaultValue);
 
-    /**
-     * @brief Retrieves a floating-point value from the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param defaultValue A default value to return if the key is not found.
-     * @return The double value from the config, or `defaultValue` if not found.
-     */
-    double (*Cfg_GetFloat)(SPF_Config_Handle* h, const char* key, double defaultValue);
+  /**
+   * @brief Retrieves a floating-point value from the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param defaultValue A default value to return if the key is not found.
+   * @return The double value from the config, or `defaultValue` if not found.
+   */
+  double (*Cfg_GetFloat)(SPF_Config_Handle* h, const char* key, double defaultValue);
 
-    /**
-     * @brief Retrieves a boolean value from the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param defaultValue A default value to return if the key is not found.
-     * @return The boolean value from the config, or `defaultValue` if not found.
-     */
-    bool (*Cfg_GetBool)(SPF_Config_Handle* h, const char* key, bool defaultValue);
+  /**
+   * @brief Retrieves a boolean value from the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param defaultValue A default value to return if the key is not found.
+   * @return The boolean value from the config, or `defaultValue` if not found.
+   */
+  bool (*Cfg_GetBool)(SPF_Config_Handle* h, const char* key, bool defaultValue);
 
-    /**
-     * @brief (Advanced) Retrieves a handle to a raw JSON value for a given key.
-     *
-     * @details This function is intended for advanced use cases where a configuration
-     *          value is not a simple type (like an int or bool), but a complex JSON
-     *          object or array. The standard Cfg_Get... functions cannot retrieve
-     *          such structures. This function provides a way to get a "handle" to the
-     *          raw JSON value.
-     *
-     * @section Intended Workflow
-     * This function is designed to be used with the `SPF_JsonReader_API`. The typical
-     * workflow is:
-     * 1. Retrieve this handle for a complex setting key (e.g., "settings.my_object").
-     * 2. Obtain a pointer to the `SPF_JsonReader_API`.
-     * 3. Use the functions in `SPF_JsonReader_API` (like `Json_GetType`, `Json_GetString`, etc.)
-     *    to parse the data within the handle.
-     *
-     * @param h The configuration context handle obtained from `Cfg_GetContext`.
-     * @param key The dot-separated key for the value (e.g., "settings.my_complex_object").
-     * @return An opaque handle to the JSON value, or `NULL` if the key is not found.
-     *         The lifetime of this handle is managed by the framework; do not free it.
-     */
-    SPF_JsonValue_Handle* (*Cfg_GetJsonValueHandle)(SPF_Config_Handle* h, const char* key);
+  /**
+   * @brief (Advanced) Retrieves a handle to a raw JSON value for a given key.
+   *
+   * @details This function is intended for advanced use cases where a configuration
+   *          value is not a simple type (like an int or bool), but a complex JSON
+   *          object or array. The standard Cfg_Get... functions cannot retrieve
+   *          such structures. This function provides a way to get a "handle" to the
+   *          raw JSON value.
+   *
+   * @section Intended Workflow
+   * This function is designed to be used with the `SPF_JsonReader_API`. The typical
+   * workflow is:
+   * 1. Retrieve this handle for a complex setting key (e.g., "settings.my_object").
+   * 2. Obtain a pointer to the `SPF_JsonReader_API`.
+   * 3. Use the functions in `SPF_JsonReader_API` (like `Json_GetType`, `Json_GetString`, etc.)
+   *    to parse the data within the handle.
+   *
+   * @param h The configuration context handle obtained from `Cfg_GetContext`.
+   * @param key The dot-separated key for the value (e.g., "settings.my_complex_object").
+   * @return An opaque handle to the JSON value, or `NULL` if the key is not found.
+   *         The lifetime of this handle is managed by the framework; do not free it.
+   */
+  SPF_JsonValue_Handle* (*Cfg_GetJsonValueHandle)(SPF_Config_Handle* h, const char* key);
 
-    // --- Value Setters ---
+  // --- Value Setters ---
 
-    /**
-     * @brief Sets a string value in the configuration.
-     * @details The change is stored in memory and will be persisted to the file
-     *          on shutdown or when settings are saved in the UI.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param value The string value to set.
-     */
-    void (*Cfg_SetString)(SPF_Config_Handle* h, const char* key, const char* value);
+  /**
+   * @brief Sets a string value in the configuration.
+   * @details The change is stored in memory and will be persisted to the file
+   *          on shutdown or when settings are saved in the UI.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param value The string value to set.
+   */
+  void (*Cfg_SetString)(SPF_Config_Handle* h, const char* key, const char* value);
 
-    /**
-     * @brief Sets an integer value in the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param value The integer value to set.
-     */
-    void (*Cfg_SetInt)(SPF_Config_Handle* h, const char* key, int64_t value);
+  /**
+   * @brief Sets an integer value in the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param value The integer value to set.
+   */
+  void (*Cfg_SetInt)(SPF_Config_Handle* h, const char* key, int64_t value);
 
-    /**
-     * @brief Sets a 32-bit integer value in the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param value The 32-bit integer value to set.
-     */
-    void (*Cfg_SetInt32)(SPF_Config_Handle* h, const char* key, int32_t value);
+  /**
+   * @brief Sets a 32-bit integer value in the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param value The 32-bit integer value to set.
+   */
+  void (*Cfg_SetInt32)(SPF_Config_Handle* h, const char* key, int32_t value);
 
-    /**
-     * @brief Sets a floating-point value in the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param value The double value to set.
-     */
-    void (*Cfg_SetFloat)(SPF_Config_Handle* h, const char* key, double value);
+  /**
+   * @brief Sets a floating-point value in the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param value The double value to set.
+   */
+  void (*Cfg_SetFloat)(SPF_Config_Handle* h, const char* key, double value);
 
-    /**
-     * @brief Sets a boolean value in the configuration.
-     * @param h The context handle obtained from `Cfg_GetContext`.
-     * @param key The key for the value.
-     * @param value The boolean value to set.
-     */
-    void (*Cfg_SetBool)(SPF_Config_Handle* h, const char* key, bool value);
+  /**
+   * @brief Sets a boolean value in the configuration.
+   * @param h The context handle obtained from `Cfg_GetContext`.
+   * @param key The key for the value.
+   * @param value The boolean value to set.
+   */
+  void (*Cfg_SetBool)(SPF_Config_Handle* h, const char* key, bool value);
 
-    // --- New ABI-safe extensions ---
+  // --- New ABI-safe extensions ---
 
-    /**
-     * @brief Checks if a specific key path exists in the configuration.
-     * @param h The context handle.
-     * @param key The dot-separated key for the value (e.g., "settings.commands").
-     * @return `true` if the key exists, `false` otherwise.
-     */
-    bool (*Cfg_HasKey)(SPF_Config_Handle* h, const char* key);
+  /**
+   * @brief Checks if a specific key path exists in the configuration.
+   * @param h The context handle.
+   * @param key The dot-separated key for the value (e.g., "settings.commands").
+   * @return `true` if the key exists, `false` otherwise.
+   */
+  bool (*Cfg_HasKey)(SPF_Config_Handle* h, const char* key);
 
-    /**
-     * @brief Force-saves the current configuration state from memory to 'settings.json'.
-     * @details Use this to ensure persistence after critical changes.
-     * @param h The context handle.
-     */
-    void (*Cfg_Save)(SPF_Config_Handle* h);
+  /**
+   * @brief Force-saves the current configuration state from memory to 'settings.json'.
+   * @details Use this to ensure persistence after critical changes.
+   * @param h The context handle.
+   */
+  void (*Cfg_Save)(SPF_Config_Handle* h);
 
-    /**
-     * @brief Removes a key or an entire path from the configuration.
-     * @details This is useful for cleaning up lists or old configuration nodes.
-     * @param h The context handle.
-     * @param key The key or path to remove (e.g., "settings.old_commands").
-     */
-    void (*Cfg_RemoveKey)(SPF_Config_Handle* h, const char* key);
+  /**
+   * @brief Removes a key or an entire path from the configuration.
+   * @details This is useful for cleaning up lists or old configuration nodes.
+   * @param h The context handle.
+   * @param key The key or path to remove (e.g., "settings.old_commands").
+   */
+  void (*Cfg_RemoveKey)(SPF_Config_Handle* h, const char* key);
 
-    /**
-     * @brief Sets a raw JSON string as the value for a key.
-     * @details Allows writing complex JSON structures directly. 
-     *          Warning: The framework may validate or re-format the string.
-     * @param h The context handle.
-     * @param key The key for the value.
-     * @param json_literal A valid JSON string (e.g., "[1, 2, 3]" or "{\"a\": 1}").
-     */
-    void (*Cfg_SetJsonString)(SPF_Config_Handle* h, const char* key, const char* json_literal);
+  /**
+   * @brief Sets a raw JSON string as the value for a key.
+   * @details Allows writing complex JSON structures directly.
+   *          Warning: The framework may validate or re-format the string.
+   * @param h The context handle.
+   * @param key The key for the value.
+   * @param json_literal A valid JSON string (e.g., "[1, 2, 3]" or "{\"a\": 1}").
+   */
+  void (*Cfg_SetJsonString)(SPF_Config_Handle* h, const char* key, const char* json_literal);
 
-    /**
-     * @brief Discards in-memory changes and reloads the configuration from disk.
-     * @param h The context handle.
-     */
-    void (*Cfg_Reload)(SPF_Config_Handle* h);
+  /**
+   * @brief Discards in-memory changes and reloads the configuration from disk.
+   * @param h The context handle.
+   */
+  void (*Cfg_Reload)(SPF_Config_Handle* h);
 
-    /**
-     * @brief Retrieves a raw JSON string representation of a configuration node.
-     * @param h The context handle.
-     * @param key The key for the value.
-     * @param[out] out_buffer Buffer to store the JSON string.
-     * @param buffer_size Size of the output buffer.
-     * @return Number of characters written. Truncated if >= buffer_size.
-     */
-    int (*Cfg_GetJsonString)(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
+  /**
+   * @brief Retrieves a raw JSON string representation of a configuration node.
+   * @param h The context handle.
+   * @param key The key for the value.
+   * @param[out] out_buffer Buffer to store the JSON string.
+   * @param buffer_size Size of the output buffer.
+   * @return Number of characters written. Truncated if >= buffer_size.
+   */
+  int (*Cfg_GetJsonString)(SPF_Config_Handle* h, const char* key, char* out_buffer, int buffer_size);
 
-    /**
-     * @brief Creates a configuration context for an arbitrary JSON file.
-     * @details This allows you to use the standard Cfg_Get/Set functions for any JSON 
-     *          file on disk, not just the default settings.json.
-     * @param filePath The full physical path to the JSON file.
-     * @return A handle to the configuration context, or NULL on error.
-     */
-    SPF_Config_Handle* (*Cfg_CreateCustomContext)(const char* filePath);
+  /**
+   * @brief Creates a configuration context for an arbitrary JSON file.
+   * @details This allows you to use the standard Cfg_Get/Set functions for any JSON
+   *          file on disk, not just the default settings.json.
+   * @param filePath The full physical path to the JSON file.
+   * @return A handle to the configuration context, or NULL on error.
+   */
+  SPF_Config_Handle* (*Cfg_CreateCustomContext)(const char* filePath);
 
-    /**
-     * @brief Enables or disables automatic saving to disk when values are changed.
-     * @param h The context handle.
-     * @param enabled If true, changes are automatically synced to disk (default).
-     */
-    void (*Cfg_SetAutoSave)(SPF_Config_Handle* h, bool enabled);
+  /**
+   * @brief Enables or disables automatic saving to disk when values are changed.
+   * @param h The context handle.
+   * @param enabled If true, changes are automatically synced to disk (default).
+   */
+  void (*Cfg_SetAutoSave)(SPF_Config_Handle* h, bool enabled);
 
 } SPF_Config_API;
 

@@ -1,12 +1,15 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Hooks/IHook.hpp"
-#include "SPF/Renderer/RenderAPI.hpp" // Added for the new method
-#include <vector>
-#include <string>
-#include <set>
+#include "SPF/Renderer/RenderAPI.hpp"  // Added for the new method
+
 #include <map>
+#include <set>
+#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Hooks {

@@ -1,11 +1,14 @@
 #pragma once
 
-#include <SPF/Logging/Logger.hpp>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Logging/Logger.hpp"
+
+#include "fmt/base.h"
+
+#include <filesystem>
 #include <fstream>
 #include <string>
-#include <filesystem>
-
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 

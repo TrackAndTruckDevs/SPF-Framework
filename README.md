@@ -122,26 +122,65 @@ There are three main ways to start developing a plugin with SPF. Choose the one 
 
 ### Method 1: Use the Template Project (Recommended)
 
-This is the fastest and easiest way to start a new plugin from scratch. This method separates plugin development from the framework's runtime environment.
+This is the fastest way to start a new plugin. The template is a self-contained CMake project with pre-configured build presets, automatic deployment, and support for both MSVC (Windows native) and MinGW (Linux cross-compile).
+
+The template is pre-configured for:
+
+- **CMake ≥ 4.4** — required for the preset format
+- **C++20** standard
+- **Windows:** Visual Studio 2022 with MSVC (default)
+- **Linux (cross-compile):** MinGW-w64 + Ninja or Unix Makefiles
 
 **Part 1: Developing and Building Your Plugin**
-From the [GitHub Releases](https://github.com/TrackAndTruckDevs/SPF-Framework/releases) page, download the template project archive (e.g., `MyPlugin_Template_v1.0.3.zip`). This is a self-contained, ready-to-use CMake project that already includes the necessary C API headers.
 
-Unzip the template project and rename its folder and source files (e.g., from `MyPlugin.cpp` to `YourPlugin.cpp`). Next, **edit** the `CMakeLists.txt` file to change the project name inside it (e.g., from `project(MyPlugin)` to `project(YourPlugin)`). The provided configuration is already set up to build your plugin into a DLL file. You can now open the project in your favorite editor and start implementing your ideas.
+1. **Download the template** from the [GitHub Releases](https://github.com/TrackAndTruckDevs/SPF-Framework/releases) page (e.g., `MyPlugin_Template_v1.0.3.zip`).
 
-**Part 2: Running and Testing Your Plugin in the Game**
-To test your plugin in-game, you need the main SPF-Framework runtime (`spf-framework.dll`). You can obtain it in one of two ways: download a pre-built package from the [Download SFP Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases), or build it yourself (see the **Method 3: Build from Source** section).
+2. **Unzip and rename** — rename the folder and its contents (e.g. `MyPlugin.cpp` → `YourPlugin.cpp`).
 
-Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory.
+3. **Edit `CMakeLists.txt`** — change `PLUGIN_NAME` and add your source files to `PLUGIN_SOURCES`.
 
-Next, take your compiled plugin's DLL (e.g., `MyPlugin.dll`) and place it inside the dedicated SPF-plugins folder, creating a sub-directory for your plugin like so:
-```
-.../bin/win_x64/plugins/
-└───spfPlugins/
-    └───MyPlugin/
-        └─── MyPlugin.dll
-```
-Now you can launch the game. The SPF-Framework will discover and load your plugin.
+4. **Set game paths** — open `CMakeUserPresets.json` and fill in your game directories:
+   ```json
+   "environment": {
+       "ATS_PLUGINS_DIR":  "C:/Program Files/Steam/.../American Truck Simulator/bin/win_x64/plugins",
+       "ETS2_PLUGINS_DIR": "C:/Program Files/Steam/.../Euro Truck Simulator 2/bin/win_x64/plugins"
+   }
+   ```
+   > You can also set these via environment variables and remove them from `environment`.
+
+5. **Build** — run the complete workflow (configure + build + deploy):
+   ```bash
+   cmake --workflow --preset user-win-release
+   ```
+   Or step by step:
+   ```bash
+   cmake --preset user-win-release
+   cmake --build --preset user-win-release
+   ```
+
+   The build automatically deploys the compiled DLL, plus `localization/` and `data/` folders if present, to `spfPlugins/<YourPlugin>/` in each configured game directory.
+
+   > **Cross-compilation on Linux:** Install MinGW and use a `mingw-*` preset:
+   > ```bash
+   > sudo apt install mingw-w64 mingw-w64-tools
+   > cmake --workflow --preset user-mingw-release
+   > ```
+
+**Part 2: Running Your Plugin in the Game**
+
+1. Make sure the SPF-Framework runtime is installed in your game's `plugins/` folder (see [Installing the SPF-Framework](#installing-the-spf-framework)).
+
+2. If you used the preset build (Part 1, step 5), the DLL was already deployed. Otherwise, copy it manually:
+   ```
+   .../bin/win_x64/plugins/
+   └───spfPlugins/
+       └───MyPlugin/
+           ├─── MyPlugin.dll
+           ├─── localization/    (optional)
+           └─── data/            (optional)
+   ```
+
+3. Launch the game — the framework will discover and load your plugin.
 
 ### Method 2: Integrate the API into Your Own Project
 
@@ -208,57 +247,137 @@ Now you can launch the game. The SPF-Framework will discover and load your plugi
 
 This method is for developers who want to work with the latest framework code, modify it, or contribute to the project.
 
-Clone the entire repository. Create a new sub-directory for your plugin inside the `/plugins` folder (you can copy the existing `MyPlugin` to use as a starting point). Add the directory of your new plugin to the `CMakeLists.txt` file in the `/plugins` folder. When you compile the project, both your plugin and the framework will be built together from the source code, allowing for deep integration and easy debugging of all components.
+To build the framework from source, follow the **[Build Instructions](#build-instructions)** section.
+If you want to build your own plugin together with the framework, place it in `/plugins/<YourPlugin>/`
+and run the build — CMake will discover it automatically.
 
 
 
 
 <h2 align="center">⚙️ Build Instructions</h2>
 
-This project uses a modern CMake setup with `FetchContent` to automatically download and manage all dependencies (ImGui, MinHook, etc.). You do not need to install them manually.
+This project uses CMake presets with `FetchContent` to automatically download and manage all dependencies (ImGui, MinHook, etc.). You do not need to install them manually.
 
 ### Prerequisites
 
-To build the project, you will need **CMake** version `3.16` or newer and **Git** to download dependencies. You will also need a **C++20 compliant compiler**. The build script is pre-configured with the necessary linker options for **MSVC (via Visual Studio)** and **Clang**, ensuring the correct functions are exported for the game.
+- **CMake** ≥ 4.4 — required for the `version: 12` preset format
+- **Git** — downloads dependencies via FetchContent
+- **C++20 compiler**:
+  - **Windows**: Visual Studio 2022 (MSVC)
+  - **Linux** (cross-compile): MinGW-w64 + tools
+    ```bash
+    sudo apt install mingw-w64 mingw-w64-tools
+    ```
 
-### Building the Project
+### Setup (first time)
 
-First, you need to **clone the repository**. Execute the following commands:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/TrackAndTruckDevs/SPF-Framework.git
+   cd spf-framework
+   ```
+
+2. **Create your user preset from the template:**
+   ```bash
+   cp CMakeUserPresets.json.example CMakeUserPresets.json
+   ```
+
+3. **Edit `CMakeUserPresets.json`** — fill in your game paths in the `base-user-env` → `environment` section:
+   ```json
+   "environment": {
+       "ATS_PLUGINS_DIR":  "C:/Program Files/Steam/steamapps/common/American Truck Simulator/bin/win_x64/plugins",
+       "ETS2_PLUGINS_DIR": "C:/Program Files/Steam/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins"
+   }
+   ```
+
+   > You can also set these via environment variables and remove them from `environment` — the `$env{}` references in `cacheVariables` will pick them up automatically.
+
+### Build
+
+Run the complete workflow (configure + build + deploy) in one command:
+
 ```bash
-git clone https://github.com/TrackAndTruckDevs/SPF-Framework.git
-cd spf-framework
+cmake --workflow --preset user-win-release
 ```
 
-Next, **configure CMake** to generate the project files. From the root of the repository, run the command for your desired build system.
+Or step by step:
 
-**For Visual Studio (Recommended)**
 ```bash
-cmake -B build -G "Visual Studio 17 2022"
+cmake --preset user-win-release
+cmake --build --preset user-win-release
 ```
 
-**For Ninja**
+### Available User Presets
+
+Presets with the `user-` prefix include deployment paths. Choose the one for your platform and build system:
+
+| Preset | Generator | Build Type |
+|---|---|---|
+| `user-win-release` | Visual Studio 17 2022 | Release |
+| `user-win-debug` | Visual Studio 17 2022 | Debug |
+| `user-win-relwithdebinfo` | Visual Studio 17 2022 | RelWithDebInfo |
+| `user-win-minsizerel` | Visual Studio 17 2022 | MinSizeRel |
+| `user-ninja-release` | Ninja + MSVC | Release |
+| `user-ninja-debug` | Ninja + MSVC | Debug |
+| `user-ninja-relwithdebinfo` | Ninja + MSVC | RelWithDebInfo |
+| `user-ninja-minsizerel` | Ninja + MSVC | MinSizeRel |
+| `user-mingw-release` | Ninja + MinGW (cross-compile) | Release |
+| `user-mingw-debug` | Ninja + MinGW (cross-compile) | Debug |
+| `user-mingw-relwithdebinfo` | Ninja + MinGW (cross-compile) | RelWithDebInfo |
+| `user-mingw-minsizerel` | Ninja + MinGW (cross-compile) | MinSizeRel |
+| `user-mingw-make-release` | Unix Makefiles + MinGW (cross-compile) | Release |
+| `user-mingw-make-debug` | Unix Makefiles + MinGW (cross-compile) | Debug |
+| `user-mingw-make-relwithdebinfo` | Unix Makefiles + MinGW (cross-compile) | RelWithDebInfo |
+| `user-mingw-make-minsizerel` | Unix Makefiles + MinGW (cross-compile) | MinSizeRel |
+
+> 💡 **Tip:** Presets without the `user-` prefix (e.g. `vs-release`, `mingw-release`)
+> build the framework without deployment paths. Use these if you just want the DLL
+> and don't need automatic copying to game directories. All presets work for both
+> the framework itself and standalone plugin projects.
+
+### Automatic Deployment
+
+When `ATS_PLUGINS_DIR` or `ETS2_PLUGINS_DIR` is set in your preset, the build automatically:
+1. Copies `spf-framework.dll` to the game's `plugins/` directory
+2. Copies the `spfAssets/localization` folder alongside it
+
+You can verify the result in the configure log:
+
+```
+  ==================== DEPLOY ====================
+
+  [ATS]      C:/SteamLibrary/steamapps/common/.../plugins
+           ✅ deployed successfully
+
+  [ETS2]
+           ⚠️  no path set
+
+  ==================== END DEPLOY ====================
+```
+
+The build log also shows ✅ / ❌ / ⚠️ status per game and per plugin — easy to spot at a glance.
+
+### Build Output
+
+After a successful build, artifacts are placed under `build/<preset>/`:
+
+| Artifact | Path |
+|---|---|
+| Framework DLL | `build/<preset>/spf-framework.dll` |
+| Plugin DLLs | `build/<preset>/plugins/<PluginName>/<PluginName>.dll` |
+
+If deployment paths were configured, the DLLs are also copied to the corresponding game directories.
+
+### Cross-Compilation on Linux
+
+To build for Windows from Linux, install MinGW and use a `mingw-*` preset:
+
 ```bash
-cmake -B build -G "Ninja"
+sudo apt install mingw-w64 mingw-w64-tools
+cmake --workflow --preset user-mingw-release
 ```
 
-**💡 Tip: Automatic Deployment**
-You can configure CMake to automatically copy the compiled DLL and resource files directly to your game's plugin folder. This can be achieved in several ways. The recommended method is to add the `GAME_PLUGINS_DIR` variable during configuration on the command line, for example:
-```bash
-cmake -B build -G "Visual Studio 17 2022" -D GAME_PLUGINS_DIR="C:/Path/to/your/game/bin/win_x64/plugins"
-```
-Alternatively, you can change the value of the `GAME_PLUGINS_DIR` variable in the `cmake-gui` graphical interface. You can also directly edit the `CMakeLists.txt` file by modifying the `set(GAME_PLUGINS_DIR ...)` line to replace the default path with your desired path. For example:
-```cmake
-set(GAME_PLUGINS_DIR "C:/Path/to/your/game/bin/win_x64/plugins" CACHE PATH "Path to the game's plugins directory")
-```
-
-Finally, once configuration is complete, **build the project** by compiling the source code:
-```bash
-cmake --build build --config Release
-```
-
-### After Building
-
-After a successful build, the compiled framework DLL, named `spf-framework.dll`, will be located in the `build/Release` directory. If you configured `GAME_PLUGINS_DIR`, this DLL and the required `spfAssets` assets folder (containing localizations) will have been automatically copied to your game's plugins directory.
+The toolchain file `cmake/toolchain-mingw.cmake` is used automatically. The `windres` RC compiler (provided by `mingw-w64-tools`) is required for the version resource.
 
 
 

@@ -1,10 +1,13 @@
 #include "SPF/Data/GameData/Finders/WindowCameraDataFinder.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
+
 #include <chrono>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -25,7 +28,7 @@ namespace {
  * 140876f02 48 8d 8b 28 03 00 00       LEA        RCX,[RBX + 0x328]              <-- LEA (Offset +0x1B)
  * 140876f09 f3 0f 11 8b 9c 05 00 00    MOVSS      dword ptr [RBX + 0x59c],XMM1   <-- Live Pitch (Offset +0x29)
  */
-const char* LIVE_YAW_PITCH_SIG = 
+const char* LIVE_YAW_PITCH_SIG =
   "F3 0F 59 [C0-FF] "
   "F3 0F 11 [80-8F] ?? ?? ?? ??"
   " 0F 2F [C0-FF] "
@@ -59,7 +62,7 @@ bool WindowCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   };
 
   // --- Step 1: Find vehicle_interior_camera SII Attributes ---
-  
+
   uintptr_t headOff = getAttr(CLASS_NAME_WINDOW, "head_offset");
   if (headOff) {
     owner.SetWindowHeadOffsetXOffset(static_cast<intptr_t>(headOff));
@@ -112,7 +115,7 @@ bool WindowCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (shakeAnim) owner.SetShakeAnimOffset(static_cast<intptr_t>(shakeAnim));
 
   // --- Step 3: Find Runtime State (Live Yaw/Pitch) via Pattern ---
-  
+
   uintptr_t addr = PatternFinder::Find(LIVE_YAW_PITCH_SIG);
   if (addr) {
     logger->Debug("2. Live Yaw/Pitch signature found at 0x{:X}", addr);
@@ -120,7 +123,7 @@ bool WindowCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     int32_t liveYaw = PatternFinder::ReadInt32(addr + 4 + 4);
     uintptr_t searchStart = addr + 12;
     uintptr_t movss2Addr = PatternFinder::Find(searchStart, 48, "F3 0F 11 [80-8F]");
-    
+
     if (movss2Addr) {
       int32_t livePitch = PatternFinder::ReadInt32(movss2Addr + 4);
 
@@ -142,17 +145,9 @@ bool WindowCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = all_found && (owner.GetWindowHeadOffsetXOffset() != 0 &&
-                           owner.GetWindowMouseLeftLimitOffset() != 0 &&
-                           owner.GetWindowLiveYawOffset() != 0 &&
-                           owner.GetWindowRelativeHeadtrackingAzimuthOffset() != 0 &&
-                           owner.GetWindowAutoCenterMoveDirectionOffset() != 0 &&
-                           owner.GetCameraFovOffset() != 0 &&
-                           owner.GetMouseSensitivityOffset() != 0 &&
-                           owner.GetShakeAnimStepOffset() != 0 &&
-                           owner.GetShakeAnimScaleMinOffset() != 0 &&
-                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
-                           owner.GetShakeAnimOffset() != 0);
+  m_isReady = all_found && (owner.GetWindowHeadOffsetXOffset() != 0 && owner.GetWindowMouseLeftLimitOffset() != 0 && owner.GetWindowLiveYawOffset() != 0 && owner.GetWindowRelativeHeadtrackingAzimuthOffset() != 0 &&
+                            owner.GetWindowAutoCenterMoveDirectionOffset() != 0 && owner.GetCameraFovOffset() != 0 && owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 &&
+                            owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetShakeAnimOffset() != 0);
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

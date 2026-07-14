@@ -1,10 +1,14 @@
 #include "SPF/Data/GameData/Finders/BehindCameraDataFinder.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
+
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -135,7 +139,7 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (dynLazSpd) owner.SetBehindDynamicOffsetLazinessSpeedOffset(static_cast<intptr_t>(dynLazSpd));
 
   // --- Step 2: Find vehicle_camera SII Attributes via Reflection Table ---
-  
+
   uintptr_t validation = getAttr(CLASS_NAME_VEHICLE_CAM, "validation");
   if (validation) owner.SetBehindValidationOffset(static_cast<intptr_t>(validation));
 
@@ -190,9 +194,18 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         if (PatternFinder::IsSaneOffset(liveYaw)) {
           owner.SetBehindLiveYawOffset(liveYaw);
           logger->Debug("4.1 [RUNTIME] LiveYaw offset found: 0x{:X}", liveYaw);
-        } else { logger->Error("4.1 [RUNTIME] Insane LiveYaw offset: 0x{:X}", liveYaw); all_found = false; }
-      } else { logger->Error("4.1 [RUNTIME] FAILED to extract ADDSS Yaw instruction."); all_found = false; }
-    } else { logger->Error("4.1 [RUNTIME] FAILED to find LiveYaw logic chain."); all_found = false; }
+        } else {
+          logger->Error("4.1 [RUNTIME] Insane LiveYaw offset: 0x{:X}", liveYaw);
+          all_found = false;
+        }
+      } else {
+        logger->Error("4.1 [RUNTIME] FAILED to extract ADDSS Yaw instruction.");
+        all_found = false;
+      }
+    } else {
+      logger->Error("4.1 [RUNTIME] FAILED to find LiveYaw logic chain.");
+      all_found = false;
+    }
 
     // 4.2 Live Pitch (Vertical)
     // Chain: MOVSS (Pitch writeback) -> [skip] -> MOV DL, 1 (Next logic block anchor).
@@ -202,8 +215,14 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       if (livePitch > 0 && livePitch < 0x7F) {
         owner.SetBehindLivePitchOffset(static_cast<intptr_t>(livePitch));
         logger->Debug("4.2 [RUNTIME] LivePitch offset found: 0x{:X}", livePitch);
-      } else { logger->Error("4.2 [RUNTIME] Insane LivePitch offset: 0x{:X}", livePitch); all_found = false; }
-    } else { logger->Error("4.2 [RUNTIME] FAILED to find LivePitch logic chain."); all_found = false; }
+      } else {
+        logger->Error("4.2 [RUNTIME] Insane LivePitch offset: 0x{:X}", livePitch);
+        all_found = false;
+      }
+    } else {
+      logger->Error("4.2 [RUNTIME] FAILED to find LivePitch logic chain.");
+      all_found = false;
+    }
 
     // 4.3 Live Zoom (Distance)
     // Chain: MOVSS (current Zoom) -> [skip] -> SUBSS (Distance Change Speed).
@@ -217,9 +236,18 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         if (verifyOff == static_cast<int32_t>(distChgSpd) && PatternFinder::IsSaneOffset(liveZoom)) {
           owner.SetBehindLiveZoomOffset(liveZoom);
           logger->Debug("4.3 [RUNTIME] LiveZoom offset verified: 0x{:X} (via distChgSpd 0x{:X})", liveZoom, verifyOff);
-        } else { logger->Error("4.3 [RUNTIME] Zoom verification FAILED. Offset: 0x{:X}, Expected Verification Offset: 0x{:X}", liveZoom, verifyOff); all_found = false; }
-      } else { logger->Error("4.3 [RUNTIME] FAILED to extract SUBSS Zoom instruction."); all_found = false; }
-    } else { logger->Error("4.3 [RUNTIME] FAILED to find LiveZoom logic chain."); all_found = false; }
+        } else {
+          logger->Error("4.3 [RUNTIME] Zoom verification FAILED. Offset: 0x{:X}, Expected Verification Offset: 0x{:X}", liveZoom, verifyOff);
+          all_found = false;
+        }
+      } else {
+        logger->Error("4.3 [RUNTIME] FAILED to extract SUBSS Zoom instruction.");
+        all_found = false;
+      }
+    } else {
+      logger->Error("4.3 [RUNTIME] FAILED to find LiveZoom logic chain.");
+      all_found = false;
+    }
 
   } else {
     logger->Error("4.[RUNTIME] FAILED to find UpdateCameraInput function anchor.");
@@ -227,40 +255,14 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = all_found && (owner.GetBehindDistanceMinOffset() != 0 &&
-                           owner.GetBehindDistanceMaxOffset() != 0 &&
-                           owner.GetBehindDistanceTrailerMaxOffset() != 0 &&
-                           owner.GetBehindDistanceDefaultOffset() != 0 &&
-                           owner.GetBehindDistanceTrailerDefaultOffset() != 0 &&
-                           owner.GetBehindDistanceChangeSpeedOffset() != 0 &&
-                           owner.GetBehindDistanceLazinessSpeedOffset() != 0 &&
-                           owner.GetBehindAzimuthLazinessSpeedOffset() != 0 &&
-                           owner.GetBehindElevationMinOffset() != 0 &&
-                           owner.GetBehindElevationMaxOffset() != 0 &&
-                           owner.GetBehindElevationDefaultOffset() != 0 &&
-                           owner.GetBehindElevationTrailerDefaultOffset() != 0 &&
-                           owner.GetBehindHeightLimitOffset() != 0 &&
-                           owner.GetBehindPivotXOffset() != 0 &&
-                           owner.GetBehindPivotYOffset() != 0 &&
-                           owner.GetBehindPivotZOffset() != 0 &&
-                           owner.GetBehindDynamicOffsetMaxOffset() != 0 &&
-                           owner.GetBehindDynamicOffsetSpeedMinOffset() != 0 &&
-                           owner.GetBehindDynamicOffsetSpeedMaxOffset() != 0 &&
-                           owner.GetBehindDynamicOffsetLazinessSpeedOffset() != 0 &&
-                           owner.GetBehindLiveYawOffset() != 0 &&
-                           owner.GetBehindLivePitchOffset() != 0 &&
-                           owner.GetBehindLiveZoomOffset() != 0 &&
-                           owner.GetBehindValidationOffset() != 0 &&
-                           owner.GetBehindValidationSpeedPositiveOffset() != 0 &&
-                           owner.GetBehindValidationSpeedNegativeOffset() != 0 &&
-                           owner.GetBehindValidationRadiusOffset() != 0 &&
-                           owner.GetBehindSpeedFovChangeFactorOffset() != 0 &&
-                           owner.GetCameraFovOffset() != 0 &&
-                           owner.GetMouseSensitivityOffset() != 0 &&
-                           owner.GetShakeAnimStepOffset() != 0 &&
-                           owner.GetShakeAnimScaleMinOffset() != 0 &&
-                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
-                           owner.GetShakeAnimOffset() != 0);
+  m_isReady = all_found && (owner.GetBehindDistanceMinOffset() != 0 && owner.GetBehindDistanceMaxOffset() != 0 && owner.GetBehindDistanceTrailerMaxOffset() != 0 && owner.GetBehindDistanceDefaultOffset() != 0 &&
+                            owner.GetBehindDistanceTrailerDefaultOffset() != 0 && owner.GetBehindDistanceChangeSpeedOffset() != 0 && owner.GetBehindDistanceLazinessSpeedOffset() != 0 && owner.GetBehindAzimuthLazinessSpeedOffset() != 0 &&
+                            owner.GetBehindElevationMinOffset() != 0 && owner.GetBehindElevationMaxOffset() != 0 && owner.GetBehindElevationDefaultOffset() != 0 && owner.GetBehindElevationTrailerDefaultOffset() != 0 &&
+                            owner.GetBehindHeightLimitOffset() != 0 && owner.GetBehindPivotXOffset() != 0 && owner.GetBehindPivotYOffset() != 0 && owner.GetBehindPivotZOffset() != 0 && owner.GetBehindDynamicOffsetMaxOffset() != 0 &&
+                            owner.GetBehindDynamicOffsetSpeedMinOffset() != 0 && owner.GetBehindDynamicOffsetSpeedMaxOffset() != 0 && owner.GetBehindDynamicOffsetLazinessSpeedOffset() != 0 && owner.GetBehindLiveYawOffset() != 0 &&
+                            owner.GetBehindLivePitchOffset() != 0 && owner.GetBehindLiveZoomOffset() != 0 && owner.GetBehindValidationOffset() != 0 && owner.GetBehindValidationSpeedPositiveOffset() != 0 &&
+                            owner.GetBehindValidationSpeedNegativeOffset() != 0 && owner.GetBehindValidationRadiusOffset() != 0 && owner.GetBehindSpeedFovChangeFactorOffset() != 0 && owner.GetCameraFovOffset() != 0 &&
+                            owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 && owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetShakeAnimOffset() != 0);
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

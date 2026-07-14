@@ -1,56 +1,61 @@
-#include "SPF/Namespace.hpp"
-#include <SPF/Core/Core.hpp>
+#include "SPF/Core/Core.hpp"
 
-// --- Standard Library ---
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/ConfigService.hpp"
+#include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Data/GameData/ClimateService.hpp"
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
+#include "SPF/Data/GameData/GameObjectSessionService.hpp"
+#include "SPF/Data/GameData/GameObjectVehicleService.hpp"
+#include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Events/ConfigEvents.hpp"
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/Proxies/WndProcEventProxy.hpp"
+#include "SPF/Events/SystemEvents.hpp"
+#include "SPF/Events/UIEvents.hpp"
+#include "SPF/GameCamera/GameCameraManager.hpp"
+#include "SPF/GameConsole/GameConsole.hpp"
+#include "SPF/Hooks/CameraHooks.hpp"
+#include "SPF/Hooks/GameLogHook.hpp"
+#include "SPF/Hooks/HookManager.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Input/InputManager.hpp"
+#include "SPF/Input/SCS/SCSInputService.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
+#include "SPF/Modules/HandleManager.hpp"
+#include "SPF/Modules/IInputService.hpp"
+#include "SPF/Modules/InputFactory.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Modules/PluginManager.hpp"
+#include "SPF/Renderer/Renderer.hpp"
+#include "SPF/System/ApiService.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
+#include "SPF/System/PathManager.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/SCSTelemetryService.hpp"
+#include "SPF/UI/ImGuiInputConsumer.hpp"
+#include "SPF/UI/UIManager.hpp"
+#include "SPF/Utils/Signal.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+#include "scssdk_telemetry.h"
+
+#include <chrono>
 #include <debugapi.h>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <minwindef.h>
+#include <mutex>
 #include <set>
+#include <string>
+#include <thread>
+#include <utility>
 #include <vector>
-
-// --- Framework ---
-#include <SPF/Config/ConfigService.hpp>
-#include <SPF/Core/InitializationReport.hpp>
-#include <SPF/Events/EventManager.hpp>
-#include <SPF/Events/Proxies/WndProcEventProxy.hpp>
-#include <SPF/Events/UIEvents.hpp>
-#include <SPF/Events/SystemEvents.hpp>  //  For system-level events
-#include <SPF/Events/ConfigEvents.hpp>
-#include <SPF/Input/InputEvents.hpp>
-#include <SPF/Hooks/HookManager.hpp>
-#include <SPF/Hooks/GameLogHook.hpp>
-#include <SPF/Input/InputManager.hpp>
-#include <SPF/Localization/LocalizationManager.hpp>
-#include <SPF/Logging/LoggerFactory.hpp>
-#include <SPF/Modules/HandleManager.hpp>
-#include <SPF/Modules/KeyBindsManager.hpp>
-#include <SPF/Modules/PluginManager.hpp>
-#include <SPF/Renderer/Renderer.hpp>
-#include <SPF/System/PathManager.hpp>
-#include <SPF/System/EnvironmentManager.hpp>
-#include <SPF/UI/ImGuiInputConsumer.hpp>
-#include <SPF/UI/UIManager.hpp>
-#include <SPF/Modules/IBindableInput.hpp>  // Added to get full definition for event handlers
-#include <SPF/Modules/InputFactory.hpp>    // Added for conflict resolution
-#include <SPF/System/ApiService.hpp>       //  For ApiService
-#include <SPF/Modules/CommunicationManager.hpp>   //  For CommunicationManager
-#include <SPF/Utils/Signal.hpp>
-
-// ADDED: Telemetry module includes
-#include <SPF/Telemetry/GameContext.hpp>
-#include <SPF/Telemetry/SCSTelemetryService.hpp>
-#include <SPF/Modules/IInputService.hpp>
-#include <SPF/Input/SCS/SCSInputService.hpp>
-#include <SPF/GameConsole/GameConsole.hpp>
-#include <SPF/Hooks/CameraHooks.hpp>
-#include <SPF/GameCamera/GameCameraManager.hpp>
-#include <SPF/Data/GameData/GameDataCameraService.hpp>
-#include <SPF/Data/GameData/GameObjectVehicleService.hpp>
-#include <SPF/Data/GameData/GameWorldService.hpp>
-#include <SPF/Data/GameData/GameObjectFileSystemService.hpp>
-#include <SPF/Data/GameData/GameObjectSessionService.hpp>
-#include <SPF/Data/GameData/ClimateService.hpp>
 
 using namespace SPF::Logging;
 using namespace SPF::Events;
@@ -73,7 +78,7 @@ Core::Core(HMODULE module)
       m_telemetryReady(false),
       m_inputReady(false),
       m_eventManager(std::make_unique<EventManager>()),
-      m_configService(std::make_unique<Config::ConfigService>(*m_eventManager)), // Initialize ConfigService here
+      m_configService(std::make_unique<Config::ConfigService>(*m_eventManager)),
       m_inputManager(std::make_unique<Input::InputManager>(*m_eventManager)),
       m_onPluginWillBeLoadedSink(std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeLoaded&)>>(m_eventManager->System.OnPluginWillBeLoaded)),
       m_onPluginWillBeUnloadedSink(std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded)),
@@ -87,8 +92,7 @@ Core::Core(HMODULE module)
       m_onRequestInputCaptureCancelSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestInputCaptureCancel&)>>(m_eventManager->System.OnRequestInputCaptureCancel)),
       m_onRequestBindingUpdateSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestBindingUpdate&)>>(m_eventManager->System.OnRequestBindingUpdate)),
       m_onRequestDeleteBindingSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestDeleteBinding&)>>(m_eventManager->System.OnRequestDeleteBinding)),
-      m_onRequestBindingPropertyUpdateSink(
-          std::make_unique<Utils::Sink<void(const Events::UI::RequestBindingPropertyUpdate&)>>(m_eventManager->System.OnRequestBindingPropertyUpdate)),
+      m_onRequestBindingPropertyUpdateSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestBindingPropertyUpdate&)>>(m_eventManager->System.OnRequestBindingPropertyUpdate)),
       m_onKeybindsModifiedSink(std::make_unique<Utils::Sink<void(const Events::Config::OnKeybindsModified&)>>(m_eventManager->System.OnKeybindsModified)),
       m_onTelemetryFrameStartSink(std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnTelemetryFrameStart)),
       m_onGameWorldReadySink(std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnGameWorldReady)),
@@ -98,11 +102,8 @@ Core::Core(HMODULE module)
       m_onRequestUpdateCheckSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>>(m_eventManager->System.OnRequestUpdateCheck)),
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
       m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
-      m_onPatronsFetchCompletedSink(
-          std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
-      m_onUsageTrackingCompletedSink(
-          std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted))
-      {}
+      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
+      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -222,7 +223,7 @@ void Core::TryStartInitialization() {
   m_configurableServices.clear();
   // Re-add the persistent services that are not re-created in the functions below.
   m_configurableServices.push_back(&Logging::LoggerFactory::GetInstance());
-  
+
   auto managersStartTime = std::chrono::steady_clock::now();
   InitManagersAndPlugins();
 
@@ -354,7 +355,7 @@ void Core::FullShutdown() {
   m_inputReady = false;
 
   m_lifecycleState = LifecycleState::Stopped;
-  
+
   if (m_shutdownStartTime.time_since_epoch().count() != 0) {
     auto endTime = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - m_shutdownStartTime).count();
@@ -388,9 +389,9 @@ void Core::InitFeatureHooks() {
 
   if (!frameworkSettings.contains("hook_states")) {
     if (isNewInstall) {
-        m_logger->Debug("'hook_states' not found in framework settings (expected for new install). Hooks will use default values.");
+      m_logger->Debug("'hook_states' not found in framework settings (expected for new install). Hooks will use default values.");
     } else {
-        m_logger->Warn("'hook_states' not found in framework settings. Hooks will use default values.");
+      m_logger->Warn("'hook_states' not found in framework settings. Hooks will use default values.");
     }
     return;
   }
@@ -407,11 +408,11 @@ void Core::InitFeatureHooks() {
     } else {
       // If no config entry, use the hook's default enabled state
       hookManager.ReconcileHookState(hook, hook->IsEnabled());
-      
+
       if (isNewInstall) {
-          m_logger->Debug("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
+        m_logger->Debug("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
       } else {
-          m_logger->Warn("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
+        m_logger->Warn("No config entry found for hook: {}. Using default state (Enabled: {}).", hookName, hook->IsEnabled());
       }
     }
   }
@@ -728,7 +729,7 @@ void Core::PerformDeferredInitialization() {
   // --- FINAL DETAILED REPORT ---
   auto now = std::chrono::steady_clock::now();
   auto mainInitTotal = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_mainInitStartTime).count();
-  
+
   m_logger->Info("<<<---------- FRAMEWORK LOADING REPORT ---------->>>");
   m_logger->Info("  -> Preload phase (DLL attach):     {:>5} ms", m_preloadMs);
   m_logger->Info("  -> [Main Init] (Click to ready):   {:>5} ms", mainInitTotal);
@@ -744,19 +745,19 @@ void Core::PerformDeferredInitialization() {
 void Core::Update() {
   // This is the main update loop for logic that is not tied to telemetry frames.
   // It's called by the renderer on every visual frame.
-  
+
   // 1. Process deferred tasks
   {
-      auto now = std::chrono::steady_clock::now();
-      std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
-      for (auto it = m_deferredTasks.begin(); it != m_deferredTasks.end(); ) {
-          if (now >= it->triggerTime) {
-              it->action();
-              it = m_deferredTasks.erase(it);
-          } else {
-              ++it;
-          }
+    auto now = std::chrono::steady_clock::now();
+    std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+    for (auto it = m_deferredTasks.begin(); it != m_deferredTasks.end();) {
+      if (now >= it->triggerTime) {
+        it->action();
+        it = m_deferredTasks.erase(it);
+      } else {
+        ++it;
       }
+    }
   }
 
   if (m_inputManager) {
@@ -814,24 +815,15 @@ void Core::BindEventHandlers() {
 
 void Core::OnRequestExecuteCommand(const Events::UI::RequestExecuteCommand& e) { GameConsole::GetInstance().Execute(e.command); }
 
-void Core::OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e) {
-  m_communicationManager->RequestUpdateCheck(e.force);
-}
+void Core::OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e) { m_communicationManager->RequestUpdateCheck(e.force); }
 
-void Core::OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e) {
-  m_communicationManager->RequestPatronsFetch(e.force);
-}
+void Core::OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e) { m_communicationManager->RequestPatronsFetch(e.force); }
 
-void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
-  UIManager::GetInstance().NotifyUpdateCheckCompleted(e);
-}
+void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) { UIManager::GetInstance().NotifyUpdateCheckCompleted(e); }
 
-void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
-  UIManager::GetInstance().NotifyPatronsFetchCompleted(e);
-}
+void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
 
-void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {
-}
+void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
 
 void Core::OnGameWorldReady() {
   m_logger->Info("OnGameWorldReady event received. Finalizing component initialization...");
@@ -947,10 +939,10 @@ void Core::OnRequestPluginStateChange(const Events::UI::RequestPluginStateChange
   } else {
     // Dependencies are processed on the OnPluginWillBeUnloaded event.
     Modules::PluginManager::GetInstance().QueuePluginForUnload(e.pluginName);
-    
+
     // Ensure all dirty settings are saved to disk before/during unloading
     if (m_configService) {
-        m_configService->SaveAllDirty();
+      m_configService->SaveAllDirty();
     }
   }
 
@@ -1012,23 +1004,23 @@ void Core::OnSettingWasChanged(const Events::UI::OnSettingWasChanged& e) {
   // If the framework's language changes, we notify ALL plugins via the dedicated OnLanguageChanged callback.
   // This broadcast only happens if the 'sync_plugin_languages' setting is enabled in the framework config.
   if (e.componentName == "framework" && fullKeyPath == "localization.language") {
-      bool shouldSync = m_configService->GetValue("framework", "localization.sync_plugin_languages", false).get<bool>();
-      
-      if (shouldSync) {
-          std::string newLangCode;
-          if (e.newValue.is_object() && e.newValue.contains("_value")) {
-              newLangCode = e.newValue["_value"].get<std::string>();
-          } else if (e.newValue.is_string()) {
-              newLangCode = e.newValue.get<std::string>();
-          }
+    bool shouldSync = m_configService->GetValue("framework", "localization.sync_plugin_languages", false).get<bool>();
 
-          if (!newLangCode.empty()) {
-              m_logger->Info("Broadcasting framework language change to all plugins: '{}'", newLangCode);
-              PluginManager::GetInstance().NotifyAllPluginsOfLanguageChange(newLangCode);
-          }
-      } else {
-          m_logger->Debug("Framework language changed, but plugin synchronization is disabled.");
+    if (shouldSync) {
+      std::string newLangCode;
+      if (e.newValue.is_object() && e.newValue.contains("_value")) {
+        newLangCode = e.newValue["_value"].get<std::string>();
+      } else if (e.newValue.is_string()) {
+        newLangCode = e.newValue.get<std::string>();
       }
+
+      if (!newLangCode.empty()) {
+        m_logger->Info("Broadcasting framework language change to all plugins: '{}'", newLangCode);
+        PluginManager::GetInstance().NotifyAllPluginsOfLanguageChange(newLangCode);
+      }
+    } else {
+      m_logger->Debug("Framework language changed, but plugin synchronization is disabled.");
+    }
   }
 
   // --- DISPATCH TO PLUGINS IF NOT HANDLED ---
@@ -1052,7 +1044,7 @@ void Core::OnInputCaptured(const Input::InputCaptured& e) {
 
     // Re-create the input object to pass ownership to the new event, as the original event is const.
     auto newCapturedInput = Modules::InputFactory::CreateFromJson(e.capturedInput->ToJson());
-    
+
     InputCaptureConflict conflict_data{e.actionFullName, std::move(newCapturedInput), std::move(conflicts), e.originalBinding};
     m_eventManager->System.OnInputCaptureConflict.Call(conflict_data);
   } else {
@@ -1095,9 +1087,7 @@ void Core::OnRequestBindingUpdate(const Events::UI::RequestBindingUpdate& e) {
 
 void Core::OnRequestDeleteBinding(const Events::UI::RequestDeleteBinding& e) { m_configService->DeleteBinding(e.actionFullName, e.bindingToDelete); }
 
-void Core::OnRequestBindingPropertyUpdate(const Events::UI::RequestBindingPropertyUpdate& e) {
-  m_configService->UpdateBindingProperty(e.actionFullName, e.originalBinding, e.propertyName, e.newValue);
-}
+void Core::OnRequestBindingPropertyUpdate(const Events::UI::RequestBindingPropertyUpdate& e) { m_configService->UpdateBindingProperty(e.actionFullName, e.originalBinding, e.propertyName, e.newValue); }
 
 void Core::OnKeybindsModified(const Events::Config::OnKeybindsModified& e) {
   m_logger->Info("Keybindings were modified. Updating KeyBindsManager...");
@@ -1185,9 +1175,9 @@ void Core::ShutdownInputService() {
 void Core::ExecuteCommand(const std::string& command) { GameConsole::GetInstance().Execute(command); }
 
 void Core::ScheduleTask(std::chrono::milliseconds delay, std::function<void()> action) {
-    auto triggerTime = std::chrono::steady_clock::now() + delay;
-    std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
-    m_deferredTasks.push_back({triggerTime, std::move(action)});
+  auto triggerTime = std::chrono::steady_clock::now() + delay;
+  std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+  m_deferredTasks.push_back({triggerTime, std::move(action)});
 }
 
 }  // namespace Core

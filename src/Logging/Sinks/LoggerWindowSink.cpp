@@ -1,12 +1,21 @@
 #include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Logging/Logger.hpp"
+
+#include "fmt/base.h"
+
 #include <fmt/format.h>
+#include <mutex>
+#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Logging::Sinks {
 
-LoggerWindowSink::LoggerWindowSink() {
-    m_name = "ui_sink";
-}
+LoggerWindowSink::LoggerWindowSink() { m_name = "ui_sink"; }
 
 void LoggerWindowSink::Log(const LogMessage& msg) {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -14,11 +23,10 @@ void LoggerWindowSink::Log(const LogMessage& msg) {
   m_items.push_back({.level = msg.level, .logger_name = std::string(msg.logger_name.data(), msg.logger_name.size()), .message = fmt::to_string(msg.formatted_message)});
 }
 
-fmt::string_view LoggerWindowSink::GetName() const {
-    return m_name;
-}
+fmt::string_view LoggerWindowSink::GetName() const { return m_name; }
 
-std::vector<LoggerWindowSink::DisplayMessage> LoggerWindowSink::GetMessages() const {  std::lock_guard<std::mutex> lock(m_mutex);
+std::vector<LoggerWindowSink::DisplayMessage> LoggerWindowSink::GetMessages() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
   return m_items;
 }
 

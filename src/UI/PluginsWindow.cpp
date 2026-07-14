@@ -1,17 +1,28 @@
 #include "SPF/UI/PluginsWindow.hpp"
-#include "SPF/UI/UIManager.hpp"
-#include "SPF/UI/Icons.hpp"
-#include "SPF/UI/UITypographyHelper.hpp"
-#include "SPF/UI/UIStyle.hpp"
-#include "SPF/UI/UIElements.hpp"
-#include "SPF/Modules/PluginManager.hpp"
-#include "SPF/Modules/IInputService.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Modules/IInputService.hpp"
+#include "SPF/Modules/PluginManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/Icons.hpp"
+#include "SPF/UI/UIElements.hpp"
+#include "SPF/UI/UIManager.hpp"
+#include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "imgui.h"
+
+#include <algorithm>
+#include <cstddef>
+#include <optional>
+#include <shellapi.h>
 #include <string>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -111,7 +122,7 @@ void PluginsWindow::RenderContent() {
         float totalRightWidth = 0.0f;
         float spacing = ImGui::GetStyle().ItemSpacing.x;
         float framePaddingX = ImGui::GetStyle().FramePadding.x;
-        
+
         // Accumulate widths for active blocks
         std::vector<float> blockWidths;
         int activeBlocksCount = 0;
@@ -259,7 +270,12 @@ void PluginsWindow::RenderContent() {
         ImGui::Separator();
 
         ImGui::Spacing();
-        struct SocialLink { const char* icon; std::string url; const char* name; ImVec4 color; };
+        struct SocialLink {
+          const char* icon;
+          std::string url;
+          const char* name;
+          ImVec4 color;
+        };
         std::vector<SocialLink> links;
         auto addLink = [&](const std::optional<std::string>& url, const char* icon, const char* name, ImVec4 color) {
           if (url && !url->empty()) links.push_back({icon, *url, name, color});
@@ -283,10 +299,10 @@ void PluginsWindow::RenderContent() {
           for (const auto& link : links) {
             totalIconsWidth += ImGui::CalcTextSize(link.icon).x + buttonPaddingX;
           }
-          
+
           // Calculate spacing to distribute icons evenly
           float spacing = (contentWidth - totalIconsWidth) / (float)(links.size() + 1);
-          
+
           // Ensure spacing is not negative and has a minimum
           spacing = (std::max)(spacing, ImGui::GetStyle().ItemSpacing.x);
 
@@ -295,11 +311,11 @@ void PluginsWindow::RenderContent() {
 
           for (size_t i = 0; i < links.size(); ++i) {
             if (i > 0) ImGui::SameLine(0, spacing);
-            
+
             if (Button(links[i].icon, TextStyle::DefaultButton().Color(links[i].color))) {
-                ShellExecute(NULL, "open", links[i].url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+              ShellExecute(NULL, "open", links[i].url.c_str(), NULL, NULL, SW_SHOWNORMAL);
             }
-            
+
             if (ImGui::IsItemHovered()) {
               ImGui::SetTooltip("%s", links[i].name);
             }
@@ -328,7 +344,7 @@ void PluginsWindow::RenderContent() {
 
       if (ImGui::BeginPopupModal(descriptionTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
         ImGui::BeginChild("description_scroll_region", ImVec2(500, 250), false, ImGuiWindowFlags_HorizontalScrollbar);
-        
+
         std::string description;
         if (componentInfo.descriptionLiteral.has_value()) {
           description = componentInfo.descriptionLiteral.value();
@@ -337,7 +353,7 @@ void PluginsWindow::RenderContent() {
         }
 
         if (!description.empty()) {
-            Typography::RenderMarkdownText(description, TextStyle::Regular().Wrapped(true));
+          Typography::RenderMarkdownText(description, TextStyle::Regular().Wrapped(true));
         }
 
         ImGui::EndChild();

@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,29 +140,29 @@ typedef uint32_t (*SPF_GW_GetGameWeek_t)();
  * @brief API for interacting with the core game world state and time.
  */
 typedef struct SPF_GameWorld_API {
-    SPF_GW_IsReady_t GW_IsReady;
-    SPF_GW_IsFinderReady_t GW_IsFinderReady;
-    SPF_GW_AreAllOffsetsFound_t GW_AreAllOffsetsFound;
-    SPF_GW_RefreshOffsets_t GW_RefreshOffsets;
+  SPF_GW_IsReady_t GW_IsReady;
+  SPF_GW_IsFinderReady_t GW_IsFinderReady;
+  SPF_GW_AreAllOffsetsFound_t GW_AreAllOffsetsFound;
+  SPF_GW_RefreshOffsets_t GW_RefreshOffsets;
 
-    SPF_GW_GetPreviewTime_t GW_GetPreviewTime;
-    SPF_GW_SetPreviewTime_t GW_SetPreviewTime;
-    SPF_GW_GetSimulationTime_t GW_GetSimulationTime;
-    SPF_GW_SetSimulationTime_t GW_SetSimulationTime;
-    SPF_GW_SetSkyboxAutoUpdate_t GW_SetSkyboxAutoUpdate;
+  SPF_GW_GetPreviewTime_t GW_GetPreviewTime;
+  SPF_GW_SetPreviewTime_t GW_SetPreviewTime;
+  SPF_GW_GetSimulationTime_t GW_GetSimulationTime;
+  SPF_GW_SetSimulationTime_t GW_SetSimulationTime;
+  SPF_GW_SetSkyboxAutoUpdate_t GW_SetSkyboxAutoUpdate;
 
-    SPF_GW_GetRealPlayTime_t GW_GetRealPlayTime;
-    SPF_GW_GetMapScale_t GW_GetMapScale;
-    SPF_GW_GetGlobalWarp_t GW_GetGlobalWarp;
-    SPF_GW_SetGlobalWarp_t GW_SetGlobalWarp;
-    SPF_GW_IsGamePaused_t GW_IsGamePaused;
-    SPF_GW_SetGamePaused_t GW_SetGamePaused;
-    SPF_GW_SetEngineHalt_t GW_SetEngineHalt;
-    SPF_GW_GetRealDeltaTime_t GW_GetRealDeltaTime;
+  SPF_GW_GetRealPlayTime_t GW_GetRealPlayTime;
+  SPF_GW_GetMapScale_t GW_GetMapScale;
+  SPF_GW_GetGlobalWarp_t GW_GetGlobalWarp;
+  SPF_GW_SetGlobalWarp_t GW_SetGlobalWarp;
+  SPF_GW_IsGamePaused_t GW_IsGamePaused;
+  SPF_GW_SetGamePaused_t GW_SetGamePaused;
+  SPF_GW_SetEngineHalt_t GW_SetEngineHalt;
+  SPF_GW_GetRealDeltaTime_t GW_GetRealDeltaTime;
 
-    SPF_GW_GetGameDay_t GW_GetGameDay;
-    SPF_GW_GetDayOfWeek_t GW_GetDayOfWeek;
-    SPF_GW_GetGameWeek_t GW_GetGameWeek;
+  SPF_GW_GetGameDay_t GW_GetGameDay;
+  SPF_GW_GetDayOfWeek_t GW_GetDayOfWeek;
+  SPF_GW_GetGameWeek_t GW_GetGameWeek;
 } SPF_GameWorld_API;
 
 #ifdef __cplusplus

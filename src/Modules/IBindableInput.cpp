@@ -1,5 +1,8 @@
 #include "SPF/Modules/IBindableInput.hpp"
 
+#include "SPF/Namespace.hpp"
+
+
 SPF_NS_BEGIN
 namespace Modules {
 // Base class has no implementation for most methods,

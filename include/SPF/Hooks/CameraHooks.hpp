@@ -1,8 +1,12 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Hooks/IHook.hpp"
-#include <string>
+
 #include <cstdint>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace Hooks {
@@ -53,7 +57,7 @@ class CameraHooks : public IHook {
   // ActivateCameraByIDFunc GetActivateCameraByIDFunc() const { return m_activateCameraByIDFunc; } //for Photo Camera
   uintptr_t GetDebugCameraHandleInputFunc() const { return m_debugCameraHandleInputFunc; }
 
-  private:
+ private:
   CameraHooks();
   ~CameraHooks() = default;
 

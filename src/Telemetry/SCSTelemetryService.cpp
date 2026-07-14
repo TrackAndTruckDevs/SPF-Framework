@@ -1,26 +1,47 @@
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 
-#include <cstring>
+#include "SPF/Namespace.hpp"
 
-#include "SPF/Logging/Logger.hpp"
-#include "SPF/Telemetry/GameContext.hpp"
-#include "SPF/Telemetry/GameDataProcessor.hpp"
-#include "SPF/Telemetry/TruckProcessor.hpp"
-#include "SPF/Telemetry/TrailerProcessor.hpp"
-#include "SPF/Telemetry/JobProcessor.hpp"
-#include "SPF/Telemetry/EventsProcessor.hpp"
-#include "SPF/Telemetry/ControlsProcessor.hpp"
-#include "SPF/Telemetry/GearboxProcessor.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/TelemetryEvents.hpp"
-#include "SPF/Telemetry/ConfigAttributeReader.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/ControlsProcessor.hpp"
+#include "SPF/Telemetry/EventsProcessor.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/GameDataProcessor.hpp"
+#include "SPF/Telemetry/GearboxProcessor.hpp"
+#include "SPF/Telemetry/JobProcessor.hpp"
+#include "SPF/Telemetry/SCS/Common.hpp"
+#include "SPF/Telemetry/SCS/Controls.hpp"
+#include "SPF/Telemetry/SCS/Events.hpp"
+#include "SPF/Telemetry/SCS/Gearbox.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Telemetry/TrailerProcessor.hpp"
+#include "SPF/Telemetry/TruckProcessor.hpp"
+#include "SPF/Utils/Signal.hpp"
+
+#include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <vector>
+
+// IWYU insists on a direct provider for _s functions.
+// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <sec_api/stdio_s.h>
+#endif
 
 SPF_NS_BEGIN
 namespace Telemetry {
 using namespace Modules;
 
-SCSTelemetryService::SCSTelemetryService(Logging::Logger& logger, GameContext& context, Events::EventManager& eventManager)
-    : m_logger(logger), m_context(context), m_eventManager(eventManager) {
+SCSTelemetryService::SCSTelemetryService(Logging::Logger& logger, GameContext& context, Events::EventManager& eventManager) : m_logger(logger), m_context(context), m_eventManager(eventManager) {
   m_gameDataProcessor = std::make_unique<GameDataProcessor>(logger, context, m_eventManager);
   m_truckProcessor = std::make_unique<TruckProcessor>(logger, context);
   m_trailerProcessor = std::make_unique<TrailerProcessor>(logger, context);
@@ -115,7 +136,7 @@ void SCSTelemetryService::Initialize(const scs_telemetry_init_params_t* const pa
     if (strcmp(versioned_params->common.game_id, SCS_GAME_ID_EUT2) == 0) {
       registerForChannel(SCS_TELEMETRY_TRUCK_CHANNEL_adblue, SCS_U32_NIL, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
       registerForChannel(SCS_TELEMETRY_TRUCK_CHANNEL_adblue_warning, SCS_U32_NIL, SCS_VALUE_TYPE_bool, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-      //registerForChannel(SCS_TELEMETRY_TRUCK_CHANNEL_adblue_average_consumption, SCS_U32_NIL, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+      // registerForChannel(SCS_TELEMETRY_TRUCK_CHANNEL_adblue_average_consumption, SCS_U32_NIL, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
     }
 
     registerForChannel(SCS_TELEMETRY_TRUCK_CHANNEL_oil_pressure, SCS_U32_NIL, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
@@ -227,22 +248,14 @@ void SCSTelemetryService::UpdateTruckWheelChannels(scs_u32_t wheel_count) {
 
   // Register channels for new wheels.
   while (m_registered_truck_wheel_count < wheel_count) {
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_susp_deflection, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_on_ground, m_registered_truck_wheel_count, SCS_VALUE_TYPE_bool, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_substance, m_registered_truck_wheel_count, SCS_VALUE_TYPE_u32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_velocity, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_steering, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_rotation, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_lift, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_wheel_lift_offset, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_susp_deflection, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_on_ground, m_registered_truck_wheel_count, SCS_VALUE_TYPE_bool, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_substance, m_registered_truck_wheel_count, SCS_VALUE_TYPE_u32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_velocity, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_steering, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_rotation, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_lift, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_wheel_lift_offset, m_registered_truck_wheel_count, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
     ++m_registered_truck_wheel_count;
   }
 }
@@ -258,8 +271,7 @@ void SCSTelemetryService::UpdateHShifterSelectorChannels(scs_u32_t selector_coun
 
   // Register channels for new selectors.
   while (m_registered_hshifter_selector_count < selector_count) {
-    m_register_for_channel(
-        SCS_TELEMETRY_TRUCK_CHANNEL_hshifter_selector, m_registered_hshifter_selector_count, SCS_VALUE_TYPE_bool, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    m_register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_hshifter_selector, m_registered_hshifter_selector_count, SCS_VALUE_TYPE_bool, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
     ++m_registered_hshifter_selector_count;
   }
 }
@@ -316,7 +328,7 @@ void SCSTelemetryService::HandleConfiguration(const scs_telemetry_configuration_
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_substances) == 0) {
     m_gameDataProcessor->HandleConfiguration(info);
 
-  m_eventManager.System.Telemetry.OnCommonDataUpdated.Call(m_gameDataProcessor->GetCommonData());
+    m_eventManager.System.Telemetry.OnCommonDataUpdated.Call(m_gameDataProcessor->GetCommonData());
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_controls) == 0 || strcmp(info->id, SCS_TELEMETRY_CONFIG_hshifter) == 0) {
     m_gearboxProcessor->HandleConfiguration(info);
 
@@ -458,61 +470,33 @@ const std::string& SCSTelemetryService::GetLastGameplayEventId() const { return 
 float SCSTelemetryService::GetDeltaTime() const { return m_deltaTime; }
 
 // --- Signal Accessors (ITelemetryService Implementation) ---
-Utils::Signal<void(const SCS::GameState&)>& SCSTelemetryService::GetGameStateSignal() {
-    return m_eventManager.System.Telemetry.OnGameStateUpdated;
-}
+Utils::Signal<void(const SCS::GameState&)>& SCSTelemetryService::GetGameStateSignal() { return m_eventManager.System.Telemetry.OnGameStateUpdated; }
 
-Utils::Signal<void(const SCS::Timestamps&)>& SCSTelemetryService::GetTimestampsSignal() {
-    return m_eventManager.System.Telemetry.OnTimestampsUpdated;
-}
+Utils::Signal<void(const SCS::Timestamps&)>& SCSTelemetryService::GetTimestampsSignal() { return m_eventManager.System.Telemetry.OnTimestampsUpdated; }
 
-Utils::Signal<void(const SCS::CommonData&)>& SCSTelemetryService::GetCommonDataSignal() {
-    return m_eventManager.System.Telemetry.OnCommonDataUpdated;
-}
+Utils::Signal<void(const SCS::CommonData&)>& SCSTelemetryService::GetCommonDataSignal() { return m_eventManager.System.Telemetry.OnCommonDataUpdated; }
 
-Utils::Signal<void(const SCS::TruckConstants&)>& SCSTelemetryService::GetTruckConstantsSignal() {
-    return m_eventManager.System.Telemetry.OnTruckConstantsChanged;
-}
+Utils::Signal<void(const SCS::TruckConstants&)>& SCSTelemetryService::GetTruckConstantsSignal() { return m_eventManager.System.Telemetry.OnTruckConstantsChanged; }
 
-Utils::Signal<void(const SCS::TrailerConstants&)>& SCSTelemetryService::GetTrailerConstantsSignal() {
-    return m_eventManager.System.Telemetry.OnTrailerConstantsChanged;
-}
+Utils::Signal<void(const SCS::TrailerConstants&)>& SCSTelemetryService::GetTrailerConstantsSignal() { return m_eventManager.System.Telemetry.OnTrailerConstantsChanged; }
 
-Utils::Signal<void(const SCS::TruckData&)>& SCSTelemetryService::GetTruckDataSignal() {
-    return m_eventManager.System.Telemetry.OnTruckDataUpdated;
-}
+Utils::Signal<void(const SCS::TruckData&)>& SCSTelemetryService::GetTruckDataSignal() { return m_eventManager.System.Telemetry.OnTruckDataUpdated; }
 
-Utils::Signal<void(const std::vector<SCS::Trailer>&)>& SCSTelemetryService::GetTrailersSignal() {
-    return m_eventManager.System.Telemetry.OnTrailersUpdated;
-}
+Utils::Signal<void(const std::vector<SCS::Trailer>&)>& SCSTelemetryService::GetTrailersSignal() { return m_eventManager.System.Telemetry.OnTrailersUpdated; }
 
-Utils::Signal<void(const SCS::JobConstants&)>& SCSTelemetryService::GetJobConstantsSignal() {
-    return m_eventManager.System.Telemetry.OnJobConstantsChanged;
-}
+Utils::Signal<void(const SCS::JobConstants&)>& SCSTelemetryService::GetJobConstantsSignal() { return m_eventManager.System.Telemetry.OnJobConstantsChanged; }
 
-Utils::Signal<void(const SCS::JobData&)>& SCSTelemetryService::GetJobDataSignal() {
-    return m_eventManager.System.Telemetry.OnJobDataUpdated;
-}
+Utils::Signal<void(const SCS::JobData&)>& SCSTelemetryService::GetJobDataSignal() { return m_eventManager.System.Telemetry.OnJobDataUpdated; }
 
-Utils::Signal<void(const SCS::NavigationData&)>& SCSTelemetryService::GetNavigationDataSignal() {
-    return m_eventManager.System.Telemetry.OnNavigationDataUpdated;
-}
+Utils::Signal<void(const SCS::NavigationData&)>& SCSTelemetryService::GetNavigationDataSignal() { return m_eventManager.System.Telemetry.OnNavigationDataUpdated; }
 
-Utils::Signal<void(const SCS::Controls&)>& SCSTelemetryService::GetControlsSignal() {
-    return m_eventManager.System.Telemetry.OnControlsUpdated;
-}
+Utils::Signal<void(const SCS::Controls&)>& SCSTelemetryService::GetControlsSignal() { return m_eventManager.System.Telemetry.OnControlsUpdated; }
 
-Utils::Signal<void(const SCS::SpecialEvents&)>& SCSTelemetryService::GetSpecialEventsSignal() {
-    return m_eventManager.System.Telemetry.OnSpecialEventsUpdated;
-}
+Utils::Signal<void(const SCS::SpecialEvents&)>& SCSTelemetryService::GetSpecialEventsSignal() { return m_eventManager.System.Telemetry.OnSpecialEventsUpdated; }
 
-Utils::Signal<void(const char*, const SCS::GameplayEvents&)>& SCSTelemetryService::GetGameplayEventsSignal() {
-    return m_eventManager.System.Telemetry.OnGameplayEventsUpdated;
-}
+Utils::Signal<void(const char*, const SCS::GameplayEvents&)>& SCSTelemetryService::GetGameplayEventsSignal() { return m_eventManager.System.Telemetry.OnGameplayEventsUpdated; }
 
-Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearboxConstantsSignal() {
-    return m_eventManager.System.Telemetry.OnGearboxConstantsChanged;
-}
+Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearboxConstantsSignal() { return m_eventManager.System.Telemetry.OnGearboxConstantsChanged; }
 
 }  // namespace Telemetry
 SPF_NS_END

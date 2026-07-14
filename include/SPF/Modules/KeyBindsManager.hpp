@@ -1,25 +1,33 @@
 #pragma once
-#include "SPF/Core/InitializationReport.hpp"
-#include "SPF/Input/IInputConsumer.hpp"
-#include "SPF/Modules/IBindableInput.hpp"
-#include "SPF/Config/IConfigurable.hpp"
-#include "SPF/Config/IConfigService.hpp"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/EnumMappings.hpp"
+#include "SPF/Config/IConfigurable.hpp"
+#include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/PluginEvents.hpp"
-#include "SPF/Utils/Signal.hpp"
-#include "SPF/System/Keyboard.hpp"
+#include "SPF/Input/IInputConsumer.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
+#include "SPF/System/Keyboard.hpp"
 #include "SPF/System/MouseButtonMapping.hpp"
+#include "SPF/Utils/Signal.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
-#include <string>
-#include <vector>
 #include <map>
 #include <memory>
-#include <optional>
-#include <chrono>
 #include <mutex>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 
@@ -28,7 +36,7 @@ class InputManager;
 struct KeyboardEvent;
 struct GamepadEvent;
 struct MouseButtonEvent;
-}
+}  // namespace Input
 namespace Events {
 class EventManager;
 }
@@ -48,8 +56,8 @@ struct Binding {
   Input::PressType PressType = Input::PressType::Short;      // Specifies if this binding is for a short or long press
   ActivationBehavior Behavior = ActivationBehavior::Toggle;  // Specifies how the action is triggered over time
   std::optional<std::chrono::milliseconds> PressThreshold;
-  nlohmann::ordered_json originalBindingJson; // Store the original JSON for better conflict reporting
-  bool programmaticallyBlocked = false;       // Used when Policy is set to Manual
+  nlohmann::ordered_json originalBindingJson;  // Store the original JSON for better conflict reporting
+  bool programmaticallyBlocked = false;        // Used when Policy is set to Manual
 };
 
 struct Action {
@@ -66,9 +74,9 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   KeyBindsManager(Input::InputManager& inputManager, Events::EventManager& eventManager);
   ~KeyBindsManager();
 
-   Core::InitializationReport Initialize(const nlohmann::ordered_json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo);
+  Core::InitializationReport Initialize(const nlohmann::ordered_json* keyBindsConfig, const std::map<std::string, Config::ComponentInfo>& componentInfo);
 
-   /**
+  /**
    * @brief Non-destructively updates the key assignments for all actions from a new config.
    * This preserves the registered action callbacks.
    * @param keyBindsConfig The new keybinds configuration object.
@@ -105,7 +113,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   struct PressTypeConflictAnalysis {
     bool isShortPressAvailable = true;
     bool isLongPressAvailable = true;
-    
+
     // Axis specific analysis
     bool isPositiveAvailable = true;
     bool isNegativeAvailable = true;
@@ -141,7 +149,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
    * @return An optional pair containing the name and binding JSON of the conflicting action, if found.
    */
   std::optional<std::pair<std::string, nlohmann::ordered_json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
-                                                                             const std::string& actionToExclude) const;
+                                                                                       const std::string& actionToExclude) const;
 
   const Binding* GetBindingForInput(System::Keyboard key, Input::PressType pressType) const;
   const Binding* GetBindingForInput(System::GamepadButton button, Input::PressType pressType) const;

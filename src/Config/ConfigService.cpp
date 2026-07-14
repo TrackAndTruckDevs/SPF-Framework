@@ -1,25 +1,41 @@
 #include "SPF/Config/ConfigService.hpp"
 
-#include "SPF/Events/EventManager.hpp"
-#include "SPF/Events/ConfigEvents.hpp"
-#include "SPF/Core/InitializationReport.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/System/PathManager.hpp"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Config/ManifestData.hpp"
-#include "SPF/Utils/SystemUtils.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
-#include "SPF/Modules/KeyBindsManager.hpp"
-
-#include <fstream>
-#include <filesystem>
-#include <regex>
-#include <set>
-#include <algorithm>
-#include <objbase.h>
-#include <cstdio>
-#include "SPF/Modules/InputFactory.hpp"
+#include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/IHook.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/InputFactory.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/System/ApiService.hpp"
+#include "SPF/System/EnvironmentManager.hpp"
+#include "SPF/System/PathManager.hpp"
+#include "SPF/Utils/SystemUtils.hpp"
+
+#include "fmt/format.h"
+#include "nlohmann/json_fwd.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <exception>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <objbase.h>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+#include <winerror.h>
+#include <winnt.h>
+
 
 SPF_NS_BEGIN
 
@@ -33,76 +49,79 @@ using namespace SPF::Localization;
 namespace {
 // Helper to inject _meta block into a JSON object
 void InjectMetadata(nlohmann::ordered_json& target, const std::string& titleKey, const std::string& descriptionKey) {
-    if (!titleKey.empty() || !descriptionKey.empty()) {
-        target["_meta"] = nlohmann::ordered_json::object();
-        if (!titleKey.empty()) {
-            target["_meta"]["titleKey"] = titleKey;
-        }
-        if (!descriptionKey.empty()) {
-            target["_meta"]["descriptionKey"] = descriptionKey;
-        }
+  if (!titleKey.empty() || !descriptionKey.empty()) {
+    target["_meta"] = nlohmann::ordered_json::object();
+    if (!titleKey.empty()) {
+      target["_meta"]["titleKey"] = titleKey;
     }
+    if (!descriptionKey.empty()) {
+      target["_meta"]["descriptionKey"] = descriptionKey;
+    }
+  }
 }
 
 // Helper to convert a dot-separated path to a JSON pointer, automatically descending into _value wrappers if they exist.
 nlohmann::ordered_json::json_pointer GetMetaAwarePointer(const nlohmann::ordered_json& root, const std::string& dotPath) {
-    if (dotPath.empty()) return nlohmann::ordered_json::json_pointer("/");
+  if (dotPath.empty()) return nlohmann::ordered_json::json_pointer("/");
 
-    std::string pointerStr = "";
-    const nlohmann::ordered_json* current = &root;
+  std::string pointerStr = "";
+  const nlohmann::ordered_json* current = &root;
 
-    std::string remaining = dotPath;
-    while (!remaining.empty()) {
-        size_t dotPos = remaining.find('.');
-        std::string part = (dotPos == std::string::npos) ? remaining : remaining.substr(0, dotPos);
-        remaining = (dotPos == std::string::npos) ? "" : remaining.substr(dotPos + 1);
+  std::string remaining = dotPath;
+  while (!remaining.empty()) {
+    size_t dotPos = remaining.find('.');
+    std::string part = (dotPos == std::string::npos) ? remaining : remaining.substr(0, dotPos);
+    remaining = (dotPos == std::string::npos) ? "" : remaining.substr(dotPos + 1);
 
-        // If current node is a Value Object (has _value), we MUST descend into _value to find the 'part'
-        if (current && current->is_object() && current->contains("_value")) {
-            pointerStr += "/_value";
-            current = &((*current)["_value"]);
-        }
-
-        pointerStr += "/";
-        // JSON pointer requires escaping ~ to ~0 and / to ~1
-        for (char c : part) {
-            if (c == '~') pointerStr += "~0";
-            else if (c == '/') pointerStr += "~1";
-            else pointerStr += c;
-        }
-
-        // Move 'current' for the next iteration to detect intermediate _value wrappers
-        if (current) {
-            if (current->is_object() && current->contains(part)) {
-                current = &((*current)[part]);
-            } else if (current->is_array()) {
-                try {
-                    size_t idx = std::stoul(part);
-                    if (idx < current->size()) {
-                        current = &((*current)[idx]);
-                    } else {
-                        current = nullptr;
-                    }
-                } catch (...) {
-                    current = nullptr;
-                }
-            } else {
-                current = nullptr;
-            }
-        }
+    // If current node is a Value Object (has _value), we MUST descend into _value to find the 'part'
+    if (current && current->is_object() && current->contains("_value")) {
+      pointerStr += "/_value";
+      current = &((*current)["_value"]);
     }
 
-    return nlohmann::ordered_json::json_pointer(pointerStr);
+    pointerStr += "/";
+    // JSON pointer requires escaping ~ to ~0 and / to ~1
+    for (char c : part) {
+      if (c == '~')
+        pointerStr += "~0";
+      else if (c == '/')
+        pointerStr += "~1";
+      else
+        pointerStr += c;
+    }
+
+    // Move 'current' for the next iteration to detect intermediate _value wrappers
+    if (current) {
+      if (current->is_object() && current->contains(part)) {
+        current = &((*current)[part]);
+      } else if (current->is_array()) {
+        try {
+          size_t idx = std::stoul(part);
+          if (idx < current->size()) {
+            current = &((*current)[idx]);
+          } else {
+            current = nullptr;
+          }
+        } catch (...) {
+          current = nullptr;
+        }
+      } else {
+        current = nullptr;
+      }
+    }
+  }
+
+  return nlohmann::ordered_json::json_pointer(pointerStr);
 }
 
 // // Helper to convert a dot-separated path to a JSON pointer path string (Loop version)
 std::string ToJSONPointerPath(const std::string& dotPath) {
-    if (dotPath.empty()) return "/";
-    std::string result = "/" + dotPath;
-    for (size_t i = 1; i < result.length(); ++i) {
-        if (result[i] == '.') result[i] = '/';
-    }
-    return result;
+  if (dotPath.empty()) return "/";
+  std::string result = "/" + dotPath;
+  for (size_t i = 1; i < result.length(); ++i) {
+    if (result[i] == '.') result[i] = '/';
+  }
+  return result;
 }
 
 const nlohmann::ordered_json* GetSettings(const nlohmann::ordered_json& source, const std::string& systemName) {
@@ -114,303 +133,312 @@ const nlohmann::ordered_json* GetSettings(const nlohmann::ordered_json& source, 
 
 // Helper to serialize general settings from ManifestData to  nlohmann::ordered_json.
 nlohmann::ordered_json SerializeSettings(const ManifestData& manifest, const ManifestData& frameworkManifest) {
-    nlohmann::ordered_json j = manifest.settings;
-    // Inject custom settings metadata (no fallback for custom settings)
-    for (const auto& meta : manifest.customSettingsMetadata) {
-        if (meta.keyPath.empty()) continue;
-        try {
-            auto ptr = nlohmann::ordered_json::json_pointer(ToJSONPointerPath(meta.keyPath));
-            if (!j.contains(ptr)) continue;
-            nlohmann::ordered_json& node = j[ptr];
-            if (node.is_object() && node.contains("_value")) {
-                InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            } else if (node.is_primitive() || node.is_string() || node.is_array()) {
-                auto value = node;
-                node = nlohmann::ordered_json::object();
-                node["_value"] = value;
-                InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            } else if (node.is_object()) {
-                InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            }
+  nlohmann::ordered_json j = manifest.settings;
+  // Inject custom settings metadata (no fallback for custom settings)
+  for (const auto& meta : manifest.customSettingsMetadata) {
+    if (meta.keyPath.empty()) continue;
+    try {
+      auto ptr = nlohmann::ordered_json::json_pointer(ToJSONPointerPath(meta.keyPath));
+      if (!j.contains(ptr)) continue;
+      nlohmann::ordered_json& node = j[ptr];
+      if (node.is_object() && node.contains("_value")) {
+        InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
+      } else if (node.is_primitive() || node.is_string() || node.is_array()) {
+        auto value = node;
+        node = nlohmann::ordered_json::object();
+        node["_value"] = value;
+        InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
+      } else if (node.is_object()) {
+        InjectMetadata(node, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
+      }
 
-            // NEW: Inject UI rendering hints
-            if (meta.widget.has_value() || !meta.widget_params.empty() || meta.hide_in_ui) {
-                if (!node.contains("_meta")) {
-                     node["_meta"] = nlohmann::ordered_json::object();
-                }
-
-                if (meta.hide_in_ui) {
-                    node["_meta"]["hide_in_ui"] = true;
-                }
-
-                if(meta.widget.has_value() || !meta.widget_params.empty()){
-                    node["_meta"]["ui"] = nlohmann::ordered_json::object();
-                    auto& ui_meta = node["_meta"]["ui"];
-                    if (meta.widget.has_value()) {
-                        ui_meta["widget"] = meta.widget.value();
-                    }
-                    if (!meta.widget_params.empty()) {
-                        ui_meta["params"] = meta.widget_params;
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            LoggerFactory::GetInstance().GetLogger("ConfigService")->Error("Error injecting custom setting metadata for key '{}': {}", meta.keyPath, e.what());
+      // NEW: Inject UI rendering hints
+      if (meta.widget.has_value() || !meta.widget_params.empty() || meta.hide_in_ui) {
+        if (!node.contains("_meta")) {
+          node["_meta"] = nlohmann::ordered_json::object();
         }
+
+        if (meta.hide_in_ui) {
+          node["_meta"]["hide_in_ui"] = true;
+        }
+
+        if (meta.widget.has_value() || !meta.widget_params.empty()) {
+          node["_meta"]["ui"] = nlohmann::ordered_json::object();
+          auto& ui_meta = node["_meta"]["ui"];
+          if (meta.widget.has_value()) {
+            ui_meta["widget"] = meta.widget.value();
+          }
+          if (!meta.widget_params.empty()) {
+            ui_meta["params"] = meta.widget_params;
+          }
+        }
+      }
+    } catch (const std::exception& e) {
+      LoggerFactory::GetInstance().GetLogger("ConfigService")->Error("Error injecting custom setting metadata for key '{}': {}", meta.keyPath, e.what());
     }
-    return j;
+  }
+  return j;
 }
 
 // Helper to serialize logging settings from ManifestData to  nlohmann::ordered_json.
 nlohmann::ordered_json SerializeLogging(const ManifestData& manifest, const ManifestData& frameworkManifest) {
-    nlohmann::ordered_json j;
-    auto findLoggingMeta = [&](const std::string& key) -> const StandardSettingMetadata* {
-        for (const auto& meta : manifest.loggingMetadata) { if (meta.key == key) return &meta; }
-        if (&manifest != &frameworkManifest) {
-            for (const auto& meta : frameworkManifest.loggingMetadata) { if (meta.key == key) return &meta; }
-        }
-        return nullptr;
-    };
+  nlohmann::ordered_json j;
+  auto findLoggingMeta = [&](const std::string& key) -> const StandardSettingMetadata* {
+    for (const auto& meta : manifest.loggingMetadata) {
+      if (meta.key == key) return &meta;
+    }
+    if (&manifest != &frameworkManifest) {
+      for (const auto& meta : frameworkManifest.loggingMetadata) {
+        if (meta.key == key) return &meta;
+      }
+    }
+    return nullptr;
+  };
 
-    if (manifest.logging.level.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.logging.level.value();
-        if (const auto* meta = findLoggingMeta("level")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        j["level"] = node;
+  if (manifest.logging.level.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.logging.level.value();
+    if (const auto* meta = findLoggingMeta("level")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
     }
+    j["level"] = node;
+  }
 
-    nlohmann::ordered_json sinksNode;
-    if (const auto* meta = findLoggingMeta("sinks")) {
-        InjectMetadata(sinksNode, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+  nlohmann::ordered_json sinksNode;
+  if (const auto* meta = findLoggingMeta("sinks")) {
+    InjectMetadata(sinksNode, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+  }
+  if (manifest.logging.sinks.file.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.logging.sinks.file.value();
+    if (const auto* meta = findLoggingMeta("sinks.file")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
     }
-    if (manifest.logging.sinks.file.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.logging.sinks.file.value();
-        if (const auto* meta = findLoggingMeta("sinks.file")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        sinksNode["file"] = node;
+    sinksNode["file"] = node;
+  }
+  if (manifest.logging.sinks.ui.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.logging.sinks.ui.value();
+    if (const auto* meta = findLoggingMeta("sinks.ui")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
     }
-    if (manifest.logging.sinks.ui.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.logging.sinks.ui.value();
-        if (const auto* meta = findLoggingMeta("sinks.ui")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        sinksNode["ui"] = node;
+    sinksNode["ui"] = node;
+  }
+  if (manifest.logging.sinks.report.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.logging.sinks.report.value();
+    if (const auto* meta = findLoggingMeta("sinks.report")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
     }
-    if (manifest.logging.sinks.report.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.logging.sinks.report.value();
-        if (const auto* meta = findLoggingMeta("sinks.report")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        sinksNode["report"] = node;
-    }
-    if (!sinksNode.empty()) {
-        j["sinks"] = sinksNode;
-    }
-    return j;
+    sinksNode["report"] = node;
+  }
+  if (!sinksNode.empty()) {
+    j["sinks"] = sinksNode;
+  }
+  return j;
 }
 
 // Helper to serialize localization settings from ManifestData to  nlohmann::ordered_json.
 nlohmann::ordered_json SerializeLocalization(const ManifestData& manifest, const ManifestData& frameworkManifest) {
-    nlohmann::ordered_json j;
-    auto findLocMeta = [&](const std::string& key) -> const StandardSettingMetadata* {
-        for (const auto& meta : manifest.localizationMetadata) { if (meta.key == key) return &meta; }
-        if (&manifest != &frameworkManifest) {
-            for (const auto& meta : frameworkManifest.localizationMetadata) { if (meta.key == key) return &meta; }
-        }
-        return nullptr;
-    };
-
-    if (manifest.localization.language.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.localization.language.value();
-        if (const auto* meta = findLocMeta("language")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        j["language"] = node;
+  nlohmann::ordered_json j;
+  auto findLocMeta = [&](const std::string& key) -> const StandardSettingMetadata* {
+    for (const auto& meta : manifest.localizationMetadata) {
+      if (meta.key == key) return &meta;
     }
-
-    if (manifest.localization.sync_plugin_languages.has_value()) {
-        nlohmann::ordered_json node;
-        node["_value"] = manifest.localization.sync_plugin_languages.value();
-        if (const auto* meta = findLocMeta("sync_plugin_languages")) {
-            InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
-        j["sync_plugin_languages"] = node;
+    if (&manifest != &frameworkManifest) {
+      for (const auto& meta : frameworkManifest.localizationMetadata) {
+        if (meta.key == key) return &meta;
+      }
     }
-    return j;
+    return nullptr;
+  };
+
+  if (manifest.localization.language.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.localization.language.value();
+    if (const auto* meta = findLocMeta("language")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+    }
+    j["language"] = node;
+  }
+
+  if (manifest.localization.sync_plugin_languages.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.localization.sync_plugin_languages.value();
+    if (const auto* meta = findLocMeta("sync_plugin_languages")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+    }
+    j["sync_plugin_languages"] = node;
+  }
+  return j;
 }
 
 // Helper to serialize UI settings from ManifestData to  nlohmann::ordered_json.
 nlohmann::ordered_json SerializeUI(const ManifestData& manifest, const ManifestData& frameworkManifest) {
-    nlohmann::ordered_json j;
-    nlohmann::ordered_json windowsNode;
+  nlohmann::ordered_json j;
+  nlohmann::ordered_json windowsNode;
 
-    auto findUIMeta = [&](const std::string& key) -> const WindowMetadata* {
-        for (const auto& meta : manifest.uiMetadata) { if (meta.windowName == key) return &meta; }
-        if (&manifest != &frameworkManifest) {
-            for (const auto& meta : frameworkManifest.uiMetadata) { if (meta.windowName == key) return &meta; }
-        }
-        return nullptr;
+  auto findUIMeta = [&](const std::string& key) -> const WindowMetadata* {
+    for (const auto& meta : manifest.uiMetadata) {
+      if (meta.windowName == key) return &meta;
+    }
+    if (&manifest != &frameworkManifest) {
+      for (const auto& meta : frameworkManifest.uiMetadata) {
+        if (meta.windowName == key) return &meta;
+      }
+    }
+    return nullptr;
+  };
+
+  if (const auto* meta = findUIMeta("windows")) {
+    InjectMetadata(windowsNode, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+  }
+
+  for (const auto& [name, data] : manifest.ui.windows) {
+    nlohmann::ordered_json window_j;
+    if (const auto* meta = findUIMeta(name)) {
+      InjectMetadata(window_j, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+    }
+
+    auto addValueWithMeta = [&](const std::string& propName, auto propValue) {
+      nlohmann::ordered_json node;
+      node["_value"] = propValue;
+      if (const auto* meta = findUIMeta(propName)) {
+        InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+      }
+      window_j[propName] = node;
     };
-    
-    if (const auto* meta = findUIMeta("windows")) {
-        InjectMetadata(windowsNode, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-    }
 
-    for (const auto& [name, data] : manifest.ui.windows) {
-        nlohmann::ordered_json window_j;
-        if (const auto* meta = findUIMeta(name)) {
-            InjectMetadata(window_j, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-        }
+    if (data.isVisible.has_value()) addValueWithMeta("is_visible", data.isVisible.value());
+    if (data.isInteractive.has_value()) addValueWithMeta("is_interactive", data.isInteractive.value());
+    if (data.posX.has_value()) addValueWithMeta("pos_x", data.posX.value());
+    if (data.posY.has_value()) addValueWithMeta("pos_y", data.posY.value());
+    if (data.sizeW.has_value()) addValueWithMeta("size_w", data.sizeW.value());
+    if (data.sizeH.has_value()) addValueWithMeta("size_h", data.sizeH.value());
+    if (data.isCollapsed.has_value()) addValueWithMeta("is_collapsed", data.isCollapsed.value());
+    if (data.isDocked.has_value()) addValueWithMeta("is_docked", data.isDocked.value());
+    if (data.dockPriority.has_value()) addValueWithMeta("dock_priority", data.dockPriority.value());
+    if (data.allowUndocking.has_value()) addValueWithMeta("allow_undocking", data.allowUndocking.value());
+    if (data.autoScroll.has_value()) addValueWithMeta("auto_scroll", data.autoScroll.value());
+    if (data.isDeveloperOnly.has_value()) addValueWithMeta("is_developer_only", data.isDeveloperOnly.value());
 
-        auto addValueWithMeta = [&](const std::string& propName, auto propValue) {
-            nlohmann::ordered_json node;
-            node["_value"] = propValue;
-            if (const auto* meta = findUIMeta(propName)) {
-                InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
-            }
-            window_j[propName] = node;
-        };
-
-        if (data.isVisible.has_value()) addValueWithMeta("is_visible", data.isVisible.value());
-        if (data.isInteractive.has_value()) addValueWithMeta("is_interactive", data.isInteractive.value());
-        if (data.posX.has_value()) addValueWithMeta("pos_x", data.posX.value());
-        if (data.posY.has_value()) addValueWithMeta("pos_y", data.posY.value());
-        if (data.sizeW.has_value()) addValueWithMeta("size_w", data.sizeW.value());
-        if (data.sizeH.has_value()) addValueWithMeta("size_h", data.sizeH.value());
-        if (data.isCollapsed.has_value()) addValueWithMeta("is_collapsed", data.isCollapsed.value());
-        if (data.isDocked.has_value()) addValueWithMeta("is_docked", data.isDocked.value());
-        if (data.dockPriority.has_value()) addValueWithMeta("dock_priority", data.dockPriority.value());
-        if (data.allowUndocking.has_value()) addValueWithMeta("allow_undocking", data.allowUndocking.value());
-        if (data.autoScroll.has_value()) addValueWithMeta("auto_scroll", data.autoScroll.value());
-        if (data.isDeveloperOnly.has_value()) addValueWithMeta("is_developer_only", data.isDeveloperOnly.value());
-
-        if (!window_j.empty()) windowsNode[name] = window_j;
-    }
-    if (!windowsNode.empty()) j["windows"] = windowsNode;
-    return j;
+    if (!window_j.empty()) windowsNode[name] = window_j;
+  }
+  if (!windowsNode.empty()) j["windows"] = windowsNode;
+  return j;
 }
 
 // Helper to serialize keybinds settings from ManifestData to  nlohmann::ordered_json.
 nlohmann::ordered_json SerializeKeybinds(const ManifestData& manifest) {
-    nlohmann::ordered_json keybinds;
-    for (const auto& [group, actions] : manifest.keybinds.actions) {
-        for (const auto& [name, defs] : actions) {
-            nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
-            for (const auto& def : defs) {
-                nlohmann::ordered_json temp;
-                std::string typeStr = def.type.value_or("");
-                if (!typeStr.empty()) temp["type"] = typeStr;
-                
-                if (typeStr == "chord" && !def.bindings.empty()) {
-                    nlohmann::ordered_json subArray = nlohmann::ordered_json::array();
-                    for (const auto& subDef : def.bindings) {
-                        nlohmann::ordered_json subJ;
-                        if (subDef.type.has_value()) subJ["type"] = *subDef.type;
-                        if (subDef.key.has_value()) subJ["key"] = *subDef.key;
-                        subArray.push_back(subJ);
-                    }
-                    temp["bindings"] = subArray;
-                } else {
-                    if (def.key.has_value()) temp["key"] = def.key.value();
-                }
+  nlohmann::ordered_json keybinds;
+  for (const auto& [group, actions] : manifest.keybinds.actions) {
+    for (const auto& [name, defs] : actions) {
+      nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
+      for (const auto& def : defs) {
+        nlohmann::ordered_json temp;
+        std::string typeStr = def.type.value_or("");
+        if (!typeStr.empty()) temp["type"] = typeStr;
 
-                auto input = Modules::InputFactory::CreateFromJson(temp);
-                nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
-
-                bool isAxis = (typeStr.find("_axis") != std::string::npos);
-                std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
-
-                nlohmann::ordered_json final_j;
-                final_j["type"] = input_j.value("type", typeStr);
-                
-                if (final_j["type"] == "chord") {
-                    final_j["bindings"] = input_j["bindings"];
-                } else {
-                    final_j["key"] = input_j["key"];
-                }
-
-                final_j["consume"] = def.consume.value_or("never");
-
-                if (isAxis) {
-                    final_j["mode"] = mode;
-                    if (mode == "analog") {
-                        final_j["curve"] = input_j.value("curve", "linear");
-                        final_j["invert"] = input_j.value("invert", false);
-                        final_j["deadzone"] = input_j.value("deadzone", 0.0);
-                        final_j["saturation"] = input_j.value("saturation", 1.0);
-                        final_j["sensitivity"] = input_j.value("sensitivity", 1.0);
-                        final_j["smoothing"] = input_j.value("smoothing", 0.0);
-                        
-                        bool isMouse = (final_j["type"] == "mouse_axis");
-                        bool accumulator = input_j.value("accumulator", isMouse);
-                        final_j["accumulator"] = accumulator;
-
-                        bool isTrigger = false;
-                        if (final_j["key"].is_string()) {
-                            std::string k = final_j["key"].get<std::string>();
-                            isTrigger = (k.find("TRIGGER") != std::string::npos);
-                        }
-
-                        final_j["range_min"] = input_j.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
-                        final_j["range_max"] = input_j.value("range_max", isMouse ? 100.0 : 1.0);
-                    } else {
-                        final_j["threshold"] = input_j.value("threshold", 0.5);
-                        final_j["behavior"] = def.behavior.value_or("toggle");
-                        final_j["press_type"] = def.pressType.value_or("short");
-                        final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
-                    }
-                } else {
-                    final_j["behavior"] = def.behavior.value_or("toggle");
-                    final_j["press_type"] = def.pressType.value_or("short");
-                    final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
-                }
-
-                if (!final_j.empty()) bindingsArray.push_back(final_j);
-            }
-            
-            if (!bindingsArray.empty()) {
-                nlohmann::ordered_json actionObject;
-                actionObject["bindings"] = bindingsArray;
-                
-                // Keybinds do not use fallback, they are unique to the plugin.
-                for (const auto& meta : manifest.keybindsMetadata) {
-                    if (meta.groupName == group && meta.actionName == name) {
-                        InjectMetadata(actionObject, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-                        break;
-                    }
-                }
-                keybinds[group][name] = actionObject;
-            }
+        if (typeStr == "chord" && !def.bindings.empty()) {
+          nlohmann::ordered_json subArray = nlohmann::ordered_json::array();
+          for (const auto& subDef : def.bindings) {
+            nlohmann::ordered_json subJ;
+            if (subDef.type.has_value()) subJ["type"] = *subDef.type;
+            if (subDef.key.has_value()) subJ["key"] = *subDef.key;
+            subArray.push_back(subJ);
+          }
+          temp["bindings"] = subArray;
+        } else {
+          if (def.key.has_value()) temp["key"] = def.key.value();
         }
+
+        auto input = Modules::InputFactory::CreateFromJson(temp);
+        nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
+
+        bool isAxis = (typeStr.find("_axis") != std::string::npos);
+        std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
+
+        nlohmann::ordered_json final_j;
+        final_j["type"] = input_j.value("type", typeStr);
+
+        if (final_j["type"] == "chord") {
+          final_j["bindings"] = input_j["bindings"];
+        } else {
+          final_j["key"] = input_j["key"];
+        }
+
+        final_j["consume"] = def.consume.value_or("never");
+
+        if (isAxis) {
+          final_j["mode"] = mode;
+          if (mode == "analog") {
+            final_j["curve"] = input_j.value("curve", "linear");
+            final_j["invert"] = input_j.value("invert", false);
+            final_j["deadzone"] = input_j.value("deadzone", 0.0);
+            final_j["saturation"] = input_j.value("saturation", 1.0);
+            final_j["sensitivity"] = input_j.value("sensitivity", 1.0);
+            final_j["smoothing"] = input_j.value("smoothing", 0.0);
+
+            bool isMouse = (final_j["type"] == "mouse_axis");
+            bool accumulator = input_j.value("accumulator", isMouse);
+            final_j["accumulator"] = accumulator;
+
+            bool isTrigger = false;
+            if (final_j["key"].is_string()) {
+              std::string k = final_j["key"].get<std::string>();
+              isTrigger = (k.find("TRIGGER") != std::string::npos);
+            }
+
+            final_j["range_min"] = input_j.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+            final_j["range_max"] = input_j.value("range_max", isMouse ? 100.0 : 1.0);
+          } else {
+            final_j["threshold"] = input_j.value("threshold", 0.5);
+            final_j["behavior"] = def.behavior.value_or("toggle");
+            final_j["press_type"] = def.pressType.value_or("short");
+            final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+          }
+        } else {
+          final_j["behavior"] = def.behavior.value_or("toggle");
+          final_j["press_type"] = def.pressType.value_or("short");
+          final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+        }
+
+        if (!final_j.empty()) bindingsArray.push_back(final_j);
+      }
+
+      if (!bindingsArray.empty()) {
+        nlohmann::ordered_json actionObject;
+        actionObject["bindings"] = bindingsArray;
+
+        // Keybinds do not use fallback, they are unique to the plugin.
+        for (const auto& meta : manifest.keybindsMetadata) {
+          if (meta.groupName == group && meta.actionName == name) {
+            InjectMetadata(actionObject, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
+            break;
+          }
+        }
+        keybinds[group][name] = actionObject;
+      }
     }
-    return keybinds;
+  }
+  return keybinds;
 }
-
-
-
 
 bool IsUserConfigAllowed(const SPF::Config::ManifestData& manifest) { return manifest.configPolicy.allowUserConfig.value_or(true); }
 
 nlohmann::ordered_json GetSystemSettingsAsJson(const ManifestData& manifest, const std::string& systemName, const ManifestData& frameworkManifest) {
-    if (systemName == "settings") {
-        return SerializeSettings(manifest, frameworkManifest);
-    } else if (systemName == "logging") {
-        return SerializeLogging(manifest, frameworkManifest);
-    } else if (systemName == "localization") {
-        return SerializeLocalization(manifest, frameworkManifest);
-    } else if (systemName == "ui") {
-        return SerializeUI(manifest, frameworkManifest);
-    } else if (systemName == "keybinds") {
-        return SerializeKeybinds(manifest);
-    }
-    return nlohmann::ordered_json();
+  if (systemName == "settings") {
+    return SerializeSettings(manifest, frameworkManifest);
+  } else if (systemName == "logging") {
+    return SerializeLogging(manifest, frameworkManifest);
+  } else if (systemName == "localization") {
+    return SerializeLocalization(manifest, frameworkManifest);
+  } else if (systemName == "ui") {
+    return SerializeUI(manifest, frameworkManifest);
+  } else if (systemName == "keybinds") {
+    return SerializeKeybinds(manifest);
+  }
+  return nlohmann::ordered_json();
 }
 
 /**
@@ -427,93 +455,98 @@ nlohmann::ordered_json GetSystemSettingsAsJson(const ManifestData& manifest, con
  * @param componentName The name of the component whose settings are being merged.
  * @param currentPath The current path within the JSON hierarchy for logging purposes.
  */
-void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_json& defaults, const nlohmann::ordered_json& user, InitializationReport& report, const std::string& componentName,
-                      const std::string& currentPath = "") {
-    // Pass 1: Iterate through defaults to merge existing keys and apply defaults
-    for (auto it = defaults.begin(); it != defaults.end(); ++it) {
-        const std::string& key = it.key();
-        const auto& defaultValue = it.value();
-        std::string newPath = currentPath.empty() ? key : currentPath + "." + key;
+void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_json& defaults, const nlohmann::ordered_json& user, InitializationReport& report,
+                      const std::string& componentName, const std::string& currentPath = "") {
+  // Pass 1: Iterate through defaults to merge existing keys and apply defaults
+  for (auto it = defaults.begin(); it != defaults.end(); ++it) {
+    const std::string& key = it.key();
+    const auto& defaultValue = it.value();
+    std::string newPath = currentPath.empty() ? key : currentPath + "." + key;
 
-        if (user.contains(key)) {
-            const auto& userValue = user[key];
+    if (user.contains(key)) {
+      const auto& userValue = user[key];
 
-            const bool defaultIsObj = defaultValue.is_object();
-            const bool userIsObj = userValue.is_object();
-            const bool defaultIsValueObj = defaultIsObj && defaultValue.contains("_value");
-            const bool userIsValueObj = userIsObj && userValue.contains("_value");
+      const bool defaultIsObj = defaultValue.is_object();
+      const bool userIsObj = userValue.is_object();
+      const bool defaultIsValueObj = defaultIsObj && defaultValue.contains("_value");
+      const bool userIsValueObj = userIsObj && userValue.contains("_value");
 
-            // Case 1: Both are "compatible" objects (both regular objects, or both value objects). Recurse.
-            if (defaultIsObj && userIsObj && (defaultIsValueObj == userIsValueObj)) {
-                target[key] = nlohmann::ordered_json::object();
-                MergeJsonObjects(target[key], defaultValue, userValue, report, componentName, newPath);
-            }
-            // Case 2: Default is a value object, but user provided a simple, compatible value.
-            else if (defaultIsValueObj && !userIsObj) {
-                const auto& defaultInnerValue = defaultValue["_value"];
-                if (defaultInnerValue.type() == userValue.type() || (defaultInnerValue.is_number() && userValue.is_number())) {
-                    target[key] = defaultValue; // Copy default (with _meta)
-                    target[key]["_value"] = userValue; // Overwrite with user's value
-                } else {
-                    // Type mismatch between user's simple value and the inner default value.
-                    target[key] = defaultValue;
-                    report.Warnings.push_back(InitializationReport::Issue{
-                        fmt::format("Type mismatch for key '{}' in component '{}'. User value type '{}' is incompatible with internal default type '{}'. Using default.",
-                                    newPath, componentName, userValue.type_name(), defaultInnerValue.type_name()),
-                        componentName + "." + newPath});
-                }
-            }
-            // Case 3: Both are simple, compatible types.
-            else if (!defaultIsObj && !userIsObj && (defaultValue.type() == userValue.type() || (defaultValue.is_number() && userValue.is_number()))) {
-                target[key] = userValue;
-            }
-            // Case 4: All other combinations are type mismatches.
-            else {
-                target[key] = defaultValue;
-                report.Warnings.push_back(InitializationReport::Issue{
-                    fmt::format("Type mismatch for key '{}' in component '{}'. Expected '{}' but got '{}'. Using default value.",
-                                newPath, componentName, defaultValue.type_name(), userValue.type_name()),
-                    componentName + "." + newPath});
-            }
+      // Case 1: Both are "compatible" objects (both regular objects, or both value objects). Recurse.
+      if (defaultIsObj && userIsObj && (defaultIsValueObj == userIsValueObj)) {
+        target[key] = nlohmann::ordered_json::object();
+        MergeJsonObjects(target[key], defaultValue, userValue, report, componentName, newPath);
+      }
+      // Case 2: Default is a value object, but user provided a simple, compatible value.
+      else if (defaultIsValueObj && !userIsObj) {
+        const auto& defaultInnerValue = defaultValue["_value"];
+        if (defaultInnerValue.type() == userValue.type() || (defaultInnerValue.is_number() && userValue.is_number())) {
+          target[key] = defaultValue;         // Copy default (with _meta)
+          target[key]["_value"] = userValue;  // Overwrite with user's value
         } else {
-            // If user config doesn't have the key, use the default.
-            target[key] = defaultValue;
+          // Type mismatch between user's simple value and the inner default value.
+          target[key] = defaultValue;
+          report.Warnings.push_back(InitializationReport::Issue{
+            fmt::format("Type mismatch for key '{}' in component '{}'. User value type '{}' is incompatible with internal default type '{}'. Using default.",
+                        newPath,
+                        componentName,
+                        userValue.type_name(),
+                        defaultInnerValue.type_name()),
+            componentName + "." + newPath});
         }
+      }
+      // Case 3: Both are simple, compatible types.
+      else if (!defaultIsObj && !userIsObj && (defaultValue.type() == userValue.type() || (defaultValue.is_number() && userValue.is_number()))) {
+        target[key] = userValue;
+      }
+      // Case 4: All other combinations are type mismatches.
+      else {
+        target[key] = defaultValue;
+        report.Warnings.push_back(InitializationReport::Issue{fmt::format("Type mismatch for key '{}' in component '{}'. Expected '{}' but got '{}'. Using default value.",
+                                                                          newPath,
+                                                                          componentName,
+                                                                          defaultValue.type_name(),
+                                                                          userValue.type_name()),
+                                                              componentName + "." + newPath});
+      }
+    } else {
+      // If user config doesn't have the key, use the default.
+      target[key] = defaultValue;
     }
+  }
 
-    // Pass 2: Iterate through user keys to add keys that don't exist in defaults
-    for (auto it = user.begin(); it != user.end(); ++it) {
-        const std::string& key = it.key();
-        if (!defaults.contains(key)) {
-            target[key] = it.value();
-        }
+  // Pass 2: Iterate through user keys to add keys that don't exist in defaults
+  for (auto it = user.begin(); it != user.end(); ++it) {
+    const std::string& key = it.key();
+    if (!defaults.contains(key)) {
+      target[key] = it.value();
     }
+  }
 }
 void StripMetadata(nlohmann::ordered_json& node) {
-    if (node.is_object()) {
-        // Handle _value first: if it's a _value object, replace it entirely
-        if (node.contains("_value")) {
-            node = node["_value"];
-            // After replacing, the new node might itself be an object/array that needs stripping
-            StripMetadata(node);
-            return; // Done with this node after replacement
-        }
-
-        // If it's not a _value object, but contains _meta, remove _meta
-        if (node.contains("_meta")) {
-            node.erase("_meta");
-        }
-
-        // Recurse into remaining object items
-        for (auto it = node.begin(); it != node.end(); ++it) {
-            StripMetadata(it.value());
-        }
-    } else if (node.is_array()) {
-        // Recurse into arrays
-        for (auto& item : node) {
-            StripMetadata(item);
-        }
+  if (node.is_object()) {
+    // Handle _value first: if it's a _value object, replace it entirely
+    if (node.contains("_value")) {
+      node = node["_value"];
+      // After replacing, the new node might itself be an object/array that needs stripping
+      StripMetadata(node);
+      return;  // Done with this node after replacement
     }
+
+    // If it's not a _value object, but contains _meta, remove _meta
+    if (node.contains("_meta")) {
+      node.erase("_meta");
+    }
+
+    // Recurse into remaining object items
+    for (auto it = node.begin(); it != node.end(); ++it) {
+      StripMetadata(it.value());
+    }
+  } else if (node.is_array()) {
+    // Recurse into arrays
+    for (auto& item : node) {
+      StripMetadata(item);
+    }
+  }
 }
 
 }  // namespace
@@ -593,16 +626,15 @@ void ConfigService::Finalize(InitializationReport* report) {
       std::ifstream file(frameworkUserConfigPath);
       if (file.is_open() && file.peek() != std::ifstream::traits_type::eof()) {
         nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
-        
+
         // Path: settings -> framework -> version
         std::string storedVersion = "0.0.0";
-        if (userJson.contains("settings") && userJson["settings"].contains("framework") && 
-            userJson["settings"]["framework"].contains("version")) {
+        if (userJson.contains("settings") && userJson["settings"].contains("framework") && userJson["settings"]["framework"].contains("version")) {
           storedVersion = userJson["settings"]["framework"]["version"].get<std::string>();
         }
 
         if (storedVersion == "0.0.0" || storedVersion.empty()) {
-          m_installationStatus = InstallationStatus::Updated; // File exists but no version key
+          m_installationStatus = InstallationStatus::Updated;  // File exists but no version key
           report->InfoMessages.push_back("Configuration file found but version key is missing. Marked as Updated.");
         } else if (storedVersion == currentVersion) {
           m_installationStatus = InstallationStatus::SameVersion;
@@ -626,7 +658,7 @@ void ConfigService::Finalize(InitializationReport* report) {
         }
       }
     }
-    
+
     // NEW: Propagate status to EnvironmentManager
     System::EnvironmentManager::GetInstance().SetInstallationStatus(m_installationStatus);
 
@@ -699,7 +731,7 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
       info.scsForumUrl = manifestInfo.scsForumUrl;
       info.patreonUrl = manifestInfo.patreonUrl;
       info.websiteUrl = manifestInfo.websiteUrl;
-      
+
       info.hasInfo = info.author.has_value() || info.version.has_value();
       info.hasDescription = info.descriptionKey.has_value() || info.descriptionLiteral.has_value();
 
@@ -714,7 +746,7 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
       if (manifest.info.minFrameworkVersion.has_value() && !manifest.info.minFrameworkVersion->empty()) {
         const auto& requiredVersionStr = manifest.info.minFrameworkVersion.value();
         const auto& frameworkVersionStr = GetFrameworkManifestData().info.version.value_or("0.0.0");
-        
+
         auto requiredVersionOpt = System::Version::FromString(requiredVersionStr);
         auto frameworkVersionOpt = System::Version::FromString(frameworkVersionStr);
 
@@ -738,7 +770,7 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
       }
       // Override isEnabled if incompatible
       if (info.incompatibilityReason.has_value()) {
-        if(info.isEnabled){
+        if (info.isEnabled) {
           // If the user had it enabled, we force it off and mark config for saving.
           info.isEnabled = false;
           pluginStates[componentName]["enabled"] = false;
@@ -776,8 +808,6 @@ void ConfigService::ReconcilePluginStates(const std::vector<std::string>& physic
 
   BuildAggregatedUserSettings();
 }
-
-
 
 void ConfigService::ReconcileHookStates(const std::vector<Hooks::IHook*>& featureHooks, Core::InitializationReport* report) {
   if (!report) return;
@@ -851,7 +881,7 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
 
     if (IsUserConfigAllowed(manifest)) {
       std::filesystem::path userConfigPath =
-          (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+        (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
       if (std::filesystem::exists(userConfigPath)) {
         try {
@@ -880,22 +910,22 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
 
         // Auto-detect system language for new installations
         if (systemName == "localization" && m_installationStatus == System::InstallationStatus::NewInstall) {
-            std::string sysLocale = SystemUtils::GetSystemLocaleName();
-            if (sysLocale.length() >= 2) {
-                std::string langCode = sysLocale.substr(0, 2);
-                std::transform(langCode.begin(), langCode.end(), langCode.begin(), ::tolower);
+          std::string sysLocale = SystemUtils::GetSystemLocaleName();
+          if (sysLocale.length() >= 2) {
+            std::string langCode = sysLocale.substr(0, 2);
+            std::transform(langCode.begin(), langCode.end(), langCode.begin(), ::tolower);
 
-                if (LocalizationManager::GetInstance().LanguageFileExists(componentName, langCode)) {
-                    if (finalConfig.contains("language")) {
-                        if (finalConfig["language"].is_object() && finalConfig["language"].contains("_value")) {
-                            finalConfig["language"]["_value"] = langCode;
-                        } else {
-                            finalConfig["language"] = langCode;
-                        }
-                        report.InfoMessages.push_back(fmt::format("Auto-detected system language '{}' for component '{}' during new installation.", langCode, componentName));
-                    }
+            if (LocalizationManager::GetInstance().LanguageFileExists(componentName, langCode)) {
+              if (finalConfig.contains("language")) {
+                if (finalConfig["language"].is_object() && finalConfig["language"].contains("_value")) {
+                  finalConfig["language"]["_value"] = langCode;
+                } else {
+                  finalConfig["language"] = langCode;
                 }
+                report.InfoMessages.push_back(fmt::format("Auto-detected system language '{}' for component '{}' during new installation.", langCode, componentName));
+              }
             }
+          }
         }
       }
     }
@@ -959,9 +989,9 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
         const nlohmann::ordered_json* keys_to_assign = nullptr;
 
         if (actionNode.is_object() && actionNode.contains("bindings")) {
-            keys_to_assign = &actionNode["bindings"];
+          keys_to_assign = &actionNode["bindings"];
         } else if (actionNode.is_array()) {
-            keys_to_assign = &actionNode;
+          keys_to_assign = &actionNode;
         }
 
         if (!keys_to_assign || !keys_to_assign->is_array()) continue;
@@ -971,26 +1001,25 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
         for (const auto& key_value : *keys_to_assign) {
           bool conflict = false;
           try {
-              auto new_input_obj = Modules::InputFactory::CreateFromJson(key_value);
-              if (new_input_obj) {
-                  std::string new_press_type = key_value.value("press_type", "short");
+            auto new_input_obj = Modules::InputFactory::CreateFromJson(key_value);
+            if (new_input_obj) {
+              std::string new_press_type = key_value.value("press_type", "short");
 
-                  for (const auto& used_binding_json : usedKeyValues) {
-                      auto existing_input_obj = Modules::InputFactory::CreateFromJson(used_binding_json);
-                      if (existing_input_obj && new_input_obj->IsSameAs(*existing_input_obj)) {
-                          std::string existing_press_type = used_binding_json.value("press_type", "short");
-                          if (new_press_type == existing_press_type) {
-                              conflict = true; 
-                              break;
-                          }
-                      }
+              for (const auto& used_binding_json : usedKeyValues) {
+                auto existing_input_obj = Modules::InputFactory::CreateFromJson(used_binding_json);
+                if (existing_input_obj && new_input_obj->IsSameAs(*existing_input_obj)) {
+                  std::string existing_press_type = used_binding_json.value("press_type", "short");
+                  if (new_press_type == existing_press_type) {
+                    conflict = true;
+                    break;
                   }
+                }
               }
+            }
           } catch (const std::exception& e) {
-              report.Warnings.push_back({fmt::format("Could not parse binding '{}' for action '{}' in component '{}'. Error: {}",
-                                                     key_value.dump(), fullActionKey, componentName, e.what()),
-                                           fullActionKey});
-              continue; // Skip this invalid binding
+            report.Warnings.push_back(
+              {fmt::format("Could not parse binding '{}' for action '{}' in component '{}'. Error: {}", key_value.dump(), fullActionKey, componentName, e.what()), fullActionKey});
+            continue;  // Skip this invalid binding
           }
 
           if (conflict) {
@@ -1012,7 +1041,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
           }
           // We need to reconstruct the full action object here, not just the bindings array
           nlohmann::ordered_json finalActionObject;
-          if(actionNode.is_object() && actionNode.contains("_meta")) {
+          if (actionNode.is_object() && actionNode.contains("_meta")) {
             finalActionObject["_meta"] = actionNode["_meta"];
           }
           finalActionObject["bindings"] = successful_keys;
@@ -1053,7 +1082,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
             nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
             const auto* userSettings = GetSettings(userJson, systemName);
             if (userSettings) {
-                process_source(*userSettings, componentName);
+              process_source(*userSettings, componentName);
             }
           }
         } catch (const std::exception& e) {
@@ -1087,7 +1116,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
             nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
             const auto* userSettings = GetSettings(userJson, systemName);
             if (userSettings) {
-                process_source(*userSettings, componentName);
+              process_source(*userSettings, componentName);
             }
           }
         } catch (const std::exception& e) {
@@ -1122,18 +1151,17 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
   // Final pass to inject metadata into the merged keybinds
   for (const auto& [componentName, manifest] : m_manifests) {
     for (const auto& meta : manifest.keybindsMetadata) {
-        if (finalConfig.contains(meta.groupName) && finalConfig[meta.groupName].contains(meta.actionName)) {
-            auto& actionNode = finalConfig[meta.groupName][meta.actionName];
-            
-            // If the node is an object and doesn't already have metadata, inject it.
-            // This ensures that actions defined in user files (which don't have meta) get it from the manifest.
-            if (actionNode.is_object() && !actionNode.contains("_meta")) {
-                InjectMetadata(actionNode, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
-            }
+      if (finalConfig.contains(meta.groupName) && finalConfig[meta.groupName].contains(meta.actionName)) {
+        auto& actionNode = finalConfig[meta.groupName][meta.actionName];
+
+        // If the node is an object and doesn't already have metadata, inject it.
+        // This ensures that actions defined in user files (which don't have meta) get it from the manifest.
+        if (actionNode.is_object() && !actionNode.contains("_meta")) {
+          InjectMetadata(actionNode, meta.titleKey.value_or(""), meta.descriptionKey.value_or(""));
         }
+      }
     }
   }
-
 
   m_mergedConfigs[systemName] = finalConfig;
 }
@@ -1152,22 +1180,23 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
   // --- Check custom configs first ---
   auto customIt = m_customConfigs.find(componentName);
   if (customIt != m_customConfigs.end()) {
-      try {
-          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, jsonPath);
-          customIt->second[ptr] = value;
-          
-          // Auto-save logic for custom configs
-          if (m_disabledAutoSave.find(componentName) == m_disabledAutoSave.end()) {
-              auto pathIt = m_customContextPaths.find(componentName);
-              if (pathIt != m_customContextPaths.end()) {
-                  std::ofstream file(pathIt->second);
-                  file << customIt->second.dump(4);
-              }
-          }
-          
-          m_eventManager.System.OnSettingWasChanged.Call({"", componentName, jsonPath, value});
-          return;
-      } catch (...) {}
+    try {
+      nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, jsonPath);
+      customIt->second[ptr] = value;
+
+      // Auto-save logic for custom configs
+      if (m_disabledAutoSave.find(componentName) == m_disabledAutoSave.end()) {
+        auto pathIt = m_customContextPaths.find(componentName);
+        if (pathIt != m_customContextPaths.end()) {
+          std::ofstream file(pathIt->second);
+          file << customIt->second.dump(4);
+        }
+      }
+
+      m_eventManager.System.OnSettingWasChanged.Call({"", componentName, jsonPath, value});
+      return;
+    } catch (...) {
+    }
   }
 
   size_t firstDot = jsonPath.find('.');
@@ -1189,26 +1218,26 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
       // Check if the target node is a _value object and update it correctly
       auto& targetNode = m_isolatedConfigs[systemName][componentName][ptr];
       if (targetNode.is_object() && targetNode.contains("_value")) {
-          if (value.is_object() && value.contains("_value")) {
-            targetNode["_value"] = value["_value"];
-          } else {
-            targetNode["_value"] = value;
-          }
+        if (value.is_object() && value.contains("_value")) {
+          targetNode["_value"] = value["_value"];
+        } else {
+          targetNode["_value"] = value;
+        }
       } else {
-          targetNode = value;
+        targetNode = value;
       }
 
       // Perform a targeted update on the aggregated map as well
       nlohmann::ordered_json::json_pointer aggregatedPtr = GetMetaAwarePointer(m_aggregatedUserSettings[componentName][systemName], keyPath);
       auto& aggregatedTargetNode = m_aggregatedUserSettings[componentName][systemName][aggregatedPtr];
       if (aggregatedTargetNode.is_object() && aggregatedTargetNode.contains("_value")) {
-          if (value.is_object() && value.contains("_value")) {
-            aggregatedTargetNode["_value"] = value["_value"];
-          } else {
-            aggregatedTargetNode["_value"] = value;
-          }
+        if (value.is_object() && value.contains("_value")) {
+          aggregatedTargetNode["_value"] = value["_value"];
+        } else {
+          aggregatedTargetNode["_value"] = value;
+        }
       } else {
-          aggregatedTargetNode = value;
+        aggregatedTargetNode = value;
       }
 
       if (IsUserConfigAllowed(m_manifests.at(componentName))) {
@@ -1254,7 +1283,6 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
           m_dirtyComponents.insert(componentName);
         }
       }
-
     }
 
     // After any successful change, fire an event so other systems can react.
@@ -1262,20 +1290,22 @@ void ConfigService::SetValue(const std::string& componentName, const std::string
 
     // Special case: if we are changing plugin states in framework settings, update the ComponentInfo cache
     if (systemName == "settings" && componentName == "framework" && keyPath.find("plugin_states.") == 0) {
-        // Path format: plugin_states.PLUGIN_ID.enabled
-        std::string rest = keyPath.substr(14); // skip "plugin_states."
-        size_t dotPos = rest.find('.');
-        if (dotPos != std::string::npos) {
-            std::string pluginId = rest.substr(0, dotPos);
-            std::string prop = rest.substr(dotPos + 1);
-            if (prop == "enabled" && m_allComponentInfo.count(pluginId)) {
-                bool newState = false;
-                if (value.is_boolean()) newState = value.get<bool>();
-                else if (value.is_object() && value.contains("_value")) newState = value["_value"].get<bool>();
-                
-                m_allComponentInfo[pluginId].isEnabled = newState;
-            }
+      // Path format: plugin_states.PLUGIN_ID.enabled
+      std::string rest = keyPath.substr(14);  // skip "plugin_states."
+      size_t dotPos = rest.find('.');
+      if (dotPos != std::string::npos) {
+        std::string pluginId = rest.substr(0, dotPos);
+        std::string prop = rest.substr(dotPos + 1);
+        if (prop == "enabled" && m_allComponentInfo.count(pluginId)) {
+          bool newState = false;
+          if (value.is_boolean())
+            newState = value.get<bool>();
+          else if (value.is_object() && value.contains("_value"))
+            newState = value["_value"].get<bool>();
+
+          m_allComponentInfo[pluginId].isEnabled = newState;
         }
+      }
     }
   } catch (const std::exception& e) {
     auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
@@ -1288,7 +1318,7 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
   if (logger) logger->Debug("Attempting to reset key. System: '{}', KeyPath: '{}'", systemName, keyPathWithComponent);
 
   std::string originalComponent;
-   nlohmann::ordered_json defaultValue;
+  nlohmann::ordered_json defaultValue;
   bool found = false;
 
   auto strategyIt = m_systemStrategies.find(systemName);
@@ -1309,10 +1339,10 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
     std::string keyPath = keyPathWithComponent.substr(firstDot + 1);
 
     if (m_manifests.count(componentName)) {
-       nlohmann::ordered_json defaultSettings = GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework"));
+      nlohmann::ordered_json defaultSettings = GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework"));
       if (!defaultSettings.is_null()) {
         try {
-          defaultValue = defaultSettings.at( nlohmann::ordered_json::json_pointer(ToJSONPointerPath(keyPath)));
+          defaultValue = defaultSettings.at(nlohmann::ordered_json::json_pointer(ToJSONPointerPath(keyPath)));
           originalComponent = componentName;
           found = true;
         } catch (const std::exception&) {
@@ -1355,7 +1385,7 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
     }
 
     for (const auto& [compName, manifest] : m_manifests) {
-       nlohmann::ordered_json defaultSettings = GetSystemSettingsAsJson(manifest, systemName, m_manifests.at("framework"));
+      nlohmann::ordered_json defaultSettings = GetSystemSettingsAsJson(manifest, systemName, m_manifests.at("framework"));
       if (!defaultSettings.is_null() && defaultSettings.contains(groupName) && defaultSettings[groupName].contains(actionName)) {
         const auto& settingValue = defaultSettings[groupName][actionName];
 
@@ -1389,303 +1419,303 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
   }
 }
 
-void ConfigService::UpdateBinding(const std::string& actionFullName, const  nlohmann::ordered_json& originalBinding, const  nlohmann::ordered_json& newBinding,
-                                  const std::optional<std::pair<std::string,  nlohmann::ordered_json>>& bindingToClear) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
+                                  const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) {
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-    // 1. Find owner of the action being changed. This is for marking dirty files.
-    auto ownerIt = m_keybindOwnership.find(actionFullName);
-    if (ownerIt == m_keybindOwnership.end()) {
-        if (logger) logger->Error("UpdateBinding failed: Could not find owner for action '{}'.", actionFullName);
-        return;
-    }
-    const std::string& componentName = ownerIt->second;
+  // 1. Find owner of the action being changed. This is for marking dirty files.
+  auto ownerIt = m_keybindOwnership.find(actionFullName);
+  if (ownerIt == m_keybindOwnership.end()) {
+    if (logger) logger->Error("UpdateBinding failed: Could not find owner for action '{}'.", actionFullName);
+    return;
+  }
+  const std::string& componentName = ownerIt->second;
 
-    // 2. Parse action name
-    size_t lastDot = actionFullName.rfind('.');
-    if (lastDot == std::string::npos) {
-        if (logger) logger->Error("UpdateBinding failed: Invalid action name format for '{}'.", actionFullName);
-        return;
-    }
-    std::string groupName = actionFullName.substr(0, lastDot);
-    std::string actionName = actionFullName.substr(lastDot + 1);
+  // 2. Parse action name
+  size_t lastDot = actionFullName.rfind('.');
+  if (lastDot == std::string::npos) {
+    if (logger) logger->Error("UpdateBinding failed: Invalid action name format for '{}'.", actionFullName);
+    return;
+  }
+  std::string groupName = actionFullName.substr(0, lastDot);
+  std::string actionName = actionFullName.substr(lastDot + 1);
 
-    // 3. Find the target bindings array in the merged config
-    if (!m_mergedConfigs.count("keybinds") || !m_mergedConfigs["keybinds"].contains(groupName) || !m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
-        if (logger) logger->Warn("UpdateBinding: Action '{}' not found in merged config.", actionFullName);
-        return;
+  // 3. Find the target bindings array in the merged config
+  if (!m_mergedConfigs.count("keybinds") || !m_mergedConfigs["keybinds"].contains(groupName) || !m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
+    if (logger) logger->Warn("UpdateBinding: Action '{}' not found in merged config.", actionFullName);
+    return;
+  }
+  auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
+  if (!actionObject.is_object() || !actionObject.contains("bindings") || !actionObject["bindings"].is_array()) {
+    if (logger) logger->Error("UpdateBinding failed: 'bindings' array not found or is not an array for action '{}'.", actionFullName);
+    return;
+  }
+  auto& bindingsArray = actionObject["bindings"];
+
+  // 4. Create a complete binding object by merging UI changes with manifest defaults
+  nlohmann::ordered_json mergedData = newBinding;
+  const auto& ownerManifest = m_manifests.at(componentName);
+  if (ownerManifest.keybinds.actions.count(groupName) && ownerManifest.keybinds.actions.at(groupName).count(actionName)) {
+    const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName);
+    if (!defaultBindings.empty()) {
+      const auto& def = defaultBindings[0];
+      nlohmann::ordered_json manifestDefaults;
+      manifestDefaults["consume"] = def.consume.value_or("never");
+      if (newBinding.value("type", "").find("_axis") == std::string::npos) {
+        manifestDefaults["press_type"] = def.pressType.value_or("short");
+        manifestDefaults["behavior"] = def.behavior.value_or("toggle");
+        manifestDefaults["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+      }
+      manifestDefaults.merge_patch(newBinding);
+      mergedData = manifestDefaults;
     }
+  }
+
+  // --- RECONSTRUCT WITH FIXED ORDER ---
+  std::string type = mergedData.value("type", "");
+  bool isAxis = (type.find("_axis") != std::string::npos);
+  bool isMouse = (type == "mouse_axis");
+  std::string mode = mergedData.value("mode", isAxis ? "analog" : "digital");
+
+  nlohmann::ordered_json finalNewBinding;
+  finalNewBinding["type"] = type;
+
+  if (type == "chord") {
+    finalNewBinding["bindings"] = mergedData["bindings"];
+  } else {
+    finalNewBinding["key"] = mergedData["key"];
+  }
+
+  finalNewBinding["consume"] = mergedData.value("consume", "never");
+
+  if (isAxis) {
+    finalNewBinding["mode"] = mode;
+    if (mode == "analog") {
+      finalNewBinding["curve"] = mergedData.value("curve", "linear");
+      finalNewBinding["side"] = mergedData.value("side", "both");
+      finalNewBinding["invert"] = mergedData.value("invert", false);
+      finalNewBinding["deadzone"] = mergedData.value("deadzone", 0.0);
+      finalNewBinding["saturation"] = mergedData.value("saturation", 1.0);
+      finalNewBinding["sensitivity"] = mergedData.value("sensitivity", 1.0);
+      finalNewBinding["smoothing"] = mergedData.value("smoothing", 0.0);
+      bool accumulator = mergedData.value("accumulator", isMouse);
+      finalNewBinding["accumulator"] = accumulator;
+
+      bool isTrigger = false;
+      if (finalNewBinding["key"].is_string()) {
+        std::string k = finalNewBinding["key"].get<std::string>();
+        isTrigger = (k.find("TRIGGER") != std::string::npos);
+      }
+
+      finalNewBinding["range_min"] = mergedData.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+      finalNewBinding["range_max"] = mergedData.value("range_max", isMouse ? 100.0 : 1.0);
+    } else {
+      finalNewBinding["threshold"] = mergedData.value("threshold", 0.5);
+      finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
+      finalNewBinding["press_type"] = mergedData.value("press_type", "short");
+      finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
+    }
+  } else {
+    finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
+    finalNewBinding["press_type"] = mergedData.value("press_type", "short");
+    finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
+  }
+
+  // 5. Add or Update the binding in the target array
+  if (originalBinding.empty()) {  // Add new binding
+    bindingsArray.push_back(finalNewBinding);
+  } else {  // Update existing binding
+    bool found = false;
+    for (auto& binding : bindingsArray) {
+      // This simple comparison is OK here because the UI passes the exact original JSON object.
+      if (binding == originalBinding) {
+        binding = finalNewBinding;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      if (logger) logger->Warn("UpdateBinding: Could not find original binding for action '{}' to update. Adding as new.", actionFullName);
+      bindingsArray.push_back(finalNewBinding);
+    }
+  }
+
+  // Mark the owner component as dirty
+  m_dirtyComponents.insert(componentName);
+
+  // 5. Handle clearing the binding from the conflicting action
+  if (bindingToClear.has_value()) {
+    const auto& [conflictingAction, bindingJsonToClear] = bindingToClear.value();
+    _DeleteBindingInternal(conflictingAction, bindingJsonToClear);
+  }
+
+  m_eventManager.System.OnKeybindsModified.Call({});
+}
+
+bool ConfigService::_DeleteBindingInternal(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete) {
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+
+  auto ownerIt = m_keybindOwnership.find(actionFullName);
+  if (ownerIt == m_keybindOwnership.end()) {
+    if (logger) logger->Error("_DeleteBindingInternal failed: Could not find owner for action '{}'.", actionFullName);
+    return false;
+  }
+  const std::string& componentName = ownerIt->second;
+
+  size_t lastDot = actionFullName.rfind('.');
+  if (lastDot == std::string::npos) {
+    if (logger) logger->Error("_DeleteBindingInternal failed: Invalid action name format '{}'.", actionFullName);
+    return false;
+  }
+  std::string groupName = actionFullName.substr(0, lastDot);
+  std::string actionName = actionFullName.substr(lastDot + 1);
+
+  if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
     auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
-    if (!actionObject.is_object() || !actionObject.contains("bindings") || !actionObject["bindings"].is_array()) {
-      if (logger) logger->Error("UpdateBinding failed: 'bindings' array not found or is not an array for action '{}'.", actionFullName);
-      return;
-    }
-    auto& bindingsArray = actionObject["bindings"];
+    if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
+      auto& bindingsArray = actionObject["bindings"];
 
-    // 4. Create a complete binding object by merging UI changes with manifest defaults
-    nlohmann::ordered_json mergedData = newBinding;
-    const auto& ownerManifest = m_manifests.at(componentName);
-    if (ownerManifest.keybinds.actions.count(groupName) && ownerManifest.keybinds.actions.at(groupName).count(actionName)) {
-        const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName);
-        if (!defaultBindings.empty()) {
-            const auto& def = defaultBindings[0];
-            nlohmann::ordered_json manifestDefaults;
-            manifestDefaults["consume"] = def.consume.value_or("never");
-            if (newBinding.value("type", "").find("_axis") == std::string::npos) {
-                manifestDefaults["press_type"] = def.pressType.value_or("short");
-                manifestDefaults["behavior"] = def.behavior.value_or("toggle");
-                manifestDefaults["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
-            }
-            manifestDefaults.merge_patch(newBinding);
-            mergedData = manifestDefaults;
-        }
-    }
-
-    // --- RECONSTRUCT WITH FIXED ORDER ---
-    std::string type = mergedData.value("type", "");
-    bool isAxis = (type.find("_axis") != std::string::npos);
-    bool isMouse = (type == "mouse_axis");
-    std::string mode = mergedData.value("mode", isAxis ? "analog" : "digital");
-
-    nlohmann::ordered_json finalNewBinding;
-    finalNewBinding["type"] = type;
-    
-    if (type == "chord") {
-        finalNewBinding["bindings"] = mergedData["bindings"];
-    } else {
-        finalNewBinding["key"] = mergedData["key"];
-    }
-
-    finalNewBinding["consume"] = mergedData.value("consume", "never");
-
-    if (isAxis) {
-        finalNewBinding["mode"] = mode;
-        if (mode == "analog") {
-            finalNewBinding["curve"] = mergedData.value("curve", "linear");
-            finalNewBinding["side"] = mergedData.value("side", "both");
-            finalNewBinding["invert"] = mergedData.value("invert", false);
-            finalNewBinding["deadzone"] = mergedData.value("deadzone", 0.0);
-            finalNewBinding["saturation"] = mergedData.value("saturation", 1.0);
-            finalNewBinding["sensitivity"] = mergedData.value("sensitivity", 1.0);
-            finalNewBinding["smoothing"] = mergedData.value("smoothing", 0.0);
-            bool accumulator = mergedData.value("accumulator", isMouse);
-            finalNewBinding["accumulator"] = accumulator;
-            
-            bool isTrigger = false;
-            if (finalNewBinding["key"].is_string()) {
-                std::string k = finalNewBinding["key"].get<std::string>();
-                isTrigger = (k.find("TRIGGER") != std::string::npos);
-            }
-
-            finalNewBinding["range_min"] = mergedData.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
-            finalNewBinding["range_max"] = mergedData.value("range_max", isMouse ? 100.0 : 1.0);
+      for (auto it = bindingsArray.begin(); it != bindingsArray.end();) {
+        if (*it == bindingToDelete) {
+          it = bindingsArray.erase(it);
+          m_dirtyComponents.insert(componentName);
+          if (logger) logger->Info("_DeleteBindingInternal: Removed binding from action '{}'. Component '{}' marked as dirty.", actionFullName, componentName);
+          return true;
         } else {
-            finalNewBinding["threshold"] = mergedData.value("threshold", 0.5);
-            finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
-            finalNewBinding["press_type"] = mergedData.value("press_type", "short");
-            finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
+          ++it;
         }
-    } else {
-        finalNewBinding["behavior"] = mergedData.value("behavior", "toggle");
-        finalNewBinding["press_type"] = mergedData.value("press_type", "short");
-        finalNewBinding["press_threshold_ms"] = mergedData.value("press_threshold_ms", 500);
+      }
     }
+  }
 
-    // 5. Add or Update the binding in the target array
-    if (originalBinding.empty()) { // Add new binding
-        bindingsArray.push_back(finalNewBinding);
-    } else { // Update existing binding
-        bool found = false;
-        for (auto& binding : bindingsArray) {
-            // This simple comparison is OK here because the UI passes the exact original JSON object.
-            if (binding == originalBinding) {
-                binding = finalNewBinding;
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            if (logger) logger->Warn("UpdateBinding: Could not find original binding for action '{}' to update. Adding as new.", actionFullName);
-            bindingsArray.push_back(finalNewBinding);
-        }
-    }
+  if (logger) logger->Warn("_DeleteBindingInternal: Could not find binding '{}' in action '{}' to delete.", bindingToDelete.dump(), actionFullName);
+  return false;  // Failure
+}
 
-    // Mark the owner component as dirty
-    m_dirtyComponents.insert(componentName);
-
-    // 5. Handle clearing the binding from the conflicting action
-    if (bindingToClear.has_value()) {
-        const auto& [conflictingAction, bindingJsonToClear] = bindingToClear.value();
-        _DeleteBindingInternal(conflictingAction, bindingJsonToClear);
-    }
-
+void ConfigService::DeleteBinding(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete) {
+  if (_DeleteBindingInternal(actionFullName, bindingToDelete)) {
     m_eventManager.System.OnKeybindsModified.Call({});
+  }
 }
 
-bool ConfigService::_DeleteBindingInternal(const std::string& actionFullName, const  nlohmann::ordered_json& bindingToDelete) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+void ConfigService::UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName,
+                                          const nlohmann::ordered_json& newValue) {
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-    auto ownerIt = m_keybindOwnership.find(actionFullName);
-    if (ownerIt == m_keybindOwnership.end()) {
-        if (logger) logger->Error("_DeleteBindingInternal failed: Could not find owner for action '{}'.", actionFullName);
-        return false;
-    }
-    const std::string& componentName = ownerIt->second;
+  auto ownerIt = m_keybindOwnership.find(actionFullName);
+  if (ownerIt == m_keybindOwnership.end()) {
+    if (logger) logger->Error("UpdateBindingProperty failed: Could not find owner for action '{}'.", actionFullName);
+    return;
+  }
+  const std::string& componentName = ownerIt->second;
 
-    size_t lastDot = actionFullName.rfind('.');
-    if (lastDot == std::string::npos) {
-        if (logger) logger->Error("_DeleteBindingInternal failed: Invalid action name format '{}'.", actionFullName);
-        return false;
-    }
-    std::string groupName = actionFullName.substr(0, lastDot);
-    std::string actionName = actionFullName.substr(lastDot + 1);
+  size_t lastDot = actionFullName.rfind('.');
+  if (lastDot == std::string::npos) return;
+  std::string groupName = actionFullName.substr(0, lastDot);
+  std::string actionName = actionFullName.substr(lastDot + 1);
 
-    if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
-        auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
-        if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
-            auto& bindingsArray = actionObject["bindings"];
-            
-            for (auto it = bindingsArray.begin(); it != bindingsArray.end(); ) {
-                if (*it == bindingToDelete) {
-                    it = bindingsArray.erase(it);
-                    m_dirtyComponents.insert(componentName);
-                    if (logger) logger->Info("_DeleteBindingInternal: Removed binding from action '{}'. Component '{}' marked as dirty.", actionFullName, componentName);
-                    return true;
-                } else {
-                    ++it;
-                }
+  if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
+    auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
+    if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
+      auto& bindingsArray = actionObject["bindings"];
+
+      if (originalBinding.is_object()) {
+        std::string origType = originalBinding.value("type", "");
+        std::string origKey = originalBinding.value("key", "");
+        std::string origPressType = originalBinding.value("press_type", "short");
+        std::string origSide = originalBinding.value("side", "both");
+        auto const& origBindings = originalBinding.contains("bindings") ? originalBinding["bindings"] : nlohmann::ordered_json();
+
+        for (auto& binding : bindingsArray) {
+          bool match = false;
+          if (binding.is_object()) {
+            // 1. Compare basic identity fields
+            bool typeMatch = (binding.value("type", "") == origType);
+            bool pressTypeMatch = (binding.value("press_type", "short") == origPressType);
+
+            // 2. Compare key or chord constituents
+            bool keyOrChordMatch = false;
+            if (origType == "chord") {
+              keyOrChordMatch = (binding.contains("bindings") && binding["bindings"] == origBindings);
+            } else {
+              keyOrChordMatch = (binding.value("key", "") == origKey);
             }
-        }
-    }
 
-    if (logger) logger->Warn("_DeleteBindingInternal: Could not find binding '{}' in action '{}' to delete.", bindingToDelete.dump(), actionFullName);
-    return false; // Failure
-}
-
-void ConfigService::DeleteBinding(const std::string& actionFullName, const  nlohmann::ordered_json& bindingToDelete) {
-    if (_DeleteBindingInternal(actionFullName, bindingToDelete)) {
-        m_eventManager.System.OnKeybindsModified.Call({});
-    }
-}
-
-void ConfigService::UpdateBindingProperty(const std::string& actionFullName, const  nlohmann::ordered_json& originalBinding, const std::string& propertyName,
-                                          const  nlohmann::ordered_json& newValue) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
-
-    auto ownerIt = m_keybindOwnership.find(actionFullName);
-    if (ownerIt == m_keybindOwnership.end()) {
-        if (logger) logger->Error("UpdateBindingProperty failed: Could not find owner for action '{}'.", actionFullName);
-        return;
-    }
-    const std::string& componentName = ownerIt->second;
-
-    size_t lastDot = actionFullName.rfind('.');
-    if (lastDot == std::string::npos) return;
-    std::string groupName = actionFullName.substr(0, lastDot);
-    std::string actionName = actionFullName.substr(lastDot + 1);
-
-    if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
-        auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
-        if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
-            auto& bindingsArray = actionObject["bindings"];
-
-            if (originalBinding.is_object()) {
-                std::string origType = originalBinding.value("type", "");
-                std::string origKey = originalBinding.value("key", "");
-                std::string origPressType = originalBinding.value("press_type", "short");
-                std::string origSide = originalBinding.value("side", "both");
-                auto const& origBindings = originalBinding.contains("bindings") ? originalBinding["bindings"] : nlohmann::ordered_json();
-
-                for (auto& binding : bindingsArray) {
-                    bool match = false;
-                    if (binding.is_object()) {
-                        // 1. Compare basic identity fields
-                        bool typeMatch = (binding.value("type", "") == origType);
-                        bool pressTypeMatch = (binding.value("press_type", "short") == origPressType);
-                        
-                        // 2. Compare key or chord constituents
-                        bool keyOrChordMatch = false;
-                        if (origType == "chord") {
-                            keyOrChordMatch = (binding.contains("bindings") && binding["bindings"] == origBindings);
-                        } else {
-                            keyOrChordMatch = (binding.value("key", "") == origKey);
-                        }
-
-                        // 3. Compare side (only relevant for axes)
-                        bool sideMatch = true;
-                        if (origType.find("_axis") != std::string::npos) {
-                            sideMatch = (binding.value("side", "both") == origSide);
-                        }
-
-                        if (typeMatch && pressTypeMatch && keyOrChordMatch && sideMatch) {
-                            match = true;
-                        }
-                    }
-
-                    if (match) {
-                        binding[propertyName] = newValue;
-                        
-                        // --- RECONSTRUCT TO CLEAN UP WHILE PRESERVING USER VALUES ---
-                        nlohmann::ordered_json current = binding;
-                        std::string type = current.value("type", "");
-                        bool isAxis = (type.find("_axis") != std::string::npos);
-                        bool isMouse = (type == "mouse_axis");
-                        std::string mode = current.value("mode", isAxis ? "analog" : "digital");
-
-                        bool isTrigger = false;
-                        if (current.contains("key") && current["key"].is_string()) {
-                            std::string k = current["key"].get<std::string>();
-                            isTrigger = (k.find("TRIGGER") != std::string::npos);
-                        }
-
-                        nlohmann::ordered_json clean;
-                        clean["type"] = type;
-                        if (type == "chord") {
-                            clean["bindings"] = current["bindings"];
-                        } else {
-                            clean["key"] = current["key"];
-                        }
-                        clean["consume"] = current.value("consume", "never");
-
-                        if (isAxis) {
-                            clean["mode"] = mode;
-                            if (mode == "analog") {
-                                clean["curve"] = current.value("curve", "linear");
-                                clean["side"] = current.value("side", "both");
-                                clean["invert"] = current.value("invert", false);
-                                clean["deadzone"] = current.value("deadzone", 0.0);
-                                clean["saturation"] = current.value("saturation", 1.0);
-                                clean["sensitivity"] = current.value("sensitivity", 1.0);
-                                clean["smoothing"] = current.value("smoothing", 0.0);
-                                bool accumulator = current.value("accumulator", isMouse);
-                                clean["accumulator"] = accumulator;
-                                clean["range_min"] = current.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
-                                clean["range_max"] = current.value("range_max", isMouse ? 100.0 : 1.0);
-                            } else {
-                                clean["threshold"] = current.value("threshold", 0.5);
-                                clean["behavior"] = current.value("behavior", "toggle");
-                                clean["press_type"] = current.value("press_type", "short");
-                                clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
-                            }
-                        } else {
-                            clean["behavior"] = current.value("behavior", "toggle");
-                            clean["press_type"] = current.value("press_type", "short");
-                            clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
-                        }
-
-                        binding = clean; // Swap dirty with clean
-                        
-                        m_dirtyComponents.insert(componentName);
-                        m_eventManager.System.OnKeybindsModified.Call({});
-                        if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' and filtered stale fields.", propertyName);
-                        return;
-                    }
-                }
+            // 3. Compare side (only relevant for axes)
+            bool sideMatch = true;
+            if (origType.find("_axis") != std::string::npos) {
+              sideMatch = (binding.value("side", "both") == origSide);
             }
-        }
-    }
 
-    if (logger) logger->Warn("UpdateBindingProperty: Could not find binding to update property '{}' for in action '{}'.", propertyName, actionFullName);
+            if (typeMatch && pressTypeMatch && keyOrChordMatch && sideMatch) {
+              match = true;
+            }
+          }
+
+          if (match) {
+            binding[propertyName] = newValue;
+
+            // --- RECONSTRUCT TO CLEAN UP WHILE PRESERVING USER VALUES ---
+            nlohmann::ordered_json current = binding;
+            std::string type = current.value("type", "");
+            bool isAxis = (type.find("_axis") != std::string::npos);
+            bool isMouse = (type == "mouse_axis");
+            std::string mode = current.value("mode", isAxis ? "analog" : "digital");
+
+            bool isTrigger = false;
+            if (current.contains("key") && current["key"].is_string()) {
+              std::string k = current["key"].get<std::string>();
+              isTrigger = (k.find("TRIGGER") != std::string::npos);
+            }
+
+            nlohmann::ordered_json clean;
+            clean["type"] = type;
+            if (type == "chord") {
+              clean["bindings"] = current["bindings"];
+            } else {
+              clean["key"] = current["key"];
+            }
+            clean["consume"] = current.value("consume", "never");
+
+            if (isAxis) {
+              clean["mode"] = mode;
+              if (mode == "analog") {
+                clean["curve"] = current.value("curve", "linear");
+                clean["side"] = current.value("side", "both");
+                clean["invert"] = current.value("invert", false);
+                clean["deadzone"] = current.value("deadzone", 0.0);
+                clean["saturation"] = current.value("saturation", 1.0);
+                clean["sensitivity"] = current.value("sensitivity", 1.0);
+                clean["smoothing"] = current.value("smoothing", 0.0);
+                bool accumulator = current.value("accumulator", isMouse);
+                clean["accumulator"] = accumulator;
+                clean["range_min"] = current.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+                clean["range_max"] = current.value("range_max", isMouse ? 100.0 : 1.0);
+              } else {
+                clean["threshold"] = current.value("threshold", 0.5);
+                clean["behavior"] = current.value("behavior", "toggle");
+                clean["press_type"] = current.value("press_type", "short");
+                clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
+              }
+            } else {
+              clean["behavior"] = current.value("behavior", "toggle");
+              clean["press_type"] = current.value("press_type", "short");
+              clean["press_threshold_ms"] = current.value("press_threshold_ms", 500);
+            }
+
+            binding = clean;  // Swap dirty with clean
+
+            m_dirtyComponents.insert(componentName);
+            m_eventManager.System.OnKeybindsModified.Call({});
+            if (logger) logger->Info("UpdateBindingProperty: Updated property '{}' and filtered stale fields.", propertyName);
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  if (logger) logger->Warn("UpdateBindingProperty: Could not find binding to update property '{}' for in action '{}'.", propertyName, actionFullName);
 }
 
 /**
@@ -1704,16 +1734,16 @@ void ConfigService::SaveAllDirty() {
 
   for (const auto& componentName : m_dirtyComponents) {
     std::filesystem::path userConfigPath =
-        (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+      (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
-     nlohmann::ordered_json fullConfigToSave;
+    nlohmann::ordered_json fullConfigToSave;
     try {
       // If the file was corrupted, we start fresh. Otherwise, load existing content to preserve other settings.
       if (m_corruptedFilePaths.find(userConfigPath.string()) == m_corruptedFilePaths.end()) {
         if (std::filesystem::exists(userConfigPath)) {
           std::ifstream file(userConfigPath);
           if (file.peek() != std::ifstream::traits_type::eof()) {
-            fullConfigToSave =  nlohmann::ordered_json::parse(file);
+            fullConfigToSave = nlohmann::ordered_json::parse(file);
           }
         }
       }
@@ -1726,7 +1756,7 @@ void ConfigService::SaveAllDirty() {
       }
 
       // --- Save MERGED systems (keybinds) for this component ---
-       nlohmann::ordered_json keybindsToSave =  nlohmann::ordered_json::object();
+      nlohmann::ordered_json keybindsToSave = nlohmann::ordered_json::object();
       const auto* keybindsConfig = GetMergedConfig("keybinds");
 
       if (keybindsConfig) {
@@ -1768,24 +1798,25 @@ void ConfigService::SaveAllDirty() {
   logger->Info("--- Finished saving dirty configurations ---");
 }
 
-nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName, const std::string& keyPath, const  nlohmann::ordered_json& defaultValue) const {
+nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const {
   // --- Check custom configs first ---
   auto customIt = m_customConfigs.find(componentName);
   if (customIt != m_customConfigs.end()) {
-      try {
-          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
-          if (customIt->second.contains(ptr)) {
-              return customIt->second[ptr];
-          }
-      } catch (...) {}
-      return defaultValue;
+    try {
+      nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
+      if (customIt->second.contains(ptr)) {
+        return customIt->second[ptr];
+      }
+    } catch (...) {
+    }
+    return defaultValue;
   }
 
   if (keyPath.rfind("info.", 0) == 0) {
     auto manifestIt = m_manifests.find(componentName);
     if (manifestIt != m_manifests.end()) {
       const auto& info = manifestIt->second.info;
-      std::string subKey = keyPath.substr(5); // Length of "info."
+      std::string subKey = keyPath.substr(5);  // Length of "info."
       if (subKey == "name" && info.name.has_value()) return info.name.value();
       if (subKey == "version" && info.version.has_value()) return info.version.value();
       if (subKey == "author" && info.author.has_value()) return info.author.value();
@@ -1799,7 +1830,6 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
       if (subKey == "scsForumUrl" && info.scsForumUrl.has_value()) return info.scsForumUrl.value();
       if (subKey == "patreonUrl" && info.patreonUrl.has_value()) return info.patreonUrl.value();
       if (subKey == "websiteUrl" && info.websiteUrl.has_value()) return info.websiteUrl.value();
-
     }
     return defaultValue;
   }
@@ -1817,7 +1847,7 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
     return defaultValue;
   }
 
-  const  nlohmann::ordered_json* configRoot = nullptr;
+  const nlohmann::ordered_json* configRoot = nullptr;
   if (strategyIt->second == MergeStrategy::Isolate) {
     auto isolatedSystemIt = m_isolatedConfigs.find(systemName);
     if (isolatedSystemIt != m_isolatedConfigs.end()) {
@@ -1838,34 +1868,35 @@ nlohmann::ordered_json ConfigService::GetValue(const std::string& componentName,
   }
 
   try {
-      auto ptr = GetMetaAwarePointer(*configRoot, restOfPath);
-      
-      // Use find() logic or similar to avoid double lookup and exceptions
-      if (configRoot->contains(ptr)) {
-          const auto& rawNode = configRoot->at(ptr);
-          if (rawNode.is_object() && rawNode.contains("_value")) {
-              return rawNode["_value"];
-          }
-          return rawNode;
+    auto ptr = GetMetaAwarePointer(*configRoot, restOfPath);
+
+    // Use find() logic or similar to avoid double lookup and exceptions
+    if (configRoot->contains(ptr)) {
+      const auto& rawNode = configRoot->at(ptr);
+      if (rawNode.is_object() && rawNode.contains("_value")) {
+        return rawNode["_value"];
       }
+      return rawNode;
+    }
   } catch (...) {
-      // json_pointer might throw if path is invalid, return default
+    // json_pointer might throw if path is invalid, return default
   }
 
   return defaultValue;
 }
 
-const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& componentName, const std::string& keyPath) const {
+const nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& componentName, const std::string& keyPath) const {
   // --- Check custom configs first ---
   auto customIt = m_customConfigs.find(componentName);
   if (customIt != m_customConfigs.end()) {
-      try {
-          nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
-          if (customIt->second.contains(ptr)) {
-              return &customIt->second.at(ptr);
-          }
-      } catch (...) {}
-      return nullptr;
+    try {
+      nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(customIt->second, keyPath);
+      if (customIt->second.contains(ptr)) {
+        return &customIt->second.at(ptr);
+      }
+    } catch (...) {
+    }
+    return nullptr;
   }
 
   size_t firstDot = keyPath.find('.');
@@ -1881,7 +1912,7 @@ const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& com
     return nullptr;
   }
 
-  const  nlohmann::ordered_json* configRoot = nullptr;
+  const nlohmann::ordered_json* configRoot = nullptr;
   if (strategyIt->second == MergeStrategy::Isolate) {
     auto isolatedSystemIt = m_isolatedConfigs.find(systemName);
     if (isolatedSystemIt != m_isolatedConfigs.end()) {
@@ -1904,13 +1935,12 @@ const  nlohmann::ordered_json* ConfigService::GetValuePtr(const std::string& com
   try {
     nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(*configRoot, restOfPath);
     return &configRoot->at(ptr);
-  } catch (const  nlohmann::ordered_json::out_of_range&) {
+  } catch (const nlohmann::ordered_json::out_of_range&) {
     return nullptr;
-  } catch (const  nlohmann::ordered_json::parse_error&) {
+  } catch (const nlohmann::ordered_json::parse_error&) {
     return nullptr;
   }
 }
-
 
 void ConfigService::CheckDirtyKeybinds(InitializationReport& report) {
   const auto* keybindsConfig = GetMergedConfig("keybinds");
@@ -1922,23 +1952,23 @@ void ConfigService::CheckDirtyKeybinds(InitializationReport& report) {
     if (!IsUserConfigAllowed(manifest)) continue;
 
     std::filesystem::path userConfigPath =
-        (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+      (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
     if (!std::filesystem::exists(userConfigPath)) continue;
 
-     nlohmann::ordered_json userJson;
+    nlohmann::ordered_json userJson;
     try {
       std::ifstream file(userConfigPath);
       if (file.peek() != std::ifstream::traits_type::eof()) {
-        userJson =  nlohmann::ordered_json::parse(file);
+        userJson = nlohmann::ordered_json::parse(file);
       }
     } catch (...) {
       continue;  // File is likely corrupted, already marked as dirty
     }
 
-    const  nlohmann::ordered_json* originalUserBinds = GetSettings(userJson, "keybinds");
+    const nlohmann::ordered_json* originalUserBinds = GetSettings(userJson, "keybinds");
 
-     nlohmann::ordered_json newBinds =  nlohmann::ordered_json::object();
+    nlohmann::ordered_json newBinds = nlohmann::ordered_json::object();
     for (const auto& [fullActionKey, owner] : m_keybindOwnership) {
       if (owner == componentName) {
         size_t lastDot = fullActionKey.rfind('.');
@@ -1947,7 +1977,7 @@ void ConfigService::CheckDirtyKeybinds(InitializationReport& report) {
         std::string actionName = fullActionKey.substr(lastDot + 1);
 
         if (keybindsConfig->contains(groupName) && (*keybindsConfig)[groupName].contains(actionName)) {
-          if (!newBinds.contains(groupName)) newBinds[groupName] =  nlohmann::ordered_json::object();
+          if (!newBinds.contains(groupName)) newBinds[groupName] = nlohmann::ordered_json::object();
           newBinds[groupName][actionName] = (*keybindsConfig)[groupName][actionName];
         }
       }
@@ -1992,339 +2022,354 @@ void ConfigService::BuildAggregatedUserSettings() {
   }
 }
 
-const std::map<std::string,  nlohmann::ordered_json>& ConfigService::GetAggregatedUserSettings() const { return m_aggregatedUserSettings; }
+const std::map<std::string, nlohmann::ordered_json>& ConfigService::GetAggregatedUserSettings() const { return m_aggregatedUserSettings; }
 
 System::InstallationStatus ConfigService::GetInstallationStatus() const { return m_installationStatus; }
 
 std::string ConfigService::GetOrCreateFrameworkInstanceId() {
-    const std::string keyPath = "settings.framework.framework_instance_id";
+  const std::string keyPath = "settings.framework.framework_instance_id";
 
-    // 1. Try to get the existing ID
-     nlohmann::ordered_json existingIdJson = GetValue("framework", keyPath, "");
-    if (existingIdJson.is_string()) {
-        std::string existingId = existingIdJson.get<std::string>();
-        if (!existingId.empty()) {
-            return existingId;
-        }
+  // 1. Try to get the existing ID
+  nlohmann::ordered_json existingIdJson = GetValue("framework", keyPath, "");
+  if (existingIdJson.is_string()) {
+    std::string existingId = existingIdJson.get<std::string>();
+    if (!existingId.empty()) {
+      return existingId;
     }
+  }
 
-    // 2. If not found, generate a new one
-    GUID guid;
-    if (SUCCEEDED(CoCreateGuid(&guid))) {
-        char guid_cstr[39];
-        snprintf(guid_cstr, sizeof(guid_cstr),
-                 "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
-                 guid.Data1, guid.Data2, guid.Data3,
-                 guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-                 guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-        
-        std::string newId(guid_cstr);
+  // 2. If not found, generate a new one
+  GUID guid;
+  if (SUCCEEDED(CoCreateGuid(&guid))) {
+    char guid_cstr[39];
+    snprintf(guid_cstr,
+             sizeof(guid_cstr),
+             "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+             guid.Data1,
+             guid.Data2,
+             guid.Data3,
+             guid.Data4[0],
+             guid.Data4[1],
+             guid.Data4[2],
+             guid.Data4[3],
+             guid.Data4[4],
+             guid.Data4[5],
+             guid.Data4[6],
+             guid.Data4[7]);
 
-        // 3. Save the new ID back to the config
-        // SetValue expects a dot-separated path starting with the system name.
-        SetValue("framework", keyPath, newId);
+    std::string newId(guid_cstr);
 
-        return newId;
-    }
+    // 3. Save the new ID back to the config
+    // SetValue expects a dot-separated path starting with the system name.
+    SetValue("framework", keyPath, newId);
 
-    // Fallback in case CoCreateGuid fails
-    return "generation_failed";
+    return newId;
+  }
+
+  // Fallback in case CoCreateGuid fails
+  return "generation_failed";
 }
 
 bool ConfigService::IsConnectionAllowed() {
-    const std::string keyPath = "settings.framework.connect";
+  const std::string keyPath = "settings.framework.connect";
 
-    // 1. Try to get the existing value
-    nlohmann::ordered_json valueJson = GetValue("framework", keyPath, nullptr);
-    
-    if (valueJson.is_boolean()) {
-        return valueJson.get<bool>();
-    }
+  // 1. Try to get the existing value
+  nlohmann::ordered_json valueJson = GetValue("framework", keyPath, nullptr);
 
-    // 2. If not found or not a boolean, create/fix it with default 'true'
-    SetValue("framework", keyPath, true);
-    return true;
+  if (valueJson.is_boolean()) {
+    return valueJson.get<bool>();
+  }
+
+  // 2. If not found or not a boolean, create/fix it with default 'true'
+  SetValue("framework", keyPath, true);
+  return true;
 }
 
 void ConfigService::RegisterActionMetadata(const std::string& componentName, const std::string& actionFullName, const std::string& titleKey, const std::string& descKey) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
-    
-    // 1. NORMALIZE: Ensure actionFullName starts with componentName (e.g. "ExamplePlugin.myAction")
-    // This is mandatory for UI visibility and proper JSON serialization.
-    std::string sanitizedFullName = actionFullName;
-    std::string prefix = componentName + ".";
-    if (actionFullName.find(prefix) != 0) {
-        sanitizedFullName = prefix + actionFullName;
-    }
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-    // 2. Register ownership
-    m_keybindOwnership[sanitizedFullName] = componentName;
+  // 1. NORMALIZE: Ensure actionFullName starts with componentName (e.g. "ExamplePlugin.myAction")
+  // This is mandatory for UI visibility and proper JSON serialization.
+  std::string sanitizedFullName = actionFullName;
+  std::string prefix = componentName + ".";
+  if (actionFullName.find(prefix) != 0) {
+    sanitizedFullName = prefix + actionFullName;
+  }
 
-    // 3. Split into group and action
-    size_t lastDot = sanitizedFullName.rfind('.');
-    std::string groupName = sanitizedFullName.substr(0, lastDot);
-    std::string actionName = sanitizedFullName.substr(lastDot + 1);
+  // 2. Register ownership
+  m_keybindOwnership[sanitizedFullName] = componentName;
 
-    if (!m_mergedConfigs.count("keybinds")) {
-        m_mergedConfigs["keybinds"] = nlohmann::ordered_json::object();
-    }
-    
-    auto& keybinds = m_mergedConfigs["keybinds"];
-    if (!keybinds.contains(groupName)) {
-        keybinds[groupName] = nlohmann::ordered_json::object();
-    }
-    
-    if (!keybinds[groupName].contains(actionName)) {
-        keybinds[groupName][actionName] = nlohmann::ordered_json::object();
-        keybinds[groupName][actionName]["bindings"] = nlohmann::ordered_json::array();
-    }
+  // 3. Split into group and action
+  size_t lastDot = sanitizedFullName.rfind('.');
+  std::string groupName = sanitizedFullName.substr(0, lastDot);
+  std::string actionName = sanitizedFullName.substr(lastDot + 1);
 
-    // 4. Inject metadata
-    auto& actionNode = keybinds[groupName][actionName];
-    InjectMetadata(actionNode, titleKey, descKey);
+  if (!m_mergedConfigs.count("keybinds")) {
+    m_mergedConfigs["keybinds"] = nlohmann::ordered_json::object();
+  }
 
-    // 5. Mark dirty to ensure it's saved in the plugin's settings.json
-    m_dirtyComponents.insert(componentName);
+  auto& keybinds = m_mergedConfigs["keybinds"];
+  if (!keybinds.contains(groupName)) {
+    keybinds[groupName] = nlohmann::ordered_json::object();
+  }
 
-    // 6. Fire event to refresh UI
-    m_eventManager.System.OnKeybindsModified.Call({});
+  if (!keybinds[groupName].contains(actionName)) {
+    keybinds[groupName][actionName] = nlohmann::ordered_json::object();
+    keybinds[groupName][actionName]["bindings"] = nlohmann::ordered_json::array();
+  }
 
-    if (logger) logger->Info("Dynamically registered action metadata for '{}' (Owner: {})", sanitizedFullName, componentName);
+  // 4. Inject metadata
+  auto& actionNode = keybinds[groupName][actionName];
+  InjectMetadata(actionNode, titleKey, descKey);
 
-    // 7. Ensure the action exists in KeyBindsManager
-    Modules::KeyBindsManager::GetInstance().EnsureActionExists(sanitizedFullName);
+  // 5. Mark dirty to ensure it's saved in the plugin's settings.json
+  m_dirtyComponents.insert(componentName);
+
+  // 6. Fire event to refresh UI
+  m_eventManager.System.OnKeybindsModified.Call({});
+
+  if (logger) logger->Info("Dynamically registered action metadata for '{}' (Owner: {})", sanitizedFullName, componentName);
+
+  // 7. Ensure the action exists in KeyBindsManager
+  Modules::KeyBindsManager::GetInstance().EnsureActionExists(sanitizedFullName);
 }
 
 void ConfigService::UnregisterActionMetadata(const std::string& componentName, const std::string& actionFullName) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-    // NORMALIZE input name first to find the correct internal key
-    std::string sanitizedFullName = actionFullName;
-    std::string prefix = componentName + ".";
-    if (actionFullName.find(prefix) != 0) {
-        sanitizedFullName = prefix + actionFullName;
+  // NORMALIZE input name first to find the correct internal key
+  std::string sanitizedFullName = actionFullName;
+  std::string prefix = componentName + ".";
+  if (actionFullName.find(prefix) != 0) {
+    sanitizedFullName = prefix + actionFullName;
+  }
+
+  // 1. Remove from ownership map
+  auto it = m_keybindOwnership.find(sanitizedFullName);
+  if (it != m_keybindOwnership.end() && it->second == componentName) {
+    m_keybindOwnership.erase(it);
+  } else {
+    return;
+  }
+
+  // 2. Remove from merged config
+  size_t lastDot = sanitizedFullName.rfind('.');
+  std::string groupName = sanitizedFullName.substr(0, lastDot);
+  std::string actionName = sanitizedFullName.substr(lastDot + 1);
+
+  if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName)) {
+    auto& group = m_mergedConfigs["keybinds"][groupName];
+    if (group.contains(actionName)) {
+      group.erase(actionName);
+      if (group.empty()) {
+        m_mergedConfigs["keybinds"].erase(groupName);
+      }
+      m_dirtyComponents.insert(componentName);
+      m_eventManager.System.OnKeybindsModified.Call({});
+      if (logger) logger->Info("Dynamically unregistered action '{}' for component '{}'.", sanitizedFullName, componentName);
     }
+  }
 
-    // 1. Remove from ownership map
-    auto it = m_keybindOwnership.find(sanitizedFullName);
-    if (it != m_keybindOwnership.end() && it->second == componentName) {
-        m_keybindOwnership.erase(it);
-    } else {
-        return; 
-    }
-
-    // 2. Remove from merged config
-    size_t lastDot = sanitizedFullName.rfind('.');
-    std::string groupName = sanitizedFullName.substr(0, lastDot);
-    std::string actionName = sanitizedFullName.substr(lastDot + 1);
-
-    if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName)) {
-        auto& group = m_mergedConfigs["keybinds"][groupName];
-        if (group.contains(actionName)) {
-            group.erase(actionName);
-            if (group.empty()) {
-                m_mergedConfigs["keybinds"].erase(groupName);
-            }
-            m_dirtyComponents.insert(componentName);
-            m_eventManager.System.OnKeybindsModified.Call({});
-            if (logger) logger->Info("Dynamically unregistered action '{}' for component '{}'.", sanitizedFullName, componentName);
-        }
-    }
-
-    // 3. Completely remove from KeyBindsManager logic
-    Modules::KeyBindsManager::GetInstance().RemoveAction(sanitizedFullName);
+  // 3. Completely remove from KeyBindsManager logic
+  Modules::KeyBindsManager::GetInstance().RemoveAction(sanitizedFullName);
 }
 
 std::vector<std::string> ConfigService::GetOwnedActions(const std::string& componentName) const {
-    std::vector<std::string> actions;
-    for (const auto& [actionKey, owner] : m_keybindOwnership) {
-        if (owner == componentName) {
-            actions.push_back(actionKey);
-        }
+  std::vector<std::string> actions;
+  for (const auto& [actionKey, owner] : m_keybindOwnership) {
+    if (owner == componentName) {
+      actions.push_back(actionKey);
     }
-    return actions;
+  }
+  return actions;
 }
 
-bool ConfigService::HasKey(const std::string& componentName, const std::string& keyPath) const {
-    return GetValuePtr(componentName, keyPath) != nullptr;
-}
+bool ConfigService::HasKey(const std::string& componentName, const std::string& keyPath) const { return GetValuePtr(componentName, keyPath) != nullptr; }
 
 void ConfigService::SaveComponentConfig(const std::string& componentName) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-    // --- Support manual saving for custom configs ---
-    auto customIt = m_customConfigs.find(componentName);
-    if (customIt != m_customConfigs.end()) {
-        auto pathIt = m_customContextPaths.find(componentName);
-        if (pathIt != m_customContextPaths.end()) {
-            try {
-                std::ofstream file(pathIt->second);
-                if (file.is_open()) {
-                    file << customIt->second.dump(4);
-                    if (logger) logger->Info("Manually saved custom config to {}", pathIt->second);
-                    return;
-                }
-            } catch (const std::exception& e) {
-                if (logger) logger->Error("Failed to manually save custom config {}: {}", pathIt->second, e.what());
-                return;
-            }
+  // --- Support manual saving for custom configs ---
+  auto customIt = m_customConfigs.find(componentName);
+  if (customIt != m_customConfigs.end()) {
+    auto pathIt = m_customContextPaths.find(componentName);
+    if (pathIt != m_customContextPaths.end()) {
+      try {
+        std::ofstream file(pathIt->second);
+        if (file.is_open()) {
+          file << customIt->second.dump(4);
+          if (logger) logger->Info("Manually saved custom config to {}", pathIt->second);
+          return;
         }
-    }
-
-    if (m_dirtyComponents.find(componentName) == m_dirtyComponents.end()) {
-        if (logger) logger->Debug("SaveComponentConfig: Component '{}' is not dirty, skipping.", componentName);
+      } catch (const std::exception& e) {
+        if (logger) logger->Error("Failed to manually save custom config {}: {}", pathIt->second, e.what());
         return;
+      }
     }
+  }
 
-    // Reuse SaveAllDirty logic but only for this component
-    std::set<std::string> originalDirty = m_dirtyComponents;
-    m_dirtyComponents.clear();
-    m_dirtyComponents.insert(componentName);
-    
-    SaveAllDirty();
-    
-    // Restore remaining dirty components
-    for (const auto& comp : originalDirty) {
-        if (comp != componentName) {
-            m_dirtyComponents.insert(comp);
-        }
+  if (m_dirtyComponents.find(componentName) == m_dirtyComponents.end()) {
+    if (logger) logger->Debug("SaveComponentConfig: Component '{}' is not dirty, skipping.", componentName);
+    return;
+  }
+
+  // Reuse SaveAllDirty logic but only for this component
+  std::set<std::string> originalDirty = m_dirtyComponents;
+  m_dirtyComponents.clear();
+  m_dirtyComponents.insert(componentName);
+
+  SaveAllDirty();
+
+  // Restore remaining dirty components
+  for (const auto& comp : originalDirty) {
+    if (comp != componentName) {
+      m_dirtyComponents.insert(comp);
     }
+  }
 }
 
 void ConfigService::RemoveKey(const std::string& componentName, const std::string& keyPath) {
-    size_t firstDot = keyPath.find('.');
-    if (firstDot == std::string::npos) return;
+  size_t firstDot = keyPath.find('.');
+  if (firstDot == std::string::npos) return;
 
-    std::string systemName = keyPath.substr(0, firstDot);
-    std::string restOfPath = keyPath.substr(firstDot + 1);
+  std::string systemName = keyPath.substr(0, firstDot);
+  std::string restOfPath = keyPath.substr(firstDot + 1);
 
-    auto strategyIt = m_systemStrategies.find(systemName);
-    if (strategyIt == m_systemStrategies.end()) return;
+  auto strategyIt = m_systemStrategies.find(systemName);
+  if (strategyIt == m_systemStrategies.end()) return;
 
-    try {
-        auto unescape = [](std::string s) -> std::string {
-            size_t pos = 0;
-            while ((pos = s.find("~1", pos)) != std::string::npos) { s.replace(pos, 2, "/"); pos += 1; }
-            pos = 0;
-            while ((pos = s.find("~0", pos)) != std::string::npos) { s.replace(pos, 2, "~"); pos += 1; }
-            return s;
-        };
+  try {
+    auto unescape = [](std::string s) -> std::string {
+      size_t pos = 0;
+      while ((pos = s.find("~1", pos)) != std::string::npos) {
+        s.replace(pos, 2, "/");
+        pos += 1;
+      }
+      pos = 0;
+      while ((pos = s.find("~0", pos)) != std::string::npos) {
+        s.replace(pos, 2, "~");
+        pos += 1;
+      }
+      return s;
+    };
 
-        if (strategyIt->second == MergeStrategy::Isolate) {
-            if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
+    if (strategyIt->second == MergeStrategy::Isolate) {
+      if (!m_isolatedConfigs.contains(systemName) || !m_isolatedConfigs[systemName].contains(componentName)) return;
 
-            auto& config = m_isolatedConfigs[systemName][componentName];
-            nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(config, restOfPath);
-            
-            if (config.contains(ptr)) {
-                std::string actualPath = ptr.to_string();
-                size_t lastSlash = actualPath.rfind('/');
-                if (lastSlash != std::string::npos) {
-                    std::string parentPathStr = actualPath.substr(0, lastSlash);
-                    std::string leafKey = unescape(actualPath.substr(lastSlash + 1));
+      auto& config = m_isolatedConfigs[systemName][componentName];
+      nlohmann::ordered_json::json_pointer ptr = GetMetaAwarePointer(config, restOfPath);
 
-                    nlohmann::ordered_json::json_pointer parentPtr(parentPathStr);
-                    if (config.contains(parentPtr)) {
-                        auto& parentNode = config[parentPtr];
-                        if (parentNode.is_object()) {
-                            parentNode.erase(leafKey);
-                        } else if (parentNode.is_array()) {
-                            try {
-                                size_t idx = std::stoul(leafKey);
-                                if (idx < parentNode.size()) {
-                                    parentNode.erase(parentNode.begin() + idx);
-                                }
-                            } catch (...) {}
-                        }
-                    }
-                } else {
-                    // Root level key
-                    std::string rootKey = unescape(actualPath.substr(1));
-                    if (config.is_object()) {
-                        config.erase(rootKey);
-                    }
+      if (config.contains(ptr)) {
+        std::string actualPath = ptr.to_string();
+        size_t lastSlash = actualPath.rfind('/');
+        if (lastSlash != std::string::npos) {
+          std::string parentPathStr = actualPath.substr(0, lastSlash);
+          std::string leafKey = unescape(actualPath.substr(lastSlash + 1));
+
+          nlohmann::ordered_json::json_pointer parentPtr(parentPathStr);
+          if (config.contains(parentPtr)) {
+            auto& parentNode = config[parentPtr];
+            if (parentNode.is_object()) {
+              parentNode.erase(leafKey);
+            } else if (parentNode.is_array()) {
+              try {
+                size_t idx = std::stoul(leafKey);
+                if (idx < parentNode.size()) {
+                  parentNode.erase(parentNode.begin() + idx);
                 }
-
-                m_dirtyComponents.insert(componentName);
-                BuildAggregatedUserSettings();
+              } catch (...) {
+              }
             }
+          }
         } else {
-            // PriorityMerge (keybinds)
-            if (!m_mergedConfigs.contains(systemName)) return;           
-            
-            size_t lastDot = restOfPath.rfind('.');
-            if (lastDot == std::string::npos) return;
-            std::string groupName = restOfPath.substr(0, lastDot);
-            std::string actionName = restOfPath.substr(lastDot + 1);
-
-            if (m_mergedConfigs[systemName].contains(groupName) && m_mergedConfigs[systemName][groupName].contains(actionName)) {
-                m_mergedConfigs[systemName][groupName].erase(actionName);
-                if (m_mergedConfigs[systemName][groupName].empty()) {
-                    m_mergedConfigs[systemName].erase(groupName);
-                }
-                m_dirtyComponents.insert(componentName);
-            }
+          // Root level key
+          std::string rootKey = unescape(actualPath.substr(1));
+          if (config.is_object()) {
+            config.erase(rootKey);
+          }
         }
-    } catch (...) {}
+
+        m_dirtyComponents.insert(componentName);
+        BuildAggregatedUserSettings();
+      }
+    } else {
+      // PriorityMerge (keybinds)
+      if (!m_mergedConfigs.contains(systemName)) return;
+
+      size_t lastDot = restOfPath.rfind('.');
+      if (lastDot == std::string::npos) return;
+      std::string groupName = restOfPath.substr(0, lastDot);
+      std::string actionName = restOfPath.substr(lastDot + 1);
+
+      if (m_mergedConfigs[systemName].contains(groupName) && m_mergedConfigs[systemName][groupName].contains(actionName)) {
+        m_mergedConfigs[systemName][groupName].erase(actionName);
+        if (m_mergedConfigs[systemName][groupName].empty()) {
+          m_mergedConfigs[systemName].erase(groupName);
+        }
+        m_dirtyComponents.insert(componentName);
+      }
+    }
+  } catch (...) {
+  }
 }
 
 void ConfigService::ReloadComponentConfig(const std::string& componentName) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
-    if (logger) logger->Info("Reloading configuration for component '{}' from disk.", componentName);
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+  if (logger) logger->Info("Reloading configuration for component '{}' from disk.", componentName);
 
-    // 1. Remove from dirty to prevent overwriting during process
-    m_dirtyComponents.erase(componentName);
+  // 1. Remove from dirty to prevent overwriting during process
+  m_dirtyComponents.erase(componentName);
 
-    // 2. Re-process configurations
-    InitializationReport report;
-    ProcessAllSystemConfigurations(report);
+  // 2. Re-process configurations
+  InitializationReport report;
+  ProcessAllSystemConfigurations(report);
 }
 
 bool ConfigService::IsSettingHidden(const std::string& componentName, const std::string& keyPath) const {
-    auto it = m_manifests.find(componentName);
-    if (it == m_manifests.end()) return false;
+  auto it = m_manifests.find(componentName);
+  if (it == m_manifests.end()) return false;
 
-    // customSettingsMetadata contains paths WITHOUT the system prefix (e.g. "commands", not "settings.commands")
-    for (const auto& meta : it->second.customSettingsMetadata) {
-        if (meta.keyPath == keyPath) {
-            return meta.hide_in_ui;
-        }
+  // customSettingsMetadata contains paths WITHOUT the system prefix (e.g. "commands", not "settings.commands")
+  for (const auto& meta : it->second.customSettingsMetadata) {
+    if (meta.keyPath == keyPath) {
+      return meta.hide_in_ui;
     }
+  }
 
-    return false;
+  return false;
 }
 
 std::string ConfigService::CreateCustomContext(const std::string& filePath) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
-    if (m_customConfigs.count(filePath)) return filePath;
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
+  if (m_customConfigs.count(filePath)) return filePath;
 
-    try {
-        if (std::filesystem::exists(filePath)) {
-            std::ifstream file(filePath);
-            if (file.is_open()) {
-                nlohmann::ordered_json j;
-                file >> j;
-                m_customConfigs[filePath] = std::move(j);
-                if (logger) logger->Info("Loaded custom configuration from {}", filePath);
-            }
-        } else {
-            m_customConfigs[filePath] = nlohmann::ordered_json::object();
-            if (logger) logger->Info("Created new custom configuration context for {}", filePath);
-        }
-        m_customContextPaths[filePath] = filePath;
-        return filePath;
-    } catch (const std::exception& e) {
-        if (logger) logger->Error("Failed to create custom context for {}. Error: {}", filePath, e.what());
-        return "";
+  try {
+    if (std::filesystem::exists(filePath)) {
+      std::ifstream file(filePath);
+      if (file.is_open()) {
+        nlohmann::ordered_json j;
+        file >> j;
+        m_customConfigs[filePath] = std::move(j);
+        if (logger) logger->Info("Loaded custom configuration from {}", filePath);
+      }
+    } else {
+      m_customConfigs[filePath] = nlohmann::ordered_json::object();
+      if (logger) logger->Info("Created new custom configuration context for {}", filePath);
     }
+    m_customContextPaths[filePath] = filePath;
+    return filePath;
+  } catch (const std::exception& e) {
+    if (logger) logger->Error("Failed to create custom context for {}. Error: {}", filePath, e.what());
+    return "";
+  }
 }
 
 void ConfigService::SetAutoSave(const std::string& contextId, bool enabled) {
-    if (enabled) {
-        m_disabledAutoSave.erase(contextId);
-    } else {
-        m_disabledAutoSave.insert(contextId);
-    }
+  if (enabled) {
+    m_disabledAutoSave.erase(contextId);
+  } else {
+    m_disabledAutoSave.insert(contextId);
+  }
 }
 
 }  // namespace Config

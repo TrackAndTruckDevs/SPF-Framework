@@ -1,7 +1,9 @@
 #pragma once
 
-#include "SPF/Handles/IHandle.hpp"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/Handles/IHandle.hpp"
+
 
 SPF_NS_BEGIN
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Input/InputEvents.hpp"
+
 
 SPF_NS_BEGIN
 namespace Input {

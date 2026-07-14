@@ -1,9 +1,13 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
-#include <cstdint>
+
+#include <cstddef>
 #include <vector>
-#include <algorithm>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -43,18 +47,20 @@ class GameCameraInterior : public IGameCamera {
     float zoom_speed = 0.0f;
 
     struct AzimuthRangeData {
-        float start_azimuth, end_azimuth;
-        bool outside;
-        float start_up_limit, end_up_limit;
-        float start_down_limit, end_down_limit;
-        float start_up_down_default, end_up_down_default;
-        float start_left_right_default, end_left_right_default;
-        float start_head_x, start_head_y, start_head_z;
-        float end_head_x, end_head_y, end_head_z;
+      float start_azimuth, end_azimuth;
+      bool outside;
+      float start_up_limit, end_up_limit;
+      float start_down_limit, end_down_limit;
+      float start_up_down_default, end_up_down_default;
+      float start_left_right_default, end_left_right_default;
+      float start_head_x, start_head_y, start_head_z;
+      float end_head_x, end_head_y, end_head_z;
     };
     std::vector<AzimuthRangeData> azimuth_overrides_defaults;
 
-    struct Vec3 { float x, y, z; };
+    struct Vec3 {
+      float x, y, z;
+    };
     std::vector<Vec3> shake_anim_defaults;
   };
 

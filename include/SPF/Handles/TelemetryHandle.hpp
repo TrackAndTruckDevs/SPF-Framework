@@ -1,10 +1,14 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Handles/IHandle.hpp"
-#include "SPF/Modules/API/TelemetryApi.hpp" // Include for BaseSubscriptionHandler
+#include "SPF/Modules/API/TelemetryApi.hpp"  // Include for BaseSubscriptionHandler
+
+#include <memory>  // For std::unique_ptr
 #include <string>
 #include <vector>
-#include <memory> // For std::unique_ptr
+
 
 SPF_NS_BEGIN
 namespace Handles {

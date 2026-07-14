@@ -1,18 +1,20 @@
 #pragma once
 
-#include <Windows.h>
-#include <memory>
-#include <vector>
-#include <set>
-#include <thread>
-#include <queue>
-#include <functional>
-#include <chrono>
-#include <mutex>
-
 #include "SPF/Namespace.hpp"
-#include "SPF/Core/InitializationReport.hpp"
+
 #include "SPF/Config/IConfigurable.hpp"
+#include "SPF/Core/InitializationReport.hpp"
+
+#include <chrono>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <minwindef.h>
+#include <mutex>
+#include <set>
+#include <string>
+#include <thread>
+#include <vector>
 
 struct scs_telemetry_init_params_t;
 struct scs_input_init_params_t;
@@ -183,7 +185,7 @@ class Core {
   void BindEventHandlers();
   void LogInitializationReports(const std::vector<InitializationReport>& reports);
   std::set<std::string> HandleServiceInitialization(const std::vector<InitializationReport>& reports);
-  
+
   // --- Task Scheduler ---
   struct DeferredTask {
     std::chrono::steady_clock::time_point triggerTime;

@@ -1,9 +1,12 @@
 #include "SPF/Data/GameData/Finders/ViewportDataFinder.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <Windows.h>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -15,9 +18,9 @@ bool ViewportDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
   /**
    * PRIMARY STRATEGY: Direct Viewport Parameters Access.
-   * Targets the code block in the engine where camera parameters are accessed and 
+   * Targets the code block in the engine where camera parameters are accessed and
    * viewport boundaries (X1, X2, Y1, Y2) are used for calculations.
-   * 
+   *
    * Ghidra Analysis (v1.59.2):
    * 14044ae44 [0]: 48 8b 1d 2d b0 f7 02    MOV RBX, qword ptr [DAT_1433c5e78]   <-- Global Pointer
    * 14044ae4b [7]: 8b c6                 MOV EAX, ESI
@@ -36,7 +39,7 @@ bool ViewportDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t pGamePtrAddr = Utils::PatternFinder::GetRipAddress(anchor, 3, 7);
     if (pGamePtrAddr) {
       uintptr_t pGameObject = *reinterpret_cast<uintptr_t*>(pGamePtrAddr);
-      
+
       // 2. Set camera parameters base (In v1.59.2, RBX points to the object directly)
       owner.SetCameraParamsObjectPtr(pGameObject);
       logger->Debug("Resolved Viewport Base Address: 0x{:X}", pGameObject);
@@ -48,12 +51,12 @@ bool ViewportDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t off_x1 = Utils::PatternFinder::ReadInt32(anchor + 37);
 
       auto validateAndSet = [&](int32_t offset, const char* label, void (GameDataCameraService::*setter)(intptr_t)) {
-          if (Utils::PatternFinder::IsSaneOffset(offset)) {
-              (owner.*setter)(static_cast<intptr_t>(offset));
-              return true;
-          }
-          logger->Error("Viewport {} offset is INVALID (0x{:X})", label, offset);
-          return false;
+        if (Utils::PatternFinder::IsSaneOffset(offset)) {
+          (owner.*setter)(static_cast<intptr_t>(offset));
+          return true;
+        }
+        logger->Error("Viewport {} offset is INVALID (0x{:X})", label, offset);
+        return false;
       };
 
       all_found &= validateAndSet(off_x1, "X1", &GameDataCameraService::SetViewportX1Offset);

@@ -10,18 +10,19 @@
  * stops working after a game update, repeat this chain of actions to find a new one.
  */
 #include "SPF/Hooks/GameLogHook.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Hooks/BaseHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Modules/GameLogEventManager.hpp"
+#include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
-#include <Windows.h>
-#include <Psapi.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <psapi.h>
 #include <string>
-#include <vector>
-#include <sstream>    // For parsing signature string
-#include <stdexcept>  // For std::invalid_argument
-
-#include "MinHook.h"
 
 namespace {
 // Keep hook details private to this translation unit
@@ -63,13 +64,13 @@ void Detour_GameLog(int level, const char* format, va_list args) {
   // Also, log it to the framework's "Game" logger, but with the correct level
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("Game");
   if (logger) {
-      if (strstr(formatted_message, "<ERROR>")) {
-          logger->Error("{}", formatted_message);
-      } else if (strstr(formatted_message, "<WARNING>")) {
-          logger->Warn("{}", formatted_message);
-      } else {
-          logger->Info("{}", formatted_message);
-      }
+    if (strstr(formatted_message, "<ERROR>")) {
+      logger->Error("{}", formatted_message);
+    } else if (strstr(formatted_message, "<WARNING>")) {
+      logger->Warn("{}", formatted_message);
+    } else {
+      logger->Info("{}", formatted_message);
+    }
   }
 
   return o_GameLog(level, format, args);
@@ -79,21 +80,16 @@ void Detour_GameLog(int level, const char* format, va_list args) {
 SPF_NS_BEGIN
 namespace Hooks {
 
-GameLogHook::GameLogHook()
-    : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework") {}
+GameLogHook::GameLogHook() : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework") {}
 
 GameLogHook& GameLogHook::GetInstance() {
   static GameLogHook instance;
   return instance;
 }
 
-void* GameLogHook::GetDetourFunc() {
-    return reinterpret_cast<void*>(&Detour_GameLog);
-}
+void* GameLogHook::GetDetourFunc() { return reinterpret_cast<void*>(&Detour_GameLog); }
 
-void** GameLogHook::GetOriginalFuncPtr() {
-    return reinterpret_cast<void**>(&o_GameLog);
-}
+void** GameLogHook::GetOriginalFuncPtr() { return reinterpret_cast<void**>(&o_GameLog); }
 
 }  // namespace Hooks
 SPF_NS_END

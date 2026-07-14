@@ -1,14 +1,15 @@
-#include <memory>
-#include <Windows.h>
+#include "SPF/Core/Core.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Utils/AvMitigation.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "MinHook.h"
 
-#include "SPF/Telemetry/Sdk.hpp"
+#include <memory>
+#include <minwindef.h>
+#include <winnt.h>
 
-
-#include "SPF/Core/Core.hpp"
-#include "SPF/Logging/Logger.hpp"
-#include "SPF/Utils/AvMitigation.hpp"
 
 static std::unique_ptr<SPF::Core::Core> g_Core;
 

@@ -1,21 +1,23 @@
 #include "SPF/UI/BaseWindow.hpp"
-#include "SPF/UI/Icons.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Localization/LocalizationManager.hpp"  // Include the new icons header
-#include "SPF/UI/UIElements.hpp" // For Button
-#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/UI/UIElements.hpp"                     // For Button
+
+#include "imgui.h"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cmath>  // For fabs
+#include <string>
+#include <utility>
+
 
 SPF_NS_BEGIN
 namespace UI {
-using namespace SPF::Logging;
 using namespace SPF::Localization;
 
-BaseWindow::BaseWindow(std::string componentName, std::string windowId)
-    : m_componentName(std::move(componentName)),
-      m_windowId(std::move(windowId)),
-      m_defaultTitle(m_windowId),
-      m_titleLocalizationKey(m_windowId + ".title") {}
+BaseWindow::BaseWindow(std::string componentName, std::string windowId) : m_componentName(std::move(componentName)), m_windowId(std::move(windowId)), m_defaultTitle(m_windowId), m_titleLocalizationKey(m_windowId + ".title") {}
 
 const std::string& BaseWindow::GetWindowId() const { return m_windowId; }
 
@@ -41,10 +43,10 @@ void BaseWindow::SetVisibility(bool isVisible) {
 }
 
 void BaseWindow::SetDocked(bool isDocked) {
-    if (m_isConfiguredAsDockable && m_is_docked != isDocked) {
-        m_is_docked = isDocked;
-        m_stateIsDirty = true;
-    }
+  if (m_isConfiguredAsDockable && m_is_docked != isDocked) {
+    m_is_docked = isDocked;
+    m_stateIsDirty = true;
+  }
 }
 
 void BaseWindow::Focus() { m_needsFocus = true; }
@@ -64,8 +66,7 @@ void BaseWindow::SetSize(float width, float height) {
 }
 
 const char* BaseWindow::GetWindowTitle() const {
-  const auto& localizedTitle =
-      LocalizationManager::GetInstance().Get(m_componentName, m_titleLocalizationKey);
+  const auto& localizedTitle = LocalizationManager::GetInstance().Get(m_componentName, m_titleLocalizationKey);
 
   if (localizedTitle == m_titleLocalizationKey) {
     return m_defaultTitle.c_str();

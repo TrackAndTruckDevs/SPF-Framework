@@ -1,4 +1,9 @@
 #include "SPF/Modules/API/FormattingApi.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/SPF_API/SPF_Formatting_API.h"
+
 #include <cstdarg>
 #include <cstdio>
 
@@ -22,5 +27,5 @@ void FormattingApi::FillFormattingApi(SPF_Formatting_API* api) {
   api->Fmt_Format = &FormattingApi::Fmt_Format;
 }
 
-} // namespace Modules::API
+}  // namespace Modules::API
 SPF_NS_END

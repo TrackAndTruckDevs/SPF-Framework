@@ -1,10 +1,13 @@
 #include "SPF/Data/GameData/Finders/TopCameraDataFinder.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
+
 #include <chrono>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -33,7 +36,7 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   };
 
   // --- Step 1: Find vehicle_top_camera SII Attributes ---
-  
+
   uintptr_t minH = getAttr(CLASS_NAME_TOP, "minimum_height");
   if (minH) owner.SetTopMinHeightOffset(static_cast<intptr_t>(minH));
 
@@ -99,26 +102,10 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   if (shakeAnim) owner.SetShakeAnimOffset(static_cast<intptr_t>(shakeAnim));
 
   // --- Final Readiness Check ---
-  m_isReady = all_found && (owner.GetTopMinHeightOffset() != 0 &&
-                           owner.GetTopMaxHeightOffset() != 0 &&
-                           owner.GetTopSpeedOffset() != 0 &&
-                           owner.GetTopXOffsetForwardOffset() != 0 &&
-                           owner.GetTopXOffsetBackwardOffset() != 0 &&
-                           owner.GetTopOffsetForwardOffset() != 0 &&
-                           owner.GetTopOffsetBackwardOffset() != 0 &&
-                           owner.GetTopCameraHeightFactorOffset() != 0 &&
-                           owner.GetTopUseAdaptiveCameraHeightOffset() != 0 &&
-                           owner.GetTopNearPlaneOffset() != 0 &&
-                           owner.GetTopFarPlaneOffset() != 0 &&
-                           owner.GetTopValidationOffset() != 0 &&
-                           owner.GetTopValidationSpeedPositiveOffset() != 0 &&
-                           owner.GetTopValidationSpeedNegativeOffset() != 0 &&
-                           owner.GetCameraFovOffset() != 0 &&
-                           owner.GetMouseSensitivityOffset() != 0 &&
-                           owner.GetShakeAnimStepOffset() != 0 &&
-                           owner.GetShakeAnimScaleMinOffset() != 0 &&
-                           owner.GetShakeAnimScaleMaxOffset() != 0 &&
-                           owner.GetShakeAnimOffset() != 0);
+  m_isReady = all_found && (owner.GetTopMinHeightOffset() != 0 && owner.GetTopMaxHeightOffset() != 0 && owner.GetTopSpeedOffset() != 0 && owner.GetTopXOffsetForwardOffset() != 0 && owner.GetTopXOffsetBackwardOffset() != 0 &&
+                            owner.GetTopOffsetForwardOffset() != 0 && owner.GetTopOffsetBackwardOffset() != 0 && owner.GetTopCameraHeightFactorOffset() != 0 && owner.GetTopUseAdaptiveCameraHeightOffset() != 0 && owner.GetTopNearPlaneOffset() != 0 &&
+                            owner.GetTopFarPlaneOffset() != 0 && owner.GetTopValidationOffset() != 0 && owner.GetTopValidationSpeedPositiveOffset() != 0 && owner.GetTopValidationSpeedNegativeOffset() != 0 && owner.GetCameraFovOffset() != 0 &&
+                            owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 && owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetShakeAnimOffset() != 0);
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

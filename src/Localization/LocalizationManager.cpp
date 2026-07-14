@@ -1,12 +1,23 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 
-#include <fstream>
-#include <filesystem>
-#include <unordered_set>
+#include "SPF/Namespace.hpp"
 
-#include "SPF/System/PathManager.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/System/PathManager.hpp"
+
+#include "fmt/format.h"
+#include "nlohmann/json_fwd.hpp"
+
+#include <exception>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <mutex>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Localization {
@@ -47,34 +58,32 @@ Core::InitializationReport LocalizationManager::Initialize(const std::map<std::s
   for (const auto& [componentName, config] : *allConfigs) {
     std::string lang = DEFAULT_LANGUAGE;
     try {
-        if (config.contains("language")) {
-            const auto& langNode = config["language"];
-            if (langNode.is_object() && langNode.contains("_value")) {
-                lang = langNode["_value"].get<std::string>();
-            } else if (langNode.is_string()) {
-                lang = langNode.get<std::string>();
-            } else {
-                // The "language" key exists but is not a string or a value object.
-                logger->Warn("Component '{}' has a 'language' setting with an invalid type '{}'. Falling back to default.", componentName, langNode.type_name());
-                // lang is already DEFAULT_LANGUAGE
-            }
+      if (config.contains("language")) {
+        const auto& langNode = config["language"];
+        if (langNode.is_object() && langNode.contains("_value")) {
+          lang = langNode["_value"].get<std::string>();
+        } else if (langNode.is_string()) {
+          lang = langNode.get<std::string>();
+        } else {
+          // The "language" key exists but is not a string or a value object.
+          logger->Warn("Component '{}' has a 'language' setting with an invalid type '{}'. Falling back to default.", componentName, langNode.type_name());
+          // lang is already DEFAULT_LANGUAGE
         }
+      }
     } catch (const std::exception& e) {
-        logger->Error("Error reading 'language' setting for component '{}': {}. Falling back to default language.", componentName, e.what());
-        // lang is already DEFAULT_LANGUAGE
+      logger->Error("Error reading 'language' setting for component '{}': {}. Falling back to default language.", componentName, e.what());
+      // lang is already DEFAULT_LANGUAGE
     }
 
     if (LoadLanguageFile(componentName, lang)) {
       m_currentLanguages[componentName] = lang;
       report.InfoMessages.push_back(fmt::format("Successfully loaded configured language '{}' for component '{}'.", lang, componentName));
     } else {
-      report.Errors.push_back(
-          {fmt::format("Failed to load language '{}' for component '{}'. It might be missing or corrupted.", lang, componentName), fmt::format("{}.language", componentName)});
+      report.Errors.push_back({fmt::format("Failed to load language '{}' for component '{}'. It might be missing or corrupted.", lang, componentName), fmt::format("{}.language", componentName)});
       // Attempt to fall back to default language
       if (lang != DEFAULT_LANGUAGE && LoadLanguageFile(componentName, DEFAULT_LANGUAGE)) {
         m_currentLanguages[componentName] = DEFAULT_LANGUAGE;
-        report.Warnings.push_back(
-            Core::InitializationReport::Issue{fmt::format("Successfully loaded fallback language '{}' for component '{}'.", DEFAULT_LANGUAGE, componentName), ""});
+        report.Warnings.push_back(Core::InitializationReport::Issue{fmt::format("Successfully loaded fallback language '{}' for component '{}'.", DEFAULT_LANGUAGE, componentName), ""});
       }
     }
   }
@@ -118,12 +127,12 @@ const std::vector<std::string>& LocalizationManager::GetAvailableLanguagesFor(co
 }
 
 std::string LocalizationManager::GetComponentLanguage(const std::string& componentName) const {
-    std::lock_guard lock(m_mutex);
-    auto it = m_currentLanguages.find(componentName);
-    if (it != m_currentLanguages.end()) {
-        return it->second;
-    }
-    return DEFAULT_LANGUAGE;
+  std::lock_guard lock(m_mutex);
+  auto it = m_currentLanguages.find(componentName);
+  if (it != m_currentLanguages.end()) {
+    return it->second;
+  }
+  return DEFAULT_LANGUAGE;
 }
 
 bool LocalizationManager::SetComponentLanguage(const std::string& componentName, const std::string& langCode) {
@@ -203,73 +212,73 @@ bool LocalizationManager::LoadLanguageFile(const std::string& componentName, con
 }
 
 const std::string* LocalizationManager::FindKey(const std::string& componentName, const std::string& key) {
-    auto componentIt = m_translations.find(componentName);
-    if (componentIt == m_translations.end()) {
-        return nullptr;
-    }
-
-    auto& translationMap = componentIt->second;
-    auto keyIt = translationMap.find(key);
-
-    if (keyIt != translationMap.end()) {
-        return &keyIt->second;
-    }
-
+  auto componentIt = m_translations.find(componentName);
+  if (componentIt == m_translations.end()) {
     return nullptr;
+  }
+
+  auto& translationMap = componentIt->second;
+  auto keyIt = translationMap.find(key);
+
+  if (keyIt != translationMap.end()) {
+    return &keyIt->second;
+  }
+
+  return nullptr;
 }
 
 const std::string& LocalizationManager::Get(const std::string& componentName, const std::string& key) {
-    std::lock_guard lock(m_mutex);
+  std::lock_guard lock(m_mutex);
 
-    if (const auto* result = FindKey(componentName, key)) {
-        return *result;
+  if (const auto* result = FindKey(componentName, key)) {
+    return *result;
+  }
+
+  auto& reported = m_reportedMissingKeys[componentName];
+  auto [it, inserted] = reported.insert(key);
+  if (inserted) {
+    // If the key contains spaces, it's likely a literal string, not a translation key.
+    // We return it as is without warning.
+    if (key.find(' ') != std::string::npos) {
+      return *it;
     }
 
-    auto& reported = m_reportedMissingKeys[componentName];
-    auto [it, inserted] = reported.insert(key);
-    if (inserted) {
-        // If the key contains spaces, it's likely a literal string, not a translation key.
-        // We return it as is without warning.
-        if (key.find(' ') != std::string::npos) {
-            return *it;
-        }
-
-        auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
-        logger->Debug("Localization key '{}' not found for component '{}'.", key, componentName);
-    }
-    return *it;
+    auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
+    logger->Debug("Localization key '{}' not found for component '{}'.", key, componentName);
+  }
+  return *it;
 }
 
 const std::string& LocalizationManager::Get(const std::string& key) { return Get(FRAMEWORK_COMPONENT_NAME, key); }
 
 const std::string& LocalizationManager::GetWithFallback(const std::string& primaryComponentName, const std::string& key) {
-    std::lock_guard lock(m_mutex);
+  std::lock_guard lock(m_mutex);
 
-    // 1. Try primary component
-    if (const auto* result = FindKey(primaryComponentName, key)) {
-        return *result;
+  // 1. Try primary component
+  if (const auto* result = FindKey(primaryComponentName, key)) {
+    return *result;
+  }
+
+  // 2. Try framework fallback
+  if (primaryComponentName != FRAMEWORK_COMPONENT_NAME) {
+    if (const auto* result = FindKey(FRAMEWORK_COMPONENT_NAME, key)) {
+      return *result;
+    }
+  }
+
+  // 3. If not found anywhere, log ONCE and return the key.
+  auto& reported = m_reportedMissingKeys[primaryComponentName];
+  auto [it, inserted] = reported.insert(key);
+  if (inserted) {
+    // Suppress warning for literal strings (contain spaces)
+    if (key.find(' ') != std::string::npos) {
+      return *it;
     }
 
-    // 2. Try framework fallback
-    if (primaryComponentName != FRAMEWORK_COMPONENT_NAME) {
-        if (const auto* result = FindKey(FRAMEWORK_COMPONENT_NAME, key)) {
-            return *result;
-        }
-    }
-
-    // 3. If not found anywhere, log ONCE and return the key.
-    auto& reported = m_reportedMissingKeys[primaryComponentName];
-    auto [it, inserted] = reported.insert(key);
-    if (inserted) {
-        // Suppress warning for literal strings (contain spaces)
-        if (key.find(' ') != std::string::npos) {
-            return *it;
-        }
-
-        auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
-        logger->Debug("Localization key '{}' not found for component '{}' and no framework fallback available.", key, primaryComponentName);
-    }
-    return *it;
+    auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
+    logger->Debug("Localization key '{}' not found for component '{}' and no framework fallback available.", key, primaryComponentName);
+  }
+  return *it;
 }
 
 bool LocalizationManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {

@@ -1,10 +1,14 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Utils/Signal.hpp"
-#include <Windows.h>
+
+#include <minwindef.h>
+#include <windef.h>
 
 // Forward declare D3D12 types to avoid including the large header here
-struct IDXGISwapChain3; // Or IDXGISwapChain4 for more advanced features if needed
+struct IDXGISwapChain3;  // Or IDXGISwapChain4 for more advanced features if needed
 struct ID3D12Device;
 struct ID3D12CommandQueue;
 

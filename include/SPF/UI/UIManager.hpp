@@ -1,28 +1,33 @@
 #pragma once
 
-#include "SPF/Core/InitializationReport.hpp"
-#include "SPF/UI/IWindow.hpp"
-#include "SPF/Config/IConfigurable.hpp"
-
-#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Namespace.hpp"
 
-#include "SPF/Modules/KeyBindsManager.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"    // Added include for LoggerFactory
-#include "SPF/Modules/ITelemetryService.hpp" // Added include for ITelemetryService
-
+#include "SPF/Config/IConfigurable.hpp"
+#include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Renderer/ITexture.hpp"
+#include "SPF/SPF_API/SPF_UI_API.h"
+#include "SPF/System/ApiService.hpp"
+#include "SPF/UI/IWindow.hpp"
 #include "SPF/Utils/Signal.hpp"
 
-#include <vector>
-#include <memory>
-#include <map>
-#include <unordered_map>
-#include <nlohmann/json.hpp>
-#include <imgui.h>  // For ImFont
+#include "imgui.h"
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
 
-#include "SPF/Renderer/ITexture.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -35,7 +40,7 @@ class InputManager;
 namespace Modules {
 class PluginManager;
 class CommunicationManager;
-}
+}  // namespace Modules
 namespace Config {
 struct IConfigService;
 }
@@ -45,7 +50,7 @@ class Renderer;
 
 namespace UI {
 class IWindow;
-class NotificationWindow; // Forward declaration
+class NotificationWindow;  // Forward declaration
 
 class UIManager : public Config::IConfigurable {
  private:  // Private constructor for Singleton pattern
@@ -62,8 +67,8 @@ class UIManager : public Config::IConfigurable {
   void operator=(const UIManager&) = delete;
 
   // Initialize method to pass dependencies, replacing constructor parameters
-  void Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager,
-            Modules::PluginManager& pluginManager, Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService);
+  void Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager, Modules::PluginManager& pluginManager,
+            Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService);
 
   // Creates and registers all framework-defined UI windows.
   // This method centralizes UI window creation within UIManager.
@@ -74,7 +79,7 @@ class UIManager : public Config::IConfigurable {
 
   void RegisterWindow(std::shared_ptr<IWindow> window);
   IWindow* GetWindow(const std::string& componentName, const std::string& windowId) const;
-  
+
   /**
    * @brief Updates internal UI state (processes queues, rebuilds font atlas if needed).
    * This MUST be called before ImGui::NewFrame().

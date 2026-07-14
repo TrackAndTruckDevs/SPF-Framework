@@ -24,15 +24,20 @@
 !/vendor/
 !/vendor/**
 
-!/.clang-format
+!/README.md
 
-!.gitignore
+!/.clang-format
+!/.clangd
 
 !/.github/
 !/.github/**
+!/.gitattributes
+!.gitignore
+
 
 !/CMakeLists.txt
+!/CMakePresets.json
+!/CMakeUserPresets.json.example
 
-!/README.md
-
+!/.mailmap
 !/version.rc.in

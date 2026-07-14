@@ -1,16 +1,22 @@
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/UIEvents.hpp"
 #include "SPF/Input/InputEvents.hpp"
-#include "SPF/Utils/Signal.hpp"
-#include "SPF/Config/IConfigService.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
 #include <map>
-#include <string>
-#include <vector>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -66,10 +72,10 @@ class SettingsWindow : public BaseWindow {
   std::optional<std::string> m_actionBeingEdited;
   std::vector<std::shared_ptr<Modules::IBindableInput>> m_currentChordInputs;
   nlohmann::ordered_json m_editingBindingObject;
-  std::optional<std::string> m_editingBindingAction;      // For the details popup
+  std::optional<std::string> m_editingBindingAction;              // For the details popup
   std::optional<nlohmann::ordered_json> m_editingBindingDetails;  // For the details popup
   nlohmann::ordered_json m_originalBindingCopy;                   // Copy of the binding when popup opened
-  int m_currentPressThreshold = 500;                      // Buffer for the slider
+  int m_currentPressThreshold = 500;                              // Buffer for the slider
   std::optional<Input::InputCaptured> m_bufferedInputInfo;
   std::optional<Input::InputCaptureConflict> m_conflictInfo;
   std::map<uint32_t, int> m_hardwareCodeUsageCount;

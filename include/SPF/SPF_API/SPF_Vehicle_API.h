@@ -1,58 +1,59 @@
-/**                                                                                               
-* @file SPF_Vehicle_API.h                                                                         
-* @brief API for inspecting and interacting with vehicles in the game world.
-*                                                                                                 
-* @details This API provides an interface to the game's traffic system and individual vehicle 
-* actors. It uses an opaque handle system (SPF_VehicleHandle) to represent vehicles, 
-* ensuring maximum stability and performance.
-*                                                                                                 
-* ================================================================================================
-* KEY CONCEPTS                                                                                    
-* ================================================================================================
-*                                                                                                 
-* 1. **Handle-Based**: Most functions require a vehicle handle (`SPF_VehicleHandle`). Get a 
-*    handle for the player's truck using `Veh_GetPlayerVehicle()` or scan the world using 
-*    `Veh_GetAllHandles()`.
-*                                                                                                 
-* 2. **Opaque Objects**: The handles point to internal game objects. Do not attempt to 
-*    dereference them directly. Always use the provided getter functions.
-*                                                                                                 
-* 3. **Validation**: Before using a handle obtained in a previous frame, it is recommended 
-*    to verify if the vehicle still exists (e.g., by checking if its ID is still valid).
-*                                                                                                 
-* ================================================================================================
-* USAGE EXAMPLE (C++)                                                                             
-* ================================================================================================
-* @code                                                                                           
-* // Get the player's current vehicle handle
-* SPF_VehicleHandle h = api->Vehicle->Veh_GetPlayerVehicle();
-*
-* if (h) {
-*     // Retrieve properties using the handle 'h'
-*     float speed = api->Vehicle->Veh_GetCurrentSpeed(h);
-*     int32_t id = api->Vehicle->Veh_GetId(h);
-*     
-*     printf("Player Truck [ID: %d] Speed: %.2f m/s\n", id, speed);
-* }
-* @endcode                                                                                        
-*/ 
+/**
+ * @file SPF_Vehicle_API.h
+ * @brief API for inspecting and interacting with vehicles in the game world.
+ *
+ * @details This API provides an interface to the game's traffic system and individual vehicle
+ * actors. It uses an opaque handle system (SPF_VehicleHandle) to represent vehicles,
+ * ensuring maximum stability and performance.
+ *
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ *
+ * 1. **Handle-Based**: Most functions require a vehicle handle (`SPF_VehicleHandle`). Get a
+ *    handle for the player's truck using `Veh_GetPlayerVehicle()` or scan the world using
+ *    `Veh_GetAllHandles()`.
+ *
+ * 2. **Opaque Objects**: The handles point to internal game objects. Do not attempt to
+ *    dereference them directly. Always use the provided getter functions.
+ *
+ * 3. **Validation**: Before using a handle obtained in a previous frame, it is recommended
+ *    to verify if the vehicle still exists (e.g., by checking if its ID is still valid).
+ *
+ * ================================================================================================
+ * USAGE EXAMPLE (C++)
+ * ================================================================================================
+ * @code
+ * // Get the player's current vehicle handle
+ * SPF_VehicleHandle h = api->Vehicle->Veh_GetPlayerVehicle();
+ *
+ * if (h) {
+ *     // Retrieve properties using the handle 'h'
+ *     float speed = api->Vehicle->Veh_GetCurrentSpeed(h);
+ *     int32_t id = api->Vehicle->Veh_GetId(h);
+ *
+ *     printf("Player Truck [ID: %d] Speed: %.2f m/s\n", id, speed);
+ * }
+ * @endcode
+ */
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // =================================================================================================
-// Types                                                                                            
+// Types
 // =================================================================================================
 
-/**                                                                                                 
+/**
  * @brief Opaque handle to a vehicle object (Actor) in the game memory.
- */ 
+ */
 typedef void* SPF_VehicleHandle;
 
 // --- Function Typedefs ---
@@ -105,21 +106,21 @@ typedef uintptr_t (*SPF_Veh_GetLocalPlayerControllerPtr_t)();
 
 // --- Framework & Service Status ---
 
-/** 
- * @brief Checks if all memory offsets for the vehicle system were successfully found. 
+/**
+ * @brief Checks if all memory offsets for the vehicle system were successfully found.
  * @return True if all dynamic patterns were successfully resolved.
  */
 typedef bool (*SPF_Veh_AreAllOffsetsFound_t)();
 
-/** 
- * @brief Checks if a specific vehicle data finder is ready. 
+/**
+ * @brief Checks if a specific vehicle data finder is ready.
  * @param finderName The name of the finder to check.
  * @return True if the specific offsets are found and valid.
  */
 typedef bool (*SPF_Veh_IsFinderReady_t)(const char* finderName);
 
-/** 
- * @brief Forces the framework to re-scan game memory for all vehicle-related offsets. 
+/**
+ * @brief Forces the framework to re-scan game memory for all vehicle-related offsets.
  * @return True if all offsets were successfully found after the refresh operation.
  */
 typedef bool (*SPF_Veh_RefreshOffsets_t)();
@@ -189,34 +190,33 @@ typedef float (*SPF_Veh_GetCurrentSpeed_t)(SPF_VehicleHandle h);
  */
 typedef float (*SPF_Veh_GetAcceleration_t)(SPF_VehicleHandle h);
 
-
 /**
  * @struct SPF_Vehicle_API
  * @brief API for interacting with the game's traffic and vehicle system.
  */
 typedef struct SPF_Vehicle_API {
-    SPF_Veh_IsReady_t Veh_IsReady;
-    SPF_Veh_GetPlayerVehicle_t Veh_GetPlayerVehicle;
-    SPF_Veh_GetVehicleById_t Veh_GetVehicleById;
-    SPF_Veh_GetCount_t Veh_GetCount;
-    SPF_Veh_GetAllHandles_t Veh_GetAllHandles;
-    
-    SPF_Veh_GetTrafficManagerPtr_t Veh_GetTrafficManagerPtr;
-    SPF_Veh_GetLocalPlayerControllerPtr_t Veh_GetLocalPlayerControllerPtr;
+  SPF_Veh_IsReady_t Veh_IsReady;
+  SPF_Veh_GetPlayerVehicle_t Veh_GetPlayerVehicle;
+  SPF_Veh_GetVehicleById_t Veh_GetVehicleById;
+  SPF_Veh_GetCount_t Veh_GetCount;
+  SPF_Veh_GetAllHandles_t Veh_GetAllHandles;
 
-    SPF_Veh_AreAllOffsetsFound_t Veh_AreAllOffsetsFound;
-    SPF_Veh_IsFinderReady_t Veh_IsFinderReady;
-    SPF_Veh_RefreshOffsets_t Veh_RefreshOffsets;
+  SPF_Veh_GetTrafficManagerPtr_t Veh_GetTrafficManagerPtr;
+  SPF_Veh_GetLocalPlayerControllerPtr_t Veh_GetLocalPlayerControllerPtr;
 
-    SPF_Veh_GetId_t Veh_GetId;
-    SPF_Veh_GetRawAddress_t Veh_GetRawAddress;
-    SPF_Veh_GetPatience_t Veh_GetPatience;
-    SPF_Veh_GetSafety_t Veh_GetSafety;
-    SPF_Veh_GetTargetSpeed_t Veh_GetTargetSpeed;
-    SPF_Veh_GetSpeedLimit_t Veh_GetSpeedLimit;
-    SPF_Veh_GetLaneSpeedInput_t Veh_GetLaneSpeedInput;
-    SPF_Veh_GetCurrentSpeed_t Veh_GetCurrentSpeed;
-    SPF_Veh_GetAcceleration_t Veh_GetAcceleration;
+  SPF_Veh_AreAllOffsetsFound_t Veh_AreAllOffsetsFound;
+  SPF_Veh_IsFinderReady_t Veh_IsFinderReady;
+  SPF_Veh_RefreshOffsets_t Veh_RefreshOffsets;
+
+  SPF_Veh_GetId_t Veh_GetId;
+  SPF_Veh_GetRawAddress_t Veh_GetRawAddress;
+  SPF_Veh_GetPatience_t Veh_GetPatience;
+  SPF_Veh_GetSafety_t Veh_GetSafety;
+  SPF_Veh_GetTargetSpeed_t Veh_GetTargetSpeed;
+  SPF_Veh_GetSpeedLimit_t Veh_GetSpeedLimit;
+  SPF_Veh_GetLaneSpeedInput_t Veh_GetLaneSpeedInput;
+  SPF_Veh_GetCurrentSpeed_t Veh_GetCurrentSpeed;
+  SPF_Veh_GetAcceleration_t Veh_GetAcceleration;
 } SPF_Vehicle_API;
 
 #ifdef __cplusplus

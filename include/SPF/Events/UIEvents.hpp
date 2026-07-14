@@ -1,10 +1,15 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include <string>
-#include <nlohmann/json.hpp>
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
 #include <optional>
+#include <string>
 #include <utility>  // For std::pair
+
 
 SPF_NS_BEGIN
 namespace Events::UI {
@@ -54,7 +59,7 @@ struct OnSettingWasChanged {
  * @brief Fired from the UI to request the start of an input capture session.
  */
 struct RequestInputCapture {
-  std::string actionFullName;      // e.g., "framework.ui.main_window.toggle"
+  std::string actionFullName;              // e.g., "framework.ui.main_window.toggle"
   nlohmann::ordered_json originalBinding;  // e.g., {"key": "KEY_DELETE", "type": "keyboard"}
 };
 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Input/InputEvents.hpp"
+
 #include <map>
 #include <string>
 
@@ -33,10 +36,10 @@ struct ConsumptionPolicyInfo {
 };
 
 static inline const std::map<ConsumptionPolicy, ConsumptionPolicyInfo> ConsumptionPolicyMap = {
-    {ConsumptionPolicy::Never, {"never", "enums.consumption_policy.never"}},
-    {ConsumptionPolicy::OnUIFocus, {"on_ui_focus", "enums.consumption_policy.on_ui_focus"}},
-    {ConsumptionPolicy::Always, {"always", "enums.consumption_policy.always"}},
-    {ConsumptionPolicy::Manual, {"manual", "enums.consumption_policy.manual"}}};
+  {ConsumptionPolicy::Never, {"never", "enums.consumption_policy.never"}},
+  {ConsumptionPolicy::OnUIFocus, {"on_ui_focus", "enums.consumption_policy.on_ui_focus"}},
+  {ConsumptionPolicy::Always, {"always", "enums.consumption_policy.always"}},
+  {ConsumptionPolicy::Manual, {"manual", "enums.consumption_policy.manual"}}};
 }  // namespace Config
 
 SPF_NS_END
