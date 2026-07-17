@@ -1,13 +1,16 @@
-/**                                                                                               
- * @file ClimateWindow.hpp                                                                          
+/**
+ * @file ClimateWindow.hpp
  * @brief Header for the UI window for Climate and Weather manipulation.
- */ 
+ */
 
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/UI/BaseWindow.hpp"
+
 #include <string>
+
 
 SPF_NS_BEGIN
 
@@ -37,5 +40,5 @@ class ClimateWindow : public BaseWindow {
   std::string m_locNotReady;
 };
 
-} // namespace UI
+}  // namespace UI
 SPF_NS_END

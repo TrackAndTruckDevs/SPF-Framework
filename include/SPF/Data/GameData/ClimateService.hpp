@@ -1,11 +1,14 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Utils/Vec3.hpp"
+
 #include <cstdint>
-#include <vector>
 #include <memory>
 #include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -119,8 +122,8 @@ class ClimateService {
   uint32_t GetSkyboxIndex(int32_t weatherMode, uint32_t slot = 0);
 
   struct ClimateInfo {
-      std::string name;
-      uint64_t token;
+    std::string name;
+    uint64_t token;
   };
 
   std::string GetCurrentClimateName();
@@ -246,7 +249,7 @@ class ClimateService {
   void GetExposureLimits(int profileSlot, uint32_t variationIdx, float& minScale, float& maxScale);
   void SetExposureLimits(int profileSlot, uint32_t variationIdx, float minScale, float maxScale);
 
-//   void SetSkyboxAutoUpdate(bool enabled);
+  //   void SetSkyboxAutoUpdate(bool enabled);
 
   /**
    * @brief Logs the current environment state (rain, fog, etc.) to the logger.
@@ -278,39 +281,39 @@ class ClimateService {
 
   // --- Runtime State ---
   bool m_isInitialized = false;
-  mutable int8_t m_versionCache = -1; // -1: Unknown, 0: 1.59, 1: 1.60+
-  int32_t m_lastKickedMode = -1; // -1 = No kick yet, 0 = Nice kicked, 1 = Bad kicked
+  mutable int8_t m_versionCache = -1;  // -1: Unknown, 0: 1.59, 1: 1.60+
+  int32_t m_lastKickedMode = -1;       // -1 = No kick yet, 0 = Nice kicked, 1 = Bad kicked
   std::vector<std::unique_ptr<IClimateDataFinder>> m_dataFinders;
 
   // --- Environment Data Offsets and Pointers ---
   uintptr_t m_environmentBasePtr = 0;    // Pointer to MainEngineObject
-  intptr_t m_environmentAdjustment = 0; // Dynamic adjustment
+  intptr_t m_environmentAdjustment = 0;  // Dynamic adjustment
   intptr_t m_envObjectOffset = 0;        // Offset to Environment object
   uintptr_t m_updateFnAddr = 0;          // Address of the UpdateEnvironmentState function
 
   // --- Weather and Environment Data ---
-  intptr_t m_weatherModeOffset = 0;      // 0x3e50
-  intptr_t m_weatherTargetOffset = 0;    // 0x3e54
-  intptr_t m_weatherTransitionOffset = 0;// 0x4554
-  intptr_t m_climatePtrOffset = 0;       // 0x2a98
-  intptr_t m_rainIntensityOffset = 0;    // 0x3f14
-  intptr_t m_roadWetnessOffset = 0;      // 0x3f18
-  intptr_t m_fogColorOffset = 0;         // 0x3f30
-  intptr_t m_fogDensityOffset = 0;       // 0x3f3c
-  intptr_t m_lightningEnabledOffset = 0; // 0x3ef1
-  intptr_t m_lightningIntensityOffset = 0;// 0x42cc
-  intptr_t m_temperatureOffset = 0;      // 0x28c
-  intptr_t m_weatherTransStartTimeOffset = 0; // 0x4558
-  intptr_t m_weatherTransDurationOffset = 0;  // 0x4550
-  intptr_t m_weatherBlendingFactorOffset = 0; // 0x45C8
-  intptr_t m_skyboxAutoUpdateOffset = 0;      // 0x46c4
-  intptr_t m_activeProfileIndexAOffset = 0;   // 0x4540
-  intptr_t m_activeProfileIndexBOffset = 0;   // 0x4544
-  intptr_t m_niceProfilesArrayOffset = 0;     // 0xC0
-  intptr_t m_badProfilesArrayOffset = 0;      // 0x100
-  intptr_t m_profileNameTokenOffset = 0;      // 0x08
-  uintptr_t m_setClimateFnAddr = 0;           // Address of SetClimate function
-  intptr_t m_timeOffset = 0;                  // Offset to visual minutes
+  intptr_t m_weatherModeOffset = 0;            // 0x3e50
+  intptr_t m_weatherTargetOffset = 0;          // 0x3e54
+  intptr_t m_weatherTransitionOffset = 0;      // 0x4554
+  intptr_t m_climatePtrOffset = 0;             // 0x2ab8 (Hydra: FUN_1404d5f50)
+  intptr_t m_rainIntensityOffset = 0;          // 0x3f14
+  intptr_t m_roadWetnessOffset = 0;            // 0x3f18
+  intptr_t m_fogColorOffset = 0;               // 0x3f30
+  intptr_t m_fogDensityOffset = 0;             // 0x3f3c
+  intptr_t m_lightningEnabledOffset = 0;       // 0x3ef1
+  intptr_t m_lightningIntensityOffset = 0;     // 0x42cc
+  intptr_t m_temperatureOffset = 0;            // 0x28c
+  intptr_t m_weatherTransStartTimeOffset = 0;  // 0x4558
+  intptr_t m_weatherTransDurationOffset = 0;   // 0x4550
+  intptr_t m_weatherBlendingFactorOffset = 0;  // 0x45C8
+  intptr_t m_skyboxAutoUpdateOffset = 0;       // 0x46c4
+  intptr_t m_activeProfileIndexAOffset = 0;    // 0x4560 (Hydra: FUN_1404d5f50)
+  intptr_t m_activeProfileIndexBOffset = 0;    // 0x4564 (Hydra: FUN_1404d5f50)
+  intptr_t m_niceProfilesArrayOffset = 0;      // 0xD0   (Hydra: FUN_1404d5f50)
+  intptr_t m_badProfilesArrayOffset = 0;       // 0x120  (Hydra: FUN_1404d5f50)
+  intptr_t m_profileNameTokenOffset = 0;       // 0x08
+  uintptr_t m_setClimateFnAddr = 0;            // Address of SetClimate function
+  intptr_t m_timeOffset = 0;                   // Offset to visual minutes
 };
 
 }  // namespace Data::GameData

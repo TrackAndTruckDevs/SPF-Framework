@@ -1,12 +1,14 @@
-/**                                                                                               
- * @file ClimateDataFinder.hpp                                                                          
+/**
+ * @file ClimateDataFinder.hpp
  * @brief Dynamic pattern searcher for Climate-related data.
- */ 
+ */
 
 #pragma once
 
-#include "SPF/Data/GameData/IClimateDataFinder.hpp"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/IClimateDataFinder.hpp"
+
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -28,5 +30,5 @@ class ClimateDataFinder : public IClimateDataFinder {
   const char* GetName() const override { return "ClimateDataFinder"; }
 };
 
-} // namespace Data::GameData::Finders
+}  // namespace Data::GameData::Finders
 SPF_NS_END
