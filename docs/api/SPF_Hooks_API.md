@@ -15,6 +15,7 @@ The SPF pattern scanner supports advanced syntax:
 - **Exact Bytes**: Hex values (e.g., `48 89`).
 - **Wildcards**: `?` or `??` matches any single byte.
 - **Ranges**: `[XX-YY]` matches any byte within the specified hex range (e.g., `[40-7F]`).
+- **Named Templates**: Pre-defined instruction patterns like `[CMP r64, [r64+off32]]` for convenience.
 
 ### Signature Syntax
 
@@ -25,7 +26,18 @@ The pattern scanner is designed to be both flexible and precise. Using ranges is
 | `XX` | Exact hex byte | `48`, `8B`, `E8` |
 | `?` or `??` | Wildcard (matches anything) | `48 8B ?? ??` |
 | `[XX-YY]` | Hex range (inclusive) | `[40-7F]` |
-| `[min-max?]` | Variable wildcard (matches any sequence of length between min and max) | `[1-4?]`, `[0-1?]` |
+| `[min-max?]` | Variable wildcard (matches any sequence of length between min and max) | `[1-4?]` |
+| `[SIB?]` | Conditional SIB byte: consumes 1 byte if the preceding ModRM has R/M=100 (`ModRM & 0x07 == 0x04`), 0 bytes otherwise | `[SIB?]` |
+| `XX?` | Optional byte (matches `XX` or absent) | `25?` |
+| `[XX\|YY]` | OR operator (matches one of the listed byte values or sub-ranges)|`[80\|BF]`, `[80\|BF\|C0-C5]` | 
+| `X[Y-Z]` or `[X-Y]Z` | Nibble ranges (matches variable registers/opcodes by high/low nibble) | `4[8-B]`, `[4-7]8`, `[4-7][8-B]` |
+| `[Template Name]` | Named instruction template (see `PatternTemplates.hpp`) | `[CMP r64, [r64+off32]]`, `[JAE rel32]`, `[MOV r64, [r64+sib+off32]]` |
+
+> **Tip:** Templates can be mixed with raw hex in the same signature. The pattern `[MOV r64, [r64+off8]] 8b [80-bf]` works.
+>
+> **SIB Byte Handling:** Use `[SIB?]` to match a SIB (Scale-Index-Base) byte only when the preceding ModRM byte requires one. The scanner checks `(ModRM & 0x07) == 0x04` at match time. This replaces the old `[0-1?]` workaround for SIB, which was ambiguous. All built-in templates with generic addressing already use `[SIB?]` — you only need to write it manually in custom raw signatures.
+
+> **Recommended Workflow:** Use the official [Ghidra Pattern Helper](https://github.com/TrackAndTruckDevs/SPF_GhidraPatternHelper) to generate signatures directly from selected instructions. It automatically handles ModRM/SIB displacement analysis and outputs both raw masked hex and SPF template syntax.
 
 ### String-Based Pattern Scanning
 The most stable way to find functions is by referencing unique strings they contain (like error messages or log entries). Unlike byte patterns at the start of a function, these strings rarely change between game updates.
@@ -205,6 +217,13 @@ One of the most powerful features of the SPF pattern scanner is the ability to c
 *   `[0-1?]` handles the optional `PUSH RBP`.
 *   `[81-83]` matches both types of `SUB RSP` instructions.
 *   `[1-4?]` handles the difference between a 1-byte and 4-byte stack size operand.
+
+**SIB Byte in Signatures:**
+When a ModRM byte has R/M field = 100 (`0x04`), a SIB byte follows. The `[SIB?]` token handles this deterministically — it inspects the preceding ModRM byte at match time.
+```
+48 8B [80-BF] [SIB?] ?? ?? ?? ??   ; MOV r64, [r64+disp32] (with optional SIB)
+```
+Without `[SIB?]`, you would need `[0-1?]` which blindly matches 0 or 1 byte, risking false positives. The pattern scanner uses `[SIB?]` internally in all generic-addressing templates.
 
 **Example: Advanced Matching**
 To find an instruction like `LEA REG, [REG + disp8]` while ignoring `LEA REG, [RIP + disp32]`, you can use:

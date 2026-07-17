@@ -1,10 +1,13 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
+#include <cstddef>
 #include <stdint.h>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Utils {
@@ -12,13 +15,13 @@ namespace Utils {
 /**
  * @class PatternFinder
  * @brief A high-performance memory scanning and reverse engineering toolkit for the SCS engine.
- * 
+ *
  * This class provides optimized tools for:
  * 1. Byte pattern matching (Signatures) with backtracking support.
  * 2. Automated harvesting of SCS Reflection Tables with caching.
  * 3. Advanced code analysis (Xrefs, function start detection, VTable resolution).
  * 4. Section-aware memory scanning to minimize CPU overhead.
- * 
+ *
  * It operates as a Singleton to manage internal performance caches (Strings, Pointers, Reflection).
  */
 class PatternFinder {
@@ -38,16 +41,23 @@ class PatternFinder {
 
   /**
    * @brief Scans the entire module for a specific hex signature.
-   * 
-   * @param signature A space-separated hex string (e.g., "48 89 5C 24 ? 57").
-   *                  Supports '?' or '??' as wildcards.
+   *
+   * @param signature A space-separated signature pattern supporting:
+   *                  - Exact Byte: "48", "8B", "CF" (matches exact hex values)
+   *                  - Wildcard: "?" or "??" (matches any byte)
+   *                  - Length Wildcard: "[1-5?]" (matches between 1 and 5 bytes of any value)
+   *                  - Byte Range: "[40-4C]" (matches any byte value from 0x40 to 0x4C inclusive)
+   *                  - OR Operator: "[80|BF]" or "[80|BF|C0]" (matches one of the listed byte values)
+   *                                 Supports embedded ranges as well: "[80|BF|C0-C5]"
+   *                  - Nibble Ranges: "4[8-B]" (matches 0x48..0x4B), "[4-7]8" (matches 0x48, 0x58, 0x68, 0x78),
+   *                                   or "[4-7][8-B]" (great for matching variable register encodings)
    * @return uintptr_t The absolute memory address of the first match, or 0 if not found.
    */
   static uintptr_t Find(const char* signature);
 
   /**
    * @brief Scans a specific memory block for a text signature.
-   * 
+   *
    * @param base Starting address of the memory range.
    * @param size Size of the memory block in bytes.
    * @param signature Hex string pattern to search for.
@@ -58,7 +68,7 @@ class PatternFinder {
   /**
    * @brief Searches for a pattern backwards from a base address.
    * Moves the starting point step-by-step backwards, but performs forward matching.
-   * 
+   *
    * @param startAddress The address where the backward search starts.
    * @param searchRange How many bytes to look back from the startAddress.
    * @param signature Hex string pattern to search for.
@@ -68,7 +78,7 @@ class PatternFinder {
 
   /**
    * @brief Performs an optimized search for a raw byte sequence in a memory block.
-   * 
+   *
    * @param base Starting address of the memory range.
    * @param size Size of the memory block.
    * @param signature Pointer to the raw byte array pattern.
@@ -80,7 +90,7 @@ class PatternFinder {
 
   /**
    * @brief Searches for a stable chain of instructions (multiple patterns).
-   * 
+   *
    * @param signatures Ordered vector of signatures to find.
    * @param maxGap Maximum allowed distance (bytes) between each signature in the chain.
    * @param startAddress Address to start searching from (scans full module if 0).
@@ -94,12 +104,14 @@ class PatternFinder {
    * @brief Represents a rule for matching a single byte in a pattern.
    */
   struct ByteMatcher {
-    enum Type { EXACT, WILDCARD, RANGE };
-    Type type;        ///< Match type (exact byte, any byte, or value range)
-    uint8_t min;      ///< Minimum value for EXACT or RANGE
-    uint8_t max;      ///< Maximum value for RANGE
-    int minCount = 1; ///< For future support of variable length wildcards
+    enum Type { EXACT, WILDCARD, RANGE, LIST, SIB_CONDITIONAL };
+    Type type;         ///< Match type (exact byte, any byte, value range, or list of values)
+    uint8_t min;       ///< Minimum value for EXACT or RANGE
+    uint8_t max;       ///< Maximum value for RANGE
+    int minCount = 1;  ///< For future support of variable length wildcards
     int maxCount = 1;
+    bool optional = false;
+    std::vector<uint8_t> values;  ///< Values for LIST type
 
     /**
      * @brief Checks if a byte satisfies the matching rule.
@@ -109,7 +121,14 @@ class PatternFinder {
     bool Matches(uint8_t b) const {
       if (type == WILDCARD) return true;
       if (type == EXACT) return b == min;
-      return b >= min && b <= max;
+      if (type == RANGE) return b >= min && b <= max;
+      if (type == LIST) {
+        for (uint8_t val : values) {
+          if (val == b) return true;
+        }
+        return false;
+      }
+      return false;
     }
   };
 
@@ -119,10 +138,10 @@ class PatternFinder {
 
   /**
    * @brief Finds the offset of a class attribute using the game's internal reflection.
-   * 
-   * On the first call for a class, it harvests ALL attributes of that class and 
+   *
+   * On the first call for a class, it harvests ALL attributes of that class and
    * stores them in the cache for instant future access.
-   * 
+   *
    * @param className Name of the SCS class (e.g., "vehicle_interior_camera").
    * @param attributeName Name of the field to find (e.g., "head_offset").
    * @return uintptr_t The field offset relative to the class instance, or 0.
@@ -131,7 +150,7 @@ class PatternFinder {
 
   /**
    * @brief Retrieves the C++ data type size from an SCS TypeID.
-   * 
+   *
    * @param typeId The internal SCS TypeID (e.g., 0x05 for float).
    * @return size_t Size in bytes, or 0 if unknown.
    */
@@ -143,7 +162,7 @@ class PatternFinder {
 
   /**
    * @brief Locates the prologue (start) of the function containing the given address.
-   * 
+   *
    * @param address Any address inside the function.
    * @return uintptr_t Address of the function's first instruction, or 0.
    * @note Uses Windows exception tables (.pdata) for maximum reliability on x64.
@@ -152,7 +171,7 @@ class PatternFinder {
 
   /**
    * @brief Determines the end address of the function containing the given address.
-   * 
+   *
    * @param address Any address inside the function.
    * @return uintptr_t Address of the function's last byte (or start of the next function), or 0.
    */
@@ -160,7 +179,7 @@ class PatternFinder {
 
   /**
    * @brief Finds all instructions that reference a target address (RIP-relative).
-   * 
+   *
    * @param targetAddr The absolute address being referenced.
    * @param moduleName Name of the module to scan (nullptr for main EXE).
    * @return std::vector<uintptr_t> List of instruction addresses (LEA, MOV, etc.).
@@ -169,7 +188,7 @@ class PatternFinder {
 
   /**
    * @brief Finds all 8-byte aligned data pointers pointing to a target address.
-   * 
+   *
    * @param targetAddr The address to find pointers to.
    * @param moduleName Name of the module to scan.
    * @return std::vector<uintptr_t> Addresses of the found pointers in data sections.
@@ -179,7 +198,7 @@ class PatternFinder {
 
   /**
    * @brief Extracts a VTable address from an instruction referencing it.
-   * 
+   *
    * @param signature Signature that matches the referencing instruction.
    * @param offsetPos Position of the 32-bit displacement within the instruction.
    * @param instructionSize Total length of the instruction.
@@ -189,7 +208,7 @@ class PatternFinder {
 
   /**
    * @brief Gets a function address from a Virtual Table by index.
-   * 
+   *
    * @param vtableAddr Absolute address of the VTable.
    * @param index 0-based index of the function pointer.
    * @return uintptr_t Address of the target function, or 0.
@@ -198,7 +217,7 @@ class PatternFinder {
 
   /**
    * @brief Finds a function start based on a 32-bit constant it uses.
-   * 
+   *
    * @param constant The 32-bit value to look for.
    * @param findStart If true, returns the function start; if false, returns the instruction address.
    * @return uintptr_t Address found, or 0.
@@ -207,7 +226,7 @@ class PatternFinder {
 
   /**
    * @brief Finds a function that references a specific unique string.
-   * 
+   *
    * @param str The string to search for.
    * @param findStart If true, returns the function prologue.
    * @param contextSig Optional signature to find near the string reference to disambiguate.
@@ -226,30 +245,30 @@ class PatternFinder {
    * @return int32_t The value read, or 0 if address is null.
    */
   static int32_t ReadInt32(uintptr_t address);
-  
+
   /**
    * @brief Safely reads an 8-bit integer.
    */
-  static int8_t  ReadInt8(uintptr_t address);
-  
+  static int8_t ReadInt8(uintptr_t address);
+
   /**
    * @brief Safely reads a 64-bit integer.
    */
   static int64_t ReadInt64(uintptr_t address);
-  
+
   /**
    * @brief Safely reads a float.
    */
-  static float   ReadFloat(uintptr_t address);
-  
+  static float ReadFloat(uintptr_t address);
+
   /**
    * @brief Safely reads a double.
    */
-  static double  ReadDouble(uintptr_t address);
+  static double ReadDouble(uintptr_t address);
 
   /**
    * @brief Resolves an absolute address from a RIP-relative displacement.
-   * 
+   *
    * @param instructionAddr Starting address of the instruction.
    * @param offsetPos Displacement field offset.
    * @param instructionSize Instruction length.
@@ -277,9 +296,9 @@ class PatternFinder {
    * @brief Holds information about a PE module section.
    */
   struct MemorySection {
-    uintptr_t base;   ///< Start address of the section
-    size_t size;      ///< Virtual size of the section
-    std::string name; ///< Section name (e.g., ".data")
+    uintptr_t base;    ///< Start address of the section
+    size_t size;       ///< Virtual size of the section
+    std::string name;  ///< Section name (e.g., ".data")
   };
 
   /**
@@ -296,28 +315,28 @@ class PatternFinder {
    * @brief Internal recursive chain validator with backtracking.
    */
   static uintptr_t FindChainRecursive(const std::vector<std::vector<ByteMatcher>>& compiledSigs, size_t sigIdx, uintptr_t currentBase, size_t maxGap, uintptr_t searchLimit);
-  
+
   /**
    * @brief Core backtracking engine for signature matching.
    */
   static bool MatchInternal(const uint8_t* data, size_t dataSize, const std::vector<ByteMatcher>& matchers, size_t dataIdx, size_t matcherIdx, size_t& matchLen);
-  
+
   /**
    * @brief Parses a hex signature string into internal matcher rules.
    */
   static std::vector<ByteMatcher> SignatureToVector(const std::string& signature);
-  
+
   /**
    * @brief Core scanner that iterates over module memory.
    */
   static uintptr_t Find(const char* moduleName, const std::vector<ByteMatcher>& signature);
 
   // --- Performance Caches ---
-  std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache; ///< className -> {attrName -> offset}
-  std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;      ///< string -> [addresses]
-  std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;       ///< targetAddr -> [pointer_locations]
-  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache; ///< moduleName -> {targetAddr -> [xref_locations]}
-  std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache; ///< moduleName -> [sections]
+  std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache;       ///< className -> {attrName -> offset}
+  std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;                               ///< string -> [addresses]
+  std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;                                ///< targetAddr -> [pointer_locations]
+  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache;  ///< moduleName -> {targetAddr -> [xref_locations]}
+  std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache;                          ///< moduleName -> [sections]
 };
 
 }  // namespace Utils

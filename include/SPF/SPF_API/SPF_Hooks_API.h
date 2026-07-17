@@ -20,6 +20,31 @@
  *    - **Variable Wildcards**: Use `[min-max?]` to match a sequence of any bytes with
  *      variable length (e.g., `[1-3?]` matches 1, 2, or 3 bytes). This is crucial for
  *      handling different compiler optimizations or minor code changes between updates.
+ *    - **Conditional SIB**: Use `[SIB?]` to conditionally match a SIB (Scale-Index-Base)
+ *      byte. The scanner checks `(preceding_ModRM & 0x07) == 0x04` at match time: if true,
+ *      1 byte is consumed, otherwise 0. This replaces the ambiguous `[0-1?]` pattern for SIB.
+ *    - **Optional Bytes**: Use `XX?` to make a specific byte optional (e.g., `25?` matches
+ *      either `25` or skips the byte entirely). This is useful for REX prefixes and other
+ *      optional instruction bits.
+ *    - **Nibble Ranges**: Use mixed hex and range syntax like `4[8-f]` to match nibble
+ *      patterns (e.g., `4[8-f]` matches `48` through `4F`). Also supports `[4-7]8`
+ *      (matches `48`, `58`, `68`, `78`) and `[4-7][8-B]` for matching variable register
+ *      encodings.
+ *    - **OR Lists**: Use `[XX|YY]` to match one of several values (e.g., `[80|BF|C0]`).
+ *      Supports embedded ranges as well: `[80|BF|C0-C5]`.
+ *    - **Named Templates**: For convenience, pre-defined instruction templates are available.
+ *      Instead of writing raw hex patterns, use template identifiers like:
+ *      `[CMP r64, [r64+off32]]` (CMP r64 with memory + 32-bit displacement),
+ *      `[JAE rel32]` (JAE with 32-bit relative offset),
+ *      `[MOV r64, [r64+sib+off32]]` (MOV with SIB-indexed addressing + 32-bit displacement).
+ *      All available templates are defined in `PatternTemplates.hpp` and can be mixed
+ *      with raw hex in the same signature string.
+ *
+ *    **Recommended Workflow**: Use the official Ghidra script to quickly generate
+ *    signatures from selected instructions in your disassembler. The script supports
+ *    both raw masked hex output and SPF template syntax, with automatic ModRM/SIB
+ *    displacement analysis. Download at:
+ *    https://github.com/TrackAndTruckDevs/SPF_GhidraPatternHelper
  *
  * 2. **Detours**: Your custom function that executes instead of the original.
  *    It MUST match the original signature exactly.
@@ -91,11 +116,18 @@ typedef SPF_Hook_Handle* (*SPF_Hook_Register_t)(const char* pluginName, const ch
  *                  - Exact Byte: "48", "8B", "CF" (matches exact hex values)
  *                  - Wildcard: "?" or "??" (matches any byte)
  *                  - Length Wildcard: "[1-5?]" (matches between 1 and 5 bytes of any value)
+ *                  - Conditional SIB: "[SIB?]" (consumes 1 byte if preceding ModRM has R/M=100,
+ *                    otherwise 0 bytes — deterministic SIB handling)
  *                  - Byte Range: "[40-4C]" (matches any byte value from 0x40 to 0x4C inclusive)
+ *                  - Optional Byte: "25?" (matches "25" or absent — great for REX prefixes)
  *                  - OR Operator: "[80|BF]" or "[80|BF|C0]" (matches one of the listed byte values)
  *                                 Supports embedded ranges as well: "[80|BF|C0-C5]"
  *                  - Nibble Ranges: "4[8-B]" (matches 0x48..0x4B), "[4-7]8" (matches 0x48, 0x58, 0x68, 0x78),
  *                                   or "[4-7][8-B]" (great for matching variable register encodings)
+ *                  - Named Templates: Use square-bracket template IDs like "[CMP r64, [r64+off32]]"
+ *                                    or "[JAE rel32]" for common instruction patterns.
+ *                                    All templates are defined in PatternTemplates.hpp.
+ *                                    See the header documentation for a full list.
  * @return The memory address where the pattern was found, or 0 if not found.
  */
 typedef uintptr_t (*SPF_Hook_FindPattern_t)(const char* signature);
@@ -347,7 +379,8 @@ typedef void (*SPF_Memory_WriteVector3_t)(uintptr_t address, float x, float y, f
  * 1.  **Signature**: A unique sequence of bytes representing the beginning of a
  *     function in memory. This is used to find the function's address, which
  *     can change between game updates. Supports exact bytes, wildcards (`?` or `??`),
- *     and hex ranges (`[XX-YY]`) for advanced instruction matching.
+ *     hex ranges (`[XX-YY]`), conditional SIB (`[SIB?]`), optional bytes, and
+ *     named instruction templates for advanced matching.
  * 2.  **Detour**: Your C++ function that will be executed when the game tries to
  *     call the original function. It MUST have the exact same function signature
  *     (calling convention, parameters, and return type) as the function you are hooking.
