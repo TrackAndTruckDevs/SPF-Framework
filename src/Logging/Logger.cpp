@@ -2,6 +2,8 @@
 
 #include "SPF/Namespace.hpp"
 
+#include "SPF/Utils/SEHGuard.hpp"
+
 #include "fmt/base.h"
 #include "fmt/format.h"
 
@@ -13,6 +15,7 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <minwindef.h>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -128,7 +131,13 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
 
   // Format the message into a buffer using the pre-packed arguments
   fmt::memory_buffer buffer;
-  fmt::vformat_to(std::back_inserter(buffer), format_str, args);
+
+  DWORD exceptionCode = 0;
+  bool formatOk = Utils::InvokeSafe([&]() { fmt::vformat_to(std::back_inserter(buffer), format_str, args); }, &exceptionCode);
+
+  if (!formatOk) {
+    fmt::format_to(std::back_inserter(buffer), "[LOG FORMAT ERROR: 0x{:08X}] {}", exceptionCode, format_str);
+  }
 
   // Create the message object
   LogMessage msg{.timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};

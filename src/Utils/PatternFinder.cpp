@@ -666,6 +666,15 @@ uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos,
 
 bool PatternFinder::IsSaneOffset(int32_t offset) { return offset > 0 && offset < 0x6000; }
 
+bool PatternFinder::IsValidAddress(uintptr_t addr) {
+  if (addr == 0) return false;
+  MEMORY_BASIC_INFORMATION mbi;
+  if (VirtualQuery(reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)) == 0) return false;
+  if (mbi.State != MEM_COMMIT) return false;
+  if (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) return false;
+  return true;
+}
+
 uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
   if (!str) return 0;
   size_t len = strlen(str);

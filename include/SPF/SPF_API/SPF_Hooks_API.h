@@ -367,6 +367,38 @@ typedef void (*SPF_Memory_ReadVector3_t)(uintptr_t address, float* outX, float* 
 typedef void (*SPF_Memory_WriteVector3_t)(uintptr_t address, float x, float y, float z);
 
 /**
+ * @brief Reads a 64-bit floating-point value (double) from memory.
+ * @param address The absolute memory address to read from.
+ * @return The double value read from memory, or 0.0 if the address is null.
+ */
+typedef double (*SPF_Memory_ReadDouble_t)(uintptr_t address);
+
+/**
+ * @brief Checks if a memory address points to valid, committed, accessible memory.
+ *
+ * @details Uses VirtualQuery to verify the page state is MEM_COMMIT and does not
+ *          have PAGE_GUARD or PAGE_NOACCESS flags. Essential for safe memory access
+ *          when working with addresses resolved from patterns or calculations.
+ *
+ * @param address The absolute memory address to validate.
+ * @return true if the address is safe to read from, false otherwise.
+ */
+typedef bool (*SPF_Memory_IsValidAddress_t)(uintptr_t address);
+
+/**
+ * @brief Checks if a class member offset is within typical game object size boundaries.
+ *
+ * @details Validates that an offset (typically resolved via Reflection_GetAttributeOffset
+ *          or similar) falls within a reasonable range for SCS game objects.
+ *          A "sane" offset is typically between 0 and 0x6000 (24KB).
+ *          Use this to catch suspicious offsets before passing them to memory read functions.
+ *
+ * @param offset The relative byte offset to validate.
+ * @return true if the offset is within valid bounds, false if it appears suspicious.
+ */
+typedef bool (*SPF_Memory_IsSaneOffset_t)(int32_t offset);
+
+/**
  * @struct SPF_Hooks_API
  * @brief C-style API for finding memory patterns and hooking game functions.
  *
@@ -566,11 +598,6 @@ typedef struct {
   SPF_Hook_FindFunctionByConstant_t Hook_FindFunctionByConstant;
 
   /**
-   * @name Reflection API (v1.2)
-   * @{
-   */
-
-  /**
    * @brief Dynamically finds the byte offset of a class member using SCS reflection.
    * @see SPF_Reflection_GetAttributeOffset_t
    */
@@ -581,13 +608,6 @@ typedef struct {
    * @see SPF_Reflection_ResolveSmartPtr_t
    */
   SPF_Reflection_ResolveSmartPtr_t Reflection_ResolveSmartPtr;
-
-  /** @} */
-
-  /**
-   * @name Advanced Memory API (v1.2)
-   * @{
-   */
 
   /**
    * @brief Writes a float value to the specified memory address.
@@ -608,6 +628,26 @@ typedef struct {
    * @brief Writes X, Y, Z components to a memory location as a 3D vector.
    */
   SPF_Memory_WriteVector3_t Memory_WriteVector3;
+
+  /**
+   * @brief Reads a double-precision floating point value from memory.
+   * @see SPF_Memory_ReadDouble_t
+   */
+  SPF_Memory_ReadDouble_t Memory_ReadDouble;
+
+  /**
+   * @brief Validates a memory address before reading.
+   * @see SPF_Memory_IsValidAddress_t
+   */
+  SPF_Memory_IsValidAddress_t Memory_IsValidAddress;
+
+  /**
+   * @brief Validates a class member offset range.
+   * @see SPF_Memory_IsSaneOffset_t
+   */
+  SPF_Memory_IsSaneOffset_t Memory_IsSaneOffset;
+
+  /** @} */
 
 } SPF_Hooks_API;
 

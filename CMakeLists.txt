@@ -355,6 +355,7 @@ add_library(SPF SHARED
     "src/System/EnvironmentManager.cpp"
     "src/System/ApiService.cpp"
     "src/Utils/PatternFinder.cpp"
+    "src/Utils/FinderLog.cpp"
     "src/Utils/HashUtils.cpp"
     "src/Utils/SystemUtils.cpp"
     "src/Utils/AvMitigation.cpp"

@@ -284,6 +284,14 @@ class PatternFinder {
   static bool IsSaneOffset(int32_t offset);
 
   /**
+   * @brief Checks if a memory address points to committed, accessible memory.
+   * Uses VirtualQuery to verify the page is MEM_COMMIT and not PAGE_GUARD/PAGE_NOACCESS.
+   * @param addr The address to validate.
+   * @return true if valid and accessible, false otherwise.
+   */
+  static bool IsValidAddress(uintptr_t addr);
+
+  /**
    * @brief Finds the address of a null-terminated string in data sections.
    * @param str The string to find.
    * @param moduleName Module name.

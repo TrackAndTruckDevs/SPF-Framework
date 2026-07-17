@@ -33,6 +33,9 @@ class HooksApi {
   static int64_t Memory_ReadInt64(uintptr_t address);
   static float Memory_ReadFloat(uintptr_t address);
   static uintptr_t Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
+  static double Memory_ReadDouble(uintptr_t address);
+  static bool Memory_IsValidAddress(uintptr_t address);
+  static bool Memory_IsSaneOffset(int32_t offset);
 
   static uintptr_t Hook_FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature);
   static uintptr_t Hook_FindString(const char* str);

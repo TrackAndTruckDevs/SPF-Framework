@@ -11,7 +11,6 @@
 #include <fmt/chrono.h>
 #include <fmt/core.h>
 #include <functional>
-#include <iterator>
 #include <memory>
 #include <mutex>
 #include <source_location>
@@ -256,24 +255,7 @@ class Logger {
 // The implementation of template methods must be in the header file.
 template <typename... Args>
 void Logger::Log(LogLevel level, fmt::string_view format_str, Args&&... args) {
-  // The log level is now checked per-sink, not globally at the start.
-
-  // Formatting the message in the buffer
-  fmt::memory_buffer buffer;
-  fmt::vformat_to(std::back_inserter(buffer), format_str, fmt::make_format_args(args...));
-
-  // Creating a message object
-  LogMessage msg{
-    .timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
-
-  // We lock the mutex and send a message to all "sinks"
-  std::lock_guard<std::mutex> lock(m_mutex);
-  for (const auto& sink : m_sinks) {
-    if (sink->ShouldFilterByLevel() && msg.level < m_level.load(std::memory_order_relaxed)) {
-      continue;  // Skip this sink if it filters and the level is too low
-    }
-    sink->Log(msg);
-  }
+  LogV(level, format_str, fmt::make_format_args(args...));
 }
 
 template <typename... Args>

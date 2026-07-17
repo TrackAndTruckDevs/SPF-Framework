@@ -28,6 +28,9 @@ void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
   api->Memory_ReadInt64 = &Utils::PatternFinder::ReadInt64;
   api->Memory_ReadFloat = &Utils::PatternFinder::ReadFloat;
   api->Memory_GetRipAddress = &Utils::PatternFinder::GetRipAddress;
+  api->Memory_ReadDouble = &Utils::PatternFinder::ReadDouble;
+  api->Memory_IsValidAddress = &Utils::PatternFinder::IsValidAddress;
+  api->Memory_IsSaneOffset = &Utils::PatternFinder::IsSaneOffset;
 
   // ABI Extension (v1.1)
   api->Hook_FindBackward = &HooksApi::Hook_FindBackward;
@@ -73,6 +76,12 @@ int64_t HooksApi::Memory_ReadInt64(uintptr_t address) { return Utils::PatternFin
 float HooksApi::Memory_ReadFloat(uintptr_t address) { return Utils::PatternFinder::ReadFloat(address); }
 
 uintptr_t HooksApi::Memory_GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) { return Utils::PatternFinder::GetRipAddress(instructionAddr, offsetPos, instructionSize); }
+
+double HooksApi::Memory_ReadDouble(uintptr_t address) { return Utils::PatternFinder::ReadDouble(address); }
+
+bool HooksApi::Memory_IsValidAddress(uintptr_t address) { return Utils::PatternFinder::IsValidAddress(address); }
+
+bool HooksApi::Memory_IsSaneOffset(int32_t offset) { return Utils::PatternFinder::IsSaneOffset(offset); }
 
 uintptr_t HooksApi::Hook_FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature) { return Utils::PatternFinder::FindBackward(startAddress, searchRange, signature); }
 

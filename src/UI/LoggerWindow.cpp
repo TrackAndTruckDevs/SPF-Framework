@@ -8,8 +8,10 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
 #include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UIElements.hpp"
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "fmt/format.h"
@@ -17,6 +19,7 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
+#include <cfloat>
 #include <memory>
 #include <set>
 #include <string>
@@ -43,6 +46,25 @@ static ImVec4 GetColorForLogLevel(LogLevel level) {
       return Colors::BRIGHT_RED;
     default:
       return Colors::WHITE;
+  }
+}
+
+static const char* GetIconForLogLevel(LogLevel level) {
+  switch (level) {
+    case LogLevel::Trace:
+      return ICON_FA_BUG;
+    case LogLevel::Debug:
+      return ICON_FA_CODE;
+    case LogLevel::Info:
+      return ICON_FA_CIRCLE_INFO;
+    case LogLevel::Warn:
+      return ICON_FA_TRIANGLE_EXCLAMATION;
+    case LogLevel::Error:
+      return ICON_FA_CIRCLE_XMARK;
+    case LogLevel::Critical:
+      return ICON_FA_RADIATION;
+    default:
+      return ICON_FA_QUESTION;
   }
 }
 
@@ -118,27 +140,59 @@ void LoggerWindow::BuildComponentFilterList() {
 void LoggerWindow::RenderContent() {
   if (!m_sink) return;
 
-  if (Button(m_cachedButtonClear.c_str())) {
+  // Right panel: Clear button + Autoscroll checkbox
+  std::string clearLabel = std::string(ICON_FA_TRASH_CAN) + " " + m_cachedButtonClear;
+  float clearWidth = ImGui::CalcTextSize(clearLabel.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+  float cbTextWidth = ImGui::CalcTextSize(m_cachedCheckboxAutoscroll.c_str()).x;
+  float checkboxWidth = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x + cbTextWidth;
+  float rightWidth = clearWidth + ImGui::GetStyle().ItemSpacing.x + checkboxWidth;
+
+  float leftPosX = ImGui::GetCursorPosX();
+  ImGui::SetCursorPosX(leftPosX + ImGui::GetContentRegionAvail().x - rightWidth);
+  if (Button(clearLabel.c_str())) {
     m_sink->Clear();
   }
   ImGui::SameLine();
   ImGui::Checkbox(m_cachedCheckboxAutoscroll.c_str(), &m_autoScroll);
+
+  // Level filter buttons on the left
+  ImGui::SameLine();
+  ImGui::SetCursorPosX(leftPosX);
+
+  for (const auto& level : GetAllLogLevels()) {
+    if (level == LogLevel::Unknown) continue;
+
+    bool isSelected = (m_filterLevel == level);
+    ImVec4 color = GetColorForLogLevel(level);
+    std::string label = fmt::format("{} {}", GetIconForLogLevel(level), LogLevelToString(level));
+
+    if (isSelected) {
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x * 0.25f, color.y * 0.25f, color.z * 0.25f, color.w));
+    }
+    auto btnStyle = TextStyle::DefaultButton().Color(color).HoverColor(color).ActiveColor(ImVec4(0.15f, 0.19f, 0.24f, 1.00f));
+    if (Button(label.c_str(), btnStyle, ImVec2(0, 0), m_cachedLabelLevel.c_str())) {
+      m_filterLevel = level;
+    }
+    if (isSelected) {
+      ImGui::PopStyleColor();
+    }
+
+    if (level != LogLevel::Critical) {
+      ImGui::SameLine();
+    }
+  }
+
   ImGui::Separator();
 
-  ImGui::PushItemWidth(120);
-  if (ImGui::BeginCombo("##level_filter", LogLevelToString(m_filterLevel))) {
-    for (const auto& level : GetAllLogLevels()) {
-      bool is_selected = (m_filterLevel == level);
-      if (ImGui::Selectable(LogLevelToString(level), is_selected)) m_filterLevel = level;
-      if (is_selected) ImGui::SetItemDefaultFocus();
-    }
-    ImGui::EndCombo();
-  }
-  if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_cachedLabelLevel.c_str());
-
-  ImGui::SameLine();
-
   BuildComponentFilterList();
+
+  float maxNameWidth = 0.0f;
+  for (const auto& name : m_componentList) {
+    float w = ImGui::CalcTextSize(name.c_str()).x;
+    if (w > maxNameWidth) maxNameWidth = w;
+  }
+  ImGui::PushItemWidth(maxNameWidth + ImGui::GetStyle().FramePadding.x * 2.0f);
+
   if (ImGui::BeginCombo("##component_filter", m_selectedComponent.c_str())) {
     for (const auto& componentName : m_componentList) {
       if (componentName == "###SEPARATOR###") {
@@ -154,7 +208,6 @@ void LoggerWindow::RenderContent() {
     ImGui::EndCombo();
   }
   if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_cachedLabelModule.c_str());
-
   ImGui::PopItemWidth();
   ImGui::Separator();
 

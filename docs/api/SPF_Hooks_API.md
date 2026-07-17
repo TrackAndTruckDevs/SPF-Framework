@@ -368,6 +368,24 @@ Calculates an absolute memory address from an x64 RIP-relative instruction.
     *   `instructionSize`: The total length of the instruction in bytes.
 
 ---
+### `double Memory_ReadDouble(uintptr_t address)`
+Reads a 64-bit double-precision floating-point value from the specified memory address.
+
+---
+
+### `bool Memory_IsValidAddress(uintptr_t address)`
+Checks if a memory address points to valid, committed, accessible memory.
+
+* **Details**: Uses `VirtualQuery` to verify the page state. Returns `true` only if the memory is committed and not guarded or inaccessible. Always validate addresses obtained from pattern scans or calculations before reading.
+
+---
+
+### `bool Memory_IsSaneOffset(int32_t offset)`
+Checks if a class member offset is within typical game object size boundaries.
+
+* **Details**: Validates that an offset falls within a reasonable range (0 to ~24KB) for SCS game objects. Use this to catch suspicious offsets resolved via `Reflection_GetAttributeOffset` or calculated manually before passing them to memory read functions.
+
+---
 
 ## Memory Access Example
 
