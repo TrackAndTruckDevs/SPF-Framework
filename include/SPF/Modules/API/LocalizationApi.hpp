@@ -1,5 +1,6 @@
 #pragma once
 #include "SPF/Namespace.hpp"
+
 #include "SPF/SPF_API/SPF_Localization_API.h"
 
 SPF_NS_BEGIN

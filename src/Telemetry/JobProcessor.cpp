@@ -1,15 +1,14 @@
 #include "SPF/Telemetry/JobProcessor.hpp"
 
-#include <cstring>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
 
-// SDK headers for channel and attribute names
-#include "common/scssdk_telemetry_common_configs.h"
-#include "common/scssdk_telemetry_job_common_channels.h"
-#include "common/scssdk_telemetry_truck_common_channels.h"  // For navigation channels
+#include <cstring>
+
 
 SPF_NS_BEGIN
 namespace Telemetry {

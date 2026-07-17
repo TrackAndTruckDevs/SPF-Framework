@@ -1,17 +1,28 @@
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
 
-#include <imgui.h>
-#include <imgui_impl_win32.h>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/EventProxyBase.hpp"
+#include "SPF/Events/UIEvents.hpp"
 #include "SPF/Hooks/D3D11Hook.hpp"
 #include "SPF/Hooks/D3D12Hook.hpp"
 #include "SPF/Hooks/OpenGLHook.hpp"
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/System/VirtualKeyMapping.hpp"
-#include "SPF/Renderer/Renderer.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
+#include "SPF/Renderer/Renderer.hpp"
+#include "SPF/System/VirtualKeyMapping.hpp"
+#include "SPF/Utils/Windows.hpp"
+
+#include "imgui.h"
+
+#include <cstdint>
+#include <cstdlib>
+#include <minwindef.h>
+#include <windef.h>
+
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -22,45 +33,47 @@ namespace Events::Proxies {
 using namespace SPF::Logging;
 using namespace SPF::Rendering;
 
-WndProcEventProxy::WndProcEventProxy(EventManager& eventManager, Renderer& renderer) 
-    : EventProxyBase(eventManager), 
-      m_renderer(renderer),
-      m_d3d11Sink(Hooks::D3D11Hook::OnWndProc),
-      m_d3d12Sink(Hooks::D3D12Hook::OnWndProc),
-      m_openGLSink(Hooks::OpenGLHook::OnWndProc)
-{
-    m_logger = LoggerFactory::GetInstance().GetLogger("WndProcEventProxy");
+WndProcEventProxy::WndProcEventProxy(EventManager& eventManager, Renderer& renderer)
+    : EventProxyBase(eventManager), m_renderer(renderer), m_d3d11Sink(Hooks::D3D11Hook::OnWndProc), m_d3d12Sink(Hooks::D3D12Hook::OnWndProc), m_openGLSink(Hooks::OpenGLHook::OnWndProc) {
+  m_logger = LoggerFactory::GetInstance().GetLogger("WndProcEventProxy");
 
-    RenderAPI api = m_renderer.GetDetectedAPI();
-    switch (api) {
-        case RenderAPI::D3D11:
-            m_d3d11Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
-            m_logger->Info("Proxy created and connected to D3D11Hook::OnWndProc.");
-            break;
-        case RenderAPI::D3D12:
-            m_d3d12Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
-            m_logger->Info("Proxy created and connected to D3D12Hook::OnWndProc.");
-            break;
-        case RenderAPI::OpenGL:
-             m_openGLSink.Connect<&WndProcEventProxy::OnWndProc>(this);
-            m_logger->Info("Proxy created and connected to OpenGLHook::OnWndProc.");
-            break;
-        default:
-            m_logger->Warn("WndProcEventProxy created, but no compatible graphics hook was detected to connect to.");
-            break;
-    }
+  RenderAPI api = m_renderer.GetDetectedAPI();
+  switch (api) {
+    case RenderAPI::D3D11:
+      m_d3d11Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
+      m_logger->Info("Proxy created and connected to D3D11Hook::OnWndProc.");
+      break;
+    case RenderAPI::D3D12:
+      m_d3d12Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
+      m_logger->Info("Proxy created and connected to D3D12Hook::OnWndProc.");
+      break;
+    case RenderAPI::OpenGL:
+      m_openGLSink.Connect<&WndProcEventProxy::OnWndProc>(this);
+      m_logger->Info("Proxy created and connected to OpenGLHook::OnWndProc.");
+      break;
+    default:
+      m_logger->Warn("WndProcEventProxy created, but no compatible graphics hook was detected to connect to.");
+      break;
+  }
 }
 
 void WndProcEventProxy::SetBlockWndProc(bool block) {
-    if (!block) return;
-    
-    RenderAPI api = m_renderer.GetDetectedAPI();
-    switch (api) {
-        case RenderAPI::D3D11:  SPF::Hooks::D3D11Hook::block_wndproc_message = true; break;
-        case RenderAPI::D3D12:  SPF::Hooks::D3D12Hook::block_wndproc_message = true; break;
-        case RenderAPI::OpenGL: SPF::Hooks::OpenGLHook::block_wndproc_message = true; break;
-        default: break;
-    }
+  if (!block) return;
+
+  RenderAPI api = m_renderer.GetDetectedAPI();
+  switch (api) {
+    case RenderAPI::D3D11:
+      SPF::Hooks::D3D11Hook::block_wndproc_message = true;
+      break;
+    case RenderAPI::D3D12:
+      SPF::Hooks::D3D12Hook::block_wndproc_message = true;
+      break;
+    case RenderAPI::OpenGL:
+      SPF::Hooks::OpenGLHook::block_wndproc_message = true;
+      break;
+    default:
+      break;
+  }
 }
 
 void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -80,12 +93,12 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_KEYUP:
     case WM_SYSKEYUP: {
       auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
-      
+
       // Check if this is a virtual release we sent ourselves to fix blocking chords
       uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(keyMapper.FromWinAPI(wParam));
       if (SPF::Input::InputManager::GetInstance().IsPendingVirtualRelease(hardwareCode)) {
-          // Ignore this event for the framework
-          break;
+        // Ignore this event for the framework
+        break;
       }
 
       bool isPressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
@@ -136,20 +149,21 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
     // --- Mouse Move (Delta) ---
     case WM_MOUSEMOVE: {
-        auto& inputManager = SPF::Input::InputManager::GetInstance();
-        static int lastX = -1, lastY = -1;
-        int curX = LOWORD(lParam), curY = HIWORD(lParam);
+      auto& inputManager = SPF::Input::InputManager::GetInstance();
+      static int lastX = -1, lastY = -1;
+      int curX = LOWORD(lParam), curY = HIWORD(lParam);
 
-        if (lastX != -1) {
-            float dx = (float)(curX - lastX);
-            float dy = (float)(curY - lastY);
-            if (std::abs(dx) > 0.0f) inputManager.PublishAxisMove(0x03, 0, dx, 3);
-            if (std::abs(dy) > 0.0f) inputManager.PublishAxisMove(0x03, 1, dy, 3);
-        }
-        lastX = curX; lastY = curY;
-        
-        if (!inputManager.ShouldGameControlMouseAxes()) blockMessage = true;
-        break;
+      if (lastX != -1) {
+        float dx = (float)(curX - lastX);
+        float dy = (float)(curY - lastY);
+        if (std::abs(dx) > 0.0f) inputManager.PublishAxisMove(0x03, 0, dx, 3);
+        if (std::abs(dy) > 0.0f) inputManager.PublishAxisMove(0x03, 1, dy, 3);
+      }
+      lastX = curX;
+      lastY = curY;
+
+      if (!inputManager.ShouldGameControlMouseAxes()) blockMessage = true;
+      break;
     }
 
     // Handle non-input messages we care about.

@@ -1,19 +1,23 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Renderer/ITexture.hpp"
+#include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/IWindow.hpp"
 #include "SPF/UI/MarkdownRenderer.hpp"
-#include "SPF/Renderer/ITexture.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
 #include <memory>
 #include <string>
+
 
 SPF_NS_BEGIN
 
 namespace UI {
 
-enum class WelcomeMode {
-    FirstInstall,
-    FrameworkUpdate
-};
+enum class WelcomeMode { FirstInstall, FrameworkUpdate };
 
 class WelcomeWindow : public IWindow {
  public:
@@ -31,7 +35,7 @@ class WelcomeWindow : public IWindow {
   bool IsFocused() const override { return m_isFocused; }
   void Focus() override { m_isFocused = true; }
   const char* GetWindowTitle() const override { return "Welcome"; }
-  
+
   void ApplySettings(const nlohmann::ordered_json& settings) override;
   void SetDrawCallback(SPF_DrawCallback callback) override {}
   nlohmann::ordered_json GetCurrentSettings() const override;

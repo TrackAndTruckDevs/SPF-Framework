@@ -1,18 +1,20 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <mutex>
-#include <map>
-#include <filesystem>
-#include <nlohmann/json.hpp>
-#include <fmt/format.h>
-#include <unordered_set>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 
-#include "SPF/Namespace.hpp"
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <filesystem>
+#include <fmt/format.h>
+#include <map>
+#include <mutex>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -25,11 +27,10 @@ class LocalizationManager : public Config::IConfigurable {
  public:
   static LocalizationManager& GetInstance();
 
-   /* @param allConfigs A map of component names to their localization configurations.
+  /* @param allConfigs A map of component names to their localization configurations.
    * @return An InitializationReport detailing the results of the operation.
    */
   Core::InitializationReport Initialize(const std::map<std::string, nlohmann::ordered_json>* allConfigs);
-
 
   bool SetComponentLanguage(const std::string& componentName, const std::string& langCode);
   std::string GetComponentLanguage(const std::string& componentName) const;

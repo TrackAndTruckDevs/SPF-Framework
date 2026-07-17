@@ -1,9 +1,18 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"  // For Input::PressType
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/Keyboard.hpp"
-#include "SPF/Input/InputEvents.hpp" // For Input::PressType
-#include <nlohmann/json.hpp>
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
+#include <string>
 
 SPF_NS_BEGIN
 namespace Modules {

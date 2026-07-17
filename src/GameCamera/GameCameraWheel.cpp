@@ -1,7 +1,14 @@
 #include "SPF/GameCamera/GameCameraWheel.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -13,9 +20,9 @@ void GameCameraWheel::OnActivate() {
 
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   uintptr_t pStandardManager = gameData.GetCameraManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }
@@ -209,7 +216,9 @@ void GameCameraWheel::GetShakeAnim(size_t index, float& x, float& y, float& z) c
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + off + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
-  x = pVec[0]; y = pVec[1]; z = pVec[2];
+  x = pVec[0];
+  y = pVec[1];
+  z = pVec[2];
 }
 
 void GameCameraWheel::SetShakeAnimStep(float val) {
@@ -245,7 +254,9 @@ void GameCameraWheel::SetShakeAnim(size_t index, float x, float y, float z) {
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + off + 8);
   if (!pData) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
-  pVec[0] = x; pVec[1] = y; pVec[2] = z;
+  pVec[0] = x;
+  pVec[1] = y;
+  pVec[2] = z;
 }
 }  // namespace GameCamera
 SPF_NS_END

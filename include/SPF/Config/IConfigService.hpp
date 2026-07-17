@@ -1,15 +1,21 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include "SPF/Config/ManifestData.hpp"  // Required for ManifestData type
 
-#include <string>
-#include <vector>
-#include <nlohmann/json.hpp>
-
-#include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Config/ComponentInfo.hpp"
+#include "SPF/Config/ManifestData.hpp"  // Required for ManifestData type
+#include "SPF/Core/InitializationReport.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <map>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -182,7 +188,8 @@ struct IConfigService {
    * @param propertyName The name of the JSON property to change (e.g., "press_type").
    * @param newValue The new value for the property.
    */
-  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) = 0;
+  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName,
+                                     const nlohmann::ordered_json& newValue) = 0;
 
   /**
    * @brief Resets a specific key in a component's config to its default value from the manifest.

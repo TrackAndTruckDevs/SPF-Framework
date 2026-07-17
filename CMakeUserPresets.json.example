@@ -1,0 +1,290 @@
+{
+  "version": 11,
+  "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+
+  "$comment": [
+    "User-specific CMake presets.",
+    "",
+    "Edit the environment variables in `base-user-env` below",
+    "to set your game path and RC compiler paths.",
+    "",
+    "To add a new user preset, inherit from `base-user-env` and any",
+    "configurePreset from CMakePresets.json, then add it to the list."
+  ],
+
+  "configurePresets": [
+    {
+      "$comment": "=== Hidden base: user environment (edit paths here) ===",
+      "name": "base-user-env",
+      "hidden": true,
+      "environment": {
+        "ATS_PLUGINS_DIR": "",
+        "ETS2_PLUGINS_DIR": "",
+        "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres"
+      }
+    },
+
+    {
+      "$comment": "=== Windows: MSVC (VS 2022) ===",
+      "name": "user-win-release",
+      "inherits": ["base-user-env", "vs-release"],
+      "displayName": "\u2714 USER: VS 2022 \u00b7 Release",
+      "description": "VS 2022 Release with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-win-debug",
+      "inherits": ["base-user-env", "vs-debug"],
+      "displayName": "  \u00B7 USER: VS 2022 \u00b7 Debug",
+      "description": "VS 2022 Debug with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-win-relwithdebinfo",
+      "inherits": ["base-user-env", "vs-relwithdebinfo"],
+      "displayName": "  \u00B7 USER: VS 2022 \u00b7 RelWithDebInfo",
+      "description": "VS 2022 RelWithDebInfo with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-win-minsizerel",
+      "inherits": ["base-user-env", "vs-minsizerel"],
+      "displayName": "  \u00B7 USER: VS 2022 \u00b7 MinSizeRel",
+      "description": "VS 2022 MinSizeRel with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+
+    {
+      "$comment": "=== Windows: Ninja (MSVC) ===",
+      "name": "user-ninja-release",
+      "inherits": ["base-user-env", "ninja-release"],
+      "displayName": "\u2714 USER: Ninja (MSVC) \u00b7 Release",
+      "description": "Ninja + MSVC Release with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-ninja-debug",
+      "inherits": ["base-user-env", "ninja-debug"],
+      "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 Debug",
+      "description": "Ninja + MSVC Debug with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-ninja-relwithdebinfo",
+      "inherits": ["base-user-env", "ninja-relwithdebinfo"],
+      "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 RelWithDebInfo",
+      "description": "Ninja + MSVC RelWithDebInfo with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-ninja-minsizerel",
+      "inherits": ["base-user-env", "ninja-minsizerel"],
+      "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 MinSizeRel",
+      "description": "Ninja + MSVC MinSizeRel with game deploy path",
+      "cacheVariables": {
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+
+    {
+      "$comment": "=== Linux: MinGW cross-compile (Ninja) ===",
+      "name": "user-mingw-release",
+      "inherits": ["base-user-env", "mingw-release"],
+      "displayName": "\u2714 USER: MinGW (Ninja) \u00b7 Release",
+      "description": "MinGW + Ninja Release with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-debug",
+      "inherits": ["base-user-env", "mingw-debug"],
+      "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 Debug",
+      "description": "MinGW + Ninja Debug with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-relwithdebinfo",
+      "inherits": ["base-user-env", "mingw-relwithdebinfo"],
+      "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 RelWithDebInfo",
+      "description": "MinGW + Ninja RelWithDebInfo with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-minsizerel",
+      "inherits": ["base-user-env", "mingw-minsizerel"],
+      "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 MinSizeRel",
+      "description": "MinGW + Ninja MinSizeRel with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+
+    {
+      "$comment": "=== Linux: MinGW cross-compile (Unix Makefiles) ===",
+      "name": "user-mingw-make-release",
+      "inherits": ["base-user-env", "mingw-make-release"],
+      "displayName": "\u2714 USER: MinGW (Make) \u00b7 Release",
+      "description": "MinGW + Unix Makefiles Release with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-make-debug",
+      "inherits": ["base-user-env", "mingw-make-debug"],
+      "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 Debug",
+      "description": "MinGW + Unix Makefiles Debug with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-make-relwithdebinfo",
+      "inherits": ["base-user-env", "mingw-make-relwithdebinfo"],
+      "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 RelWithDebInfo",
+      "description": "MinGW + Unix Makefiles RelWithDebInfo with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    },
+    {
+      "name": "user-mingw-make-minsizerel",
+      "inherits": ["base-user-env", "mingw-make-minsizerel"],
+      "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 MinSizeRel",
+      "description": "MinGW + Unix Makefiles MinSizeRel with game deploy path and RC compiler",
+      "cacheVariables": {
+        "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
+        "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "user-win-release",
+      "configurePreset": "user-win-release",
+      "displayName": "\u2714 Build: USER VS 2022 \u00b7 Release",
+      "configuration": "Release"
+    },
+    {
+      "name": "user-win-debug",
+      "configurePreset": "user-win-debug",
+      "displayName": "  \u00B7 Build: USER VS 2022 \u00b7 Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "user-win-relwithdebinfo",
+      "configurePreset": "user-win-relwithdebinfo",
+      "displayName": "  \u00B7 Build: USER VS 2022 \u00b7 RelWithDebInfo",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "user-win-minsizerel",
+      "configurePreset": "user-win-minsizerel",
+      "displayName": "  \u00B7 Build: USER VS 2022 \u00b7 MinSizeRel",
+      "configuration": "MinSizeRel"
+    },
+    {
+      "name": "user-ninja-release",
+      "configurePreset": "user-ninja-release",
+      "displayName": "\u2714 Build: USER Ninja (MSVC) \u00b7 Release"
+    },
+    {
+      "name": "user-ninja-debug",
+      "configurePreset": "user-ninja-debug",
+      "displayName": "  \u00B7 Build: USER Ninja (MSVC) \u00b7 Debug"
+    },
+    {
+      "name": "user-ninja-relwithdebinfo",
+      "configurePreset": "user-ninja-relwithdebinfo",
+      "displayName": "  \u00B7 Build: USER Ninja (MSVC) \u00b7 RelWithDebInfo"
+    },
+    {
+      "name": "user-ninja-minsizerel",
+      "configurePreset": "user-ninja-minsizerel",
+      "displayName": "  \u00B7 Build: USER Ninja (MSVC) \u00b7 MinSizeRel"
+    },
+    {
+      "name": "user-mingw-release",
+      "configurePreset": "user-mingw-release",
+      "displayName": "\u2714 Build: USER MinGW (Ninja) \u00b7 Release"
+    },
+    {
+      "name": "user-mingw-debug",
+      "configurePreset": "user-mingw-debug",
+      "displayName": "  \u00B7 Build: USER MinGW (Ninja) \u00b7 Debug"
+    },
+    {
+      "name": "user-mingw-relwithdebinfo",
+      "configurePreset": "user-mingw-relwithdebinfo",
+      "displayName": "  \u00B7 Build: USER MinGW (Ninja) \u00b7 RelWithDebInfo"
+    },
+    {
+      "name": "user-mingw-minsizerel",
+      "configurePreset": "user-mingw-minsizerel",
+      "displayName": "  \u00B7 Build: USER MinGW (Ninja) \u00b7 MinSizeRel"
+    },
+    {
+      "name": "user-mingw-make-release",
+      "configurePreset": "user-mingw-make-release",
+      "displayName": "\u2714 Build: USER MinGW (Make) \u00b7 Release"
+    },
+    {
+      "name": "user-mingw-make-debug",
+      "configurePreset": "user-mingw-make-debug",
+      "displayName": "  \u00B7 Build: USER MinGW (Make) \u00b7 Debug"
+    },
+    {
+      "name": "user-mingw-make-relwithdebinfo",
+      "configurePreset": "user-mingw-make-relwithdebinfo",
+      "displayName": "  \u00B7 Build: USER MinGW (Make) \u00b7 RelWithDebInfo"
+    },
+    {
+      "name": "user-mingw-make-minsizerel",
+      "configurePreset": "user-mingw-make-minsizerel",
+      "displayName": "  \u00B7 Build: USER MinGW (Make) \u00b7 MinSizeRel"
+    }
+  ]
+}

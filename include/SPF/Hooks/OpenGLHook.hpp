@@ -1,7 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Utils/Signal.hpp"
-#include <Windows.h>
+
+#include <minwindef.h>
+#include <windef.h>
 
 SPF_NS_BEGIN
 

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include "SPF/Telemetry/Sdk.hpp"  // Include all SDK headers
-#include <string>                 // Added for std::string
+
+#include "scssdk_input_device.h"
+
+#include <string>  // Added for std::string
 
 // Forward declaration for the SDK init params
 struct scs_input_init_params_t;

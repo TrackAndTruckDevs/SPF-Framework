@@ -1,10 +1,14 @@
 #include "SPF/Data/GameData/Finders/FovDataFinder.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <Windows.h>
+#include <cstddef>
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
@@ -43,7 +47,10 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(baseFovOffset))) {
       owner.SetFovBaseOffset(baseFovOffset);
       logger->Debug("FOV Anchor #1 found: BaseFovOffset=0x{:X}", (uint8_t)baseFovOffset);
-    } else { logger->Error("FOV Anchor #1: BaseFov INVALID (0x{:X})", (uint8_t)baseFovOffset); all_found = false; }
+    } else {
+      logger->Error("FOV Anchor #1: BaseFov INVALID (0x{:X})", (uint8_t)baseFovOffset);
+      all_found = false;
+    }
   } else {
     logger->Error("FAILED to find FOV Anchor #1 (Base FOV) in UpdateCameraProjection");
     all_found = false;
@@ -68,7 +75,10 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(horizFovOffset))) {
       owner.SetFovHorizFinalOffset(horizFovOffset);
       logger->Debug("FOV Anchor #2 found: HorizFovOffset=0x{:X}", (uint8_t)horizFovOffset);
-    } else { logger->Error("FOV Anchor #2: HorizFov INVALID (0x{:X})", (uint8_t)horizFovOffset); all_found = false; }
+    } else {
+      logger->Error("FOV Anchor #2: HorizFov INVALID (0x{:X})", (uint8_t)horizFovOffset);
+      all_found = false;
+    }
   } else {
     logger->Error("FAILED to find FOV Anchor #2 (Horizontal FOV) in UpdateCameraProjection");
     all_found = false;
@@ -92,7 +102,10 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(vertFovOffset))) {
       owner.SetFovVertFinalOffset(vertFovOffset);
       logger->Debug("FOV Anchor #3 found: VertFovOffset=0x{:X}", (uint8_t)vertFovOffset);
-    } else { logger->Error("FOV Anchor #3: VertFov INVALID (0x{:X})", (uint8_t)vertFovOffset); all_found = false; }
+    } else {
+      logger->Error("FOV Anchor #3: VertFov INVALID (0x{:X})", (uint8_t)vertFovOffset);
+      all_found = false;
+    }
   } else {
     logger->Error("FAILED to find FOV Anchor #3 (Vertical FOV) in UpdateCameraProjection");
     all_found = false;

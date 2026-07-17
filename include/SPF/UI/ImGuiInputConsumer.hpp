@@ -1,7 +1,10 @@
 #pragma once
 
-#include "SPF/Input/IInputConsumer.hpp"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/Input/IInputConsumer.hpp"
+#include "SPF/Input/InputEvents.hpp"
+
 
 SPF_NS_BEGIN
 

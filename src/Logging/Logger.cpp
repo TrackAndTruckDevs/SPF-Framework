@@ -1,6 +1,23 @@
-#include <SPF/Logging/Logger.hpp>
+#include "SPF/Logging/Logger.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "fmt/base.h"
+#include "fmt/format.h"
+
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <chrono>
+#include <cstddef>
+#include <functional>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -114,8 +131,7 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
   fmt::vformat_to(std::back_inserter(buffer), format_str, args);
 
   // Create the message object
-  LogMessage msg{
-      .timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
+  LogMessage msg{.timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
 
   // Lock the mutex and dispatch the message to all sinks
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -128,27 +144,27 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
 }
 
 void Logger::LogThrottledManual(LogLevel level, const char* throttle_key, std::chrono::milliseconds duration, fmt::string_view message) {
-    if (!throttle_key) return;
+  if (!throttle_key) return;
 
-    // Generate a unique key from the provided string literal
-    size_t key_hash = std::hash<const char*>{}(throttle_key);
+  // Generate a unique key from the provided string literal
+  size_t key_hash = std::hash<const char*>{}(throttle_key);
 
-    {
-        std::lock_guard<std::mutex> lock(m_throttle_mutex);
-        auto now = std::chrono::steady_clock::now();
-        auto it = m_throttle_map.find(key_hash);
+  {
+    std::lock_guard<std::mutex> lock(m_throttle_mutex);
+    auto now = std::chrono::steady_clock::now();
+    auto it = m_throttle_map.find(key_hash);
 
-        if (it != m_throttle_map.end()) {
-            if (now - it->second < duration) {
-                return;
-            }
-            it->second = now;
-        } else {
-            m_throttle_map[key_hash] = now;
-        }
+    if (it != m_throttle_map.end()) {
+      if (now - it->second < duration) {
+        return;
+      }
+      it->second = now;
+    } else {
+      m_throttle_map[key_hash] = now;
     }
+  }
 
-    Log(level, message);
+  Log(level, message);
 }
 
 }  // namespace Logging

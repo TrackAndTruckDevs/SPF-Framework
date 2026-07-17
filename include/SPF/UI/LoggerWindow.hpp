@@ -1,11 +1,19 @@
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Logging/Logger.hpp"
-#include "SPF/Config/IConfigService.hpp"
-#include "SPF/Namespace.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Utils/Signal.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <memory>
+#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -20,8 +28,7 @@ namespace UI {
  */
 class LoggerWindow : public BaseWindow, public Config::IConfigurable {
  public:
-  LoggerWindow(const std::string& componentName, const std::string& windowId,
-               Config::IConfigService& configService);
+  LoggerWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService);
 
   // --- IConfigurable Implementation ---
   bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) override;

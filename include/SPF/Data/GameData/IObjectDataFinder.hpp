@@ -29,7 +29,7 @@ class IObjectDataFinder {
    * @return True if all data was found successfully, false otherwise.
    */
   virtual bool TryFindOffsets(GameObjectVehicleService& owner) = 0;
-  
+
   /**
    * @brief Checks if the finder has successfully found all its required data.
    * @return True if ready, false otherwise.

@@ -1,6 +1,15 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
 #include <string>
 
 SPF_NS_BEGIN
@@ -22,8 +31,8 @@ class MouseAxisInput : public IBindableInput {
   InputType GetType() const override { return InputType::MouseAxis; }
 
  private:
-  int m_axisIndex; // 0=X, 1=Y, 2=Wheel
-  std::string m_mode; // "analog" or "digital"
+  int m_axisIndex;     // 0=X, 1=Y, 2=Wheel
+  std::string m_mode;  // "analog" or "digital"
   float m_deadzone = 0.0f;
   float m_saturation = 1.0f;
   float m_sensitivity = 1.0f;
@@ -35,7 +44,7 @@ class MouseAxisInput : public IBindableInput {
   float m_rangeMax = 1.0f;
   bool m_invert = false;
 
-  mutable float m_lastValue = 0.0f; // For smoothing
+  mutable float m_lastValue = 0.0f;  // For smoothing
 };
 
 }  // namespace Modules

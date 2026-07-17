@@ -1,10 +1,15 @@
 #include "SPF/Modules/HandleManager.hpp"
 
-#include <list>
-#include <map>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Handles/IHandle.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -40,9 +45,7 @@ HandleManager::HandleManager() : m_pimpl(std::make_unique<HandleManagerImpl>()) 
 
 HandleManager::~HandleManager() = default;
 
-Handles::IHandle* HandleManager::RegisterHandle(const std::string& pluginName, std::unique_ptr<Handles::IHandle> handle) {
-  return m_pimpl->RegisterHandle(pluginName, std::move(handle));
-}
+Handles::IHandle* HandleManager::RegisterHandle(const std::string& pluginName, std::unique_ptr<Handles::IHandle> handle) { return m_pimpl->RegisterHandle(pluginName, std::move(handle)); }
 
 void HandleManager::ReleaseHandlesFor(const std::string& pluginName) { m_pimpl->ReleaseHandlesFor(pluginName); }
 }  // namespace Modules

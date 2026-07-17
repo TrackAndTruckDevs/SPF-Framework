@@ -1,26 +1,28 @@
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Hooks/CameraHooks.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 
-// Include all finder implementations
-#include "SPF/Data/GameData/Finders/CoreCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/FreeCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/InteriorCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/FovDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/ViewportDataFinder.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/Finders/BehindCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/TopCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/CabinCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/WindowCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/BumperCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/WheelCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/TVCameraDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/PhotoCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/CabinCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/CoreCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/DebugCameraAnimationDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/DebugCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/DebugCameraStateDataFinder.hpp"
-#include "SPF/Data/GameData/Finders/DebugCameraAnimationDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/FovDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/FreeCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/InteriorCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/TopCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/TVCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/ViewportDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/WheelCameraDataFinder.hpp"
+#include "SPF/Data/GameData/Finders/WindowCameraDataFinder.hpp"
+#include "SPF/GameCamera/GameCameraType.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
+#include <cstdint>
+#include <cstring>
+#include <memory>
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -60,7 +62,7 @@ void GameDataCameraService::Initialize() {
 
   m_isInitialized = false;
   m_coreOffsetsFound = false;
-  
+
   logger->Info("Camera Data Service logic registered. Starting pattern scan sequence.");
 }
 
@@ -77,7 +79,7 @@ bool GameDataCameraService::TryFindAllOffsets() {
       } else {
         // Log failure for every finder so we know exactly what's missing
         logger->Warn("[Failed] Finder '{}' could not resolve all patterns. Will retry on next tick.", finder->GetName());
-        
+
         // CoreCameraDataFinder is mandatory. Without it, we can't even find the manager.
         if (strcmp(finder->GetName(), "CoreCameraDataFinder") == 0) {
           logger->Critical("CRITICAL FAILURE: CoreCameraDataFinder is missing! Camera system is offline.");
@@ -94,17 +96,13 @@ bool GameDataCameraService::TryFindAllOffsets() {
     return true;
   } else {
     // Report detailed failure status at the end of the pass
-    logger->Error("Camera Data Service NOT ready. Status -> CriticalFinders: {}, CoreOffsetsFlag: {}", 
-                  all_critical_found ? "OK" : "FAILED", 
-                  m_coreOffsetsFound ? "OK" : "FALSE");
+    logger->Error("Camera Data Service NOT ready. Status -> CriticalFinders: {}, CoreOffsetsFlag: {}", all_critical_found ? "OK" : "FAILED", m_coreOffsetsFound ? "OK" : "FALSE");
   }
 
   return m_isInitialized;
 }
 
-void GameDataCameraService::RegisterDiscoveredAddress(int slotIndex, uintptr_t address) {
-  m_discoveredAddresses[slotIndex] = address;
-}
+void GameDataCameraService::RegisterDiscoveredAddress(int slotIndex, uintptr_t address) { m_discoveredAddresses[slotIndex] = address; }
 
 uintptr_t GameDataCameraService::GetDiscoveredAddress(int slotIndex) const {
   auto it = m_discoveredAddresses.find(slotIndex);
@@ -114,9 +112,7 @@ uintptr_t GameDataCameraService::GetDiscoveredAddress(int slotIndex) const {
   return 0;
 }
 
-void GameDataCameraService::RegisterVerifiedCamera(GameCamera::GameCameraType type, uintptr_t address) {
-  m_verifiedCameras[type] = address;
-}
+void GameDataCameraService::RegisterVerifiedCamera(GameCamera::GameCameraType type, uintptr_t address) { m_verifiedCameras[type] = address; }
 
 uintptr_t GameDataCameraService::GetVerifiedCamera(GameCamera::GameCameraType type) const {
   auto it = m_verifiedCameras.find(type);

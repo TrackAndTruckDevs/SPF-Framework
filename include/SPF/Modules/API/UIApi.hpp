@@ -1,7 +1,12 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_UI_API.h"  // For SPF_UI_API and SPF_DrawCallback
 #include "SPF/Namespace.hpp"
+
+#include "SPF/SPF_API/SPF_UI_API.h"  // For SPF_UI_API and SPF_DrawCallback
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -208,14 +213,18 @@ class UIApi {
   static bool UI_DragFloat2(const char* label, float v[2], float v_speed, float v_min, float v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_DragFloat3(const char* label, float v[3], float v_speed, float v_min, float v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_DragFloat4(const char* label, float v[4], float v_speed, float v_min, float v_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_DragFloatRange2(const char* label, float* v_current_min, float* v_current_max, float v_speed, float v_min, float v_max, const char* format, const char* format_max, SPF_SliderFlags flags);
+  static bool UI_DragFloatRange2(const char* label, float* v_current_min, float* v_current_max, float v_speed, float v_min, float v_max, const char* format, const char* format_max,
+                                 SPF_SliderFlags flags);
   static bool UI_DragInt(const char* label, int* v, float v_speed, int v_min, int v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_DragInt2(const char* label, int v[2], float v_speed, int v_min, int v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_DragInt3(const char* label, int v[3], float v_speed, int v_min, int v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_DragInt4(const char* label, int v[4], float v_speed, int v_min, int v_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_DragIntRange2(const char* label, int* v_current_min, int* v_current_max, float v_speed, int v_min, int v_max, const char* format, const char* format_max, SPF_SliderFlags flags);
-  static bool UI_DragScalar(const char* label, SPF_DataType data_type, void* p_data, float v_speed, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_DragScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, float v_speed, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
+  static bool UI_DragIntRange2(const char* label, int* v_current_min, int* v_current_max, float v_speed, int v_min, int v_max, const char* format, const char* format_max,
+                               SPF_SliderFlags flags);
+  static bool UI_DragScalar(const char* label, SPF_DataType data_type, void* p_data, float v_speed, const void* p_min, const void* p_max, const char* format,
+                            SPF_SliderFlags flags);
+  static bool UI_DragScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, float v_speed, const void* p_min, const void* p_max, const char* format,
+                             SPF_SliderFlags flags);
 
   // Sliders
   static bool UI_SliderFloat(const char* label, float* v, float v_min, float v_max, const char* format, SPF_SliderFlags flags);
@@ -228,10 +237,12 @@ class UIApi {
   static bool UI_SliderInt3(const char* label, int v[3], int v_min, int v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_SliderInt4(const char* label, int v[4], int v_min, int v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_SliderScalar(const char* label, SPF_DataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_SliderScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
+  static bool UI_SliderScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, const void* p_min, const void* p_max, const char* format,
+                               SPF_SliderFlags flags);
   static bool UI_VSliderFloat(const char* label, float size_x, float size_y, float* v, float v_min, float v_max, const char* format, SPF_SliderFlags flags);
   static bool UI_VSliderInt(const char* label, float size_x, float size_y, int* v, int v_min, int v_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_VSliderScalar(const char* label, float size_x, float size_y, SPF_DataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
+  static bool UI_VSliderScalar(const char* label, float size_x, float size_y, SPF_DataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format,
+                               SPF_SliderFlags flags);
 
   // Direct Inputs
   static bool UI_InputText(const char* label, char* buf, size_t buf_size, SPF_InputTextFlags flags);
@@ -247,7 +258,8 @@ class UIApi {
   static bool UI_InputInt4(const char* label, int v[4], SPF_InputTextFlags flags);
   static bool UI_InputDouble(const char* label, double* v, double step, double step_fast, const char* format, SPF_InputTextFlags flags);
   static bool UI_InputScalar(const char* label, SPF_DataType data_type, void* p_data, const void* p_step, const void* p_step_fast, const char* format, SPF_InputTextFlags flags);
-  static bool UI_InputScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, const void* p_step, const void* p_step_fast, const char* format, SPF_InputTextFlags flags);
+  static bool UI_InputScalarN(const char* label, SPF_DataType data_type, void* p_data, int components, const void* p_step, const void* p_step_fast, const char* format,
+                              SPF_InputTextFlags flags);
 
   // Color Editor & Picker
   static bool UI_ColorEdit3(const char* label, float col[3], SPF_ColorEditFlags flags);
@@ -282,10 +294,14 @@ class UIApi {
   static bool UI_IsItemToggledSelection();
 
   // Data Visualization
-  static void UI_PlotLines(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride);
-  static void UI_PlotHistogram(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y, int stride);
-  static void UI_PlotLinesCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
-  static void UI_PlotHistogramCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, float graph_size_x, float graph_size_y);
+  static void UI_PlotLines(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max,
+                           float graph_size_x, float graph_size_y, int stride);
+  static void UI_PlotHistogram(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max,
+                               float graph_size_x, float graph_size_y, int stride);
+  static void UI_PlotLinesCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min,
+                                   float scale_max, float graph_size_x, float graph_size_y);
+  static void UI_PlotHistogramCallback(const char* label, SPF_PlotGetter values_getter, void* data, int values_count, int values_offset, const char* overlay_text, float scale_min,
+                                       float scale_max, float graph_size_x, float graph_size_y);
 
   // Simple Value Display
   static void UI_Value_Bool(const char* prefix, bool b);
@@ -410,14 +426,18 @@ class UIApi {
   static void UI_DrawList_PushClipRectFullScreen(SPF_DrawList_Handle dl);
   static void UI_DrawList_PopClipRect(SPF_DrawList_Handle dl);
   static void UI_DrawList_AddLine(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, uint32_t col, float thickness);
-  static void UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, SPF_DrawFlags flags, float thickness);
+  static void UI_DrawList_AddRect(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, SPF_DrawFlags flags,
+                                  float thickness);
   static void UI_DrawList_AddRectFilled(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col, float rounding, SPF_DrawFlags flags);
-  static void UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left);
-  static void UI_DrawList_AddQuad(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col, float thickness);
+  static void UI_DrawList_AddRectFilledMultiColor(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, uint32_t col_upr_left, uint32_t col_upr_right,
+                                                  uint32_t col_bot_right, uint32_t col_bot_left);
+  static void UI_DrawList_AddQuad(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col,
+                                  float thickness);
   static void UI_DrawList_AddQuadFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, uint32_t col);
   static void UI_DrawList_AddTriangle(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col, float thickness);
   static void UI_DrawList_AddTriangleFilled(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col);
-  static void UI_DrawList_AddTriangleFilledMultiColor(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2, uint32_t col3);
+  static void UI_DrawList_AddTriangleFilledMultiColor(SPF_DrawList_Handle dl, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, uint32_t col1, uint32_t col2,
+                                                      uint32_t col3);
   static void UI_DrawList_AddCircle(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
   static void UI_DrawList_AddCircleFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
   static void UI_DrawList_AddCircleFilledMultiColor(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col_inner, uint32_t col_outer, int num_segments);
@@ -425,20 +445,27 @@ class UIApi {
   static void UI_DrawList_AddNgon(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
   static void UI_DrawList_AddNgonFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments);
   static void UI_DrawList_AddNgonContour(SPF_DrawList_Handle dl, float center_x, float center_y, float radius, uint32_t col, int num_segments, float thickness);
-  static void UI_DrawList_AddEllipse(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments, float thickness);
+  static void UI_DrawList_AddEllipse(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments,
+                                     float thickness);
   static void UI_DrawList_AddEllipseFilled(SPF_DrawList_Handle dl, float center_x, float center_y, float radius_x, float radius_y, uint32_t col, float rot, int num_segments);
-  static void UI_DrawList_AddBezierCubic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float cp1_x, float cp1_y, float cp2_x, float cp2_y, float p2_x, float p2_y, uint32_t col, float thickness, int num_segments);
-  static void UI_DrawList_AddBezierQuadratic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float cp_x, float cp_y, float p2_x, float p2_y, uint32_t col, float thickness, int num_segments);
+  static void UI_DrawList_AddBezierCubic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float cp1_x, float cp1_y, float cp2_x, float cp2_y, float p2_x, float p2_y, uint32_t col,
+                                         float thickness, int num_segments);
+  static void UI_DrawList_AddBezierQuadratic(SPF_DrawList_Handle dl, float p1_x, float p1_y, float cp_x, float cp_y, float p2_x, float p2_y, uint32_t col, float thickness,
+                                             int num_segments);
   static void UI_DrawList_AddPolyline(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col, SPF_DrawFlags flags, float thickness);
   static void UI_DrawList_AddConvexPolyFilled(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col);
   static void UI_DrawList_AddConcavePolyFilled(SPF_DrawList_Handle dl, const float* points_x, const float* points_y, int num_points, uint32_t col);
-  static void UI_DrawList_AddImage(SPF_DrawList_Handle dl, void* user_texture_id, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y, uint32_t col);
-  static void UI_DrawList_AddImageQuad(SPF_DrawList_Handle dl, void* user_texture_id, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x, float p4_y, float uv1_x, float uv1_y, float uv2_x, float uv2_y, float uv3_x, float uv3_y, float uv4_x, float uv4_y, uint32_t col);
-  static void UI_DrawList_AddImageRounded(SPF_DrawList_Handle dl, void* user_texture_id, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y, uint32_t col, float rounding, SPF_DrawFlags flags);
+  static void UI_DrawList_AddImage(SPF_DrawList_Handle dl, void* user_texture_id, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y,
+                                   float uv_max_x, float uv_max_y, uint32_t col);
+  static void UI_DrawList_AddImageQuad(SPF_DrawList_Handle dl, void* user_texture_id, float p1_x, float p1_y, float p2_x, float p2_y, float p3_x, float p3_y, float p4_x,
+                                       float p4_y, float uv1_x, float uv1_y, float uv2_x, float uv2_y, float uv3_x, float uv3_y, float uv4_x, float uv4_y, uint32_t col);
+  static void UI_DrawList_AddImageRounded(SPF_DrawList_Handle dl, void* user_texture_id, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y,
+                                          float uv_max_x, float uv_max_y, uint32_t col, float rounding, SPF_DrawFlags flags);
   static void UI_DrawList_AddCallback(SPF_DrawList_Handle dl, void (*callback)(const void* parent_list, const void* cmd), void* user_data);
   static void UI_DrawList_AddText(SPF_DrawList_Handle dl, float pos_x, float pos_y, uint32_t col, const char* text);
   static void UI_DrawList_AddTextWithFont(SPF_DrawList_Handle dl, SPF_Font font, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
-  static void UI_DrawList_AddTextWithFontHandle(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text, float wrap_width);
+  static void UI_DrawList_AddTextWithFontHandle(SPF_DrawList_Handle dl, SPF_Font_Handle font_handle, float font_size, float pos_x, float pos_y, uint32_t col, const char* text,
+                                                float wrap_width);
   static void UI_DrawList_PathClear(SPF_DrawList_Handle dl);
   static void UI_DrawList_PathLineTo(SPF_DrawList_Handle dl, float pos_x, float pos_y);
   static void UI_DrawList_PathStroke(SPF_DrawList_Handle dl, uint32_t col, SPF_DrawFlags flags, float thickness);
@@ -449,7 +476,8 @@ class UIApi {
   static void UI_DrawList_ChannelsMerge(SPF_DrawList_Handle dl);
   static void UI_DrawList_ChannelsSetCurrent(SPF_DrawList_Handle dl, int n);
   static void UI_DrawList_PrimReserve(SPF_DrawList_Handle dl, int idx_count, int vtx_count);
-  static void UI_DrawList_PrimRectUV(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y, uint32_t col);
+  static void UI_DrawList_PrimRectUV(SPF_DrawList_Handle dl, float p_min_x, float p_min_y, float p_max_x, float p_max_y, float uv_min_x, float uv_min_y, float uv_max_x,
+                                     float uv_max_y, uint32_t col);
   static void UI_DrawList_PrimVtx(SPF_DrawList_Handle dl, float x, float y, float u, float v, uint32_t col);
   static void UI_DrawList_PrimIdx(SPF_DrawList_Handle dl, uint16_t idx);
 
@@ -505,8 +533,10 @@ class UIApi {
   static void UI_SetLastItemData(uint32_t item_id, SPF_InputTextFlags flags, SPF_HoveredFlags status_flags, float min_x, float min_y, float max_x, float max_y);
   static bool UI_ButtonBehavior(float min_x, float min_y, float max_x, float max_y, uint32_t id, bool* out_hovered, bool* out_held, SPF_WindowFlags flags);
   static bool UI_DragBehavior(uint32_t id, SPF_DataType data_type, void* p_v, float v_speed, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_SliderBehavior(float min_x, float min_y, float max_x, float max_y, uint32_t id, SPF_DataType data_type, void* p_v, const void* p_min, const void* p_max, const char* format, SPF_SliderFlags flags);
-  static bool UI_SplitterBehavior(float bb_min_x, float bb_min_y, float bb_max_x, float bb_max_y, uint32_t id, int axis, float* size1, float* size2, float min_size1, float min_size2);
+  static bool UI_SliderBehavior(float min_x, float min_y, float max_x, float max_y, uint32_t id, SPF_DataType data_type, void* p_v, const void* p_min, const void* p_max,
+                                const char* format, SPF_SliderFlags flags);
+  static bool UI_SplitterBehavior(float bb_min_x, float bb_min_y, float bb_max_x, float bb_max_y, uint32_t id, int axis, float* size1, float* size2, float min_size1,
+                                  float min_size2);
   static void UI_RenderFrame(float min_x, float min_y, float max_x, float max_y, uint32_t col, bool border, float rounding);
   static void UI_RenderFrameBorder(float min_x, float min_y, float max_x, float max_y, float rounding);
   static void UI_RenderText(float x, float y, const char* text, bool hide_text_after_hash);

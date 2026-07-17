@@ -1,18 +1,21 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Utils/Signal.hpp"
 
-#include <nlohmann/json.hpp>
-#include <string>
-#include <memory>
-#include <map>
-#include <mutex>
-#include <vector>
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
 #include <filesystem>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -64,10 +67,10 @@ class LoggerFactory : public Config::IConfigurable {
   mutable std::mutex m_mutex;
 
   // Logger and Sink Management
-  std::shared_ptr<Logger> m_logger; // Internal logger for the factory itself
-  std::shared_ptr<Logger> m_defaultLogger; // No-op logger for pre-init phase
+  std::shared_ptr<Logger> m_logger;         // Internal logger for the factory itself
+  std::shared_ptr<Logger> m_defaultLogger;  // No-op logger for pre-init phase
   std::map<std::string, std::shared_ptr<Logger>> m_loggers;
-  
+
   // Global Sinks that apply to all loggers
   std::vector<std::shared_ptr<ILogSink>> m_globalSinks;
   std::shared_ptr<Sinks::LoggerWindowSink> m_uiSink;

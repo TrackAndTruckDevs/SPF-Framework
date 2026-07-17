@@ -1,8 +1,11 @@
 #include "SPF/UI/ImGuiInputConsumer.hpp"
 
-#include <imgui.h>
+#include "SPF/Namespace.hpp"
 
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/System/Keyboard.hpp"
+
+#include "imgui.h"
 
 SPF_NS_BEGIN
 
@@ -256,13 +259,9 @@ bool ImGuiInputConsumer::OnMouseWheel(const Input::MouseWheelEvent& event) {
   return io.WantCaptureMouse;
 }
 
-bool ImGuiInputConsumer::IsCapturingKeyboard() {
-  return ImGui::GetIO().WantCaptureKeyboard;
-}
+bool ImGuiInputConsumer::IsCapturingKeyboard() { return ImGui::GetIO().WantCaptureKeyboard; }
 
-bool ImGuiInputConsumer::IsCapturingMouse() {
-  return ImGui::GetIO().WantCaptureMouse;
-}
+bool ImGuiInputConsumer::IsCapturingMouse() { return ImGui::GetIO().WantCaptureMouse; }
 }  // namespace UI
 
 SPF_NS_END

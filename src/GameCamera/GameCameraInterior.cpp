@@ -1,8 +1,14 @@
 #include "SPF/GameCamera/GameCameraInterior.hpp"
-#include "SPF/GameCamera/GameCameraManager.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -189,10 +195,10 @@ void GameCameraInterior::StoreDefaultState() {
   if (GetShakeAnimStep(&val)) m_defaultCameraData.shake_step = val;
   if (GetShakeAnimScaleMin(&val)) m_defaultCameraData.shake_min = val;
   if (GetShakeAnimScaleMax(&val)) m_defaultCameraData.shake_max = val;
-  
+
   if (GetHandShakeLimit(&val)) m_defaultCameraData.hand_shake_limit = val;
   if (GetHandShakeSpeed(&val)) m_defaultCameraData.hand_shake_speed = val;
-  
+
   if (GetZoomFovFactor(&val)) m_defaultCameraData.zoom_fov_factor = val;
   if (GetZoomSpeed(&val)) m_defaultCameraData.zoom_speed = val;
 
@@ -200,29 +206,29 @@ void GameCameraInterior::StoreDefaultState() {
   m_defaultCameraData.azimuth_overrides_defaults.clear();
   size_t azimuth_count = GetAzimuthOverridesCount();
   for (size_t i = 0; i < azimuth_count; ++i) {
-      CameraData::AzimuthRangeData range = {};
-      GetAzimuthOverrideStartAzimuth(i, &range.start_azimuth);
-      GetAzimuthOverrideEndAzimuth(i, &range.end_azimuth);
-      GetAzimuthOverrideOutside(i, &range.outside);
-      GetAzimuthOverrideStartUpLimit(i, &range.start_up_limit);
-      GetAzimuthOverrideEndUpLimit(i, &range.end_up_limit);
-      GetAzimuthOverrideStartDownLimit(i, &range.start_down_limit);
-      GetAzimuthOverrideEndDownLimit(i, &range.end_down_limit);
-      GetAzimuthOverrideStartUpDownDefault(i, &range.start_up_down_default);
-      GetAzimuthOverrideEndUpDownDefault(i, &range.end_up_down_default);
-      GetAzimuthOverrideStartLeftRightDefault(i, &range.start_left_right_default);
-      GetAzimuthOverrideEndLeftRightDefault(i, &range.end_left_right_default);
-      GetAzimuthOverrideStartHeadOffset(i, &range.start_head_x, &range.start_head_y, &range.start_head_z);
-      GetAzimuthOverrideEndHeadOffset(i, &range.end_head_x, &range.end_head_y, &range.end_head_z);
-      m_defaultCameraData.azimuth_overrides_defaults.push_back(range);
+    CameraData::AzimuthRangeData range = {};
+    GetAzimuthOverrideStartAzimuth(i, &range.start_azimuth);
+    GetAzimuthOverrideEndAzimuth(i, &range.end_azimuth);
+    GetAzimuthOverrideOutside(i, &range.outside);
+    GetAzimuthOverrideStartUpLimit(i, &range.start_up_limit);
+    GetAzimuthOverrideEndUpLimit(i, &range.end_up_limit);
+    GetAzimuthOverrideStartDownLimit(i, &range.start_down_limit);
+    GetAzimuthOverrideEndDownLimit(i, &range.end_down_limit);
+    GetAzimuthOverrideStartUpDownDefault(i, &range.start_up_down_default);
+    GetAzimuthOverrideEndUpDownDefault(i, &range.end_up_down_default);
+    GetAzimuthOverrideStartLeftRightDefault(i, &range.start_left_right_default);
+    GetAzimuthOverrideEndLeftRightDefault(i, &range.end_left_right_default);
+    GetAzimuthOverrideStartHeadOffset(i, &range.start_head_x, &range.start_head_y, &range.start_head_z);
+    GetAzimuthOverrideEndHeadOffset(i, &range.end_head_x, &range.end_head_y, &range.end_head_z);
+    m_defaultCameraData.azimuth_overrides_defaults.push_back(range);
   }
 
   m_defaultCameraData.shake_anim_defaults.clear();
   size_t shake_count = GetShakeAnimCount();
   for (size_t i = 0; i < shake_count; ++i) {
-      CameraData::Vec3 point = {};
-      GetShakeAnim(i, &point.x, &point.y, &point.z);
-      m_defaultCameraData.shake_anim_defaults.push_back(point);
+    CameraData::Vec3 point = {};
+    GetShakeAnim(i, &point.x, &point.y, &point.z);
+    m_defaultCameraData.shake_anim_defaults.push_back(point);
   }
 
   // Mark defaults as saved
@@ -262,20 +268,20 @@ void GameCameraInterior::ResetToDefaults() {
   size_t azimuth_restore_count = (current_azimuth_count < saved_azimuth_count) ? current_azimuth_count : saved_azimuth_count;
 
   for (size_t i = 0; i < azimuth_restore_count; ++i) {
-      const auto& range = m_defaultCameraData.azimuth_overrides_defaults[i];
-      SetAzimuthOverrideStartAzimuth(i, range.start_azimuth);
-      SetAzimuthOverrideEndAzimuth(i, range.end_azimuth);
-      SetAzimuthOverrideOutside(i, range.outside);
-      SetAzimuthOverrideStartUpLimit(i, range.start_up_limit);
-      SetAzimuthOverrideEndUpLimit(i, range.end_up_limit);
-      SetAzimuthOverrideStartDownLimit(i, range.start_down_limit);
-      SetAzimuthOverrideEndDownLimit(i, range.end_down_limit);
-      SetAzimuthOverrideStartUpDownDefault(i, range.start_up_down_default);
-      SetAzimuthOverrideEndUpDownDefault(i, range.end_up_down_default);
-      SetAzimuthOverrideStartLeftRightDefault(i, range.start_left_right_default);
-      SetAzimuthOverrideEndLeftRightDefault(i, range.end_left_right_default);
-      SetAzimuthOverrideStartHeadOffset(i, range.start_head_x, range.start_head_y, range.start_head_z);
-      SetAzimuthOverrideEndHeadOffset(i, range.end_head_x, range.end_head_y, range.end_head_z);
+    const auto& range = m_defaultCameraData.azimuth_overrides_defaults[i];
+    SetAzimuthOverrideStartAzimuth(i, range.start_azimuth);
+    SetAzimuthOverrideEndAzimuth(i, range.end_azimuth);
+    SetAzimuthOverrideOutside(i, range.outside);
+    SetAzimuthOverrideStartUpLimit(i, range.start_up_limit);
+    SetAzimuthOverrideEndUpLimit(i, range.end_up_limit);
+    SetAzimuthOverrideStartDownLimit(i, range.start_down_limit);
+    SetAzimuthOverrideEndDownLimit(i, range.end_down_limit);
+    SetAzimuthOverrideStartUpDownDefault(i, range.start_up_down_default);
+    SetAzimuthOverrideEndUpDownDefault(i, range.end_up_down_default);
+    SetAzimuthOverrideStartLeftRightDefault(i, range.start_left_right_default);
+    SetAzimuthOverrideEndLeftRightDefault(i, range.end_left_right_default);
+    SetAzimuthOverrideStartHeadOffset(i, range.start_head_x, range.start_head_y, range.start_head_z);
+    SetAzimuthOverrideEndHeadOffset(i, range.end_head_x, range.end_head_y, range.end_head_z);
   }
 
   size_t current_shake_count = GetShakeAnimCount();
@@ -283,8 +289,8 @@ void GameCameraInterior::ResetToDefaults() {
   size_t shake_restore_count = (current_shake_count < saved_shake_count) ? current_shake_count : saved_shake_count;
 
   for (size_t i = 0; i < shake_restore_count; ++i) {
-      const auto& point = m_defaultCameraData.shake_anim_defaults[i];
-      SetShakeAnim(i, point.x, point.y, point.z);
+    const auto& point = m_defaultCameraData.shake_anim_defaults[i];
+    SetShakeAnim(i, point.x, point.y, point.z);
   }
 }
 
@@ -676,7 +682,7 @@ void* GameCameraInterior::GetAzimuthOverrideAddress(size_t index) const {
   return data[index];
 }
 
-//start_azimuth
+// start_azimuth
 bool GameCameraInterior::GetAzimuthOverrideStartAzimuth(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -701,7 +707,7 @@ void GameCameraInterior::SetAzimuthOverrideStartAzimuth(size_t index, float val)
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//end_azimuth
+// end_azimuth
 bool GameCameraInterior::GetAzimuthOverrideEndAzimuth(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -726,7 +732,7 @@ void GameCameraInterior::SetAzimuthOverrideEndAzimuth(size_t index, float val) {
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//outside
+// outside
 bool GameCameraInterior::GetAzimuthOverrideOutside(size_t index, bool* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -753,7 +759,7 @@ void GameCameraInterior::SetAzimuthOverrideOutside(size_t index, bool val) {
   *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(addr) + offset) = val ? 1 : 0;
 }
 
-//start_up_limit
+// start_up_limit
 bool GameCameraInterior::GetAzimuthOverrideStartUpLimit(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -778,7 +784,7 @@ void GameCameraInterior::SetAzimuthOverrideStartUpLimit(size_t index, float val)
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//end_up_limit
+// end_up_limit
 bool GameCameraInterior::GetAzimuthOverrideEndUpLimit(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -803,7 +809,7 @@ void GameCameraInterior::SetAzimuthOverrideEndUpLimit(size_t index, float val) {
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//start_down_limit
+// start_down_limit
 bool GameCameraInterior::GetAzimuthOverrideStartDownLimit(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -828,7 +834,7 @@ void GameCameraInterior::SetAzimuthOverrideStartDownLimit(size_t index, float va
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//end_down_limit
+// end_down_limit
 bool GameCameraInterior::GetAzimuthOverrideEndDownLimit(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -853,7 +859,7 @@ void GameCameraInterior::SetAzimuthOverrideEndDownLimit(size_t index, float val)
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//start_up_down_default
+// start_up_down_default
 bool GameCameraInterior::GetAzimuthOverrideStartUpDownDefault(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -878,7 +884,7 @@ void GameCameraInterior::SetAzimuthOverrideStartUpDownDefault(size_t index, floa
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//end_up_down_default
+// end_up_down_default
 bool GameCameraInterior::GetAzimuthOverrideEndUpDownDefault(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -903,7 +909,7 @@ void GameCameraInterior::SetAzimuthOverrideEndUpDownDefault(size_t index, float 
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//start_left_right_default
+// start_left_right_default
 bool GameCameraInterior::GetAzimuthOverrideStartLeftRightDefault(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -928,7 +934,7 @@ void GameCameraInterior::SetAzimuthOverrideStartLeftRightDefault(size_t index, f
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//end_left_right_default
+// end_left_right_default
 bool GameCameraInterior::GetAzimuthOverrideEndLeftRightDefault(size_t index, float* out_val) const {
   if (!out_val) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -953,7 +959,7 @@ void GameCameraInterior::SetAzimuthOverrideEndLeftRightDefault(size_t index, flo
   *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(addr) + offset) = val;
 }
 
-//start_head_offset_offset
+// start_head_offset_offset
 bool GameCameraInterior::GetAzimuthOverrideStartHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) const {
   if (!out_x || !out_y || !out_z) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -984,7 +990,7 @@ void GameCameraInterior::SetAzimuthOverrideStartHeadOffset(size_t index, float x
   *reinterpret_cast<float*>(ptr + 8) = z;
 }
 
-//end_head_offset_offset
+// end_head_offset_offset
 bool GameCameraInterior::GetAzimuthOverrideEndHeadOffset(size_t index, float* out_x, float* out_y, float* out_z) const {
   if (!out_x || !out_y || !out_z) return false;
   void* addr = GetAzimuthOverrideAddress(index);
@@ -1041,7 +1047,7 @@ bool GameCameraInterior::GetShakeAnim(size_t index, float* out_x, float* out_y, 
 
   // Packed float3 (12 bytes per element)
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
-  
+
   if (out_x) *out_x = pVec[0];
   if (out_y) *out_y = pVec[1];
   if (out_z) *out_z = pVec[2];

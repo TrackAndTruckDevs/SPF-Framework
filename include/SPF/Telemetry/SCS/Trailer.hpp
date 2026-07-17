@@ -1,10 +1,15 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Telemetry/SCS/Common.hpp"
+
+#include "scssdk_value.h"
+
+#include <cstdint>
 #include <string>
 #include <vector>
 
-#include "SPF/Namespace.hpp"
-#include "SPF/Telemetry/SCS/Common.hpp"
 
 SPF_NS_BEGIN
 namespace Telemetry {

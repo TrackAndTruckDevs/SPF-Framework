@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
 #include "SPF/Namespace.hpp"
+
+#include <string>
 
 SPF_NS_BEGIN
 namespace Events {

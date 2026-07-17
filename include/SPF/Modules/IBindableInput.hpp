@@ -1,16 +1,22 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Input/InputEvents.hpp"
-#include <nlohmann/json.hpp>
-#include <set>
-#include <map>
+#include "SPF/System/Keyboard.hpp"
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
 #include <cstdint>
+#include <map>
+#include <set>
+#include <string>
 
 SPF_NS_BEGIN
 
 namespace Input {
-    struct ButtonState;
+struct ButtonState;
 }
 
 namespace Modules {
@@ -59,8 +65,7 @@ struct IBindableInput {
    * @param pressedHardwareCodes Set of currently active hardware codes.
    * @param axisValues Map of current raw axis values from InputManager.
    */
-  virtual float GetValue(const std::set<uint32_t>& pressedHardwareCodes, 
-                         const std::map<uint32_t, float>& axisValues) const = 0;
+  virtual float GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const = 0;
 
   /**
    * @brief Checks if this input involves a specific physical key/button.

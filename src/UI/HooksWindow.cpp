@@ -1,13 +1,18 @@
 #include "SPF/UI/HooksWindow.hpp"
-#include "SPF/UI/UIManager.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Hooks/IHook.hpp"
-#include "SPF/Events/EventManager.hpp"
-#include "SPF/Events/UIEvents.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/UIManager.hpp"
 
-#include <imgui.h>
+#include "imgui.h"
+
 #include <cctype>  // for isxdigit
+#include <string>
 
 SPF_NS_BEGIN
 namespace UI {

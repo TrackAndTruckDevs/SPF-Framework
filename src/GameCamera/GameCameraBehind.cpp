@@ -1,7 +1,14 @@
 #include "SPF/GameCamera/GameCameraBehind.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -15,10 +22,10 @@ void GameCameraBehind::OnActivate() {
 
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // GetCameraManager() handles pointer dereferencing and version-specific adjustments (e.g. v1.59).
   uintptr_t pStandardManager = gameData.GetCameraManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }
@@ -127,17 +134,10 @@ void GameCameraBehind::ResetToDefaults() {
                       m_defaultCameraData.distance_trailer_default,
                       m_defaultCameraData.distance_change_speed,
                       m_defaultCameraData.distance_laziness_speed);
-  SetElevationSettings(m_defaultCameraData.azimuth_laziness_speed,
-                       m_defaultCameraData.elevation_min,
-                       m_defaultCameraData.elevation_max,
-                       m_defaultCameraData.elevation_default,
-                       m_defaultCameraData.elevation_trailer_default,
-                       m_defaultCameraData.height_limit);
+  SetElevationSettings(
+    m_defaultCameraData.azimuth_laziness_speed, m_defaultCameraData.elevation_min, m_defaultCameraData.elevation_max, m_defaultCameraData.elevation_default, m_defaultCameraData.elevation_trailer_default, m_defaultCameraData.height_limit);
   SetPivot(m_defaultCameraData.pivot_x, m_defaultCameraData.pivot_y, m_defaultCameraData.pivot_z);
-  SetDynamicOffset(m_defaultCameraData.dynamic_offset_max,
-                   m_defaultCameraData.dynamic_offset_speed_min,
-                   m_defaultCameraData.dynamic_offset_speed_max,
-                   m_defaultCameraData.dynamic_offset_laziness_speed);
+  SetDynamicOffset(m_defaultCameraData.dynamic_offset_max, m_defaultCameraData.dynamic_offset_speed_min, m_defaultCameraData.dynamic_offset_speed_max, m_defaultCameraData.dynamic_offset_laziness_speed);
   SetFov(m_defaultCameraData.fov_base);
   SetValidation(m_defaultCameraData.validation);
   SetValidationSettings(m_defaultCameraData.validation_radius, m_defaultCameraData.validation_speed_positive, m_defaultCameraData.validation_speed_negative);
@@ -392,8 +392,7 @@ bool GameCameraBehind::GetLiveState(float* out_pitch, float* out_yaw, float* out
   return false;
 }
 
-bool GameCameraBehind::GetDistanceSettings(float* out_min, float* out_max, float* out_trailer_max_offset, float* out_def, float* out_trailer_def, float* out_change_speed,
-                                           float* out_laziness) const {
+bool GameCameraBehind::GetDistanceSettings(float* out_min, float* out_max, float* out_trailer_max_offset, float* out_def, float* out_trailer_def, float* out_change_speed, float* out_laziness) const {
   if (!out_min || !out_max || !out_trailer_max_offset || !out_def || !out_trailer_def || !out_change_speed || !out_laziness) return false;
   if (!m_pCameraObject) return false;
 

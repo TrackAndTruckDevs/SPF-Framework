@@ -1,7 +1,8 @@
 #pragma once
+#include "SPF/Namespace.hpp"
+
 #include <string>
 #include <vector>
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 namespace Core {

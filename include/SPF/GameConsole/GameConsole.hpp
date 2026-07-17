@@ -1,9 +1,14 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Hooks/IHook.hpp"
+
+#include <cstdint>
 #include <string>
 
-namespace SPF {
+
+SPF_NS_BEGIN
 /**
  * @class GameConsole
  * @brief A manageable service for executing in-game console commands.
@@ -81,4 +86,4 @@ class GameConsole : public Hooks::IHook {
   uintptr_t m_hookedAddress = 0;
   ExecuteCommandFn m_ExecuteGameCommand = nullptr;
 };
-}  // namespace SPF
+SPF_NS_END

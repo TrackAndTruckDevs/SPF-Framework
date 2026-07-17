@@ -1,10 +1,12 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/System/Keyboard.hpp"
+
+#include <minwindef.h>
 #include <string>
 #include <unordered_map>
-#include <Windows.h>  // For WPARAM
-#include "SPF/System/Keyboard.hpp"
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 

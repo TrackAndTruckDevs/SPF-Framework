@@ -12,45 +12,45 @@
  * ================================================================================================
  * KEY CONCEPTS
  * ================================================================================================
- * 
- * 1. **Context-Driven**: Most APIs require a handle (e.g., 'SPF_Logger_Handle'). These 
+ *
+ * 1. **Context-Driven**: Most APIs require a handle (e.g., 'SPF_Logger_Handle'). These
  *    handles are unique to your plugin and should be obtained during 'OnLoad' or 'OnActivated'.
- * 
- * 2. **Lifecycle Aware**: The plugin goes through distinct stages ('OnLoad' -> 'OnActivated'). 
+ *
+ * 2. **Lifecycle Aware**: The plugin goes through distinct stages ('OnLoad' -> 'OnActivated').
  *    Different services become available at different stages.
- * 
- * 3. **ABI Stability**: Structures like 'SPF_Core_API' are designed to be extendable. 
+ *
+ * 3. **ABI Stability**: Structures like 'SPF_Core_API' are designed to be extendable.
  *    New pointers are always added to the end to ensure binary compatibility.
- * 
+ *
  * ================================================================================================
  * WORKFLOW
  * ================================================================================================
- * 
- * 1. **Declare Manifest**: Export 'SPF_GetManifestAPI' to tell the framework your plugin's name, 
+ *
+ * 1. **Declare Manifest**: Export 'SPF_GetManifestAPI' to tell the framework your plugin's name,
  *    version, and required hooks.
- * 
- * 2. **Implement Exports**: Implement functions defined in 'SPF_Plugin_Exports' and 
+ *
+ * 2. **Implement Exports**: Implement functions defined in 'SPF_Plugin_Exports' and
  *    export them via 'SPF_GetPlugin'.
- * 
- * 3. **Early Init (OnLoad)**: Initialize loggers, configs, and **CRITICAL**: Create any 
+ *
+ * 3. **Early Init (OnLoad)**: Initialize loggers, configs, and **CRITICAL**: Create any
  *    virtual input devices here to ensure the game SDK registers them.
- * 
+ *
  * 4. **Late Init (OnActivated)**: Access game telemetry, install hooks, and register UI windows.
- * 
+ *
  * ================================================================================================
  * ABI STABILITY GUARANTEES
  * ================================================================================================
- * 
+ *
  * To ensure your plugin remains compatible with future framework versions without a re-compile:
  * 1. The order of existing function pointers in API structures will **NEVER** change.
  * 2. Fields will **NEVER** be deleted from released API structures.
  * 3. New functionality is only added by appending to the **end** of structures.
- * 
+ *
  * ================================================================================================
  * DEVELOPER REQUIREMENTS
  * ================================================================================================
- * 
- * *   **String Safety**: ALWAYS use the 'SPF_Formatting_API' for cross-DLL string formatting 
+ *
+ * *   **String Safety**: ALWAYS use the 'SPF_Formatting_API' for cross-DLL string formatting
  *     (e.g., inside 'Fmt_Format' or 'Log' calls) to avoid memory management crashes.
  * *   **Handle Validation**: Always check if pointers and handles are non-NULL before use.
  * *   **Thread Safety**: UI calls must only be made within the registered draw callbacks.
@@ -96,6 +96,8 @@ typedef struct SPF_Vehicle_API SPF_Vehicle_API;
 typedef struct SPF_Environment_API SPF_Environment_API;
 typedef struct SPF_GameWorld_API SPF_GameWorld_API;
 
+// --- Handle Types (Opaque pointers used as context identifiers) ---
+typedef struct SPF_Config_Handle SPF_Config_Handle;
 
 // =================================================================================================
 // 1. PLUGIN EXPORTS (FUNCTIONS PROVIDED BY THE PLUGIN TO THE CORE)
@@ -133,8 +135,6 @@ typedef struct SPF_GameWorld_API SPF_GameWorld_API;
  * -   **API State:** All services are available via the previously stored `core_api` pointer.
  * -   **Purpose:** UI-specific setup.
  */
-
-
 
 /**
  * @struct SPF_Plugin_Exports
@@ -233,7 +233,7 @@ typedef struct {
 
   /**
    * @brief (Optional) Called when the framework's global interface language is changed.
-   * @details This allows plugins to automatically synchronize their own language 
+   * @details This allows plugins to automatically synchronize their own language
    *          with the framework's settings for a seamless user experience.
    * @param langCode The new language code (e.g., "en", "uk").
    */
@@ -245,16 +245,14 @@ typedef struct {
 // 2. API STRUCTURES (PROVIDED BY THE CORE TO THE PLUGIN)
 // =================================================================================================
 
-
-
 /**
  * @struct SPF_Load_API
  * @brief Provides access to essential core services available at load time.
  *
  * @details This structure is passed to the `OnLoad` function and contains only services
  * that are guaranteed to be available immediately when the plugin is loaded.
- * 
- * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added 
+ *
+ * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added
  * to the end of this structure.
  */
 struct SPF_Load_API {
@@ -291,7 +289,7 @@ struct SPF_Load_API {
   SPF_Environment_API* environment;
 
   /**
-   * @brief (Advanced) JSON Reader API. 
+   * @brief (Advanced) JSON Reader API.
    */
   SPF_JsonReader_API* json_reader;
 
@@ -312,8 +310,8 @@ struct SPF_Load_API {
  *
  * @details This structure is the main entry point to all framework subsystems.
  * A pointer to it is provided in `OnActivated`, and the plugin must save it.
- * 
- * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added 
+ *
+ * **ABI Rule**: To maintain compatibility, new API pointers MUST only be added
  * to the end of this structure.
  */
 struct SPF_Core_API {
@@ -394,33 +392,33 @@ struct SPF_Core_API {
    *          and then uses the functions within this API (e.g., `GetType`, `GetString`)
    *          to navigate and extract information from that JSON structure.
    */
-     SPF_JsonReader_API* json_reader;
-   
-   /**
-    * @brief Vehicle API. For inspecting vehicles and traffic.
-    */
-     SPF_Vehicle_API* vehicle;
+  SPF_JsonReader_API* json_reader;
 
-   /**
-    * @brief Environment API. For retrieving game, system, and framework info.
-    */
-     SPF_Environment_API* environment;
+  /**
+   * @brief Vehicle API. For inspecting vehicles and traffic.
+   */
+  SPF_Vehicle_API* vehicle;
 
-   /**
-    * @brief (Advanced) JSON Writer API.
-    */
-     SPF_JsonWriter_API* json_writer;
+  /**
+   * @brief Environment API. For retrieving game, system, and framework info.
+   */
+  SPF_Environment_API* environment;
 
-   /**
-    * @brief JSON IO API.
-    */
-     SPF_JsonIO_API* json_io;
+  /**
+   * @brief (Advanced) JSON Writer API.
+   */
+  SPF_JsonWriter_API* json_writer;
 
-   /**
-    * @brief Game World API. For controlling world time, clock, and simulation state.
-    */
-     SPF_GameWorld_API* gameworld;
-   };
+  /**
+   * @brief JSON IO API.
+   */
+  SPF_JsonIO_API* json_io;
+
+  /**
+   * @brief Game World API. For controlling world time, clock, and simulation state.
+   */
+  SPF_GameWorld_API* gameworld;
+};
 
 // =================================================================================================
 // 3. THE PLUGIN'S MAIN EXPORTED FUNCTION

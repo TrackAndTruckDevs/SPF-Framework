@@ -1,20 +1,37 @@
 #include "SPF/Modules/KeyBindsManager.hpp"
 
-#include <Windows.h>  // Pre-include for safety
-#include "SPF/Events/PluginEvents.hpp"
-#include "SPF/Events/EventManager.hpp"
+#include "SPF/Namespace.hpp"
 
+#include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/EnumMappings.hpp"
-
+#include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/Modules/InputFactory.hpp"
+#include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
+#include "SPF/Modules/InputFactory.hpp"
+#include "SPF/System/GamepadButton.hpp"
 #include "SPF/System/GamepadButtonMapping.hpp"
+#include "SPF/System/Keyboard.hpp"
 #include "SPF/System/MouseButtonMapping.hpp"
 
-#include <nlohmann/json.hpp>
-#include <string_view>
+#include "fmt/format.h"
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <map>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -76,73 +93,70 @@ KeyBindsManager& KeyBindsManager::GetInstance() {
 }
 
 KeyBindsManager::KeyBindsManager(Input::InputManager& inputManager, Events::EventManager& eventManager)
-    : m_inputManager(inputManager),
-      m_eventManager(eventManager),
-      m_onPluginDidLoadSink(eventManager.System.OnPluginDidLoad),
-      m_onPluginWillBeUnloadedSink(eventManager.System.OnPluginWillBeUnloaded) {
+    : m_inputManager(inputManager), m_eventManager(eventManager), m_onPluginDidLoadSink(eventManager.System.OnPluginDidLoad), m_onPluginWillBeUnloadedSink(eventManager.System.OnPluginWillBeUnloaded) {
   s_instance = this;
   m_onPluginDidLoadSink.Connect<&KeyBindsManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink.Connect<&KeyBindsManager::OnPluginUnloaded>(this);
 }
 
 void KeyBindsManager::ApplyAxisPropertiesToInputManager() {
-    m_inputManager.ResetAxisProperties();
+  m_inputManager.ResetAxisProperties();
 
-    struct AxisAggr {
-        Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
-        bool emulation = false;
-        bool isAccumulator = false;
-        bool invert = false;
-        std::string side = "both";
-        float threshold = 0.5f;
-        float sensitivity = 1.0f;
-        float rMin = -1.0f;
-        float rMax = 1.0f;
-        bool found = false;
-    };
-    std::map<uint32_t, AxisAggr> axisAggregation;
+  struct AxisAggr {
+    Config::ConsumptionPolicy policy = Config::ConsumptionPolicy::Never;
+    bool emulation = false;
+    bool isAccumulator = false;
+    bool invert = false;
+    std::string side = "both";
+    float threshold = 0.5f;
+    float sensitivity = 1.0f;
+    float rMin = -1.0f;
+    float rMax = 1.0f;
+    bool found = false;
+  };
+  std::map<uint32_t, AxisAggr> axisAggregation;
 
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (!binding.Input) continue;
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (!binding.Input) continue;
 
-            uint32_t code = binding.Input->GetHardwareCode();
-            bool isAxis = ((code >> 16) & 0xFF) == 0x01; // Axis flag
+      uint32_t code = binding.Input->GetHardwareCode();
+      bool isAxis = ((code >> 16) & 0xFF) == 0x01;  // Axis flag
 
-            if (isAxis) {
-                auto& aggr = axisAggregation[code];
-                aggr.found = true;
+      if (isAxis) {
+        auto& aggr = axisAggregation[code];
+        aggr.found = true;
 
-                // If ANY binding wants a stricter policy, use it
-                if (binding.Policy > aggr.policy) aggr.policy = binding.Policy;
+        // If ANY binding wants a stricter policy, use it
+        if (binding.Policy > aggr.policy) aggr.policy = binding.Policy;
 
-                // Capture sensitivity, range, invert, side and accumulator settings
-                aggr.sensitivity = binding.originalBindingJson.value("sensitivity", aggr.sensitivity);
-                aggr.rMin = binding.originalBindingJson.value("range_min", aggr.rMin);
-                aggr.rMax = binding.originalBindingJson.value("range_max", aggr.rMax);
-                aggr.invert = binding.originalBindingJson.value("invert", aggr.invert);
-                aggr.side = binding.originalBindingJson.value("side", aggr.side);
-                
-                // Mouse is always an accumulator, for others read from JSON
-                if (binding.originalBindingJson.value("type", "") == "mouse_axis") {
-                    aggr.isAccumulator = true;
-                } else {
-                    aggr.isAccumulator = binding.originalBindingJson.value("accumulator", false);
-                }
+        // Capture sensitivity, range, invert, side and accumulator settings
+        aggr.sensitivity = binding.originalBindingJson.value("sensitivity", aggr.sensitivity);
+        aggr.rMin = binding.originalBindingJson.value("range_min", aggr.rMin);
+        aggr.rMax = binding.originalBindingJson.value("range_max", aggr.rMax);
+        aggr.invert = binding.originalBindingJson.value("invert", aggr.invert);
+        aggr.side = binding.originalBindingJson.value("side", aggr.side);
 
-                // If ANY binding is digital, enable emulation for the axis
-                if (binding.originalBindingJson.value("mode", "analog") == "digital") {
-                    aggr.emulation = true;
-                    aggr.threshold = binding.originalBindingJson.value("threshold", 0.5f);
-                }
-            }
+        // Mouse is always an accumulator, for others read from JSON
+        if (binding.originalBindingJson.value("type", "") == "mouse_axis") {
+          aggr.isAccumulator = true;
+        } else {
+          aggr.isAccumulator = binding.originalBindingJson.value("accumulator", false);
         }
-    }
 
-    // Push aggregated properties
-    for (const auto& [code, aggr] : axisAggregation) {
-        m_inputManager.SetAxisProperties(code, aggr.policy, aggr.emulation, aggr.isAccumulator, aggr.invert, aggr.side, aggr.threshold, aggr.sensitivity, aggr.rMin, aggr.rMax);
+        // If ANY binding is digital, enable emulation for the axis
+        if (binding.originalBindingJson.value("mode", "analog") == "digital") {
+          aggr.emulation = true;
+          aggr.threshold = binding.originalBindingJson.value("threshold", 0.5f);
+        }
+      }
     }
+  }
+
+  // Push aggregated properties
+  for (const auto& [code, aggr] : axisAggregation) {
+    m_inputManager.SetAxisProperties(code, aggr.policy, aggr.emulation, aggr.isAccumulator, aggr.invert, aggr.side, aggr.threshold, aggr.sensitivity, aggr.rMin, aggr.rMax);
+  }
 }
 
 KeyBindsManager::~KeyBindsManager() {
@@ -200,8 +214,7 @@ Core::InitializationReport KeyBindsManager::Initialize(const nlohmann::ordered_j
         const auto& inputConfig = (*inputs)[i];
         auto input = InputFactory::CreateFromJson(inputConfig);
         if (!input || !input->IsValid()) {
-          report.Errors.push_back(Core::InitializationReport::Issue{fmt::format("Invalid input configuration for action '{}': {}", fullActionKey, inputConfig.dump()),
-                                                                    fmt::format("{}[{}]", fullActionKey, i)});
+          report.Errors.push_back(Core::InitializationReport::Issue{fmt::format("Invalid input configuration for action '{}': {}", fullActionKey, inputConfig.dump()), fmt::format("{}[{}]", fullActionKey, i)});
         } else {
           auto props = ParseBindingProperties(inputConfig);
           action.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold, inputConfig});
@@ -294,22 +307,22 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
 }
 
 void KeyBindsManager::EnsureActionExists(const std::string& actionKey) {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    if (m_actions.find(actionKey) == m_actions.end()) {
-        m_actions[actionKey] = Action();
-        auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
-        if (logger) logger->Info("Dynamically created action entry for '{}'.", actionKey);
-    }
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  if (m_actions.find(actionKey) == m_actions.end()) {
+    m_actions[actionKey] = Action();
+    auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+    if (logger) logger->Info("Dynamically created action entry for '{}'.", actionKey);
+  }
 }
 
 void KeyBindsManager::RemoveAction(const std::string& actionKey) {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    auto it = m_actions.find(actionKey);
-    if (it != m_actions.end()) {
-        m_actions.erase(it);
-        auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
-        if (logger) logger->Info("Dynamically removed action entry for '{}'.", actionKey);
-    }
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it != m_actions.end()) {
+    m_actions.erase(it);
+    auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+    if (logger) logger->Info("Dynamically removed action entry for '{}'.", actionKey);
+  }
 }
 
 void KeyBindsManager::RegisterAction(const std::string& actionKey, ActionCallback callback) {
@@ -347,13 +360,13 @@ void KeyBindsManager::UnregisterOwner(const std::string& owner) {
 }
 
 void KeyBindsManager::SetBlockState(const std::string& actionKey, bool blocked) {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    auto it = m_actions.find(actionKey);
-    if (it != m_actions.end()) {
-        for (auto& binding : it->second.Inputs) {
-            binding.programmaticallyBlocked = blocked;
-        }
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it != m_actions.end()) {
+    for (auto& binding : it->second.Inputs) {
+      binding.programmaticallyBlocked = blocked;
     }
+  }
 }
 
 std::vector<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::GetBindingsForInput(const IBindableInput& input) const {
@@ -403,25 +416,25 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent&
 
       // Only consider bindings that are FULLY ACTIVE right now
       if (binding.Input->IsActive(pressedCodes)) {
-          size_t complexity = 1;
-          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-              complexity = chord->GetInputs().size();
-          }
+        size_t complexity = 1;
+        if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+          complexity = chord->GetInputs().size();
+        }
 
-          if (complexity > maxComplexity) {
-              maxComplexity = complexity;
-              bestActiveBinding = &binding;
-          }
+        if (complexity > maxComplexity) {
+          maxComplexity = complexity;
+          bestActiveBinding = &binding;
+        }
       }
     }
   }
 
   if (bestActiveBinding) {
-      ConsumptionPolicy policy = bestActiveBinding->Policy;
-      if (policy == ConsumptionPolicy::Manual) {
-          policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
-      }
-      return policy;
+    ConsumptionPolicy policy = bestActiveBinding->Policy;
+    if (policy == ConsumptionPolicy::Manual) {
+      policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+    }
+    return policy;
   }
 
   return ConsumptionPolicy::Never;
@@ -440,25 +453,25 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& 
       if (!binding.Input->InvolvesHardwareCode(code)) continue;
 
       if (binding.Input->IsActive(pressedCodes)) {
-          size_t complexity = 1;
-          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-              complexity = chord->GetInputs().size();
-          }
+        size_t complexity = 1;
+        if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+          complexity = chord->GetInputs().size();
+        }
 
-          if (complexity > maxComplexity) {
-              maxComplexity = complexity;
-              bestActiveBinding = &binding;
-          }
+        if (complexity > maxComplexity) {
+          maxComplexity = complexity;
+          bestActiveBinding = &binding;
+        }
       }
     }
   }
 
   if (bestActiveBinding) {
-      ConsumptionPolicy policy = bestActiveBinding->Policy;
-      if (policy == ConsumptionPolicy::Manual) {
-          policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
-      }
-      return policy;
+    ConsumptionPolicy policy = bestActiveBinding->Policy;
+    if (policy == ConsumptionPolicy::Manual) {
+      policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+    }
+    return policy;
   }
   return ConsumptionPolicy::Never;
 }
@@ -476,25 +489,25 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEve
       if (!binding.Input->InvolvesHardwareCode(code)) continue;
 
       if (binding.Input->IsActive(pressedCodes)) {
-          size_t complexity = 1;
-          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-              complexity = chord->GetInputs().size();
-          }
+        size_t complexity = 1;
+        if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+          complexity = chord->GetInputs().size();
+        }
 
-          if (complexity > maxComplexity) {
-              maxComplexity = complexity;
-              bestActiveBinding = &binding;
-          }
+        if (complexity > maxComplexity) {
+          maxComplexity = complexity;
+          bestActiveBinding = &binding;
+        }
       }
     }
   }
 
   if (bestActiveBinding) {
-      ConsumptionPolicy policy = bestActiveBinding->Policy;
-      if (policy == ConsumptionPolicy::Manual) {
-          policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
-      }
-      return policy;
+    ConsumptionPolicy policy = bestActiveBinding->Policy;
+    if (policy == ConsumptionPolicy::Manual) {
+      policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+    }
+    return policy;
   }
   return ConsumptionPolicy::Never;
 }
@@ -512,54 +525,54 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::JoystickEvent&
       if (!binding.Input->InvolvesHardwareCode(code)) continue;
 
       if (binding.Input->IsActive(pressedCodes)) {
-          size_t complexity = 1;
-          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-              complexity = chord->GetInputs().size();
-          }
+        size_t complexity = 1;
+        if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+          complexity = chord->GetInputs().size();
+        }
 
-          if (complexity > maxComplexity) {
-              maxComplexity = complexity;
-              bestActiveBinding = &binding;
-          }
+        if (complexity > maxComplexity) {
+          maxComplexity = complexity;
+          bestActiveBinding = &binding;
+        }
       }
     }
   }
 
   if (bestActiveBinding) {
-      ConsumptionPolicy policy = bestActiveBinding->Policy;
-      if (policy == ConsumptionPolicy::Manual) {
-          policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
-      }
-      return policy;
+    ConsumptionPolicy policy = bestActiveBinding->Policy;
+    if (policy == ConsumptionPolicy::Manual) {
+      policy = bestActiveBinding->programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
+    }
+    return policy;
   }
   return ConsumptionPolicy::Never;
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForHardwareCode(uint32_t hardwareCode) const {
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (binding.Input && binding.Input->InvolvesHardwareCode(hardwareCode)) {
-                ConsumptionPolicy policy = binding.Policy;
-                if (policy == ConsumptionPolicy::Manual) {
-                    policy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
-                }
-                return policy;
-            }
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (binding.Input && binding.Input->InvolvesHardwareCode(hardwareCode)) {
+        ConsumptionPolicy policy = binding.Policy;
+        if (policy == ConsumptionPolicy::Manual) {
+          policy = binding.programmaticallyBlocked ? ConsumptionPolicy::Always : ConsumptionPolicy::Never;
         }
+        return policy;
+      }
     }
-    return ConsumptionPolicy::Never;
+  }
+  return ConsumptionPolicy::Never;
 }
 
 float KeyBindsManager::GetThresholdForHardwareCode(uint32_t hardwareCode) const {
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (binding.Input && binding.Input->InvolvesHardwareCode(hardwareCode)) {
-                // Return the threshold from the JSON config of this binding
-                return binding.originalBindingJson.value("threshold", 0.5f);
-            }
-        }
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (binding.Input && binding.Input->InvolvesHardwareCode(hardwareCode)) {
+        // Return the threshold from the JSON config of this binding
+        return binding.originalBindingJson.value("threshold", 0.5f);
+      }
     }
-    return 0.5f;
+  }
+  return 0.5f;
 }
 
 std::chrono::milliseconds KeyBindsManager::GetLongPressThreshold() const {
@@ -596,16 +609,24 @@ bool KeyBindsManager::OnGamepadButtonPress(const GamepadEvent& event) {
 bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) { return false; }
 
 void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pressType) {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    uint8_t type = (hardwareCode >> 24) & 0xFF;
-    uint32_t raw = hardwareCode & 0x00FFFFFF;
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  uint8_t type = (hardwareCode >> 24) & 0xFF;
+  uint32_t raw = hardwareCode & 0x00FFFFFF;
 
-    switch (type) {
-    case 0x01: TriggerAction(static_cast<System::Keyboard>(raw), pressType); break;
-    case 0x02: TriggerAction(static_cast<System::GamepadButton>(raw), pressType); break;
-    case 0x03: TriggerAction(static_cast<System::MouseButton>(raw), pressType); break;
-    case 0x04: TriggerAction(static_cast<int>(raw), pressType); break;
-    }
+  switch (type) {
+    case 0x01:
+      TriggerAction(static_cast<System::Keyboard>(raw), pressType);
+      break;
+    case 0x02:
+      TriggerAction(static_cast<System::GamepadButton>(raw), pressType);
+      break;
+    case 0x03:
+      TriggerAction(static_cast<System::MouseButton>(raw), pressType);
+      break;
+    case 0x04:
+      TriggerAction(static_cast<int>(raw), pressType);
+      break;
+  }
 }
 
 void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) {
@@ -660,67 +681,68 @@ void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType
 }
 
 void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType) {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    uint32_t code = 0x04000000 | static_cast<uint32_t>(buttonIndex);
-    const Binding* best = FindBestBinding(code, pressType);
-    if (best) {
-        for (const auto& [actionKey, action] : m_actions) {
-            for (const auto& b : action.Inputs) {
-                if (&b == best) {
-                    if (action.Callback) action.Callback();
-                    if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
-                    return;
-                }
-            }
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  uint32_t code = 0x04000000 | static_cast<uint32_t>(buttonIndex);
+  const Binding* best = FindBestBinding(code, pressType);
+  if (best) {
+    for (const auto& [actionKey, action] : m_actions) {
+      for (const auto& b : action.Inputs) {
+        if (&b == best) {
+          if (action.Callback) action.Callback();
+          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
+          return;
         }
+      }
     }
+  }
 }
-  
-  float KeyBindsManager::GetActionValue(const std::string& actionName) const {
-      std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-      auto it = m_actions.find(actionName);
-      if (it == m_actions.end()) {
-          return 0.0f;
-      }
-  
-      float maxVal = 0.0f;
-      const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
-      const auto& axisValues = m_inputManager.GetCurrentlyActiveAxisValues();
-  
-      for (const auto& binding : it->second.Inputs) {
-          if (!binding.Input) continue;
-          
-          // We only consider bindings that are programmatically active (not blocked)
-          if (binding.programmaticallyBlocked) continue;
-  
-          float val = binding.Input->GetValue(pressedCodes, axisValues);
-          if (std::abs(val) > std::abs(maxVal)) {
-              maxVal = val;
-          }
-      }
-      return maxVal;
+
+float KeyBindsManager::GetActionValue(const std::string& actionName) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionName);
+  if (it == m_actions.end()) {
+    return 0.0f;
   }
 
-  size_t KeyBindsManager::GetBindingCount(const std::string& actionName) const {
-      std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-      auto it = m_actions.find(actionName);
-      if (it == m_actions.end()) {
-          return 0;
-      }
-      return it->second.Inputs.size();
-  }
+  float maxVal = 0.0f;
+  const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
+  const auto& axisValues = m_inputManager.GetCurrentlyActiveAxisValues();
 
-  const Binding* KeyBindsManager::GetBinding(const std::string& actionName, size_t index) const {
-      std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-      auto it = m_actions.find(actionName);
-      if (it == m_actions.end() || index >= it->second.Inputs.size()) {
-          return nullptr;
-      }
-      return &it->second.Inputs[index];
+  for (const auto& binding : it->second.Inputs) {
+    if (!binding.Input) continue;
+
+    // We only consider bindings that are programmatically active (not blocked)
+    if (binding.programmaticallyBlocked) continue;
+
+    float val = binding.Input->GetValue(pressedCodes, axisValues);
+    if (std::abs(val) > std::abs(maxVal)) {
+      maxVal = val;
+    }
   }
-  
-  bool KeyBindsManager::OnGamepadAxisMove(const GamepadEvent& event) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");  auto& mapper = System::GamepadButtonMapping::GetInstance();
+  return maxVal;
+}
+
+size_t KeyBindsManager::GetBindingCount(const std::string& actionName) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionName);
+  if (it == m_actions.end()) {
+    return 0;
+  }
+  return it->second.Inputs.size();
+}
+
+const Binding* KeyBindsManager::GetBinding(const std::string& actionName, size_t index) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionName);
+  if (it == m_actions.end() || index >= it->second.Inputs.size()) {
+    return nullptr;
+  }
+  return &it->second.Inputs[index];
+}
+
+bool KeyBindsManager::OnGamepadAxisMove(const GamepadEvent& event) {
+  auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+  auto& mapper = System::GamepadButtonMapping::GetInstance();
   if (logger) {
     // logger->TraceThrottled(
     //     std::chrono::milliseconds(1000),
@@ -783,37 +805,36 @@ KeyBindsManager::PressTypeConflictAnalysis KeyBindsManager::AnalyzeConflictsForI
 
   for (const auto& conflict : allPhysicalConflicts) {
     const auto& bindingJson = conflict.second;
-    
+
     if (isAxis) {
-        std::string side = bindingJson.value("side", "both");
-        if (side == "both") {
-            analysis.isPositiveAvailable = false;
-            analysis.isNegativeAvailable = false;
-            analysis.bothConflict = conflict;
-        } else if (side == "positive") {
-            analysis.isPositiveAvailable = false;
-            analysis.positiveConflict = conflict;
-        } else if (side == "negative") {
-            analysis.isNegativeAvailable = false;
-            analysis.negativeConflict = conflict;
-        }
+      std::string side = bindingJson.value("side", "both");
+      if (side == "both") {
+        analysis.isPositiveAvailable = false;
+        analysis.isNegativeAvailable = false;
+        analysis.bothConflict = conflict;
+      } else if (side == "positive") {
+        analysis.isPositiveAvailable = false;
+        analysis.positiveConflict = conflict;
+      } else if (side == "negative") {
+        analysis.isNegativeAvailable = false;
+        analysis.negativeConflict = conflict;
+      }
     } else {
-        std::string pressType = bindingJson.value("press_type", "short");
-        if (pressType == "short") {
-          analysis.isShortPressAvailable = false;
-          analysis.shortPressConflict = conflict;
-        } else if (pressType == "long") {
-          analysis.isLongPressAvailable = false;
-          analysis.longPressConflict = conflict;
-        }
+      std::string pressType = bindingJson.value("press_type", "short");
+      if (pressType == "short") {
+        analysis.isShortPressAvailable = false;
+        analysis.shortPressConflict = conflict;
+      } else if (pressType == "long") {
+        analysis.isLongPressAvailable = false;
+        analysis.longPressConflict = conflict;
+      }
     }
   }
 
   return analysis;
 }
 
-std::optional<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
-                                                                                              const std::string& actionToExclude) const {
+std::optional<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::FindConflictForBinding(const IBindableInput& input, Input::PressType pressType, const std::string& actionToExclude) const {
   for (const auto& [actionName, action] : m_actions) {
     // Skip the action that is currently being edited.
     if (actionName == actionToExclude) {
@@ -833,104 +854,104 @@ std::optional<std::pair<std::string, nlohmann::ordered_json>> KeyBindsManager::F
 }
 
 const Binding* KeyBindsManager::FindBestBinding(uint32_t triggerHardwareCode, Input::PressType pressType) const {
-    std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-    const Binding* bestBinding = nullptr;
-    size_t maxActiveComplexity = 0;
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  const Binding* bestBinding = nullptr;
+  size_t maxActiveComplexity = 0;
 
-    const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
+  const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
-    // First pass: Determine the maximum complexity among ALL active bindings involving this trigger.
-    // This establishes which "layer" of input (single vs chord) currently owns this hardware code.
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (!binding.Input) continue;
+  // First pass: Determine the maximum complexity among ALL active bindings involving this trigger.
+  // This establishes which "layer" of input (single vs chord) currently owns this hardware code.
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (!binding.Input) continue;
 
-            bool involvesTrigger = false;
-            size_t complexity = 1;
+      bool involvesTrigger = false;
+      size_t complexity = 1;
 
-            if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-                complexity = chord->GetInputs().size();
-                for (const auto& inner : chord->GetInputs()) {
-                    if (inner->GetHardwareCode() == triggerHardwareCode) {
-                        involvesTrigger = true;
-                        break;
-                    }
-                }
-            } else {
-                involvesTrigger = (binding.Input->GetHardwareCode() == triggerHardwareCode);
-            }
-
-            if (involvesTrigger) {
-                bool isActive = binding.Input->IsActive(pressedCodes);
-                if (!isActive) {
-                    if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-                        bool allOthersActive = true;
-                        for (const auto& inner : chord->GetInputs()) {
-                            if (inner->GetHardwareCode() == triggerHardwareCode) continue;
-                            if (!inner->IsActive(pressedCodes)) {
-                                allOthersActive = false;
-                                break;
-                            }
-                        }
-                        isActive = allOthersActive;
-                    } else {
-                        isActive = true;
-                    }
-                }
-
-                if (isActive && complexity > maxActiveComplexity) {
-                    maxActiveComplexity = complexity;
-                }
-            }
+      if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+        complexity = chord->GetInputs().size();
+        for (const auto& inner : chord->GetInputs()) {
+          if (inner->GetHardwareCode() == triggerHardwareCode) {
+            involvesTrigger = true;
+            break;
+          }
         }
-    }
+      } else {
+        involvesTrigger = (binding.Input->GetHardwareCode() == triggerHardwareCode);
+      }
 
-    // Second pass: Find the binding that matches the requested pressType AND matches the maximum active complexity.
-    for (const auto& [actionName, action] : m_actions) {
-        for (const auto& binding : action.Inputs) {
-            if (!binding.Input || binding.PressType != pressType) continue;
-
-            size_t complexity = 1;
-            bool involvesTrigger = false;
-            if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-                complexity = chord->GetInputs().size();
-                for (const auto& inner : chord->GetInputs()) {
-                    if (inner->GetHardwareCode() == triggerHardwareCode) {
-                        involvesTrigger = true;
-                        break;
-                    }
-                }
-            } else {
-                involvesTrigger = (binding.Input->GetHardwareCode() == triggerHardwareCode);
+      if (involvesTrigger) {
+        bool isActive = binding.Input->IsActive(pressedCodes);
+        if (!isActive) {
+          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+            bool allOthersActive = true;
+            for (const auto& inner : chord->GetInputs()) {
+              if (inner->GetHardwareCode() == triggerHardwareCode) continue;
+              if (!inner->IsActive(pressedCodes)) {
+                allOthersActive = false;
+                break;
+              }
             }
-
-            if (involvesTrigger && complexity == maxActiveComplexity) {
-                // IMPORTANT: Re-verify activation state to ensure we pick the CORRECT active binding of this complexity.
-                bool isActive = binding.Input->IsActive(pressedCodes);
-                if (!isActive) {
-                    if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
-                        bool allOthersActive = true;
-                        for (const auto& inner : chord->GetInputs()) {
-                            if (inner->GetHardwareCode() == triggerHardwareCode) continue;
-                            if (!inner->IsActive(pressedCodes)) {
-                                allOthersActive = false;
-                                break;
-                            }
-                        }
-                        isActive = allOthersActive;
-                    } else {
-                        isActive = true;
-                    }
-                }
-
-                if (isActive) {
-                    bestBinding = &binding;
-                    break; // Found the best match for this pressType
-                }
-            }
+            isActive = allOthersActive;
+          } else {
+            isActive = true;
+          }
         }
+
+        if (isActive && complexity > maxActiveComplexity) {
+          maxActiveComplexity = complexity;
+        }
+      }
     }
-    return bestBinding;
+  }
+
+  // Second pass: Find the binding that matches the requested pressType AND matches the maximum active complexity.
+  for (const auto& [actionName, action] : m_actions) {
+    for (const auto& binding : action.Inputs) {
+      if (!binding.Input || binding.PressType != pressType) continue;
+
+      size_t complexity = 1;
+      bool involvesTrigger = false;
+      if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+        complexity = chord->GetInputs().size();
+        for (const auto& inner : chord->GetInputs()) {
+          if (inner->GetHardwareCode() == triggerHardwareCode) {
+            involvesTrigger = true;
+            break;
+          }
+        }
+      } else {
+        involvesTrigger = (binding.Input->GetHardwareCode() == triggerHardwareCode);
+      }
+
+      if (involvesTrigger && complexity == maxActiveComplexity) {
+        // IMPORTANT: Re-verify activation state to ensure we pick the CORRECT active binding of this complexity.
+        bool isActive = binding.Input->IsActive(pressedCodes);
+        if (!isActive) {
+          if (auto* chord = dynamic_cast<const ChordInput*>(binding.Input.get())) {
+            bool allOthersActive = true;
+            for (const auto& inner : chord->GetInputs()) {
+              if (inner->GetHardwareCode() == triggerHardwareCode) continue;
+              if (!inner->IsActive(pressedCodes)) {
+                allOthersActive = false;
+                break;
+              }
+            }
+            isActive = allOthersActive;
+          } else {
+            isActive = true;
+          }
+        }
+
+        if (isActive) {
+          bestBinding = &binding;
+          break;  // Found the best match for this pressType
+        }
+      }
+    }
+  }
+  return bestBinding;
 }
 
 }  // namespace Modules

@@ -1,23 +1,30 @@
 #pragma once
 
-#include <memory>
-#include <d3d11.h>
-#include <windows.h>
-#include <wrl/client.h> // For ComPtr
-
-#include "SPF/Renderer/RendererBase.hpp"
-#include "SPF/Utils/Signal.hpp"
 #include "SPF/Namespace.hpp"
 
+#include "SPF/Renderer/ITexture.hpp"
+#include "SPF/Renderer/RendererBase.hpp"
+#include "SPF/Utils/Signal.hpp"
+
+#include <cstddef>
+#include <d3d11.h>
+#include <memory>
+#include <minwindef.h>
+#include <windef.h>
+#include <wrl/client.h>
 
 SPF_NS_BEGIN
 
 // Use a template alias for ComPtr for consistency with the D3D12 implementation.
-template<typename T>
+template <typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-namespace Logging { class Logger; }
-namespace UI { class UIManager; }
+namespace Logging {
+class Logger;
+}
+namespace UI {
+class UIManager;
+}
 
 namespace Rendering {
 

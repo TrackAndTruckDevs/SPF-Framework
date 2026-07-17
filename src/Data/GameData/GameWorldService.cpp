@@ -1,16 +1,14 @@
-/**                                                                                               
- * @file GameWorldService.cpp                                                                          
- * @brief Implementation of the GameWorldService for managing core engine state and world clock.
- */ 
-
 #include "SPF/Data/GameData/GameWorldService.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
-#include "SPF/System/EnvironmentManager.hpp"
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
-#include <Windows.h>
-#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <memory>
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -58,9 +56,7 @@ void GameWorldService::Shutdown() {
   }
 }
 
-void GameWorldService::RegisterFinders() {
-  m_dataFinders.push_back(std::make_unique<Finders::WorldDataFinder>());
-}
+void GameWorldService::RegisterFinders() { m_dataFinders.push_back(std::make_unique<Finders::WorldDataFinder>()); }
 
 bool GameWorldService::TryFindAllOffsets() {
   if (m_isInitialized) return true;
@@ -92,9 +88,7 @@ bool GameWorldService::TryFindAllOffsets() {
   return m_isInitialized;
 }
 
-bool GameWorldService::IsReady() {
-  return m_isInitialized && AreAllFindersReady();
-}
+bool GameWorldService::IsReady() { return m_isInitialized && AreAllFindersReady(); }
 
 bool GameWorldService::IsFinderReady(const char* name) const {
   for (const auto& finder : m_dataFinders) {
@@ -111,8 +105,6 @@ bool GameWorldService::AreAllFindersReady() const {
   }
   return true;
 }
-
-
 
 // --- World Manipulation Methods ---
 
@@ -135,7 +127,7 @@ uint32_t GameWorldService::GetPreviewTime() {
 void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
   if (!m_isInitialized) return;
 
-  uint32_t normalizedMinutes = totalMinutes % (1440 * 7); // Use full week cycle for visual consistency
+  uint32_t normalizedMinutes = totalMinutes % (1440 * 7);  // Use full week cycle for visual consistency
 
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return;
@@ -146,12 +138,12 @@ void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
 
   // Update the visual time minutes (used for skybox and shadow calculations).
   // In the game engine, if the simulation is unpaused, this value will be
-  // overwritten by the real game time logic on the next frame unless 
+  // overwritten by the real game time logic on the next frame unless
   // auto-update is disabled at 0x46c4.
   *(uint32_t*)(envObject + m_timeOffset) = normalizedMinutes;
-  *(float*)(envObject + m_timeOffset + 4) = 0.0f; // Visual seconds
+  *(float*)(envObject + m_timeOffset + 4) = 0.0f;  // Visual seconds
 
-  typedef void(__fastcall* UpdateEnv_t)(uintptr_t rcx);
+  typedef void(__fastcall * UpdateEnv_t)(uintptr_t rcx);
   UpdateEnv_t UpdateEnv = (UpdateEnv_t)m_updateFnAddr;
 
   if (UpdateEnv) {
@@ -210,17 +202,11 @@ float GameWorldService::GetMapScale() {
   return *(float*)(envBaseObj + m_mapScaleOffset);
 }
 
-uint32_t GameWorldService::GetGameDay() {
-  return GetSimulationTime() / 1440;
-}
+uint32_t GameWorldService::GetGameDay() { return GetSimulationTime() / 1440; }
 
-uint32_t GameWorldService::GetDayOfWeek() {
-  return GetGameDay() % 7;
-}
+uint32_t GameWorldService::GetDayOfWeek() { return GetGameDay() % 7; }
 
-uint32_t GameWorldService::GetGameWeek() {
-  return GetGameDay() / 7;
-}
+uint32_t GameWorldService::GetGameWeek() { return GetGameDay() / 7; }
 
 float GameWorldService::GetGlobalWarp() {
   if (!m_isInitialized || m_globalWarpOffset == 0) return 1.0f;
@@ -247,13 +233,10 @@ bool GameWorldService::IsGamePaused() {
   if (!coreApp) return false;
 
   // If any halt counter is > 0, the game is technically paused/halted
-  return *(int32_t*)(coreApp + m_globalHaltOffset) > 0 || 
-         *(int32_t*)(coreApp + m_simulationHaltOffset) > 0;
+  return *(int32_t*)(coreApp + m_globalHaltOffset) > 0 || *(int32_t*)(coreApp + m_simulationHaltOffset) > 0;
 }
 
-void GameWorldService::SetGamePaused(bool paused) {
-    SetEngineHalt(paused);
-}
+void GameWorldService::SetGamePaused(bool paused) { SetEngineHalt(paused); }
 
 void GameWorldService::SetEngineHalt(bool halted) {
   if (!m_isInitialized || m_globalHaltOffset == 0 || m_simulationHaltOffset == 0) return;
@@ -264,7 +247,7 @@ void GameWorldService::SetEngineHalt(bool halted) {
   *(int32_t*)(coreApp + m_globalHaltOffset) = halted ? 1 : 0;
   *(int32_t*)(coreApp + m_simulationHaltOffset) = halted ? 1 : 0;
   *(int32_t*)(coreApp + m_trafficHaltOffset) = halted ? 1 : 0;
-  
+
   m_pluginHalted = halted;
 }
 
@@ -278,7 +261,6 @@ double GameWorldService::GetRealDeltaTime() {
   uint64_t microSecs = *(uint64_t*)(coreApp + m_realDeltaTimeOffset);
   return (double)microSecs * 1e-06;
 }
-
 
 void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
   if (!m_isInitialized) return;

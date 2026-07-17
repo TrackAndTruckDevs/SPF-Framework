@@ -1,7 +1,16 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
+
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
 #include <string>
 
 SPF_NS_BEGIN
@@ -24,19 +33,19 @@ class GamepadAxisInput : public IBindableInput {
 
  private:
   System::GamepadButton m_axis;
-  std::string m_mode; // "analog" or "digital"
+  std::string m_mode;  // "analog" or "digital"
   float m_deadzone = 0.0f;
   float m_saturation = 1.0f;
   float m_sensitivity = 1.0f;
   float m_threshold = 0.5f;
   std::string m_curve = "linear";
-  std::string m_side = "both"; // "both", "positive", "negative"
-  float m_smoothing = 0.0f; // 0.0 - no smoothing
+  std::string m_side = "both";  // "both", "positive", "negative"
+  float m_smoothing = 0.0f;     // 0.0 - no smoothing
   float m_rangeMin = -1.0f;
   float m_rangeMax = 1.0f;
   bool m_invert = false;
 
-  mutable float m_lastValue = 0.0f; // For smoothing
+  mutable float m_lastValue = 0.0f;  // For smoothing
 };
 
 }  // namespace Modules

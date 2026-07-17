@@ -1,5 +1,10 @@
-#include <SPF/Telemetry/GameContext.hpp>
+#include "SPF/Telemetry/GameContext.hpp"
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Telemetry/Game.hpp"
+
+#include <cstdint>
 #include <cstring>  // For strcmp
 
 SPF_NS_BEGIN

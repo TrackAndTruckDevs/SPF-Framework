@@ -1,9 +1,10 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include <functional>
 #include <type_traits>
 
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 

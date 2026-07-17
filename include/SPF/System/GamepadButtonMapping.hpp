@@ -1,10 +1,12 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/System/GamepadButton.hpp"
+
 #include <string>
 #include <unordered_map>
 
-#include "SPF/System/GamepadButton.hpp"
-#include "SPF/Namespace.hpp"
 
 SPF_NS_BEGIN
 
@@ -16,7 +18,7 @@ enum class DeviceType {
   Mouse,        // For completeness
   Xbox,         // For XInput-compatible controllers
   PlayStation,  // For DualShock/DualSense controllers
-  Joystick       // For other DirectInput or custom devices
+  Joystick      // For other DirectInput or custom devices
 };
 
 class GamepadButtonMapping {

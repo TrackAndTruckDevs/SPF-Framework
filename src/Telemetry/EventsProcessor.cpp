@@ -1,13 +1,14 @@
 #include "SPF/Telemetry/EventsProcessor.hpp"
 
-#include <cstring>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
 
-// SDK headers for event and attribute names
-#include "common/scssdk_telemetry_common_gameplay_events.h"
+#include <cstring>
+#include <string>
 
 SPF_NS_BEGIN
 namespace Telemetry {
@@ -83,7 +84,6 @@ void EventsProcessor::HandleGameplayEvent(const scs_telemetry_gameplay_event_t* 
     data.source_id = reader.GetString(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_source_id).value_or("");
     data.target_id = reader.GetString(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_target_id).value_or("");
   }
-
 }
 
 }  // namespace Telemetry

@@ -1,7 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "IHandle.hpp"
+
 #include <string>
+
 
 SPF_NS_BEGIN
 namespace Handles {

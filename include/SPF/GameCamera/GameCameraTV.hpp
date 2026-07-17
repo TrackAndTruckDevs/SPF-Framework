@@ -1,7 +1,12 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
+
 #include <cstddef>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {

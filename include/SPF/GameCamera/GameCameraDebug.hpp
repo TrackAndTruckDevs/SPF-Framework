@@ -1,12 +1,12 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/GameCamera/DebugCameraMode.hpp"
 #include "SPF/GameCamera/DebugHudPosition.hpp"
 
 #include <cstdint>
-// #include <vector>
-// #include <string>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {

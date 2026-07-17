@@ -1,12 +1,13 @@
 #include "SPF/Telemetry/ControlsProcessor.hpp"
 
-#include <cstring>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
 
-// SDK headers for channel names
-#include "common/scssdk_telemetry_truck_common_channels.h"
+#include <cstring>
+
 
 SPF_NS_BEGIN
 namespace Telemetry {

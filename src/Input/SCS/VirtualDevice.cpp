@@ -1,7 +1,17 @@
 #include "SPF/Input/SCS/VirtualDevice.hpp"
-#include <stdexcept>
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Telemetry/Sdk.hpp"
+
 #include <algorithm>
 #include <cstring>  // For strncpy
+#include <iterator>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Input::SCS {
@@ -15,8 +25,7 @@ int find_input_index(const std::vector<std::string>& names, const std::string& n
   return -1;
 }
 
-VirtualDevice::VirtualDevice(std::string name, std::string displayName, scs_input_device_type_t type)
-    : m_name(std::move(name)), m_displayName(std::move(displayName)), m_type(type) {
+VirtualDevice::VirtualDevice(std::string name, std::string displayName, scs_input_device_type_t type) : m_name(std::move(name)), m_displayName(std::move(displayName)), m_type(type) {
   // Reserve some space to avoid frequent reallocations
   m_inputs.reserve(32);
   m_inputNames.reserve(32);

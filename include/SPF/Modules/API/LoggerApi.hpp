@@ -1,7 +1,8 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_Logger_API.h"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/SPF_API/SPF_Logger_API.h"
 
 #include <cstdint>
 

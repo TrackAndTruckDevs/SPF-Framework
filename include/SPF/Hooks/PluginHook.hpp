@@ -1,7 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Hooks/BaseHook.hpp"
+
 #include <string>
+
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -14,7 +18,8 @@ namespace Modules {
  */
 class PluginHook : public Hooks::BaseHook {
  public:
-  PluginHook(const std::string& pluginName, const std::string& hookName, const std::string& displayName, void* pDetour, void** ppOriginal, const std::string& signature, bool isEnabled);
+  PluginHook(const std::string& pluginName, const std::string& hookName, const std::string& displayName, void* pDetour, void** ppOriginal, const std::string& signature,
+             bool isEnabled);
   ~PluginHook();
 
  private:

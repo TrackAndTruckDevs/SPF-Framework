@@ -1,11 +1,15 @@
 #pragma once
 
-#include "SPF/Logging/Logger.hpp"  // Correct include for ILogSink
 #include "SPF/Namespace.hpp"
 
-#include <vector>
+#include "SPF/Logging/Logger.hpp"  // Correct include for ILogSink
+
+#include "fmt/base.h"
+
 #include <mutex>
 #include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Logging::Sinks {

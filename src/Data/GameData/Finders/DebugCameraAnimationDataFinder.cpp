@@ -1,7 +1,12 @@
 #include "SPF/Data/GameData/Finders/DebugCameraAnimationDataFinder.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
+
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {

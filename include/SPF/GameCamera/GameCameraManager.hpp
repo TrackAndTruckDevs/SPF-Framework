@@ -1,15 +1,20 @@
 #pragma once
 
-#include "SPF/Hooks/IHook.hpp"
-#include "SPF/GameCamera/IGameCamera.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/GameCamera/GameCameraDebug.hpp"
-#include "SPF/GameCamera/GameCameraDebugState.hpp"
 #include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
+#include "SPF/GameCamera/GameCameraDebugState.hpp"
+#include "SPF/GameCamera/GameCameraType.hpp"
+#include "SPF/GameCamera/IGameCamera.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
-#include <string>
+#include "SPF/Hooks/IHook.hpp"
+
 #include <cstdint>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -51,7 +56,7 @@ class GameCameraManager : public Hooks::IHook {
 
   /**
    * @brief Retrieves a verified pointer to a specific camera object.
-   * Performs a 'Lazy Verification': compares the result from the game function 
+   * Performs a 'Lazy Verification': compares the result from the game function
    * against the raw array address and caches the result.
    */
   uintptr_t GetVerifiedCameraObject(GameCameraType cameraType);

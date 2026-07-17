@@ -1,15 +1,26 @@
 #pragma once
 
-#include <memory>
-#include <windows.h>
-#include <SPF/Renderer/RendererBase.hpp>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Renderer/ITexture.hpp"
+#include "SPF/Renderer/RendererBase.hpp"
 #include "SPF/Utils/Signal.hpp"
+
+#include <cstddef>
+#include <memory>
+#include <windef.h>
 
 SPF_NS_BEGIN
 
-namespace UI { class UIManager; }
-namespace Logging { class Logger; }
-namespace Hooks { class OpenGLHook; }
+namespace UI {
+class UIManager;
+}
+namespace Logging {
+class Logger;
+}
+namespace Hooks {
+class OpenGLHook;
+}
 
 namespace Rendering {
 

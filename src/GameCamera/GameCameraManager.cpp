@@ -1,28 +1,37 @@
 #include "SPF/GameCamera/GameCameraManager.hpp"
-#include "SPF/Hooks/CameraHooks.hpp"
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/GameCamera/GameCameraInterior.hpp"
-#include "SPF/GameCamera/GameCameraBehind.hpp"
-#include "SPF/GameCamera/GameCameraTop.hpp"
-#include "SPF/GameCamera/GameCameraCabin.hpp"
-#include "SPF/GameCamera/GameCameraWindow.hpp"
-#include "SPF/GameCamera/GameCameraBumper.hpp"
-#include "SPF/GameCamera/GameCameraWheel.hpp"
-#include "SPF/GameCamera/GameCameraTV.hpp"
-#include "SPF/GameCamera/GameCameraFree.hpp"
-#include "SPF/GameCamera/GameCameraPhoto.hpp"
 
-#include <Windows.h>
-#include <memory>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/GameCamera/GameCameraBehind.hpp"
+#include "SPF/GameCamera/GameCameraBumper.hpp"
+#include "SPF/GameCamera/GameCameraCabin.hpp"
+#include "SPF/GameCamera/GameCameraDebug.hpp"
+#include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
+#include "SPF/GameCamera/GameCameraDebugState.hpp"
+#include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/GameCamera/GameCameraInterior.hpp"
+#include "SPF/GameCamera/GameCameraPhoto.hpp"
+#include "SPF/GameCamera/GameCameraTop.hpp"
+#include "SPF/GameCamera/GameCameraTV.hpp"
+#include "SPF/GameCamera/GameCameraType.hpp"
+#include "SPF/GameCamera/GameCameraWheel.hpp"
+#include "SPF/GameCamera/GameCameraWindow.hpp"
+#include "SPF/GameCamera/IGameCamera.hpp"
+#include "SPF/Hooks/CameraHooks.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/Windows.hpp"
+
+#include <cstdint>
 #include <map>
+#include <memory>
+#include <utility>
 
 using namespace SPF::Data::GameData;
 
 SPF_NS_BEGIN
 namespace GameCamera {
-GameCameraManager::GameCameraManager() {
-}
+GameCameraManager::GameCameraManager() {}
 
 GameCameraManager& GameCameraManager::GetInstance() {
   static GameCameraManager instance;
@@ -111,7 +120,7 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
 
   // --- Native Engine Call ---
   // We tell the game to switch the active camera.
-  // Both gameplay cameras and the Developer Free Camera (ID 0) 
+  // Both gameplay cameras and the Developer Free Camera (ID 0)
   // are initialized using the main Camera Manager as the context.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t cameraManagerAddr = gameData.GetCameraManager();
@@ -123,37 +132,35 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
 
   uint32_t cameraID = static_cast<uint32_t>(cameraType);
 
-
-
   /**
- * TODO: Implement Photo Camera functionality.
- *
- * CURRENT STATUS:
- * - Activation: SUCCESSFUL. Setting HUD state to 12 enables the mode.
- *   Example: *reinterpret_cast<int*>(pHudManager + 0x10) = 12;
- * - Deactivation: NOT WORKING via this pointer.
- * - Observations: Setting this value to 1 or other IDs triggers menus/different UI states.
- *
- * NEXT STEPS:
- * - Need to find and hook the function that handles the 'Escape' key (UI exit logic)
- *   to properly restore the game state and UI.
- */
+   * TODO: Implement Photo Camera functionality.
+   *
+   * CURRENT STATUS:
+   * - Activation: SUCCESSFUL. Setting HUD state to 12 enables the mode.
+   *   Example: *reinterpret_cast<int*>(pHudManager + 0x10) = 12;
+   * - Deactivation: NOT WORKING via this pointer.
+   * - Observations: Setting this value to 1 or other IDs triggers menus/different UI states.
+   *
+   * NEXT STEPS:
+   * - Need to find and hook the function that handles the 'Escape' key (UI exit logic)
+   *   to properly restore the game state and UI.
+   */
   // // --- Photo Camera Cleanup Logic ---
   // // If we are switching AWAY from Photo Mode, we must ensure its slot (13) is cleared.
   // if (GetCurrentCameraType() == GameCameraType::PhotoCamera && cameraType != GameCameraType::PhotoCamera) {
   //     auto& hooks = Hooks::CameraHooks::GetInstance();
   //     auto activateByIDFunc = hooks.GetActivateCameraByIDFunc();
-      
+
   //     if (activateByIDFunc && cameraManagerAddr) {
   //         logger->Info("[CameraSystem] Exiting Photo Mode. Triggering cleanup for slot 13.");
-          
+
   //         // Force the system to acknowledge slot 13 as current to trigger занулення in FUN_1404f0450
   //         *reinterpret_cast<int32_t*>(cameraManagerAddr + 0x18) = 13;
-          
+
   //         // Set target ID and call activation
   //         *reinterpret_cast<int32_t*>(cameraManagerAddr + 0x14) = cameraID;
   //         activateByIDFunc(cameraManagerAddr, 0.0f);
-          
+
   //         // Return HUD to driving state (0)
   //         uintptr_t base_obj = gameData.GetFreecamGlobalObject();
   //         uintptr_t context_offset = gameData.GetFreecamContextOffset();
@@ -164,7 +171,7 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   //                 if (pHudManager) *reinterpret_cast<int*>(pHudManager + 0x10) = 0;
   //             }
   //         }
-  //         return; 
+  //         return;
   //     }
   // }
 
@@ -174,11 +181,11 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   //   // We must manually set the HUD state and trigger the ENTER command.
   //   auto& hooks = Hooks::CameraHooks::GetInstance();
   //   auto execCmdFunc = hooks.GetExecuteCommandFunc();
-    
+
   //   if (execCmdFunc) {
   //     uintptr_t base_obj = gameData.GetFreecamGlobalObject();
   //     uintptr_t context_offset = gameData.GetFreecamContextOffset();
-      
+
   //     if (base_obj && context_offset) {
   //       uintptr_t pController = *reinterpret_cast<uintptr_t*>(base_obj + context_offset);
   //       if (pController && !IsBadReadPtr((void*)pController, 8)) {
@@ -190,13 +197,13 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   //           // 2. Send ENTER command (9) to trigger the ProcessModeLogic
   //           void* pCommandProcessor = *reinterpret_cast<void**>(pHudManager + 0x50);
   //           if (pCommandProcessor && !IsBadReadPtr(pCommandProcessor, 8)) {
-  //             int cmd = 9; 
+  //             int cmd = 9;
   //             logger->Debug("[CameraSystem] Initializing Photo Entry (9). Processor: {:#x}", (uintptr_t)pCommandProcessor);
   //             execCmdFunc(pCommandProcessor, &cmd);
-              
+
   //             // IMPORTANT: Command 9 already handles camera initialization.
   //             // We MUST return here to prevent the crash in m_initializeCameraFunc.
-  //             return; 
+  //             return;
   //           }
   //         }
   //       }
@@ -211,11 +218,11 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
   } else {
     // --- Special case for Developer Free Camera (ID 0) ---
     // Why this is necessary:
-    // Unlike standard cameras, the ID 0 camera is a specialized developer tool 
-    // in the Prism engine. It does not belong to the standard manager's array 
-    // in the same way. Passing the standard Camera Manager pointer here would 
-    // cause a crash because the engine expects a specific "Freecam Context" 
-    // structure. We resolve this context by reading a specific offset from 
+    // Unlike standard cameras, the ID 0 camera is a specialized developer tool
+    // in the Prism engine. It does not belong to the standard manager's array
+    // in the same way. Passing the standard Camera Manager pointer here would
+    // cause a crash because the engine expects a specific "Freecam Context"
+    // structure. We resolve this context by reading a specific offset from
     // the Freecam Global Object.
     uintptr_t base_obj = gameData.GetFreecamGlobalObject();
     if (!base_obj) {
@@ -237,7 +244,7 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
 
     m_initializeCameraFunc(freeCamInitContext, 0);
   }
-  
+
   logger->Info("[CameraSystem] Switched to camera ID: {}", cameraID);
 }
 
@@ -248,7 +255,7 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
 
   // Get data fresh from the source services to ensure it's valid.
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // GetCameraManager() handles the pointer dereferencing and version-specific adjustments.
   uintptr_t standardManagerPtr = gameData.GetCameraManager();
   intptr_t camera_id_offset = gameData.GetActiveCameraIdOffset();
@@ -274,7 +281,7 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
 
 uintptr_t GameCameraManager::GetVerifiedCameraObject(GameCameraType cameraType) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // 1. Check if we already verified and cached this address
   uintptr_t verifiedAddr = gameData.GetVerifiedCamera(cameraType);
   if (verifiedAddr != 0) return verifiedAddr;
@@ -293,16 +300,15 @@ uintptr_t GameCameraManager::GetVerifiedCameraObject(GameCameraType cameraType) 
 
   // 3. Compare results and log any discrepancies
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
-  
+
   if (addrFromFunc != 0) {
     if (addrFromArray != 0 && addrFromFunc != addrFromArray) {
-      logger->Warn("[CameraSystem] Verification MISMATCH for Camera ID {}. Function: 0x{:X}, Array: 0x{:X}. Trusting Function result.", 
-                   id, addrFromFunc, addrFromArray);
+      logger->Warn("[CameraSystem] Verification MISMATCH for Camera ID {}. Function: 0x{:X}, Array: 0x{:X}. Trusting Function result.", id, addrFromFunc, addrFromArray);
     }
-    
+
     // Register the final verified address in the service cache
     gameData.RegisterVerifiedCamera(cameraType, addrFromFunc);
-    
+
     // Logic check passed (either matched or function provided valid non-null address)
     return addrFromFunc;
   }

@@ -1,7 +1,12 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_Camera_API.h"
 #include "SPF/Namespace.hpp"
+
+#include "SPF/SPF_API/SPF_Camera_API.h"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -338,6 +343,6 @@ class CameraApi {
   static size_t T_Camera_GetTVShakeAnimCount();
   static bool T_Camera_GetTVShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetTVShakeAnim(size_t index, float x, float y, float z);
-  };
-  }  // namespace Modules::API
-  SPF_NS_END
+};
+}  // namespace Modules::API
+SPF_NS_END

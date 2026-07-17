@@ -1,14 +1,15 @@
 #pragma once
 
-#include "SPF/Hooks/IHook.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
-#include "SPF/Namespace.hpp"
-#include <string>
+
 #include <cstdint>
-#include <vector>
-#include <memory>
 #include <map>
+#include <memory>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -36,7 +37,7 @@ class GameDataCameraService {
   void UpdateFinders();
 
   // --- Camera Discovery, Verification & Caching ---
-  
+
   /**
    * @brief Stores the raw address found in the Camera Manager's array (+0x38).
    * This is used during the initial inventory pass before official verification.
@@ -66,13 +67,13 @@ class GameDataCameraService {
   uintptr_t GetDiscoveredAddress(int slotIndex) const;
 
   // --- Core Camera Manager Getters ---
-  
+
   uintptr_t GetCameraManagerPtrAddr() const { return m_pCameraManagerPtrAddr; }
 
   /**
    * @brief Returns the actual pointer to the Camera Manager object.
    * Logic: Reads the global pointer and adds version-specific adjustment (v1.59+).
-   * 
+   *
    * Ghidra Reference (InitializeCamera):
    * 1405c09f2 48 8b 1d af 42 f9 02    MOV RBX, qword ptr [DAT_143554ca8]
    */
@@ -84,7 +85,7 @@ class GameDataCameraService {
   }
 
   intptr_t GetActiveCameraIdOffset() const { return m_activeCameraIdOffset; }
-  
+
   /**
    * @brief Returns the offset to the camera pointer array inside Camera Manager.
    * Typically 0x38 (0x30 base + 0x08 sub).
@@ -286,7 +287,7 @@ class GameDataCameraService {
   void SetShakeAnimOffset(intptr_t val) { m_shake_anim_offset = val; }
   void SetHandShakeLimitOffset(intptr_t val) { m_hand_shake_limit_offset = val; }
   void SetHandShakeSpeedOffset(intptr_t val) { m_hand_shake_speed_offset = val; }
-  
+
   void SetCameraManagerPtrAddr(uintptr_t val) { m_pCameraManagerPtrAddr = val; }
   void SetCameraManagerAdjustment(intptr_t val) { m_cameraManagerAdjustment = val; }
   void SetCameraArrayOffset(intptr_t val) { m_cameraArrayOffset = val; }
@@ -417,7 +418,7 @@ class GameDataCameraService {
   void SetFreecamRollOffset(intptr_t val) { m_freecam_roll_offset = val; }
   void SetFlySpeedPtr(float* val) { m_pFreeCamSpeed = val; }
   void SetCameraWorldCoordinatesPtr(uintptr_t* val) { m_pCameraWorldCoordinatesPtr = val; }
-  
+
   uintptr_t* GetFreecamGlobalObjectPtr() const { return m_pFreecamGlobalObjectPtr; }
   void SetFreecamGlobalObjectPtr(uintptr_t* val) { m_pFreecamGlobalObjectPtr = val; }
   void SetFreecamGlobalObjectAdjustment(intptr_t val) { m_freecamGlobalObjectAdjustment = val; }

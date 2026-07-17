@@ -1,10 +1,14 @@
 #include "SPF/Telemetry/GearboxProcessor.hpp"
 
-#include <cstring>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Logging/Logger.hpp"
-#include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+
+#include <cstdint>
+#include <cstring>
 
 SPF_NS_BEGIN
 namespace Telemetry {

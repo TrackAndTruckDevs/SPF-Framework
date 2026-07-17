@@ -1,21 +1,23 @@
 #include "SPF/Hooks/HookManager.hpp"
 
+#include "SPF/Namespace.hpp"
+
 // --- Framework Includes ---
+#include "SPF/Hooks/IHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 // --- System Hook Includes (Critical) ---
 #include "SPF/Hooks/D3D11Hook.hpp"
 #include "SPF/Hooks/D3D12Hook.hpp"
-#include "SPF/Hooks/OpenGLHook.hpp"
 #include "SPF/Hooks/DInput8Hook.hpp"
+#include "SPF/Hooks/OpenGLHook.hpp"
 #include "SPF/Hooks/User32Hook.hpp"
 #include "SPF/Hooks/XInputHook.hpp"
-
-// --- Feature Hook Includes (Configurable) ---
-#include "SPF/Hooks/GameLogHook.hpp"
-#include "SPF/GameConsole/GameConsole.hpp"
+#include "SPF/Renderer/RenderAPI.hpp"
 
 #include <algorithm>  // For std::find
+#include <string>
+#include <vector>
 
 SPF_NS_BEGIN
 namespace Hooks {
@@ -142,61 +144,61 @@ bool HookManager::InstallSystemAndFeatureHooks() {
 }
 
 void HookManager::InstallFeatureHook(IHook* hook) {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
-    if (!hook) return;
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
+  if (!hook) return;
 
-    bool requestedByPlugin = IsHookRequired(hook->GetName());
-    if (hook->IsEnabled() || requestedByPlugin) {
-        if (hook->IsInstalled()) {
-            logger->Debug("Skipping already installed dynamic hook: {}", hook->GetDisplayName());
-        } else {
-            logger->Info("Dynamically installing hook: {} (Enabled: {}, Required: {})...", hook->GetDisplayName(), hook->IsEnabled(), requestedByPlugin);
-            if (!hook->Install()) {
-                logger->Error("Failed to install feature hook: {}", hook->GetDisplayName());
-            }
-        }
+  bool requestedByPlugin = IsHookRequired(hook->GetName());
+  if (hook->IsEnabled() || requestedByPlugin) {
+    if (hook->IsInstalled()) {
+      logger->Debug("Skipping already installed dynamic hook: {}", hook->GetDisplayName());
     } else {
-        logger->Info("Skipping installation of disabled dynamic hook: {}", hook->GetDisplayName());
+      logger->Info("Dynamically installing hook: {} (Enabled: {}, Required: {})...", hook->GetDisplayName(), hook->IsEnabled(), requestedByPlugin);
+      if (!hook->Install()) {
+        logger->Error("Failed to install feature hook: {}", hook->GetDisplayName());
+      }
     }
+  } else {
+    logger->Info("Skipping installation of disabled dynamic hook: {}", hook->GetDisplayName());
+  }
 }
 
 IHook* HookManager::GetHook(const std::string& name) {
-    for (auto* hook : m_featureHooks) {
-        if (hook->GetName() == name) {
-            return hook;
-        }
+  for (auto* hook : m_featureHooks) {
+    if (hook->GetName() == name) {
+      return hook;
     }
-    return nullptr;
+  }
+  return nullptr;
 }
 
 void HookManager::ReconcileHookState(IHook* hook, bool configuredEnabledState) {
-    if (!hook) return;
+  if (!hook) return;
 
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
-    // A hook should be active if it's explicitly enabled in config OR if any plugin requires it.
-    bool shouldBeActive = configuredEnabledState || IsHookRequired(hook->GetName());
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
+  // A hook should be active if it's explicitly enabled in config OR if any plugin requires it.
+  bool shouldBeActive = configuredEnabledState || IsHookRequired(hook->GetName());
 
-    if (shouldBeActive) {
-        if (!hook->IsInstalled()) {
-            logger->Info("Reconciling hook '{}': Installing...", hook->GetDisplayName());
-            hook->Install();
-        }
-        // Ensure the hook is enabled if it should be active
-        if (!hook->IsEnabled()) { // Check runtime state
-            logger->Info("Reconciling hook '{}': Enabling...", hook->GetDisplayName());
-            hook->SetEnabled(true); // Set runtime state
-        }
-    } else { // shouldBeActive is false
-        if (hook->IsInstalled()) {
-            logger->Info("Reconciling hook '{}': Uninstalling...", hook->GetDisplayName());
-            hook->Uninstall();
-        }
-        // Ensure the hook is disabled if it should not be active
-        if (hook->IsEnabled()) { // Check runtime state
-            logger->Info("Reconciling hook '{}': Disabling...", hook->GetDisplayName());
-            hook->SetEnabled(false); // Set runtime state
-        }
+  if (shouldBeActive) {
+    if (!hook->IsInstalled()) {
+      logger->Info("Reconciling hook '{}': Installing...", hook->GetDisplayName());
+      hook->Install();
     }
+    // Ensure the hook is enabled if it should be active
+    if (!hook->IsEnabled()) {  // Check runtime state
+      logger->Info("Reconciling hook '{}': Enabling...", hook->GetDisplayName());
+      hook->SetEnabled(true);  // Set runtime state
+    }
+  } else {  // shouldBeActive is false
+    if (hook->IsInstalled()) {
+      logger->Info("Reconciling hook '{}': Uninstalling...", hook->GetDisplayName());
+      hook->Uninstall();
+    }
+    // Ensure the hook is disabled if it should not be active
+    if (hook->IsEnabled()) {  // Check runtime state
+      logger->Info("Reconciling hook '{}': Disabling...", hook->GetDisplayName());
+      hook->SetEnabled(false);  // Set runtime state
+    }
+  }
 }
 
 void HookManager::UninstallAllHooks() {

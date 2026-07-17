@@ -1,61 +1,74 @@
 #include "SPF/UI/UIManager.hpp"
-#include "SPF/Logging/Logger.hpp" // Added include for GetAllLogLevels and LogLevelToString
-#include "SPF/UI/MainWindow.hpp"      // Added for MainWindow creation
-#include "SPF/UI/PluginsWindow.hpp"     // Added for PluginsWindow creation
-#include "SPF/UI/SettingsWindow.hpp"    // Added for SettingsWindow creation
-#include "SPF/UI/LoggerWindow.hpp"      // Added for LoggerWindow creation
-#include "SPF/UI/CameraWindow.hpp"      // Added for CameraWindow creation
-#include "SPF/UI/InfoWindow.hpp"        // Added for InfoWindow creation
-#include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
-#include "SPF/UI/ClimateWindow.hpp"      // Added for ClimateWindow creation
-#include "SPF/UI/WelcomeWindow.hpp"     // Added for WelcomeWindow creation
-#include "SPF/UI/GameConsoleWindow.hpp" // Added for GameConsoleWindow creation
-#include "SPF/UI/HooksWindow.hpp"       // Added for HooksWindow creation
-#include "SPF/UI/TelemetryWindow.hpp"   // Added for TelemetryWindow creation
-#include "SPF/UI/NotificationWindow.hpp" // Added for Notifications
 
+#include "SPF/Namespace.hpp"
 
-#include "SPF/Core/InitializationReport.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
-#include "SPF/Events/EventManager.hpp"
-#include <SPF/UI/UIStyle.hpp>
-#include "SPF/UI/Icons.hpp"
 #include "SPF/Config/IConfigService.hpp"
-#include "SPF/Events/PluginEvents.hpp"
-#include "SPF/UI/PluginProxyWindow.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Data/GameData/ClimateService.hpp"
+#include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Events/SystemEvents.hpp"
+#include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
+#include "SPF/GameCamera/GameCameraManager.hpp"  // For animation input blocking
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Renderer/Renderer.hpp"
+#include "SPF/SPF_API/SPF_Icons.h"
+#include "SPF/SPF_API/SPF_UI_API.h"
+#include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
-
-
-// --- Embedded Font Data ---
+#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/CameraWindow.hpp"   // Added for CameraWindow creation
+#include "SPF/UI/ClimateWindow.hpp"  // Added for ClimateWindow creation
 #include "SPF/UI/Fonts/FontAwesome7.h"
 #include "SPF/UI/Fonts/FontAwesome7Brands.h"
 #include "SPF/UI/Fonts/NotoSansBold.h"
 #include "SPF/UI/Fonts/NotoSansBoldItalic.h"
 #include "SPF/UI/Fonts/NotoSansItalic.h"
+#include "SPF/UI/Fonts/NotoSansKRRegular.h"
 #include "SPF/UI/Fonts/NotoSansMedium.h"
+#include "SPF/UI/Fonts/NotoSansMediumItalic.h"
 #include "SPF/UI/Fonts/NotoSansRegular.h"
 #include "SPF/UI/Fonts/NotoSansSCRegular.h"
-#include "SPF/UI/Fonts/NotoSansKRRegular.h"
-#include "SPF/UI/Fonts/NotoSansMediumItalic.h"
 #include "SPF/UI/Fonts/RobotoMonoRegular.h"
-// --- End Embedded Font Data ---
+#include "SPF/UI/GameConsoleWindow.hpp"   // Added for GameConsoleWindow creation
+#include "SPF/UI/GameWorldWindow.hpp"     // Added for GameWorldWindow creation
+#include "SPF/UI/HooksWindow.hpp"         // Added for HooksWindow creation
+#include "SPF/UI/InfoWindow.hpp"          // Added for InfoWindow creation
+#include "SPF/UI/LoggerWindow.hpp"        // Added for LoggerWindow creation
+#include "SPF/UI/MainWindow.hpp"          // Added for MainWindow creation
+#include "SPF/UI/MainWindow.hpp"          // Required for dynamic_cast and GetMainDockspaceID
+#include "SPF/UI/NotificationWindow.hpp"  // Added for Notifications
+#include "SPF/UI/PluginProxyWindow.hpp"
+#include "SPF/UI/PluginsWindow.hpp"    // Added for PluginsWindow creation
+#include "SPF/UI/SettingsWindow.hpp"   // Added for SettingsWindow creation
+#include "SPF/UI/SettingsWindow.hpp"   // Required for dynamic_cast
+#include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
+#include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
+#include "SPF/Utils/Signal.hpp"
 
-#include <set>
-#include <string>
-#include <imgui_internal.h>
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "nlohmann/json_fwd.hpp"
 
-#include "SPF/GameCamera/GameCameraManager.hpp"  // For animation input blocking
-#include "SPF/Data/GameData/GameWorldService.hpp"
-#include "SPF/Data/GameData/ClimateService.hpp"
-
-#include "SPF/UI/MainWindow.hpp"      // Required for dynamic_cast and GetMainDockspaceID
-#include "SPF/UI/SettingsWindow.hpp"  // Required for dynamic_cast
-#include "SPF/Renderer/Renderer.hpp"
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <fstream>
-#include <iterator>
+#include <ios>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 SPF_NS_BEGIN
 
@@ -77,7 +90,7 @@ UIManager::UIManager()
       m_keyBindsManager(nullptr),
       m_pluginManager(nullptr),
       m_communicationManager(nullptr),
-      m_onPluginDidLoadSink(nullptr),        // will be initialized in Init()
+      m_onPluginDidLoadSink(nullptr),         // will be initialized in Init()
       m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
       m_onReleaseNotesReceivedSink(nullptr),  // will be initialized in Init()
       m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
@@ -85,8 +98,8 @@ UIManager::UIManager()
   // No dependencies are passed here, they will be passed via Init()
 }
 
-void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager,
-            Modules::PluginManager& pluginManager, Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService) {
+void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& inputManager, Config::IConfigService& configService, Modules::KeyBindsManager& keyBindsManager, Modules::PluginManager& pluginManager,
+                     Modules::CommunicationManager& communicationManager, Logging::LoggerFactory& loggerFactory, Modules::ITelemetryService& telemetryService) {
   m_eventManager = &eventManager;
   m_inputManager = &inputManager;
   m_configService = &configService;
@@ -95,7 +108,7 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_communicationManager = &communicationManager;
   m_loggerFactory = &loggerFactory;
   m_telemetryService = &telemetryService;
-  
+
   // Initialize and connect sinks
   m_onPluginDidLoadSink = std::make_unique<Utils::Sink<void(const Events::OnPluginDidLoad&)>>(m_eventManager->System.OnPluginDidLoad);
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
@@ -109,72 +122,72 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
 }
 
 void UIManager::CloseFocusedWindow() {
-    ImGuiContext& g = *ImGui::GetCurrentContext();
+  ImGuiContext& g = *ImGui::GetCurrentContext();
 
-    // Priority 1: Check for and close any open popups/modals
-    if (g.OpenPopupStack.Size > 0) {
-        g.OpenPopupStack.clear(); // Brute-force close. May have side effects.
-        return; // Popups handled, do nothing else.
+  // Priority 1: Check for and close any open popups/modals
+  if (g.OpenPopupStack.Size > 0) {
+    g.OpenPopupStack.clear();  // Brute-force close. May have side effects.
+    return;                    // Popups handled, do nothing else.
+  }
+
+  IWindow* focusedWindow = nullptr;
+  ImGuiWindow* navWindow = g.NavWindow;
+
+  if (navWindow) {
+    const char* navWindowName = navWindow->Name;
+    for (const auto& window : m_windows) {
+      if (!window || !window->IsVisible()) {
+        continue;
+      }
+
+      std::string expectedName = std::string(window->GetWindowTitle()) + "###" + window->GetComponentName() + "_" + window->GetWindowId();
+      if (strcmp(navWindowName, expectedName.c_str()) == 0) {
+        focusedWindow = window.get();
+        break;
+      }
     }
+  }
 
-    IWindow* focusedWindow = nullptr;
-    ImGuiWindow* navWindow = g.NavWindow;
-
-    if (navWindow) {
-        const char* navWindowName = navWindow->Name;
-        for (const auto& window : m_windows) {
-            if (!window || !window->IsVisible()) {
-                continue;
-            }
-            
-            std::string expectedName = std::string(window->GetWindowTitle()) + "###" + window->GetComponentName() + "_" + window->GetWindowId();
-            if (strcmp(navWindowName, expectedName.c_str()) == 0) {
-                focusedWindow = window.get();
-                break;
-            }
+  // If no specific window is focused, but the UI is active, close the main window.
+  if (!focusedWindow) {
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
+      if (auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"))) {
+        if (mainWindow->IsVisible()) {
+          mainWindow->SetVisibility(false);
         }
+      }
     }
+    return;
+  }
 
-    // If no specific window is focused, but the UI is active, close the main window.
-    if (!focusedWindow) {
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
-            if (auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"))) {
-                if (mainWindow->IsVisible()) {
-                    mainWindow->SetVisibility(false);
-                }
-            }
-        }
-        return;
-    }
+  auto* baseWindow = dynamic_cast<BaseWindow*>(focusedWindow);
+  if (!baseWindow) {
+    return;  // Not a BaseWindow, do nothing.
+  }
 
-    auto* baseWindow = dynamic_cast<BaseWindow*>(focusedWindow);
-    if (!baseWindow) {
-        return; // Not a BaseWindow, do nothing.
-    }
-    
-    // If it's the main window, close it.
-    if (baseWindow->GetWindowId() == "main_window") {
-        baseWindow->SetVisibility(false);
-        return;
-    }
+  // If it's the main window, close it.
+  if (baseWindow->GetWindowId() == "main_window") {
+    baseWindow->SetVisibility(false);
+    return;
+  }
 
-    // If the window is configured to be dockable AND it's currently undocked, then re-dock it.
-    if (baseWindow->IsConfiguredAsDockable() && !baseWindow->IsDocked()) {
-        baseWindow->SetDocked(true);
-    } 
-    // Otherwise (it's either a docked window or a floating plugin window)
+  // If the window is configured to be dockable AND it's currently undocked, then re-dock it.
+  if (baseWindow->IsConfiguredAsDockable() && !baseWindow->IsDocked()) {
+    baseWindow->SetDocked(true);
+  }
+  // Otherwise (it's either a docked window or a floating plugin window)
+  else {
+    // If it's docked, close the main window.
+    if (baseWindow->IsDocked()) {
+      if (auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"))) {
+        mainWindow->SetVisibility(false);
+      }
+    }
+    // If it's a floating window not configured for docking, just hide it.
     else {
-        // If it's docked, close the main window.
-        if (baseWindow->IsDocked()) {
-            if (auto* mainWindow = dynamic_cast<MainWindow*>(GetWindow("framework", "main_window"))) {
-                mainWindow->SetVisibility(false);
-            }
-        } 
-        // If it's a floating window not configured for docking, just hide it.
-        else {
-            baseWindow->SetVisibility(false);
-        }
+      baseWindow->SetVisibility(false);
     }
+  }
 }
 
 UIManager::~UIManager() {
@@ -257,9 +270,9 @@ void UIManager::ApplyDeveloperMode(bool enabled) {
     if (window->IsDeveloperOnly()) {
       auto* base = dynamic_cast<BaseWindow*>(window.get());
       if (base) {
-          base->SetVisibility(enabled);
-          // Persist to config so it's saved correctly
-          m_configService->SetValue(window->GetComponentName(), "ui.windows." + window->GetWindowId() + ".is_visible", enabled);
+        base->SetVisibility(enabled);
+        // Persist to config so it's saved correctly
+        m_configService->SetValue(window->GetComponentName(), "ui.windows." + window->GetWindowId() + ".is_visible", enabled);
       }
     }
   }
@@ -284,140 +297,148 @@ void UIManager::ShowNotification(const std::string& message, int type, SPF_Notif
 }
 
 SPF_Notification_Handle UIManager::ShowNotificationEx(const SPF_Notification_Params* params) {
-    if (m_notificationWindow && params) {
-        SPF_Notification_Params p = *params;
-        // Resolve 'Auto' duration from settings if it's negative
-        if (p.duration < 0.0f) {
-            p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
-        }
-        return m_notificationWindow->ShowEx(p);
+  if (m_notificationWindow && params) {
+    SPF_Notification_Params p = *params;
+    // Resolve 'Auto' duration from settings if it's negative
+    if (p.duration < 0.0f) {
+      p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
     }
-    return nullptr;
+    return m_notificationWindow->ShowEx(p);
+  }
+  return nullptr;
 }
 
 void UIManager::HideNotification(SPF_Notification_Handle handle) {
-    if (m_notificationWindow) {
-        m_notificationWindow->Hide(handle);
-    }
+  if (m_notificationWindow) {
+    m_notificationWindow->Hide(handle);
+  }
 }
 
 const Events::System::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
-    auto it = m_pluginUpdates.find(pluginId);
-    if (it != m_pluginUpdates.end()) {
-        return &it->second;
-    }
-    return nullptr;
+  auto it = m_pluginUpdates.find(pluginId);
+  if (it != m_pluginUpdates.end()) {
+    return &it->second;
+  }
+  return nullptr;
 }
 
 void UIManager::PlayTransition(int type, float duration, bool reverse, int color) {
-    m_activeTransition.type = type;
-    m_activeTransition.duration = (duration > 0.0f) ? duration : 0.001f;
-    m_activeTransition.reverse = reverse;
-    m_activeTransition.colorPreset = color;
-    m_activeTransition.startTime = static_cast<float>(ImGui::GetTime());
-    m_activeTransition.active = true;
+  m_activeTransition.type = type;
+  m_activeTransition.duration = (duration > 0.0f) ? duration : 0.001f;
+  m_activeTransition.reverse = reverse;
+  m_activeTransition.colorPreset = color;
+  m_activeTransition.startTime = static_cast<float>(ImGui::GetTime());
+  m_activeTransition.active = true;
 }
 
 void UIManager::ProcessTransitions() {
-    if (!m_activeTransition.active) return;
+  if (!m_activeTransition.active) return;
 
-    float currentTime = static_cast<float>(ImGui::GetTime());
-    float elapsed = currentTime - m_activeTransition.startTime;
-    float progress = elapsed / m_activeTransition.duration;
+  float currentTime = static_cast<float>(ImGui::GetTime());
+  float elapsed = currentTime - m_activeTransition.startTime;
+  float progress = elapsed / m_activeTransition.duration;
 
-    if (progress >= 1.0f) {
-        m_activeTransition.active = false;
-        // Even if finished, we might want to stay at 100% for one frame 
-        // but usually fire-and-forget ends here.
-        return; 
+  if (progress >= 1.0f) {
+    m_activeTransition.active = false;
+    // Even if finished, we might want to stay at 100% for one frame
+    // but usually fire-and-forget ends here.
+    return;
+  }
+
+  ImDrawList* drawList = ImGui::GetForegroundDrawList();
+  if (!drawList) return;
+
+  const ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImVec2 p_min = viewport->Pos;
+  ImVec2 p_max = {viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y};
+  float w = viewport->Size.x;
+  float h = viewport->Size.y;
+
+  // Determine Base Color using style presets
+  ImVec4 col = Colors::BLACK;
+  switch (m_activeTransition.colorPreset) {
+    case 1:
+      col = Colors::WHITE;
+      break;  // SPF_TRANS_COLOR_WHITE
+    case 2:
+      col = Colors::SEPIA;
+      break;  // SPF_TRANS_COLOR_SEPIA
+    case 3:
+      col = Colors::GRAY;
+      break;  // SPF_TRANS_COLOR_GRAY
+  }
+
+  float alpha = 1.0f;
+
+  // Adjust progress if reversed
+  float t = m_activeTransition.reverse ? (1.0f - progress) : progress;
+
+  switch (m_activeTransition.type) {
+    case 0:  // SPF_TRANS_FADE
+      alpha = t;
+      drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+      break;
+
+    case 1:  // SPF_TRANS_CROSS (0 -> 100 -> 0)
+      alpha = (progress < 0.5f) ? (progress * 2.0f) : (1.0f - (progress - 0.5f) * 2.0f);
+      drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+      break;
+
+    case 2:  // SPF_TRANS_FLASH (Fast in, slow out)
+      if (progress < 0.2f)
+        alpha = progress / 0.2f;
+      else
+        alpha = 1.0f - (progress - 0.2f) / 0.8f;
+      drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
+      break;
+
+    case 3:  // SPF_TRANS_LETTERBOX
+    {
+      float barHeight = (h * 0.12f) * t;
+      drawList->AddRectFilled(p_min, {p_max.x, p_min.y + barHeight}, ImGui::ColorConvertFloat4ToU32(col));
+      drawList->AddRectFilled({p_min.x, p_max.y - barHeight}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+      break;
     }
 
-    ImDrawList* drawList = ImGui::GetForegroundDrawList();
-    if (!drawList) return;
+    case 4:  // SPF_TRANS_WIPE_LEFT (Right to Left)
+      drawList->AddRectFilled({p_max.x - w * t, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+      break;
 
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImVec2 p_min = viewport->Pos;
-    ImVec2 p_max = { viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y };
-    float w = viewport->Size.x;
-    float h = viewport->Size.y;
+    case 5:  // SPF_TRANS_WIPE_RIGHT (Left to Right)
+      drawList->AddRectFilled(p_min, {p_min.x + w * t, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
+      break;
 
-    // Determine Base Color using style presets
-    ImVec4 col = Colors::BLACK; 
-    switch (m_activeTransition.colorPreset) {
-        case 1: col = Colors::WHITE; break; // SPF_TRANS_COLOR_WHITE
-        case 2: col = Colors::SEPIA; break; // SPF_TRANS_COLOR_SEPIA
-        case 3: col = Colors::GRAY;  break; // SPF_TRANS_COLOR_GRAY
+    case 6:  // SPF_TRANS_WIPE_TOP (Bottom to Top)
+      drawList->AddRectFilled({p_min.x, p_max.y - h * t}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+      break;
+
+    case 7:  // SPF_TRANS_WIPE_BOTTOM (Top to Bottom)
+      drawList->AddRectFilled(p_min, {p_max.x, p_min.y + h * t}, ImGui::ColorConvertFloat4ToU32(col));
+      break;
+
+    case 8:  // SPF_TRANS_SHUTTER_H
+    {
+      float halfW = (w / 2.0f) * t;
+      drawList->AddRectFilled(p_min, {p_min.x + halfW, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
+      drawList->AddRectFilled({p_max.x - halfW, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+      break;
     }
 
-    float alpha = 1.0f;
-    
-    // Adjust progress if reversed
-    float t = m_activeTransition.reverse ? (1.0f - progress) : progress;
-
-    switch (m_activeTransition.type) {
-        case 0: // SPF_TRANS_FADE
-            alpha = t;
-            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
-            break;
-
-        case 1: // SPF_TRANS_CROSS (0 -> 100 -> 0)
-            alpha = (progress < 0.5f) ? (progress * 2.0f) : (1.0f - (progress - 0.5f) * 2.0f);
-            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
-            break;
-
-        case 2: // SPF_TRANS_FLASH (Fast in, slow out)
-            if (progress < 0.2f) alpha = progress / 0.2f;
-            else alpha = 1.0f - (progress - 0.2f) / 0.8f;
-            drawList->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32({col.x, col.y, col.z, alpha}));
-            break;
-
-        case 3: // SPF_TRANS_LETTERBOX
-        {
-            float barHeight = (h * 0.12f) * t;
-            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + barHeight}, ImGui::ColorConvertFloat4ToU32(col));
-            drawList->AddRectFilled({p_min.x, p_max.y - barHeight}, p_max, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-        }
-
-        case 4: // SPF_TRANS_WIPE_LEFT (Right to Left)
-            drawList->AddRectFilled({p_max.x - w * t, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-
-        case 5: // SPF_TRANS_WIPE_RIGHT (Left to Right)
-            drawList->AddRectFilled(p_min, {p_min.x + w * t, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-
-        case 6: // SPF_TRANS_WIPE_TOP (Bottom to Top)
-            drawList->AddRectFilled({p_min.x, p_max.y - h * t}, p_max, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-
-        case 7: // SPF_TRANS_WIPE_BOTTOM (Top to Bottom)
-            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + h * t}, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-
-        case 8: // SPF_TRANS_SHUTTER_H
-        {
-            float halfW = (w / 2.0f) * t;
-            drawList->AddRectFilled(p_min, {p_min.x + halfW, p_max.y}, ImGui::ColorConvertFloat4ToU32(col));
-            drawList->AddRectFilled({p_max.x - halfW, p_min.y}, p_max, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-        }
-
-        case 9: // SPF_TRANS_SHUTTER_V
-        {
-            float halfH = (h / 2.0f) * t;
-            drawList->AddRectFilled(p_min, {p_max.x, p_min.y + halfH}, ImGui::ColorConvertFloat4ToU32(col));
-            drawList->AddRectFilled({p_min.x, p_max.y - halfH}, p_max, ImGui::ColorConvertFloat4ToU32(col));
-            break;
-        }
-
-        case 10: // SPF_TRANS_RADIAL
-        {
-            float maxRadius = sqrtf(w*w + h*h) / 2.0f;
-            drawList->AddCircleFilled({p_min.x + w/2.0f, p_min.y + h/2.0f}, maxRadius * t, ImGui::ColorConvertFloat4ToU32(col), 64);
-            break;
-        }
+    case 9:  // SPF_TRANS_SHUTTER_V
+    {
+      float halfH = (h / 2.0f) * t;
+      drawList->AddRectFilled(p_min, {p_max.x, p_min.y + halfH}, ImGui::ColorConvertFloat4ToU32(col));
+      drawList->AddRectFilled({p_min.x, p_max.y - halfH}, p_max, ImGui::ColorConvertFloat4ToU32(col));
+      break;
     }
+
+    case 10:  // SPF_TRANS_RADIAL
+    {
+      float maxRadius = sqrtf(w * w + h * h) / 2.0f;
+      drawList->AddCircleFilled({p_min.x + w / 2.0f, p_min.y + h / 2.0f}, maxRadius * t, ImGui::ColorConvertFloat4ToU32(col), 64);
+      break;
+    }
+  }
 }
 
 void UIManager::ToggleMouseOverridden() {
@@ -520,13 +541,13 @@ void UIManager::Update() {
       if (req.isMemory) {
         // Transfer ownership of data to a long-lived buffer in UIManager
         auto persistedData = std::make_unique<std::vector<unsigned char>>(std::move(req.data));
-        
+
         if (req.isCompressed) {
-            font = io.Fonts->AddFontFromMemoryCompressedTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
+          font = io.Fonts->AddFontFromMemoryCompressedTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
         } else {
-            font = io.Fonts->AddFontFromMemoryTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
+          font = io.Fonts->AddFontFromMemoryTTF(persistedData->data(), static_cast<int>(persistedData->size()), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
         }
-        
+
         m_fontDataBuffers.push_back(std::move(persistedData));
       } else {
         font = io.Fonts->AddFontFromFileTTF(req.path.c_str(), req.size_pixels, &config, req.ranges.empty() ? nullptr : req.ranges.data());
@@ -594,7 +615,7 @@ void UIManager::RenderAll() {
     m_inputManager->SetMouseAxesControl(!axesBlockedByPlugin);
     m_inputManager->SetMouseButtonsControl(!buttonsBlockedByPlugin);
     m_inputManager->SetMouseWheelControl(!wheelBlockedByPlugin);
-    
+
     ImGui::GetIO().MouseDrawCursor = false;
   } else {
     // Special case: Animation is playing, but no windows are visible.
@@ -642,7 +663,7 @@ void UIManager::RenderAll() {
 
       // 3. Apply the final state
       ImGui::GetIO().MouseDrawCursor = final_uiShouldHaveControl;
-      
+
       // Game control is true only if UI doesn't have it AND plugin doesn't block it.
       m_inputManager->SetMouseAxesControl(!final_uiShouldHaveControl && !axesBlockedByPlugin);
       m_inputManager->SetMouseButtonsControl(!final_uiShouldHaveControl && !buttonsBlockedByPlugin);
@@ -847,7 +868,7 @@ void UIManager::InitializeImGui() {
   m_fonts["h3"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 20.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
-  
+
   // New Large Bold Font for Main Headers
   m_fonts["h1_large_bold"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansBold_compressed_data, Font_NotoSansBold_compressed_size, 32.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 28.0f, &icon_config_fa, icon_ranges_fa);
@@ -924,9 +945,9 @@ ImFont* UIManager::LoadPluginFontFromMemory(const std::string& name, const void*
   req.size_pixels = size_pixels;
   req.merge = merge;
   req.isMemory = true;
-  
+
   uint32_t magic = *(const uint32_t*)data;
-  req.isCompressed = (magic != 0x00010000 && magic != 0x4F54544F); 
+  req.isCompressed = (magic != 0x00010000 && magic != 0x4F54544F);
 
   if (ranges) {
     const uint16_t* r = ranges;
@@ -939,7 +960,7 @@ ImFont* UIManager::LoadPluginFontFromMemory(const std::string& name, const void*
 
   m_pendingFontRequests.push_back(std::move(req));
   m_fontAtlasRebuildPending = true;
-  return nullptr; // Will be available next frame
+  return nullptr;  // Will be available next frame
 }
 
 ImFont* UIManager::LoadPluginFontFromFile(const std::string& name, const std::string& path, float size_pixels, bool merge, const uint16_t* ranges) {
@@ -964,7 +985,7 @@ ImFont* UIManager::LoadPluginFontFromFile(const std::string& name, const std::st
 
   m_pendingFontRequests.push_back(std::move(req));
   m_fontAtlasRebuildPending = true;
-  return nullptr; // Will be available next frame
+  return nullptr;  // Will be available next frame
 }
 
 void UIManager::OnPluginLoaded(const Events::OnPluginDidLoad& e) {
@@ -994,22 +1015,22 @@ void UIManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) {
 }
 
 void UIManager::OnReleaseNotesReceived(const System::ChangelogData& data) {
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    logger->Info("Release notes received: '{}'. Showing welcome window.", data.title);
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+  logger->Info("Release notes received: '{}'. Showing welcome window.", data.title);
 
-    auto welcomeWindow = dynamic_cast<WelcomeWindow*>(GetWindow("framework", "welcome_window"));
-    
-    // Create it if it doesn't exist (e.g. if it wasn't a NewInstall but an Update)
-    if (!welcomeWindow) {
-        auto sharedWelcome = std::make_shared<WelcomeWindow>("framework", "welcome_window");
-        RegisterWindow(sharedWelcome);
-        welcomeWindow = sharedWelcome.get();
-    }
+  auto welcomeWindow = dynamic_cast<WelcomeWindow*>(GetWindow("framework", "welcome_window"));
 
-    if (welcomeWindow) {
-        welcomeWindow->SetUpdateContent(data.title, data.markdown);
-        welcomeWindow->SetVisibility(true);
-    }
+  // Create it if it doesn't exist (e.g. if it wasn't a NewInstall but an Update)
+  if (!welcomeWindow) {
+    auto sharedWelcome = std::make_shared<WelcomeWindow>("framework", "welcome_window");
+    RegisterWindow(sharedWelcome);
+    welcomeWindow = sharedWelcome.get();
+  }
+
+  if (welcomeWindow) {
+    welcomeWindow->SetUpdateContent(data.title, data.markdown);
+    welcomeWindow->SetVisibility(true);
+  }
 }
 
 void UIManager::DestroyWindowsForOwner(const std::string& owner) {
@@ -1024,8 +1045,8 @@ void UIManager::DestroyWindowsForOwner(const std::string& owner) {
   }
 
   if (hasWindows) {
-      // Force save to disk immediately so reloading the plugin mid-session picks up latest state
-      m_configService->SaveAllDirty();
+    // Force save to disk immediately so reloading the plugin mid-session picks up latest state
+    m_configService->SaveAllDirty();
   }
 
   std::erase_if(m_windows, [&](const std::shared_ptr<IWindow>& window) { return window->GetComponentName() == owner; });
@@ -1092,71 +1113,69 @@ void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e)
 }
 
 void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
-    auto& loc = Localization::LocalizationManager::GetInstance();
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    if (e.result.success && e.result.data.has_value()) {
-        const auto& data = e.result.data.value();
-        logger->Debug("Update check completed. Available: {}", data.updateAvailable);
+  auto& loc = Localization::LocalizationManager::GetInstance();
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+  if (e.result.success && e.result.data.has_value()) {
+    const auto& data = e.result.data.value();
+    logger->Debug("Update check completed. Available: {}", data.updateAvailable);
 
-        if (data.updateAvailable) {
-            bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
-            logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
+    if (data.updateAvailable) {
+      bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+      logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
 
-            if (showNotifications) {
-                logger->Info("Showing update notification...");
-                std::string versionStr = "v." + e.result.data->latestVersion.full;
-                std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
-                SPF_Notification_Params params{};
-                params.message = updateMsg.c_str();
-                params.type = SPF_NOTIFICATION_INFO;
-                params.mode = SPF_NOTIF_MODE_TOP;
-                params.duration = 5.0f;
-                UIManager::GetInstance().ShowNotificationEx(&params);
-            } else {
-                logger->Debug("Update notifications are disabled in settings.");
-            }
-        }
-    } else if (!e.result.success) {
-        logger->Warn("Update check failed: {}", e.result.errorMessage.value_or("unknown error"));
+      if (showNotifications) {
+        logger->Info("Showing update notification...");
+        std::string versionStr = "v." + e.result.data->latestVersion.full;
+        std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
+        SPF_Notification_Params params{};
+        params.message = updateMsg.c_str();
+        params.type = SPF_NOTIFICATION_INFO;
+        params.mode = SPF_NOTIF_MODE_TOP;
+        params.duration = 5.0f;
+        UIManager::GetInstance().ShowNotificationEx(&params);
+      } else {
+        logger->Debug("Update notifications are disabled in settings.");
+      }
     }
+  } else if (!e.result.success) {
+    logger->Warn("Update check failed: {}", e.result.errorMessage.value_or("unknown error"));
+  }
 
-    for (const auto& window : m_windows) {
-        window->OnUpdateCheckCompleted(e);
-    }
+  for (const auto& window : m_windows) {
+    window->OnUpdateCheckCompleted(e);
+  }
 }
 
 void UIManager::NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
-    for (const auto& window : m_windows) {
-        window->OnPatronsFetchCompleted(e);
-    }
+  for (const auto& window : m_windows) {
+    window->OnPatronsFetchCompleted(e);
+  }
 }
 
-void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {
-  
-}
+void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
 
 void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e) {
-    m_pluginUpdates[e.pluginId] = e;
+  m_pluginUpdates[e.pluginId] = e;
 
-    auto& loc = Localization::LocalizationManager::GetInstance();
-    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-    logger->Info("Update available for plugin {}: {} -> {}", e.pluginName, e.currentVersion, e.latestVersion);
+  auto& loc = Localization::LocalizationManager::GetInstance();
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+  logger->Info("Update available for plugin {}: {} -> {}", e.pluginName, e.currentVersion, e.latestVersion);
 
-    bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
-    logger->Debug("Update notifications enabled (Plugin): {}", showNotifications);
+  bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+  logger->Debug("Update notifications enabled (Plugin): {}", showNotifications);
 
-    if (showNotifications) {
-                logger->Info("Showing update notification...");
-                std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", e.pluginName, e.latestVersion);
-                SPF_Notification_Params params{};
-                params.message = updateMsg.c_str();
-                params.type = SPF_NOTIFICATION_INFO;
-                params.mode = SPF_NOTIF_MODE_TOP;
-                params.duration = 5.0f;
-                UIManager::GetInstance().ShowNotificationEx(&params);
-            } else {
-                logger->Debug("Update notifications are disabled in settings.");
-            }
+  if (showNotifications) {
+    logger->Info("Showing update notification...");
+    std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", e.pluginName, e.latestVersion);
+    SPF_Notification_Params params{};
+    params.message = updateMsg.c_str();
+    params.type = SPF_NOTIFICATION_INFO;
+    params.mode = SPF_NOTIF_MODE_TOP;
+    params.duration = 5.0f;
+    UIManager::GetInstance().ShowNotificationEx(&params);
+  } else {
+    logger->Debug("Update notifications are disabled in settings.");
+  }
 }
 
 void UIManager::CreateAndRegisterFrameworkWindows() {
@@ -1225,13 +1244,13 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Welcome Window - Only created and registered on fresh installation or framework update
   const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();
   if (fwInfo.installStatus == System::InstallationStatus::NewInstall) {
-      auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
-      welcomeWindow->SetVisibility(true);
-      RegisterWindow(welcomeWindow);
+    auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
+    welcomeWindow->SetVisibility(true);
+    RegisterWindow(welcomeWindow);
   } else if (fwInfo.installStatus == System::InstallationStatus::Updated) {
-      // If updated, we request release notes from the server. 
-      // When they arrive, OnReleaseNotesReceived will show the window.
-      m_communicationManager->RequestReleaseNotesFetch();
+    // If updated, we request release notes from the server.
+    // When they arrive, OnReleaseNotesReceived will show the window.
+    m_communicationManager->RequestReleaseNotesFetch();
   }
 
   // Notifications (Global)
@@ -1244,12 +1263,11 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
 
   // Trigger update check on startup
   if (!System::EnvironmentManager::GetInstance().GetFrameworkInfo().version.empty()) {
-      m_eventManager->System.OnRequestUpdateCheck.Call({});
-      m_communicationManager->RequestPluginUpdateChecks();
+    m_eventManager->System.OnRequestUpdateCheck.Call({});
+    m_communicationManager->RequestPluginUpdateChecks();
   }
 }
 
 }  // namespace UI
 
 SPF_NS_END
-

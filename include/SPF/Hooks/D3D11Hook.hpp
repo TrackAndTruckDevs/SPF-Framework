@@ -1,10 +1,12 @@
 #pragma once
 
-#include <cstdint>
-#include <windows.h>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Utils/Signal.hpp"
-#include "SPF/Namespace.hpp"
+
+#include <minwindef.h>
+#include <windef.h>
+
 
 struct IDXGISwapChain;
 struct ID3D11Device;

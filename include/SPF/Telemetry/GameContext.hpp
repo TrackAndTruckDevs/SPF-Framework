@@ -1,9 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Telemetry/Game.hpp"
+
 #include <cstdint>
 
-#include "SPF/Namespace.hpp"
-#include "SPF/Types.hpp"
 
 SPF_NS_BEGIN
 namespace Telemetry {

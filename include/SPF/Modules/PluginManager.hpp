@@ -1,45 +1,35 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_Plugin.h"
-#include "SPF/SPF_API/SPF_Manifest_API.h"
-#include "SPF/SPF_API/SPF_Logger_API.h"
-#include "SPF/SPF_API/SPF_Localization_API.h"
-#include "SPF/SPF_API/SPF_Config_API.h"
-#include "SPF/SPF_API/SPF_KeyBinds_API.h"
-#include "SPF/SPF_API/SPF_Hooks_API.h"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Hooks/IHook.hpp"
 #include "SPF/SPF_API/SPF_Camera_API.h"
-#include "SPF/SPF_API/SPF_Vehicle_API.h"
-#include "SPF/SPF_API/SPF_UI_API.h"
-#include "SPF/SPF_API/SPF_Telemetry_API.h"
-#include "SPF/SPF_API/SPF_VirtInput_API.h"
+#include "SPF/SPF_API/SPF_Config_API.h"
+#include "SPF/SPF_API/SPF_Environment_API.h"
+#include "SPF/SPF_API/SPF_Formatting_API.h"
 #include "SPF/SPF_API/SPF_GameConsole_API.h"
+#include "SPF/SPF_API/SPF_GameLog_API.h"
+#include "SPF/SPF_API/SPF_GameWorld_API.h"
+#include "SPF/SPF_API/SPF_Hooks_API.h"
+#include "SPF/SPF_API/SPF_JsonIO_API.h"
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
 #include "SPF/SPF_API/SPF_JsonWriter_API.h"
-#include "SPF/SPF_API/SPF_JsonIO_API.h"
-#include "SPF/SPF_API/SPF_Formatting_API.h"
-#include "SPF/SPF_API/SPF_GameLog_API.h"
-#include "SPF/SPF_API/SPF_Environment_API.h"
-#include "SPF/SPF_API/SPF_GameWorld_API.h"
-#include "SPF/Hooks/IHook.hpp"
-#include "SPF/Namespace.hpp"
+#include "SPF/SPF_API/SPF_KeyBinds_API.h"
+#include "SPF/SPF_API/SPF_Localization_API.h"
+#include "SPF/SPF_API/SPF_Logger_API.h"
+#include "SPF/SPF_API/SPF_Plugin.h"
+#include "SPF/SPF_API/SPF_Telemetry_API.h"
+#include "SPF/SPF_API/SPF_UI_API.h"
+#include "SPF/SPF_API/SPF_Vehicle_API.h"
+#include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Signal.hpp"
-#include "SPF/Telemetry/SCS/Common.hpp"
-#include "SPF/Telemetry/SCS/Events.hpp"
-#include "SPF/Telemetry/SCS/Truck.hpp"
-#include "SPF/Telemetry/SCS/Trailer.hpp"
-#include "SPF/Telemetry/SCS/Job.hpp"
-#include "SPF/Telemetry/SCS/Navigation.hpp"
-#include "SPF/Telemetry/SCS/Controls.hpp"
-#include "SPF/Telemetry/SCS/Gearbox.hpp"
 
-#include <Windows.h>  // For HMODULE
+#include <filesystem>
+#include <map>
 #include <memory>
+#include <minwindef.h>
 #include <string>
 #include <vector>
-#include <map>
-#include <filesystem>
-#include <mutex>
-
 
 SPF_NS_BEGIN
 
@@ -60,8 +50,6 @@ class UIManager;
 
 namespace Modules {
 
-
-
 class PluginManager {
  public:
   static PluginManager& GetInstance();
@@ -75,8 +63,8 @@ class PluginManager {
 
   ~PluginManager();
 
-  void Init(Events::EventManager& eventManager, HandleManager& handleManager, SPF::Config::IConfigService& configService, KeyBindsManager& keyBindsManager,
-            SPF::UI::UIManager& uiManager, ITelemetryService& telemetryService, IInputService& inputService);
+  void Init(Events::EventManager& eventManager, HandleManager& handleManager, SPF::Config::IConfigService& configService, KeyBindsManager& keyBindsManager, SPF::UI::UIManager& uiManager, ITelemetryService& telemetryService,
+            IInputService& inputService);
 
   void DiscoverPlugins();
   void InitializePlugins();
@@ -90,10 +78,8 @@ class PluginManager {
   void UnloadAllPlugins();
   void UpdateAllPlugins();
 
-      void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath);
+  void NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath);
   void NotifyAllPluginsOfLanguageChange(const std::string& langCode);
-
-
 
   SPF_UI_API* GetUIApi() { return &m_uiAPI; }
   SPF::UI::UIManager* GetUIManager() { return m_uiManager; }
@@ -156,11 +142,7 @@ class PluginManager {
 
   std::unique_ptr<Utils::Sink<void()>> m_onGameWorldReadySink;
 
-
-
   std::vector<std::unique_ptr<Hooks::IHook>> m_pluginHooks;
-
-
 
   SPF_Load_API m_loadAPI{};
   SPF_Core_API m_coreAPI{};

@@ -1,7 +1,14 @@
 #include "SPF/GameCamera/GameCameraTop.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+
+#include <cstddef>
+#include <cstdint>
+
 
 SPF_NS_BEGIN
 namespace GameCamera {
@@ -15,10 +22,10 @@ void GameCameraTop::OnActivate() {
 
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // GetCameraManager() handles pointer dereferencing and version-specific adjustments.
   uintptr_t pStandardManager = gameData.GetCameraManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }

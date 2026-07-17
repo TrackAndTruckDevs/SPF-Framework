@@ -1,38 +1,38 @@
-/**                                                                                               
-* @file SPF_Icons.h                                                                          
-* @brief Comprehensive collection of Font Awesome 7 icon macros for plugin UIs.
-*                                                                                                 
-* @details This header provides UTF-8 encoded string macros for every icon available in 
-*          Font Awesome 7 (Free Solid and Brands). These icons are pre-loaded by the 
-*          framework and can be used directly in any UI function that accepts strings.
-*                                                                                                 
-* ================================================================================================
-* KEY CONCEPTS                                                                                    
-* ================================================================================================
-*                                                                                                 
-* 1. **String Embedding**: Icons are defined as C-strings. You can concatenate them with 
-*    regular text: `ICON_FA_PLAY " Play"`.
-*                                                                                                 
-* 2. **Two Fonts**: 
-*    - **Solid**: Most general-purpose icons (Actions, Media, Navigation).
-*    - **Brands**: Company and platform logos (Discord, YouTube, Steam).
-*                                                                                                 
-* 3. **Automatic Scaling**: Icons automatically match the size and color of the surrounding 
-*    text unless manually overridden via UI style functions.
-*                                                                                                 
-* ================================================================================================
-* USAGE EXAMPLE (C++)                                                                             
-* ================================================================================================
-* @code                                                                                           
-* // Adding an icon to a button:
-* if (ui->UI_Button(ICON_FA_SAVE " Save Changes", 0, 0)) {
-*     // Save logic here...
-* }
-*
-* // Using a brand icon in a colored label:
-* ui->UI_TextColored(0.45f, 0.55f, 1.0f, 1.0f, ICON_FA_DISCORD " Join our community");
-* @endcode                                                                                        
-*/ 
+/**
+ * @file SPF_Icons.h
+ * @brief Comprehensive collection of Font Awesome 7 icon macros for plugin UIs.
+ *
+ * @details This header provides UTF-8 encoded string macros for every icon available in
+ *          Font Awesome 7 (Free Solid and Brands). These icons are pre-loaded by the
+ *          framework and can be used directly in any UI function that accepts strings.
+ *
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ *
+ * 1. **String Embedding**: Icons are defined as C-strings. You can concatenate them with
+ *    regular text: `ICON_FA_PLAY " Play"`.
+ *
+ * 2. **Two Fonts**:
+ *    - **Solid**: Most general-purpose icons (Actions, Media, Navigation).
+ *    - **Brands**: Company and platform logos (Discord, YouTube, Steam).
+ *
+ * 3. **Automatic Scaling**: Icons automatically match the size and color of the surrounding
+ *    text unless manually overridden via UI style functions.
+ *
+ * ================================================================================================
+ * USAGE EXAMPLE (C++)
+ * ================================================================================================
+ * @code
+ * // Adding an icon to a button:
+ * if (ui->UI_Button(ICON_FA_SAVE " Save Changes", 0, 0)) {
+ *     // Save logic here...
+ * }
+ *
+ * // Using a brand icon in a colored label:
+ * ui->UI_TextColored(0.45f, 0.55f, 1.0f, 1.0f, ICON_FA_DISCORD " Join our community");
+ * @endcode
+ */
 
 #pragma once
 

@@ -1,7 +1,12 @@
 #include "SPF/Events/EventManager.hpp"
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
 #include "SPF/Renderer/Renderer.hpp"
+
+#include <memory>
+
 
 SPF_NS_BEGIN
 

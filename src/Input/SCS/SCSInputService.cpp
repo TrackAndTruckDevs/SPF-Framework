@@ -1,9 +1,17 @@
 #include "SPF/Input/SCS/SCSInputService.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Input/SCS/VirtualDevice.hpp"
 #include "SPF/Logging/Logger.hpp"
-#include "SPF/Events/EventManager.hpp"
-#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IInputService.hpp"
+#include "SPF/Telemetry/Sdk.hpp"
+
 #include <fmt/core.h>
+#include <memory>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace Input::SCS {
@@ -36,8 +44,7 @@ bool SCSInputService::RegisterDevice(VirtualDevice* device, const std::string& c
   if (!device) return false;
 
   if (m_registrationClosed) {
-    m_logger.Error("Late registration attempt for device '{}' (Plugin: '{}'). The SDK input initialization window is already closed. A framework restart is required.", 
-                   device->GetName(), componentName);
+    m_logger.Error("Late registration attempt for device '{}' (Plugin: '{}'). The SDK input initialization window is already closed. A framework restart is required.", device->GetName(), componentName);
     m_componentsRequiringRestart.insert(componentName);
     return false;
   }
@@ -45,9 +52,7 @@ bool SCSInputService::RegisterDevice(VirtualDevice* device, const std::string& c
   return true;
 }
 
-bool SCSInputService::IsRestartRequiredForComponent(const std::string& componentName) const {
-    return m_componentsRequiringRestart.count(componentName) > 0;
-}
+bool SCSInputService::IsRestartRequiredForComponent(const std::string& componentName) const { return m_componentsRequiringRestart.count(componentName) > 0; }
 
 VirtualDevice* SCSInputService::GetDevice(const std::string& name) {
   for (const auto& device : m_devices) {

@@ -1,31 +1,40 @@
 #include "SPF/UI/MainWindow.hpp"
 
-#include <Windows.h>  // Pre-include for safety
-#include <fmt/format.h>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Config/IConfigService.hpp"
-#include "SPF/Modules/PerformanceMonitor.hpp"
-#include "SPF/Telemetry/SCS/Common.hpp" //  Required for GameState definition
-
 #include "SPF/Events/EventManager.hpp"
-#include "SPF/Modules/KeyBindsManager.hpp"
-#include "SPF/Input/InputManager.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Hooks/IHook.hpp"
+#include "SPF/Input/InputManager.hpp"
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Modules/PerformanceMonitor.hpp"
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
-#include "SPF/System/PathManager.hpp"
+#include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
-
+#include "SPF/System/PathManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/Icons.hpp"
-#include "SPF/UI/UIStyle.hpp"
-#include "SPF/UI/UIManager.hpp"
-#include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/UI/UIElements.hpp"
-// #include <imgui.h>
+#include "SPF/UI/UIManager.hpp"
+#include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
+#include "SPF/Utils/Windows.hpp"
+
+#include "imgui.h"
 #include "imgui_internal.h"
+
+#include <cstddef>
+#include <filesystem>
+#include <fmt/format.h>
+#include <map>
+#include <shellapi.h>
+#include <string>
+#include <vector>
 
 // Anonymous namespace for file-local definitions
 namespace {
@@ -227,104 +236,104 @@ void MainWindow::RenderContent() {
     Typography::Text(TextStyle::H1().Align(TextAlign::Center).Color(Colors::GOLD), "%s", title.c_str());
     ImGui::SameLine();
 
-// --- Top-right corner buttons ---
-  {
-    // Calculate widths of each button individually for accuracy
-    const float button1_w = Typography::CalcTextSize(ICON_FA_HAND_HOLDING_HEART).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-    const float button2_w = Typography::CalcTextSize(ICON_FA_ARROWS_ROTATE).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-    const float button3_w = Typography::CalcTextSize(ICON_FA_SCALE_BALANCED).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-
-    // Total width of all buttons plus the spacing between them
-    const float total_buttons_width = button1_w + button2_w + button3_w + (ImGui::GetStyle().ItemSpacing.x * 2);
-
-    // Desired padding from the right edge, matching the top padding for consistency
-    const float right_padding = ImGui::GetStyle().WindowPadding.y;
-
-    // Use SameLine to position the button block from the right edge of the window
-    ImGui::SameLine(ImGui::GetWindowWidth() - total_buttons_width - right_padding);
-
-    // Fetch the current connectivity setting
-    bool isConnectEnabled = m_configService.GetValue("framework", "settings.framework.connect", true).get<bool>();
-
-    // Patrons Button
+    // --- Top-right corner buttons ---
     {
-      TextStyle patronsButtonStyle = TextStyle::DefaultButton();
-      if (!isConnectEnabled) patronsButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
+      // Calculate widths of each button individually for accuracy
+      const float button1_w = Typography::CalcTextSize(ICON_FA_HAND_HOLDING_HEART).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+      const float button2_w = Typography::CalcTextSize(ICON_FA_ARROWS_ROTATE).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+      const float button3_w = Typography::CalcTextSize(ICON_FA_SCALE_BALANCED).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 
-      if (Button(ICON_FA_HAND_HOLDING_HEART, patronsButtonStyle)) {
-        if (isConnectEnabled) {
-          m_isPatronsPopupOpen = true;
-          m_eventManager.System.OnRequestPatronsFetch.Call({});
-        }
-      }
-      if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locPatronsButtonTooltip : m_locConnectDisabled).c_str());
-      }
-    }
+      // Total width of all buttons plus the spacing between them
+      const float total_buttons_width = button1_w + button2_w + button3_w + (ImGui::GetStyle().ItemSpacing.x * 2);
 
-    ImGui::SameLine();
+      // Desired padding from the right edge, matching the top padding for consistency
+      const float right_padding = ImGui::GetStyle().WindowPadding.y;
 
-    // Update Button
-    {
-      TextStyle updateButtonStyle = TextStyle::DefaultButton();
-      if (isConnectEnabled) {
-        switch (m_currentUpdateStatus) {
-          case Modules::CommunicationManager::UpdateStatus::PatchAvailable:
-            updateButtonStyle.Color(Colors::YELLOW);
-            break;
-          case Modules::CommunicationManager::UpdateStatus::MinorAvailable:
-            updateButtonStyle.Color(Colors::ORANGE);
-            break;
-          case Modules::CommunicationManager::UpdateStatus::MajorAvailable:
-            updateButtonStyle.Color(Colors::RED);
-            break;
-          default:
-            updateButtonStyle.Color(Colors::WHITE);
-            break;
-        }
-      } else {
-        updateButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
-      }
+      // Use SameLine to position the button block from the right edge of the window
+      ImGui::SameLine(ImGui::GetWindowWidth() - total_buttons_width - right_padding);
 
-      if (Button(ICON_FA_ARROWS_ROTATE, updateButtonStyle)) {
-        if (isConnectEnabled) {
-          m_isUpdatePopupOpen = true;
-          if (!m_frameworkVersion.empty()) {
-            m_eventManager.System.OnRequestUpdateCheck.Call({});
-          } else {
-            auto logger = Logging::LoggerFactory::GetInstance().GetLogger("MainWindow");
-            logger->Warn("Cannot perform update check: Framework version is not specified in the manifest.");
+      // Fetch the current connectivity setting
+      bool isConnectEnabled = m_configService.GetValue("framework", "settings.framework.connect", true).get<bool>();
+
+      // Patrons Button
+      {
+        TextStyle patronsButtonStyle = TextStyle::DefaultButton();
+        if (!isConnectEnabled) patronsButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
+
+        if (Button(ICON_FA_HAND_HOLDING_HEART, patronsButtonStyle)) {
+          if (isConnectEnabled) {
+            m_isPatronsPopupOpen = true;
+            m_eventManager.System.OnRequestPatronsFetch.Call({});
           }
         }
+        if (ImGui::IsItemHovered()) {
+          ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locPatronsButtonTooltip : m_locConnectDisabled).c_str());
+        }
       }
-      if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locUpdateButtonTooltip : m_locConnectDisabled).c_str());
+
+      ImGui::SameLine();
+
+      // Update Button
+      {
+        TextStyle updateButtonStyle = TextStyle::DefaultButton();
+        if (isConnectEnabled) {
+          switch (m_currentUpdateStatus) {
+            case Modules::CommunicationManager::UpdateStatus::PatchAvailable:
+              updateButtonStyle.Color(Colors::YELLOW);
+              break;
+            case Modules::CommunicationManager::UpdateStatus::MinorAvailable:
+              updateButtonStyle.Color(Colors::ORANGE);
+              break;
+            case Modules::CommunicationManager::UpdateStatus::MajorAvailable:
+              updateButtonStyle.Color(Colors::RED);
+              break;
+            default:
+              updateButtonStyle.Color(Colors::WHITE);
+              break;
+          }
+        } else {
+          updateButtonStyle.Color(Colors::GRAY).HoverColor(Colors::GRAY).ActiveColor(Colors::GRAY);
+        }
+
+        if (Button(ICON_FA_ARROWS_ROTATE, updateButtonStyle)) {
+          if (isConnectEnabled) {
+            m_isUpdatePopupOpen = true;
+            if (!m_frameworkVersion.empty()) {
+              m_eventManager.System.OnRequestUpdateCheck.Call({});
+            } else {
+              auto logger = Logging::LoggerFactory::GetInstance().GetLogger("MainWindow");
+              logger->Warn("Cannot perform update check: Framework version is not specified in the manifest.");
+            }
+          }
+        }
+        if (ImGui::IsItemHovered()) {
+          ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locUpdateButtonTooltip : m_locConnectDisabled).c_str());
+        }
+      }
+
+      ImGui::SameLine();
+
+      // Hamburger Menu Button
+      if (Button(ICON_FA_BARS, TextStyle::DefaultButton())) {
+        ImGui::OpenPopup("HamburgerMenu");
       }
     }
 
-    ImGui::SameLine();
-
-    // Hamburger Menu Button
-    if (Button(ICON_FA_BARS, TextStyle::DefaultButton())) {
-      ImGui::OpenPopup("HamburgerMenu");
-    }  
-  }
-
-  // --- Mode Toggle Row (Centered on new line) ---
-  {
-    const float toggle_switch_width = 46.0f;
-    const float toggle_switch_height = 20.0f;
-    const float toggle_radius = toggle_switch_height * 0.5f;
-
-    ImVec2 userLabelSize = Typography::CalcTextSize(loc.Get(m_locUserMode).c_str(), TextStyle::Bold());
-    ImVec2 devLabelSize = Typography::CalcTextSize(loc.Get(m_locDeveloperMode).c_str(), TextStyle::Bold());
-    const float toggle_group_width = userLabelSize.x + toggle_switch_width + devLabelSize.x + ImGui::GetStyle().ItemSpacing.x * 4.0f;
-
-    ImGui::Spacing();
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - toggle_group_width) * 0.5f);
-    
-    ImGui::BeginGroup();
+    // --- Mode Toggle Row (Centered on new line) ---
     {
+      const float toggle_switch_width = 46.0f;
+      const float toggle_switch_height = 20.0f;
+      const float toggle_radius = toggle_switch_height * 0.5f;
+
+      ImVec2 userLabelSize = Typography::CalcTextSize(loc.Get(m_locUserMode).c_str(), TextStyle::Bold());
+      ImVec2 devLabelSize = Typography::CalcTextSize(loc.Get(m_locDeveloperMode).c_str(), TextStyle::Bold());
+      const float toggle_group_width = userLabelSize.x + toggle_switch_width + devLabelSize.x + ImGui::GetStyle().ItemSpacing.x * 4.0f;
+
+      ImGui::Spacing();
+      ImGui::SetCursorPosX((ImGui::GetWindowWidth() - toggle_group_width) * 0.5f);
+
+      ImGui::BeginGroup();
+      {
         // User Mode Label
         Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::WHITE : Colors::GOLD), "%s", loc.Get(m_locUserMode).c_str());
         ImGui::SameLine();
@@ -335,18 +344,19 @@ void MainWindow::RenderContent() {
         ImGui::InvisibleButton("##mode_toggle", ImVec2(toggle_switch_width, toggle_switch_height));
         const bool is_hovered = ImGui::IsItemHovered();
         if (ImGui::IsItemClicked()) {
-            m_isDeveloperMode = !m_isDeveloperMode;
-            m_configService.SetValue("framework", "settings.framework.developer_mode", m_isDeveloperMode);
-            m_configService.SaveAllDirty();
-            UIManager::GetInstance().ApplyDeveloperMode(m_isDeveloperMode);
+          m_isDeveloperMode = !m_isDeveloperMode;
+          m_configService.SetValue("framework", "settings.framework.developer_mode", m_isDeveloperMode);
+          m_configService.SaveAllDirty();
+          UIManager::GetInstance().ApplyDeveloperMode(m_isDeveloperMode);
         }
 
         // Background
         ImVec4 bg_col = is_hovered ? ImVec4(0.25f, 0.25f, 0.25f, 1.0f) : ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
         draw_list->AddRectFilled(p, ImVec2(p.x + toggle_switch_width, p.y + toggle_switch_height), ImGui::GetColorU32(bg_col), toggle_radius);
-        
+
         // Outline
-        ImVec4 outline_col = Colors::WHITE; outline_col.w = is_hovered ? 0.3f : 0.15f;
+        ImVec4 outline_col = Colors::WHITE;
+        outline_col.w = is_hovered ? 0.3f : 0.15f;
         draw_list->AddRect(p, ImVec2(p.x + toggle_switch_width, p.y + toggle_switch_height), ImGui::GetColorU32(outline_col), toggle_radius);
 
         // Oval Knob
@@ -354,16 +364,16 @@ void MainWindow::RenderContent() {
         float knob_h = toggle_switch_height - 4.0f;
         float knob_x = m_isDeveloperMode ? (p.x + toggle_switch_width - knob_w - 2.0f) : (p.x + 2.0f);
         float knob_y = p.y + 2.0f;
-        
+
         ImVec4 knob_color = m_isDeveloperMode ? Colors::ORANGE : Colors::BLUE;
         draw_list->AddRectFilled(ImVec2(knob_x, knob_y), ImVec2(knob_x + knob_w, knob_y + knob_h), ImGui::GetColorU32(knob_color), toggle_radius);
-        
+
         ImGui::SameLine();
         // Developer Mode Label
         Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::GOLD : Colors::WHITE), "%s", loc.Get(m_locDeveloperMode).c_str());
+      }
+      ImGui::EndGroup();
     }
-    ImGui::EndGroup();
-  }
 
     // --- Game Info ---
     ImGui::Spacing();
@@ -371,12 +381,12 @@ void MainWindow::RenderContent() {
 
     const auto& game = System::EnvironmentManager::GetInstance().GetGameInfo();
     if (!game.name.empty()) {
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusRunningGame).c_str());
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.name.c_str());
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusCurrentVersion).c_str());
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.version.c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusRunningGame).c_str());
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.name.c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusCurrentVersion).c_str());
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.version.c_str());
     }
 
     // --- Performance Stats ---
@@ -388,97 +398,96 @@ void MainWindow::RenderContent() {
     const auto& status = System::EnvironmentManager::GetInstance().GetStatus();
 
     if (!status.renderer.empty()) {
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfGraphicsApiLabel).c_str());
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", status.renderer.c_str());
-        ImGui::SameLine();
-        ImGui::Dummy(ImVec2(10.0f, 0.0f)); // Spacer
-        ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfGraphicsApiLabel).c_str());
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", status.renderer.c_str());
+      ImGui::SameLine();
+      ImGui::Dummy(ImVec2(10.0f, 0.0f));  // Spacer
+      ImGui::SameLine();
     }
 
     if (perf.GetDeltaTime() > 0.0f) {
-        // FPSAvg
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsAvg).c_str());
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsAvg).c_str());
-        }
-        ImGui::SameLine();
+      // FPSAvg
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsAvg).c_str());
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsAvg).c_str());
+      }
+      ImGui::SameLine();
 
-        const float fpsAvg = perf.GetRollingAvgFPS();
-        ImVec4 fpsColor = Colors::WHITE;
-        if (fpsAvg < 30.0f) {
-            fpsColor = Colors::RED;
-        } else if (fpsAvg < 60.0f) {
-            fpsColor = Colors::YELLOW;
-        }
-        Typography::Text(TextStyle::Bold().Color(fpsColor), "%.0f", fpsAvg);
-        ImGui::SameLine();
+      const float fpsAvg = perf.GetRollingAvgFPS();
+      ImVec4 fpsColor = Colors::WHITE;
+      if (fpsAvg < 30.0f) {
+        fpsColor = Colors::RED;
+      } else if (fpsAvg < 60.0f) {
+        fpsColor = Colors::YELLOW;
+      }
+      Typography::Text(TextStyle::Bold().Color(fpsColor), "%.0f", fpsAvg);
+      ImGui::SameLine();
 
-        ImGui::Dummy(ImVec2(10.0f, 0.0f));
-        ImGui::SameLine();
+      ImGui::Dummy(ImVec2(10.0f, 0.0f));
+      ImGui::SameLine();
 
-        // FPSRoll Min/Max
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsRollMinMax).c_str());
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsRollMinMax).c_str());
-        }
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetRollingMinFPS(), perf.GetRollingMaxFPS());
-        ImGui::SameLine();
+      // FPSRoll Min/Max
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsRollMinMax).c_str());
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsRollMinMax).c_str());
+      }
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetRollingMinFPS(), perf.GetRollingMaxFPS());
+      ImGui::SameLine();
 
-        ImGui::Dummy(ImVec2(10.0f, 0.0f));
-        ImGui::SameLine();
+      ImGui::Dummy(ImVec2(10.0f, 0.0f));
+      ImGui::SameLine();
 
-        // FPSGbl Min/Max
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsGblMinMax).c_str());
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsGblMinMax).c_str());
-        }
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetGlobalMinFPS(), perf.GetGlobalMaxFPS());
-    }   
+      // FPSGbl Min/Max
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsGblMinMax).c_str());
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsGblMinMax).c_str());
+      }
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetGlobalMinFPS(), perf.GetGlobalMaxFPS());
+    }
     ImGui::Spacing();
-
 
     // --- Plugin Stats ---
     ImGui::Spacing();
     {
-        auto& pluginManager = Modules::PluginManager::GetInstance();
-        const auto& allComponents = m_configService.GetAllComponentInfo();
+      auto& pluginManager = Modules::PluginManager::GetInstance();
+      const auto& allComponents = m_configService.GetAllComponentInfo();
 
-        int totalPlugins = 0;
-        int enabledPlugins = 0;
+      int totalPlugins = 0;
+      int enabledPlugins = 0;
 
-        for (const auto& [id, info] : allComponents) {
-            if (info.isFramework) continue;
-            totalPlugins++;
-            if (pluginManager.IsPluginLoaded(id)) {
-                enabledPlugins++;
-            }
+      for (const auto& [id, info] : allComponents) {
+        if (info.isFramework) continue;
+        totalPlugins++;
+        if (pluginManager.IsPluginLoaded(id)) {
+          enabledPlugins++;
         }
+      }
 
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPluginsLoadedActivatedLabel).c_str());
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalPlugins, enabledPlugins);
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPluginsLoadedActivatedLabel).c_str());
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalPlugins, enabledPlugins);
 
-        // --- Hook Stats ---
-        ImGui::SameLine();
+      // --- Hook Stats ---
+      ImGui::SameLine();
 
-        ImGui::SameLine();
-        auto& hookManager = Hooks::HookManager::GetInstance();
-        const auto& hooks = hookManager.GetFeatureHooks();
+      ImGui::SameLine();
+      auto& hookManager = Hooks::HookManager::GetInstance();
+      const auto& hooks = hookManager.GetFeatureHooks();
 
-        int totalHooks = hooks.size();
-        int enabledHooks = 0;
-        for (const auto* hook : hooks) {
-            if (hook->IsEnabled()) {
-                enabledHooks++;
-            }
+      int totalHooks = hooks.size();
+      int enabledHooks = 0;
+      for (const auto* hook : hooks) {
+        if (hook->IsEnabled()) {
+          enabledHooks++;
         }
+      }
 
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locHooksLoadedActivatedLabel).c_str());
-        ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalHooks, enabledHooks);
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locHooksLoadedActivatedLabel).c_str());
+      ImGui::SameLine();
+      Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalHooks, enabledHooks);
     }
 
     // --- 4. Separator ---
@@ -486,9 +495,6 @@ void MainWindow::RenderContent() {
     ImGui::Separator();
     ImGui::Spacing();
   }
-
-
-  
 
   // --- Render all popups --- //
   // Each function manages the state and rendering of a specific popup.
@@ -500,15 +506,12 @@ void MainWindow::RenderContent() {
   RenderLegalPopup();
   RenderShutdownPopup();
 
-  
-
   // --- Dockspace ---
   // Make the separator and overline below the tab bar transparent
   ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
   m_dockspaceId = ImGui::GetID("MainDockSpace");
-  ImGuiDockNodeFlags dockspace_flags =
-      ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingSplit | ImGuiDockNodeFlags_NoDockingOverCentralNode | ImGuiDockNodeFlags_NoUndocking;
+  ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingSplit | ImGuiDockNodeFlags_NoDockingOverCentralNode | ImGuiDockNodeFlags_NoUndocking;
   ImGui::DockSpace(m_dockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
 
   // Get the dock node by its ID to change its behavior
@@ -528,18 +531,20 @@ void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompl
   if (e.result.success && e.result.data.has_value()) {
     auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
     logger->Debug("Update check succeeded.");
-    
+
     m_lastUpdateInfo = e.result.data.value();
     m_lastUpdateError.reset();
 
     if (m_lastUpdateInfo->updateAvailable) {
       // For now, determining status based on version presence
-      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable; // Default
-      
+      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable;  // Default
+
       auto currentVerOpt = System::Version::FromString(m_frameworkVersion);
       if (currentVerOpt) {
-          if (m_lastUpdateInfo->latestVersion.ver.major > currentVerOpt->major) m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
-          else if (m_lastUpdateInfo->latestVersion.ver.minor > currentVerOpt->minor) m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
+        if (m_lastUpdateInfo->latestVersion.ver.major > currentVerOpt->major)
+          m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
+        else if (m_lastUpdateInfo->latestVersion.ver.minor > currentVerOpt->minor)
+          m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
       }
     } else {
       m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::UpToDate;
@@ -620,9 +625,7 @@ void MainWindow::RenderPatronsPopup() {
     if (!m_lastPatronsResult.has_value()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "Loading patrons...");  // TODO: Localize
     } else if (!m_lastPatronsResult->success || !m_lastPatronsResult->data.has_value()) {
-      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::RED),
-                       "%s",
-                       loc.Get(m_lastPatronsResult->errorMessage.value_or(m_locUpdateErrorGeneric)).c_str());
+      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::RED), "%s", loc.Get(m_lastPatronsResult->errorMessage.value_or(m_locUpdateErrorGeneric)).c_str());
     } else if (m_lastPatronsResult->data->empty()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsHofEmpty).c_str());
     } else {
@@ -699,17 +702,16 @@ void MainWindow::RenderUpdatePopup() {
     // Determine required popup size based on content
     bool hasChangelog = m_lastUpdateInfo.has_value() && !m_lastUpdateInfo->content.markdown.empty();
     ImVec2 childSize = hasChangelog ? ImVec2(575, 300) : ImVec2(450, 100);
-    
+
     ImGui::BeginChild("description_modals_update", childSize, false);
-    
+
     // --- Header ---
     ImGui::Spacing();
     ImGui::Separator();
-    Typography::Text(
-    TextStyle::H3().Align(TextAlign::Center).Color(Colors::GOLD), "%s%s v%s", loc.Get(m_locVersionLabel).c_str(), m_frameworkName.c_str(), m_frameworkVersion.c_str());
+    Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GOLD), "%s%s v%s", loc.Get(m_locVersionLabel).c_str(), m_frameworkName.c_str(), m_frameworkVersion.c_str());
     ImGui::Separator();
     ImGui::Spacing();
-    
+
     // --- Content ---
     if (!m_lastUpdateInfo.has_value() && !m_lastUpdateError.has_value()) {
       // 1. Loading state
@@ -718,9 +720,7 @@ void MainWindow::RenderUpdatePopup() {
       Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locUpdateChecking).c_str());
     } else if (m_lastUpdateError.has_value()) {
       // 2. Error state (Network, API error, etc.)
-      Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::RED).Padding(ImVec2(15.0f, 0.0f)),
-                       "%s",
-                       loc.Get(m_lastUpdateError.value_or(m_locUpdateErrorGeneric)).c_str());
+      Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::RED).Padding(ImVec2(15.0f, 0.0f)), "%s", loc.Get(m_lastUpdateError.value_or(m_locUpdateErrorGeneric)).c_str());
     } else if (m_lastUpdateInfo.has_value()) {
       // 3. Success states (Received response from server)
       const auto& updateData = m_lastUpdateInfo.value();
@@ -732,10 +732,8 @@ void MainWindow::RenderUpdatePopup() {
         Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Align(TextAlign::Center), "%s", loc.Get(m_locUpdateNoUpdate).c_str());
       } else if (updateData.updateAvailable) {
         // Here: Server said there is a new version.
-        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)),
-                       "%s",
-                       loc.GetFormatted("framework", m_locUpdateAvailable, updateData.latestVersion.full).c_str());
-        
+        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)), "%s", loc.GetFormatted("framework", m_locUpdateAvailable, updateData.latestVersion.full).c_str());
+
         if (hasChangelog) {
           ImGui::Spacing();
           ImGui::Separator();
@@ -759,7 +757,7 @@ void MainWindow::RenderUpdatePopup() {
         }
       }
     }
-    
+
     ImGui::Spacing();
     ImGui::EndChild();
 
@@ -811,12 +809,12 @@ void MainWindow::RenderHamburgerMenu() {
 
     // Open Plugins Folder button (left-aligned)
     if (Button(ICON_FA_FOLDER_OPEN, TextStyle::DefaultButton())) {
-        const std::string pluginsPath = PathManager::GetPluginsPath().string();
-        ShellExecute(NULL, "open", pluginsPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
-        ImGui::CloseCurrentPopup();
+      const std::string pluginsPath = PathManager::GetPluginsPath().string();
+      ShellExecute(NULL, "open", pluginsPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+      ImGui::CloseCurrentPopup();
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locMenuOpenPluginsFolder).c_str());
+      ImGui::SetTooltip("%s", loc.Get(m_locMenuOpenPluginsFolder).c_str());
     }
     ImGui::SameLine();
     // Existing buttons (right-aligned)
@@ -1091,7 +1089,7 @@ void MainWindow::RenderLegalPopup() {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
-}
+  }
 }
 
 // --- Popup Modals: Shutdown ---

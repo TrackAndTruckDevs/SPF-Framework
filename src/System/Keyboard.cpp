@@ -1,5 +1,11 @@
 #include "SPF/System/Keyboard.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/System/VirtualKeyMapping.hpp"
+
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace System {

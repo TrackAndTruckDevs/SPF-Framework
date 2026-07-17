@@ -1,8 +1,12 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Renderer/ITexture.hpp"
+
+#include <cstddef>
 #include <memory>
+
 
 SPF_NS_BEGIN
 

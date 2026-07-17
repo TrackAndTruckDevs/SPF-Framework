@@ -1,9 +1,19 @@
 #include "SPF/UI/GameConsoleWindow.hpp"
-#include "SPF/UI/UIElements.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/UIElements.hpp"
+#include "SPF/UI/UITypographyHelper.hpp"
+
 #include "imgui.h"
+
+#include <cstring>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace UI {
@@ -12,10 +22,9 @@ using namespace SPF::Localization;
 
 namespace {
 constexpr int MAX_HISTORY_SIZE = 20;
-} // namespace
+}  // namespace
 
-GameConsoleWindow::GameConsoleWindow(const std::string& owner, const std::string& id, Events::EventManager& eventManager)
-    : BaseWindow(owner, id), m_eventManager(eventManager), m_hookManager(HookManager::GetInstance()) {
+GameConsoleWindow::GameConsoleWindow(const std::string& owner, const std::string& id, Events::EventManager& eventManager) : BaseWindow(owner, id), m_eventManager(eventManager), m_hookManager(HookManager::GetInstance()) {
   m_titleLocalizationKey = "game_console_window.title";
 }
 
@@ -67,17 +76,15 @@ void GameConsoleWindow::RenderContent() {
         m_eventManager.System.OnRequestExecuteCommand.Call({m_commandBuffer});
         m_history.push_back(m_commandBuffer);
         if (m_history.size() > MAX_HISTORY_SIZE) {
-            m_history.erase(m_history.begin());
+          m_history.erase(m_history.begin());
         }
         m_commandBuffer[0] = '\0';
-        m_historyPos = -1; // Reset history position after new command
+        m_historyPos = -1;  // Reset history position after new command
       }
     };
 
     ImGui::PushItemWidth(-80.0f);  // Leave space for the button
-    if (ImGui::InputText("##CommandInput", m_commandBuffer, sizeof(m_commandBuffer),
-                         ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory,
-                         &GameConsoleWindow::HistoryCallback, (void*)this)) {
+    if (ImGui::InputText("##CommandInput", m_commandBuffer, sizeof(m_commandBuffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, &GameConsoleWindow::HistoryCallback, (void*)this)) {
       execute();
     }
     ImGui::PopItemWidth();

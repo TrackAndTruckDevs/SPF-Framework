@@ -1,7 +1,11 @@
 #pragma once
 
+#include "SPF/Namespace.hpp"
+
 #include "SPF/UI/BaseWindow.hpp"
+
 #include <string>
+
 
 SPF_NS_BEGIN
 namespace UI {

@@ -1,20 +1,24 @@
 #pragma once
 
-#include "SPF/SPF_API/SPF_Telemetry_API.h"
 #include "SPF/Namespace.hpp"
-#include "SPF/Telemetry/SCS/Common.hpp"   // For GameState, Timestamps, CommonData
-#include "SPF/Telemetry/SCS/Truck.hpp"    // For TruckConstants, TruckData
-#include "SPF/Telemetry/SCS/Trailer.hpp"  // For Trailer, TrailerConstants (used in std::vector<Trailer>)
-#include "SPF/Telemetry/SCS/Job.hpp"      // For JobConstants, JobData
-#include "SPF/Telemetry/SCS/Navigation.hpp" // For NavigationData
-#include "SPF/Telemetry/SCS/Controls.hpp" // For Controls
-#include "SPF/Telemetry/SCS/Events.hpp"   // For SpecialEvents, GameplayEvents
-#include "SPF/Telemetry/SCS/Gearbox.hpp"  // For GearboxConstants
 
+#include "SPF/SPF_API/SPF_Telemetry_API.h"
+#include "SPF/SPF_API/SPF_TelemetryData.h"
+#include "SPF/Telemetry/SCS/Common.hpp"      // For GameState, Timestamps, CommonData
+#include "SPF/Telemetry/SCS/Controls.hpp"    // For Controls
+#include "SPF/Telemetry/SCS/Events.hpp"      // For SpecialEvents, GameplayEvents
+#include "SPF/Telemetry/SCS/Gearbox.hpp"     // For GearboxConstants
+#include "SPF/Telemetry/SCS/Job.hpp"         // For JobConstants, JobData
+#include "SPF/Telemetry/SCS/Navigation.hpp"  // For NavigationData
+#include "SPF/Telemetry/SCS/Trailer.hpp"     // For Trailer, TrailerConstants (used in std::vector<Trailer>)
+#include "SPF/Telemetry/SCS/Truck.hpp"       // For TruckConstants, TruckData
 #include "SPF/Utils/Signal.hpp"
-#include "SPF/Utils/Delegate.hpp"
-#include <functional> // For std::function
-#include <memory> // For std::unique_ptr, std::make_unique
+
+#include <cstddef>
+#include <cstdint>
+#include <functional>  // For std::function
+#include <vector>
+
 
 SPF_NS_BEGIN
 
@@ -25,55 +29,45 @@ class EventManager;
 namespace Modules::API {
 class TelemetryApi {
  public:
-    // Base class for all telemetry subscription handlers. Used for type erasure in TelemetryHandle.
-    struct BaseSubscriptionHandler {
-        virtual ~BaseSubscriptionHandler() = default;
-    };
+  // Base class for all telemetry subscription handlers. Used for type erasure in TelemetryHandle.
+  struct BaseSubscriptionHandler {
+    virtual ~BaseSubscriptionHandler() = default;
+  };
 
-    // Templated handler for specific telemetry event types
-    template <typename CppDataType>
-    struct SubscriptionHandler : public BaseSubscriptionHandler {
-        using InvokerFunction = std::function<void(const CppDataType&, void* user_data_ptr)>;
+  // Templated handler for specific telemetry event types
+  template <typename CppDataType>
+  struct SubscriptionHandler : public BaseSubscriptionHandler {
+    using InvokerFunction = std::function<void(const CppDataType&, void* user_data_ptr)>;
 
-        SubscriptionHandler(
-            Utils::Signal<void(const CppDataType&)>& signal, // The specific signal from EventManager
-            InvokerFunction invoker_func, // Function that performs conversion and calls plugin callback
-            void* user_data_ptr
-        ) : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal)
-        {
-            m_sink.template Connect<&SubscriptionHandler<CppDataType>::OnEvent>(this);
-        }
+    SubscriptionHandler(Utils::Signal<void(const CppDataType&)>& signal,  // The specific signal from EventManager
+                        InvokerFunction invoker_func,                     // Function that performs conversion and calls plugin callback
+                        void* user_data_ptr)
+        : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal) {
+      m_sink.template Connect<&SubscriptionHandler<CppDataType>::OnEvent>(this);
+    }
 
-        void OnEvent(const CppDataType& cpp_data) {
-            m_invoker_func(cpp_data, m_user_data_ptr);
-        }
+    void OnEvent(const CppDataType& cpp_data) { m_invoker_func(cpp_data, m_user_data_ptr); }
 
-        InvokerFunction m_invoker_func;
-        void* m_user_data_ptr;
-        Utils::Sink<void(const CppDataType&)> m_sink;
-    };
+    InvokerFunction m_invoker_func;
+    void* m_user_data_ptr;
+    Utils::Sink<void(const CppDataType&)> m_sink;
+  };
 
-    // Specialized handler for GameplayEvents
-    struct GameplayEventSubscriptionHandler : public BaseSubscriptionHandler {
-        using InvokerFunction = std::function<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&, void* user_data_ptr)>;
+  // Specialized handler for GameplayEvents
+  struct GameplayEventSubscriptionHandler : public BaseSubscriptionHandler {
+    using InvokerFunction = std::function<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&, void* user_data_ptr)>;
 
-        GameplayEventSubscriptionHandler(
-            Utils::Signal<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)>& signal,
-            InvokerFunction invoker_func,
-            void* user_data_ptr
-        ) : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal)
-        {
-            m_sink.template Connect<&GameplayEventSubscriptionHandler::OnEvent>(this);
-        }
+    GameplayEventSubscriptionHandler(Utils::Signal<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)>& signal, InvokerFunction invoker_func, void* user_data_ptr)
+        : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal) {
+      m_sink.template Connect<&GameplayEventSubscriptionHandler::OnEvent>(this);
+    }
 
-        void OnEvent(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data) {
-            m_invoker_func(event_id, cpp_data, m_user_data_ptr);
-        }
+    void OnEvent(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data) { m_invoker_func(event_id, cpp_data, m_user_data_ptr); }
 
-        InvokerFunction m_invoker_func;
-        void* m_user_data_ptr;
-        Utils::Sink<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)> m_sink;
-    };
+    InvokerFunction m_invoker_func;
+    void* m_user_data_ptr;
+    Utils::Sink<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)> m_sink;
+  };
 
   static void FillTelemetryApi(SPF_Telemetry_API* api);
 
@@ -91,7 +85,8 @@ class TelemetryApi {
   static void InvokeNavigationDataCallback(const SPF::Telemetry::SCS::NavigationData& cpp_data, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
   static void InvokeControlsCallback(const SPF::Telemetry::SCS::Controls& cpp_data, SPF_Telemetry_Controls_Callback callback, void* user_data);
   static void InvokeSpecialEventsCallback(const SPF::Telemetry::SCS::SpecialEvents& cpp_data, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
-  static void InvokeGameplayEventsCallback(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
+  static void InvokeGameplayEventsCallback(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data, SPF_Telemetry_GameplayEvents_Callback callback,
+                                           void* user_data);
   static void InvokeGearboxConstantsCallback(const SPF::Telemetry::SCS::GearboxConstants& cpp_data, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
 
   // --- Event Subscription (New RAII-based C-API Proxies) ---
@@ -125,10 +120,7 @@ class TelemetryApi {
   static void Tel_GetSpecialEvents(SPF_Telemetry_Handle* h, SPF_SpecialEvents* out_data, size_t struct_size);
   static void Tel_GetGameplayEvents(SPF_Telemetry_Handle* h, SPF_GameplayEvents* out_data, size_t struct_size);
   static void Tel_GetGearboxConstants(SPF_Telemetry_Handle* h, SPF_GearboxConstants* out_data, size_t struct_size);
-  static int  Tel_GetLastGameplayEventId(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
-
-
-
+  static int Tel_GetLastGameplayEventId(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
 };
 }  // namespace Modules::API
 SPF_NS_END

@@ -1,6 +1,12 @@
 #include "SPF/Modules/API/VehicleApi.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
-#include <Windows.h>
+#include "SPF/SPF_API/SPF_Vehicle_API.h"
+#include "SPF/Utils/Windows.hpp"
+
+#include <cstdint>
 
 SPF_NS_BEGIN
 namespace Modules::API {
@@ -34,9 +40,7 @@ void VehicleApi::FillVehicleApi(SPF_Vehicle_API* vehicle_api) {
 
 bool VehicleApi::T_Vehicle_IsReady() { return GameObjectVehicleService::GetInstance().AreAllFindersReady(); }
 
-SPF_VehicleHandle VehicleApi::T_Vehicle_GetPlayerVehicle() {
-  return reinterpret_cast<SPF_VehicleHandle>(GameObjectVehicleService::GetInstance().GetPlayerVehiclePtr());
-}
+SPF_VehicleHandle VehicleApi::T_Vehicle_GetPlayerVehicle() { return reinterpret_cast<SPF_VehicleHandle>(GameObjectVehicleService::GetInstance().GetPlayerVehiclePtr()); }
 
 SPF_VehicleHandle VehicleApi::T_Vehicle_GetVehicleById(int32_t id) {
   auto vehicles = GameObjectVehicleService::GetInstance().GetAllVehiclesFullInfo();
@@ -46,9 +50,7 @@ SPF_VehicleHandle VehicleApi::T_Vehicle_GetVehicleById(int32_t id) {
   return nullptr;
 }
 
-uint32_t VehicleApi::T_Vehicle_GetCount() {
-  return static_cast<uint32_t>(GameObjectVehicleService::GetInstance().GetAllVehiclesFullInfo().size());
-}
+uint32_t VehicleApi::T_Vehicle_GetCount() { return static_cast<uint32_t>(GameObjectVehicleService::GetInstance().GetAllVehiclesFullInfo().size()); }
 
 uint32_t VehicleApi::T_Vehicle_GetAllHandles(SPF_VehicleHandle* out_handles, uint32_t max_count) {
   if (!out_handles || max_count == 0) return 0;
@@ -61,25 +63,15 @@ uint32_t VehicleApi::T_Vehicle_GetAllHandles(SPF_VehicleHandle* out_handles, uin
   return count;
 }
 
-uintptr_t VehicleApi::T_Vehicle_GetTrafficManagerPtr() {
-  return GameObjectVehicleService::GetInstance().GetTrafficManagerAddr();
-}
+uintptr_t VehicleApi::T_Vehicle_GetTrafficManagerPtr() { return GameObjectVehicleService::GetInstance().GetTrafficManagerAddr(); }
 
-uintptr_t VehicleApi::T_Vehicle_GetLocalPlayerControllerPtr() {
-  return GameObjectVehicleService::GetInstance().GetLocalPlayerControllerAddr();
-}
+uintptr_t VehicleApi::T_Vehicle_GetLocalPlayerControllerPtr() { return GameObjectVehicleService::GetInstance().GetLocalPlayerControllerAddr(); }
 
-bool VehicleApi::T_Vehicle_AreAllOffsetsFound() {
-  return GameObjectVehicleService::GetInstance().AreAllFindersReady();
-}
+bool VehicleApi::T_Vehicle_AreAllOffsetsFound() { return GameObjectVehicleService::GetInstance().AreAllFindersReady(); }
 
-bool VehicleApi::T_Vehicle_IsFinderReady(const char* finderName) {
-  return GameObjectVehicleService::GetInstance().IsFinderReady(finderName);
-}
+bool VehicleApi::T_Vehicle_IsFinderReady(const char* finderName) { return GameObjectVehicleService::GetInstance().IsFinderReady(finderName); }
 
-bool VehicleApi::T_Vehicle_RefreshOffsets() {
-  return GameObjectVehicleService::GetInstance().TryFindAllOffsets();
-}
+bool VehicleApi::T_Vehicle_RefreshOffsets() { return GameObjectVehicleService::GetInstance().TryFindAllOffsets(); }
 
 int32_t VehicleApi::T_Vehicle_GetId(SPF_VehicleHandle h) {
   if (!h) return -1;
@@ -135,7 +127,7 @@ float VehicleApi::T_Vehicle_GetCurrentSpeed(SPF_VehicleHandle h) {
   if (!h) return 0.0f;
   auto& svc = GameObjectVehicleService::GetInstance();
   uintptr_t actor = reinterpret_cast<uintptr_t>(h);
-  
+
   // The sub-object (physics component) is inlined at the offset.
   uintptr_t subObj = actor + svc.GetVehicleSubObjectOffset();
   if (IsBadReadPtr((void*)subObj, sizeof(uintptr_t))) return 0.0f;
@@ -143,10 +135,10 @@ float VehicleApi::T_Vehicle_GetCurrentSpeed(SPF_VehicleHandle h) {
   // Safe reading of VTable (vptr is at the start of the sub-object)
   uintptr_t vtable = *reinterpret_cast<uintptr_t*>(subObj);
   if (IsBadReadPtr((void*)vtable, sizeof(uintptr_t))) return 0.0f;
-  
+
   uintptr_t fnAddr = vtable + svc.GetVtableGetCurrentSpeedOffset();
   if (IsBadReadPtr((void*)fnAddr, sizeof(uintptr_t))) return 0.0f;
-  
+
   using GetSpeedFn = float (*)(uintptr_t);
   auto fn = reinterpret_cast<GetSpeedFn>(*reinterpret_cast<uintptr_t*>(fnAddr));
   return fn ? fn(subObj) : 0.0f;
@@ -156,7 +148,7 @@ float VehicleApi::T_Vehicle_GetAcceleration(SPF_VehicleHandle h) {
   if (!h) return 0.0f;
   auto& svc = GameObjectVehicleService::GetInstance();
   uintptr_t actor = reinterpret_cast<uintptr_t>(h);
-  
+
   // The sub-object (physics component) is inlined at the offset.
   uintptr_t subObj = actor + svc.GetVehicleSubObjectOffset();
   if (IsBadReadPtr((void*)subObj, sizeof(uintptr_t))) return 0.0f;
@@ -164,10 +156,10 @@ float VehicleApi::T_Vehicle_GetAcceleration(SPF_VehicleHandle h) {
   // Safe reading of VTable (vptr is at the start of the sub-object)
   uintptr_t vtable = *reinterpret_cast<uintptr_t*>(subObj);
   if (IsBadReadPtr((void*)vtable, sizeof(uintptr_t))) return 0.0f;
-  
+
   uintptr_t fnAddr = vtable + svc.GetVtableGetAccelerationOffset();
   if (IsBadReadPtr((void*)fnAddr, sizeof(uintptr_t))) return 0.0f;
-  
+
   using GetAccelFn = float (*)(uintptr_t);
   auto fn = reinterpret_cast<GetAccelFn>(*reinterpret_cast<uintptr_t*>(fnAddr));
   return fn ? fn(subObj) : 0.0f;

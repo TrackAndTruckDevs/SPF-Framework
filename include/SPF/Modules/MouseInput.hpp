@@ -1,9 +1,18 @@
 #pragma once
 
-#include <SPF/Modules/IBindableInput.hpp>
-#include <SPF/System/MouseButtonMapping.hpp>
-#include <SPF/Input/InputEvents.hpp>
-#include <nlohmann/json.hpp>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
+#include "SPF/System/MouseButtonMapping.hpp"
+
+#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
+
+#include <cstdint>
+#include <map>
+#include <set>
+#include <string>
 
 SPF_NS_BEGIN
 namespace Modules {
@@ -16,24 +25,24 @@ namespace Modules {
  * and provides logic to check for event triggers and validate the binding.
  */
 class MouseInput : public IBindableInput {
-public:
-    /**
-     * @brief Constructs a MouseInput object from a JSON configuration.
-     * @param config The JSON object defining the binding (e.g., {"type": "mouse", "button": "MOUSE_MIDDLE"}).
-     */
-    explicit MouseInput(const nlohmann::ordered_json& config);
+ public:
+  /**
+   * @brief Constructs a MouseInput object from a JSON configuration.
+   * @param config The JSON object defining the binding (e.g., {"type": "mouse", "button": "MOUSE_MIDDLE"}).
+   */
+  explicit MouseInput(const nlohmann::ordered_json& config);
 
-    // --- IBindableInput Overrides ---
-    
-    bool IsTriggeredBy(const Input::MouseButtonEvent& event) const override;
-    
-    nlohmann::ordered_json ToJson() const override;
-    
-    std::string GetDisplayName() const override;
+  // --- IBindableInput Overrides ---
 
-    /**
-     * @brief Validates the binding. A binding is invalid if it uses an unknown button or the reserved Left Mouse Button.
-     */
+  bool IsTriggeredBy(const Input::MouseButtonEvent& event) const override;
+
+  nlohmann::ordered_json ToJson() const override;
+
+  std::string GetDisplayName() const override;
+
+  /**
+   * @brief Validates the binding. A binding is invalid if it uses an unknown button or the reserved Left Mouse Button.
+   */
   bool IsValid() const override;
   InputType GetType() const override { return InputType::Mouse; }
   uint32_t GetHardwareCode() const override;
@@ -43,11 +52,11 @@ public:
   bool IsSameAs(const IBindableInput& other) const override;
   float GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const override;
 
-private:
-    System::MouseButton m_button;
-    // Note: pressType is handled by InputManager's state machine, not stored here,
-    // similar to KeyboardInput. It is part of the binding configuration, not the input itself.
+ private:
+  System::MouseButton m_button;
+  // Note: pressType is handled by InputManager's state machine, not stored here,
+  // similar to KeyboardInput. It is part of the binding configuration, not the input itself.
 };
 
-} // namespace Modules
+}  // namespace Modules
 SPF_NS_END

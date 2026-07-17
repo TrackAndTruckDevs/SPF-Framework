@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Windows.h>
-#include <Xinput.h>
+#include "SPF/Namespace.hpp"
 
 #include "SPF/Utils/Signal.hpp"
-#include "SPF/Namespace.hpp"
+
+#include <minwindef.h>
+#include <xinput.h>
 
 SPF_NS_BEGIN
 

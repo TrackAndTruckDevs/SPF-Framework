@@ -57,7 +57,7 @@ enum class GamepadButton {
   POV1Down,
   POV1Left,
   POV1Right,
-  
+
   POV2Up,
   POV2Down,
   POV2Left,

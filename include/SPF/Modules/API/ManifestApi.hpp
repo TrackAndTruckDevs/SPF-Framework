@@ -1,8 +1,9 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
-#include "SPF/Config/ManifestData.hpp"        // For the C++ ManifestData structure
-#include "SPF/SPF_API/SPF_Manifest_API.h"   // For SPF_GetManifestAPI_Func and Builder types
+
+#include "SPF/Config/ManifestData.hpp"     // For the C++ ManifestData structure
+#include "SPF/SPF_API/SPF_Manifest_API.h"  // For SPF_GetManifestAPI_Func and Builder types
 
 #include <string>
 
@@ -16,7 +17,7 @@ class ManifestApi {
  public:
   /**
    * @brief Invokes the plugin's builder function to populate a C++ ManifestData object.
-   * 
+   *
    * @param pGetManifestFunc Pointer to the plugin's exported `SPF_GetManifestAPI` function.
    * @param pluginName The name of the plugin (used for initial fallback and logging).
    * @return A fully populated C++ ManifestData object.

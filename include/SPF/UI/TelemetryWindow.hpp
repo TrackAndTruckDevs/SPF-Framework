@@ -1,25 +1,27 @@
 #pragma once
 
-#include "SPF/UI/BaseWindow.hpp"
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Telemetry/SCS/Common.hpp"
-#include "SPF/Telemetry/SCS/Truck.hpp"
-#include "SPF/Telemetry/SCS/Trailer.hpp"
-#include "SPF/Telemetry/SCS/Job.hpp"
-#include "SPF/Telemetry/SCS/Navigation.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/SCS/Events.hpp"
 #include "SPF/Telemetry/SCS/Gearbox.hpp"
+#include "SPF/Telemetry/SCS/Job.hpp"
+#include "SPF/Telemetry/SCS/Navigation.hpp"
+#include "SPF/Telemetry/SCS/Trailer.hpp"
+#include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Utils/Signal.hpp"
+
 #include <string>
 #include <vector>
+
 
 SPF_NS_BEGIN
 
 namespace Modules {
 class ITelemetryService;
 }
-
-
 
 namespace UI {
 class TelemetryWindow : public BaseWindow {
@@ -79,7 +81,7 @@ class TelemetryWindow : public BaseWindow {
   Telemetry::SCS::GameplayEvents m_gameplayEvents;
   Telemetry::SCS::GearboxConstants m_gearboxConstants;
   std::string m_lastGameplayEventId;
-  
+
   // Localization keys
   std::string m_locTabGame;
   std::string m_locTabJob;

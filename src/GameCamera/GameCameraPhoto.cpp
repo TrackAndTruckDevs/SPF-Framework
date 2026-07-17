@@ -1,21 +1,26 @@
 #include "SPF/GameCamera/GameCameraPhoto.hpp"
+
+#include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
+#include <cstdint>
+
+
 SPF_NS_BEGIN
 namespace GameCamera {
 
-GameCameraPhoto::GameCameraPhoto() {
-}
+GameCameraPhoto::GameCameraPhoto() {}
 
 void GameCameraPhoto::OnActivate() {
   auto& hooks = Hooks::CameraHooks::GetInstance();
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  
+
   // GetCameraManager() handles pointer dereferencing and version-specific adjustments.
   uintptr_t pStandardManager = gameData.GetCameraManager();
-  
+
   if (hooks.GetGetCameraObjectFunc() && pStandardManager) {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
   }
@@ -28,9 +33,7 @@ void GameCameraPhoto::OnActivate() {
   }
 }
 
-void GameCameraPhoto::OnDeactivate() {
-  m_pCameraObject = nullptr;
-}
+void GameCameraPhoto::OnDeactivate() { m_pCameraObject = nullptr; }
 
 void GameCameraPhoto::Update(float dt) {
   if (!m_pCameraObject) return;
@@ -48,26 +51,17 @@ void GameCameraPhoto::ResetToDefaults() {
   // Apply defaults
 }
 
-bool GameCameraPhoto::GetLiveState(float* out_pitch, float* out_yaw, float* out_roll, float* out_zoom) const {
-  return false;
-}
+bool GameCameraPhoto::GetLiveState(float* out_pitch, float* out_yaw, float* out_roll, float* out_zoom) const { return false; }
 
-void GameCameraPhoto::SetLiveState(float pitch, float yaw, float roll, float zoom) {
-}
+void GameCameraPhoto::SetLiveState(float pitch, float yaw, float roll, float zoom) {}
 
-bool GameCameraPhoto::GetPosition(float* out_x, float* out_y, float* out_z) const {
-  return false;
-}
+bool GameCameraPhoto::GetPosition(float* out_x, float* out_y, float* out_z) const { return false; }
 
-void GameCameraPhoto::SetPosition(float x, float y, float z) {
-}
+void GameCameraPhoto::SetPosition(float x, float y, float z) {}
 
-bool GameCameraPhoto::GetFov(float* out_fov) const {
-  return false;
-}
+bool GameCameraPhoto::GetFov(float* out_fov) const { return false; }
 
-void GameCameraPhoto::SetFov(float fov) {
-}
+void GameCameraPhoto::SetFov(float fov) {}
 
 }  // namespace GameCamera
 SPF_NS_END

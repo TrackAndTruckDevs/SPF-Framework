@@ -1,76 +1,63 @@
 #include "SPF/Modules/PluginManager.hpp"
-#include "imgui.h"
 
-#include "SPF/Utils/PatternFinder.hpp"
-#include "SPF/Utils/Vec3.hpp"
+#include "SPF/Namespace.hpp"
+
+#include "SPF/Config/IConfigService.hpp"
+#include "SPF/Config/ManifestData.hpp"
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"  // For registering hooks
-#include "SPF/Hooks/PluginHook.hpp"   // For creating proxy objects
-#include "SPF/GameConsole/GameConsole.hpp"  // For ExecuteCommand trampoline
-#include "SPF/Hooks/CameraHooks.hpp"  // For Camera API trampolines
-#include "SPF/Data/GameData/GameDataCameraService.hpp"
-#include "SPF/GameCamera/GameCameraManager.hpp"  // For Camera API trampolines
-#include "SPF/GameCamera/GameCameraInterior.hpp"
-#include "SPF/GameCamera/GameCameraBehind.hpp"
-#include "SPF/GameCamera/GameCameraTop.hpp"
-#include "SPF/GameCamera/GameCameraCabin.hpp"
-#include "SPF/GameCamera/GameCameraWindow.hpp"
-#include "SPF/GameCamera/GameCameraBumper.hpp"
-#include "SPF/GameCamera/GameCameraWheel.hpp"
-#include "SPF/GameCamera/GameCameraTV.hpp"
-#include "SPF/GameCamera/GameCameraFree.hpp"
+#include "SPF/Hooks/IHook.hpp"
+#include "SPF/Hooks/PluginHook.hpp"  // For creating proxy objects
+#include "SPF/Localization/LocalizationManager.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/API/CameraApi.hpp"
-#include "SPF/Modules/API/VehicleApi.hpp"
-#include "SPF/Modules/API/GameWorldApi.hpp"
-#include "SPF/Modules/API/UIApi.hpp"
-#include "SPF/Modules/API/LoggerApi.hpp"
-#include "SPF/Modules/API/LocalizationApi.hpp"
 #include "SPF/Modules/API/ConfigApi.hpp"
-#include "SPF/Modules/API/KeyBindsApi.hpp"
-#include "SPF/Modules/API/TelemetryApi.hpp"
-#include "SPF/Modules/API/VirtualInputApi.hpp"
-#include "SPF/Modules/API/ManifestApi.hpp"
+#include "SPF/Modules/API/EnvironmentApi.hpp"
+#include "SPF/Modules/API/FormattingApi.hpp"
 #include "SPF/Modules/API/GameConsoleApi.hpp"
+#include "SPF/Modules/API/GameLogApi.hpp"
+#include "SPF/Modules/API/GameWorldApi.hpp"
+#include "SPF/Modules/API/HooksApi.hpp"
+#include "SPF/Modules/API/JsonIOApi.hpp"
 #include "SPF/Modules/API/JsonReaderApi.hpp"
 #include "SPF/Modules/API/JsonWriterApi.hpp"
-#include "SPF/Modules/API/JsonIOApi.hpp"
-#include "SPF/Modules/API/HooksApi.hpp"
-#include "SPF/Modules/API/FormattingApi.hpp"
-#include "SPF/Modules/API/GameLogApi.hpp"
-#include "SPF/Modules/API/EnvironmentApi.hpp"
-#include "SPF/Hooks/IHook.hpp"
-
+#include "SPF/Modules/API/KeyBindsApi.hpp"
+#include "SPF/Modules/API/LocalizationApi.hpp"
+#include "SPF/Modules/API/LoggerApi.hpp"
+#include "SPF/Modules/API/ManifestApi.hpp"
+#include "SPF/Modules/API/TelemetryApi.hpp"
+#include "SPF/Modules/API/UIApi.hpp"
+#include "SPF/Modules/API/VehicleApi.hpp"
+#include "SPF/Modules/API/VirtualInputApi.hpp"
 #include "SPF/Modules/HandleManager.hpp"
-#include "SPF/Modules/KeyBindsManager.hpp"
-#include "SPF/UI/UIManager.hpp"
-#include "SPF/UI/PluginProxyWindow.hpp"
-#include "SPF/Handles/LocalizationHandle.hpp"
-#include "SPF/Handles/ConfigHandle.hpp"
-#include "SPF/Handles/LoggerHandle.hpp"
-#include "SPF/Handles/KeyBindsHandle.hpp"
-#include "SPF/Handles/WindowHandle.hpp"
-#include "SPF/Handles/TelemetryHandle.hpp"
-#include "SPF/Handles/InputDeviceHandle.hpp"
-#include "SPF/Modules/ITelemetryService.hpp"
 #include "SPF/Modules/IInputService.hpp"
-#include "SPF/Input/SCS/VirtualDevice.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/SPF_API/SPF_Config_API.h"
+#include "SPF/SPF_API/SPF_Hooks_API.h"
+#include "SPF/SPF_API/SPF_Manifest_API.h"
+#include "SPF/SPF_API/SPF_Plugin.h"
+#include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/System/PathManager.hpp"
-#include "SPF/Localization/LocalizationManager.hpp"
-#include "SPF/Events/EventManager.hpp"
-#include "SPF/Events/PluginEvents.hpp"
-#include "SPF/Config/IConfigService.hpp"
+#include "SPF/UI/UIManager.hpp"
+#include "SPF/Utils/SEHGuard.hpp"
+#include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <cctype>
-
+#include <cstring>
+#include <errhandlingapi.h>
+#include <exception>
 #include <filesystem>
-#include <fstream>
-#include <Windows.h>
-#include <vector>
-#include <map>
 #include <fmt/core.h>
-#include <nlohmann/json.hpp>
+#include <libloaderapi.h>
+#include <map>
+#include <memory>
+#include <minwindef.h>
+#include <string>
+#include <utility>
+#include <vector>
 
 using SPF_GetPlugin_t = bool (*)(SPF_Plugin_Exports*);
 
@@ -82,9 +69,7 @@ using namespace SPF::System;
 using namespace SPF::Config;
 using namespace SPF::UI;
 using namespace SPF::Events;
-using namespace SPF::GameCamera;
 using namespace SPF::Utils;
-using namespace SPF::Data::GameData;
 using namespace SPF::Modules::API;
 using namespace SPF::Hooks;
 using namespace SPF::Telemetry::SCS;
@@ -113,46 +98,45 @@ std::vector<std::string> PluginManager::GetDiscoveredPluginNames() const {
 }
 
 void PluginManager::LoadAllDiscoveredPluginManifests() {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-    if (!logger) return;
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (!logger) return;
 
-    logger->Info("--- Loading all discovered plugin manifests (C-API Method) ---");
+  logger->Info("--- Loading all discovered plugin manifests (C-API Method) ---");
 
-    for (const auto& [pluginName, discoveredPlugin] : m_discoveredPlugins) {
-        logger->Info("  -> Attempting to load manifest for plugin '{}' from '{}'", pluginName, discoveredPlugin.dllPath.string());
+  for (const auto& [pluginName, discoveredPlugin] : m_discoveredPlugins) {
+    logger->Info("  -> Attempting to load manifest for plugin '{}' from '{}'", pluginName, discoveredPlugin.dllPath.string());
 
-        HMODULE handle = LoadLibraryW(discoveredPlugin.dllPath.c_str());
-        if (!handle) {
-            logger->Error("  -> Failed to temporarily load library for manifest extraction. Win32 Error: {}", GetLastError());
-            continue;
-        }
-
-        auto getManifestApiFunc = reinterpret_cast<SPF_GetManifestAPI_Func>(GetProcAddress(handle, "SPF_GetManifestAPI"));
-        if (getManifestApiFunc) {
-            try {
-                // Use the new Builder-based ManifestApi to construct the C++ manifest
-                SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::BuildManifest(getManifestApiFunc, pluginName);
-
-                // Register the C++ manifest
-                m_configService->RegisterPluginManifest(pluginName, cppManifest);
-                logger->Info("    -> Successfully built and registered manifest for plugin '{}'.", pluginName);
-            } catch (const std::exception& e) {
-                logger->Error("    -> An exception occurred while building manifest for '{}'. Error: {}", pluginName, e.what());
-            } catch (...) {
-                logger->Error("    -> An unknown exception occurred while building manifest for '{}'.", pluginName);
-            }
-        } else {
-            logger->Debug("    -> SPF_GetManifestAPI not found for plugin '{}'. This plugin does not provide an in-code manifest.", pluginName);
-        }
-
-        FreeLibrary(handle);
-        logger->Info("  -> Unloaded library for plugin '{}'", pluginName);
+    HMODULE handle = LoadLibraryW(discoveredPlugin.dllPath.c_str());
+    if (!handle) {
+      logger->Error("  -> Failed to temporarily load library for manifest extraction. Win32 Error: {}", GetLastError());
+      continue;
     }
-    logger->Info("--- Finished loading all discovered plugin manifests ---");
+
+    auto getManifestApiFunc = reinterpret_cast<SPF_GetManifestAPI_Func>(GetProcAddress(handle, "SPF_GetManifestAPI"));
+    if (getManifestApiFunc) {
+      try {
+        // Use the new Builder-based ManifestApi to construct the C++ manifest
+        SPF::Config::ManifestData cppManifest = Modules::API::ManifestApi::BuildManifest(getManifestApiFunc, pluginName);
+
+        // Register the C++ manifest
+        m_configService->RegisterPluginManifest(pluginName, cppManifest);
+        logger->Info("    -> Successfully built and registered manifest for plugin '{}'.", pluginName);
+      } catch (const std::exception& e) {
+        logger->Error("    -> An exception occurred while building manifest for '{}'. Error: {}", pluginName, e.what());
+      } catch (...) {
+        logger->Error("    -> An unknown exception occurred while building manifest for '{}'.", pluginName);
+      }
+    } else {
+      logger->Debug("    -> SPF_GetManifestAPI not found for plugin '{}'. This plugin does not provide an in-code manifest.", pluginName);
+    }
+
+    FreeLibrary(handle);
+    logger->Info("  -> Unloaded library for plugin '{}'", pluginName);
+  }
+  logger->Info("--- Finished loading all discovered plugin manifests ---");
 }
 
-void PluginManager::Init(EventManager& eventManager, HandleManager& handleManager, IConfigService& configService, KeyBindsManager& keyBindsManager, UIManager& uiManager,
-                         ITelemetryService& telemetryService, IInputService& inputService) {
+void PluginManager::Init(EventManager& eventManager, HandleManager& handleManager, IConfigService& configService, KeyBindsManager& keyBindsManager, UIManager& uiManager, ITelemetryService& telemetryService, IInputService& inputService) {
   m_eventManager = &eventManager;
   m_handleManager = &handleManager;
   m_configService = &configService;
@@ -281,7 +265,7 @@ void PluginManager::LoadPlugin(const std::string& pluginName) {
   }
 
   m_eventManager->System.OnPluginWillBeLoaded.Call({plugin->name});
-  
+
   if (!SafeCallOnLoad(*plugin, &m_loadAPI)) {
     logger->Error("  -> Plugin failed during Load sequence. Aborting.");
     FreeLibrary(handle);
@@ -305,7 +289,7 @@ void PluginManager::ActivatePlugins() {
   m_isLateInitDone = true;
 
   logger->Info("--- Activating All Loaded Plugins (OnActivated stage) ---");
-  
+
   // Create a copy of keys to avoid iterator invalidation if plugins load others (unlikely but safe)
   std::vector<std::string> pluginNames;
   for (const auto& [name, plugin] : m_plugins) {
@@ -315,7 +299,7 @@ void PluginManager::ActivatePlugins() {
   for (const auto& name : pluginNames) {
     ActivatePlugin(name);
   }
-  
+
   logger->Info("--- Finished Activating Plugins ---");
 }
 
@@ -330,18 +314,18 @@ void PluginManager::ActivatePlugin(const std::string& pluginName) {
   auto syncSetting = m_configService->GetValue("framework", "localization.sync_plugin_languages", false);
   bool shouldSync = false;
   if (syncSetting.is_boolean()) {
-      shouldSync = syncSetting.get<bool>();
+    shouldSync = syncSetting.get<bool>();
   } else if (syncSetting.is_object() && syncSetting.contains("_value") && syncSetting["_value"].is_boolean()) {
-      shouldSync = syncSetting["_value"].get<bool>();
+    shouldSync = syncSetting["_value"].get<bool>();
   }
 
   if (shouldSync) {
-      auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
-      std::string frameworkLang = l10n.GetComponentLanguage("framework");
-      if (l10n.LanguageFileExists(pluginName, frameworkLang)) {
-          logger->Info("  -> Auto-syncing plugin '{}' language to framework: '{}'", pluginName, frameworkLang);
-          m_configService->SetValue(pluginName, "localization.language", frameworkLang);
-      }
+    auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
+    std::string frameworkLang = l10n.GetComponentLanguage("framework");
+    if (l10n.LanguageFileExists(pluginName, frameworkLang)) {
+      logger->Info("  -> Auto-syncing plugin '{}' language to framework: '{}'", pluginName, frameworkLang);
+      m_configService->SetValue(pluginName, "localization.language", frameworkLang);
+    }
   }
 
   if (plugin.exports.OnActivated) {
@@ -475,8 +459,6 @@ void PluginManager::OnGameWorldReady() {
   }
 }
 
-
-
 void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath) {
   auto it = m_plugins.find(pluginName);
   if (it != m_plugins.end()) {
@@ -492,16 +474,16 @@ void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, c
 void PluginManager::NotifyAllPluginsOfLanguageChange(const std::string& langCode) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
   logger->Info("Broadcasting language change to all plugins: '{}'", langCode);
-  
+
   auto& l10n = SPF::Localization::LocalizationManager::GetInstance();
 
   for (auto& [name, plugin] : m_plugins) {
     // 1. Update Configuration (UI & Persistence)
     // Only update config if the plugin actually supports this language
     if (l10n.LanguageFileExists(name, langCode)) {
-        // This will trigger OnSettingWasChanged -> LocalizationManager::OnSettingChanged -> SetComponentLanguage
-        // So we don't need to call SetComponentLanguage manually here.
-        m_configService->SetValue(name, "localization.language", langCode);
+      // This will trigger OnSettingWasChanged -> LocalizationManager::OnSettingChanged -> SetComponentLanguage
+      // So we don't need to call SetComponentLanguage manually here.
+      m_configService->SetValue(name, "localization.language", langCode);
     }
 
     // 2. Notify C-API (Plugin Logic)
@@ -554,7 +536,7 @@ SPF_Hook_Handle* PluginManager::T_Hooks_Register(const char* pluginName, const c
 
   // If the main hook installation has already run, install this new hook immediately.
   if (self.m_isLateInitDone) {
-      Hooks::HookManager::GetInstance().InstallFeatureHook(hookPtr);
+    Hooks::HookManager::GetInstance().InstallFeatureHook(hookPtr);
   }
 
   // Store it for lifetime management and return its raw pointer as a handle
@@ -580,7 +562,7 @@ void PluginManager::FillAPIs() {
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
   API::JsonWriterApi::FillJsonWriterApi(&m_jsonWriterAPI);
   API::JsonIOApi::FillJsonIOApi(&m_jsonIOAPI);
-  
+
   // Fill Environment API
   API::EnvironmentApi::FillEnvironmentApi(&m_environmentAPI);
 
@@ -595,207 +577,151 @@ void PluginManager::FillAPIs() {
   m_loadAPI.json_writer = &m_jsonWriterAPI;
   m_loadAPI.json_io = &m_jsonIOAPI;
 
-    // --- Fill Core API (all services) ---
-    m_coreAPI.logger = &m_loggerAPI;
-    m_coreAPI.localization = &m_localizationAPI;
-    m_coreAPI.config = &m_configAPI;
-    m_coreAPI.keybinds = &m_keybindsAPI;
-    m_coreAPI.ui = &m_uiAPI;
-    m_coreAPI.telemetry = &m_telemetryAPI;
-    m_coreAPI.input = &m_inputAPI;
-    m_coreAPI.hooks = &m_hooksAPI;
-    m_coreAPI.camera = &m_cameraAPI;
-    m_coreAPI.console = &m_gameConsoleAPI;
-    m_coreAPI.formatting = &m_formattingAPI;
-    m_coreAPI.gamelog = &m_gameLogAPI;
-    m_coreAPI.json_reader = &m_jsonReaderAPI;
-    m_coreAPI.vehicle = &m_vehicleAPI;
-    m_coreAPI.gameworld = &m_gameworldAPI;
-    m_coreAPI.environment = &m_environmentAPI;
-    m_coreAPI.json_writer = &m_jsonWriterAPI;
-    m_coreAPI.json_io = &m_jsonIOAPI;
+  // --- Fill Core API (all services) ---
+  m_coreAPI.logger = &m_loggerAPI;
+  m_coreAPI.localization = &m_localizationAPI;
+  m_coreAPI.config = &m_configAPI;
+  m_coreAPI.keybinds = &m_keybindsAPI;
+  m_coreAPI.ui = &m_uiAPI;
+  m_coreAPI.telemetry = &m_telemetryAPI;
+  m_coreAPI.input = &m_inputAPI;
+  m_coreAPI.hooks = &m_hooksAPI;
+  m_coreAPI.camera = &m_cameraAPI;
+  m_coreAPI.console = &m_gameConsoleAPI;
+  m_coreAPI.formatting = &m_formattingAPI;
+  m_coreAPI.gamelog = &m_gameLogAPI;
+  m_coreAPI.json_reader = &m_jsonReaderAPI;
+  m_coreAPI.vehicle = &m_vehicleAPI;
+  m_coreAPI.gameworld = &m_gameworldAPI;
+  m_coreAPI.environment = &m_environmentAPI;
+  m_coreAPI.json_writer = &m_jsonWriterAPI;
+  m_coreAPI.json_io = &m_jsonIOAPI;
+}
+
+// --- Safe Invocation Helpers (SEH-wrapped) ---
+
+namespace {
+template <typename F>
+static bool InvokeInternal(F&& fn, DWORD* outEx) {
+  return Utils::InvokeSafe(std::forward<F>(fn), outEx);
+}
+}  // namespace
+
+bool PluginManager::SafeCallOnLoad(LoadedPlugin& plugin, SPF_Load_API* api) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnLoad() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnLoad) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnLoad(api); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' CRITICAL FAILURE: Crashed during OnLoad() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    return false;
   }
-  
-  // --- Safe Invocation Helpers (SEH-wrapped) ---
-  
-  namespace {
-  // Internal helpers with NO C++ objects to satisfy MSVC C2712 (__try vs object unwinding)
-  static bool InvokeOnLoadInternal(void (*func)(const SPF_Load_API*), const SPF_Load_API* api, DWORD* outExceptionCode) {
-      __try {
-          func(api);
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnActivated(LoadedPlugin& plugin, SPF_Core_API* api) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnActivated() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnActivated) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnActivated(api); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' CRITICAL FAILURE: Crashed during OnActivated() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnActivated = nullptr;
+    return false;
   }
-  
-  static bool InvokeOnActivatedInternal(void (*func)(const SPF_Core_API*), const SPF_Core_API* api, DWORD* outExceptionCode) {
-      __try {
-          func(api);
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnRegisterUI(LoadedPlugin& plugin, SPF_UI_API* api) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnRegisterUI() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnRegisterUI) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnRegisterUI(api); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnRegisterUI() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnRegisterUI = nullptr;
+    return false;
   }
-  
-  static bool InvokeOnRegisterUIInternal(void (*func)(SPF_UI_API*), SPF_UI_API* api, DWORD* outExceptionCode) {
-      __try {
-          func(api);
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnUnload(LoadedPlugin& plugin) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnUnload() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnUnload) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnUnload(); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnUnload() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnUnload = nullptr;
+    return false;
   }
-  
-  static bool InvokeSimpleInternal(void (*func)(), DWORD* outExceptionCode) {
-      __try {
-          func();
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnUpdate(LoadedPlugin& plugin) {
+  if (!plugin.exports.OnUpdate) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnUpdate(); }, &exceptionCode)) {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnUpdate() (Exception: 0x{:08X}). OnUpdate has been disabled.", plugin.name, exceptionCode);
+    plugin.exports.OnUpdate = nullptr;
+    return false;
   }
-  
-  static bool InvokeOnSettingChangedInternal(void (*func)(SPF_Config_Handle*, const char*), SPF_Config_Handle* handle, const char* keyPath, DWORD* outExceptionCode) {
-      __try {
-          func(handle, keyPath);
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnGameWorldReady(LoadedPlugin& plugin) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnGameWorldReady() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnGameWorldReady) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnGameWorldReady(); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnGameWorldReady() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnGameWorldReady = nullptr;
+    return false;
   }
-  
-  static bool InvokeOnLanguageChangedInternal(void (*func)(const char*), const char* langCode, DWORD* outExceptionCode) {
-      __try {
-          func(langCode);
-          return true;
-      }
-      __except (*outExceptionCode = GetExceptionCode(), EXCEPTION_EXECUTE_HANDLER) {
-          return false;
-      }
+  return true;
+}
+
+bool PluginManager::SafeCallOnSettingChanged(LoadedPlugin& plugin, SPF_Config_Handle* handle, const char* keyPath) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnSettingChanged() for plugin '{}' (Key: {})...", plugin.name, keyPath ? keyPath : "NULL");
+
+  if (!plugin.exports.OnSettingChanged) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnSettingChanged(handle, keyPath); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnSettingChanged() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnSettingChanged = nullptr;
+    return false;
   }
-  } // namespace
-  
-  bool PluginManager::SafeCallOnLoad(LoadedPlugin& plugin, SPF_Load_API* api) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnLoad() for plugin '{}'...", plugin.name);
-  
-      if (!plugin.exports.OnLoad) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeOnLoadInternal(plugin.exports.OnLoad, api, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' CRITICAL FAILURE: Crashed during OnLoad() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          return false;
-      }
-      return true;
+  return true;
+}
+
+bool PluginManager::SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* langCode) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnLanguageChanged() for plugin '{}' (Lang: {})...", plugin.name, langCode ? langCode : "NULL");
+
+  if (!plugin.exports.OnLanguageChanged) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnLanguageChanged(langCode); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnLanguageChanged() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnLanguageChanged = nullptr;
+    return false;
   }
-  
-  bool PluginManager::SafeCallOnActivated(LoadedPlugin& plugin, SPF_Core_API* api) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnActivated() for plugin '{}'...", plugin.name);
-  
-      if (!plugin.exports.OnActivated) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeOnActivatedInternal(plugin.exports.OnActivated, api, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' CRITICAL FAILURE: Crashed during OnActivated() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnActivated = nullptr; 
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnRegisterUI(LoadedPlugin& plugin, SPF_UI_API* api) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnRegisterUI() for plugin '{}'...", plugin.name);
-  
-      if (!plugin.exports.OnRegisterUI) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeOnRegisterUIInternal(plugin.exports.OnRegisterUI, api, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnRegisterUI() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnRegisterUI = nullptr;
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnUnload(LoadedPlugin& plugin) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnUnload() for plugin '{}'...", plugin.name);
-  
-      if (!plugin.exports.OnUnload) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeSimpleInternal(plugin.exports.OnUnload, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnUnload() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnUnload = nullptr;
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnUpdate(LoadedPlugin& plugin) {
-      if (!plugin.exports.OnUpdate) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeSimpleInternal(plugin.exports.OnUpdate, &exceptionCode)) {
-          auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnUpdate() (Exception: 0x{:08X}). OnUpdate has been disabled.", plugin.name, exceptionCode);
-          plugin.exports.OnUpdate = nullptr; 
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnGameWorldReady(LoadedPlugin& plugin) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnGameWorldReady() for plugin '{}'...", plugin.name);
-  
-      if (!plugin.exports.OnGameWorldReady) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeSimpleInternal(plugin.exports.OnGameWorldReady, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnGameWorldReady() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnGameWorldReady = nullptr;
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnSettingChanged(LoadedPlugin& plugin, SPF_Config_Handle* handle, const char* keyPath) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnSettingChanged() for plugin '{}' (Key: {})...", plugin.name, keyPath ? keyPath : "NULL");
-  
-      if (!plugin.exports.OnSettingChanged) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeOnSettingChangedInternal(plugin.exports.OnSettingChanged, handle, keyPath, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnSettingChanged() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnSettingChanged = nullptr;
-          return false;
-      }
-      return true;
-  }
-  
-  bool PluginManager::SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* langCode) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
-      if (logger) logger->Debug("  -> [SafeCall] Calling OnLanguageChanged() for plugin '{}' (Lang: {})...", plugin.name, langCode ? langCode : "NULL");
-  
-      if (!plugin.exports.OnLanguageChanged) return true;
-  
-      DWORD exceptionCode = 0;
-      if (!InvokeOnLanguageChangedInternal(plugin.exports.OnLanguageChanged, langCode, &exceptionCode)) {
-          if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnLanguageChanged() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
-          plugin.exports.OnLanguageChanged = nullptr;
-          return false;
-      }
-      return true;
-  }  }  // namespace Modules
-  SPF_NS_END  // namespace Modules
-  
+  return true;
+}
+}  // namespace Modules
+SPF_NS_END  // namespace Modules

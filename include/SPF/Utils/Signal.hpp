@@ -1,11 +1,12 @@
 #pragma once
 
-#include <vector>
-#include <algorithm>
-
 #include "SPF/Namespace.hpp"
 
 #include "Delegate.hpp"
+
+#include <algorithm>
+#include <vector>
+
 
 SPF_NS_BEGIN
 

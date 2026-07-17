@@ -1,8 +1,10 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+
+#include "imgui.h"
+
 #include <md4c.h>
-#include <imgui.h>
 #include <string>
 #include <vector>
 
@@ -15,76 +17,76 @@ namespace UI {
  * @details This implementation provides full control over spacing, fonts, and custom colors.
  */
 class MarkdownRenderer {
-public:
-    MarkdownRenderer();
-    ~MarkdownRenderer() = default;
+ public:
+  MarkdownRenderer();
+  ~MarkdownRenderer() = default;
 
-    /**
-     * @brief Renders the provided markdown text to the current ImGui window.
-     */
-    void Render(const std::string& markdownText);
+  /**
+   * @brief Renders the provided markdown text to the current ImGui window.
+   */
+  void Render(const std::string& markdownText);
 
-private:
-    // --- Rendering Context ---
-    enum class AlertType {
-        None,
-        Note,      // [!NOTE] -> Blue
-        Tip,       // [!TIP] -> Green
-        Important, // [!IMPORTANT] -> Purple
-        Warning,   // [!WARNING] -> Orange/Gold
-        Caution    // [!CAUTION] -> Red
-    };
+ private:
+  // --- Rendering Context ---
+  enum class AlertType {
+    None,
+    Note,       // [!NOTE] -> Blue
+    Tip,        // [!TIP] -> Green
+    Important,  // [!IMPORTANT] -> Purple
+    Warning,    // [!WARNING] -> Orange/Gold
+    Caution     // [!CAUTION] -> Red
+  };
 
-    struct Style {
-        bool isBold = false;
-        bool isItalic = false;
-        bool isUnderline = false;
-        bool isStrikethrough = false;
-        bool isCode = false;
-        bool isLink = false;
-        bool isBlockQuote = false;
-        AlertType alertType = AlertType::None;
-        unsigned int hLevel = 0; // 0 = no heading, 1-6 = H1-H6
-        ImVec4 customColor = {0,0,0,0}; // (0,0,0,0) means no custom color
-    };
+  struct Style {
+    bool isBold = false;
+    bool isItalic = false;
+    bool isUnderline = false;
+    bool isStrikethrough = false;
+    bool isCode = false;
+    bool isLink = false;
+    bool isBlockQuote = false;
+    AlertType alertType = AlertType::None;
+    unsigned int hLevel = 0;            // 0 = no heading, 1-6 = H1-H6
+    ImVec4 customColor = {0, 0, 0, 0};  // (0,0,0,0) means no custom color
+  };
 
-    struct ListInfo {
-        bool isOrdered;
-        int counter;
-        bool isTight;
-    };
+  struct ListInfo {
+    bool isOrdered;
+    int counter;
+    bool isTight;
+  };
 
-    // --- MD4C Static Callbacks ---
-    static int OnEnterBlock(MD_BLOCKTYPE type, void* detail, void* userdata);
-    static int OnLeaveBlock(MD_BLOCKTYPE type, void* detail, void* userdata);
-    static int OnEnterSpan(MD_SPANTYPE type, void* detail, void* userdata);
-    static int OnLeaveSpan(MD_SPANTYPE type, void* detail, void* userdata);
-    static int OnText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata);
+  // --- MD4C Static Callbacks ---
+  static int OnEnterBlock(MD_BLOCKTYPE type, void* detail, void* userdata);
+  static int OnLeaveBlock(MD_BLOCKTYPE type, void* detail, void* userdata);
+  static int OnEnterSpan(MD_SPANTYPE type, void* detail, void* userdata);
+  static int OnLeaveSpan(MD_SPANTYPE type, void* detail, void* userdata);
+  static int OnText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata);
 
-    // --- Internal Processing ---
-    void HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter);
-    void HandleSpan(MD_SPANTYPE type, void* detail, bool enter);
-    void HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE size);
+  // --- Internal Processing ---
+  void HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter);
+  void HandleSpan(MD_SPANTYPE type, void* detail, bool enter);
+  void HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE size);
 
-    // --- Helpers ---
-    ImFont* GetFontForCurrentStyle() const;
-    void ApplyStyleColor(bool push);
-    void EnsureNewLine();
-    void SetHref(const MD_ATTRIBUTE& attr);
+  // --- Helpers ---
+  ImFont* GetFontForCurrentStyle() const;
+  void ApplyStyleColor(bool push);
+  void EnsureNewLine();
+  void SetHref(const MD_ATTRIBUTE& attr);
 
-    // --- Members ---
-    Style m_style;
-    std::vector<ListInfo> m_listStack;
-    std::string m_href;
-    std::string m_currentCodeBlockText; // Buffer for copying
-    int m_codeBlockCounter = 0;
-    float m_quoteStartY = 0.0f;
-    bool m_isAtStartOfLine = true;
-    bool m_isInsideCodeBlock = false; // Flag to distinguish block vs inline code
-    bool m_isWaitingForAlertMarker = false; // Flag to detect [!NOTE] etc.
-    bool m_skipNextNewline = false;
+  // --- Members ---
+  Style m_style;
+  std::vector<ListInfo> m_listStack;
+  std::string m_href;
+  std::string m_currentCodeBlockText;  // Buffer for copying
+  int m_codeBlockCounter = 0;
+  float m_quoteStartY = 0.0f;
+  bool m_isAtStartOfLine = true;
+  bool m_isInsideCodeBlock = false;        // Flag to distinguish block vs inline code
+  bool m_isWaitingForAlertMarker = false;  // Flag to detect [!NOTE] etc.
+  bool m_skipNextNewline = false;
 };
 
-} // namespace UI
+}  // namespace UI
 
 SPF_NS_END

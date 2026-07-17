@@ -1,12 +1,13 @@
 #pragma once
 
-#include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
 #include "SPF/Namespace.hpp"
-#include "SPF/Utils/Vec3.hpp"
+
+#include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
+
 #include <cstdint>
-#include <vector>
 #include <memory>
-#include <string>
+#include <vector>
+
 
 SPF_NS_BEGIN
 namespace Data::GameData {
@@ -62,7 +63,6 @@ class GameWorldService {
   uint32_t GetSimulationTime();
   void SetSimulationTime(uint32_t totalMinutes);
 
-
   void SetSkyboxAutoUpdate(bool enabled);
 
   // --- Core/Engine Methods ---
@@ -76,9 +76,9 @@ class GameWorldService {
   double GetRealDeltaTime();
 
   // --- Time Calculation Helpers ---
-  uint32_t GetGameDay();         // Total game days
-  uint32_t GetDayOfWeek();       // 0 = Monday, 6 = Sunday
-  uint32_t GetGameWeek();        // Current game week index
+  uint32_t GetGameDay();    // Total game days
+  uint32_t GetDayOfWeek();  // 0 = Monday, 6 = Sunday
+  uint32_t GetGameWeek();   // Current game week index
 
  private:
   GameWorldService();
@@ -92,32 +92,32 @@ class GameWorldService {
   std::vector<std::unique_ptr<IGameWorldDataFinder>> m_dataFinders;
 
   // --- World Data Offsets and Pointers ---
-  uintptr_t m_environmentBasePtr = 0;    
-  intptr_t m_environmentAdjustment = 0; 
-  uintptr_t m_timeMgrPtrAddr = 0;       
-  
-  intptr_t m_envObjectOffset = 0;        
-  intptr_t m_timeOffset = 0;             
-  
-  intptr_t m_simulationTimeOffset = 0;   
-  intptr_t m_subMinuteSecondsOffset = 0; 
-  
-  intptr_t m_realPlayTimeOffset = 0;     
-  intptr_t m_realPlaySecondsOffset = 0;  
-  
-  intptr_t m_mapScaleOffset = 0;         
+  uintptr_t m_environmentBasePtr = 0;
+  intptr_t m_environmentAdjustment = 0;
+  uintptr_t m_timeMgrPtrAddr = 0;
 
-  intptr_t m_globalWarpOffset = 0;       
-  intptr_t m_pauseStatusOffset = 0;      
+  intptr_t m_envObjectOffset = 0;
+  intptr_t m_timeOffset = 0;
 
-  intptr_t m_globalHaltOffset = 0;       
-  intptr_t m_simulationHaltOffset = 0;   
-  intptr_t m_trafficHaltOffset = 0;      
-    
-  intptr_t m_realDeltaTimeOffset = 0;    
+  intptr_t m_simulationTimeOffset = 0;
+  intptr_t m_subMinuteSecondsOffset = 0;
 
-  intptr_t m_skyboxAutoUpdateOffset = 0; 
-  uintptr_t m_updateFnAddr = 0;          
+  intptr_t m_realPlayTimeOffset = 0;
+  intptr_t m_realPlaySecondsOffset = 0;
+
+  intptr_t m_mapScaleOffset = 0;
+
+  intptr_t m_globalWarpOffset = 0;
+  intptr_t m_pauseStatusOffset = 0;
+
+  intptr_t m_globalHaltOffset = 0;
+  intptr_t m_simulationHaltOffset = 0;
+  intptr_t m_trafficHaltOffset = 0;
+
+  intptr_t m_realDeltaTimeOffset = 0;
+
+  intptr_t m_skyboxAutoUpdateOffset = 0;
+  uintptr_t m_updateFnAddr = 0;
 };
 
 }  // namespace Data::GameData

@@ -1,11 +1,18 @@
 #include "SPF/UI/UITypographyHelper.hpp"
+
+#include "SPF/Namespace.hpp"
+
+#include "SPF/UI/MarkdownRenderer.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/UI/UIStyle.hpp"
-#include <imgui.h>
-#include <imgui_internal.h>
+
+#include "imgui.h"
+
+#include <cstddef>
+#include <cstdio>
 #include <stdarg.h>
-#include "SPF/UI/MarkdownRenderer.hpp"
-#include <algorithm> // For std::min, std::max
+#include <string>
+
 
 SPF_NS_BEGIN
 
@@ -14,224 +21,220 @@ namespace UI {
 // --- TextStyle Factory Methods ---
 
 TextStyle TextStyle::Regular() { return {}; }
-TextStyle TextStyle::Bold() { return { .fontKey = "bold" }; }
-TextStyle TextStyle::Italic() { return { .fontKey = "italic" }; }
-TextStyle TextStyle::BoldItalic() { return { .fontKey = "bold_italic" }; }
-TextStyle TextStyle::Medium() { return { .fontKey = "medium" }; }
-TextStyle TextStyle::MediumItalic() { return { .fontKey = "medium_italic" }; }
-TextStyle TextStyle::Monospace() { return { .fontKey = "monospace" }; }
-TextStyle TextStyle::H1() { return { .fontKey = "h1" }; }
-TextStyle TextStyle::H2() { return { .fontKey = "h2" }; }
-TextStyle TextStyle::H3() { return { .fontKey = "h3" }; }
-TextStyle TextStyle::DefaultButton() { 
-    return TextStyle::Regular()
-        .Color(Colors::WHITE)
-        .HoverColor(Colors::GOLD)
-        .ActiveColor(ImVec4(0.15f, 0.19f, 0.24f, 1.00f)); 
-}
+TextStyle TextStyle::Bold() { return {.fontKey = "bold"}; }
+TextStyle TextStyle::Italic() { return {.fontKey = "italic"}; }
+TextStyle TextStyle::BoldItalic() { return {.fontKey = "bold_italic"}; }
+TextStyle TextStyle::Medium() { return {.fontKey = "medium"}; }
+TextStyle TextStyle::MediumItalic() { return {.fontKey = "medium_italic"}; }
+TextStyle TextStyle::Monospace() { return {.fontKey = "monospace"}; }
+TextStyle TextStyle::H1() { return {.fontKey = "h1"}; }
+TextStyle TextStyle::H2() { return {.fontKey = "h2"}; }
+TextStyle TextStyle::H3() { return {.fontKey = "h3"}; }
+TextStyle TextStyle::DefaultButton() { return TextStyle::Regular().Color(Colors::WHITE).HoverColor(Colors::GOLD).ActiveColor(ImVec4(0.15f, 0.19f, 0.24f, 1.00f)); }
 
 // --- ScopedStyle RAII Helper Implementation ---
 
 ScopedStyle::ScopedStyle(const TextStyle& style) {
-    if (style.fontKey) {
-        ImFont* font = UIManager::GetInstance().GetFont(*style.fontKey);
-        if (font) {
-            ImGui::PushFont(font);
-            m_fontPushed = true;
-        }
+  if (style.fontKey) {
+    ImFont* font = UIManager::GetInstance().GetFont(*style.fontKey);
+    if (font) {
+      ImGui::PushFont(font);
+      m_fontPushed = true;
     }
+  }
 
-    if (style.disabled) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-        m_colorCount++;
-    } else if (style.color) {
-        ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
-        m_colorCount++;
-    }
+  if (style.disabled) {
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+    m_colorCount++;
+  } else if (style.color) {
+    ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
+    m_colorCount++;
+  }
 
-    if (style.isSeparator) {
-        float alignX = 0.0f;
-        if (style.align == TextAlign::Center) alignX = 0.5f;
-        else if (style.align == TextAlign::Right) alignX = 1.0f;
-        
-        ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(alignX, 0.5f));
-        m_varCount++;
-    }
+  if (style.isSeparator) {
+    float alignX = 0.0f;
+    if (style.align == TextAlign::Center)
+      alignX = 0.5f;
+    else if (style.align == TextAlign::Right)
+      alignX = 1.0f;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(alignX, 0.5f));
+    m_varCount++;
+  }
 }
 
 ScopedStyle::~ScopedStyle() {
-    if (m_fontPushed) {
-        ImGui::PopFont();
-    }
-    if (m_colorCount > 0) {
-        ImGui::PopStyleColor(m_colorCount);
-    }
-    if (m_varCount > 0) {
-        ImGui::PopStyleVar(m_varCount);
-    }
+  if (m_fontPushed) {
+    ImGui::PopFont();
+  }
+  if (m_colorCount > 0) {
+    ImGui::PopStyleColor(m_colorCount);
+  }
+  if (m_varCount > 0) {
+    ImGui::PopStyleVar(m_varCount);
+  }
 }
 
 // --- Typography Core Methods Implementation ---
 
 void Typography::TextV(const TextStyle& style, const char* fmt, va_list args) {
-    ScopedStyle scopedStyle(style);
+  ScopedStyle scopedStyle(style);
 
-    // If it's a separator, we use a different ImGui call and logic.
-    if (style.isSeparator) {
-        char temp_buffer[2048];
-        vsnprintf(temp_buffer, IM_ARRAYSIZE(temp_buffer), fmt, args);
-        ImGui::SeparatorText(temp_buffer);
-        return; // Separator handles its own rendering.
+  // If it's a separator, we use a different ImGui call and logic.
+  if (style.isSeparator) {
+    char temp_buffer[2048];
+    vsnprintf(temp_buffer, IM_ARRAYSIZE(temp_buffer), fmt, args);
+    ImGui::SeparatorText(temp_buffer);
+    return;  // Separator handles its own rendering.
+  }
+
+  // 1. Apply padding by adjusting cursor position
+  if (style.padding.x != 0.0f || style.padding.y != 0.0f) {
+    const ImVec2 cursorPos = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(ImVec2(cursorPos.x + style.padding.x, cursorPos.y + style.padding.y));
+  }
+
+  // 2. Handle Text Wrapping
+  if (style.wrap) {
+    ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+  }
+
+  // 3. Handle Alignment
+  if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
+    // We need the formatted text to calculate its size for alignment.
+    // So we format it once here.
+    char temp_buffer[2048];  // A bit risky, but vsnprintf requires a buffer.
+    va_list args_copy;
+    va_copy(args_copy, args);
+    vsnprintf(temp_buffer, IM_ARRAYSIZE(temp_buffer), fmt, args_copy);
+    va_end(args_copy);
+
+    const float textWidth = ImGui::CalcTextSize(temp_buffer).x;
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
+
+    float offsetX = 0.0f;
+    if (style.align == TextAlign::Center) {
+      offsetX = (availableWidth - textWidth) * 0.5f;
+    } else {  // Right
+      offsetX = availableWidth - textWidth;
     }
 
-    // 1. Apply padding by adjusting cursor position
-    if (style.padding.x != 0.0f || style.padding.y != 0.0f) {
-        const ImVec2 cursorPos = ImGui::GetCursorPos();
-        ImGui::SetCursorPos(ImVec2(cursorPos.x + style.padding.x, cursorPos.y + style.padding.y));
+    if (offsetX > 0.0f) {
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
     }
+  }
 
-    // 2. Handle Text Wrapping
-    if (style.wrap) {
-        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+  // 4. Render the text
+  ImGui::TextV(fmt, args);
+
+  // 5. Handle Underline and Strikethrough
+  if (style.underline || style.strikethrough) {
+    const ImVec2 min = ImGui::GetItemRectMin();
+    const ImVec2 max = ImGui::GetItemRectMax();
+    const float thickness = 1.0f;
+    auto* drawList = ImGui::GetWindowDrawList();
+    const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
+
+    if (style.underline) {
+      const float y = max.y - thickness;
+      drawList->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), col, thickness);
     }
-
-    // 3. Handle Alignment
-    if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
-        // We need the formatted text to calculate its size for alignment.
-        // So we format it once here.
-        char temp_buffer[2048]; // A bit risky, but vsnprintf requires a buffer.
-        va_list args_copy;
-        va_copy(args_copy, args);
-        vsnprintf(temp_buffer, IM_ARRAYSIZE(temp_buffer), fmt, args_copy);
-        va_end(args_copy);
-
-        const float textWidth = ImGui::CalcTextSize(temp_buffer).x;
-        const float availableWidth = ImGui::GetContentRegionAvail().x;
-        
-        float offsetX = 0.0f;
-        if (style.align == TextAlign::Center) {
-            offsetX = (availableWidth - textWidth) * 0.5f;
-        } else { // Right
-            offsetX = availableWidth - textWidth;
-        }
-
-        if (offsetX > 0.0f) {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
-        }
+    if (style.strikethrough) {
+      const float y = (min.y + max.y) * 0.5f;
+      drawList->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), col, thickness);
     }
+  }
 
-    // 4. Render the text
-    ImGui::TextV(fmt, args);
-
-    // 5. Handle Underline and Strikethrough
-    if (style.underline || style.strikethrough) {
-        const ImVec2 min = ImGui::GetItemRectMin();
-        const ImVec2 max = ImGui::GetItemRectMax();
-        const float thickness = 1.0f;
-        auto* drawList = ImGui::GetWindowDrawList();
-        const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
-
-        if (style.underline) {
-            const float y = max.y - thickness;
-            drawList->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), col, thickness);
-        }
-        if (style.strikethrough) {
-            const float y = (min.y + max.y) * 0.5f;
-            drawList->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), col, thickness);
-        }
-    }
-
-    // Pop wrapping state
-    if (style.wrap) {
-        ImGui::PopTextWrapPos();
-    }
+  // Pop wrapping state
+  if (style.wrap) {
+    ImGui::PopTextWrapPos();
+  }
 }
 
 void Typography::Text(const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    TextV(TextStyle::Regular(), fmt, args);
-    va_end(args);
+  va_list args;
+  va_start(args, fmt);
+  TextV(TextStyle::Regular(), fmt, args);
+  va_end(args);
 }
 
 void Typography::Text(const TextStyle& style, const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    TextV(style, fmt, args);
-    va_end(args);
+  va_list args;
+  va_start(args, fmt);
+  TextV(style, fmt, args);
+  va_end(args);
 }
 
 ImVec2 Typography::CalcTextSize(const char* text, const TextStyle& style) {
-    ScopedStyle scopedStyle(style);
-    return ImGui::CalcTextSize(text);
+  ScopedStyle scopedStyle(style);
+  return ImGui::CalcTextSize(text);
 }
 
 void Typography::RenderMarkdownText(const std::string& markdownText, const TextStyle& style) {
-    std::string processedText = markdownText;
-    // Smart replacement to ensure ``` is on its own line for the parser
-    size_t start_pos = 0;
-    std::string to_find = "```";
-    std::string replacement = "\n```\n";
-    while((start_pos = processedText.find(to_find, start_pos)) != std::string::npos) {
-        processedText.replace(start_pos, to_find.length(), replacement);
-        start_pos += replacement.length(); // Move past the replacement
+  std::string processedText = markdownText;
+  // Smart replacement to ensure ``` is on its own line for the parser
+  size_t start_pos = 0;
+  std::string to_find = "```";
+  std::string replacement = "\n```\n";
+  while ((start_pos = processedText.find(to_find, start_pos)) != std::string::npos) {
+    processedText.replace(start_pos, to_find.length(), replacement);
+    start_pos += replacement.length();  // Move past the replacement
+  }
+
+  ImGui::BeginGroup();
+
+  // 1. Apply Top Padding
+  if (style.padding.y > 0.0f) {
+    ImGui::Dummy(ImVec2(0, style.padding.y));
+  }
+
+  // 2. Apply Left Padding using Indent (persists across NewLines)
+  if (style.padding.x > 0.0f) {
+    ImGui::Indent(style.padding.x);
+  }
+
+  // 3. Handle Alignment (Approximation for simple blocks)
+  if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
+    ImVec2 textSize = CalcTextSize(processedText.c_str(), style);
+    const float availableWidth = ImGui::GetContentRegionAvail().x - style.padding.x;
+    float offsetX = 0.0f;
+    if (style.align == TextAlign::Center) {
+      offsetX = (availableWidth - textSize.x) * 0.5f;
+    } else {  // Right
+      offsetX = availableWidth - textSize.x;
     }
-
-    ImGui::BeginGroup();
-
-    // 1. Apply Top Padding
-    if (style.padding.y > 0.0f) {
-        ImGui::Dummy(ImVec2(0, style.padding.y));
+    if (offsetX > 0.0f) {
+      ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
     }
+  }
 
-    // 2. Apply Left Padding using Indent (persists across NewLines)
-    if (style.padding.x > 0.0f) {
-        ImGui::Indent(style.padding.x);
-    }
+  // 4. Handle Text Wrapping
+  bool wrapPushed = false;
+  if (style.wrap) {
+    float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x - style.padding.x;
+    ImGui::PushTextWrapPos(wrapPosX);
+    wrapPushed = true;
+  }
 
-    // 3. Handle Alignment (Approximation for simple blocks)
-    if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
-        ImVec2 textSize = CalcTextSize(processedText.c_str(), style);
-        const float availableWidth = ImGui::GetContentRegionAvail().x - style.padding.x;
-        float offsetX = 0.0f;
-        if (style.align == TextAlign::Center) {
-            offsetX = (availableWidth - textSize.x) * 0.5f;
-        } else { // Right
-            offsetX = availableWidth - textSize.x;
-        }
-        if (offsetX > 0.0f) {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
-        }
-    }
+  // 5. Base Color
+  int colorPushed = 0;
+  if (style.color) {
+    ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
+    colorPushed++;
+  }
 
-    // 4. Handle Text Wrapping
-    bool wrapPushed = false;
-    if (style.wrap) {
-        float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x - style.padding.x;
-        ImGui::PushTextWrapPos(wrapPosX);
-        wrapPushed = true;
-    }
+  // 6. Render using MarkdownRenderer
+  static UI::MarkdownRenderer renderer;
+  renderer.Render(processedText);
 
-    // 5. Base Color
-    int colorPushed = 0;
-    if (style.color) {
-        ImGui::PushStyleColor(ImGuiCol_Text, *style.color);
-        colorPushed++;
-    }
+  // Cleanup
+  if (colorPushed > 0) ImGui::PopStyleColor(colorPushed);
+  if (wrapPushed) ImGui::PopTextWrapPos();
+  if (style.padding.x > 0.0f) ImGui::Unindent(style.padding.x);
+  if (style.padding.y > 0.0f) ImGui::Dummy(ImVec2(0, style.padding.y));
 
-    // 6. Render using MarkdownRenderer
-    static UI::MarkdownRenderer renderer;
-    renderer.Render(processedText);
-
-    // Cleanup
-    if (colorPushed > 0) ImGui::PopStyleColor(colorPushed);
-    if (wrapPushed) ImGui::PopTextWrapPos();
-    if (style.padding.x > 0.0f) ImGui::Unindent(style.padding.x);
-    if (style.padding.y > 0.0f) ImGui::Dummy(ImVec2(0, style.padding.y));
-
-    ImGui::EndGroup();
+  ImGui::EndGroup();
 }
 
-
-} // namespace UI
+}  // namespace UI
 SPF_NS_END

@@ -1,48 +1,49 @@
-/**                                                                                               
-* @file SPF_Telemetry_API.h                                                                          
-* @brief API for accessing real-time game data (speed, engine, jobs, etc.).
-*                                                                                                 
-* @details This API provides two ways to interact with game telemetry:
-*          1. **Event-Driven**: Subscribe to specific data updates (e.g., Truck Data).
-*          2. **Polling**: Request a snapshot of data at any moment.
-*                                                                                                 
-* ================================================================================================
-* KEY CONCEPTS                                                                                    
-* ================================================================================================
-*                                                                                                 
-* 1. **Context-Based**: Every call requires a 'SPF_Telemetry_Handle'. Get it 
-*    once during 'OnActivated' using 'Tel_GetContext()'.
-*                                                                                                 
-* 2. **Event-Driven (Recommended)**: Use 'Tel_RegisterFor...' functions. This is 
-*    the most efficient way to handle high-frequency data like speed or RPM.
-*                                                                                                 
-* 3. **ABI Stability**: When using polling functions (e.g., 'Tel_GetTruckData'), you 
-*    must provide the size of your local structure. This allows the framework 
-*    to support different plugin versions without memory corruption.
-*                                                                                                 
-* ================================================================================================
-* USAGE EXAMPLE (C++)                                                                             
-* ================================================================================================
-* @code                                                                                           
-* void OnTruckUpdate(const SPF_TruckData* data, void* user_data) {
-*     // Process data received every frame
-*     float speed = data->speed * 3.6f; // Convert to km/h
-* }
-*
-* void MyPlugin_OnActivated(const SPF_Core_API* api) {
-*     SPF_Telemetry_Handle* h = api->telemetry->Tel_GetContext("MyPlugin");
-*     
-*     // Subscribe to truck data updates
-*     api->telemetry->Tel_RegisterForTruckData(h, OnTruckUpdate, NULL);
-* }
-* @endcode                                                                                        
-*/ 
+/**
+ * @file SPF_Telemetry_API.h
+ * @brief API for accessing real-time game data (speed, engine, jobs, etc.).
+ *
+ * @details This API provides two ways to interact with game telemetry:
+ *          1. **Event-Driven**: Subscribe to specific data updates (e.g., Truck Data).
+ *          2. **Polling**: Request a snapshot of data at any moment.
+ *
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ *
+ * 1. **Context-Based**: Every call requires a 'SPF_Telemetry_Handle'. Get it
+ *    once during 'OnActivated' using 'Tel_GetContext()'.
+ *
+ * 2. **Event-Driven (Recommended)**: Use 'Tel_RegisterFor...' functions. This is
+ *    the most efficient way to handle high-frequency data like speed or RPM.
+ *
+ * 3. **ABI Stability**: When using polling functions (e.g., 'Tel_GetTruckData'), you
+ *    must provide the size of your local structure. This allows the framework
+ *    to support different plugin versions without memory corruption.
+ *
+ * ================================================================================================
+ * USAGE EXAMPLE (C++)
+ * ================================================================================================
+ * @code
+ * void OnTruckUpdate(const SPF_TruckData* data, void* user_data) {
+ *     // Process data received every frame
+ *     float speed = data->speed * 3.6f; // Convert to km/h
+ * }
+ *
+ * void MyPlugin_OnActivated(const SPF_Core_API* api) {
+ *     SPF_Telemetry_Handle* h = api->telemetry->Tel_GetContext("MyPlugin");
+ *
+ *     // Subscribe to truck data updates
+ *     api->telemetry->Tel_RegisterForTruckData(h, OnTruckUpdate, NULL);
+ * }
+ * @endcode
+ */
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-
 #include "SPF_TelemetryData.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,7 +165,6 @@ typedef void (*SPF_Telemetry_GameplayEvents_Callback)(const char* event_id, cons
  */
 typedef void (*SPF_Telemetry_GearboxConstants_Callback)(const SPF_GearboxConstants* data, void* user_data);
 
-
 /**
  * @struct SPF_Telemetry_API
  * @brief API for accessing telemetry data from the game.
@@ -230,267 +230,267 @@ typedef void (*SPF_Telemetry_GearboxConstants_Callback)(const SPF_GearboxConstan
  * @endcode
  */
 typedef struct SPF_Telemetry_API {
-    /**
-     * @brief Gets a telemetry context handle for the plugin. This handle is required for all other calls.
-     * @param pluginName The name of the plugin requesting the context. Must not be NULL.
-     * @return An opaque handle to the telemetry context, or NULL if an error occurs.
-     */
-    SPF_Telemetry_Handle* (*Tel_GetContext)(const char* pluginName);
+  /**
+   * @brief Gets a telemetry context handle for the plugin. This handle is required for all other calls.
+   * @param pluginName The name of the plugin requesting the context. Must not be NULL.
+   * @return An opaque handle to the telemetry context, or NULL if an error occurs.
+   */
+  SPF_Telemetry_Handle* (*Tel_GetContext)(const char* pluginName);
 
-    /**
-     * @brief Registers a callback for game state changes.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when game state data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGameState)(SPF_Telemetry_Handle* h, SPF_Telemetry_GameState_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for game state changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when game state data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGameState)(SPF_Telemetry_Handle* h, SPF_Telemetry_GameState_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for timestamp updates.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when timestamp data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTimestamps)(SPF_Telemetry_Handle* h, SPF_Telemetry_Timestamps_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for timestamp updates.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when timestamp data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTimestamps)(SPF_Telemetry_Handle* h, SPF_Telemetry_Timestamps_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for common data updates (e.g., game time).
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when common data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForCommonData)(SPF_Telemetry_Handle* h, SPF_Telemetry_CommonData_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for common data updates (e.g., game time).
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when common data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForCommonData)(SPF_Telemetry_Handle* h, SPF_Telemetry_CommonData_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for when the truck's configuration (e.g., brand, engine) changes.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when truck constant data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTruckConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckConstants_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for when the truck's configuration (e.g., brand, engine) changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when truck constant data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTruckConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckConstants_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for when a trailer's configuration changes.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when trailer constant data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTrailerConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_TrailerConstants_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for when a trailer's configuration changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when trailer constant data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTrailerConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_TrailerConstants_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for live truck data updates (e.g., speed, RPM), fired every frame.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when truck data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTruckData)(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckData_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for live truck data updates (e.g., speed, RPM), fired every frame.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when truck data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTruckData)(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckData_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for live trailer data updates, fired every frame.
-     * @details The callback receives a pointer to an array of `SPF_Trailer` structs and a count.
-     *          This list is automatically filtered by the framework to only include active trailers.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when trailer data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTrailers)(SPF_Telemetry_Handle* h, SPF_Telemetry_Trailers_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for live trailer data updates, fired every frame.
+   * @details The callback receives a pointer to an array of `SPF_Trailer` structs and a count.
+   *          This list is automatically filtered by the framework to only include active trailers.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when trailer data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForTrailers)(SPF_Telemetry_Handle* h, SPF_Telemetry_Trailers_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for when the current job's configuration changes.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when job constant data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForJobConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for when the current job's configuration changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when job constant data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForJobConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for live job data updates (e.g., cargo damage).
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when job data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForJobData)(SPF_Telemetry_Handle* h, SPF_Telemetry_JobData_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for live job data updates (e.g., cargo damage).
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when job data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForJobData)(SPF_Telemetry_Handle* h, SPF_Telemetry_JobData_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for live navigation data updates.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when navigation data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForNavigationData)(SPF_Telemetry_Handle* h, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for live navigation data updates.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when navigation data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForNavigationData)(SPF_Telemetry_Handle* h, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for live player control input updates.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when control data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForControls)(SPF_Telemetry_Handle* h, SPF_Telemetry_Controls_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for live player control input updates.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when control data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForControls)(SPF_Telemetry_Handle* h, SPF_Telemetry_Controls_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for one-frame special events (e.g., job delivery).
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when a special event occurs.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForSpecialEvents)(SPF_Telemetry_Handle* h, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for one-frame special events (e.g., job delivery).
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when a special event occurs.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForSpecialEvents)(SPF_Telemetry_Handle* h, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for detailed gameplay events (e.g., fines, deliveries).
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when a gameplay event occurs.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGameplayEvents)(SPF_Telemetry_Handle* h, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for detailed gameplay events (e.g., fines, deliveries).
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when a gameplay event occurs.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGameplayEvents)(SPF_Telemetry_Handle* h, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
 
-    /**
-     * @brief Registers a callback for when the H-shifter gearbox configuration changes.
-     * @param h The telemetry context handle for your plugin.
-     * @param callback The function to be called when gearbox constant data is updated.
-     * @param user_data Optional user-defined data to be passed to the callback.
-     * @return An opaque handle that represents the subscription.
-     */
-    SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGearboxConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
+  /**
+   * @brief Registers a callback for when the H-shifter gearbox configuration changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when gearbox constant data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForGearboxConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
 
-    /**
-     * @brief Retrieves a snapshot of the current game state (version, pause status, etc.).
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_GameState` struct to be filled with data.
-     * @param struct_size The size of the `out_data` structure in bytes.
-     */
-    void (*Tel_GetGameState)(SPF_Telemetry_Handle* h, SPF_GameState* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of the current game state (version, pause status, etc.).
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_GameState` struct to be filled with data.
+   * @param struct_size The size of the `out_data` structure in bytes.
+   */
+  void (*Tel_GetGameState)(SPF_Telemetry_Handle* h, SPF_GameState* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of the current game timestamps.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_Timestamps` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetTimestamps)(SPF_Telemetry_Handle* h, SPF_Timestamps* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of the current game timestamps.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_Timestamps` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetTimestamps)(SPF_Telemetry_Handle* h, SPF_Timestamps* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of common, frequently updated data (game time, rest stops).
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_CommonData` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetCommonData)(SPF_Telemetry_Handle* h, SPF_CommonData* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of common, frequently updated data (game time, rest stops).
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_CommonData` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetCommonData)(SPF_Telemetry_Handle* h, SPF_CommonData* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves the static configuration data for the player's current truck (e.g., brand, fuel capacity).
-     * This data only changes when the truck configuration changes.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_TruckConstants` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetTruckConstants)(SPF_Telemetry_Handle* h, SPF_TruckConstants* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves the static configuration data for the player's current truck (e.g., brand, fuel capacity).
+   * This data only changes when the truck configuration changes.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_TruckConstants` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetTruckConstants)(SPF_Telemetry_Handle* h, SPF_TruckConstants* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of the dynamic, live data for the player's truck (e.g., speed, RPM).
-     * For continuous monitoring, it is highly recommended to use `Tel_RegisterForTruckData` instead.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_TruckData` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetTruckData)(SPF_Telemetry_Handle* h, SPF_TruckData* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of the dynamic, live data for the player's truck (e.g., speed, RPM).
+   * For continuous monitoring, it is highly recommended to use `Tel_RegisterForTruckData` instead.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_TruckData` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetTruckData)(SPF_Telemetry_Handle* h, SPF_TruckData* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of data for all active trailers.
-     * @details This function automatically filters the raw trailer data from the game to return only
-     *          active trailers (i.e., those that are connected or have a valid ID).
-     * @param h The telemetry context handle.
-     * @param[out] out_trailers A pointer to an array of `SPF_Trailer` structs. 
-     * @param struct_size The size of a SINGLE `SPF_Trailer` structure in bytes.
-     * @param[in,out] in_out_count As input, this must point to a `uint32_t` holding the capacity of the `out_trailers` array.
-     *                             As output, the value will be updated with the actual number of active trailers written to the array.
-     */
-    void (*Tel_GetTrailers)(SPF_Telemetry_Handle* h, SPF_Trailer* out_trailers, size_t struct_size, uint32_t* in_out_count);
+  /**
+   * @brief Retrieves a snapshot of data for all active trailers.
+   * @details This function automatically filters the raw trailer data from the game to return only
+   *          active trailers (i.e., those that are connected or have a valid ID).
+   * @param h The telemetry context handle.
+   * @param[out] out_trailers A pointer to an array of `SPF_Trailer` structs.
+   * @param struct_size The size of a SINGLE `SPF_Trailer` structure in bytes.
+   * @param[in,out] in_out_count As input, this must point to a `uint32_t` holding the capacity of the `out_trailers` array.
+   *                             As output, the value will be updated with the actual number of active trailers written to the array.
+   */
+  void (*Tel_GetTrailers)(SPF_Telemetry_Handle* h, SPF_Trailer* out_trailers, size_t struct_size, uint32_t* in_out_count);
 
-    /**
-     * @brief Retrieves static information about the current job.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_JobConstants` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetJobConstants)(SPF_Telemetry_Handle* h, SPF_JobConstants* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves static information about the current job.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_JobConstants` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetJobConstants)(SPF_Telemetry_Handle* h, SPF_JobConstants* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of dynamic data about the current job.
-     * For continuous monitoring, it is highly recommended to use `Tel_RegisterForJobData` instead.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_JobData` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetJobData)(SPF_Telemetry_Handle* h, SPF_JobData* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of dynamic data about the current job.
+   * For continuous monitoring, it is highly recommended to use `Tel_RegisterForJobData` instead.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_JobData` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetJobData)(SPF_Telemetry_Handle* h, SPF_JobData* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of data from the in-game GPS and route advisor.
-     * For continuous monitoring, it is highly recommended to use `Tel_RegisterForNavigationData` instead.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_NavigationData` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetNavigationData)(SPF_Telemetry_Handle* h, SPF_NavigationData* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of data from the in-game GPS and route advisor.
+   * For continuous monitoring, it is highly recommended to use `Tel_RegisterForNavigationData` instead.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_NavigationData` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetNavigationData)(SPF_Telemetry_Handle* h, SPF_NavigationData* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of player control inputs.
-     * For continuous monitoring, it is highly recommended to use `Tel_RegisterForControls` instead.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_Controls` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetControls)(SPF_Telemetry_Handle* h, SPF_Controls* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of player control inputs.
+   * For continuous monitoring, it is highly recommended to use `Tel_RegisterForControls` instead.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_Controls` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetControls)(SPF_Telemetry_Handle* h, SPF_Controls* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves a snapshot of flags for special one-time gameplay events.
-     * Note: This provides simple boolean flags. For detailed data about the event (e.g., fine amount),
-     * you must use `Tel_RegisterForGameplayEvents`.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_SpecialEvents` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetSpecialEvents)(SPF_Telemetry_Handle* h, SPF_SpecialEvents* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves a snapshot of flags for special one-time gameplay events.
+   * Note: This provides simple boolean flags. For detailed data about the event (e.g., fine amount),
+   * you must use `Tel_RegisterForGameplayEvents`.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_SpecialEvents` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetSpecialEvents)(SPF_Telemetry_Handle* h, SPF_SpecialEvents* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves detailed data for the most recent gameplay event.
-     * This function only returns the data for the single last event. To reliably process all events,
-     * you must subscribe using `Tel_RegisterForGameplayEvents`.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_GameplayEvents` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetGameplayEvents)(SPF_Telemetry_Handle* h, SPF_GameplayEvents* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves detailed data for the most recent gameplay event.
+   * This function only returns the data for the single last event. To reliably process all events,
+   * you must subscribe using `Tel_RegisterForGameplayEvents`.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_GameplayEvents` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetGameplayEvents)(SPF_Telemetry_Handle* h, SPF_GameplayEvents* out_data, size_t struct_size);
 
-    /**
-     * @brief Retrieves constants related to the H-shifter gearbox layout.
-     * @param h The telemetry context handle.
-     * @param[out] out_data Pointer to an `SPF_GearboxConstants` struct to be filled with data.
-     * @param struct_size The size of the structure in bytes.
-     */
-    void (*Tel_GetGearboxConstants)(SPF_Telemetry_Handle* h, SPF_GearboxConstants* out_data, size_t struct_size);
+  /**
+   * @brief Retrieves constants related to the H-shifter gearbox layout.
+   * @param h The telemetry context handle.
+   * @param[out] out_data Pointer to an `SPF_GearboxConstants` struct to be filled with data.
+   * @param struct_size The size of the structure in bytes.
+   */
+  void (*Tel_GetGearboxConstants)(SPF_Telemetry_Handle* h, SPF_GearboxConstants* out_data, size_t struct_size);
 
-    /**
-     * @brief Gets the ID string of the last gameplay event that occurred (e.g., "player.fined").
-     * This is useful for checking the last event without getting the full data payload.
-     * @param h The telemetry context handle.
-     * @param[out] out_buffer A character buffer to receive the event ID string.
-     * @param buffer_size The size of the output buffer in bytes.
-     * @return The number of characters written to the buffer, or the required buffer size if the provided buffer is too small.
-     */
-    int (*Tel_GetLastGameplayEventId)(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
+  /**
+   * @brief Gets the ID string of the last gameplay event that occurred (e.g., "player.fined").
+   * This is useful for checking the last event without getting the full data payload.
+   * @param h The telemetry context handle.
+   * @param[out] out_buffer A character buffer to receive the event ID string.
+   * @param buffer_size The size of the output buffer in bytes.
+   * @return The number of characters written to the buffer, or the required buffer size if the provided buffer is too small.
+   */
+  int (*Tel_GetLastGameplayEventId)(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
 
 } SPF_Telemetry_API;
 

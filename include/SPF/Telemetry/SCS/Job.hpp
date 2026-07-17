@@ -1,10 +1,10 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <cstdint>
-
 #include "SPF/Namespace.hpp"
+
+#include <cstdint>
+#include <string>
+
 
 SPF_NS_BEGIN
 namespace Telemetry {

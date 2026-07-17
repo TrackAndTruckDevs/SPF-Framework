@@ -1,37 +1,37 @@
-/**                                                                                               
-* @file SPF_Localization_API.h                                                                          
-* @brief API for providing multi-language support to plugins.
-*                                                                                                 
-* @details This API enables plugins to load translation files (JSON) and retrieve 
-* localized strings at runtime. It supports dynamic language switching and 
-* automatic fallback to a default language (usually English).
-*                                                                                                 
-* ================================================================================================
-* KEY CONCEPTS                                                                                    
-* ================================================================================================
-*                                                                                                 
-* 1. **Context-Based**: Every call requires a 'SPF_Localization_Handle'. Get it 
-*    once during 'OnActivated' using 'Loc_GetContext()'.
-*                                                                                                 
-* 2. **Dot Notation**: Translation keys use dot-notation to traverse nested JSON 
-*    objects (e.g., 'menu.buttons.quit').
-*                                                                                                 
-* 3. **Fallback System**: If a key is missing in the active language, the system 
-*    automatically attempts to find it in the plugin's default language.
-*                                                                                                 
-* ================================================================================================
-* USAGE EXAMPLE (C++)                                                                             
-* ================================================================================================
-* @code                                                                                           
-* void MyPlugin_OnActivated(const SPF_Core_API* api) {
-*     SPF_Localization_Handle* h = api->localization->Loc_GetContext("MyPlugin");
-*     
-*     char buffer[256];
-*     api->localization->Loc_GetString(h, "ui.welcome_msg", buffer, sizeof(buffer));
-*     Log("Localized: %s", buffer);
-* }
-* @endcode                                                                                        
-*/ 
+/**
+ * @file SPF_Localization_API.h
+ * @brief API for providing multi-language support to plugins.
+ *
+ * @details This API enables plugins to load translation files (JSON) and retrieve
+ * localized strings at runtime. It supports dynamic language switching and
+ * automatic fallback to a default language (usually English).
+ *
+ * ================================================================================================
+ * KEY CONCEPTS
+ * ================================================================================================
+ *
+ * 1. **Context-Based**: Every call requires a 'SPF_Localization_Handle'. Get it
+ *    once during 'OnActivated' using 'Loc_GetContext()'.
+ *
+ * 2. **Dot Notation**: Translation keys use dot-notation to traverse nested JSON
+ *    objects (e.g., 'menu.buttons.quit').
+ *
+ * 3. **Fallback System**: If a key is missing in the active language, the system
+ *    automatically attempts to find it in the plugin's default language.
+ *
+ * ================================================================================================
+ * USAGE EXAMPLE (C++)
+ * ================================================================================================
+ * @code
+ * void MyPlugin_OnActivated(const SPF_Core_API* api) {
+ *     SPF_Localization_Handle* h = api->localization->Loc_GetContext("MyPlugin");
+ *
+ *     char buffer[256];
+ *     api->localization->Loc_GetString(h, "ui.welcome_msg", buffer, sizeof(buffer));
+ *     Log("Localized: %s", buffer);
+ * }
+ * @endcode
+ */
 
 #pragma once
 
@@ -94,89 +94,89 @@ typedef struct SPF_Localization_Handle SPF_Localization_Handle;
  * for these language display names.
  */
 typedef struct SPF_Localization_API {
-    /**
-     * @brief Gets a localization context handle for the plugin.
-     *
-     * @details This handle is the primary identifier for all subsequent localization
-     *          calls. The framework uses it to associate the calls with the correct
-     *          set of translation files that it has discovered for your plugin.
-     *          The framework manages the memory of this handle; do not free it.
-     *
-     * @param pluginName The name of the plugin, which MUST match the `name`
-     *                   field in your plugin's manifest.
-     * @return A handle to the localization context, or `NULL` if the plugin
-     *         could not be found.
-     */
-    SPF_Localization_Handle* (*Loc_GetContext)(const char* pluginName);
+  /**
+   * @brief Gets a localization context handle for the plugin.
+   *
+   * @details This handle is the primary identifier for all subsequent localization
+   *          calls. The framework uses it to associate the calls with the correct
+   *          set of translation files that it has discovered for your plugin.
+   *          The framework manages the memory of this handle; do not free it.
+   *
+   * @param pluginName The name of the plugin, which MUST match the `name`
+   *                   field in your plugin's manifest.
+   * @return A handle to the localization context, or `NULL` if the plugin
+   *         could not be found.
+   */
+  SPF_Localization_Handle* (*Loc_GetContext)(const char* pluginName);
 
-    /**
-     * @brief Sets the active language for the component associated with the handle.
-     *
-     * @details This function instructs the framework to load the specified language
-     *          file (e.g., `uk.json`). Subsequent calls to `GetString` will attempt
-     *          to find keys in this new language file. If a key is not found in the
-     *          new language, the system will fall back to the default language
-     *          specified in the manifest.
-     *
-     * @param h The context handle obtained from `Loc_GetContext`.
-     * @param langCode The language code (e.g., "en", "uk"). This should match the
-     *                 name of your translation file without the extension.
-     * @return `true` on success, `false` if the language file (or its fallback)
-     *         could not be loaded.
-     */
-    bool (*Loc_SetLanguage)(SPF_Localization_Handle* h, const char* langCode);
+  /**
+   * @brief Sets the active language for the component associated with the handle.
+   *
+   * @details This function instructs the framework to load the specified language
+   *          file (e.g., `uk.json`). Subsequent calls to `GetString` will attempt
+   *          to find keys in this new language file. If a key is not found in the
+   *          new language, the system will fall back to the default language
+   *          specified in the manifest.
+   *
+   * @param h The context handle obtained from `Loc_GetContext`.
+   * @param langCode The language code (e.g., "en", "uk"). This should match the
+   *                 name of your translation file without the extension.
+   * @return `true` on success, `false` if the language file (or its fallback)
+   *         could not be loaded.
+   */
+  bool (*Loc_SetLanguage)(SPF_Localization_Handle* h, const char* langCode);
 
-    /**
-     * @brief Gets a translated string from the currently loaded language file.
-     *
-     * @details This is the main function for retrieving localized text. It looks for
-     *          the provided key in the active language file and, if not found, in the
-     *          default fallback language file.
-     *
-     * @param h The context handle obtained from `Loc_GetContext`.
-     * @param key The key for the string (e.g., "my_window.title"). For nested JSON
-     *            objects, use dot notation (e.g., "menu.main.title").
-     * @param out_buffer A pointer to a character buffer to receive the string.
-     * @param buffer_size The size of the output buffer.
-     * @return The number of characters written to the buffer (excluding null terminator).
-     *         If the return value is greater than or equal to `buffer_size`, it means
-     *         the output was truncated. Returns 0 if the key was not found.
-     */
-    int (*Loc_GetString)(SPF_Localization_Handle* h, const char* key, char* out_buffer, int buffer_size);
+  /**
+   * @brief Gets a translated string from the currently loaded language file.
+   *
+   * @details This is the main function for retrieving localized text. It looks for
+   *          the provided key in the active language file and, if not found, in the
+   *          default fallback language file.
+   *
+   * @param h The context handle obtained from `Loc_GetContext`.
+   * @param key The key for the string (e.g., "my_window.title"). For nested JSON
+   *            objects, use dot notation (e.g., "menu.main.title").
+   * @param out_buffer A pointer to a character buffer to receive the string.
+   * @param buffer_size The size of the output buffer.
+   * @return The number of characters written to the buffer (excluding null terminator).
+   *         If the return value is greater than or equal to `buffer_size`, it means
+   *         the output was truncated. Returns 0 if the key was not found.
+   */
+  int (*Loc_GetString)(SPF_Localization_Handle* h, const char* key, char* out_buffer, int buffer_size);
 
-    /**
-     * @brief Gets a list of available language codes discovered for this plugin.
-     *
-     * @details The framework automatically discovers translation files in the plugin's
-     *          `localization/` directory. This function returns the list of languages
-     *          it found (based on the filenames).
-     *
-     * @param h The context handle.
-     * @param[out] count A pointer to an integer that will be filled with the number of
-     *                   languages found.
-     * @return An array of C-strings with the language codes (e.g., "en", "uk").
-     *         The memory for this array and its strings is managed by the framework
-     *         and should not be modified or freed.
-     */
-    const char** (*Loc_GetAvailableLanguages)(SPF_Localization_Handle* h, int* count);
+  /**
+   * @brief Gets a list of available language codes discovered for this plugin.
+   *
+   * @details The framework automatically discovers translation files in the plugin's
+   *          `localization/` directory. This function returns the list of languages
+   *          it found (based on the filenames).
+   *
+   * @param h The context handle.
+   * @param[out] count A pointer to an integer that will be filled with the number of
+   *                   languages found.
+   * @return An array of C-strings with the language codes (e.g., "en", "uk").
+   *         The memory for this array and its strings is managed by the framework
+   *         and should not be modified or freed.
+   */
+  const char** (*Loc_GetAvailableLanguages)(SPF_Localization_Handle* h, int* count);
 
-    /**
-     * @brief Gets the language code currently used by the framework interface.
-     * @details Plugins can use this to automatically sync their language with the 
-     *          framework's settings.
-     * 
-     * @return A C-string with the framework's language code (e.g., "en", "uk").
-     *         The memory is managed by the framework.
-     */
-    const char* (*Loc_GetFrameworkLanguage)();
+  /**
+   * @brief Gets the language code currently used by the framework interface.
+   * @details Plugins can use this to automatically sync their language with the
+   *          framework's settings.
+   *
+   * @return A C-string with the framework's language code (e.g., "en", "uk").
+   *         The memory is managed by the framework.
+   */
+  const char* (*Loc_GetFrameworkLanguage)();
 
-    /**
-     * @brief Checks if a specific language file exists for this component.
-     * @param h The context handle.
-     * @param langCode The language code to check (e.g., "uk", "fr").
-     * @return True if the translation file exists, false otherwise.
-     */
-    bool (*Loc_HasLanguage)(SPF_Localization_Handle* h, const char* langCode);
+  /**
+   * @brief Checks if a specific language file exists for this component.
+   * @param h The context handle.
+   * @param langCode The language code to check (e.g., "uk", "fr").
+   * @return True if the translation file exists, false otherwise.
+   */
+  bool (*Loc_HasLanguage)(SPF_Localization_Handle* h, const char* langCode);
 
 } SPF_Localization_API;
 

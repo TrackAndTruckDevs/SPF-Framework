@@ -1,6 +1,11 @@
 #include "SPF/System/GamepadButtonMapping.hpp"
 
-#include <stdexcept>
+#include "SPF/Namespace.hpp"
+
+#include "SPF/System/GamepadButton.hpp"
+
+#include <string>
+
 
 SPF_NS_BEGIN
 
@@ -51,17 +56,28 @@ GamepadButton GamepadButtonMapping::FromXInput(unsigned short xinputFlags) const
 GamepadButton GamepadButtonMapping::FromDInput(unsigned long dinputOffset) const {
   // DirectInput offsets from dinput.h (DIJOFS_BUTTON0 = 48)
   switch (dinputOffset) {
-    case 48: return GamepadButton::FaceDown;       // Button 0
-    case 49: return GamepadButton::FaceRight;      // Button 1
-    case 50: return GamepadButton::FaceLeft;       // Button 2
-    case 51: return GamepadButton::FaceUp;         // Button 3
-    case 52: return GamepadButton::LeftShoulder;   // Button 4
-    case 53: return GamepadButton::RightShoulder;  // Button 5
-    case 54: return GamepadButton::SpecialLeft;    // Button 6
-    case 55: return GamepadButton::SpecialRight;   // Button 7
-    case 56: return GamepadButton::LeftStick;      // Button 8
-    case 57: return GamepadButton::RightStick;     // Button 9
-    default: return GamepadButton::Unknown;
+    case 48:
+      return GamepadButton::FaceDown;  // Button 0
+    case 49:
+      return GamepadButton::FaceRight;  // Button 1
+    case 50:
+      return GamepadButton::FaceLeft;  // Button 2
+    case 51:
+      return GamepadButton::FaceUp;  // Button 3
+    case 52:
+      return GamepadButton::LeftShoulder;  // Button 4
+    case 53:
+      return GamepadButton::RightShoulder;  // Button 5
+    case 54:
+      return GamepadButton::SpecialLeft;  // Button 6
+    case 55:
+      return GamepadButton::SpecialRight;  // Button 7
+    case 56:
+      return GamepadButton::LeftStick;  // Button 8
+    case 57:
+      return GamepadButton::RightStick;  // Button 9
+    default:
+      return GamepadButton::Unknown;
   }
 }
 
