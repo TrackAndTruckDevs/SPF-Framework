@@ -118,7 +118,6 @@ void ClimateWindow::RenderContent() {
 
     // --- Change Detection & Logging ---
     if (currentWeather != lastWeatherMode || currentSkybox != lastSkyboxIndex) {
-      m_climateService.LogEnvironmentState();
       lastWeatherMode = currentWeather;
       lastSkyboxIndex = currentSkybox;
     }

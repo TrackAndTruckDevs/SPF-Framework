@@ -268,6 +268,7 @@ add_library(SPF SHARED
     "src/Hooks/GameLogHook.cpp"
     "src/Hooks/PluginHook.cpp"
     "src/Hooks/CameraHooks.cpp"
+    "src/Hooks/GameTools/ScsNameResolver.cpp"
     "src/GameCamera/GameCameraManager.cpp"
     "src/GameCamera/GameCameraInterior.cpp"
     "src/GameCamera/GameCameraPhoto.cpp"

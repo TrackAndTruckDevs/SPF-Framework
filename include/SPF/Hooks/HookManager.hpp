@@ -115,6 +115,8 @@ class HookManager {
   std::vector<IHook*> m_featureHooks;
   // Maps a hook name to a set of plugin names that require it.
   std::map<std::string, std::set<std::string>> m_hookRequests;
+  // Tracks hooks that failed to install, to avoid retrying on every reconcile.
+  std::set<std::string> m_failedFeatureHooks;
 };
 }  // namespace Hooks
 SPF_NS_END

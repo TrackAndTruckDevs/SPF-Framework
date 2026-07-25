@@ -36,6 +36,7 @@ void HookManager::UnregisterFeatureHook(IHook* hook) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
   logger->Info("--> [1.1/3] Unregistering hook '''{}'''...", hook->GetDisplayName());
   m_featureHooks.erase(std::remove(m_featureHooks.begin(), m_featureHooks.end(), hook), m_featureHooks.end());
+  m_failedFeatureHooks.erase(hook->GetName());
   logger->Info("--> [1.2/3] Hook '''{}''' erased from feature hooks vector.", hook->GetDisplayName());
 }
 
@@ -121,9 +122,12 @@ bool HookManager::InstallSystemAndFeatureHooks() {
       if (hook->IsEnabled() || requestedByPlugin) {
         if (hook->IsInstalled()) {
           logger->Debug("Skipping already installed hook: {}", hook->GetDisplayName());
+        } else if (m_failedFeatureHooks.count(hook->GetName())) {
+          logger->Debug("Skipping previously failed hook: {}", hook->GetDisplayName());
         } else {
           logger->Info("Installing hook: {} (Enabled: {}, Required: {})...", hook->GetDisplayName(), hook->IsEnabled(), requestedByPlugin);
           if (!hook->Install()) {
+            m_failedFeatureHooks.insert(hook->GetName());
             logger->Error("Failed to install feature hook: {}", hook->GetDisplayName());
           }
         }
@@ -147,6 +151,11 @@ void HookManager::InstallFeatureHook(IHook* hook) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
   if (!hook) return;
 
+  if (m_failedFeatureHooks.count(hook->GetName())) {
+    logger->Debug("Skipping previously failed dynamic hook: {}", hook->GetDisplayName());
+    return;
+  }
+
   bool requestedByPlugin = IsHookRequired(hook->GetName());
   if (hook->IsEnabled() || requestedByPlugin) {
     if (hook->IsInstalled()) {
@@ -154,6 +163,7 @@ void HookManager::InstallFeatureHook(IHook* hook) {
     } else {
       logger->Info("Dynamically installing hook: {} (Enabled: {}, Required: {})...", hook->GetDisplayName(), hook->IsEnabled(), requestedByPlugin);
       if (!hook->Install()) {
+        m_failedFeatureHooks.insert(hook->GetName());
         logger->Error("Failed to install feature hook: {}", hook->GetDisplayName());
       }
     }
@@ -180,8 +190,15 @@ void HookManager::ReconcileHookState(IHook* hook, bool configuredEnabledState) {
 
   if (shouldBeActive) {
     if (!hook->IsInstalled()) {
-      logger->Info("Reconciling hook '{}': Installing...", hook->GetDisplayName());
-      hook->Install();
+      if (m_failedFeatureHooks.count(hook->GetName())) {
+        logger->Debug("Reconciling hook '{}': Skipping (previously failed).", hook->GetDisplayName());
+      } else {
+        logger->Info("Reconciling hook '{}': Installing...", hook->GetDisplayName());
+        if (!hook->Install()) {
+          m_failedFeatureHooks.insert(hook->GetName());
+          logger->Warn("Hook '{}' failed to install, will not retry.", hook->GetDisplayName());
+        }
+      }
     }
     // Ensure the hook is enabled if it should be active
     if (!hook->IsEnabled()) {  // Check runtime state
@@ -217,6 +234,8 @@ void HookManager::UninstallAllHooks() {
   D3D12Hook::Uninstall();
   D3D11Hook::Uninstall();
   OpenGLHook::Uninstall();
+
+  m_failedFeatureHooks.clear();
 
   logger->Info("All hooks disabled.");
 }
