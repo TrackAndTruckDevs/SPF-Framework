@@ -240,7 +240,7 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature
       const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
       if (!found) break;
       i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-    } else if (!first.Matches(data[i])) {
+    } else if (!first.optional && !first.Matches(data[i])) {
       continue;
     }
 
@@ -952,7 +952,7 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
         const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
         if (!found) break;
         i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-      } else if (!first.Matches(data[i])) {
+      } else if (!first.optional && !first.Matches(data[i])) {
         continue;
       }
 

@@ -41,28 +41,28 @@ class ClimateService {
 
   // --- Weather and Environment Setters (for finders) ---
   void SetWeatherModeOffset(intptr_t val) { m_weatherModeOffset = val; }
-  void SetWeatherTargetOffset(intptr_t val) { m_weatherTargetOffset = val; }
-  void SetWeatherTransitionOffset(intptr_t val) { m_weatherTransitionOffset = val; }
+  void SetNextWeatherModeOffset(intptr_t val) { m_nextWeatherModeOffset = val; }
   void SetClimatePtrOffset(intptr_t val) { m_climatePtrOffset = val; }
   void SetClimateUnitIdOffset(intptr_t val) { m_climateUnitIdOffset = val; }
   void SetClimateArrayOffset(intptr_t val) { m_climateArrayOffset = val; }
   void SetClimateCountOffset(intptr_t val) { m_climateCountOffset = val; }
-  void SetRainIntensityOffset(intptr_t val) { m_rainIntensityOffset = val; }
-  void SetRoadWetnessOffset(intptr_t val) { m_roadWetnessOffset = val; }
-  void SetFogColorOffset(intptr_t val) { m_fogColorOffset = val; }
-  void SetFogDensityOffset(intptr_t val) { m_fogDensityOffset = val; }
-  void SetLightningEnabledOffset(intptr_t val) { m_lightningEnabledOffset = val; }
-  void SetLightningIntensityOffset(intptr_t val) { m_lightningIntensityOffset = val; }
-  void SetTemperatureOffset(intptr_t val) { m_temperatureOffset = val; }
-  void SetWeatherTransStartTimeOffset(intptr_t val) { m_weatherTransStartTimeOffset = val; }
-  void SetWeatherTransDurationOffset(intptr_t val) { m_weatherTransDurationOffset = val; }
-  void SetWeatherBlendingFactorOffset(intptr_t val) { m_weatherBlendingFactorOffset = val; }
-  void SetSkyboxAutoUpdateOffset(intptr_t val) { m_skyboxAutoUpdateOffset = val; }
+  void SetSetWeatherModeFnAddr(uintptr_t addr) { m_setWeatherModeFnAddr = addr; }
   void SetSetClimateFnAddr(uintptr_t addr) { m_setClimateFnAddr = addr; }
-  void SetTimeOffset(intptr_t val) { m_timeOffset = val; }
+  void SetActiveProfileIndexOffset(intptr_t val) { m_activeProfileIndexOffset = val; }
+  void SetNextProfileIndexOffset(intptr_t val) { m_nextProfileIndexOffset = val; }
+  void SetContainerSelectorOffset(intptr_t val) { m_containerSelectorOffset = val; }
+  void SetContainerNiceOffset(intptr_t val) { m_containerNiceOffset = val; }
+  void SetContainerBadOffset(intptr_t val) { m_containerBadOffset = val; }
+  void SetProfilesArrayOffset(intptr_t val) { m_profilesArrayOffset = val; }
+  void SetContainerCountOffset(intptr_t val) { m_containerCountOffset = val; }
+  void SetSunAngleOffset(intptr_t val) { m_sunAngleOffset = val; }
+  void SetWeatherBlendProgressFnAddr(uintptr_t addr) { m_weatherBlendFnAddr = addr; }
+  void SetTransitionDurationAddr(uintptr_t addr) { m_transitionDurationAddr = addr; }
 
   // --- Weather & Environment methods ---
   int32_t GetWeatherMode();
+  int32_t GetNextWeatherMode();
+  void SetNextWeatherMode(int32_t mode);
   void SetWeatherMode(int32_t mode, bool instant = true);
 
   float GetRainIntensity();
@@ -70,10 +70,6 @@ class ClimateService {
 
   float GetTemperature(int profileSlot, uint32_t variationIdx);
   void SetTemperature(int profileSlot, uint32_t variationIdx, float val);
-
-  uint64_t GetSkyboxCount(int32_t weatherMode);
-  void SetSkyboxIndex(int32_t weatherMode, uint32_t index);
-  uint32_t GetSkyboxIndex(int32_t weatherMode, uint32_t slot = 0);
 
   struct ClimateInfo {
     std::string name;
@@ -83,27 +79,33 @@ class ClimateService {
   std::string GetCurrentClimateName();
   std::vector<ClimateInfo> GetAvailableClimates();
   void SetClimate(uint64_t token, bool instant = true);
-  std::string GetActiveProfileName(int profileSlot = 0);
-  uint32_t GetActiveProfileIndex(int profileSlot = 0);
 
   float GetWeight(int profileSlot, uint32_t variationIdx);
   void SetWeight(int profileSlot, uint32_t variationIdx, float value);
 
-  bool IsVersion1_60() const;
+  // --- Sun Profile API ---
+  int32_t GetActiveSunProfileIndex();
+  int32_t GetNextSunProfileIndex();
+  int32_t GetSunProfileCount();
+  std::string GetSunProfileName(int32_t index);
+  float GetSunProfileElevation(int32_t index);
+  float GetTransitionProgress();
+
+  float GetSunAngle();
+  float GetWeatherBlendProgress();
+  void SetTransitionDuration(int32_t minutes);
 
  private:
   ClimateService();
   ~ClimateService() = default;
 
   void RegisterFinders();
+  uintptr_t GetClimateContainer();
   uintptr_t GetActiveProfilePtr(int profileSlot);
   void EnsureInitialKick();
 
-  intptr_t GetVerOffset(intptr_t offset159, intptr_t offset160) const;
-
   // --- Runtime State ---
   bool m_isInitialized = false;
-  mutable int8_t m_versionCache = -1;
   std::vector<std::unique_ptr<IClimateDataFinder>> m_dataFinders;
 
   // --- Environment Data Offsets and Pointers ---
@@ -114,25 +116,23 @@ class ClimateService {
 
   // --- Weather and Environment Data ---
   intptr_t m_weatherModeOffset = 0;
-  intptr_t m_weatherTargetOffset = 0;
-  intptr_t m_weatherTransitionOffset = 0;
+  intptr_t m_nextWeatherModeOffset = 0;
   intptr_t m_climatePtrOffset = 0;
   intptr_t m_climateUnitIdOffset = 0;
   intptr_t m_climateArrayOffset = 0;
   intptr_t m_climateCountOffset = 0;
-  intptr_t m_rainIntensityOffset = 0;
-  intptr_t m_roadWetnessOffset = 0;
-  intptr_t m_fogColorOffset = 0;
-  intptr_t m_fogDensityOffset = 0;
-  intptr_t m_lightningEnabledOffset = 0;
-  intptr_t m_lightningIntensityOffset = 0;
-  intptr_t m_temperatureOffset = 0;
-  intptr_t m_weatherTransStartTimeOffset = 0;
-  intptr_t m_weatherTransDurationOffset = 0;
-  intptr_t m_weatherBlendingFactorOffset = 0;
-  intptr_t m_skyboxAutoUpdateOffset = 0;
+  uintptr_t m_setWeatherModeFnAddr = 0;
   uintptr_t m_setClimateFnAddr = 0;
-  intptr_t m_timeOffset = 0;
+  intptr_t m_activeProfileIndexOffset = 0;
+  intptr_t m_nextProfileIndexOffset = 0;
+  intptr_t m_containerSelectorOffset = 0;
+  intptr_t m_containerNiceOffset = 0;
+  intptr_t m_containerBadOffset = 0;
+  intptr_t m_profilesArrayOffset = 0x08;
+  intptr_t m_containerCountOffset = 0x10;
+  intptr_t m_sunAngleOffset = 0;
+  uintptr_t m_weatherBlendFnAddr = 0;
+  uintptr_t m_transitionDurationAddr = 0;
 };
 
 }  // namespace Data::GameData

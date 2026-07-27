@@ -41,10 +41,10 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
 
   // === SECTION 1: CORE ENVIRONMENT ANCHORS ===
   // Used by: all ClimateService methods (GetWeatherMode, SetWeatherMode, SetRainIntensity,
-  //          GetSkyboxCount, GetSkyboxIndex, SetSkyboxIndex, GetCurrentClimateName,
-  //          GetAvailableClimates, GetActiveProfileName, GetActiveProfileIndex,
-  //          SetClimate, GetTemperature, SetTemperature, GetWeight, SetWeight,
-  //          EnsureInitialKick, GetActiveProfilePtr)
+  //          GetCurrentClimateName, GetAvailableClimates, GetActiveSunProfileIndex,
+  //          GetNextSunProfileIndex, GetSunProfileCount, GetSunProfileName,
+  //          GetTransitionProgress, SetClimate, GetTemperature, SetTemperature,
+  //          GetWeight, SetWeight, EnsureInitialKick, GetActiveProfilePtr)
 
   // 1. Find the entry point of the UpdateTimeAdvance function.
   const char* UPDATE_TIME_STRING = "%u:%02u";
@@ -152,64 +152,38 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
     all_found = false;
   } else {
     logger->Info("3. [CALL: SetWeather] Found at 0x{:X}", SetWeatherFn);
-  }
+    owner.SetSetWeatherModeFnAddr(SetWeatherFn);
 
-  // 3.1 Weather mode and target offsets
-  // Used by: GetWeatherMode (mode), SetWeatherMode (mode + target),
-  //          GetActiveProfileName (mode), GetActiveProfilePtr (mode)
-  const std::vector<std::string> weatherChain = {"89 91 ?? ?? ?? ??", "89 91 ?? ?? ?? ??"};
-
-  addr = Utils::PatternFinder::FindChain(weatherChain, 10, SetWeatherFn);
-  if (addr) {
-    int32_t weatherModeOff = Utils::PatternFinder::ReadInt32(addr + 2);
-    int32_t weatherTargetOff = Utils::PatternFinder::ReadInt32(addr + 8);
-
-    if (Utils::PatternFinder::IsSaneOffset(weatherModeOff) && Utils::PatternFinder::IsSaneOffset(weatherTargetOff)) {
-      owner.SetWeatherModeOffset(weatherModeOff);
-      owner.SetWeatherTargetOffset(weatherTargetOff);
-      logger->Debug("3.1 [OFFSET: Weather Indexes] Found Current: 0x{:X}, Target: 0x{:X}", weatherModeOff, weatherTargetOff);
-    }
-
-    // 3.2 Blending factor
-    // Used by: SetWeatherMode (force blending state)
-    uintptr_t addrBlend = Utils::PatternFinder::Find(SetWeatherFn, 1024, "F3 0F 11 [80-BF] ?? ?? ?? ?? 48 C7 [80-BF] ?? ?? ?? ?? FF FF FF FF");
-    if (addrBlend) {
-      int32_t blendOff = Utils::PatternFinder::ReadInt32(addrBlend + 4);
-      if (Utils::PatternFinder::IsSaneOffset(blendOff)) {
-        owner.SetWeatherBlendingFactorOffset(blendOff);
-        logger->Debug("3.2 [OFFSET: Blending Factor] Found: 0x{:X}", blendOff);
+    // Extract weatherModeOffset from function body (for GetWeatherMode)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
+    // * 1404df417  89 91 70 3E 00 00             MOV dword ptr [RCX + 0x3e70],EDX
+    // * 1404df41d  89 91 74 3E 00 00             MOV dword ptr [RCX + 0x3e74],EDX
+    addr = Utils::PatternFinder::Find(SetWeatherFn, 96, "[MOV [r64+off32], r32] [MOV [r64+off32], r32]");
+    if (addr) {
+      int32_t weatherModeOff = Utils::PatternFinder::ReadInt32(addr + 2);
+      if (Utils::PatternFinder::IsSaneOffset(weatherModeOff)) {
+        owner.SetWeatherModeOffset(weatherModeOff);
+        logger->Debug("3.1 [OFFSET: Weather Mode] Found: 0x{:X}", weatherModeOff);
       }
     }
 
-    // 3.3 Transition state and start time
-    // Used by: SetWeatherMode (transition state + blending timing)
-    const std::vector<std::string> timingChain = {
-      "B8 6D C1 16 6C",
-      "C7 [80-BF] ?? ?? ?? ?? 01 00 00 00",
-      "44 89 [80-BF] ?? ?? ?? ??"
-    };
-    uintptr_t addrTiming = Utils::PatternFinder::FindChain(timingChain, 100, SetWeatherFn);
-    if (addrTiming) {
-      uintptr_t addrState = Utils::PatternFinder::Find(addrTiming, 100, "C7 [80-BF]");
-      uintptr_t addrStart = Utils::PatternFinder::Find(addrTiming, 120, "44 89 [80-BF]");
-      if (addrState && addrStart) {
-        int32_t stateOff = Utils::PatternFinder::ReadInt32(addrState + 2);
-        int32_t startOff = Utils::PatternFinder::ReadInt32(addrStart + 3);
-        if (Utils::PatternFinder::IsSaneOffset(stateOff) && Utils::PatternFinder::IsSaneOffset(startOff)) {
-          owner.SetWeatherTransitionOffset(stateOff);
-          owner.SetWeatherTransStartTimeOffset(startOff);
-          logger->Debug("3.3 [OFFSET: Weather Timing] Found State: 0x{:X}, StartTime: 0x{:X}", stateOff, startOff);
-        }
+    // 3.2 Weather target offset (for GetNextWeatherMode)
+    // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
+    // * 1404df41d  89 91 74 3E 00 00             MOV dword ptr [RCX + 0x3e74],EDX
+    uintptr_t addrTarget = Utils::PatternFinder::Find(addr + 2, 16, "[MOV [r64+off32], r32]");
+    if (addrTarget) {
+      int32_t weatherTargetOff = Utils::PatternFinder::ReadInt32(addrTarget + 2);
+      if (Utils::PatternFinder::IsSaneOffset(weatherTargetOff)) {
+        owner.SetNextWeatherModeOffset(weatherTargetOff);
+        logger->Debug("3.2 [OFFSET: Weather Target] Found: 0x{:X}", weatherTargetOff);
       }
     }
-  } else {
-    logger->Error("3. [SET_WEATHER] FAILED to find logic chain.");
-    all_found = false;
   }
 
   // === SECTION 4: CLIMATE PTR & UNIT ID ===
-  // Used by: GetCurrentClimateName, GetAvailableClimates, GetActiveProfileName,
-  //          SetSkyboxIndex, SetRainIntensity, GetSkyboxCount, GetSkyboxIndex,
+  // Used by: GetCurrentClimateName, GetAvailableClimates, GetActiveSunProfileIndex,
+  //          GetNextSunProfileIndex, GetSunProfileCount, GetSunProfileName,
+  //          GetTransitionProgress, SetRainIntensity,
   //          EnsureInitialKick, GetActiveProfilePtr
 
   // /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateActiveClimate[1404d74d0]) ---/
@@ -318,6 +292,198 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
     } else {
       logger->Error("6.1 [OFFSET: Climate Array] FAILED to find signature.");
       all_found = false;
+    }
+  }
+
+  // === SECTION 7: SUN PROFILE ACTIVE/NEXT INDICES ===
+  // Used by: GetActiveSunProfileIndex, GetNextSunProfileIndex, GetTransitionProgress
+
+  // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+  // 1404e4940  44 88 44 24 18                MOV byte ptr [RSP + 0x18],R8B
+  // 1404e4945  41 54                         PUSH R12
+  // 1404e4947  41 56                         PUSH R14
+  // 1404e4949  41 57                         PUSH R15
+  // 1404e494b  48 83 EC 60                   SUB RSP,0x60
+  // 1404e494f  4C 8B F1                      MOV R14,RCX
+  // 1404e4952  48 81 C1 E8 2A 00 00          ADD RCX,0x2ae8
+  // 1404e4959  E8 92 E9 E2 00                CALL 0x1413132f0
+  // 1404e495e  45 33 FF                      XOR R15D,R15D
+  // \---
+  const char* SUN_PROFILE_UPDATE_SIG = "44 [MOV [r64+off8], r8] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [SUB r64, imm8] [MOV r64, r64] [ADD r64, imm32] [CALL rel32] 45 [XOR r32, r32]";
+  uintptr_t pfnSunProfileUpdate = Utils::PatternFinder::Find(SUN_PROFILE_UPDATE_SIG);
+
+  if (pfnSunProfileUpdate) {
+    logger->Debug("7. [CALL: SunProfileUpdate] Found at 0x{:X}", pfnSunProfileUpdate);
+
+    // 7.1 Active profile index offset
+    //--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49c9  41 8B 8E 60 45 00 00          MOV ECX,dword ptr [R14 + 0x4560]
+    uintptr_t addrActive = Utils::PatternFinder::Find(pfnSunProfileUpdate, 160, "41 [MOV r32, [r64+off32]]");
+    if (addrActive) {
+      int32_t activeOff = Utils::PatternFinder::ReadInt32(addrActive + 3);
+      if (Utils::PatternFinder::IsSaneOffset(activeOff)) {
+        owner.SetActiveProfileIndexOffset(activeOff);
+        logger->Debug("7.1 [OFFSET: Active Profile Index] Found: 0x{:X}", activeOff);
+      } else {
+        logger->Error("7.1 [OFFSET: Active Profile Index] Offset (0x{:X}) is insane.", activeOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.1 [OFFSET: Active Profile Index] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.2 Next profile index offset
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49e1  41 8B 8E 64 45 00 00          MOV ECX,dword ptr [R14 + 0x4564]
+    uintptr_t addrNext = Utils::PatternFinder::Find(addrActive + 1, 32, "41 [MOV r32, [r64+off32]]");
+    if (addrNext) {
+      int32_t nextOff = Utils::PatternFinder::ReadInt32(addrNext + 3);
+      if (Utils::PatternFinder::IsSaneOffset(nextOff)) {
+        owner.SetNextProfileIndexOffset(nextOff);
+        logger->Debug("7.2 [OFFSET: Next Profile Index] Found: 0x{:X}", nextOff);
+      } else {
+        logger->Error("7.2 [OFFSET: Next Profile Index] Offset (0x{:X}) is insane.", nextOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.2 [OFFSET: Next Profile Index] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.3 Container selector offset (env+0x3E70 — chooses nice vs bad container)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49b7  41 39 9E 70 3E 00 00          CMP dword ptr [R14 + 0x3e70],EBX
+    uintptr_t addrSelector = Utils::PatternFinder::Find(pfnSunProfileUpdate, 128, "41 [CMP [r64+off32], r32]");
+    if (addrSelector) {
+      int32_t selectorOff = Utils::PatternFinder::ReadInt32(addrSelector + 3);
+      if (Utils::PatternFinder::IsSaneOffset(selectorOff)) {
+        owner.SetContainerSelectorOffset(selectorOff);
+        logger->Debug("7.3 [OFFSET: Container Selector (nice/bad)] Found: 0x{:X}", selectorOff);
+      } else {
+        logger->Error("7.3 [OFFSET: Container Selector] Offset (0x{:X}) is insane.", selectorOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.3 [OFFSET: Container Selector] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.4 Nice container offset (0xd0 — first set of sun profiles, "nice" variants)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49be  B8 D0 00 00 00                MOV EAX,0xd0
+    uintptr_t addrNice = Utils::PatternFinder::Find(addrSelector, 16, "[MOV r32, imm32]");
+    if (addrNice) {
+      int32_t niceOff = Utils::PatternFinder::ReadInt32(addrNice + 1);
+      if (Utils::PatternFinder::IsSaneOffset(niceOff)) {
+        owner.SetContainerNiceOffset(niceOff);
+        logger->Debug("7.4 [OFFSET: Nice Container] Found: 0x{:X}", niceOff);
+      } else {
+        logger->Error("7.4 [OFFSET: Nice Container] Offset (0x{:X}) is insane.", niceOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.4 [OFFSET: Nice Container] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.5 Bad container offset (0x120 — second set of sun profiles, "bad" variants)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e498a  BA 20 01 00 00                MOV EDX,0x120
+    //* 1404e498f  4D 3B BE 38 01 00 00          CMP R15,qword ptr [R14 + 0x138]
+    uintptr_t addrBad = Utils::PatternFinder::FindBackward(addrSelector, 64, "[MOV r32, imm32] [CMP r64, [r64+off32]]");
+    if (addrBad) {
+      int32_t badOff = Utils::PatternFinder::ReadInt32(addrBad + 1);
+      if (Utils::PatternFinder::IsSaneOffset(badOff)) {
+        owner.SetContainerBadOffset(badOff);
+        logger->Debug("7.5 [OFFSET: Bad Container] Found: 0x{:X}", badOff);
+      } else {
+        logger->Error("7.5 [OFFSET: Bad Container] Offset (0x{:X}) is insane.", badOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.5 [OFFSET: Bad Container] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.6 Container count offset (0x10 — number of profiles in container)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49d0  48 8B 50 10                   MOV RDX,qword ptr [RAX + 0x10]
+    //* 1404e49d4  48 3B CA                      CMP RCX,RDX
+    uintptr_t addrContainerCount = Utils::PatternFinder::Find(addrNice, 32, "[MOV r64, [r64+off8]] [CMP r64, r64]");
+    if (addrContainerCount) {
+      int8_t countOff = Utils::PatternFinder::ReadInt8(addrContainerCount + 3);
+      owner.SetContainerCountOffset(countOff);
+      logger->Debug("7.6 [OFFSET: Container Count] Found: 0x{:X}", countOff);
+    } else {
+      logger->Error("7.6 [OFFSET: Container Count] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.7 Profiles array offset (0x08 — pointer to profile pointers array in container)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e49d9  48 8B 78 08                   MOV RDI,qword ptr [RAX + 0x8]
+    uintptr_t addrProfilesArray = Utils::PatternFinder::Find(addrContainerCount + 1, 16, "[MOV r64, [r64+off8]]");
+    if (addrProfilesArray) {
+      int8_t arrOff = Utils::PatternFinder::ReadInt8(addrProfilesArray + 3);
+      owner.SetProfilesArrayOffset(arrOff);
+      logger->Debug("7.7 [OFFSET: Profiles Array] Found: 0x{:X}", arrOff);
+    } else {
+      logger->Error("7.7 [OFFSET: Profiles Array] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 7.8 Sun angle offset (0x3F20 — current sun angle in env)
+    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
+    //* 1404e4a5e  F3 41 0F 10 96 20 3F 00 00    MOVSS XMM2,dword ptr [R14 + 0x3f20]
+    //* 1404e4a67  48 89 6C 24 20                MOV qword ptr [RSP + 0x20],RBP
+    uintptr_t addrSunAngle = Utils::PatternFinder::Find(addrNice, 180, "F3 41 0F 10 96 ? ? ? ? [MOV [r64+off8], r64]");
+    if (addrSunAngle) {
+      int32_t sunAngleOff = Utils::PatternFinder::ReadInt32(addrSunAngle + 5);
+      if (Utils::PatternFinder::IsSaneOffset(sunAngleOff)) {
+        owner.SetSunAngleOffset(sunAngleOff);
+        logger->Debug("7.8 [OFFSET: Sun Angle] Found: 0x{:X}", sunAngleOff);
+      } else {
+        logger->Error("7.8 [OFFSET: Sun Angle] Offset (0x{:X}) is insane.", sunAngleOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("7.8 [OFFSET: Sun Angle] FAILED to find signature.");
+      all_found = false;
+    }
+  } else {
+    logger->Error("7. [CALL: SunProfileUpdate] FAILED to find function start.");
+    all_found = false;
+  }
+
+  // === SECTION 8: WEATHER BLEND PROGRESS ===
+  // Used by: GetWeatherBlendProgress, SetTransitionDuration
+  // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d0920[1404d0920]) ---/
+  // * 1404d0920  44 8B 81 78 3E 00 00       MOV R8D,dword ptr [RCX + 0x3e78]
+  // * 1404d0927  B8 6D C1 16 6C             MOV EAX,0x6c16c16d
+  // * 1404d092c  F3 0F 10 81 7C 3E 00 00    MOVSS XMM0,dword ptr [RCX + 0x3e7c]
+  // * 1404d0934  0F 57 C9                   XORPS XMM1,XMM1
+  // * 1404d0937  F3 0F 59 05 FD 82 F0 01    MULSS XMM0,dword ptr [0x1423d8c3c]
+  const char* WEATHER_BLEND_PROGRESS_PATTERN =
+      "44 [MOV r32, [r64+off32]] [MOV r32, imm32] [MOVSS xmm, [r64+off32]] [XORPS xmm, xmm] F3 0F 59 05";
+  uintptr_t pfnWeatherBlend = Utils::PatternFinder::Find(WEATHER_BLEND_PROGRESS_PATTERN);
+
+  if (!pfnWeatherBlend) {
+    logger->Error("8. Failed to find WeatherBlendProgress function.");
+    all_found = false;
+  } else {
+    logger->Debug("8. [CALL: WeatherBlendProgress] Found at 0x{:X}", pfnWeatherBlend);
+    owner.SetWeatherBlendProgressFnAddr(pfnWeatherBlend);
+
+    // 8.1 Transition duration global (for SetTransitionDuration)
+    // * 1404d09bb  48 F7 2D E6 5E 73 02    IMUL qword ptr [0x142c068a8]
+    uintptr_t addrDuration = Utils::PatternFinder::Find(pfnWeatherBlend, 160, "48 F7 2D");
+    if (addrDuration) {
+      uintptr_t durGlobal = Utils::PatternFinder::GetRipAddress(addrDuration, 3, 7);
+      if (durGlobal) {
+        owner.SetTransitionDurationAddr(durGlobal);
+        logger->Debug("8.1 [PTR: Transition Duration] Found at 0x{:X} (val: {})", durGlobal, *(uint32_t*)durGlobal);
+      }
     }
   }
 
