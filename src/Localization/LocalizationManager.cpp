@@ -139,6 +139,9 @@ bool LocalizationManager::SetComponentLanguage(const std::string& componentName,
   std::lock_guard lock(m_mutex);
   if (LoadLanguageFile(componentName, langCode)) {
     m_currentLanguages[componentName] = langCode;
+    if (componentName == FRAMEWORK_COMPONENT_NAME) {
+      OnFrameworkLanguageChanged.Call(componentName);
+    }
     return true;
   }
 

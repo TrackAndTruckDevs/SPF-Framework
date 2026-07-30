@@ -19,6 +19,7 @@
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Hooks/GameLogHook.hpp"
+#include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
@@ -448,6 +449,7 @@ void Core::InitServices() {
   auto& hookManager = HookManager::GetInstance();
   hookManager.RegisterFeatureHook(&GameLogHook::GetInstance());
   hookManager.RegisterFeatureHook(&GameConsole::GetInstance());
+  hookManager.RegisterFeatureHook(&GameTools::ScsNameResolver::GetInstance());
   InitFeatureHooks();
   m_logger->Info("--- Core Services Initialized ---");
 }

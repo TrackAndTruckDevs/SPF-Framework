@@ -35,7 +35,7 @@ class LoggerWindow : public BaseWindow, public Config::IConfigurable {
 
  protected:
   void RenderContent() override;
-  const char* GetWindowTitle() const override;
+  void RefreshLocalization() override;
 
  private:
   void BuildComponentFilterList();

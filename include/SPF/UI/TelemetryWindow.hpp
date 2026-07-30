@@ -29,8 +29,10 @@ class TelemetryWindow : public BaseWindow {
   TelemetryWindow(const std::string& componentName, const std::string& windowId, Modules::ITelemetryService& telemetryService);
 
  protected:
-  const char* GetWindowTitle() const override;
+
+
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  private:
   // Event Handlers (Slots)

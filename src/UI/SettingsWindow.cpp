@@ -64,78 +64,84 @@ SettingsWindow::SettingsWindow(const std::string& componentName, const std::stri
   m_defaultTitle = "Settings";
   m_titleLocalizationKey = "settings_window.title";
   m_keybindsDrawerHeight = m_keybindsDrawerMinHeight;
-  m_keybindsDrawerTitleKey = "settings_window.keybinds_drawer.title";
-  m_keybindsActionHeaderKey = "settings_window.keybinds_drawer.table.action";
-  m_keybindsKeyHeaderKey = "settings_window.keybinds_drawer.table.key";
 
-  m_keyCapturePopupTitleKey = "settings_window.key_capture_popup.title";
-  m_keyCapturePressKeyTextKey = "settings_window.key_capture_popup.press_key_text";
-  m_keyCaptureDeleteButtonKey = "settings_window.key_capture_popup.delete_button";
-  m_keyCaptureCancelButtonKey = "settings_window.key_capture_popup.cancel_button";
-  m_keyCaptureConflictTitleKey = "settings_window.key_capture_popup.conflict_title";
-  m_keyCaptureConflictTextDetailedKey = "settings_window.key_capture_popup.conflict_text_detailed";
-  m_keyCaptureReassignShortPressButtonKey = "settings_window.key_capture_popup.reassign_short_press_button";
-  m_keyCaptureReassignLongPressButtonKey = "settings_window.key_capture_popup.reassign_long_press_button";
-  m_keyCaptureReassignPositiveSideButtonKey = "settings_window.key_capture_popup.reassign_positive_side_button";
-  m_keyCaptureReassignNegativeSideButtonKey = "settings_window.key_capture_popup.reassign_negative_side_button";
-  m_keyCaptureAddShortPressButtonKey = "settings_window.key_capture_popup.add_short_press_button";
-  m_keyCaptureAddLongPressButtonKey = "settings_window.key_capture_popup.add_long_press_button";
-  m_keyCaptureAddPositiveSideButtonKey = "settings_window.key_capture_popup.add_positive_side_button";
-  m_keyCaptureAddNegativeSideButtonKey = "settings_window.key_capture_popup.add_negative_side_button";
-  m_keyCaptureReassignEntireAxisButtonKey = "settings_window.key_capture_popup.reassign_entire_axis_button";
-  m_keyCaptureActionListFormatKey = "settings_window.key_capture_popup.action_list_format";
-
-  m_bindingDetailsPopupTitleKey = "settings_window.binding_details_popup.title";
-  m_bindingDetailsPressTypeLabelKey = "settings_window.binding_details_popup.press_type_label";
-  m_bindingDetailsBehaviorLabelKey = "settings_window.binding_details_popup.behavior_label";
-  m_bindingDetailsBehaviorToggleKey = "settings_window.binding_details_popup.behavior_toggle";
-  m_bindingDetailsBehaviorHoldKey = "settings_window.binding_details_popup.behavior_hold";
-  m_bindingDetailsConsumeLabelKey = "settings_window.binding_details_popup.consume_label";
-  m_bindingDetailsThresholdLabelKey = "settings_window.binding_details_popup.threshold_label";
-  m_bindingDetailsCloseButtonKey = "settings_window.binding_details_popup.close_button";
-
-  m_bindingDetailsModeLabelKey = "settings_window.binding_details_popup.mode_label";
-  m_bindingDetailsModeAnalogKey = "settings_window.binding_details_popup.mode_analog";
-  m_bindingDetailsModeDigitalKey = "settings_window.binding_details_popup.mode_digital";
-  m_bindingDetailsDeadzoneLabelKey = "settings_window.binding_details_popup.deadzone_label";
-  m_bindingDetailsSaturationLabelKey = "settings_window.binding_details_popup.saturation_label";
-  m_bindingDetailsSensitivityLabelKey = "settings_window.binding_details_popup.sensitivity_label";
-  m_bindingDetailsCurveLabelKey = "settings_window.binding_details_popup.curve_label";
-  m_bindingDetailsSmoothingLabelKey = "settings_window.binding_details_popup.smoothing_label";
-  m_bindingDetailsSideLabelKey = "settings_window.binding_details_popup.side_label";
-  m_bindingDetailsSideBothKey = "settings_window.binding_details_popup.side_both";
-  m_bindingDetailsSidePositiveKey = "settings_window.binding_details_popup.side_positive";
-  m_bindingDetailsSideNegativeKey = "settings_window.binding_details_popup.side_negative";
-  m_bindingDetailsRangeMinLabelKey = "settings_window.binding_details_popup.range_min_label";
-  m_bindingDetailsRangeMaxLabelKey = "settings_window.binding_details_popup.range_max_label";
-  m_bindingDetailsAccumulatorModeLabelKey = "settings_window.binding_details_popup.accumulator_mode_label";
-  m_bindingDetailsInvertLabelKey = "settings_window.binding_details_popup.invert_label";
   m_conflictPressTypeMessage = "settings_window.conflict.press_type_message";
   m_conflictSwapQuestion = "settings_window.conflict.swap_question";
   m_conflictYesSwapButton = "settings_window.conflict.yes_swap_button";
   m_conflictCancelButton = "settings_window.conflict.cancel_button";
 
-  m_enumPressTypeShortKey = "enums.press_type.short";
-  m_enumPressTypeLongKey = "enums.press_type.long";
-  m_enumSideBothKey = "enums.side.both";
-  m_enumSidePositiveKey = "enums.side.positive";
-  m_enumSideNegativeKey = "enums.side.negative";
-
-  m_keybindsUnassignedTextKey = "settings_window.keybinds_drawer.unassigned_text";
-
-  m_noConfigurableComponentsKey = "settings_window.main_area.no_configurable_components";
-  m_componentInfoErrorKey = "settings_window.main_area.component_info_error";
-  m_noConfigurableSystemsKey = "settings_window.main_area.no_configurable_systems";
-  m_keybindsNotAvailableKey = "settings_window.keybinds_drawer.not_available";
-  m_nullValueFormatKey = "settings_window.main_area.null_value_format";
-
   m_onFocusComponentSink->Connect<&SettingsWindow::OnFocusComponent>(this);
   m_onInputCaptureUpdateSink->Connect<&SettingsWindow::OnInputCaptureUpdate>(this);
   m_onKeybindsModifiedSink->Connect<&SettingsWindow::UpdateHardwareCodeUsageCount>(this);
 
+  RefreshLocalization();
+
   UpdateHardwareCodeUsageCount({});
 }
-const char* SettingsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
+void SettingsWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
+  auto& loc = LocalizationManager::GetInstance();
+  m_keybindsDrawerTitleKey = loc.Get("settings_window.keybinds_drawer.title");
+  m_keybindsActionHeaderKey = loc.Get("settings_window.keybinds_drawer.table.action");
+  m_keybindsKeyHeaderKey = loc.Get("settings_window.keybinds_drawer.table.key");
+
+  m_keyCapturePopupTitleKey = loc.Get("settings_window.key_capture_popup.title");
+  m_keyCapturePressKeyTextKey = loc.Get("settings_window.key_capture_popup.press_key_text");
+  m_keyCaptureDeleteButtonKey = loc.Get("settings_window.key_capture_popup.delete_button");
+  m_keyCaptureCancelButtonKey = loc.Get("settings_window.key_capture_popup.cancel_button");
+  m_keyCaptureConflictTitleKey = loc.Get("settings_window.key_capture_popup.conflict_title");
+  m_keyCaptureConflictTextDetailedKey = loc.Get("settings_window.key_capture_popup.conflict_text_detailed");
+  m_keyCaptureReassignShortPressButtonKey = loc.Get("settings_window.key_capture_popup.reassign_short_press_button");
+  m_keyCaptureReassignLongPressButtonKey = loc.Get("settings_window.key_capture_popup.reassign_long_press_button");
+  m_keyCaptureReassignPositiveSideButtonKey = loc.Get("settings_window.key_capture_popup.reassign_positive_side_button");
+  m_keyCaptureReassignNegativeSideButtonKey = loc.Get("settings_window.key_capture_popup.reassign_negative_side_button");
+  m_keyCaptureAddShortPressButtonKey = loc.Get("settings_window.key_capture_popup.add_short_press_button");
+  m_keyCaptureAddLongPressButtonKey = loc.Get("settings_window.key_capture_popup.add_long_press_button");
+  m_keyCaptureAddPositiveSideButtonKey = loc.Get("settings_window.key_capture_popup.add_positive_side_button");
+  m_keyCaptureAddNegativeSideButtonKey = loc.Get("settings_window.key_capture_popup.add_negative_side_button");
+  m_keyCaptureReassignEntireAxisButtonKey = loc.Get("settings_window.key_capture_popup.reassign_entire_axis_button");
+  m_keyCaptureActionListFormatKey = loc.Get("settings_window.key_capture_popup.action_list_format");
+
+  m_bindingDetailsPopupTitleKey = loc.Get("settings_window.binding_details_popup.title");
+  m_bindingDetailsPressTypeLabelKey = loc.Get("settings_window.binding_details_popup.press_type_label");
+  m_bindingDetailsBehaviorLabelKey = loc.Get("settings_window.binding_details_popup.behavior_label");
+  m_bindingDetailsBehaviorToggleKey = loc.Get("settings_window.binding_details_popup.behavior_toggle");
+  m_bindingDetailsBehaviorHoldKey = loc.Get("settings_window.binding_details_popup.behavior_hold");
+  m_bindingDetailsConsumeLabelKey = loc.Get("settings_window.binding_details_popup.consume_label");
+  m_bindingDetailsThresholdLabelKey = loc.Get("settings_window.binding_details_popup.threshold_label");
+  m_bindingDetailsCloseButtonKey = loc.Get("settings_window.binding_details_popup.close_button");
+
+  m_bindingDetailsModeLabelKey = loc.Get("settings_window.binding_details_popup.mode_label");
+  m_bindingDetailsModeAnalogKey = loc.Get("settings_window.binding_details_popup.mode_analog");
+  m_bindingDetailsModeDigitalKey = loc.Get("settings_window.binding_details_popup.mode_digital");
+  m_bindingDetailsDeadzoneLabelKey = loc.Get("settings_window.binding_details_popup.deadzone_label");
+  m_bindingDetailsSaturationLabelKey = loc.Get("settings_window.binding_details_popup.saturation_label");
+  m_bindingDetailsSensitivityLabelKey = loc.Get("settings_window.binding_details_popup.sensitivity_label");
+  m_bindingDetailsCurveLabelKey = loc.Get("settings_window.binding_details_popup.curve_label");
+  m_bindingDetailsSmoothingLabelKey = loc.Get("settings_window.binding_details_popup.smoothing_label");
+  m_bindingDetailsSideLabelKey = loc.Get("settings_window.binding_details_popup.side_label");
+  m_bindingDetailsSideBothKey = loc.Get("settings_window.binding_details_popup.side_both");
+  m_bindingDetailsSidePositiveKey = loc.Get("settings_window.binding_details_popup.side_positive");
+  m_bindingDetailsSideNegativeKey = loc.Get("settings_window.binding_details_popup.side_negative");
+  m_bindingDetailsRangeMinLabelKey = loc.Get("settings_window.binding_details_popup.range_min_label");
+  m_bindingDetailsRangeMaxLabelKey = loc.Get("settings_window.binding_details_popup.range_max_label");
+  m_bindingDetailsAccumulatorModeLabelKey = loc.Get("settings_window.binding_details_popup.accumulator_mode_label");
+  m_bindingDetailsInvertLabelKey = loc.Get("settings_window.binding_details_popup.invert_label");
+
+  m_enumPressTypeShortKey = loc.Get("enums.press_type.short");
+  m_enumPressTypeLongKey = loc.Get("enums.press_type.long");
+  m_enumSideBothKey = loc.Get("enums.side.both");
+  m_enumSidePositiveKey = loc.Get("enums.side.positive");
+  m_enumSideNegativeKey = loc.Get("enums.side.negative");
+
+  m_keybindsUnassignedTextKey = loc.Get("settings_window.keybinds_drawer.unassigned_text");
+
+  m_noConfigurableComponentsKey = loc.Get("settings_window.main_area.no_configurable_components");
+  m_componentInfoErrorKey = loc.Get("settings_window.main_area.component_info_error");
+  m_noConfigurableSystemsKey = loc.Get("settings_window.main_area.no_configurable_systems");
+  m_keybindsNotAvailableKey = loc.Get("settings_window.keybinds_drawer.not_available");
+  m_nullValueFormatKey = loc.Get("settings_window.main_area.null_value_format");
+}
 
 void SettingsWindow::OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e) {
   m_currentComponent = e.componentName;
@@ -565,7 +571,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
         ImGui::TreePop();
       }
     } else if (valueNode->is_null()) {
-      std::string markdownText = loc.GetFormatted("framework", m_nullValueFormatKey, key);
+      std::string markdownText = loc.GetFormatted("framework", "settings_window.main_area.null_value_format", key);
       Typography::RenderMarkdownText(markdownText, TextStyle::Italic().Color(UI::Colors::GRAY));
       ShowTooltip();
     }
@@ -575,7 +581,7 @@ void SettingsWindow::RenderSettingsNode(const std::string& key, const nlohmann::
 void SettingsWindow::RenderKeybindsSettings() {
   auto& loc = LocalizationManager::GetInstance();
   if (!m_configService.GetMergedConfig("keybinds")) {
-    Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_keybindsNotAvailableKey).c_str());
+    Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), m_keybindsNotAvailableKey.c_str());
     return;
   }
 
@@ -588,8 +594,8 @@ void SettingsWindow::RenderKeybindsSettings() {
     // --- Header Table ---
     ImGuiTableFlags header_flags = ImGuiTableFlags_Borders;
     if (ImGui::BeginTable("keybinds_header_table", 2, header_flags)) {
-      ImGui::TableSetupColumn(loc.Get(m_keybindsActionHeaderKey).c_str(), ImGuiTableColumnFlags_WidthStretch);
-      ImGui::TableSetupColumn(loc.Get(m_keybindsKeyHeaderKey).c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn(m_keybindsActionHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn(m_keybindsKeyHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
 
       ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
       for (int column = 0; column < 2; column++) {
@@ -726,7 +732,7 @@ void SettingsWindow::RenderKeybindsSettings() {
               if (bindings->empty()) {
                 ImGui::PushID((fullActionName + ":add_new").c_str());
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-                if (Button(loc.Get(m_keybindsUnassignedTextKey).c_str())) {
+                if (Button(m_keybindsUnassignedTextKey.c_str())) {
                   m_actionBeingEdited = fullActionName;
                   m_editingBindingObject = nlohmann::ordered_json::object();
                   m_eventManager.System.OnRequestInputCapture.Call({fullActionName, m_editingBindingObject});
@@ -1028,20 +1034,19 @@ void SettingsWindow::RenderContent() {
     // This child window can have its own scrollbar if the settings content is large.
     ImGui::BeginChild("MainSettingsContent", ImVec2(0, mainSettingsHeight));
     if (m_configurableComponents.empty()) {
-      Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_noConfigurableComponentsKey).c_str());
+      Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), m_noConfigurableComponentsKey.c_str());
     } else {
       const auto& infoIt = m_configService.GetAllComponentInfo().find(m_currentComponent);
       if (infoIt == m_configService.GetAllComponentInfo().end()) {
-        std::string markdownText = loc.GetFormatted("framework", m_componentInfoErrorKey, m_currentComponent);
+        std::string markdownText = loc.GetFormatted("framework", "settings_window.main_area.component_info_error", m_currentComponent);
         Typography::RenderMarkdownText(markdownText, TextStyle::H3().Color(UI::Colors::RED).Align(TextAlign::Center));
       } else {
         const auto& systemsToRender = infoIt->second.configurableSystems;
         const auto& componentSettingsIt = m_configService.GetAggregatedUserSettings().find(m_currentComponent);
         if (componentSettingsIt == m_configService.GetAggregatedUserSettings().end() || systemsToRender.empty()) {
-          Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), loc.Get(m_noConfigurableSystemsKey).c_str());
+          Typography::Text(TextStyle::H3().Color(UI::Colors::GRAY).Align(TextAlign::Center), m_noConfigurableSystemsKey.c_str());
         } else {
           const auto& componentSettingsData = componentSettingsIt->second;
-          auto& loc = LocalizationManager::GetInstance();
 
           for (const auto& systemName : systemsToRender) {
             if (componentSettingsData.contains(systemName)) {
@@ -1113,7 +1118,7 @@ void SettingsWindow::RenderContent() {
   draw_list->AddRectFilled(p_min, p_max, ImGui::GetColorU32(ImGuiCol_Button), ImGui::GetStyle().FrameRounding);
   draw_list->AddRect(p_min, p_max, ImGui::GetColorU32(ImGuiCol_Border), ImGui::GetStyle().FrameRounding, 0, 1.0f);
 
-  const char* title = loc.Get(m_keybindsDrawerTitleKey).c_str();
+  const char* title = m_keybindsDrawerTitleKey.c_str();
   const char* icon = m_keybindsDrawerExpanded ? ICON_FA_CHEVRON_DOWN : ICON_FA_CHEVRON_UP;
 
   ImVec2 title_size = ImGui::CalcTextSize(title);
@@ -1142,19 +1147,19 @@ void SettingsWindow::RenderContent() {
 
   // --- Key Capture Popup ---
   if (m_actionBeingEdited.has_value()) {
-    ImGui::OpenPopup(loc.Get(m_keyCapturePopupTitleKey).c_str());
+    ImGui::OpenPopup(m_keyCapturePopupTitleKey.c_str());
   }
 
   ImGui::SetNextWindowSize(ImVec2(450, 0), ImGuiCond_Appearing);
-  if (ImGui::BeginPopupModal(loc.Get(m_keyCapturePopupTitleKey).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (ImGui::BeginPopupModal(m_keyCapturePopupTitleKey.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     // Check for conflict first
     if (m_conflictInfo.has_value()) {
       auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SettingsWindow");
       std::string inputDisplayName = m_conflictInfo->capturedInput->GetDisplayName();
 
-      Typography::Text(TextStyle::H3().Separator().Color(UI::Colors::RED), "%s", loc.Get(m_keyCaptureConflictTitleKey).c_str());
+      Typography::Text(TextStyle::H3().Separator().Color(UI::Colors::RED), "%s", m_keyCaptureConflictTitleKey.c_str());
       // The localization string for m_keyCaptureConflictTextDetailedKey should contain markdown, e.g., "This key is already bound to **%s**."
-      std::string conflictDetails = loc.GetFormatted("framework", m_keyCaptureConflictTextDetailedKey, inputDisplayName);
+      std::string conflictDetails = loc.GetFormatted("framework", "settings_window.key_capture_popup.conflict_text_detailed", inputDisplayName);
       Typography::RenderMarkdownText(conflictDetails, TextStyle::Regular().Wrapped().Padding({0.0f, 10.0f}));
 
       ImGui::Separator();
@@ -1186,11 +1191,11 @@ void SettingsWindow::RenderContent() {
         std::string actionName = this->GetTranslatedActionName(fullActionName);
 
         // 3. Get Translated Type (Press Type or Side)
-        std::string translatedType = loc.Get(typeKey);
+        std::string translatedType = typeKey;
 
         // 4. Format and Render
         // We use the same format key, but it will now say "Side: Positive" instead of "Press type: Short" if we pass the right strings
-        std::string markdownText = loc.GetFormatted("framework", m_keyCaptureActionListFormatKey, ownerDisplayName, actionName, translatedType);
+        std::string markdownText = loc.GetFormatted("framework", "settings_window.key_capture_popup.action_list_format", ownerDisplayName, actionName, translatedType);
         Typography::RenderMarkdownText(markdownText, TextStyle::Regular().Wrapped().Padding({0.0f, 10.0f}));
       };
 
@@ -1265,7 +1270,7 @@ void SettingsWindow::RenderContent() {
 
         // 1. Add Positive Side Button
         if (analysis.isPositiveAvailable || analysis.bothConflict) {
-          if (Button(loc.Get(m_keyCaptureAddPositiveSideButtonKey).c_str())) {
+          if (Button(m_keyCaptureAddPositiveSideButtonKey.c_str())) {
             if (analysis.bothConflict) {
               // SPLIT: Update existing Both -> Negative
               m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "negative"});
@@ -1277,7 +1282,7 @@ void SettingsWindow::RenderContent() {
 
         // 2. Add Negative Side Button
         if (analysis.isNegativeAvailable || analysis.bothConflict) {
-          if (Button(loc.Get(m_keyCaptureAddNegativeSideButtonKey).c_str())) {
+          if (Button(m_keyCaptureAddNegativeSideButtonKey.c_str())) {
             if (analysis.bothConflict) {
               // SPLIT: Update existing Both -> Positive
               m_eventManager.System.OnRequestBindingPropertyUpdate.Call({analysis.bothConflict->first, analysis.bothConflict->second, "side", "positive"});
@@ -1289,19 +1294,19 @@ void SettingsWindow::RenderContent() {
 
         // 3. Reassign Axis Buttons
         if (analysis.bothConflict) {
-          if (Button(loc.Get(m_keyCaptureReassignEntireAxisButtonKey).c_str())) {
+          if (Button(m_keyCaptureReassignEntireAxisButtonKey.c_str())) {
             reassignBinding(analysis.bothConflict);
           }
           ImGui::SameLine();
         } else {
           if (analysis.positiveConflict) {
-            if (Button(loc.Get(m_keyCaptureReassignPositiveSideButtonKey).c_str())) {
+            if (Button(m_keyCaptureReassignPositiveSideButtonKey.c_str())) {
               reassignBinding(analysis.positiveConflict);
             }
             ImGui::SameLine();
           }
           if (analysis.negativeConflict) {
-            if (Button(loc.Get(m_keyCaptureReassignNegativeSideButtonKey).c_str())) {
+            if (Button(m_keyCaptureReassignNegativeSideButtonKey.c_str())) {
               reassignBinding(analysis.negativeConflict);
             }
             ImGui::SameLine();
@@ -1309,14 +1314,14 @@ void SettingsWindow::RenderContent() {
         }
       } else {
         if (analysis.isShortPressAvailable) {
-          if (Button(loc.Get(m_keyCaptureAddShortPressButtonKey).c_str())) {
+          if (Button(m_keyCaptureAddShortPressButtonKey.c_str())) {
             addBinding("short");
           }
           ImGui::SameLine();
         }
 
         if (analysis.isLongPressAvailable) {
-          if (Button(loc.Get(m_keyCaptureAddLongPressButtonKey).c_str())) {
+          if (Button(m_keyCaptureAddLongPressButtonKey.c_str())) {
             addBinding("long");
           }
           ImGui::SameLine();
@@ -1324,21 +1329,21 @@ void SettingsWindow::RenderContent() {
       }
 
       if (analysis.shortPressConflict) {
-        if (Button(loc.Get(m_keyCaptureReassignShortPressButtonKey).c_str())) {
+        if (Button(m_keyCaptureReassignShortPressButtonKey.c_str())) {
           reassignBinding(analysis.shortPressConflict);
         }
         ImGui::SameLine();
       }
 
       if (analysis.longPressConflict) {
-        if (Button(loc.Get(m_keyCaptureReassignLongPressButtonKey).c_str())) {
+        if (Button(m_keyCaptureReassignLongPressButtonKey.c_str())) {
           reassignBinding(analysis.longPressConflict);
         }
         ImGui::SameLine();
       }
 
       // --- Cancel Button ---
-      if (Button(loc.Get(m_keyCaptureCancelButtonKey).c_str())) {
+      if (Button(m_keyCaptureCancelButtonKey.c_str())) {
         logger->Info("User cancelled reassigning input '{}'.", inputDisplayName);
         m_conflictInfo.reset();
         ImGui::CloseCurrentPopup();
@@ -1374,7 +1379,7 @@ void SettingsWindow::RenderContent() {
       ImGui::CloseCurrentPopup();
     } else {
       // If no key has been captured yet, display the popup's content
-      Typography::Text(TextStyle::Regular().Wrapped(), loc.Get(m_keyCapturePressKeyTextKey).c_str());
+      Typography::Text(TextStyle::Regular().Wrapped(), m_keyCapturePressKeyTextKey.c_str());
 
       ImGui::Spacing();
       // --- Rich Chord Display ---
@@ -1444,7 +1449,7 @@ void SettingsWindow::RenderContent() {
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.0f, 0.6f, 0.6f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0f, 0.7f, 0.7f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0f, 0.8f, 0.8f));
-        if (Button(loc.Get(m_keyCaptureDeleteButtonKey).c_str())) {
+        if (Button(m_keyCaptureDeleteButtonKey.c_str())) {
           // Store the name in a local variable because m_actionBeingEdited
           // will be reset by the Cancel call below.
           std::string actionName = m_actionBeingEdited.value();
@@ -1462,7 +1467,7 @@ void SettingsWindow::RenderContent() {
         ImGui::SameLine();
       }
 
-      if (Button(loc.Get(m_keyCaptureCancelButtonKey).c_str(), TextStyle::DefaultButton(), ImVec2(120, 0))) {
+      if (Button(m_keyCaptureCancelButtonKey.c_str(), TextStyle::DefaultButton(), ImVec2(120, 0))) {
         m_eventManager.System.OnRequestInputCaptureCancel.Call({});
         // This is a direct and safe UI state change.
         m_actionBeingEdited.reset();
@@ -1475,11 +1480,11 @@ void SettingsWindow::RenderContent() {
 
   // --- Binding Details Popup ---
   if (m_shouldOpenBindingDetailsPopup) {
-    ImGui::OpenPopup(loc.Get(m_bindingDetailsPopupTitleKey).c_str());
+    ImGui::OpenPopup(m_bindingDetailsPopupTitleKey.c_str());
     m_shouldOpenBindingDetailsPopup = false;
   }
 
-  if (ImGui::BeginPopupModal(loc.Get(m_bindingDetailsPopupTitleKey).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (ImGui::BeginPopupModal(m_bindingDetailsPopupTitleKey.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     if (!m_editingBindingDetails.has_value() || !m_editingBindingAction.has_value()) {
       // Should not happen if popup is open, but as a safeguard
       ImGui::CloseCurrentPopup();
@@ -1508,19 +1513,19 @@ void SettingsWindow::RenderContent() {
       std::string mode = bindingJson.value("mode", isAxis ? "analog" : "digital");
 
       if (isAxis) {
-        ImGui::TextUnformatted(loc.Get(m_bindingDetailsModeLabelKey).c_str());
-        addTooltip(m_bindingDetailsModeLabelKey);
+        ImGui::TextUnformatted(m_bindingDetailsModeLabelKey.c_str());
+        addTooltip("settings_window.binding_details_popup.mode_label");
         ImGui::SameLine();
 
         if (isMouse) ImGui::BeginDisabled();
 
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsModeAnalogKey).c_str(), mode == "analog")) {
+        if (ImGui::RadioButton(m_bindingDetailsModeAnalogKey.c_str(), mode == "analog")) {
           bindingJson["mode"] = "analog";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "mode", "analog"});
           m_originalBindingCopy = bindingJson;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsModeDigitalKey).c_str(), mode == "digital")) {
+        if (ImGui::RadioButton(m_bindingDetailsModeDigitalKey.c_str(), mode == "digital")) {
           bindingJson["mode"] = "digital";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "mode", "digital"});
           m_originalBindingCopy = bindingJson;
@@ -1556,43 +1561,43 @@ void SettingsWindow::RenderContent() {
         bool accumulator = bindingJson.value("accumulator", isMouse);  // Mouse is always accumulator
 
         if (isCentered && !isMouse) {
-          if (ImGui::Checkbox(loc.Get(m_bindingDetailsAccumulatorModeLabelKey).c_str(), &accumulator)) {
+          if (ImGui::Checkbox(m_bindingDetailsAccumulatorModeLabelKey.c_str(), &accumulator)) {
             bindingJson["accumulator"] = accumulator;
             m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "accumulator", accumulator});
             m_originalBindingCopy = bindingJson;
           }
-          addTooltip(m_bindingDetailsAccumulatorModeLabelKey);
+          addTooltip("settings_window.binding_details_popup.accumulator_mode_label");
         }
 
         if (!isMouse && !accumulator) {
           // Deadzone
-          if (ImGui::SliderFloat(loc.Get(m_bindingDetailsDeadzoneLabelKey).c_str(), &deadzone, 0.0f, 0.5f, "%.2f")) {
+          if (ImGui::SliderFloat(m_bindingDetailsDeadzoneLabelKey.c_str(), &deadzone, 0.0f, 0.5f, "%.2f")) {
             bindingJson["deadzone"] = deadzone;
             m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "deadzone", deadzone});
             m_originalBindingCopy = bindingJson;
           }
-          addTooltip(m_bindingDetailsDeadzoneLabelKey);
+          addTooltip("settings_window.binding_details_popup.deadzone_label");
 
           // Saturation
-          if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSaturationLabelKey).c_str(), &saturation, 0.5f, 1.0f, "%.2f")) {
+          if (ImGui::SliderFloat(m_bindingDetailsSaturationLabelKey.c_str(), &saturation, 0.5f, 1.0f, "%.2f")) {
             bindingJson["saturation"] = saturation;
             m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "saturation", saturation});
             m_originalBindingCopy = bindingJson;
           }
-          addTooltip(m_bindingDetailsSaturationLabelKey);
+          addTooltip("settings_window.binding_details_popup.saturation_label");
         }
 
         // Sensitivity
-        if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSensitivityLabelKey).c_str(), &sensitivity, 0.1f, 5.0f, "%.1f")) {
+        if (ImGui::SliderFloat(m_bindingDetailsSensitivityLabelKey.c_str(), &sensitivity, 0.1f, 5.0f, "%.1f")) {
           bindingJson["sensitivity"] = sensitivity;
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "sensitivity", sensitivity});
           m_originalBindingCopy = bindingJson;
         }
-        addTooltip(m_bindingDetailsSensitivityLabelKey);
+        addTooltip("settings_window.binding_details_popup.sensitivity_label");
 
         if (!isMouse && !accumulator) {
           // Curve
-          if (ImGui::BeginCombo(loc.Get(m_bindingDetailsCurveLabelKey).c_str(), curve.c_str())) {
+          if (ImGui::BeginCombo(m_bindingDetailsCurveLabelKey.c_str(), curve.c_str())) {
             const char* curves[] = {"linear", "exponential", "logarithmic", "s-curve"};
             for (auto c : curves) {
               if (ImGui::Selectable(c, curve == c)) {
@@ -1604,15 +1609,15 @@ void SettingsWindow::RenderContent() {
             }
             ImGui::EndCombo();
           }
-          addTooltip(m_bindingDetailsCurveLabelKey);
+          addTooltip("settings_window.binding_details_popup.curve_label");
 
           // Smoothing
-          if (ImGui::SliderFloat(loc.Get(m_bindingDetailsSmoothingLabelKey).c_str(), &smoothing, 0.0f, 0.95f, "%.2f")) {
+          if (ImGui::SliderFloat(m_bindingDetailsSmoothingLabelKey.c_str(), &smoothing, 0.0f, 0.95f, "%.2f")) {
             bindingJson["smoothing"] = smoothing;
             m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "smoothing", smoothing});
             m_originalBindingCopy = bindingJson;
           }
-          addTooltip(m_bindingDetailsSmoothingLabelKey);
+          addTooltip("settings_window.binding_details_popup.smoothing_label");
         }
 
         // Range settings based on Side
@@ -1628,51 +1633,51 @@ void SettingsWindow::RenderContent() {
 
         // Range Min
         rMin = bindingJson.value("range_min", rMinLimit);
-        if (ImGui::SliderFloat(loc.Get(m_bindingDetailsRangeMinLabelKey).c_str(), &rMin, rMinLimit, rMax, "%.2f")) {
+        if (ImGui::SliderFloat(m_bindingDetailsRangeMinLabelKey.c_str(), &rMin, rMinLimit, rMax, "%.2f")) {
           bindingJson["range_min"] = rMin;
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "range_min", rMin});
           m_originalBindingCopy = bindingJson;
         }
-        addTooltip(m_bindingDetailsRangeMinLabelKey);
+        addTooltip("settings_window.binding_details_popup.range_min_label");
 
         // Range Max
         rMax = bindingJson.value("range_max", rMaxLimit);
-        if (ImGui::SliderFloat(loc.Get(m_bindingDetailsRangeMaxLabelKey).c_str(), &rMax, rMin, rMaxLimit, "%.2f")) {
+        if (ImGui::SliderFloat(m_bindingDetailsRangeMaxLabelKey.c_str(), &rMax, rMin, rMaxLimit, "%.2f")) {
           bindingJson["range_max"] = rMax;
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "range_max", rMax});
           m_originalBindingCopy = bindingJson;
         }
-        addTooltip(m_bindingDetailsRangeMaxLabelKey);
+        addTooltip("settings_window.binding_details_popup.range_max_label");
 
         // Invert
         bool invert = bindingJson.value("invert", false);
-        if (ImGui::Checkbox(loc.Get(m_bindingDetailsInvertLabelKey).c_str(), &invert)) {
+        if (ImGui::Checkbox(m_bindingDetailsInvertLabelKey.c_str(), &invert)) {
           bindingJson["invert"] = invert;
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "invert", invert});
           m_originalBindingCopy = bindingJson;
         }
-        addTooltip(m_bindingDetailsInvertLabelKey);
+        addTooltip("settings_window.binding_details_popup.invert_label");
 
         // Side
-        ImGui::TextUnformatted(loc.Get(m_bindingDetailsSideLabelKey).c_str());
-        addTooltip(m_bindingDetailsSideLabelKey);
+        ImGui::TextUnformatted(m_bindingDetailsSideLabelKey.c_str());
+        addTooltip("settings_window.binding_details_popup.side_label");
         ImGui::SameLine();
 
         if (isTrigger) ImGui::BeginDisabled();
 
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsSideBothKey).c_str(), side == "both")) {
+        if (ImGui::RadioButton(m_bindingDetailsSideBothKey.c_str(), side == "both")) {
           bindingJson["side"] = "both";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "both"});
           m_originalBindingCopy = bindingJson;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsSidePositiveKey).c_str(), side == "positive")) {
+        if (ImGui::RadioButton(m_bindingDetailsSidePositiveKey.c_str(), side == "positive")) {
           bindingJson["side"] = "positive";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "positive"});
           m_originalBindingCopy = bindingJson;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsSideNegativeKey).c_str(), side == "negative")) {
+        if (ImGui::RadioButton(m_bindingDetailsSideNegativeKey.c_str(), side == "negative")) {
           bindingJson["side"] = "negative";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "side", "negative"});
           m_originalBindingCopy = bindingJson;
@@ -1878,18 +1883,18 @@ void SettingsWindow::RenderContent() {
 
         if (isAxis) {
           float threshold = bindingJson.value("threshold", 0.5f);
-          if (ImGui::SliderFloat(loc.Get(m_bindingDetailsThresholdLabelKey).c_str(), &threshold, 0.05f, 0.95f, "%.2f")) {
+          if (ImGui::SliderFloat(m_bindingDetailsThresholdLabelKey.c_str(), &threshold, 0.05f, 0.95f, "%.2f")) {
             bindingJson["threshold"] = threshold;
             m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "threshold", threshold});
             m_originalBindingCopy = bindingJson;
           }
-          addTooltip(m_bindingDetailsThresholdLabelKey);
+          addTooltip("settings_window.binding_details_popup.threshold_label");
           ImGui::Separator();
         }
 
         // --- Press Type Setting with Radio Buttons ---
-        ImGui::TextUnformatted(loc.Get(m_bindingDetailsPressTypeLabelKey).c_str());
-        addTooltip(m_bindingDetailsPressTypeLabelKey);
+        ImGui::TextUnformatted(m_bindingDetailsPressTypeLabelKey.c_str());
+        addTooltip("settings_window.binding_details_popup.press_type_label");
         ImGui::SameLine();
         ImGui::PushID("details_press_type_radios");
 
@@ -2010,18 +2015,18 @@ void SettingsWindow::RenderContent() {
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::TextUnformatted(loc.Get(m_bindingDetailsBehaviorLabelKey).c_str());
-        addTooltip(m_bindingDetailsBehaviorLabelKey);
+        ImGui::TextUnformatted(m_bindingDetailsBehaviorLabelKey.c_str());
+        addTooltip("settings_window.binding_details_popup.behavior_label");
         ImGui::SameLine();
         ImGui::PushID("details_behavior");
         std::string currentBehavior = bindingJson.value("behavior", "toggle");
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorToggleKey).c_str(), currentBehavior == "toggle")) {
+        if (ImGui::RadioButton(m_bindingDetailsBehaviorToggleKey.c_str(), currentBehavior == "toggle")) {
           bindingJson["behavior"] = "toggle";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "toggle"});
           m_originalBindingCopy = bindingJson;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton(loc.Get(m_bindingDetailsBehaviorHoldKey).c_str(), currentBehavior == "hold")) {
+        if (ImGui::RadioButton(m_bindingDetailsBehaviorHoldKey.c_str(), currentBehavior == "hold")) {
           bindingJson["behavior"] = "hold";
           m_eventManager.System.OnRequestBindingPropertyUpdate.Call({actionFullName, m_originalBindingCopy, "behavior", "hold"});
           m_originalBindingCopy = bindingJson;
@@ -2033,8 +2038,8 @@ void SettingsWindow::RenderContent() {
       ImGui::Spacing();
       ImGui::Separator();
       ImGui::Spacing();
-      ImGui::TextUnformatted(loc.Get(m_bindingDetailsConsumeLabelKey).c_str());
-      addTooltip(m_bindingDetailsConsumeLabelKey);
+      ImGui::TextUnformatted(m_bindingDetailsConsumeLabelKey.c_str());
+      addTooltip("settings_window.binding_details_popup.consume_label");
       ImGui::SameLine();
       ImGui::PushID("details_consume");
       std::string currentConsume = bindingJson.value("consume", "never");
@@ -2066,7 +2071,7 @@ void SettingsWindow::RenderContent() {
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::TextUnformatted(loc.Get(m_bindingDetailsThresholdLabelKey).c_str());
+        ImGui::TextUnformatted(m_bindingDetailsThresholdLabelKey.c_str());
         ImGui::SameLine();
         ImGui::PushID("details_press_threshold");
 
@@ -2123,7 +2128,7 @@ void SettingsWindow::RenderContent() {
 
       ImGui::Separator();
 
-      if (Button(loc.Get(m_bindingDetailsCloseButtonKey).c_str())) {
+      if (Button(m_bindingDetailsCloseButtonKey.c_str())) {
         m_editingBindingDetails.reset();
         m_editingBindingAction.reset();
         ImGui::CloseCurrentPopup();

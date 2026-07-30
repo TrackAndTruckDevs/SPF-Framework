@@ -42,7 +42,7 @@ class MainWindow : public BaseWindow {
 
  protected:
   void RenderContent() override;
-  const char* GetWindowTitle() const override;
+  void RefreshLocalization() override;
   ImGuiWindowFlags GetExtraWindowFlags() const override;
 
   //  Override base window event handlers

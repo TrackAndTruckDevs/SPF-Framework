@@ -26,13 +26,18 @@ HooksWindow::HooksWindow(const std::string& componentName, const std::string& wi
   m_titleLocalizationKey = "hooks_window.title";
 }
 
-const char* HooksWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
+void HooksWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
+  auto& loc = LocalizationManager::GetInstance();
+  m_cachedNoHooksText = loc.Get("hooks_window.no_hooks_text");
+  m_cachedEnabledCheckbox = loc.Get("hooks_window.enabled_checkbox");
+}
 
 void HooksWindow::RenderContent() {
   const auto& hooks = m_hookManager.GetFeatureHooks();
 
   if (hooks.empty()) {
-    ImGui::TextUnformatted(LocalizationManager::GetInstance().Get("hooks_window.no_hooks_text").c_str());
+    ImGui::TextUnformatted(m_cachedNoHooksText.c_str());
     return;
   }
 
@@ -58,12 +63,12 @@ void HooksWindow::RenderContent() {
       if (isRequired) {
         ImGui::BeginDisabled(true);
         bool forcedEnabled = true;
-        ImGui::Checkbox(LocalizationManager::GetInstance().Get("hooks_window.enabled_checkbox").c_str(), &forcedEnabled);
+        ImGui::Checkbox(m_cachedEnabledCheckbox.c_str(), &forcedEnabled);
         ImGui::EndDisabled();
         ImGui::SameLine();
         ImGui::TextDisabled("%s", LocalizationManager::GetInstance().Get("hooks_window.required_by_plugin_text").c_str());
       } else {
-        if (ImGui::Checkbox(LocalizationManager::GetInstance().Get("hooks_window.enabled_checkbox").c_str(), &isEnabled)) {
+        if (ImGui::Checkbox(m_cachedEnabledCheckbox.c_str(), &isEnabled)) {
           m_eventManager.System.OnRequestSettingChange.Call({"framework", "settings.hook_states." + hook->GetName() + ".enabled", isEnabled});
         }
       }

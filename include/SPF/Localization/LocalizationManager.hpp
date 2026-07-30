@@ -5,6 +5,8 @@
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 
+#include "SPF/Utils/Signal.hpp"
+
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
@@ -31,6 +33,13 @@ class LocalizationManager : public Config::IConfigurable {
    * @return An InitializationReport detailing the results of the operation.
    */
   Core::InitializationReport Initialize(const std::map<std::string, nlohmann::ordered_json>* allConfigs);
+
+  /**
+   * @brief Signal emitted when the framework's own language changes.
+   * @details Only fires for the "framework" component. Plugin language changes do NOT trigger this.
+   *          The parameter is the component name (always "framework").
+   */
+  Utils::Signal<void(const std::string&)> OnFrameworkLanguageChanged;
 
   bool SetComponentLanguage(const std::string& componentName, const std::string& langCode);
   std::string GetComponentLanguage(const std::string& componentName) const;

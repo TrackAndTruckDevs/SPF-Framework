@@ -21,14 +21,13 @@ class PluginsWindow : public BaseWindow {
 
  protected:
   void RenderContent() override;
-  const char* GetWindowTitle() const override;
+  void RefreshLocalization() override;
 
  private:
   Config::IConfigService& m_configService;
   Events::EventManager& m_eventManager;
 
   // Localization Keys
-  std::string m_locTitle;
   std::string m_locTableStatus;
   std::string m_locTableName;
   std::string m_locTableActions;

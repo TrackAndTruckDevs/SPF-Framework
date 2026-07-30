@@ -28,16 +28,15 @@ class GameWorldWindow : public BaseWindow {
   GameWorldWindow(const std::string& componentName, const std::string& windowId, Data::GameData::GameWorldService& worldService);
   virtual ~GameWorldWindow() = default;
 
-  const char* GetWindowTitle() const override;
 
  protected:
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  private:
   Data::GameData::GameWorldService& m_worldService;
 
   // Localization keys
-  std::string m_locTitle;
   std::string m_locNotReady;
 
   // Visual Time

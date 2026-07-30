@@ -32,12 +32,16 @@ class HooksWindow : public BaseWindow {
 
  protected:
   void RenderContent() override;
-  const char* GetWindowTitle() const override;
+  void RefreshLocalization() override;
+
 
  private:
   UIManager& m_uiManager;
   Events::EventManager& m_eventManager;
   Hooks::HookManager& m_hookManager;
+
+  std::string m_cachedNoHooksText;
+  std::string m_cachedEnabledCheckbox;
 };
 }  // namespace UI
 

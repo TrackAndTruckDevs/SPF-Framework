@@ -27,8 +27,10 @@ class CameraWindow : public BaseWindow {
   CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService);
 
  protected:
-  const char* GetWindowTitle() const override;
+
+
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  private:
   GameCamera::GameCameraManager& m_gameCameraService;

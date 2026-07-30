@@ -10,6 +10,7 @@
 #include "ExamplePlugin.hpp"
 
 #include "SPF/SPF_API/SPF_Camera_API.h"
+#include "SPF/SPF_API/SPF_Climate_API.h"
 #include "SPF/SPF_API/SPF_Config_API.h"
 #include "SPF/SPF_API/SPF_GameLog_API.h"
 #include "SPF/SPF_API/SPF_Icons.h"
@@ -363,6 +364,7 @@ void OnActivated(const SPF_Core_API* core_api) {
   if (g_ctx.coreAPI) {
     g_ctx.vehicleAPI = g_ctx.coreAPI->vehicle;
     g_ctx.gameworldAPI = g_ctx.coreAPI->gameworld;
+    g_ctx.climateAPI = g_ctx.coreAPI->climate;
     g_ctx.environmentAPI = g_ctx.coreAPI->environment;
     g_ctx.uiAPI = g_ctx.coreAPI->ui;
     g_ctx.jsonWriterAPI = g_ctx.coreAPI->json_writer;
@@ -512,6 +514,18 @@ void OnUpdate() {
   // 3000 milliseconds (2 seconds), even though OnUpdate is called every frame.
   if (!g_ctx.coreAPI || !g_ctx.coreAPI->logger || !g_ctx.coreAPI->formatting) {
     return;
+  }
+
+  // --- Climate Auto-Toggle ---
+  // When the checkbox in the Climate tab is checked, flip weather mode every ~2 seconds.
+  if (g_ctx.climateAPI && g_ctx.climateAPI->CL_IsReady() && g_ctx.weatherAutoToggle) {
+    static int toggleCounter = 0;
+    toggleCounter++;
+    if (toggleCounter >= 120) {
+      toggleCounter = 0;
+      int32_t currentMode = g_ctx.climateAPI->CL_GetWeatherMode();
+      g_ctx.climateAPI->CL_SetWeatherMode(currentMode == 0 ? 1 : 0, true);
+    }
   }
 
   auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
@@ -1303,6 +1317,10 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
       RenderCameraTab(ui, user_data);
       ui->UI_EndTabItem();
     }
+    if (ui->UI_BeginTabItem("Climate", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
+      RenderClimateTab(ui, user_data);
+      ui->UI_EndTabItem();
+    }
     if (ui->UI_BeginTabItem("Telemetry", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
       RenderTelemetryTab(ui, user_data);
       ui->UI_EndTabItem();
@@ -1448,6 +1466,118 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
     ui->UI_Text(buffer);
   } else {
     ui->UI_Text("Could not get camera world coordinates.");
+  }
+}
+
+/**
+ * @brief Renders the content for the "Climate" tab in the main window.
+ * @details Displays current weather/climate API values and provides an auto-toggle checkbox
+ *          that flips between nice and bad weather every ~2 seconds.
+ */
+void RenderClimateTab(SPF_UI_API* ui, void* user_data) {
+  if (!g_ctx.climateAPI) {
+    ui->UI_Text("Climate API is not available.");
+    return;
+  }
+
+  if (!g_ctx.climateAPI->CL_IsReady()) {
+    ui->UI_Text("Climate Service is not ready yet.");
+    return;
+  }
+
+  auto climate = g_ctx.climateAPI;
+  auto format = g_ctx.coreAPI->formatting;
+
+  ui->UI_TextWrapped("This tab displays live values from the Climate API and lets you toggle weather automatically.");
+  ui->UI_Separator();
+
+  char buffer[256];
+
+  // --- Climate Name ---
+  {
+    char name[64];
+    if (climate->CL_GetCurrentClimateName(name, sizeof(name)) > 0) {
+      format->Fmt_Format(buffer, sizeof(buffer), "Current Climate: %s", name);
+      ui->UI_Text(buffer);
+    }
+  }
+
+  // --- Weather Mode ---
+  {
+    int32_t mode = climate->CL_GetWeatherMode();
+    int32_t nextMode = climate->CL_GetNextWeatherMode();
+    const char* modeStr = (mode == 0) ? "Nice" : "Bad";
+    const char* nextStr = (nextMode == 0) ? "Nice" : "Bad";
+    format->Fmt_Format(buffer, sizeof(buffer), "Weather Mode: %s (next: %s)", modeStr, nextStr);
+    ui->UI_Text(buffer);
+  }
+
+  // --- Bad Weather ---
+  {
+    float factor = climate->CL_GetBadWeatherFactor();
+    format->Fmt_Format(buffer, sizeof(buffer), "Bad Weather Factor: %.3f", factor);
+    ui->UI_Text(buffer);
+
+    uint32_t badMode = climate->CL_GetBadWeatherMode();
+    format->Fmt_Format(buffer, sizeof(buffer), "Bad Weather Mode: %s", badMode ? "Active" : "Inactive");
+    ui->UI_Text(buffer);
+
+    float remaining = climate->CL_GetRemainingBadWeatherTime();
+    format->Fmt_Format(buffer, sizeof(buffer), "Remaining Bad Weather Time: %.1f sec", remaining);
+    ui->UI_Text(buffer);
+  }
+
+  // --- Blended Values ---
+  ui->UI_Separator();
+  ui->UI_Text("Blended (interpolated) values:");
+
+  {
+    float temp = climate->GetBlendedTemperature();
+    format->Fmt_Format(buffer, sizeof(buffer), "Temperature: %.2f", temp);
+    ui->UI_Text(buffer);
+
+    float rain = climate->GetBlendedRainIntensity();
+    format->Fmt_Format(buffer, sizeof(buffer), "Rain Intensity: %.3f", rain);
+    ui->UI_Text(buffer);
+
+    float fog = climate->GetBlendedFogDensity();
+    format->Fmt_Format(buffer, sizeof(buffer), "Fog Density: %.3f", fog);
+    ui->UI_Text(buffer);
+
+    float snow = climate->GetBlendedSnowIntensity();
+    format->Fmt_Format(buffer, sizeof(buffer), "Snow Intensity: %.3f", snow);
+    ui->UI_Text(buffer);
+  }
+
+  // --- Sun Info ---
+  ui->UI_Separator();
+  ui->UI_Text("Sun & Transition:");
+
+  {
+    float sunAngle = climate->CL_GetSunAngle();
+    format->Fmt_Format(buffer, sizeof(buffer), "Sun Angle: %.2f rad", sunAngle);
+    ui->UI_Text(buffer);
+
+    float transition = climate->CL_GetTransitionProgress();
+    format->Fmt_Format(buffer, sizeof(buffer), "Sun Profile Transition: %.3f", transition);
+    ui->UI_Text(buffer);
+
+    float weatherBlend = climate->CL_GetWeatherBlendProgress();
+    format->Fmt_Format(buffer, sizeof(buffer), "Weather Blend: %.3f", weatherBlend);
+    ui->UI_Text(buffer);
+  }
+
+  // --- Auto-Toggle Checkbox ---
+  ui->UI_Separator();
+  if (ui->UI_Checkbox("Auto-toggle weather (nice/bad)", &g_ctx.weatherAutoToggle)) {
+    if (g_ctx.weatherAutoToggle) {
+      g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Climate auto-toggle enabled.");
+    } else {
+      g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Climate auto-toggle disabled.");
+    }
+  }
+  if (g_ctx.weatherAutoToggle) {
+    ui->UI_TextColored(0.4f, 1.0f, 0.4f, 1.0f, "Weather is now flipping every ~2 seconds.");
   }
 }
 
@@ -2439,8 +2569,7 @@ void InstallGameStringFormattingHook() {
 
   // This is a byte signature of the target function in memory.
   const char* signature =
-    "[MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [PUSH r64] [PUSH r64] [PUSH r64] [PUSH r64] [PUSH r64] [MOV r32, imm32] [CALL rel32] 48 2B E0 [MOV r64, "
-    "r64] [MOV r64, r64]";
+    "[MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [PUSH r64] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [MOV r32, imm32] [CALL rel32] [SUB r64, r64] [MOV r64, r64] [MOV r64, r64]";
 
   g_ctx.coreAPI->hooks->Hook_Register(PLUGIN_NAME,
                                       "GameStringFormattingHook",                               // Renamed hook ID for consistency

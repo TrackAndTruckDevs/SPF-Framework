@@ -19,10 +19,10 @@ class InfoWindow : public BaseWindow {
   InfoWindow(const std::string& componentName, const std::string& windowId);
   virtual ~InfoWindow() = default;
 
-  const char* GetWindowTitle() const override;
 
  protected:
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  private:
   void RenderFrameworkTab();
@@ -32,7 +32,6 @@ class InfoWindow : public BaseWindow {
   void RenderStatusTab();
 
   // --- Localization Keys ---
-  std::string m_locTitle;
   std::string m_locFrameworkTab;
   std::string m_locGameTab;
   std::string m_locPathsTab;

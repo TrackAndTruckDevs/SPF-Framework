@@ -42,8 +42,10 @@ class SettingsWindow : public BaseWindow {
                  Events::EventManager& eventManager);
 
  protected:
-  const char* GetWindowTitle() const override;
+
+
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  public:
   void OnInputCaptured(const Input::InputCaptured& e);
