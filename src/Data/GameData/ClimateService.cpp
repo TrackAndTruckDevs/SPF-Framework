@@ -1,11 +1,12 @@
 #include "SPF/Data/GameData/ClimateService.hpp"
 
 #include "SPF/Namespace.hpp"
+
 #include "SPF/Data/GameData/Finders/ClimateDataFinder.hpp"
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/Vec2.hpp"
 #include "SPF/Utils/Vec3.hpp"
-//#include "SPF/Utils/Windows.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -60,6 +61,85 @@ void ClimateService::Shutdown() {
     m_climateCountOffset = 0;
     m_weatherBlendFnAddr = 0;
     m_transitionDurationAddr = 0;
+
+    m_lowElevationOffset = 0;
+    m_highElevationOffset = 0;
+    m_sunDirectionOffset = 0;
+    m_temperatureOffset = 0;
+    m_skyboxTextureOffset = 0;
+    m_skycloudMaskTextureOffset = 0;
+    m_lightningMaskOffset = 0;
+    m_starsTextureOffset = 0;
+    m_mirrorSkyTextureOffset = 0;
+    m_ambientOffset = 0;
+    m_diffuseOffset = 0;
+    m_specularOffset = 0;
+    m_envOffset = 0;
+    m_envStaticModOffset = 0;
+    m_skyColorOffset = 0;
+    m_skyBottomColorOffset = 0;
+    m_starmapColorOffset = 0;
+    m_starsColorOffset = 0;
+    m_sunColorOffset = 0;
+    m_sunOpacityOffset = 0;
+    m_sunHaloColorOffset = 0;
+    m_sunShadowStrengthOffset = 0;
+    m_moonColorOffset = 0;
+    m_moonHaloColorOffset = 0;
+    m_moonHaloScaleOffset = 0;
+    m_fogColorOffset = 0;
+    m_fogColor2Offset = 0;
+    m_fogVgradientOffset = 0;
+    m_fogOffsetOffset = 0;
+    m_fogDensityOffset = 0;
+    m_speedCoefOffset = 0;
+    m_cloudShadowWeightOffset = 0;
+    m_cloudShadowTextureOffset = 0;
+    m_cloudShadowAreaSizeOffset = 0;
+    m_cloudShadowSpeedOffset = 0;
+    m_rainIntensityOffset = 0;
+    m_lightningIntensityOffset = 0;
+    m_rainMaxWetnessOffset = 0;
+    m_rainAdditionalAmbientOffset = 0;
+    m_snowIntensityOffset = 0;
+    m_snowFlakeSizeRangeOffset = 0;
+    m_snowChaosRateOffset = 0;
+    m_snowChaosWeightOffset = 0;
+    m_snowAdditionalAmbientOffset = 0;
+    m_windTypeOffset = 0;
+    m_dofStartOffset = 0;
+    m_dofTransitionOffset = 0;
+    m_dofFilterSizeOffset = 0;
+    m_colorBalanceOffset = 0;
+    m_colorSaturationOffset = 0;
+    m_sunshaftColorOffset = 0;
+    m_sunshaftSizeOffset = 0;
+    m_lowIntensityMinimumOffset = 0;
+    m_lowIntensityMaximumOffset = 0;
+    m_lowIntensityColorOffset = 0;
+    m_minScaleOffset = 0;
+    m_maxScaleOffset = 0;
+    m_scaleOverrideOffset = 0;
+    m_darkAdaptationSpeedOffset = 0;
+    m_brightAdaptationSpeedOffset = 0;
+    m_targetGrayOffset = 0;
+    m_contrastOffset = 0;
+    m_shoulderLengthOffset = 0;
+    m_bloomThresholdOffset = 0;
+    m_bloomLimitOffset = 0;
+    m_bloomIntensityOffset = 0;
+    m_bloomStandardDeviationOffset = 0;
+    m_stabilityOffset = 0;
+    m_weightOffset = 0;
+
+    m_envProfilePtrOffset = 0;
+    m_lampsOnElevationOffset = 0;
+    m_dayInYearOffset = 0;
+    m_summerTimeOffset = 0;
+    m_thunderstormProbabilityOffset = 0;
+
+    m_badWeatherFactorPtr = 0;
+    m_remainingBadWeatherOffset = 0;
   }
 }
 
@@ -195,15 +275,15 @@ int32_t ClimateService::GetNextSunProfileIndex() {
   return (raw0 <= raw1) ? raw1 : raw0;
 }
 
-int32_t ClimateService::GetSunProfileCount() {
-  uintptr_t container = GetClimateContainer();
+int32_t ClimateService::GetSunProfileCount(bool isBad) {
+  uintptr_t container = GetClimateContainer(isBad);
   if (!container) return 0;
   return (int32_t)*(uint64_t*)(container + m_containerCountOffset);
 }
 
-std::string ClimateService::GetSunProfileName(int32_t index) {
+std::string ClimateService::GetSunProfileName(int32_t index, bool isBad) {
   if (index < 0) return "unknown";
-  uintptr_t container = GetClimateContainer();
+  uintptr_t container = GetClimateContainer(isBad);
   if (!container) return "unknown";
 
   uintptr_t profilesArray = *(uintptr_t*)(container + m_profilesArrayOffset);
@@ -220,7 +300,7 @@ std::string ClimateService::GetSunProfileName(int32_t index) {
 }
 
 float ClimateService::GetTransitionProgress() {
-  uintptr_t container = GetClimateContainer();
+  uintptr_t container = GetCurrentClimateContainer();
   if (!container) return 0.0f;
 
   uintptr_t profilesArray = *(uintptr_t*)(container + m_profilesArrayOffset);
@@ -240,21 +320,20 @@ float ClimateService::GetTransitionProgress() {
   uintptr_t p1 = *(uintptr_t*)(profilesArray + (raw1 * 8));
   if (!p0 || !p1) return 0.0f;
 
-  float elev0 = *(float*)(p0 + 0x14); //low_elevation
-  float elev1 = *(float*)(p1 + 0x18); //high_elevation
-  float sunAngle = *(float*)(env + m_sunAngleOffset);
-
-  int32_t aIdx = (raw0 <= raw1) ? raw0 : raw1;
-  int32_t bIdx = (raw0 <= raw1) ? raw1 : raw0;
-  float aElev = (raw0 <= raw1) ? elev0 : elev1;
-  float bElev = (raw0 <= raw1) ? elev1 : elev0;
+  float elev0 = *(float*)(p0 + m_lowElevationOffset);
+  float elev1 = *(float*)(p1 + m_lowElevationOffset);
+  float sunAngle = GetSunAngle();
 
   float result;
-  if (aElev <= bElev) {
-    result = (sunAngle - aElev) / (bElev - aElev);
-  } else {
-    result = (aElev - sunAngle) / (aElev - bElev);
-  }
+  float range = elev1 - elev0;
+  if (range != 0.0f)
+    result = (sunAngle - elev0) / range;
+  else
+    result = 0.0f;
+
+  int32_t dir = GetSunDirection(ProfileRef{static_cast<uint64_t>(raw0), false});
+  if (dir < 0 && elev0 < elev1)
+    result = 1.0f - result;
 
   if (result < 0.0f) return 0.0f;
   if (result > 1.0f) return 1.0f;
@@ -263,7 +342,7 @@ float ClimateService::GetTransitionProgress() {
 
 float ClimateService::GetSunProfileElevation(int32_t index) {
   if (index < 0) return 0.0f;
-  uintptr_t container = GetClimateContainer();
+  uintptr_t container = GetCurrentClimateContainer();
   if (!container) return 0.0f;
 
   uintptr_t profilesArray = *(uintptr_t*)(container + m_profilesArrayOffset);
@@ -273,7 +352,7 @@ float ClimateService::GetSunProfileElevation(int32_t index) {
   uintptr_t profile = *(uintptr_t*)(profilesArray + (index * 8));
   if (!profile) return 0.0f;
 
-  return *(float*)(profile + 0x18);
+  return *(float*)(profile + m_highElevationOffset);
 }
 
 float ClimateService::GetSunAngle() {
@@ -291,13 +370,145 @@ float ClimateService::GetWeatherBlendProgress() {
   if (!basePtr) return 0.0f;
   uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
   if (!env) return 0.0f;
-  typedef float(__fastcall* BlendFn)(uintptr_t env);
+  typedef float(__fastcall * BlendFn)(uintptr_t env);
   return ((BlendFn)m_weatherBlendFnAddr)(env);
 }
 
 void ClimateService::SetTransitionDuration(int32_t minutes) {
   if (!m_transitionDurationAddr) return;
   *(uint32_t*)m_transitionDurationAddr = (uint32_t)minutes * 60000 * 1000;
+}
+
+void ClimateService::DumpVec3ToLog(intptr_t offset, const char* name) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ClimateService");
+  ProfileRef prof = ActiveProfile();
+  std::string profileName = GetSunProfileName(static_cast<int32_t>(prof.index), prof.isBad);
+  uint64_t varCount = GetProfileCount(offset, prof);
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+
+  logger->Debug("--- {} Dump ---", name);
+  logger->Debug("Container mode: activeProfile={} (idx={}, bad={})", profileName, prof.index, prof.isBad);
+  logger->Debug("Variations: {} total, active={}, next={}", varCount, activeVar, nextVar);
+
+  for (uint64_t i = 0; i < varCount; ++i) {
+    Utils::Vector3 v = GetProfileVec3ByIndex(offset, prof, i);
+    uint32_t hx, hy, hz;
+    memcpy(&hx, &v.x, sizeof(hx));
+    memcpy(&hy, &v.y, sizeof(hy));
+    memcpy(&hz, &v.z, sizeof(hz));
+    logger->Debug("{}[{}]: (&{:08x}, &{:08x}, &{:08x})", name, i, hx, hy, hz);
+  }
+
+  logger->Debug("--- {} Dump End ---", name);
+}
+
+// ============================================================================
+// Env Profile API
+// ============================================================================
+
+uintptr_t ClimateService::GetEnvProfileData() {
+  uintptr_t env = GetEnvObject();
+  if (!env || !m_envProfilePtrOffset) return 0;
+  return *(uintptr_t*)(env + m_envProfilePtrOffset);
+}
+
+float ClimateService::GetLampsOnElevation() {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_lampsOnElevationOffset) return 0.0f;
+  return *(float*)(profData + m_lampsOnElevationOffset);
+}
+
+void ClimateService::SetLampsOnElevation(float val) {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_lampsOnElevationOffset) return;
+  *(float*)(profData + m_lampsOnElevationOffset) = val;
+  UpdateEnvironment(GetEnvObject());
+}
+
+float ClimateService::GetDayInYear() {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_dayInYearOffset) return 0.0f;
+  return *(float*)(profData + m_dayInYearOffset);
+}
+
+void ClimateService::SetDayInYear(float val) {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_dayInYearOffset) return;
+  *(float*)(profData + m_dayInYearOffset) = val;
+  UpdateEnvironment(GetEnvObject());
+}
+
+float ClimateService::GetSummerTime() {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_summerTimeOffset) return 0.0f;
+  return *(float*)(profData + m_summerTimeOffset);
+}
+
+void ClimateService::SetSummerTime(float val) {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_summerTimeOffset) return;
+  *(float*)(profData + m_summerTimeOffset) = val;
+  UpdateEnvironment(GetEnvObject());
+}
+
+float ClimateService::GetThunderstormProbability() {
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_thunderstormProbabilityOffset) return 0.0f;
+  return *(float*)(profData + m_thunderstormProbabilityOffset);
+}
+
+void ClimateService::SetThunderstormProbability(float val) {
+  if (val < 0.0f) val = 0.0f;
+  if (val > 1.0f) val = 1.0f;
+  uintptr_t profData = GetEnvProfileData();
+  if (!profData || !m_thunderstormProbabilityOffset) return;
+  *(float*)(profData + m_thunderstormProbabilityOffset) = val;
+  UpdateEnvironment(GetEnvObject());
+}
+
+// ============================================================================
+// Bad Weather Factor & Timer
+// ============================================================================
+
+float ClimateService::GetBadWeatherFactor() {
+  if (!m_isInitialized || !m_badWeatherFactorPtr) return 0.07f;
+  return *(float*)(m_badWeatherFactorPtr + 0x118);
+}
+
+void ClimateService::SetBadWeatherFactor(float val) {
+  if (!m_isInitialized || !m_badWeatherFactorPtr) return;
+  *(float*)(m_badWeatherFactorPtr + 0x118) = val;
+
+  if (!m_setWeatherModeFnAddr) return;
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return;
+  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  if (!env) return;
+
+  uint32_t curMode = *(uint32_t*)(env + m_weatherModeOffset);
+  int32_t mode = (val <= 0.0f) ? 0 : (val >= 1.0f) ? 1 : (curMode == 0) ? 1 : 0;
+  typedef void(__fastcall * ForceWeather_t)(uintptr_t, int32_t, char);
+  ((ForceWeather_t)m_setWeatherModeFnAddr)(env, mode, 1);
+}
+
+uint32_t ClimateService::GetBadWeatherMode() {
+  if (!m_isInitialized) return 0;
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return 0;
+  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  if (!env) return 0;
+  return *(uint32_t*)(env + m_nextWeatherModeOffset);
+}
+
+float ClimateService::GetRemainingBadWeatherTime() {
+  if (!m_isInitialized) return 0.0f;
+  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  if (!basePtr) return 0.0f;
+  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  if (!env) return 0.0f;
+  if (!m_remainingBadWeatherOffset) return 0.0f;
+  return *(float*)(env + m_remainingBadWeatherOffset);
 }
 
 // ============================================================================
@@ -326,125 +537,491 @@ int32_t ClimateService::GetNextWeatherMode() {
   return *(int32_t*)(env + m_nextWeatherModeOffset);
 }
 
-void ClimateService::SetNextWeatherMode(int32_t mode) {
-  if (!m_isInitialized) return;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
-  if (!basePtr) return;
-  basePtr += m_environmentAdjustment;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_envObjectOffset);
-  if (!env || !m_nextWeatherModeOffset) return;
-  *(int32_t*)(env + m_nextWeatherModeOffset) = mode;
-  if (m_updateFnAddr) {
-    typedef void(__fastcall* UpdateEnv_t)(uintptr_t rcx);
-    ((UpdateEnv_t)m_updateFnAddr)(env);
-  }
-}
-
-void ClimateService::SetWeatherMode(int32_t mode, bool instant) { //del ?
+void ClimateService::SetWeatherMode(int32_t mode, bool instant) {  // del ?
   if (!m_isInitialized || !m_setWeatherModeFnAddr) return;
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return;
   uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
   if (!env) return;
-  typedef void(__fastcall* SetWeatherModeFn)(uintptr_t env, int32_t mode, char instant);
+  typedef void(__fastcall * SetWeatherModeFn)(uintptr_t env, int32_t mode, char instant);
   ((SetWeatherModeFn)m_setWeatherModeFnAddr)(env, mode, (char)instant);
 }
 
-float ClimateService::GetRainIntensity() {
-  if (!m_isInitialized) return 0.0f;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
-  if (!basePtr) return 0.0f;
-  basePtr += m_environmentAdjustment;
+// ============================================================================
+// ProfileRef Helpers
+// ============================================================================
 
-  uintptr_t env = *(uintptr_t*)(basePtr + m_envObjectOffset);
-  if (!env) return 0.0f;
-
-  return *(float*)(env + 0x4010);
+ProfileRef ClimateService::ActiveProfile() {
+  return {static_cast<uint64_t>(GetActiveSunProfileIndex()), GetWeatherMode() != 0};
 }
 
-void ClimateService::SetRainIntensity(float intensity) {
-  if (!m_isInitialized) return;
+ProfileRef ClimateService::NextProfile() {
+  return {static_cast<uint64_t>(GetNextSunProfileIndex()), GetNextWeatherMode() != 0};
+}
+
+ProfileRef ClimateService::Profile(uint64_t index, bool isBad) {
+  return {index, isBad};
+}
+
+// ============================================================================
+// Profile Data Helpers
+// ============================================================================
+
+uintptr_t ClimateService::GetEnvObject() {
+  if (!m_isInitialized) return 0;
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
-  if (!basePtr) return;
-  basePtr += m_environmentAdjustment;
+  if (!basePtr) return 0;
+  return *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+}
 
-  uintptr_t env = *(uintptr_t*)(basePtr + m_envObjectOffset);
-  if (!env || !m_climatePtrOffset) return;
-
-  uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);
-  if (!climate) return;
-
-  int32_t mode = GetWeatherMode();
-  uint32_t variationIdx = static_cast<uint32_t>(GetActiveSunProfileIndex());
-
-  uintptr_t container = climate + (mode == 0 ? 0xd0 : 0x120);
-  uintptr_t profiles_ptr = *(uintptr_t*)(container + m_profilesArrayOffset);
-  uint64_t profileCount = *(uint64_t*)(container + m_containerCountOffset);
-
-  if (!profiles_ptr || profileCount == 0) return;
-
-  for (uint64_t i = 0; i < profileCount; ++i) {
-    uintptr_t profile = *(uintptr_t*)(profiles_ptr + (i * 8));
-    if (!profile) continue;
-
-    uintptr_t rainArrayPtr = *(uintptr_t*)(profile + 0x468);
-    uint64_t rainArrayCount = *(uint64_t*)(profile + 0x470);
-
-    if (rainArrayPtr && (uint64_t)variationIdx < rainArrayCount) {
-      *(float*)(rainArrayPtr + (variationIdx * 4)) = intensity;
-    }
-  }
-
-  *(float*)(env + 0x4010) = intensity;
-
-  // Trigger update (same as moving skybox index)
-  if (m_updateFnAddr) {
-    typedef void(__fastcall * UpdateEnv_t)(uintptr_t rcx);
+void ClimateService::UpdateEnvironment(uintptr_t env) {
+  if (env && m_updateFnAddr) {
+    typedef void(__fastcall* UpdateEnv_t)(uintptr_t);
     ((UpdateEnv_t)m_updateFnAddr)(env);
   }
 }
 
-// ============================================================================
-// Profile-Based Scalar Parameters
-// ============================================================================
-
-float ClimateService::GetTemperature(int profileSlot, uint32_t variationIdx) {
-  uintptr_t profile = GetActiveProfilePtr(profileSlot);
-  if (!profile) return 0.0f;
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + 0x308);
-  uint64_t count = *(uint64_t*)(profile + 0x310);
-  if (arrayPtr > 0x1000 && (uint64_t)variationIdx < count) return *(float*)(arrayPtr + variationIdx * 4);
-  return 0.0f;
+uint64_t ClimateService::GetProfileCount(intptr_t offset, ProfileRef prof) {
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return 0;
+  return *(uint64_t*)(profile + offset + 0x10);
 }
 
-void ClimateService::SetTemperature(int profileSlot, uint32_t variationIdx, float val) {
-  uintptr_t profile = GetActiveProfilePtr(profileSlot);
-  if (!profile) return;
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + 0x308);
-  uint64_t count = *(uint64_t*)(profile + 0x310);
-  if (arrayPtr > 0x1000 && (uint64_t)variationIdx < count) *(float*)(arrayPtr + variationIdx * 4) = val;
+float* ClimateService::GetProfileArray(intptr_t offset, ProfileRef prof) {
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return nullptr;
+  return *(float**)(profile + offset + 8);
+}
+
+float ClimateService::GetProfileScalar(intptr_t offset, ProfileRef prof) {
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return 0.0f;
+  return *(float*)(profile + offset);
+}
+
+void ClimateService::SetProfileScalar(intptr_t offset, ProfileRef prof, float val) {
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  *(float*)(profile + offset) = val;
+}
+
+// ── Scalar (rad↔deg) ──────────────────────────────────────────────
+
+float ClimateService::GetLowElevation(ProfileRef prof) {
+  float rad = GetProfileScalar(m_lowElevationOffset, prof);
+  return rad * (180.0f / 3.14159265358979323846f);
+}
+
+void ClimateService::SetLowElevation(ProfileRef prof, float deg) {
+  float rad = deg * (3.14159265358979323846f / 180.0f);
+  SetProfileScalar(m_lowElevationOffset, prof, rad);
+}
+
+float ClimateService::GetHighElevation(ProfileRef prof) {
+  float rad = GetProfileScalar(m_highElevationOffset, prof);
+  return rad * (180.0f / 3.14159265358979323846f);
+}
+
+void ClimateService::SetHighElevation(ProfileRef prof, float deg) {
+  float rad = deg * (3.14159265358979323846f / 180.0f);
+  SetProfileScalar(m_highElevationOffset, prof, rad);
+}
+
+int32_t ClimateService::GetSunDirection(ProfileRef prof) {
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !m_sunDirectionOffset) return 0;
+  return *(int32_t*)(profile + m_sunDirectionOffset);
+}
+
+void ClimateService::SetSunDirection(ProfileRef prof, int32_t val) {
+  if (val < -1 || val > 1) return;
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !m_sunDirectionOffset) return;
+  *(int32_t*)(profile + m_sunDirectionOffset) = val;
+}
+
+// ── Variant Float ─────────────────────────────────────────────────
+
+float ClimateService::GetProfileFloat(intptr_t offset, ProfileRef prof) {
+  float* arr = GetProfileArray(offset, prof);
+  if (!arr) return 0.0f;
+  uint64_t varIdx = GetActiveVariationIndex();
+  uint64_t count = GetProfileCount(offset, prof);
+  if (varIdx >= count) return 0.0f;
+  return arr[varIdx];
+}
+
+float ClimateService::GetProfileFloatByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx) {
+  float* arr = GetProfileArray(offset, prof);
+  if (!arr || varIdx >= GetProfileCount(offset, prof)) return 0.0f;
+  return arr[varIdx];
+}
+
+void ClimateService::SetProfileFloat(intptr_t offset, ProfileRef prof, float val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  uint64_t varIdx = GetActiveVariationIndex();
+  float* arr = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (arr && varIdx < cnt) arr[varIdx] = val;
+  UpdateEnvironment(env);
+}
+
+void ClimateService::SetProfileFloatByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx, float val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  float* arr = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (arr && varIdx < cnt) arr[varIdx] = val;
+  UpdateEnvironment(env);
+}
+
+// ── Variant Int32 ─────────────────────────────────────────────────
+
+int32_t ClimateService::GetProfileInt(intptr_t offset, ProfileRef prof) {
+  float* arr = GetProfileArray(offset, prof);
+  if (!arr) return 0;
+  uint64_t varIdx = GetActiveVariationIndex();
+  uint64_t count = GetProfileCount(offset, prof);
+  if (varIdx >= count) return 0;
+  return reinterpret_cast<int32_t*>(arr)[varIdx];
+}
+
+int32_t ClimateService::GetProfileIntByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx) {
+  float* arr = GetProfileArray(offset, prof);
+  if (!arr || varIdx >= GetProfileCount(offset, prof)) return 0;
+  return reinterpret_cast<int32_t*>(arr)[varIdx];
+}
+
+void ClimateService::SetProfileInt(intptr_t offset, ProfileRef prof, int32_t val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  uint64_t varIdx = GetActiveVariationIndex();
+  float* arr = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (arr && varIdx < cnt) reinterpret_cast<int32_t*>(arr)[varIdx] = val;
+  UpdateEnvironment(env);
+}
+
+void ClimateService::SetProfileIntByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx, int32_t val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  float* arr = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (arr && varIdx < cnt) reinterpret_cast<int32_t*>(arr)[varIdx] = val;
+  UpdateEnvironment(env);
+}
+
+// ── Variant Vec3 ──────────────────────────────────────────────────
+
+Utils::Vector3 ClimateService::GetProfileVec3(intptr_t offset, ProfileRef prof) {
+  float* base = GetProfileArray(offset, prof);
+  uint64_t varIdx = GetActiveVariationIndex();
+  uint64_t count = GetProfileCount(offset, prof);
+  if (!base || varIdx >= count) return {};
+  float* data = (float*)(base + varIdx * 3);
+  return {data[0], data[1], data[2]};
+}
+
+Utils::Vector3 ClimateService::GetProfileVec3ByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx) {
+  float* base = GetProfileArray(offset, prof);
+  if (!base || varIdx >= GetProfileCount(offset, prof)) return {};
+  float* data = (float*)(base + varIdx * 3);
+  return {data[0], data[1], data[2]};
+}
+
+void ClimateService::SetProfileVec3(intptr_t offset, ProfileRef prof, const Utils::Vector3& val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  uint64_t varIdx = GetActiveVariationIndex();
+  float* base = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (base && varIdx < cnt) {
+    float* data = (float*)(base + varIdx * 3);
+    data[0] = val.x; data[1] = val.y; data[2] = val.z;
+  }
+  UpdateEnvironment(env);
+}
+
+void ClimateService::SetProfileVec3ByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx, const Utils::Vector3& val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  float* base = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (base && varIdx < cnt) {
+    float* data = (float*)(base + varIdx * 3);
+    data[0] = val.x; data[1] = val.y; data[2] = val.z;
+  }
+  UpdateEnvironment(env);
+}
+
+// ── Variant Vec2 ──────────────────────────────────────────────────
+
+Utils::Vec2f ClimateService::GetProfileVec2(intptr_t offset, ProfileRef prof) {
+  float* base = GetProfileArray(offset, prof);
+  uint64_t varIdx = GetActiveVariationIndex();
+  uint64_t count = GetProfileCount(offset, prof);
+  if (!base || varIdx >= count) return {};
+  float* data = base + varIdx * 2;
+  return {data[0], data[1]};
+}
+
+Utils::Vec2f ClimateService::GetProfileVec2ByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx) {
+  float* base = GetProfileArray(offset, prof);
+  if (!base || varIdx >= GetProfileCount(offset, prof)) return {};
+  float* data = base + varIdx * 2;
+  return {data[0], data[1]};
+}
+
+void ClimateService::SetProfileVec2(intptr_t offset, ProfileRef prof, const Utils::Vec2f& val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  uint64_t varIdx = GetActiveVariationIndex();
+  float* base = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (base && varIdx < cnt) {
+    float* data = base + varIdx * 2;
+    data[0] = val.x; data[1] = val.y;
+  }
+  UpdateEnvironment(env);
+}
+
+void ClimateService::SetProfileVec2ByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx, const Utils::Vec2f& val) {
+  uintptr_t env = GetEnvObject();
+  uintptr_t profile = GetProfilePtr(prof);
+  if (!profile || !offset) return;
+  float* base = *(float**)(profile + offset + 8);
+  uint64_t cnt = *(uint64_t*)(profile + offset + 0x10);
+  if (base && varIdx < cnt) {
+    float* data = base + varIdx * 2;
+    data[0] = val.x; data[1] = val.y;
+  }
+  UpdateEnvironment(env);
+}
+
+// ── Variant Texture ───────────────────────────────────────────────
+
+std::string ClimateService::GetProfileTexture(intptr_t offset, ProfileRef prof) {
+  uintptr_t base = (uintptr_t)GetProfileArray(offset, prof);
+  uint64_t varIdx = GetActiveVariationIndex();
+  uint64_t count = GetProfileCount(offset, prof);
+  if (!base || varIdx >= count) return "";
+  const char* str = *(const char**)(base + varIdx * 32 + 8);
+  return str ? std::string(str) : "";
+}
+
+std::string ClimateService::GetProfileTextureByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx) {
+  uintptr_t base = (uintptr_t)GetProfileArray(offset, prof);
+  if (!base || varIdx >= GetProfileCount(offset, prof)) return "";
+  const char* str = *(const char**)(base + varIdx * 32 + 8);
+  return str ? std::string(str) : "";
+}
+
+void ClimateService::SetProfileTexture(intptr_t offset, ProfileRef prof, const std::string& val) {
+  (void)offset;
+  (void)prof;
+  (void)val;
+}
+
+void ClimateService::SetProfileTextureByIndex(intptr_t offset, ProfileRef prof, uint64_t varIdx, const std::string& val) {
+  (void)offset;
+  (void)prof;
+  (void)varIdx;
+  (void)val;
+}
+
+// ============================================================================
+// Blended Profile Data Helpers
+// ============================================================================
+
+float ClimateService::GetBlendedFloat(intptr_t offset) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  float av = GetProfileFloatByIndex(offset, activeProf, activeVar);
+  float nv = GetProfileFloatByIndex(offset, nextProf, nextVar);
+  return av * (1.0f - progress) + nv * progress;
+}
+
+void ClimateService::SetBlendedFloat(intptr_t offset, float blendedVal, float minVal, float maxVal) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  float av = GetProfileFloatByIndex(offset, activeProf, activeVar);
+  float nv = GetProfileFloatByIndex(offset, nextProf, nextVar);
+
+  float origBlended = av * (1.0f - progress) + nv * progress;
+
+  float na, nn;
+  if (blendedVal <= origBlended) {
+    float t = (origBlended - blendedVal) / (origBlended - minVal + 1e-10f);
+    na = av * (1.0f - t) + minVal * t;
+    nn = nv * (1.0f - t) + minVal * t;
+  } else {
+    float t = (blendedVal - origBlended) / (maxVal - origBlended + 1e-10f);
+    na = av * (1.0f - t) + maxVal * t;
+    nn = nv * (1.0f - t) + maxVal * t;
+  }
+
+  SetProfileFloatByIndex(offset, activeProf, activeVar, na);
+  SetProfileFloatByIndex(offset, nextProf, nextVar, nn);
+}
+
+Utils::Vector3 ClimateService::GetBlendedVec3(intptr_t offset) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  Utils::Vector3 av = GetProfileVec3ByIndex(offset, activeProf, activeVar);
+  Utils::Vector3 nv = GetProfileVec3ByIndex(offset, nextProf, nextVar);
+  return {av.x * (1.0f - progress) + nv.x * progress, av.y * (1.0f - progress) + nv.y * progress, av.z * (1.0f - progress) + nv.z * progress};
+}
+
+void ClimateService::SetBlendedVec3(intptr_t offset, const Utils::Vector3& blendedVal, float maxComponent) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  Utils::Vector3 av = GetProfileVec3ByIndex(offset, activeProf, activeVar);
+  Utils::Vector3 nv = GetProfileVec3ByIndex(offset, nextProf, nextVar);
+
+  Utils::Vector3 origBlended = {
+      av.x * (1.0f - progress) + nv.x * progress,
+      av.y * (1.0f - progress) + nv.y * progress,
+      av.z * (1.0f - progress) + nv.z * progress};
+
+  auto blendComponent = [&](float cur, float target, float ref) -> float {
+    if (target <= ref) {
+      float t = (ref - target) / (ref - 0.0f + 1e-10f);
+      return cur * (1.0f - t) + 0.0f * t;
+    }
+    float t = (target - ref) / (maxComponent - ref + 1e-10f);
+    return cur * (1.0f - t) + maxComponent * t;
+  };
+
+  SetProfileVec3ByIndex(offset, activeProf, activeVar,
+      {blendComponent(av.x, blendedVal.x, origBlended.x),
+       blendComponent(av.y, blendedVal.y, origBlended.y),
+       blendComponent(av.z, blendedVal.z, origBlended.z)});
+  SetProfileVec3ByIndex(offset, nextProf, nextVar,
+      {blendComponent(nv.x, blendedVal.x, origBlended.x),
+       blendComponent(nv.y, blendedVal.y, origBlended.y),
+       blendComponent(nv.z, blendedVal.z, origBlended.z)});
+}
+
+Utils::Vec2f ClimateService::GetBlendedVec2(intptr_t offset) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  Utils::Vec2f av = GetProfileVec2ByIndex(offset, activeProf, activeVar);
+  Utils::Vec2f nv = GetProfileVec2ByIndex(offset, nextProf, nextVar);
+  return {av.x * (1.0f - progress) + nv.x * progress, av.y * (1.0f - progress) + nv.y * progress};
+}
+
+void ClimateService::SetBlendedVec2(intptr_t offset, const Utils::Vec2f& blendedVal, float maxComponent) {
+  auto activeProf = ActiveProfile();
+  auto nextProf = NextProfile();
+  float progress = GetTransitionProgress();
+  uint64_t activeVar = GetActiveVariationIndex();
+  uint64_t nextVar = GetNextVariationIndex();
+  Utils::Vec2f av = GetProfileVec2ByIndex(offset, activeProf, activeVar);
+  Utils::Vec2f nv = GetProfileVec2ByIndex(offset, nextProf, nextVar);
+
+  Utils::Vec2f origBlended = {
+      av.x * (1.0f - progress) + nv.x * progress,
+      av.y * (1.0f - progress) + nv.y * progress};
+
+  auto blendComponent = [&](float cur, float target, float ref) -> float {
+    if (target <= ref) {
+      float t = (ref - target) / (ref - 0.0f + 1e-10f);
+      return cur * (1.0f - t) + 0.0f * t;
+    }
+    float t = (target - ref) / (maxComponent - ref + 1e-10f);
+    return cur * (1.0f - t) + maxComponent * t;
+  };
+
+  SetProfileVec2ByIndex(offset, activeProf, activeVar,
+      {blendComponent(av.x, blendedVal.x, origBlended.x),
+       blendComponent(av.y, blendedVal.y, origBlended.y)});
+  SetProfileVec2ByIndex(offset, nextProf, nextVar,
+      {blendComponent(nv.x, blendedVal.x, origBlended.x),
+       blendComponent(nv.y, blendedVal.y, origBlended.y)});
+}
+
+// ============================================================================
+// Variation Index
+// ============================================================================
+
+uint64_t ClimateService::GetActiveVariationIndex() {
+  if (!m_isInitialized) return 0;
+  uintptr_t container = GetCurrentClimateContainer();
+  if (!container) return 0;
+  uintptr_t varIdxPtr = *(uintptr_t*)(container + 0x30);
+  uint64_t varIdxCount = *(uint64_t*)(container + 0x38);
+  int32_t profileIdx = GetActiveSunProfileIndex();
+  if (varIdxPtr && profileIdx >= 0 && (uint64_t)profileIdx < varIdxCount) {
+    return *(uint64_t*)(varIdxPtr + profileIdx * 8);
+  }
+  return 0;
+}
+
+void ClimateService::SetActiveVariationIndex(uint64_t varIdx) {
+  if (!m_isInitialized) return;
+  uintptr_t container = GetCurrentClimateContainer();
+  if (!container) return;
+  uintptr_t varIdxPtr = *(uintptr_t*)(container + 0x30);
+  uint64_t varIdxCount = *(uint64_t*)(container + 0x38);
+  int32_t profileIdx = GetActiveSunProfileIndex();
+  if (varIdxPtr && profileIdx >= 0 && (uint64_t)profileIdx < varIdxCount) {
+    *(uint64_t*)(varIdxPtr + profileIdx * 8) = varIdx;
+  }
+}
+
+uint64_t ClimateService::GetNextVariationIndex() {
+  if (!m_isInitialized) return 0;
+  uintptr_t container = GetClimateContainer(GetNextWeatherMode() != 0);
+  if (!container) return 0;
+  uintptr_t varIdxPtr = *(uintptr_t*)(container + 0x30);
+  uint64_t varIdxCount = *(uint64_t*)(container + 0x38);
+  int32_t profileIdx = GetNextSunProfileIndex();
+  if (varIdxPtr && profileIdx >= 0 && (uint64_t)profileIdx < varIdxCount) {
+    return *(uint64_t*)(varIdxPtr + profileIdx * 8);
+  }
+  return 0;
+}
+
+void ClimateService::SetNextVariationIndex(uint64_t varIdx) {
+  if (!m_isInitialized) return;
+  uintptr_t container = GetClimateContainer(GetNextWeatherMode() != 0);
+  if (!container) return;
+  uintptr_t varIdxPtr = *(uintptr_t*)(container + 0x30);
+  uint64_t varIdxCount = *(uint64_t*)(container + 0x38);
+  int32_t profileIdx = GetNextSunProfileIndex();
+  if (varIdxPtr && profileIdx >= 0 && (uint64_t)profileIdx < varIdxCount) {
+    *(uint64_t*)(varIdxPtr + profileIdx * 8) = varIdx;
+  }
 }
 
 // ============================================================================
 // Internal Helpers
 // ============================================================================
 
-void ClimateService::EnsureInitialKick() {
-  if (!m_isInitialized || !m_updateFnAddr) return;
-
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
-  if (!basePtr) return;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
-  if (!env) return;
-
-  typedef void(__fastcall* UpdateEnv_t)(uintptr_t);
-  ((UpdateEnv_t)m_updateFnAddr)(env);
-
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ClimateService");
-  logger->Info("ClimateService: Automatic environment kick performed.");
-}
-
-uintptr_t ClimateService::GetClimateContainer() {
+uintptr_t ClimateService::GetClimateContainer(bool isBad) {
   if (!m_isInitialized) return 0;
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return 0;
@@ -452,89 +1029,36 @@ uintptr_t ClimateService::GetClimateContainer() {
   if (!env) return 0;
 
   uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);
-  if (!climate || !m_containerSelectorOffset || !m_containerNiceOffset || !m_containerBadOffset) return 0;
+  if (!climate || !m_containerNiceOffset || !m_containerBadOffset) return 0;
 
-  int32_t sel = *(int32_t*)(env + m_containerSelectorOffset);
-  return climate + (sel ? m_containerBadOffset : m_containerNiceOffset);
+  return climate + (isBad ? m_containerBadOffset : m_containerNiceOffset);
 }
 
-uintptr_t ClimateService::GetActiveProfilePtr(int profileSlot) {
-  uintptr_t container = GetClimateContainer();
-  if (!container) return 0;
-
+uintptr_t ClimateService::GetCurrentClimateContainer() {
+  if (!m_isInitialized) return 0;
   uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
   if (!basePtr) return 0;
   uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
   if (!env) return 0;
 
-  uint32_t idx = *(uint32_t*)(env + (profileSlot == 0 ? m_activeProfileIndexOffset : m_nextProfileIndexOffset));
+  uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);
+  if (!climate || !m_weatherModeOffset || !m_containerNiceOffset || !m_containerBadOffset) return 0;
+
+  int32_t sel = *(int32_t*)(env + m_weatherModeOffset);
+  return climate + (sel ? m_containerBadOffset : m_containerNiceOffset);
+}
+
+uintptr_t ClimateService::GetProfilePtr(ProfileRef prof) {
+  uintptr_t container = GetClimateContainer(prof.isBad);
+  if (!container) return 0;
+
   uintptr_t profilesArray = *(uintptr_t*)(container + m_profilesArrayOffset);
   uint64_t count = *(uint64_t*)(container + m_containerCountOffset);
 
-  if (profilesArray && (uint64_t)idx < count) {
-    return *(uintptr_t*)(profilesArray + (idx * 8));
+  if (profilesArray && prof.index < count) {
+    return *(uintptr_t*)(profilesArray + (prof.index * 8));
   }
   return 0;
-}
-
-// ============================================================================
-// Profile Parameter Methods — Vec3 Colors (Internal Helpers)
-// ============================================================================
-
-static Utils::Vector3 GetProfileVec3Internal(uintptr_t profile, uint32_t offset, uint32_t varIdx) {
-  Utils::Vector3 result = {0.0f, 0.0f, 0.0f};
-  if (!profile) return result;
-
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + offset);
-  uint64_t count = *(uint64_t*)(profile + offset + 8);
-
-  if (arrayPtr > 0x1000 && (uint64_t)varIdx < count) {
-    float* data = (float*)(arrayPtr + varIdx * 12);
-    result.x = data[0];
-    result.y = data[1];
-    result.z = data[2];
-  }
-  return result;
-}
-
-static void SetProfileVec3Internal(uintptr_t profile, uint32_t offset, uint32_t varIdx, const Utils::Vector3& value, uintptr_t env, uintptr_t updateFn) {
-  if (!profile) return;
-
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + offset);
-  uint64_t count = *(uint64_t*)(profile + offset + 8);
-
-  if (arrayPtr > 0x1000 && (uint64_t)varIdx < count) {
-    float* data = (float*)(arrayPtr + varIdx * 12);
-    data[0] = value.x;
-    data[1] = value.y;
-    data[2] = value.z;
-
-    if (env && updateFn) {
-      typedef void(__fastcall * UpdateEnv_t)(uintptr_t rcx);
-      ((UpdateEnv_t)updateFn)(env);
-    }
-  }
-}
-
-// ============================================================================
-// Profile Parameter Methods — Float Effects
-// ============================================================================
-
-float ClimateService::GetWeight(int profileSlot, uint32_t variationIdx) {
-  uintptr_t profile = GetActiveProfilePtr(profileSlot);
-  if (!profile) return 1.0f;
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + 0x888);
-  uint64_t count = *(uint64_t*)(profile + 0x890);
-  if (arrayPtr > 0x1000 && (uint64_t)variationIdx < count) return *(float*)(arrayPtr + variationIdx * 4);
-  return 1.0f;
-}
-
-void ClimateService::SetWeight(int profileSlot, uint32_t variationIdx, float value) {
-  uintptr_t profile = GetActiveProfilePtr(profileSlot);
-  if (!profile) return;
-  uintptr_t arrayPtr = *(uintptr_t*)(profile + 0x888);
-  uint64_t count = *(uint64_t*)(profile + 0x890);
-  if (arrayPtr > 0x1000 && (uint64_t)variationIdx < count) *(float*)(arrayPtr + variationIdx * 4) = value;
 }
 
 }  // namespace Data::GameData

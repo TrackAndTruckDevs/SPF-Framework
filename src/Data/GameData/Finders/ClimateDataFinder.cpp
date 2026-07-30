@@ -21,6 +21,7 @@
 
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstddef>
@@ -177,6 +178,43 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
         owner.SetNextWeatherModeOffset(weatherTargetOff);
         logger->Debug("3.2 [OFFSET: Weather Target] Found: 0x{:X}", weatherTargetOff);
       }
+    }
+
+    // 3.3 Remaining bad weather time offset (env+0x4570)
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
+    // * 1404df451  F3 0F 11 83 70 45 00 00       MOVSS dword ptr [RBX + 0x4570],XMM0
+    // * 1404df459  48 C7 83 60 45 00 00 FF FF FF FF MOV qword ptr [RBX + 0x4560],-0x1
+    uintptr_t addrRemain = Utils::PatternFinder::Find(addrTarget, 96, "[MOVSS [r64+off32], xmm] [MOV qword ptr [r64+off32], imm64_32]");
+    if (addrRemain) {
+      int32_t remainOff = Utils::PatternFinder::ReadInt32(addrRemain + 4);
+      if (Utils::PatternFinder::IsSaneOffset(remainOff)) {
+        owner.SetRemainingBadWeatherOffset(remainOff);
+        logger->Debug("3.3 [OFFSET: Remaining Bad Weather] Found: 0x{:X}", remainOff);
+      } else {
+        logger->Error("3.3 [OFFSET: Remaining Bad Weather] Offset (0x{:X}) is insane.", remainOff);
+        all_found = false;
+      }
+    } else {
+      logger->Error("3.3 [OFFSET: Remaining Bad Weather] FAILED to find signature.");
+      all_found = false;
+    }
+
+    // 3.4 Env profile data pointer offset (env+0x2ae0)
+    // Used by: GetEnvProfileData (env_profile reflection attributes)
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
+    // 1404df559  48 8B 83 E0 2A 00 00          MOV RAX,qword ptr [RBX + 0x2ae0]
+    // 1404df560  F3 0F 59 05 FC 7F EF 01       MULSS XMM0,dword ptr [0x1423d7564]
+    uintptr_t addrEnvProfile = Utils::PatternFinder::Find(addrRemain, 300, "[MOV r64, [r64+off32]] F3");
+    if (addrEnvProfile) {
+      int32_t envProfileOff = Utils::PatternFinder::ReadInt32(addrEnvProfile + 3);
+      if (Utils::PatternFinder::IsSaneOffset(envProfileOff)) {
+        owner.SetEnvProfilePtrOffset(envProfileOff);
+        logger->Debug("3.4 [OFFSET: Env Profile Ptr] Found: 0x{:X}", envProfileOff);
+      } else {
+        logger->Error("3.4 [OFFSET: Env Profile Ptr] Offset (0x{:X}) is insane.", envProfileOff);
+      }
+    } else {
+      logger->Warn("3.4 [OFFSET: Env Profile Ptr] FAILED to find signature — using hardcoded 0x2ae0.");
     }
   }
 
@@ -351,28 +389,10 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       all_found = false;
     }
 
-    // 7.3 Container selector offset (env+0x3E70 — chooses nice vs bad container)
-    //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
-    //* 1404e49b7  41 39 9E 70 3E 00 00          CMP dword ptr [R14 + 0x3e70],EBX
-    uintptr_t addrSelector = Utils::PatternFinder::Find(pfnSunProfileUpdate, 128, "41 [CMP [r64+off32], r32]");
-    if (addrSelector) {
-      int32_t selectorOff = Utils::PatternFinder::ReadInt32(addrSelector + 3);
-      if (Utils::PatternFinder::IsSaneOffset(selectorOff)) {
-        owner.SetContainerSelectorOffset(selectorOff);
-        logger->Debug("7.3 [OFFSET: Container Selector (nice/bad)] Found: 0x{:X}", selectorOff);
-      } else {
-        logger->Error("7.3 [OFFSET: Container Selector] Offset (0x{:X}) is insane.", selectorOff);
-        all_found = false;
-      }
-    } else {
-      logger->Error("7.3 [OFFSET: Container Selector] FAILED to find signature.");
-      all_found = false;
-    }
-
-    // 7.4 Nice container offset (0xd0 — first set of sun profiles, "nice" variants)
+    // 7.3 Nice container offset (0xd0 — first set of sun profiles, "nice" variants)
     //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
     //* 1404e49be  B8 D0 00 00 00                MOV EAX,0xd0
-    uintptr_t addrNice = Utils::PatternFinder::Find(addrSelector, 16, "[MOV r32, imm32]");
+    uintptr_t addrNice = Utils::PatternFinder::FindBackward(addrNext, 64, "[MOV r32, imm32]");
     if (addrNice) {
       int32_t niceOff = Utils::PatternFinder::ReadInt32(addrNice + 1);
       if (Utils::PatternFinder::IsSaneOffset(niceOff)) {
@@ -391,7 +411,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
     //* /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404e4940[1404e4940]) ---/
     //* 1404e498a  BA 20 01 00 00                MOV EDX,0x120
     //* 1404e498f  4D 3B BE 38 01 00 00          CMP R15,qword ptr [R14 + 0x138]
-    uintptr_t addrBad = Utils::PatternFinder::FindBackward(addrSelector, 64, "[MOV r32, imm32] [CMP r64, [r64+off32]]");
+    uintptr_t addrBad = Utils::PatternFinder::FindBackward(addrNice, 64, "[MOV r32, imm32] [CMP r64, [r64+off32]]");
     if (addrBad) {
       int32_t badOff = Utils::PatternFinder::ReadInt32(addrBad + 1);
       if (Utils::PatternFinder::IsSaneOffset(badOff)) {
@@ -464,8 +484,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
   // * 1404d092c  F3 0F 10 81 7C 3E 00 00    MOVSS XMM0,dword ptr [RCX + 0x3e7c]
   // * 1404d0934  0F 57 C9                   XORPS XMM1,XMM1
   // * 1404d0937  F3 0F 59 05 FD 82 F0 01    MULSS XMM0,dword ptr [0x1423d8c3c]
-  const char* WEATHER_BLEND_PROGRESS_PATTERN =
-      "44 [MOV r32, [r64+off32]] [MOV r32, imm32] [MOVSS xmm, [r64+off32]] [XORPS xmm, xmm] F3 0F 59 05";
+  const char* WEATHER_BLEND_PROGRESS_PATTERN = "44 [MOV r32, [r64+off32]] [MOV r32, imm32] [MOVSS xmm, [r64+off32]] [XORPS xmm, xmm] F3 0F 59 05";
   uintptr_t pfnWeatherBlend = Utils::PatternFinder::Find(WEATHER_BLEND_PROGRESS_PATTERN);
 
   if (!pfnWeatherBlend) {
@@ -485,6 +504,150 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
         logger->Debug("8.1 [PTR: Transition Duration] Found at 0x{:X} (val: {})", durGlobal, *(uint32_t*)durGlobal);
       }
     }
+  }
+
+  // === SECTION 9: BAD WEATHER FACTOR (g_bad_weather_factor) ===
+  // Used by: GetBadWeatherFactor, SetBadWeatherFactor
+  //
+  // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
+  // * 1404d7620  40 53                         PUSH RBX
+  // * 1404d7622  48 83 EC 20                   SUB RSP,0x20
+  // * 1404d7626  48 8B 05 13 D6 07 03          MOV RAX,qword ptr [0x143554c40]
+  // * 1404d762d  48 8B D9                      MOV RBX,RCX
+  // * 1404d7630  80 B8 EC 08 00 00 00          CMP byte ptr [RAX + 0x8ec],0x0
+  // * 1404d7637  0F 85 94 01 00 00             JNZ 0x1404d77d1
+  // * 1404d763d  48 8B 0D 8C D6 07 03          MOV RCX,qword ptr [0x143554cd0]
+  const char* BAD_WEATHER_FN_SIG = "40 [PUSH r64] [SUB r64, imm8] [MOV r64, [rip+off32]] [MOV r64, r64] [CMP byte ptr [r64+off32], imm8] [JNE rel32] [MOV r64, [rip+off32]]";
+  uintptr_t pfnBadWeather = Utils::PatternFinder::Find(BAD_WEATHER_FN_SIG);
+
+  if (pfnBadWeather) {
+    logger->Debug("9. [CALL: BadWeatherUpdate] Found at 0x{:X}", pfnBadWeather);
+
+    // 9.1 PTR_PTR_142be8a30 — контейнер g_bad_weather_factor
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
+    // * 1404d7689  48 8D 0D A0 13 71 02       LEA RCX,[0x142be8a30]
+    uintptr_t addrLea = Utils::PatternFinder::Find(pfnBadWeather, 128, "[LEA r64, [rip+off32]]");
+    if (addrLea) {
+      uintptr_t ptrPtr = Utils::PatternFinder::GetRipAddress(addrLea, 3, 7);
+      if (ptrPtr) {
+        owner.SetBadWeatherFactorPtr(ptrPtr);
+        logger->Debug("9.1 [DATA: BadWeatherFactor] PTR=0x{:X}", ptrPtr);
+      } else {
+        logger->Error("9.1 [DATA: BadWeatherFactor] FAILED to resolve RIP address.");
+        all_found = false;
+      }
+    } else {
+      logger->Error("9.1 [DATA: BadWeatherFactor] FAILED to find LEA pattern.");
+      all_found = false;
+    }
+  } else {
+    logger->Error("9. [CALL: BadWeatherUpdate] FAILED to find function start.");
+    all_found = false;
+  }
+
+  // === SECTION 10: SUN PROFILE REFLECTION ATTRIBUTES ===
+  // Resolved via SCS reflection (FindAttributeOffset), independent of hardcoded game version.
+  // Best-effort: individual attributes may fail without affecting overall finder readiness.
+  {
+    Utils::FinderLog log(GetName());
+    auto phase = log.MakePhase("Sun Profile Reflection Attributes");
+
+    auto getAndSet = [&](const char* attrName, auto&& setter) -> bool {
+      uintptr_t off = Utils::PatternFinder::FindAttributeOffset("sun_profile", attrName);
+      bool ok = phase.StepOffset(static_cast<int32_t>(off), attrName, "REF");
+      if (ok) setter(static_cast<intptr_t>(off));
+      return ok;
+    };
+
+    getAndSet("low_elevation", [&](auto v) { owner.SetLowElevationOffset(v); });
+    getAndSet("high_elevation", [&](auto v) { owner.SetHighElevationOffset(v); });
+    getAndSet("sun_direction", [&](auto v) { owner.SetSunDirectionOffset(v); });
+
+    getAndSet("temperature", [&](auto v) { owner.SetTemperatureOffset(v); });
+    getAndSet("skybox_texture", [&](auto v) { owner.SetSkyboxTextureOffset(v); });
+    getAndSet("skycloud_mask_texture", [&](auto v) { owner.SetSkycloudMaskTextureOffset(v); });
+    getAndSet("lightning_mask", [&](auto v) { owner.SetLightningMaskOffset(v); });
+    getAndSet("stars_texture", [&](auto v) { owner.SetStarsTextureOffset(v); });
+    getAndSet("mirror_sky_texture", [&](auto v) { owner.SetMirrorSkyTextureOffset(v); });
+    getAndSet("ambient", [&](auto v) { owner.SetAmbientOffset(v); });
+    getAndSet("diffuse", [&](auto v) { owner.SetDiffuseOffset(v); });
+    getAndSet("specular", [&](auto v) { owner.SetSpecularOffset(v); });
+    getAndSet("env", [&](auto v) { owner.SetEnvOffset(v); });
+    getAndSet("env_static_mod", [&](auto v) { owner.SetEnvStaticModOffset(v); });
+    getAndSet("sky_color", [&](auto v) { owner.SetSkyColorOffset(v); });
+    getAndSet("sky_bottom_color", [&](auto v) { owner.SetSkyBottomColorOffset(v); });
+    getAndSet("starmap_color", [&](auto v) { owner.SetStarmapColorOffset(v); });
+    getAndSet("stars_color", [&](auto v) { owner.SetStarsColorOffset(v); });
+    getAndSet("sun_color", [&](auto v) { owner.SetSunColorOffset(v); });
+    getAndSet("sun_opacity", [&](auto v) { owner.SetSunOpacityOffset(v); });
+    getAndSet("sun_halo_color", [&](auto v) { owner.SetSunHaloColorOffset(v); });
+    getAndSet("sun_shadow_strength", [&](auto v) { owner.SetSunShadowStrengthOffset(v); });
+    getAndSet("moon_color", [&](auto v) { owner.SetMoonColorOffset(v); });
+    getAndSet("moon_halo_color", [&](auto v) { owner.SetMoonHaloColorOffset(v); });
+    getAndSet("moon_halo_scale", [&](auto v) { owner.SetMoonHaloScaleOffset(v); });
+    getAndSet("fog_color", [&](auto v) { owner.SetFogColorOffset(v); });
+    getAndSet("fog_color2", [&](auto v) { owner.SetFogColor2Offset(v); });
+    getAndSet("fog_vgradient", [&](auto v) { owner.SetFogVgradientOffset(v); });
+    getAndSet("fog_offset", [&](auto v) { owner.SetFogOffsetOffset(v); });
+    getAndSet("fog_density", [&](auto v) { owner.SetFogDensityOffset(v); });
+    getAndSet("speed_coef", [&](auto v) { owner.SetSpeedCoefOffset(v); });
+    getAndSet("cloud_shadow_weight", [&](auto v) { owner.SetCloudShadowWeightOffset(v); });
+    getAndSet("cloud_shadow_texture", [&](auto v) { owner.SetCloudShadowTextureOffset(v); });
+    getAndSet("cloud_shadow_area_size", [&](auto v) { owner.SetCloudShadowAreaSizeOffset(v); });
+    getAndSet("cloud_shadow_speed", [&](auto v) { owner.SetCloudShadowSpeedOffset(v); });
+    getAndSet("rain_intensity", [&](auto v) { owner.SetRainIntensityOffset(v); });
+    getAndSet("lightning_intensity", [&](auto v) { owner.SetLightningIntensityOffset(v); });
+    getAndSet("rain_max_wetness", [&](auto v) { owner.SetRainMaxWetnessOffset(v); });
+    getAndSet("rain_additional_ambient", [&](auto v) { owner.SetRainAdditionalAmbientOffset(v); });
+    getAndSet("snow_intensity", [&](auto v) { owner.SetSnowIntensityOffset(v); });
+    getAndSet("snow_flake_size_range", [&](auto v) { owner.SetSnowFlakeSizeRangeOffset(v); });
+    getAndSet("snow_chaos_rate", [&](auto v) { owner.SetSnowChaosRateOffset(v); });
+    getAndSet("snow_chaos_weight", [&](auto v) { owner.SetSnowChaosWeightOffset(v); });
+    getAndSet("snow_additional_ambient", [&](auto v) { owner.SetSnowAdditionalAmbientOffset(v); });
+    getAndSet("wind_type", [&](auto v) { owner.SetWindTypeOffset(v); });
+    getAndSet("dof_start", [&](auto v) { owner.SetDofStartOffset(v); });
+    getAndSet("dof_transition", [&](auto v) { owner.SetDofTransitionOffset(v); });
+    getAndSet("dof_filter_size", [&](auto v) { owner.SetDofFilterSizeOffset(v); });
+    getAndSet("color_balance", [&](auto v) { owner.SetColorBalanceOffset(v); });
+    getAndSet("color_saturation", [&](auto v) { owner.SetColorSaturationOffset(v); });
+    getAndSet("sunshaft_color", [&](auto v) { owner.SetSunshaftColorOffset(v); });
+    getAndSet("sunshaft_size", [&](auto v) { owner.SetSunshaftSizeOffset(v); });
+    getAndSet("low_intensity_minimum", [&](auto v) { owner.SetLowIntensityMinimumOffset(v); });
+    getAndSet("low_intensity_maximum", [&](auto v) { owner.SetLowIntensityMaximumOffset(v); });
+    getAndSet("low_intensity_color", [&](auto v) { owner.SetLowIntensityColorOffset(v); });
+    getAndSet("min_scale", [&](auto v) { owner.SetMinScaleOffset(v); });
+    getAndSet("max_scale", [&](auto v) { owner.SetMaxScaleOffset(v); });
+    getAndSet("scale_override", [&](auto v) { owner.SetScaleOverrideOffset(v); });
+    getAndSet("dark_adaptation_speed", [&](auto v) { owner.SetDarkAdaptationSpeedOffset(v); });
+    getAndSet("bright_adaptation_speed", [&](auto v) { owner.SetBrightAdaptationSpeedOffset(v); });
+    getAndSet("target_gray", [&](auto v) { owner.SetTargetGrayOffset(v); });
+    getAndSet("contrast", [&](auto v) { owner.SetContrastOffset(v); });
+    getAndSet("shoulder_length", [&](auto v) { owner.SetShoulderLengthOffset(v); });
+    getAndSet("bloom_threshold", [&](auto v) { owner.SetBloomThresholdOffset(v); });
+    getAndSet("bloom_limit", [&](auto v) { owner.SetBloomLimitOffset(v); });
+    getAndSet("bloom_intensity", [&](auto v) { owner.SetBloomIntensityOffset(v); });
+    getAndSet("bloom_standard_deviation", [&](auto v) { owner.SetBloomStandardDeviationOffset(v); });
+    getAndSet("stability", [&](auto v) { owner.SetStabilityOffset(v); });
+    getAndSet("weight", [&](auto v) { owner.SetWeightOffset(v); });
+  }
+
+  // === SECTION 10b: ENV PROFILE REFLECTION ATTRIBUTES ===
+  // Fields from env_profile : env.data unit (environment-level settings, not per-sun-profile).
+  {
+    Utils::FinderLog log(GetName());
+    auto phase = log.MakePhase("Env Profile Reflection Attributes");
+
+    auto getAndSetEnv = [&](const char* attrName, auto&& setter) -> bool {
+      uintptr_t off = Utils::PatternFinder::FindAttributeOffset("env_profile", attrName);
+      bool ok = phase.StepOffset(static_cast<int32_t>(off), attrName, "REF");
+      if (ok) setter(static_cast<intptr_t>(off));
+      return ok;
+    };
+
+    getAndSetEnv("lamps_on_elevation",  [&](auto v) { owner.SetLampsOnElevationOffset(v); });
+    getAndSetEnv("day_in_year",         [&](auto v) { owner.SetDayInYearOffset(v); });
+    getAndSetEnv("summer_time",         [&](auto v) { owner.SetSummerTimeOffset(v); });
+    getAndSetEnv("thunderstorm_probability", [&](auto v) { owner.SetThunderstormProbabilityOffset(v); });
   }
 
   m_isReady = all_found;
