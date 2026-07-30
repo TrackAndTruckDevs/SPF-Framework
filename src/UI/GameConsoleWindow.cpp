@@ -65,11 +65,19 @@ int GameConsoleWindow::HistoryCallback(ImGuiInputTextCallbackData* data) {
   return 0;
 }
 
-void GameConsoleWindow::RenderContent() {
+void GameConsoleWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
   auto& loc = LocalizationManager::GetInstance();
+  m_cachedInfoText = loc.Get("game_console_window.info_text");
+  m_cachedSendButton = loc.Get("game_console_window.send_button");
+  m_cachedEnableHookText = loc.Get("game_console_window.enable_hook_text");
+  m_cachedHooksWindowTitle = loc.Get("hooks_window.title");
+}
+
+void GameConsoleWindow::RenderContent() {
   auto* hook = m_hookManager.GetHook("GameConsole");
   if (hook && hook->IsEnabled()) {
-    ImGui::TextWrapped("%s", loc.Get("game_console_window.info_text").c_str());
+    ImGui::TextWrapped("%s", m_cachedInfoText.c_str());
 
     auto execute = [this]() {
       if (strlen(m_commandBuffer) > 0) {
@@ -91,11 +99,11 @@ void GameConsoleWindow::RenderContent() {
 
     ImGui::SameLine();
 
-    if (Button(loc.Get("game_console_window.send_button").c_str(), TextStyle::DefaultButton(), ImVec2(-1.0f, 0))) {
+    if (Button(m_cachedSendButton.c_str(), TextStyle::DefaultButton(), ImVec2(-1.0f, 0))) {
       execute();
     }
   } else {
-    ImGui::Text(loc.Get("game_console_window.enable_hook_text").c_str(), loc.Get("hooks_window.title").c_str());
+    ImGui::Text(m_cachedEnableHookText.c_str(), m_cachedHooksWindowTitle.c_str());
   }
 }
 }  // namespace UI

@@ -25,6 +25,7 @@
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/Utils/Windows.hpp"
 
+#include "fmt/base.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -72,117 +73,111 @@ MainWindow::MainWindow(Events::EventManager& eventManager, Input::InputManager& 
       m_patreonUrl(m_configService.GetValue("framework", "info.patreonUrl", "").get<std::string>()),
       m_scsForumUrl(m_configService.GetValue("framework", "info.scsForumUrl", "").get<std::string>()),
       m_steamProfileUrl(m_configService.GetValue("framework", "info.steamProfileUrl", "").get<std::string>()),
-      m_licenseUrl(m_githubUrl + "/blob/main/LICENSE"),
-      // Localisation Keys//
-      m_locPatronsButtonTooltip("main_window.patrons_button_tooltip"),
-      // Localisation Keys for Patrons Popup
-      m_locPatronsTitle("patrons_popup.title"),
-      m_locPatronsIntro("patrons_popup.intro_text"),
-      m_locPatronsLinkIntro("patrons_popup.link_intro"),
-      m_locPatronsLinkText("patrons_popup.link_text"),
-      m_locPatronsLinkTooltip("patrons_popup.link_tooltip"),
-      m_locPatronsHofTitle("patrons_popup.hof_title"),
-      m_locPatronsHofEmpty("patrons_popup.hof_empty"),
-      m_locPatronsHofTeaser("patrons_popup.hof_teaser"),
-      m_locPatronsCloseButton("patrons_popup.close_button"),
-      m_locTierMagnateHeader("patrons_popup.tiers.magnate"),
-      m_locTierManagerHeader("patrons_popup.tiers.manager"),
-      m_locTierMasterHeader("patrons_popup.tiers.master"),  // Road Master
-      m_locTierHaulerHeader("patrons_popup.tiers.hauler"),
-      m_locTierDriverHeader("patrons_popup.tiers.driver"),
-      // Localization Keys for Update Popup
-      m_locUpdateButtonTooltip("main_window.update_button_tooltip"),
-      m_locVersionLabel("main_window.version_label"),
-      m_locUpdateChecking("main_window.update_checking"),
-      m_locConnectDisabled("main_window.connect_disabled_tooltip"),
-      m_locUpdatePopupTitle("update_popup.title"),
-      m_locUpdateNoUpdate("update_popup.no_update"),
-      m_locUpdateAvailable("update_popup.update_available"),
-      m_locUpdateSwitchToRelease("update_popup.switch_to_release"),
-      m_locUpdateDownloadLink("update_popup.download_link"),
-      m_locUpdateDownloadTooltip("update_popup.download_tooltip"),
-      m_locUpdateDevNoteIntro("update_popup.developers_note_intro"),
-      m_locUpdateDevNoteLink("update_popup.developers_note_link"),
-      m_locUpdateGithubTooltip("update_popup.github_tooltip"),
-      m_locUpdateErrorNoInternet("api.error.no_internet"),
-      m_locUpdateErrorServerUnavailable("api.error.server_unavailable"),
-      m_locUpdateErrorGeneric("api.error.generic"),
-      m_locUpdateCloseButton("update_popup.close_button"),
-      // Localization keys for common strings
-      m_locForDevelopers("common.for_developers"),
-      m_locForUsers("common.for_users"),
-      // Localization keys for hamburger menu
-      m_locMenuManual("main_window.menu.manual"),
-      m_locMenuAbout("main_window.menu.about"),
-      m_locMenuLegal("main_window.menu.legal"),
-      m_locMenuReload("main_window.menu.reload"),
-      m_locMenuReloadDisabledTooltip("main_window.menu.reload_disabled_tooltip"),
-      m_locMenuShutdown("main_window.menu.shutdown"),
-      m_locMenuOpenPluginsFolder("main_window.menu.open_plugins_folder"),
-      // Localization keys for menu popups
-      m_locManualPopupTitle("manual_popup.title"),
-      m_locAboutFrameworkTitle("about_popup.framework_title"),
-      // m_locManualPopupContent("manual_popup.content"),
-      m_locAboutPopupTitle("about_popup.title"),
-      m_locAboutUsTitle("about_popup.about_us_title"),
-      m_locAboutUsText("about_popup.about_us_text"),
-      m_locContactsTitle("about_popup.contacts_title"),
-      m_locEmailText("about_popup.email_text"),
-      m_locDiscordText("about_popup.discord_text"),
-      m_locYoutubeText("about_popup.youtube_text"),
-      m_locGithubText("about_popup.github_text"),
-      m_locPatreonText("about_popup.patreon_text"),
-      m_locScsForumText("about_popup.scs_forum_text"),
-      m_locSteamProfileText("about_popup.steam_profile_text"),
-      m_locShutdownPopupTitle("shutdown_popup.title"),
-      m_locShutdownPopupContent("shutdown_popup.content"),
-      m_locShutdownPopupConfirm("shutdown_popup.confirm_button"),
-      m_locShutdownPopupCancel("shutdown_popup.cancel_button"),
-      // Localization keys for Legal popup
-      m_locLegalPopupTitle("legal_popup.title"),
-      m_locLegalLicenseTitle("legal_popup.license_title"),
-      m_locLegalLicenseText("legal_popup.license_text"),
-      m_locLegalDisclaimerTitle("legal_popup.disclaimer_title"),
-      m_locLegalDisclaimerText("legal_popup.disclaimer_text"),
-      m_locLegalFairPlayTitle("legal_popup.fair_play_title"),
-      m_locLegalFairPlayText("legal_popup.fair_play_text"),
-      m_locLegalContactTitle("legal_popup.contact_title"),
-      m_locLegalContactText("legal_popup.contact_text"),
-      // Localization keys for FAQ popup
-      m_locFaqQ1("manual_popup.q1_question"),
-      m_locFaqA1("manual_popup.q1_answer"),
-      m_locFaqQ2("manual_popup.q2_question"),
-      m_locFaqA2("manual_popup.q2_answer"),
-      m_locFaqQ3("manual_popup.q3_question"),
-      m_locFaqA3("manual_popup.q3_answer"),
-      m_locFaqQ4("manual_popup.q4_question"),
-      m_locFaqA4("manual_popup.q4_answer"),
-      m_locFaqQ5("manual_popup.q5_question"),
-      m_locFaqA5("manual_popup.q5_answer"),
-      m_locFaqQ6("manual_popup.q6_question"),
-      m_locFaqA6("manual_popup.q6_answer"),
-      // Developer Mode
-      m_locDeveloperMode("main_window.common.developer_mode"),
-      m_locUserMode("main_window.common.user_mode"),
-      // Game Status and Performance
-      m_locGameStatusRunningGame("main_window.game_status.running_game_label"),
-      m_locGameStatusCurrentVersion("main_window.game_status.current_version_label"),
-      m_locPerfFpsAvg("main_window.performance.fps_avg_label"),
-      m_locPerfFpsRollMinMax("main_window.performance.fps_roll_minmax_label"),
-      m_locPerfFpsGblMinMax("main_window.performance.fps_gbl_minmax_label"),
-      m_locPerfGraphicsApiLabel("main_window.performance.graphics_api_label"),
-      m_locPluginsLoadedActivatedLabel("main_window.summary.plugins_loaded_activated_label"),
-      m_locHooksLoadedActivatedLabel("main_window.summary.hooks_loaded_activated_label"),
-      m_locTooltipFpsAvg("main_window.performance.tooltip_fps_avg"),
-      m_locTooltipFpsRollMinMax("main_window.performance.tooltip_fps_roll_minmax"),
-      m_locTooltipFpsGblMinMax("main_window.performance.tooltip_fps_gbl_minmax") {
+      m_licenseUrl(m_githubUrl + "/blob/main/LICENSE") {
   m_isDeveloperMode = m_configService.GetValue("framework", "settings.framework.developer_mode", false).get<bool>();
   m_keyBindsManager.RegisterAction("framework.ui.main_window.toggle", [this]() { ToggleVisibility(); });
+  m_titleLocalizationKey = "main_window.title";
+  RefreshLocalization();
 }
 
 void MainWindow::ToggleVisibility() { SetVisibility(!IsVisible()); }
 
-const char* MainWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get("main_window.title").c_str(); }
+void MainWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
+  auto& loc = LocalizationManager::GetInstance();
+  m_locPatronsButtonTooltip = loc.Get("main_window.patrons_button_tooltip");
+  m_locPatronsTitle = loc.Get("patrons_popup.title");
+  m_locPatronsIntro = loc.Get("patrons_popup.intro_text");
+  m_locPatronsLinkIntro = loc.Get("patrons_popup.link_intro");
+  m_locPatronsLinkText = loc.Get("patrons_popup.link_text");
+  m_locPatronsLinkTooltip = loc.Get("patrons_popup.link_tooltip");
+  m_locPatronsHofTitle = loc.Get("patrons_popup.hof_title");
+  m_locPatronsHofEmpty = loc.Get("patrons_popup.hof_empty");
+  m_locPatronsHofTeaser = loc.Get("patrons_popup.hof_teaser");
+  m_locPatronsCloseButton = loc.Get("patrons_popup.close_button");
+  m_locTierMagnateHeader = loc.Get("patrons_popup.tiers.magnate");
+  m_locTierManagerHeader = loc.Get("patrons_popup.tiers.manager");
+  m_locTierMasterHeader = loc.Get("patrons_popup.tiers.master");
+  m_locTierHaulerHeader = loc.Get("patrons_popup.tiers.hauler");
+  m_locTierDriverHeader = loc.Get("patrons_popup.tiers.driver");
+  m_locUpdateButtonTooltip = loc.Get("main_window.update_button_tooltip");
+  m_locVersionLabel = loc.Get("main_window.version_label");
+  m_locUpdateChecking = loc.Get("main_window.update_checking");
+  m_locConnectDisabled = loc.Get("main_window.connect_disabled_tooltip");
+  m_locUpdatePopupTitle = loc.Get("update_popup.title");
+  m_locUpdateNoUpdate = loc.Get("update_popup.no_update");
+  m_locUpdateAvailable = loc.Get("update_popup.update_available");
+  m_locUpdateSwitchToRelease = loc.Get("update_popup.switch_to_release");
+  m_locUpdateDownloadLink = loc.Get("update_popup.download_link");
+  m_locUpdateDownloadTooltip = loc.Get("update_popup.download_tooltip");
+  m_locUpdateDevNoteIntro = loc.Get("update_popup.developers_note_intro");
+  m_locUpdateDevNoteLink = loc.Get("update_popup.developers_note_link");
+  m_locUpdateGithubTooltip = loc.Get("update_popup.github_tooltip");
+  m_locUpdateErrorNoInternet = loc.Get("api.error.no_internet");
+  m_locUpdateErrorServerUnavailable = loc.Get("api.error.server_unavailable");
+  m_locUpdateErrorGeneric = loc.Get("api.error.generic");
+  m_locUpdateCloseButton = loc.Get("update_popup.close_button");
+  m_locForDevelopers = loc.Get("common.for_developers");
+  m_locForUsers = loc.Get("common.for_users");
+  m_locMenuManual = loc.Get("main_window.menu.manual");
+  m_locMenuAbout = loc.Get("main_window.menu.about");
+  m_locMenuLegal = loc.Get("main_window.menu.legal");
+  m_locMenuReload = loc.Get("main_window.menu.reload");
+  m_locMenuReloadDisabledTooltip = loc.Get("main_window.menu.reload_disabled_tooltip");
+  m_locMenuShutdown = loc.Get("main_window.menu.shutdown");
+  m_locMenuOpenPluginsFolder = loc.Get("main_window.menu.open_plugins_folder");
+  m_locManualPopupTitle = loc.Get("manual_popup.title");
+  m_locAboutFrameworkTitle = loc.Get("about_popup.framework_title");
+  m_locAboutPopupTitle = loc.Get("about_popup.title");
+  m_locAboutUsTitle = loc.Get("about_popup.about_us_title");
+  m_locAboutUsText = loc.Get("about_popup.about_us_text");
+  m_locContactsTitle = loc.Get("about_popup.contacts_title");
+  m_locEmailText = loc.Get("about_popup.email_text");
+  m_locDiscordText = loc.Get("about_popup.discord_text");
+  m_locYoutubeText = loc.Get("about_popup.youtube_text");
+  m_locGithubText = loc.Get("about_popup.github_text");
+  m_locPatreonText = loc.Get("about_popup.patreon_text");
+  m_locScsForumText = loc.Get("about_popup.scs_forum_text");
+  m_locSteamProfileText = loc.Get("about_popup.steam_profile_text");
+  m_locShutdownPopupTitle = loc.Get("shutdown_popup.title");
+  m_locShutdownPopupContent = loc.Get("shutdown_popup.content");
+  m_locShutdownPopupConfirm = loc.Get("shutdown_popup.confirm_button");
+  m_locShutdownPopupCancel = loc.Get("shutdown_popup.cancel_button");
+  m_locLegalPopupTitle = loc.Get("legal_popup.title");
+  m_locLegalLicenseTitle = loc.Get("legal_popup.license_title");
+  m_locLegalLicenseText = loc.Get("legal_popup.license_text");
+  m_locLegalDisclaimerTitle = loc.Get("legal_popup.disclaimer_title");
+  m_locLegalDisclaimerText = loc.Get("legal_popup.disclaimer_text");
+  m_locLegalFairPlayTitle = loc.Get("legal_popup.fair_play_title");
+  m_locLegalFairPlayText = loc.Get("legal_popup.fair_play_text");
+  m_locLegalContactTitle = loc.Get("legal_popup.contact_title");
+  m_locLegalContactText = loc.Get("legal_popup.contact_text");
+  m_locFaqQ1 = loc.Get("manual_popup.q1_question");
+  m_locFaqA1 = loc.Get("manual_popup.q1_answer");
+  m_locFaqQ2 = loc.Get("manual_popup.q2_question");
+  m_locFaqA2 = loc.Get("manual_popup.q2_answer");
+  m_locFaqQ3 = loc.Get("manual_popup.q3_question");
+  m_locFaqA3 = loc.Get("manual_popup.q3_answer");
+  m_locFaqQ4 = loc.Get("manual_popup.q4_question");
+  m_locFaqA4 = loc.Get("manual_popup.q4_answer");
+  m_locFaqQ5 = loc.Get("manual_popup.q5_question");
+  m_locFaqA5 = loc.Get("manual_popup.q5_answer");
+  m_locFaqQ6 = loc.Get("manual_popup.q6_question");
+  m_locFaqA6 = loc.Get("manual_popup.q6_answer");
+  m_locDeveloperMode = loc.Get("main_window.common.developer_mode");
+  m_locUserMode = loc.Get("main_window.common.user_mode");
+  m_locGameStatusRunningGame = loc.Get("main_window.game_status.running_game_label");
+  m_locGameStatusCurrentVersion = loc.Get("main_window.game_status.current_version_label");
+  m_locPerfFpsAvg = loc.Get("main_window.performance.fps_avg_label");
+  m_locPerfFpsRollMinMax = loc.Get("main_window.performance.fps_roll_minmax_label");
+  m_locPerfFpsGblMinMax = loc.Get("main_window.performance.fps_gbl_minmax_label");
+  m_locPerfGraphicsApiLabel = loc.Get("main_window.performance.graphics_api_label");
+  m_locPluginsLoadedActivatedLabel = loc.Get("main_window.summary.plugins_loaded_activated_label");
+  m_locHooksLoadedActivatedLabel = loc.Get("main_window.summary.hooks_loaded_activated_label");
+  m_locTooltipFpsAvg = loc.Get("main_window.performance.tooltip_fps_avg");
+  m_locTooltipFpsRollMinMax = loc.Get("main_window.performance.tooltip_fps_roll_minmax");
+  m_locTooltipFpsGblMinMax = loc.Get("main_window.performance.tooltip_fps_gbl_minmax");
+}
 
 namespace {
 // Helper function for rendering a styled menu item.
@@ -227,8 +222,6 @@ bool RenderStyledMenuItem(const char* icon, const std::string& label, const std:
 }  // anonymous namespace
 
 void MainWindow::RenderContent() {
-  auto& loc = LocalizationManager::GetInstance();
-
   // --- Framework Header ---
   if (!m_frameworkName.empty()) {
     // --- 1. Title (Name and Version) ---
@@ -267,7 +260,7 @@ void MainWindow::RenderContent() {
           }
         }
         if (ImGui::IsItemHovered()) {
-          ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locPatronsButtonTooltip : m_locConnectDisabled).c_str());
+          ImGui::SetTooltip("%s", (isConnectEnabled ? m_locPatronsButtonTooltip : m_locConnectDisabled).c_str());
         }
       }
 
@@ -307,7 +300,7 @@ void MainWindow::RenderContent() {
           }
         }
         if (ImGui::IsItemHovered()) {
-          ImGui::SetTooltip("%s", loc.Get(isConnectEnabled ? m_locUpdateButtonTooltip : m_locConnectDisabled).c_str());
+          ImGui::SetTooltip("%s", (isConnectEnabled ? m_locUpdateButtonTooltip : m_locConnectDisabled).c_str());
         }
       }
 
@@ -325,8 +318,8 @@ void MainWindow::RenderContent() {
       const float toggle_switch_height = 20.0f;
       const float toggle_radius = toggle_switch_height * 0.5f;
 
-      ImVec2 userLabelSize = Typography::CalcTextSize(loc.Get(m_locUserMode).c_str(), TextStyle::Bold());
-      ImVec2 devLabelSize = Typography::CalcTextSize(loc.Get(m_locDeveloperMode).c_str(), TextStyle::Bold());
+      ImVec2 userLabelSize = Typography::CalcTextSize(m_locUserMode.c_str(), TextStyle::Bold());
+      ImVec2 devLabelSize = Typography::CalcTextSize(m_locDeveloperMode.c_str(), TextStyle::Bold());
       const float toggle_group_width = userLabelSize.x + toggle_switch_width + devLabelSize.x + ImGui::GetStyle().ItemSpacing.x * 4.0f;
 
       ImGui::Spacing();
@@ -335,7 +328,7 @@ void MainWindow::RenderContent() {
       ImGui::BeginGroup();
       {
         // User Mode Label
-        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::WHITE : Colors::GOLD), "%s", loc.Get(m_locUserMode).c_str());
+        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::WHITE : Colors::GOLD), "%s", m_locUserMode.c_str());
         ImGui::SameLine();
 
         // Switch
@@ -370,7 +363,7 @@ void MainWindow::RenderContent() {
 
         ImGui::SameLine();
         // Developer Mode Label
-        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::GOLD : Colors::WHITE), "%s", loc.Get(m_locDeveloperMode).c_str());
+        Typography::Text(TextStyle::Bold().Color(m_isDeveloperMode ? Colors::GOLD : Colors::WHITE), "%s", m_locDeveloperMode.c_str());
       }
       ImGui::EndGroup();
     }
@@ -381,10 +374,10 @@ void MainWindow::RenderContent() {
 
     const auto& game = System::EnvironmentManager::GetInstance().GetGameInfo();
     if (!game.name.empty()) {
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusRunningGame).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameStatusRunningGame.c_str());
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.name.c_str());
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locGameStatusCurrentVersion).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameStatusCurrentVersion.c_str());
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", game.version.c_str());
     }
@@ -398,19 +391,18 @@ void MainWindow::RenderContent() {
     const auto& status = System::EnvironmentManager::GetInstance().GetStatus();
 
     if (!status.renderer.empty()) {
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfGraphicsApiLabel).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfGraphicsApiLabel.c_str());
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", status.renderer.c_str());
       ImGui::SameLine();
-      ImGui::Dummy(ImVec2(10.0f, 0.0f));  // Spacer
+      ImGui::Dummy(ImVec2(10.0f, 0.0f));
       ImGui::SameLine();
     }
 
     if (perf.GetDeltaTime() > 0.0f) {
-      // FPSAvg
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsAvg).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfFpsAvg.c_str());
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsAvg).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipFpsAvg.c_str());
       }
       ImGui::SameLine();
 
@@ -427,10 +419,9 @@ void MainWindow::RenderContent() {
       ImGui::Dummy(ImVec2(10.0f, 0.0f));
       ImGui::SameLine();
 
-      // FPSRoll Min/Max
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsRollMinMax).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfFpsRollMinMax.c_str());
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsRollMinMax).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipFpsRollMinMax.c_str());
       }
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetRollingMinFPS(), perf.GetRollingMaxFPS());
@@ -439,10 +430,9 @@ void MainWindow::RenderContent() {
       ImGui::Dummy(ImVec2(10.0f, 0.0f));
       ImGui::SameLine();
 
-      // FPSGbl Min/Max
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPerfFpsGblMinMax).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfFpsGblMinMax.c_str());
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipFpsGblMinMax).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipFpsGblMinMax.c_str());
       }
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetGlobalMinFPS(), perf.GetGlobalMaxFPS());
@@ -466,7 +456,7 @@ void MainWindow::RenderContent() {
         }
       }
 
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locPluginsLoadedActivatedLabel).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPluginsLoadedActivatedLabel.c_str());
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalPlugins, enabledPlugins);
 
@@ -485,7 +475,7 @@ void MainWindow::RenderContent() {
         }
       }
 
-      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locHooksLoadedActivatedLabel).c_str());
+      Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locHooksLoadedActivatedLabel.c_str());
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%d/%d", totalHooks, enabledHooks);
     }
@@ -571,65 +561,58 @@ void MainWindow::RenderPatronsPopup() {
   auto& loc = LocalizationManager::GetInstance();
 
   if (m_isPatronsPopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locPatronsButtonTooltip).c_str());
-    m_isPatronsPopupOpen = false;  // Reset flag
+    ImGui::OpenPopup(m_locPatronsButtonTooltip.c_str());
+    m_isPatronsPopupOpen = false;
   }
 
-  if (ImGui::BeginPopupModal(loc.Get(m_locPatronsButtonTooltip).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    // --- 1. Header ---
+  if (ImGui::BeginPopupModal(m_locPatronsButtonTooltip.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     {
       ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-      Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locPatronsTitle).c_str());
+      Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locPatronsTitle.c_str());
       ImGui::PopStyleVar();
     }
 
     ImGui::Spacing();
     ImGui::Spacing();
 
-    // --- 2. Introduction Text ---
-    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsIntro).c_str());
+    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsIntro.c_str());
     ImGui::Spacing();
 
-    // --- 3. Clickable Patreon Link ---
     {
       std::string patreonUrl = m_configService.GetValue("framework", "info.patreonUrl", "").get<std::string>();
-      if (!patreonUrl.empty()) {  // Only draw if URL is present
-        Typography::Text(TextStyle::Regular().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsLinkIntro).c_str());
+      if (!patreonUrl.empty()) {
+        Typography::Text(TextStyle::Regular().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsLinkIntro.c_str());
         ImGui::SameLine();
-        Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline(), "%s", loc.Get(m_locPatronsLinkText).c_str());
+        Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline(), "%s", m_locPatronsLinkText.c_str());
         if (ImGui::IsItemHovered()) {
-          ImGui::SetTooltip("%s", loc.Get(m_locPatronsLinkTooltip).c_str());
+          ImGui::SetTooltip("%s", m_locPatronsLinkTooltip.c_str());
           ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
           if (ImGui::IsMouseClicked(0)) {
             ShellExecute(NULL, "open", patreonUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
           }
         }
-        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsHofTeaser).c_str());
+        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsHofTeaser.c_str());
       } else {
-        // If no Patreon URL, only draw the teaser text if it makes sense without the link
-        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsHofTeaser).c_str());
+        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsHofTeaser.c_str());
       }
     }
 
-    // --- 4. Hall of Fame ---
     ImGui::Spacing();
     {
       ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-      Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locPatronsHofTitle).c_str());
+      Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locPatronsHofTitle.c_str());
       ImGui::PopStyleVar();
     }
 
-    // --- Patrons List Rendering ---
     ImGui::BeginChild("patrons_list_scroll_region", ImVec2(750, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     if (!m_lastPatronsResult.has_value()) {
-      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "Loading patrons...");  // TODO: Localize
+      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "Loading patrons...");
     } else if (!m_lastPatronsResult->success || !m_lastPatronsResult->data.has_value()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)).Color(Colors::RED), "%s", loc.Get(m_lastPatronsResult->errorMessage.value_or(m_locUpdateErrorGeneric)).c_str());
     } else if (m_lastPatronsResult->data->empty()) {
-      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsHofEmpty).c_str());
+      Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsHofEmpty.c_str());
     } else {
-      // Filter patrons by tiers that should be in the Hall of Fame
       std::map<int, std::vector<System::Patron>> patronsByTier;
       for (const auto& p : m_lastPatronsResult->data.value()) {
         if (p.tier >= 3) {
@@ -638,11 +621,10 @@ void MainWindow::RenderPatronsPopup() {
       }
 
       if (patronsByTier.empty()) {
-        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", loc.Get(m_locPatronsHofEmpty).c_str());
+        Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "%s", m_locPatronsHofEmpty.c_str());
       } else {
-        // TIER 5: Logistics Magnate
         if (patronsByTier.count(5)) {
-          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locTierMagnateHeader).c_str());
+          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", m_locTierMagnateHeader.c_str());
           ImGui::Spacing();
           if (ImGui::BeginTable("MagnatesTable", 5, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingStretchSame)) {
             for (const auto& p : patronsByTier[5]) {
@@ -652,9 +634,8 @@ void MainWindow::RenderPatronsPopup() {
             ImGui::EndTable();
           }
         }
-        // TIER 4: Fleet Manager
         if (patronsByTier.count(4)) {
-          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locTierManagerHeader).c_str());
+          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", m_locTierManagerHeader.c_str());
           ImGui::Spacing();
           if (ImGui::BeginTable("ManagersTable", 5, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingStretchSame)) {
             for (const auto& p : patronsByTier[4]) {
@@ -664,9 +645,8 @@ void MainWindow::RenderPatronsPopup() {
             ImGui::EndTable();
           }
         }
-        // TIER 3: Road Master
         if (patronsByTier.count(3)) {
-          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locTierMasterHeader).c_str());
+          Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GRAY), "%s", m_locTierMasterHeader.c_str());
           ImGui::Spacing();
           if (ImGui::BeginTable("MastersTable", 5, ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingStretchSame)) {
             for (const auto& p : patronsByTier[3]) {
@@ -681,8 +661,7 @@ void MainWindow::RenderPatronsPopup() {
 
     ImGui::EndChild();
     ImGui::Spacing();
-    // --- 5. Close Button ---
-    if (Button(loc.Get(m_locPatronsCloseButton).c_str(), TextStyle::DefaultButton())) {
+    if (Button(m_locPatronsCloseButton.c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -694,45 +673,37 @@ void MainWindow::RenderUpdatePopup() {
   auto& loc = LocalizationManager::GetInstance();
 
   if (m_isUpdatePopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locUpdatePopupTitle).c_str());
-    m_isUpdatePopupOpen = false;  // Reset flag
+    ImGui::OpenPopup(m_locUpdatePopupTitle.c_str());
+    m_isUpdatePopupOpen = false;
   }
 
-  if (ImGui::BeginPopupModal(loc.Get(m_locUpdatePopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    // Determine required popup size based on content
+  if (ImGui::BeginPopupModal(m_locUpdatePopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     bool hasChangelog = m_lastUpdateInfo.has_value() && !m_lastUpdateInfo->content.markdown.empty();
     ImVec2 childSize = hasChangelog ? ImVec2(575, 300) : ImVec2(450, 100);
 
     ImGui::BeginChild("description_modals_update", childSize, false);
 
-    // --- Header ---
     ImGui::Spacing();
     ImGui::Separator();
-    Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GOLD), "%s%s v%s", loc.Get(m_locVersionLabel).c_str(), m_frameworkName.c_str(), m_frameworkVersion.c_str());
+    Typography::Text(TextStyle::H3().Align(TextAlign::Center).Color(Colors::GOLD), "%s%s v%s", m_locVersionLabel.c_str(), m_frameworkName.c_str(), m_frameworkVersion.c_str());
     ImGui::Separator();
     ImGui::Spacing();
 
-    // --- Content ---
     if (!m_lastUpdateInfo.has_value() && !m_lastUpdateError.has_value()) {
-      // 1. Loading state
       ImGui::Spacing();
       ImGui::Spacing();
-      Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center).Color(Colors::GRAY), "%s", loc.Get(m_locUpdateChecking).c_str());
+      Typography::Text(TextStyle::Bold().Wrapped().Align(TextAlign::Center).Color(Colors::GRAY), "%s", m_locUpdateChecking.c_str());
     } else if (m_lastUpdateError.has_value()) {
-      // 2. Error state (Network, API error, etc.)
       Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::RED).Padding(ImVec2(15.0f, 0.0f)), "%s", loc.Get(m_lastUpdateError.value_or(m_locUpdateErrorGeneric)).c_str());
     } else if (m_lastUpdateInfo.has_value()) {
-      // 3. Success states (Received response from server)
       const auto& updateData = m_lastUpdateInfo.value();
       auto bodyStyle = TextStyle::Bold().Wrapped().Color(Colors::SILVER).Padding(ImVec2(10, 0));
 
       if (m_currentUpdateStatus == Modules::CommunicationManager::UpdateStatus::UpToDate) {
         ImGui::Spacing();
-        // Here: Server said we are up to date.
-        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Align(TextAlign::Center), "%s", loc.Get(m_locUpdateNoUpdate).c_str());
+        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Align(TextAlign::Center), "%s", m_locUpdateNoUpdate.c_str());
       } else if (updateData.updateAvailable) {
-        // Here: Server said there is a new version.
-        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)), "%s", loc.GetFormatted("framework", m_locUpdateAvailable, updateData.latestVersion.full).c_str());
+        Typography::Text(TextStyle::Regular().Wrapped().Color(Colors::WHITE).Padding(ImVec2(15.0f, 0.0f)), "%s", fmt::format(fmt::runtime(m_locUpdateAvailable), updateData.latestVersion.full).c_str());
 
         if (hasChangelog) {
           ImGui::Spacing();
@@ -746,9 +717,9 @@ void MainWindow::RenderUpdatePopup() {
         }
 
         ImGui::Spacing();
-        Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline().Align(TextAlign::Center), "%s", loc.Get(m_locUpdateDownloadLink).c_str());
+        Typography::Text(TextStyle::Bold().Color(Colors::URL_LINK).Underline().Align(TextAlign::Center), "%s", m_locUpdateDownloadLink.c_str());
         if (ImGui::IsItemHovered()) {
-          std::string tooltipText = loc.GetFormatted("framework", m_locUpdateDownloadTooltip, updateData.latestVersion.full);
+          std::string tooltipText = fmt::format(fmt::runtime(m_locUpdateDownloadTooltip), updateData.latestVersion.full);
           ImGui::SetTooltip("%s", tooltipText.c_str());
           ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
           if (ImGui::IsMouseClicked(0)) {
@@ -761,18 +732,17 @@ void MainWindow::RenderUpdatePopup() {
     ImGui::Spacing();
     ImGui::EndChild();
 
-    // --- Footer with dev note and close button ---
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
-    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(15.0f, 0.0f)).Color(Colors::WHITE), "%s ", loc.Get(m_locForDevelopers).c_str());
-    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(15.0f, 0.0f)).Color(Colors::GRAY), "%s ", loc.Get(m_locUpdateDevNoteIntro).c_str());
+    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(15.0f, 0.0f)).Color(Colors::WHITE), "%s ", m_locForDevelopers.c_str());
+    Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(15.0f, 0.0f)).Color(Colors::GRAY), "%s ", m_locUpdateDevNoteIntro.c_str());
     ImGui::SameLine();
     std::string githubUrl = m_configService.GetValue("framework", "info.githubUrl", "").get<std::string>();
     if (!githubUrl.empty()) {
-      Typography::Text(TextStyle::Bold().Wrapped().Color(Colors::URL_LINK).Underline(), "%s", loc.Get(m_locUpdateDevNoteLink).c_str());
+      Typography::Text(TextStyle::Bold().Wrapped().Color(Colors::URL_LINK).Underline(), "%s", m_locUpdateDevNoteLink.c_str());
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locUpdateGithubTooltip).c_str());
+        ImGui::SetTooltip("%s", m_locUpdateGithubTooltip.c_str());
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
         if (ImGui::IsMouseClicked(0)) {
           ShellExecute(NULL, "open", githubUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
@@ -782,7 +752,7 @@ void MainWindow::RenderUpdatePopup() {
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
-    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {
+    if (Button(m_locUpdateCloseButton.c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -791,38 +761,33 @@ void MainWindow::RenderUpdatePopup() {
 
 // --- Popup Modals: HamburgerMenu ---
 void MainWindow::RenderHamburgerMenu() {
-  auto& loc = LocalizationManager::GetInstance();
   if (ImGui::BeginPopup("HamburgerMenu")) {
-    if (RenderStyledMenuItem(ICON_FA_CIRCLE_QUESTION, loc.Get(m_locMenuManual), loc.Get(m_locMenuManual))) {
+    if (RenderStyledMenuItem(ICON_FA_CIRCLE_QUESTION, m_locMenuManual, m_locMenuManual)) {
       m_isManualPopupOpen = true;
     }
-    if (RenderStyledMenuItem(ICON_FA_ENVELOPES_BULK, loc.Get(m_locMenuAbout), loc.Get(m_locMenuAbout))) {
+    if (RenderStyledMenuItem(ICON_FA_ENVELOPES_BULK, m_locMenuAbout, m_locMenuAbout)) {
       m_isAboutPopupOpen = true;
     }
-    if (RenderStyledMenuItem(ICON_FA_SCALE_BALANCED, loc.Get(m_locMenuLegal), loc.Get(m_locMenuLegal))) {
+    if (RenderStyledMenuItem(ICON_FA_SCALE_BALANCED, m_locMenuLegal, m_locMenuLegal)) {
       m_isLegalPopupOpen = true;
     }
 
     ImGui::Separator();
     ImGui::Spacing();
-    // Action buttons at the bottom
 
-    // Open Plugins Folder button (left-aligned)
     if (Button(ICON_FA_FOLDER_OPEN, TextStyle::DefaultButton())) {
       const std::string pluginsPath = PathManager::GetPluginsPath().string();
       ShellExecute(NULL, "open", pluginsPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
       ImGui::CloseCurrentPopup();
     }
     if (ImGui::IsItemHovered()) {
-      ImGui::SetTooltip("%s", loc.Get(m_locMenuOpenPluginsFolder).c_str());
+      ImGui::SetTooltip("%s", m_locMenuOpenPluginsFolder.c_str());
     }
     ImGui::SameLine();
-    // Existing buttons (right-aligned)
     const float button_width = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x + ImGui::GetStyle().FramePadding.x * 2.0f;
     const float buttons_total_width = (button_width * 2) + ImGui::GetStyle().ItemSpacing.x;
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - buttons_total_width);
 
-    // Reload Button
     auto* hook = m_hookManager.GetHook("GameConsole");
     const bool isGameConsoleEnabled = hook && hook->IsEnabled();
 
@@ -832,33 +797,32 @@ void MainWindow::RenderHamburgerMenu() {
         ImGui::CloseCurrentPopup();
       }
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locMenuReload).c_str());
+        ImGui::SetTooltip("%s", m_locMenuReload.c_str());
       }
     } else {
       ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
       ImGui::Text("%s", ICON_FA_ARROW_ROTATE_LEFT);
       ImGui::PopStyleColor();
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locMenuReloadDisabledTooltip).c_str());
+        ImGui::SetTooltip("%s", m_locMenuReloadDisabledTooltip.c_str());
       }
     }
 
     ImGui::SameLine();
 
-    // Shutdown Button
     if (isGameConsoleEnabled) {
       if (Button(ICON_FA_POWER_OFF, TextStyle::DefaultButton())) {
         m_isShutdownPopupOpen = true;
       }
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locMenuShutdown).c_str());
+        ImGui::SetTooltip("%s", m_locMenuShutdown.c_str());
       }
     } else {
       ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
       ImGui::Text("%s", ICON_FA_POWER_OFF);
       ImGui::PopStyleColor();
       if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", loc.Get(m_locMenuReloadDisabledTooltip).c_str());
+        ImGui::SetTooltip("%s", m_locMenuReloadDisabledTooltip.c_str());
       }
     }
 
@@ -868,74 +832,62 @@ void MainWindow::RenderHamburgerMenu() {
 
 // --- Popup Modals: Manual ---
 void MainWindow::RenderManualPopup() {
-  auto& loc = LocalizationManager::GetInstance();
-  // --- Manual Popup Trigger ---
   if (m_isManualPopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locManualPopupTitle).c_str());
+    ImGui::OpenPopup(m_locManualPopupTitle.c_str());
     m_isManualPopupOpen = false;
   }
 
-  // Manual Popup
-  if (ImGui::BeginPopupModal(loc.Get(m_locManualPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    // Fetch URLs once at the beginning
+  if (ImGui::BeginPopupModal(m_locManualPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     std::string githubUrl = m_configService.GetValue("framework", "info.githubUrl", "").get<std::string>();
     std::string patreonUrl = m_configService.GetValue("framework", "info.patreonUrl", "").get<std::string>();
 
     ImGui::BeginChild("ManualAnswer", ImVec2(575, 325), false);
-    //  Question 1
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ1).c_str())) {
+    if (ImGui::TreeNode(m_locFaqQ1.c_str())) {
       const std::string pluginsPath = PathManager::GetPluginsPath().string();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA1, pluginsPath), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
-      ImGui::TreePop();
-    }
-    ImGui::Spacing();  // Add some spacing between questions
-
-    // Question 2
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ2).c_str())) {
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA2, githubUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA1), pluginsPath), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
       ImGui::TreePop();
     }
     ImGui::Spacing();
 
-    // Question 3
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ3).c_str())) {
-      // Dynamically build the example path
+    if (ImGui::TreeNode(m_locFaqQ2.c_str())) {
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA2), githubUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+      ImGui::TreePop();
+    }
+    ImGui::Spacing();
+
+    if (ImGui::TreeNode(m_locFaqQ3.c_str())) {
       std::filesystem::path examplePluginLocPath = PathManager::GetPluginsPath().filename() / "<PluginName>" / "localization";
       const std::string locDir = PathManager::GetLocalizationDir().string();
       const std::string examplePath = examplePluginLocPath.string();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA3, locDir, examplePath).c_str(), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA3), locDir, examplePath).c_str(), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
       ImGui::TreePop();
     }
     ImGui::Spacing();
 
-    // Question 4
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ4).c_str())) {
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA4, githubUrl, patreonUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+    if (ImGui::TreeNode(m_locFaqQ4.c_str())) {
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA4), githubUrl, patreonUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
       ImGui::TreePop();
     }
     ImGui::Spacing();
 
-    // Question 5
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ5).c_str())) {
-      // Dynamically build the example path
+    if (ImGui::TreeNode(m_locFaqQ5.c_str())) {
       std::filesystem::path examplePluginConfigPath = PathManager::GetPluginsPath().filename() / "<PluginName>" / "config" / "settings.json";
       const std::string configDir = PathManager::GetConfigDir().string();
       const std::string examplePath = examplePluginConfigPath.string();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA5, configDir, examplePath).c_str(), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA5), configDir, examplePath).c_str(), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
       ImGui::TreePop();
     }
     ImGui::Spacing();
 
-    // Question 6
-    if (ImGui::TreeNode(loc.Get(m_locFaqQ6).c_str())) {
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locFaqA6, githubUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
+    if (ImGui::TreeNode(m_locFaqQ6.c_str())) {
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA6), githubUrl), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
       ImGui::TreePop();
     }
     ImGui::EndChild();
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {  // Re-use close button text
+    if (Button(m_locUpdateCloseButton.c_str(), TextStyle::DefaultButton())) {
       ImGui::Spacing();
       ImGui::CloseCurrentPopup();
     }
@@ -946,30 +898,26 @@ void MainWindow::RenderManualPopup() {
 // --- Popup Modals: About ---
 void MainWindow::RenderAboutPopup() {
   auto& loc = LocalizationManager::GetInstance();
-  // --- About Popup Trigger ---
   if (m_isAboutPopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locAboutPopupTitle).c_str());
+    ImGui::OpenPopup(m_locAboutPopupTitle.c_str());
     m_isAboutPopupOpen = false;
   }
 
-  // About Popup
-  if (ImGui::BeginPopupModal(loc.Get(m_locAboutPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (ImGui::BeginPopupModal(m_locAboutPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::BeginChild("AboutPopupContent", ImVec2(575, 325), false);
 
-    // --- About Us Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locAboutUsTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locAboutUsTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    std::string aboutText = loc.GetFormatted("framework", m_locAboutUsText, m_frameworkAuthor, m_frameworkName);
+    std::string aboutText = fmt::format(fmt::runtime(m_locAboutUsText), m_frameworkAuthor, m_frameworkName);
     Typography::Text(TextStyle::Regular().Wrapped(), "%s", aboutText.c_str());
     ImGui::Spacing();
 
-    // --- Framework Description Section ---
     ImGui::Spacing();
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locAboutFrameworkTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locAboutFrameworkTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
@@ -978,54 +926,52 @@ void MainWindow::RenderAboutPopup() {
       ImGui::Spacing();
     }
 
-    // --- Contacts Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locContactsTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locContactsTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    // --- Contact Links ---
     if (!m_emailUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_ENVELOPE);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locEmailText, m_emailUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locEmailText), m_emailUrl), TextStyle::Regular());
     }
     if (!m_discordUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_DISCORD);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locDiscordText, m_discordUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locDiscordText), m_discordUrl), TextStyle::Regular());
     }
     if (!m_youtubeUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_YOUTUBE);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locYoutubeText, m_youtubeUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locYoutubeText), m_youtubeUrl), TextStyle::Regular());
     }
     if (!m_githubUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_GITHUB);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locGithubText, m_githubUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locGithubText), m_githubUrl), TextStyle::Regular());
     }
     if (!m_patreonUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_PATREON);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locPatreonText, m_patreonUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locPatreonText), m_patreonUrl), TextStyle::Regular());
     }
     if (!m_scsForumUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_COMMENTS);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locScsForumText, m_scsForumUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locScsForumText), m_scsForumUrl), TextStyle::Regular());
     }
     if (!m_steamProfileUrl.empty()) {
       Typography::Text(TextStyle::Regular(), "%s", ICON_FA_STEAM);
       ImGui::SameLine();
-      Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locSteamProfileText, m_steamProfileUrl), TextStyle::Regular());
+      Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locSteamProfileText), m_steamProfileUrl), TextStyle::Regular());
     }
 
     ImGui::EndChild();
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {  // Re-use close button text
+    if (Button(m_locUpdateCloseButton.c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -1034,85 +980,74 @@ void MainWindow::RenderAboutPopup() {
 
 // --- Popup Modals: Legal ---
 void MainWindow::RenderLegalPopup() {
-  auto& loc = LocalizationManager::GetInstance();
-  // --- Legal Popup Trigger ---
   if (m_isLegalPopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locLegalPopupTitle).c_str());
+    ImGui::OpenPopup(m_locLegalPopupTitle.c_str());
     m_isLegalPopupOpen = false;
   }
 
-  // Legal Popup
-  if (ImGui::BeginPopupModal(loc.Get(m_locLegalPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (ImGui::BeginPopupModal(m_locLegalPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::BeginChild("LegalPopupContent", ImVec2(700, 400), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    // --- License Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locLegalLicenseTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locLegalLicenseTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locLegalLicenseText, m_licenseUrl), TextStyle::Regular().Wrapped());
+    Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locLegalLicenseText), m_licenseUrl), TextStyle::Regular().Wrapped());
     ImGui::Spacing();
 
-    // --- Disclaimer Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locLegalDisclaimerTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locLegalDisclaimerTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    Typography::RenderMarkdownText(loc.Get(m_locLegalDisclaimerText), TextStyle::Regular().Wrapped());
+    Typography::RenderMarkdownText(m_locLegalDisclaimerText, TextStyle::Regular().Wrapped());
     ImGui::Spacing();
 
-    // --- Fair Play Policy Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locLegalFairPlayTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locLegalFairPlayTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    Typography::RenderMarkdownText(loc.Get(m_locLegalFairPlayText), TextStyle::Regular().Wrapped());
+    Typography::RenderMarkdownText(m_locLegalFairPlayText, TextStyle::Regular().Wrapped());
     ImGui::Spacing();
 
-    // --- Contact Section ---
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
-    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", loc.Get(m_locLegalContactTitle).c_str());
+    Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locLegalContactTitle.c_str());
     ImGui::PopStyleVar();
     ImGui::Spacing();
 
-    Typography::RenderMarkdownText(loc.GetFormatted("framework", m_locLegalContactText, m_emailUrl), TextStyle::Regular().Wrapped());
+    Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locLegalContactText), m_emailUrl), TextStyle::Regular().Wrapped());
     ImGui::Spacing();
 
     ImGui::EndChild();
     ImGui::Spacing();
     ImGui::Separator();
 
-    if (Button(loc.Get(m_locUpdateCloseButton).c_str(), TextStyle::DefaultButton())) {
+    if (Button(m_locUpdateCloseButton.c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
   }
 }
 
-// --- Popup Modals: Shutdown ---
 void MainWindow::RenderShutdownPopup() {
-  auto& loc = LocalizationManager::GetInstance();
-  // --- Shutdown Popup Trigger ---
   if (m_isShutdownPopupOpen) {
-    ImGui::OpenPopup(loc.Get(m_locShutdownPopupTitle).c_str());
+    ImGui::OpenPopup(m_locShutdownPopupTitle.c_str());
     m_isShutdownPopupOpen = false;
   }
 
-  // Shutdown Confirmation Popup
-  if (ImGui::BeginPopupModal(loc.Get(m_locShutdownPopupTitle).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+  if (ImGui::BeginPopupModal(m_locShutdownPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     ImGui::BeginChild("ShutdownPopupContent", ImVec2(500, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
-    Typography::RenderMarkdownText(loc.Get(m_locShutdownPopupContent), TextStyle::Regular().Wrapped());
+    Typography::RenderMarkdownText(m_locShutdownPopupContent, TextStyle::Regular().Wrapped());
     ImGui::EndChild();
     ImGui::Separator();
-    if (Button(loc.Get(m_locShutdownPopupConfirm).c_str(), TextStyle::DefaultButton())) {
+    if (Button(m_locShutdownPopupConfirm.c_str(), TextStyle::DefaultButton())) {
       m_eventManager.System.OnRequestExecuteCommand.Call({"sdk unload"});
       ImGui::CloseCurrentPopup();
     }
     ImGui::SameLine();
-    if (Button(loc.Get(m_locShutdownPopupCancel).c_str(), TextStyle::DefaultButton())) {
+    if (Button(m_locShutdownPopupCancel.c_str(), TextStyle::DefaultButton())) {
       ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();

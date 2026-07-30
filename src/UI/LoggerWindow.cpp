@@ -72,6 +72,32 @@ LoggerWindow::LoggerWindow(const std::string& componentName, const std::string& 
   m_defaultTitle = "Logger";
   m_titleLocalizationKey = "logger_window.title";
 
+  m_sink = LoggerFactory::GetInstance().GetUISink();
+  SetVisibility(m_sink != nullptr);
+
+  m_onUISinkChangedSink = std::make_unique<Utils::Sink<void(std::shared_ptr<Logging::Sinks::LoggerWindowSink>)>>(LoggerFactory::GetInstance().OnUISinkChanged);
+  m_onUISinkChangedSink->Connect<&LoggerWindow::OnUISinkChanged>(this);
+
+  RefreshLocalization();
+}
+
+void LoggerWindow::OnUISinkChanged(std::shared_ptr<Logging::Sinks::LoggerWindowSink> sink) {
+  m_sink = sink;
+  SetVisibility(sink != nullptr);
+}
+
+bool LoggerWindow::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
+  if (systemName == "logging" && componentName == m_componentName && keyPath == "level") {
+    if (newValue.is_string()) {
+      m_filterLevel = LogLevelFromString(newValue.get<std::string>());
+    }
+    return true;
+  }
+  return false;
+}
+
+void LoggerWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
   auto& loc = LocalizationManager::GetInstance();
   m_cachedButtonClear = loc.Get("logger_window.button_clear");
   m_cachedCheckboxAutoscroll = loc.Get("logger_window.checkbox_autoscroll");
@@ -82,29 +108,6 @@ LoggerWindow::LoggerWindow(const std::string& componentName, const std::string& 
   m_cachedContextCopySelected = loc.Get("logger_window.context_copy_selected");
   m_cachedContextCopyAll = loc.Get("logger_window.context_copy_all");
   m_cachedMsgCleanSession = loc.Get("logger_window.msg_clean_session");
-
-  m_sink = LoggerFactory::GetInstance().GetUISink();
-  SetVisibility(m_sink != nullptr);
-
-  m_onUISinkChangedSink = std::make_unique<Utils::Sink<void(std::shared_ptr<Logging::Sinks::LoggerWindowSink>)>>(LoggerFactory::GetInstance().OnUISinkChanged);
-  m_onUISinkChangedSink->Connect<&LoggerWindow::OnUISinkChanged>(this);
-}
-
-void LoggerWindow::OnUISinkChanged(std::shared_ptr<Logging::Sinks::LoggerWindowSink> sink) {
-  m_sink = sink;
-  SetVisibility(sink != nullptr);
-}
-
-const char* LoggerWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
-
-bool LoggerWindow::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
-  if (systemName == "logging" && componentName == m_componentName && keyPath == "level") {
-    if (newValue.is_string()) {
-      m_filterLevel = LogLevelFromString(newValue.get<std::string>());
-    }
-    return true;
-  }
-  return false;
 }
 
 void LoggerWindow::BuildComponentFilterList() {

@@ -17,7 +17,15 @@ SPF_NS_BEGIN
 namespace UI {
 using namespace SPF::Localization;
 
-BaseWindow::BaseWindow(std::string componentName, std::string windowId) : m_componentName(std::move(componentName)), m_windowId(std::move(windowId)), m_defaultTitle(m_windowId), m_titleLocalizationKey(m_windowId + ".title") {}
+BaseWindow::BaseWindow(std::string componentName, std::string windowId)
+  : m_componentName(std::move(componentName)),
+    m_windowId(std::move(windowId)),
+    m_defaultTitle(m_windowId),
+    m_titleLocalizationKey(m_windowId + ".title"),
+    m_langSink(LocalizationManager::GetInstance().OnFrameworkLanguageChanged) {
+  m_langSink.Connect<&BaseWindow::OnFrameworkLanguageChanged>(this);
+  RefreshLocalization();
+}
 
 const std::string& BaseWindow::GetWindowId() const { return m_windowId; }
 
@@ -66,13 +74,24 @@ void BaseWindow::SetSize(float width, float height) {
 }
 
 const char* BaseWindow::GetWindowTitle() const {
-  const auto& localizedTitle = LocalizationManager::GetInstance().Get(m_componentName, m_titleLocalizationKey);
-
-  if (localizedTitle == m_titleLocalizationKey) {
+  if (m_cachedTitle.empty()) {
     return m_defaultTitle.c_str();
   }
+  return m_cachedTitle.c_str();
+}
 
-  return localizedTitle.c_str();
+void BaseWindow::RefreshLocalization() {
+  auto& loc = LocalizationManager::GetInstance();
+  m_cachedDockText = loc.GetWithFallback(m_componentName, "ui.actions.dock");
+  m_cachedUndockText = loc.GetWithFallback(m_componentName, "ui.actions.undock");
+  m_cachedTitle = loc.Get(m_componentName, m_titleLocalizationKey);
+  if (m_cachedTitle == m_titleLocalizationKey) {
+    m_cachedTitle = m_defaultTitle;
+  }
+}
+
+void BaseWindow::OnFrameworkLanguageChanged(const std::string& /*componentName*/) {
+  RefreshLocalization();
 }
 
 bool BaseWindow::IsConfiguredAsDockable() const { return m_isConfiguredAsDockable; }
@@ -217,11 +236,7 @@ void BaseWindow::Render() {
     m_isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_None);
 
     if (m_isConfiguredAsDockable && m_allowUndocking) {
-      const char* buttonText_key = m_is_docked ? "ui.actions.undock" : "ui.actions.dock";
-      std::string buttonText = LocalizationManager::GetInstance().Get(m_componentName, buttonText_key);
-      if (buttonText == buttonText_key) {  // Fallback if key not found
-        buttonText = LocalizationManager::GetInstance().Get("framework", buttonText_key);
-      }
+      const std::string& buttonText = m_is_docked ? m_cachedUndockText : m_cachedDockText;
 
       float windowWidth = ImGui::GetWindowWidth();
       float buttonWidth = ImGui::CalcTextSize(buttonText.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;

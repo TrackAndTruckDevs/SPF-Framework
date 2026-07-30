@@ -25,6 +25,7 @@ class GameConsoleWindow : public BaseWindow {
 
  protected:
   void RenderContent() override;
+  void RefreshLocalization() override;
 
  private:
   static int HistoryCallback(ImGuiInputTextCallbackData* data);
@@ -34,6 +35,11 @@ class GameConsoleWindow : public BaseWindow {
   char m_commandBuffer[256] = {0};
   std::vector<std::string> m_history;
   int m_historyPos = -1;  // -1: new command, 0..history.size()-1: history index
+
+  std::string m_cachedInfoText;
+  std::string m_cachedSendButton;
+  std::string m_cachedEnableHookText;
+  std::string m_cachedHooksWindowTitle;
 };
 }  // namespace UI
 

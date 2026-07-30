@@ -31,34 +31,38 @@ using namespace SPF::Localization;
 
 PluginsWindow::PluginsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, Events::EventManager& eventManager)
     : BaseWindow(componentName, windowId), m_configService(configService), m_eventManager(eventManager) {
-  m_locTitle = "plugins_window.title";
-  m_locTableStatus = "plugins_window.table.status";
-  m_locTableName = "plugins_window.table.name";
-  m_locTableActions = "plugins_window.table.actions";
-  m_locBtnEnable = "plugins_window.buttons.enable";
-  m_locBtnDisable = "plugins_window.buttons.disable";
-  m_locTooltipInfo = "plugins_window.tooltips.info";
-  m_locTooltipDesc = "plugins_window.tooltips.description";
-  m_locTooltipSettings = "plugins_window.tooltips.settings";
-  m_locInfoPopupAuthor = "plugins_window.info_popup.author";
-  m_locInfoPopupVersion = "plugins_window.info_popup.version";
-  m_locStatusIncompatible = "plugins_window.status.incompatible";
-  m_locVirtInputRestartRequired = "plugins_window.status.virt_input_restart_required";
-  m_locTooltipRestartSDK = "plugins_window.tooltips.restart_sdk";
-  m_locStatusUpdateAvailable = "plugins_window.status.update_available";
-  m_locTooltipUpdateAvailable = "plugins_window.tooltips.update_available";
+  m_titleLocalizationKey = "plugins_window.title";
+  RefreshLocalization();
 }
 
-const char* PluginsWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_locTitle).c_str(); }
+void PluginsWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
+  auto& loc = LocalizationManager::GetInstance();
+  m_locTableStatus = loc.Get("plugins_window.table.status");
+  m_locTableName = loc.Get("plugins_window.table.name");
+  m_locTableActions = loc.Get("plugins_window.table.actions");
+  m_locBtnEnable = loc.Get("plugins_window.buttons.enable");
+  m_locBtnDisable = loc.Get("plugins_window.buttons.disable");
+  m_locTooltipInfo = loc.Get("plugins_window.tooltips.info");
+  m_locTooltipDesc = loc.Get("plugins_window.tooltips.description");
+  m_locTooltipSettings = loc.Get("plugins_window.tooltips.settings");
+  m_locInfoPopupAuthor = loc.Get("plugins_window.info_popup.author");
+  m_locInfoPopupVersion = loc.Get("plugins_window.info_popup.version");
+  m_locStatusIncompatible = loc.Get("plugins_window.status.incompatible");
+  m_locVirtInputRestartRequired = loc.Get("plugins_window.status.virt_input_restart_required");
+  m_locTooltipRestartSDK = loc.Get("plugins_window.tooltips.restart_sdk");
+  m_locStatusUpdateAvailable = loc.Get("plugins_window.status.update_available");
+  m_locTooltipUpdateAvailable = loc.Get("plugins_window.tooltips.update_available");
+}
 
 void PluginsWindow::RenderContent() {
   auto& pluginManager = Modules::PluginManager::GetInstance();
   auto& loc = LocalizationManager::GetInstance();
 
   if (ImGui::BeginTable("plugins_table", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit)) {
-    ImGui::TableSetupColumn(loc.Get(m_locTableStatus).c_str(), ImGuiTableColumnFlags_WidthFixed);
-    ImGui::TableSetupColumn(loc.Get(m_locTableName).c_str(), ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn(loc.Get(m_locTableActions).c_str(), ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn(m_locTableStatus.c_str(), ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn(m_locTableName.c_str(), ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn(m_locTableActions.c_str(), ImGuiTableColumnFlags_WidthFixed);
     ImGui::TableHeadersRow();
 
     for (const auto& [componentId, componentInfo] : m_configService.GetAllComponentInfo()) {
@@ -130,7 +134,7 @@ void PluginsWindow::RenderContent() {
         float restartWidth = 0.0f;
         std::string warningText;
         if (showRestart) {
-          warningText = loc.Get(m_locVirtInputRestartRequired);
+          warningText = m_locVirtInputRestartRequired;
           float warningIconWidth = Typography::CalcTextSize(ICON_FA_TRIANGLE_EXCLAMATION).x;
           float textWidth = Typography::CalcTextSize(warningText.c_str()).x;
           float reloadBtnWidth = Typography::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x + framePaddingX * 2.0f;
@@ -142,7 +146,7 @@ void PluginsWindow::RenderContent() {
         float incompatibleWidth = 0.0f;
         std::string incompatibleText;
         if (showIncompatible) {
-          incompatibleText = loc.Get(m_locStatusIncompatible) + " " + componentInfo.incompatibilityReason.value_or("");
+          incompatibleText = m_locStatusIncompatible + " " + componentInfo.incompatibilityReason.value_or("");
           incompatibleWidth = Typography::CalcTextSize(incompatibleText.c_str(), TextStyle::Bold()).x;
           blockWidths.push_back(incompatibleWidth);
           activeBlocksCount++;
@@ -197,7 +201,7 @@ void PluginsWindow::RenderContent() {
             m_eventManager.System.OnRequestExecuteCommand.Call({"sdk reinit"});
           }
           if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", loc.Get(m_locTooltipRestartSDK).c_str());
+            ImGui::SetTooltip("%s", m_locTooltipRestartSDK.c_str());
           }
         }
 
@@ -218,7 +222,7 @@ void PluginsWindow::RenderContent() {
             ShellExecute(NULL, "open", updateInfo->downloadUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
           }
           if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", loc.Get(m_locTooltipUpdateAvailable).c_str());
+            ImGui::SetTooltip("%s", m_locTooltipUpdateAvailable.c_str());
           }
         }
       }
@@ -230,7 +234,7 @@ void PluginsWindow::RenderContent() {
       // Toggle button
       ImGui::BeginDisabled(!isCompatible);
       const char* toggleIcon = isLoaded ? ICON_FA_TOGGLE_ON : ICON_FA_TOGGLE_OFF;
-      const char* tooltipText = isLoaded ? loc.Get(m_locBtnDisable).c_str() : loc.Get(m_locBtnEnable).c_str();
+      const char* tooltipText = isLoaded ? m_locBtnDisable.c_str() : m_locBtnEnable.c_str();
 
       if (Button(toggleIcon, TextStyle::DefaultButton())) {
         m_eventManager.System.OnRequestPluginStateChange.Call({componentId, !isLoaded});
@@ -244,24 +248,24 @@ void PluginsWindow::RenderContent() {
       ImGui::SameLine();
 
       // --- "Info" button and modal window ---
-      std::string infoTitle = loc.Get(m_locTooltipInfo) + ": " + displayName;
+      std::string infoTitle = m_locTooltipInfo + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasInfo);
       if (Button(ICON_FA_CIRCLE_INFO)) {
         ImGui::OpenPopup(infoTitle.c_str());
       }
       ImGui::EndDisabled();
       if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipInfo).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipInfo.c_str());
       }
 
       if (ImGui::BeginPopupModal(infoTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
         ImGui::BeginChild("info_scroll_region", ImVec2(425, 90), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locInfoPopupAuthor).c_str());
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locInfoPopupAuthor.c_str());
         ImGui::SameLine();
         Typography::Text(TextStyle::Bold().Color(Colors::WHITE), " %s", componentInfo.author.value_or("").c_str());
 
-        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", loc.Get(m_locInfoPopupVersion).c_str());
+        Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locInfoPopupVersion.c_str());
         ImGui::SameLine();
         Typography::Text(TextStyle::Bold().Color(Colors::WHITE), " %s", componentInfo.version.value_or("").c_str());
 
@@ -332,14 +336,14 @@ void PluginsWindow::RenderContent() {
 
       // --- "Description" button and modal window ---
       ImGui::SameLine();
-      std::string descriptionTitle = loc.Get(m_locTooltipDesc) + ": " + displayName;
+      std::string descriptionTitle = m_locTooltipDesc + ": " + displayName;
       ImGui::BeginDisabled(!isLoaded || !componentInfo.hasDescription);
       if (Button(ICON_FA_FILE_LINES, TextStyle::DefaultButton())) {
         ImGui::OpenPopup(descriptionTitle.c_str());
       }
       ImGui::EndDisabled();
       if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipDesc).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipDesc.c_str());
       }
 
       if (ImGui::BeginPopupModal(descriptionTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
@@ -372,7 +376,7 @@ void PluginsWindow::RenderContent() {
       }
       ImGui::EndDisabled();
       if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", loc.Get(m_locTooltipSettings).c_str());
+        ImGui::SetTooltip("%s", m_locTooltipSettings.c_str());
       }
 
       ImGui::PopID();

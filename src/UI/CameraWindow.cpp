@@ -106,395 +106,367 @@ const char* GameCameraTypeToString(GameCamera::GameCameraType type) {
 
 CameraWindow::CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService) : BaseWindow(owner, name), m_gameCameraService(gameCameraService) {
   m_titleLocalizationKey = "camera_window.title";
-  m_locCurrentCamera = "camera_window.current_camera";
-  m_locCameraWorldCoordinates = "camera_window.camera_world_coordinates";
-  m_locCameraWorldCoordinatesNotFound = "camera_window.camera_world_coordinates_not_found";
-  m_locDataNotFound = "camera_window.data_not_found";
-  m_locSelectCamera = "camera_window.select_camera";
-  m_locInterior = "camera_window.interior";
-  m_locBehind = "camera_window.behind";
-  m_locPhoto = "camera_window.photo";
-  m_locTop = "camera_window.top";
-  m_locCabin = "camera_window.cabin";
-  m_locWindow = "camera_window.window";
-  m_locBumper = "camera_window.bumper";
-  m_locWheel = "camera_window.wheel";
-  m_locTV = "camera_window.tv";
-  m_locDeveloperFreeCamera = "camera_window.developer_free_camera";
-  m_locTabInteriorCamera = "camera_window.tabs.interior_camera";
-  m_locTabBehindCamera = "camera_window.tabs.behind_camera";
-  m_locTabTopCamera = "camera_window.tabs.top_camera";
-  m_locTabPhotoCamera = "camera_window.tabs.photo_camera";
-  m_locTabCabinCamera = "camera_window.tabs.cabin_camera";
-
-  m_locTabWindowCamera = "camera_window.tabs.window_camera";
-  m_locTabBumperCamera = "camera_window.tabs.bumper_camera";
-  m_locTabWheelCamera = "camera_window.tabs.wheel_camera";
-  m_locTabTVCamera = "camera_window.tabs.tv_camera";
-  m_locTabFreeCamera = "camera_window.tabs.free_camera";
-  m_locTabDebug = "camera_window.tabs.debug";
-
-  // Photo Camera keys
-  // m_locPhotoLiveState = "camera_window.photo_camera.live_state";
-  // m_locPhotoLivePitch = "camera_window.photo_camera.live_pitch";
-  // m_locPhotoLiveYaw = "camera_window.photo_camera.live_yaw";
-  // m_locPhotoLiveRoll = "camera_window.photo_camera.live_roll";
-  // m_locPhotoLiveZoom = "camera_window.photo_camera.live_zoom";
-  // m_locPhotoPosition = "camera_window.photo_camera.position";
-  // m_locPhotoBaseFov = "camera_window.photo_camera.base_fov";
-  // m_locPhotoNotAvailable = "camera_window.photo_camera.not_available";
-  // m_locPhotoFovZoom = "camera_window.photo_camera.fov_zoom";
-
-  m_locFovZoom = "camera_window.interior_camera.fov_zoom";
-  m_locBaseFov = "camera_window.interior_camera.base_fov";
-  m_locBaseFovNotFound = "camera_window.interior_camera.base_fov_not_found";
-  m_locFinalHFov = "camera_window.interior_camera.final_h_fov";
-  m_locFinalVFov = "camera_window.interior_camera.final_v_fov";
-  m_locFinalFovNotFound = "camera_window.interior_camera.final_fov_not_found";
-  m_locSeatPosition = "camera_window.interior_camera.seat_position";
-  m_locSeatLr = "camera_window.interior_camera.seat_lr";
-  m_locSeatUd = "camera_window.interior_camera.seat_ud";
-  m_locSeatFb = "camera_window.interior_camera.seat_fb";
-  m_locHeadRotation = "camera_window.interior_camera.head_rotation";
-  m_locYawLr = "camera_window.interior_camera.yaw_lr";
-  m_locPitchUd = "camera_window.interior_camera.pitch_ud";
-  m_locMouseRotationLimits = "camera_window.interior_camera.mouse_rotation_limits";
-  m_locLeftLimit = "camera_window.interior_camera.left_limit";
-  m_locRightLimit = "camera_window.interior_camera.right_limit";
-  m_locUpLimit = "camera_window.interior_camera.up_limit";
-  m_locDownLimit = "camera_window.interior_camera.down_limit";
-  m_locRotationDefaults = "camera_window.interior_camera.rotation_defaults";
-  m_locDefaultLr = "camera_window.interior_camera.default_lr";
-  m_locDefaultUd = "camera_window.interior_camera.default_ud";
-  m_locResetToDefaults = "camera_window.interior_camera.reset_to_defaults";
-  m_locInteriorCameraNotAvailable = "camera_window.interior_camera.not_available";
-  m_locDefaultValuePrefix = "camera_window.default_value_prefix";
-
-  m_locNearPlane = "camera_window.interior_camera.near_plane";
-  m_locFarPlane = "camera_window.interior_camera.far_plane";
-  m_locMouseSensitivity = "camera_window.interior_camera.mouse_sensitivity";
-  m_locShakeAnimStep = "camera_window.interior_camera.shake_anim_step";
-  m_locShakeAnimScaleMin = "camera_window.interior_camera.shake_anim_scale_min";
-  m_locShakeAnimScaleMax = "camera_window.interior_camera.shake_anim_scale_max";
-  m_locHandShakeLimit = "camera_window.interior_camera.hand_shake_limit";
-  m_locHandShakeSpeed = "camera_window.interior_camera.hand_shake_speed";
-  m_locZoomFovFactor = "camera_window.interior_camera.zoom_fov_factor";
-  m_locZoomSpeedInterior = "camera_window.interior_camera.zoom_speed_interior";
-  m_locAzimuthOverrides = "camera_window.interior_camera.azimuth_overrides";
-  m_locRangeStartAzimuth = "camera_window.interior_camera.range_start_azimuth";
-  m_locRangeEndAzimuth = "camera_window.interior_camera.range_end_azimuth";
-  m_locZoneIsOutside = "camera_window.interior_camera.zone_is_outside";
-  m_locStartUpLimit = "camera_window.interior_camera.start_up_limit";
-  m_locEndUpLimit = "camera_window.interior_camera.end_up_limit";
-  m_locStartDownLimit = "camera_window.interior_camera.start_down_limit";
-  m_locEndDownLimit = "camera_window.interior_camera.end_down_limit";
-  m_locStartUpDownDefault = "camera_window.interior_camera.start_up_down_default";
-  m_locEndUpDownDefault = "camera_window.interior_camera.end_up_down_default";
-  m_locStartLeftRightDefault = "camera_window.interior_camera.start_left_right_default";
-  m_locEndLeftRightDefault = "camera_window.interior_camera.end_left_right_default";
-  m_locStartHeadOffset = "camera_window.interior_camera.start_head_offset";
-  m_locEndHeadOffset = "camera_window.interior_camera.end_head_offset";
-  m_locShakeAnimationArray = "camera_window.interior_camera.shake_animation_array";
-  m_locPointX = "camera_window.interior_camera.point_x";
-  m_locPointY = "camera_window.interior_camera.point_y";
-  m_locPointZ = "camera_window.interior_camera.point_z";
-  m_locSelectRange = "camera_window.interior_camera.select_range";
-  m_locSelectFrame = "camera_window.interior_camera.select_frame";
-  m_locAdvancedCoreSettings = "camera_window.interior_camera.advanced_core_settings";
-  m_locShakeSettings = "camera_window.interior_camera.shake_settings";
-  m_locInteriorLogicSettings = "camera_window.interior_camera.interior_logic_settings";
-  m_locAzimuthRangeDetails = "camera_window.interior_camera.azimuth_range_details";
-
-  m_locLiveState = "camera_window.behind_camera.live_state";
-  m_locLivePitch = "camera_window.behind_camera.live_pitch";
-  m_locLiveYaw = "camera_window.behind_camera.live_yaw";
-  m_locLiveZoom = "camera_window.behind_camera.live_zoom";
-  m_locLiveStateNotFound = "camera_window.behind_camera.live_state_not_found";
-  m_locDistanceZoomSettings = "camera_window.behind_camera.distance_zoom_settings";
-  m_locMinDistance = "camera_window.behind_camera.min_distance";
-  m_locMaxDistance = "camera_window.behind_camera.max_distance";
-  m_locTrailerMaxOffset = "camera_window.behind_camera.trailer_max_offset";
-  m_locDefaultDistance = "camera_window.behind_camera.default_distance";
-  m_locTrailerDefaultDist = "camera_window.behind_camera.trailer_default_dist";
-  m_locZoomSpeed = "camera_window.behind_camera.zoom_speed";
-  m_locDistanceLaziness = "camera_window.behind_camera.distance_laziness";
-  m_locDistanceZoomSettingsNotFound = "camera_window.behind_camera.distance_zoom_settings_not_found";
-  m_locElevationPitchSettings = "camera_window.behind_camera.elevation_pitch_settings";
-  m_locAzimuthLaziness = "camera_window.behind_camera.azimuth_laziness";
-  m_locMinElevation = "camera_window.behind_camera.min_elevation";
-  m_locMaxElevation = "camera_window.behind_camera.max_elevation";
-  m_locDefaultElevation = "camera_window.behind_camera.default_elevation";
-  m_locTrailerDefaultElev = "camera_window.behind_camera.trailer_default_elev";
-  m_locHeightLimit = "camera_window.behind_camera.height_limit";
-  m_locElevationPitchSettingsNotFound = "camera_window.behind_camera.elevation_pitch_settings_not_found";
-  m_locPivotOffset = "camera_window.behind_camera.pivot_offset";
-  m_locPivotX = "camera_window.behind_camera.pivot_x";
-  m_locPivotY = "camera_window.behind_camera.pivot_y";
-  m_locPivotZ = "camera_window.behind_camera.pivot_z";
-  m_locPivotOffsetNotFound = "camera_window.behind_camera.pivot_offset_not_found";
-  m_locDynamicOffset = "camera_window.behind_camera.dynamic_offset";
-  m_locMaxDynamicOffset = "camera_window.behind_camera.max_dynamic_offset";
-  m_locDynOffsetSpeedMin = "camera_window.behind_camera.dyn_offset_speed_min";
-  m_locDynOffsetSpeedMax = "camera_window.behind_camera.dyn_offset_speed_max";
-  m_locDynOffsetLaziness = "camera_window.behind_camera.dyn_offset_laziness";
-  m_locDynamicOffsetNotFound = "camera_window.behind_camera.dynamic_offset_not_found";
-  m_locBaseFovBehind = "camera_window.behind_camera.base_fov_behind";
-  m_locBehindCameraNotAvailable = "camera_window.behind_camera.not_available";
-
-  m_locBehindValidation = "camera_window.behind_camera.validation";
-  m_locBehindValidationRadius = "camera_window.behind_camera.validation_radius";
-  m_locBehindValidationSpeedPos = "camera_window.behind_camera.validation_speed_pos";
-  m_locBehindValidationSpeedNeg = "camera_window.behind_camera.validation_speed_neg";
-  m_locBehindSpeedFovFactor = "camera_window.behind_camera.speed_fov_factor";
-  m_locBehindShakeSettings = "camera_window.behind_camera.shake_settings";
-  m_locBehindShakeAnimStep = "camera_window.behind_camera.shake_anim_step";
-  m_locBehindShakeAnimScaleMin = "camera_window.behind_camera.shake_anim_scale_min";
-  m_locBehindShakeAnimScaleMax = "camera_window.behind_camera.shake_anim_scale_max";
-  m_locBehindShakeAnimationArray = "camera_window.behind_camera.shake_animation_array";
-  m_locBehindCollisionSettings = "camera_window.behind_camera.collision_settings";
-
-  m_locHeightZoom = "camera_window.top_camera.height_zoom";
-  m_locMinimumHeight = "camera_window.top_camera.minimum_height";
-  m_locMaximumHeight = "camera_window.top_camera.maximum_height";
-  m_locHeightZoomNotFound = "camera_window.top_camera.height_zoom_not_found";
-  m_locMovement = "camera_window.top_camera.movement";
-  m_locMovementSpeed = "camera_window.top_camera.movement_speed";
-  m_locMovementNotFound = "camera_window.top_camera.movement_not_found";
-
-  m_locDynamicOffsetTop = "camera_window.top_camera.dynamic_offset";
-  m_locForwardOffsetX = "camera_window.top_camera.forward_offset_x";
-  m_locBackwardOffsetX = "camera_window.top_camera.backward_offset_x";
-  m_locForwardOffsetZ = "camera_window.top_camera.forward_offset_z";
-  m_locBackwardOffsetZ = "camera_window.top_camera.backward_offset_z";
-  m_locDynamicOffsetNotFoundTop = "camera_window.top_camera.dynamic_offset_not_found";
-
-  m_locBaseFovTop = "camera_window.top_camera.base_fov_top";
-
-  m_locTopCameraNotAvailable = "camera_window.top_camera.not_available";
-
-  m_locTopNearPlane = "camera_window.top_camera.near_plane";
-  m_locTopFarPlane = "camera_window.top_camera.far_plane";
-  m_locTopValidation = "camera_window.top_camera.validation";
-  m_locTopValidationSpeedPos = "camera_window.top_camera.validation_speed_pos";
-  m_locTopValidationSpeedNeg = "camera_window.top_camera.validation_speed_neg";
-  m_locTopShakeSettings = "camera_window.top_camera.shake_settings";
-  m_locTopShakeAnimStep = "camera_window.top_camera.shake_anim_step";
-  m_locTopShakeAnimScaleMin = "camera_window.top_camera.shake_anim_scale_min";
-  m_locTopShakeAnimScaleMax = "camera_window.top_camera.shake_anim_scale_max";
-  m_locTopShakeAnimationArray = "camera_window.top_camera.shake_animation_array";
-  m_locTopAdaptiveSettings = "camera_window.top_camera.adaptive_settings";
-  m_locTopHeightFactor = "camera_window.top_camera.height_factor";
-  m_locTopUseAdaptive = "camera_window.top_camera.use_adaptive";
-  m_locTopDistanceSettings = "camera_window.top_camera.distance_settings";
-  m_locTopCollisionSettings = "camera_window.top_camera.collision_settings";
-
-  m_locBaseFovCabin = "camera_window.cabin_camera.base_fov_cabin";
-  m_locCabinShakeSettings = "camera_window.cabin_camera.shake_settings";
-  m_locCabinShakeAnimStep = "camera_window.cabin_camera.shake_anim_step";
-  m_locCabinShakeAnimScaleMin = "camera_window.cabin_camera.shake_anim_scale_min";
-  m_locCabinShakeAnimScaleMax = "camera_window.cabin_camera.shake_anim_scale_max";
-  m_locCabinShakeAnimationArray = "camera_window.cabin_camera.shake_animation_array";
-  m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
-  m_locCabinCameraNotAvailable = "camera_window.cabin_camera.not_available";
-
-  m_locHeadOffset = "camera_window.window_camera.head_offset";
-  m_locHeadXWindow = "camera_window.window_camera.head_x_window";
-  m_locHeadYWindow = "camera_window.window_camera.head_y_window";
-  m_locHeadZWindow = "camera_window.window_camera.head_z_window";
-  m_locHeadOffsetNotFound = "camera_window.window_camera.head_offset_not_found";
-  m_locLiveRotation = "camera_window.window_camera.live_rotation";
-  m_locLiveYawWindow = "camera_window.window_camera.live_yaw_window";
-  m_locLivePitchWindow = "camera_window.window_camera.live_pitch_window";
-  m_locLiveRotationNotFound = "camera_window.window_camera.live_rotation_not_found";
-  m_locMouseRotationLimitsDefaults = "camera_window.window_camera.mouse_rotation_limits_defaults";
-  m_locLeftLimitWindow = "camera_window.window_camera.left_limit_window";
-  m_locRightLimitWindow = "camera_window.window_camera.right_limit_window";
-  m_locUpLimitWindow = "camera_window.window_camera.up_limit_window";
-  m_locDownLimitWindow = "camera_window.window_camera.down_limit_window";
-  m_locRotationLimitsNotFoundWindow = "camera_window.window_camera.rotation_limits_not_found_window";
-  m_locDefaultLrWindow = "camera_window.window_camera.default_lr_window";
-  m_locDefaultUdWindow = "camera_window.window_camera.default_ud_window";
-  m_locRotationDefaultsNotFoundWindow = "camera_window.window_camera.rotation_defaults_not_found_window";
-  m_locBaseFovWindow = "camera_window.window_camera.base_fov_window";
-  m_locWindowRelativeHeadtrackingAzimuth = "camera_window.window_camera.relative_headtracking_azimuth";
-  m_locWindowAutoCenterMoveDirection = "camera_window.window_camera.auto_center_move_direction";
-  m_locWindowShakeSettings = "camera_window.window_camera.shake_settings";
-  m_locWindowShakeAnimStep = "camera_window.window_camera.shake_anim_step";
-  m_locWindowShakeAnimScaleMin = "camera_window.window_camera.shake_anim_scale_min";
-  m_locWindowShakeAnimScaleMax = "camera_window.window_camera.shake_anim_scale_max";
-  m_locWindowShakeAnimationArray = "camera_window.window_camera.shake_animation_array";
-  m_locWindowCameraNotAvailable = "camera_window.window_camera.not_available";
-
-  m_locOffsetBumper = "camera_window.bumper_camera.offset";
-  m_locOffsetXBumper = "camera_window.bumper_camera.offset_x_bumper";
-  m_locOffsetYBumper = "camera_window.bumper_camera.offset_y_bumper";
-  m_locOffsetZBumper = "camera_window.bumper_camera.offset_z_bumper";
-  m_locOffsetNotFoundBumper = "camera_window.bumper_camera.offset_not_found";
-  m_locBaseFovBumper = "camera_window.bumper_camera.base_fov_bumper";
-  m_locBumperShakeSettings = "camera_window.bumper_camera.shake_settings";
-  m_locBumperShakeAnimStep = "camera_window.bumper_camera.shake_anim_step";
-  m_locBumperShakeAnimScaleMin = "camera_window.bumper_camera.shake_anim_scale_min";
-  m_locBumperShakeAnimScaleMax = "camera_window.bumper_camera.shake_anim_scale_max";
-  m_locBumperShakeAnimationArray = "camera_window.bumper_camera.shake_animation_array";
-  m_locBumperCameraNotAvailable = "camera_window.bumper_camera.not_available";
-
-  m_locOffsetWheel = "camera_window.wheel_camera.offset";
-  m_locOffsetXWheel = "camera_window.wheel_camera.offset_x_wheel";
-  m_locOffsetYWheel = "camera_window.wheel_camera.offset_y_wheel";
-  m_locOffsetZWheel = "camera_window.wheel_camera.offset_z_wheel";
-  m_locOffsetNotFoundWheel = "camera_window.wheel_camera.offset_not_found";
-  m_locBaseFovWheel = "camera_window.wheel_camera.base_fov_wheel";
-  m_locWheelShakeSettings = "camera_window.wheel_camera.shake_settings";
-  m_locWheelShakeAnimStep = "camera_window.wheel_camera.shake_anim_step";
-  m_locWheelShakeAnimScaleMin = "camera_window.wheel_camera.shake_anim_scale_min";
-  m_locWheelShakeAnimScaleMax = "camera_window.wheel_camera.shake_anim_scale_max";
-  m_locWheelShakeAnimationArray = "camera_window.wheel_camera.shake_animation_array";
-  m_locWheelCameraNotAvailable = "camera_window.wheel_camera.not_available";
-
-  m_locDistanceTV = "camera_window.tv_camera.distance";
-  m_locMaxDistanceTV = "camera_window.tv_camera.max_distance_tv";
-  m_locDistanceNotFoundTV = "camera_window.tv_camera.distance_not_found";
-  m_locPrefabUpliftTV = "camera_window.tv_camera.prefab_uplift";
-  m_locPrefabUpliftXTV = "camera_window.tv_camera.prefab_uplift_x_tv";
-  m_locPrefabUpliftYTV = "camera_window.tv_camera.prefab_uplift_y_tv";
-  m_locPrefabUpliftZTV = "camera_window.tv_camera.prefab_uplift_z_tv";
-  m_locPrefabUpliftNotFoundTV = "camera_window.tv_camera.prefab_uplift_not_found";
-  m_locRoadUpliftTV = "camera_window.tv_camera.road_uplift";
-  m_locRoadUpliftXTV = "camera_window.tv_camera.road_uplift_x_tv";
-  m_locRoadUpliftYTV = "camera_window.tv_camera.road_uplift_y_tv";
-  m_locRoadUpliftZTV = "camera_window.tv_camera.road_uplift_z_tv";
-  m_locRoadUpliftNotFoundTV = "camera_window.tv_camera.road_uplift_not_found";
-  m_locBaseFovTV = "camera_window.tv_camera.base_fov_tv";
-  m_locTVShakeSettings = "camera_window.tv_camera.shake_settings";
-  m_locTVShakeAnimStep = "camera_window.tv_camera.shake_anim_step";
-  m_locTVShakeAnimScaleMin = "camera_window.tv_camera.shake_anim_scale_min";
-  m_locTVShakeAnimScaleMax = "camera_window.tv_camera.shake_anim_scale_max";
-  m_locTVShakeAnimationArray = "camera_window.tv_camera.shake_animation_array";
-  m_locTVCameraNotAvailable = "camera_window.tv_camera.not_available";
-
-  m_locPositionFreeCam = "camera_window.free_camera.position";
-  m_locPositionXFreeCam = "camera_window.free_camera.position_x_freecam";
-  m_locPositionYFreeCam = "camera_window.free_camera.position_y_freecam";
-  m_locPositionZFreeCam = "camera_window.free_camera.position_z_freecam";
-  m_locPositionNotFoundFreeCam = "camera_window.free_camera.position_not_found";
-  m_locOrientationFreeCam = "camera_window.free_camera.orientation";
-  m_locMouseHorizontalFreeCam = "camera_window.free_camera.mouse_horizontal_freecam";
-  m_locMouseVerticalFreeCam = "camera_window.free_camera.mouse_vertical_freecam";
-  m_locRollFreeCam = "camera_window.free_camera.roll_freecam";
-  m_locOrientationNotFoundFreeCam = "camera_window.free_camera.orientation_not_found";
-  m_locQuaternionFreeCam = "camera_window.free_camera.quaternion";
-  m_locQuaternionXFreeCam = "camera_window.free_camera.quaternion_x_freecam";
-  m_locQuaternionYFreeCam = "camera_window.free_camera.quaternion_y_freecam";
-  m_locQuaternionZFreeCam = "camera_window.free_camera.quaternion_z_freecam";
-  m_locQuaternionWFreeCam = "camera_window.free_camera.quaternion_w_freecam";
-  m_locQuaternionNotFoundFreeCam = "camera_window.free_camera.quaternion_not_found";
-  m_locBaseFovFreeCam = "camera_window.free_camera.base_fov_freecam";
-  m_locMovementSpeedFreeCam = "camera_window.free_camera.movement_speed";
-  m_locSpeedFreeCam = "camera_window.free_camera.speed_freecam";
-  m_locMovementSpeedNotFoundFreeCam = "camera_window.free_camera.movement_speed_not_found";
-  m_locFreeCameraNotAvailable = "camera_window.free_camera.not_available";
-
-  m_locCurrentModeDebug = "camera_window.debug.current_mode";
-  m_locCurrentModeNADebug = "camera_window.debug.current_mode_na";
-  m_locEnableDebugCamera = "camera_window.debug.enable_debug_camera";
-  m_locEnableDebugCameraNotFound = "camera_window.debug.enable_debug_camera_not_found";
-  m_locCleanUI = "camera_window.debug.clean_ui";
-  m_locCleanUINotFound = "camera_window.debug.clean_ui_not_found";
-  m_locShowDebugHUD = "camera_window.debug.show_debug_hud";
-  m_locShowDebugHUDNotFound = "camera_window.debug.show_debug_hud_not_found";
-  m_locEnableDebugCameraToSelectMode = "camera_window.debug.enable_debug_camera_to_select_mode";
-  m_locSimpleDebug = "camera_window.debug.simple_debug";
-  m_locBasicDebugCameraMode = "camera_window.debug.basic_debug_camera_mode";
-  m_locVideoDebug = "camera_window.debug.video_debug";
-  m_locHUDPositionDebug = "camera_window.debug.hud_position_debug";
-  m_locTopLeftDebug = "camera_window.debug.top_left_debug";
-  m_locBottomLeftDebug = "camera_window.debug.bottom_left_debug";
-  m_locTopRightDebug = "camera_window.debug.top_right_debug";
-  m_locBottomRightDebug = "camera_window.debug.bottom_right_debug";
-  m_locCurrentDebug = "camera_window.debug.current_debug";
-  m_locCurrentNADebug = "camera_window.debug.current_na_debug";
-  m_locTrafficDebug = "camera_window.debug.traffic_debug";
-  m_locCameraFocusesTraffic = "camera_window.debug.camera_focuses_traffic";
-  m_locCinematicDebug = "camera_window.debug.cinematic_debug";
-  m_locCinematicCameraMode = "camera_window.debug.cinematic_camera_mode";
-  m_locAnimatedDebug = "camera_window.debug.animated_debug";
-  m_locCreatePlayAnimations = "camera_window.debug.create_play_animations";
-  m_locActivateGameAnimatedMode = "camera_window.debug.activate_game_animated_mode";
-  m_locCustomAnimationControls = "camera_window.debug.custom_animation_controls";
-  m_locPlayingStatus = "camera_window.debug.playing_status";
-  m_locPauseButton = "camera_window.debug.pause_button";
-  m_locPausedStatus = "camera_window.debug.paused_status";
-  m_locStoppedStatus = "camera_window.debug.stopped_status";
-  m_locPlayButton = "camera_window.debug.play_button";
-  m_locStopButton = "camera_window.debug.stop_button";
-  m_locStatusLabel = "camera_window.debug.status_label";
-  m_locReversePlayback = "camera_window.debug.reverse_playback";
-  m_locTimelineLabel = "camera_window.debug.timeline_label";
-  m_locStateCameraDebug = "camera_window.debug.state_camera_debug";
-  m_locCreateStateCamera = "camera_window.debug.create_state_camera";
-  m_locSaveKeyframe = "camera_window.debug.save_keyframe";
-  m_locReloadFromFile = "camera_window.debug.reload_from_file";
-  m_locClearAllMemory = "camera_window.debug.clear_all_memory";
-  m_locAnimationControls = "camera_window.debug.animation_controls";
-  m_locAddEditState = "camera_window.debug.add_edit_state";
-  m_locPositionXYZ = "camera_window.debug.position_xyz";
-  m_locInternalValue = "camera_window.debug.internal_value";
-  m_locQuaternionXYZW = "camera_window.debug.quaternion_xyzw";
-  m_locFOVLabel = "camera_window.debug.fov_label";
-  m_locAddStateMemory = "camera_window.debug.add_state_memory";
-  m_locUpdateStateMemory = "camera_window.debug.update_state_memory";
-  m_locDeleteStateMemory = "camera_window.debug.delete_state_memory";
-  m_locPreviousState = "camera_window.debug.previous_state";
-  m_locNextState = "camera_window.debug.next_state";
-  m_locActiveStateLabel = "camera_window.debug.active_state_label";
-  m_locPosLabel = "camera_window.debug.pos_label";
-  m_locInternalLabel = "camera_window.debug.internal_label";
-  m_locQuatLabel = "camera_window.debug.quat_label";
-  m_locFOVValueLabel = "camera_window.debug.fov_value_label";
-  m_locActiveStateNone = "camera_window.debug.active_state_none";
-  m_locSavedStatesLabel = "camera_window.debug.saved_states_label";
-  m_locStatesComboLabel = "camera_window.debug.states_combo_label";
-  m_locStateItemLabel = "camera_window.debug.state_item_label";
-  m_locNoStatesSaved = "camera_window.debug.no_states_saved";
-  m_locOversizeDebug = "camera_window.debug.oversize_debug";
-  m_locCameraOversizedTrailers = "camera_window.debug.camera_oversized_trailers";
-  m_locDebugCameraNotAvailable = "camera_window.debug.debug_camera_not_available";
-
-  // Video Debug Tab
-  m_locSelectionLocks = "camera_window.debug.video.selection_locks";
-  m_locPosLock = "camera_window.debug.video.pos_lock";
-  m_locRotLock = "camera_window.debug.video.rot_lock";
-  m_locOrbitMode = "camera_window.debug.video.orbit_mode";
-  m_locOrbitZoomSpeed = "camera_window.debug.video.orbit_zoom_speed";
-  m_locHoveredActor = "camera_window.debug.video.hovered_actor";
-  m_locSelectedActor = "camera_window.debug.video.selected_actor";
-  m_locTrafficVehicles = "camera_window.debug.video.traffic_vehicles";
-  m_locSelectFromList = "camera_window.debug.video.select_from_list";
-  m_locCaptureHovered = "camera_window.debug.video.capture_hovered";
-  m_locCaptureSelected = "camera_window.debug.video.capture_selected";
-  m_locNoActorToCapture = "camera_window.debug.video.no_actor_to_capture";
-  m_locCaptureMyTruck = "camera_window.debug.video.capture_my_truck";
-  m_locMyTruckNotFound = "camera_window.debug.video.my_truck_not_found";
-
-  // Traffic Debug Tab
-  m_locSelectVehicle = "camera_window.debug.traffic.select_vehicle";
-  m_locVehicleDetailsTraffic = "camera_window.debug.traffic.vehicle_details_traffic";
-  m_locVehicleDetailsMine = "camera_window.debug.traffic.vehicle_details_mine";
-  m_locPointerLabel = "camera_window.debug.traffic.pointer_label";
-  m_locPatienceLabel = "camera_window.debug.traffic.patience_label";
-  m_locSafetyLabel = "camera_window.debug.traffic.safety_label";
-  m_locTargetSpeedLabel = "camera_window.debug.traffic.target_speed_label";
-  m_locSpeedLimitLabel = "camera_window.debug.traffic.speed_limit_label";
-  m_locCurrentSpeedLabel = "camera_window.debug.traffic.current_speed_label";
-  m_locAccelerationLabel = "camera_window.debug.traffic.acceleration_label";
-  m_locStatusUserControlled = "camera_window.debug.traffic.status_user_controlled";
-  m_locCaptureSelectedVehicle = "camera_window.debug.traffic.capture_selected_vehicle";
+  RefreshLocalization();
 }
 
-const char* CameraWindow::GetWindowTitle() const { return LocalizationManager::GetInstance().Get(m_titleLocalizationKey).c_str(); }
+void CameraWindow::RefreshLocalization() {
+  BaseWindow::RefreshLocalization();
+  auto& loc = LocalizationManager::GetInstance();
+  m_locCurrentCamera = loc.Get("camera_window.current_camera");
+  m_locCameraWorldCoordinates = loc.Get("camera_window.camera_world_coordinates");
+  m_locCameraWorldCoordinatesNotFound = loc.Get("camera_window.camera_world_coordinates_not_found");
+  m_locDataNotFound = loc.Get("camera_window.data_not_found");
+  m_locSelectCamera = loc.Get("camera_window.select_camera");
+  m_locInterior = loc.Get("camera_window.interior");
+  m_locBehind = loc.Get("camera_window.behind");
+  m_locPhoto = loc.Get("camera_window.photo");
+  m_locTop = loc.Get("camera_window.top");
+  m_locCabin = loc.Get("camera_window.cabin");
+  m_locWindow = loc.Get("camera_window.window");
+  m_locBumper = loc.Get("camera_window.bumper");
+  m_locWheel = loc.Get("camera_window.wheel");
+  m_locTV = loc.Get("camera_window.tv");
+  m_locDeveloperFreeCamera = loc.Get("camera_window.developer_free_camera");
+  m_locTabInteriorCamera = loc.Get("camera_window.tabs.interior_camera");
+  m_locTabBehindCamera = loc.Get("camera_window.tabs.behind_camera");
+  m_locTabTopCamera = loc.Get("camera_window.tabs.top_camera");
+  m_locTabPhotoCamera = loc.Get("camera_window.tabs.photo_camera");
+  m_locTabCabinCamera = loc.Get("camera_window.tabs.cabin_camera");
+  m_locTabWindowCamera = loc.Get("camera_window.tabs.window_camera");
+  m_locTabBumperCamera = loc.Get("camera_window.tabs.bumper_camera");
+  m_locTabWheelCamera = loc.Get("camera_window.tabs.wheel_camera");
+  m_locTabTVCamera = loc.Get("camera_window.tabs.tv_camera");
+  m_locTabFreeCamera = loc.Get("camera_window.tabs.free_camera");
+  m_locTabDebug = loc.Get("camera_window.tabs.debug");
+  m_locFovZoom = loc.Get("camera_window.interior_camera.fov_zoom");
+  m_locBaseFov = loc.Get("camera_window.interior_camera.base_fov");
+  m_locBaseFovNotFound = loc.Get("camera_window.interior_camera.base_fov_not_found");
+  m_locFinalHFov = loc.Get("camera_window.interior_camera.final_h_fov");
+  m_locFinalVFov = loc.Get("camera_window.interior_camera.final_v_fov");
+  m_locFinalFovNotFound = loc.Get("camera_window.interior_camera.final_fov_not_found");
+  m_locSeatPosition = loc.Get("camera_window.interior_camera.seat_position");
+  m_locSeatLr = loc.Get("camera_window.interior_camera.seat_lr");
+  m_locSeatUd = loc.Get("camera_window.interior_camera.seat_ud");
+  m_locSeatFb = loc.Get("camera_window.interior_camera.seat_fb");
+  m_locHeadRotation = loc.Get("camera_window.interior_camera.head_rotation");
+  m_locYawLr = loc.Get("camera_window.interior_camera.yaw_lr");
+  m_locPitchUd = loc.Get("camera_window.interior_camera.pitch_ud");
+  m_locMouseRotationLimits = loc.Get("camera_window.interior_camera.mouse_rotation_limits");
+  m_locLeftLimit = loc.Get("camera_window.interior_camera.left_limit");
+  m_locRightLimit = loc.Get("camera_window.interior_camera.right_limit");
+  m_locUpLimit = loc.Get("camera_window.interior_camera.up_limit");
+  m_locDownLimit = loc.Get("camera_window.interior_camera.down_limit");
+  m_locRotationDefaults = loc.Get("camera_window.interior_camera.rotation_defaults");
+  m_locDefaultLr = loc.Get("camera_window.interior_camera.default_lr");
+  m_locDefaultUd = loc.Get("camera_window.interior_camera.default_ud");
+  m_locResetToDefaults = loc.Get("camera_window.interior_camera.reset_to_defaults");
+  m_locInteriorCameraNotAvailable = loc.Get("camera_window.interior_camera.not_available");
+  m_locDefaultValuePrefix = loc.Get("camera_window.default_value_prefix");
+  m_locNearPlane = loc.Get("camera_window.interior_camera.near_plane");
+  m_locFarPlane = loc.Get("camera_window.interior_camera.far_plane");
+  m_locMouseSensitivity = loc.Get("camera_window.interior_camera.mouse_sensitivity");
+  m_locShakeAnimStep = loc.Get("camera_window.interior_camera.shake_anim_step");
+  m_locShakeAnimScaleMin = loc.Get("camera_window.interior_camera.shake_anim_scale_min");
+  m_locShakeAnimScaleMax = loc.Get("camera_window.interior_camera.shake_anim_scale_max");
+  m_locHandShakeLimit = loc.Get("camera_window.interior_camera.hand_shake_limit");
+  m_locHandShakeSpeed = loc.Get("camera_window.interior_camera.hand_shake_speed");
+  m_locZoomFovFactor = loc.Get("camera_window.interior_camera.zoom_fov_factor");
+  m_locZoomSpeedInterior = loc.Get("camera_window.interior_camera.zoom_speed_interior");
+  m_locAzimuthOverrides = loc.Get("camera_window.interior_camera.azimuth_overrides");
+  m_locRangeStartAzimuth = loc.Get("camera_window.interior_camera.range_start_azimuth");
+  m_locRangeEndAzimuth = loc.Get("camera_window.interior_camera.range_end_azimuth");
+  m_locZoneIsOutside = loc.Get("camera_window.interior_camera.zone_is_outside");
+  m_locStartUpLimit = loc.Get("camera_window.interior_camera.start_up_limit");
+  m_locEndUpLimit = loc.Get("camera_window.interior_camera.end_up_limit");
+  m_locStartDownLimit = loc.Get("camera_window.interior_camera.start_down_limit");
+  m_locEndDownLimit = loc.Get("camera_window.interior_camera.end_down_limit");
+  m_locStartUpDownDefault = loc.Get("camera_window.interior_camera.start_up_down_default");
+  m_locEndUpDownDefault = loc.Get("camera_window.interior_camera.end_up_down_default");
+  m_locStartLeftRightDefault = loc.Get("camera_window.interior_camera.start_left_right_default");
+  m_locEndLeftRightDefault = loc.Get("camera_window.interior_camera.end_left_right_default");
+  m_locStartHeadOffset = loc.Get("camera_window.interior_camera.start_head_offset");
+  m_locEndHeadOffset = loc.Get("camera_window.interior_camera.end_head_offset");
+  m_locShakeAnimationArray = loc.Get("camera_window.interior_camera.shake_animation_array");
+  m_locPointX = loc.Get("camera_window.interior_camera.point_x");
+  m_locPointY = loc.Get("camera_window.interior_camera.point_y");
+  m_locPointZ = loc.Get("camera_window.interior_camera.point_z");
+  m_locSelectRange = loc.Get("camera_window.interior_camera.select_range");
+  m_locSelectFrame = loc.Get("camera_window.interior_camera.select_frame");
+  m_locAdvancedCoreSettings = loc.Get("camera_window.interior_camera.advanced_core_settings");
+  m_locShakeSettings = loc.Get("camera_window.interior_camera.shake_settings");
+  m_locInteriorLogicSettings = loc.Get("camera_window.interior_camera.interior_logic_settings");
+  m_locAzimuthRangeDetails = loc.Get("camera_window.interior_camera.azimuth_range_details");
+  m_locLiveState = loc.Get("camera_window.behind_camera.live_state");
+  m_locLivePitch = loc.Get("camera_window.behind_camera.live_pitch");
+  m_locLiveYaw = loc.Get("camera_window.behind_camera.live_yaw");
+  m_locLiveZoom = loc.Get("camera_window.behind_camera.live_zoom");
+  m_locLiveStateNotFound = loc.Get("camera_window.behind_camera.live_state_not_found");
+  m_locDistanceZoomSettings = loc.Get("camera_window.behind_camera.distance_zoom_settings");
+  m_locMinDistance = loc.Get("camera_window.behind_camera.min_distance");
+  m_locMaxDistance = loc.Get("camera_window.behind_camera.max_distance");
+  m_locTrailerMaxOffset = loc.Get("camera_window.behind_camera.trailer_max_offset");
+  m_locDefaultDistance = loc.Get("camera_window.behind_camera.default_distance");
+  m_locTrailerDefaultDist = loc.Get("camera_window.behind_camera.trailer_default_dist");
+  m_locZoomSpeed = loc.Get("camera_window.behind_camera.zoom_speed");
+  m_locDistanceLaziness = loc.Get("camera_window.behind_camera.distance_laziness");
+  m_locDistanceZoomSettingsNotFound = loc.Get("camera_window.behind_camera.distance_zoom_settings_not_found");
+  m_locElevationPitchSettings = loc.Get("camera_window.behind_camera.elevation_pitch_settings");
+  m_locAzimuthLaziness = loc.Get("camera_window.behind_camera.azimuth_laziness");
+  m_locMinElevation = loc.Get("camera_window.behind_camera.min_elevation");
+  m_locMaxElevation = loc.Get("camera_window.behind_camera.max_elevation");
+  m_locDefaultElevation = loc.Get("camera_window.behind_camera.default_elevation");
+  m_locTrailerDefaultElev = loc.Get("camera_window.behind_camera.trailer_default_elev");
+  m_locHeightLimit = loc.Get("camera_window.behind_camera.height_limit");
+  m_locElevationPitchSettingsNotFound = loc.Get("camera_window.behind_camera.elevation_pitch_settings_not_found");
+  m_locPivotOffset = loc.Get("camera_window.behind_camera.pivot_offset");
+  m_locPivotX = loc.Get("camera_window.behind_camera.pivot_x");
+  m_locPivotY = loc.Get("camera_window.behind_camera.pivot_y");
+  m_locPivotZ = loc.Get("camera_window.behind_camera.pivot_z");
+  m_locPivotOffsetNotFound = loc.Get("camera_window.behind_camera.pivot_offset_not_found");
+  m_locDynamicOffset = loc.Get("camera_window.behind_camera.dynamic_offset");
+  m_locMaxDynamicOffset = loc.Get("camera_window.behind_camera.max_dynamic_offset");
+  m_locDynOffsetSpeedMin = loc.Get("camera_window.behind_camera.dyn_offset_speed_min");
+  m_locDynOffsetSpeedMax = loc.Get("camera_window.behind_camera.dyn_offset_speed_max");
+  m_locDynOffsetLaziness = loc.Get("camera_window.behind_camera.dyn_offset_laziness");
+  m_locDynamicOffsetNotFound = loc.Get("camera_window.behind_camera.dynamic_offset_not_found");
+  m_locBaseFovBehind = loc.Get("camera_window.behind_camera.base_fov_behind");
+  m_locBehindCameraNotAvailable = loc.Get("camera_window.behind_camera.not_available");
+  m_locBehindValidation = loc.Get("camera_window.behind_camera.validation");
+  m_locBehindValidationRadius = loc.Get("camera_window.behind_camera.validation_radius");
+  m_locBehindValidationSpeedPos = loc.Get("camera_window.behind_camera.validation_speed_pos");
+  m_locBehindValidationSpeedNeg = loc.Get("camera_window.behind_camera.validation_speed_neg");
+  m_locBehindSpeedFovFactor = loc.Get("camera_window.behind_camera.speed_fov_factor");
+  m_locBehindShakeSettings = loc.Get("camera_window.behind_camera.shake_settings");
+  m_locBehindShakeAnimStep = loc.Get("camera_window.behind_camera.shake_anim_step");
+  m_locBehindShakeAnimScaleMin = loc.Get("camera_window.behind_camera.shake_anim_scale_min");
+  m_locBehindShakeAnimScaleMax = loc.Get("camera_window.behind_camera.shake_anim_scale_max");
+  m_locBehindShakeAnimationArray = loc.Get("camera_window.behind_camera.shake_animation_array");
+  m_locBehindCollisionSettings = loc.Get("camera_window.behind_camera.collision_settings");
+  m_locHeightZoom = loc.Get("camera_window.top_camera.height_zoom");
+  m_locMinimumHeight = loc.Get("camera_window.top_camera.minimum_height");
+  m_locMaximumHeight = loc.Get("camera_window.top_camera.maximum_height");
+  m_locHeightZoomNotFound = loc.Get("camera_window.top_camera.height_zoom_not_found");
+  m_locMovement = loc.Get("camera_window.top_camera.movement");
+  m_locMovementSpeed = loc.Get("camera_window.top_camera.movement_speed");
+  m_locMovementNotFound = loc.Get("camera_window.top_camera.movement_not_found");
+  m_locDynamicOffsetTop = loc.Get("camera_window.top_camera.dynamic_offset");
+  m_locForwardOffsetX = loc.Get("camera_window.top_camera.forward_offset_x");
+  m_locBackwardOffsetX = loc.Get("camera_window.top_camera.backward_offset_x");
+  m_locForwardOffsetZ = loc.Get("camera_window.top_camera.forward_offset_z");
+  m_locBackwardOffsetZ = loc.Get("camera_window.top_camera.backward_offset_z");
+  m_locDynamicOffsetNotFoundTop = loc.Get("camera_window.top_camera.dynamic_offset_not_found");
+  m_locBaseFovTop = loc.Get("camera_window.top_camera.base_fov_top");
+  m_locTopCameraNotAvailable = loc.Get("camera_window.top_camera.not_available");
+  m_locTopNearPlane = loc.Get("camera_window.top_camera.near_plane");
+  m_locTopFarPlane = loc.Get("camera_window.top_camera.far_plane");
+  m_locTopValidation = loc.Get("camera_window.top_camera.validation");
+  m_locTopValidationSpeedPos = loc.Get("camera_window.top_camera.validation_speed_pos");
+  m_locTopValidationSpeedNeg = loc.Get("camera_window.top_camera.validation_speed_neg");
+  m_locTopShakeSettings = loc.Get("camera_window.top_camera.shake_settings");
+  m_locTopShakeAnimStep = loc.Get("camera_window.top_camera.shake_anim_step");
+  m_locTopShakeAnimScaleMin = loc.Get("camera_window.top_camera.shake_anim_scale_min");
+  m_locTopShakeAnimScaleMax = loc.Get("camera_window.top_camera.shake_anim_scale_max");
+  m_locTopShakeAnimationArray = loc.Get("camera_window.top_camera.shake_animation_array");
+  m_locTopAdaptiveSettings = loc.Get("camera_window.top_camera.adaptive_settings");
+  m_locTopHeightFactor = loc.Get("camera_window.top_camera.height_factor");
+  m_locTopUseAdaptive = loc.Get("camera_window.top_camera.use_adaptive");
+  m_locTopDistanceSettings = loc.Get("camera_window.top_camera.distance_settings");
+  m_locTopCollisionSettings = loc.Get("camera_window.top_camera.collision_settings");
+  m_locBaseFovCabin = loc.Get("camera_window.cabin_camera.base_fov_cabin");
+  m_locCabinShakeSettings = loc.Get("camera_window.cabin_camera.shake_settings");
+  m_locCabinShakeAnimStep = loc.Get("camera_window.cabin_camera.shake_anim_step");
+  m_locCabinShakeAnimScaleMin = loc.Get("camera_window.cabin_camera.shake_anim_scale_min");
+  m_locCabinShakeAnimScaleMax = loc.Get("camera_window.cabin_camera.shake_anim_scale_max");
+  m_locCabinShakeAnimationArray = loc.Get("camera_window.cabin_camera.shake_animation_array");
+  m_locCabinCameraNotAvailable = loc.Get("camera_window.cabin_camera.not_available");
+  m_locCabinCameraNotAvailable = loc.Get("camera_window.cabin_camera.not_available");
+  m_locHeadOffset = loc.Get("camera_window.window_camera.head_offset");
+  m_locHeadXWindow = loc.Get("camera_window.window_camera.head_x_window");
+  m_locHeadYWindow = loc.Get("camera_window.window_camera.head_y_window");
+  m_locHeadZWindow = loc.Get("camera_window.window_camera.head_z_window");
+  m_locHeadOffsetNotFound = loc.Get("camera_window.window_camera.head_offset_not_found");
+  m_locLiveRotation = loc.Get("camera_window.window_camera.live_rotation");
+  m_locLiveYawWindow = loc.Get("camera_window.window_camera.live_yaw_window");
+  m_locLivePitchWindow = loc.Get("camera_window.window_camera.live_pitch_window");
+  m_locLiveRotationNotFound = loc.Get("camera_window.window_camera.live_rotation_not_found");
+  m_locMouseRotationLimitsDefaults = loc.Get("camera_window.window_camera.mouse_rotation_limits_defaults");
+  m_locLeftLimitWindow = loc.Get("camera_window.window_camera.left_limit_window");
+  m_locRightLimitWindow = loc.Get("camera_window.window_camera.right_limit_window");
+  m_locUpLimitWindow = loc.Get("camera_window.window_camera.up_limit_window");
+  m_locDownLimitWindow = loc.Get("camera_window.window_camera.down_limit_window");
+  m_locRotationLimitsNotFoundWindow = loc.Get("camera_window.window_camera.rotation_limits_not_found_window");
+  m_locDefaultLrWindow = loc.Get("camera_window.window_camera.default_lr_window");
+  m_locDefaultUdWindow = loc.Get("camera_window.window_camera.default_ud_window");
+  m_locRotationDefaultsNotFoundWindow = loc.Get("camera_window.window_camera.rotation_defaults_not_found_window");
+  m_locBaseFovWindow = loc.Get("camera_window.window_camera.base_fov_window");
+  m_locWindowRelativeHeadtrackingAzimuth = loc.Get("camera_window.window_camera.relative_headtracking_azimuth");
+  m_locWindowAutoCenterMoveDirection = loc.Get("camera_window.window_camera.auto_center_move_direction");
+  m_locWindowShakeSettings = loc.Get("camera_window.window_camera.shake_settings");
+  m_locWindowShakeAnimStep = loc.Get("camera_window.window_camera.shake_anim_step");
+  m_locWindowShakeAnimScaleMin = loc.Get("camera_window.window_camera.shake_anim_scale_min");
+  m_locWindowShakeAnimScaleMax = loc.Get("camera_window.window_camera.shake_anim_scale_max");
+  m_locWindowShakeAnimationArray = loc.Get("camera_window.window_camera.shake_animation_array");
+  m_locWindowCameraNotAvailable = loc.Get("camera_window.window_camera.not_available");
+  m_locOffsetBumper = loc.Get("camera_window.bumper_camera.offset");
+  m_locOffsetXBumper = loc.Get("camera_window.bumper_camera.offset_x_bumper");
+  m_locOffsetYBumper = loc.Get("camera_window.bumper_camera.offset_y_bumper");
+  m_locOffsetZBumper = loc.Get("camera_window.bumper_camera.offset_z_bumper");
+  m_locOffsetNotFoundBumper = loc.Get("camera_window.bumper_camera.offset_not_found");
+  m_locBaseFovBumper = loc.Get("camera_window.bumper_camera.base_fov_bumper");
+  m_locBumperShakeSettings = loc.Get("camera_window.bumper_camera.shake_settings");
+  m_locBumperShakeAnimStep = loc.Get("camera_window.bumper_camera.shake_anim_step");
+  m_locBumperShakeAnimScaleMin = loc.Get("camera_window.bumper_camera.shake_anim_scale_min");
+  m_locBumperShakeAnimScaleMax = loc.Get("camera_window.bumper_camera.shake_anim_scale_max");
+  m_locBumperShakeAnimationArray = loc.Get("camera_window.bumper_camera.shake_animation_array");
+  m_locBumperCameraNotAvailable = loc.Get("camera_window.bumper_camera.not_available");
+  m_locOffsetWheel = loc.Get("camera_window.wheel_camera.offset");
+  m_locOffsetXWheel = loc.Get("camera_window.wheel_camera.offset_x_wheel");
+  m_locOffsetYWheel = loc.Get("camera_window.wheel_camera.offset_y_wheel");
+  m_locOffsetZWheel = loc.Get("camera_window.wheel_camera.offset_z_wheel");
+  m_locOffsetNotFoundWheel = loc.Get("camera_window.wheel_camera.offset_not_found");
+  m_locBaseFovWheel = loc.Get("camera_window.wheel_camera.base_fov_wheel");
+  m_locWheelShakeSettings = loc.Get("camera_window.wheel_camera.shake_settings");
+  m_locWheelShakeAnimStep = loc.Get("camera_window.wheel_camera.shake_anim_step");
+  m_locWheelShakeAnimScaleMin = loc.Get("camera_window.wheel_camera.shake_anim_scale_min");
+  m_locWheelShakeAnimScaleMax = loc.Get("camera_window.wheel_camera.shake_anim_scale_max");
+  m_locWheelShakeAnimationArray = loc.Get("camera_window.wheel_camera.shake_animation_array");
+  m_locWheelCameraNotAvailable = loc.Get("camera_window.wheel_camera.not_available");
+  m_locDistanceTV = loc.Get("camera_window.tv_camera.distance");
+  m_locMaxDistanceTV = loc.Get("camera_window.tv_camera.max_distance_tv");
+  m_locDistanceNotFoundTV = loc.Get("camera_window.tv_camera.distance_not_found");
+  m_locPrefabUpliftTV = loc.Get("camera_window.tv_camera.prefab_uplift");
+  m_locPrefabUpliftXTV = loc.Get("camera_window.tv_camera.prefab_uplift_x_tv");
+  m_locPrefabUpliftYTV = loc.Get("camera_window.tv_camera.prefab_uplift_y_tv");
+  m_locPrefabUpliftZTV = loc.Get("camera_window.tv_camera.prefab_uplift_z_tv");
+  m_locPrefabUpliftNotFoundTV = loc.Get("camera_window.tv_camera.prefab_uplift_not_found");
+  m_locRoadUpliftTV = loc.Get("camera_window.tv_camera.road_uplift");
+  m_locRoadUpliftXTV = loc.Get("camera_window.tv_camera.road_uplift_x_tv");
+  m_locRoadUpliftYTV = loc.Get("camera_window.tv_camera.road_uplift_y_tv");
+  m_locRoadUpliftZTV = loc.Get("camera_window.tv_camera.road_uplift_z_tv");
+  m_locRoadUpliftNotFoundTV = loc.Get("camera_window.tv_camera.road_uplift_not_found");
+  m_locBaseFovTV = loc.Get("camera_window.tv_camera.base_fov_tv");
+  m_locTVShakeSettings = loc.Get("camera_window.tv_camera.shake_settings");
+  m_locTVShakeAnimStep = loc.Get("camera_window.tv_camera.shake_anim_step");
+  m_locTVShakeAnimScaleMin = loc.Get("camera_window.tv_camera.shake_anim_scale_min");
+  m_locTVShakeAnimScaleMax = loc.Get("camera_window.tv_camera.shake_anim_scale_max");
+  m_locTVShakeAnimationArray = loc.Get("camera_window.tv_camera.shake_animation_array");
+  m_locTVCameraNotAvailable = loc.Get("camera_window.tv_camera.not_available");
+  m_locPositionFreeCam = loc.Get("camera_window.free_camera.position");
+  m_locPositionXFreeCam = loc.Get("camera_window.free_camera.position_x_freecam");
+  m_locPositionYFreeCam = loc.Get("camera_window.free_camera.position_y_freecam");
+  m_locPositionZFreeCam = loc.Get("camera_window.free_camera.position_z_freecam");
+  m_locPositionNotFoundFreeCam = loc.Get("camera_window.free_camera.position_not_found");
+  m_locOrientationFreeCam = loc.Get("camera_window.free_camera.orientation");
+  m_locMouseHorizontalFreeCam = loc.Get("camera_window.free_camera.mouse_horizontal_freecam");
+  m_locMouseVerticalFreeCam = loc.Get("camera_window.free_camera.mouse_vertical_freecam");
+  m_locRollFreeCam = loc.Get("camera_window.free_camera.roll_freecam");
+  m_locOrientationNotFoundFreeCam = loc.Get("camera_window.free_camera.orientation_not_found");
+  m_locQuaternionFreeCam = loc.Get("camera_window.free_camera.quaternion");
+  m_locQuaternionXFreeCam = loc.Get("camera_window.free_camera.quaternion_x_freecam");
+  m_locQuaternionYFreeCam = loc.Get("camera_window.free_camera.quaternion_y_freecam");
+  m_locQuaternionZFreeCam = loc.Get("camera_window.free_camera.quaternion_z_freecam");
+  m_locQuaternionWFreeCam = loc.Get("camera_window.free_camera.quaternion_w_freecam");
+  m_locQuaternionNotFoundFreeCam = loc.Get("camera_window.free_camera.quaternion_not_found");
+  m_locBaseFovFreeCam = loc.Get("camera_window.free_camera.base_fov_freecam");
+  m_locMovementSpeedFreeCam = loc.Get("camera_window.free_camera.movement_speed");
+  m_locSpeedFreeCam = loc.Get("camera_window.free_camera.speed_freecam");
+  m_locMovementSpeedNotFoundFreeCam = loc.Get("camera_window.free_camera.movement_speed_not_found");
+  m_locFreeCameraNotAvailable = loc.Get("camera_window.free_camera.not_available");
+  m_locCurrentModeDebug = loc.Get("camera_window.debug.current_mode");
+  m_locCurrentModeNADebug = loc.Get("camera_window.debug.current_mode_na");
+  m_locEnableDebugCamera = loc.Get("camera_window.debug.enable_debug_camera");
+  m_locEnableDebugCameraNotFound = loc.Get("camera_window.debug.enable_debug_camera_not_found");
+  m_locCleanUI = loc.Get("camera_window.debug.clean_ui");
+  m_locCleanUINotFound = loc.Get("camera_window.debug.clean_ui_not_found");
+  m_locShowDebugHUD = loc.Get("camera_window.debug.show_debug_hud");
+  m_locShowDebugHUDNotFound = loc.Get("camera_window.debug.show_debug_hud_not_found");
+  m_locEnableDebugCameraToSelectMode = loc.Get("camera_window.debug.enable_debug_camera_to_select_mode");
+  m_locSimpleDebug = loc.Get("camera_window.debug.simple_debug");
+  m_locBasicDebugCameraMode = loc.Get("camera_window.debug.basic_debug_camera_mode");
+  m_locVideoDebug = loc.Get("camera_window.debug.video_debug");
+  m_locHUDPositionDebug = loc.Get("camera_window.debug.hud_position_debug");
+  m_locTopLeftDebug = loc.Get("camera_window.debug.top_left_debug");
+  m_locBottomLeftDebug = loc.Get("camera_window.debug.bottom_left_debug");
+  m_locTopRightDebug = loc.Get("camera_window.debug.top_right_debug");
+  m_locBottomRightDebug = loc.Get("camera_window.debug.bottom_right_debug");
+  m_locCurrentDebug = loc.Get("camera_window.debug.current_debug");
+  m_locCurrentNADebug = loc.Get("camera_window.debug.current_na_debug");
+  m_locTrafficDebug = loc.Get("camera_window.debug.traffic_debug");
+  m_locCameraFocusesTraffic = loc.Get("camera_window.debug.camera_focuses_traffic");
+  m_locCinematicDebug = loc.Get("camera_window.debug.cinematic_debug");
+  m_locCinematicCameraMode = loc.Get("camera_window.debug.cinematic_camera_mode");
+  m_locAnimatedDebug = loc.Get("camera_window.debug.animated_debug");
+  m_locCreatePlayAnimations = loc.Get("camera_window.debug.create_play_animations");
+  m_locActivateGameAnimatedMode = loc.Get("camera_window.debug.activate_game_animated_mode");
+  m_locCustomAnimationControls = loc.Get("camera_window.debug.custom_animation_controls");
+  m_locPlayingStatus = loc.Get("camera_window.debug.playing_status");
+  m_locPauseButton = loc.Get("camera_window.debug.pause_button");
+  m_locPausedStatus = loc.Get("camera_window.debug.paused_status");
+  m_locStoppedStatus = loc.Get("camera_window.debug.stopped_status");
+  m_locPlayButton = loc.Get("camera_window.debug.play_button");
+  m_locStopButton = loc.Get("camera_window.debug.stop_button");
+  m_locStatusLabel = loc.Get("camera_window.debug.status_label");
+  m_locReversePlayback = loc.Get("camera_window.debug.reverse_playback");
+  m_locTimelineLabel = loc.Get("camera_window.debug.timeline_label");
+  m_locStateCameraDebug = loc.Get("camera_window.debug.state_camera_debug");
+  m_locCreateStateCamera = loc.Get("camera_window.debug.create_state_camera");
+  m_locSaveKeyframe = loc.Get("camera_window.debug.save_keyframe");
+  m_locReloadFromFile = loc.Get("camera_window.debug.reload_from_file");
+  m_locClearAllMemory = loc.Get("camera_window.debug.clear_all_memory");
+  m_locAnimationControls = loc.Get("camera_window.debug.animation_controls");
+  m_locAddEditState = loc.Get("camera_window.debug.add_edit_state");
+  m_locPositionXYZ = loc.Get("camera_window.debug.position_xyz");
+  m_locInternalValue = loc.Get("camera_window.debug.internal_value");
+  m_locQuaternionXYZW = loc.Get("camera_window.debug.quaternion_xyzw");
+  m_locFOVLabel = loc.Get("camera_window.debug.fov_label");
+  m_locAddStateMemory = loc.Get("camera_window.debug.add_state_memory");
+  m_locUpdateStateMemory = loc.Get("camera_window.debug.update_state_memory");
+  m_locDeleteStateMemory = loc.Get("camera_window.debug.delete_state_memory");
+  m_locPreviousState = loc.Get("camera_window.debug.previous_state");
+  m_locNextState = loc.Get("camera_window.debug.next_state");
+  m_locActiveStateLabel = loc.Get("camera_window.debug.active_state_label");
+  m_locPosLabel = loc.Get("camera_window.debug.pos_label");
+  m_locInternalLabel = loc.Get("camera_window.debug.internal_label");
+  m_locQuatLabel = loc.Get("camera_window.debug.quat_label");
+  m_locFOVValueLabel = loc.Get("camera_window.debug.fov_value_label");
+  m_locActiveStateNone = loc.Get("camera_window.debug.active_state_none");
+  m_locSavedStatesLabel = loc.Get("camera_window.debug.saved_states_label");
+  m_locStatesComboLabel = loc.Get("camera_window.debug.states_combo_label");
+  m_locStateItemLabel = loc.Get("camera_window.debug.state_item_label");
+  m_locNoStatesSaved = loc.Get("camera_window.debug.no_states_saved");
+  m_locOversizeDebug = loc.Get("camera_window.debug.oversize_debug");
+  m_locCameraOversizedTrailers = loc.Get("camera_window.debug.camera_oversized_trailers");
+  m_locDebugCameraNotAvailable = loc.Get("camera_window.debug.debug_camera_not_available");
+  m_locSelectionLocks = loc.Get("camera_window.debug.video.selection_locks");
+  m_locPosLock = loc.Get("camera_window.debug.video.pos_lock");
+  m_locRotLock = loc.Get("camera_window.debug.video.rot_lock");
+  m_locOrbitMode = loc.Get("camera_window.debug.video.orbit_mode");
+  m_locOrbitZoomSpeed = loc.Get("camera_window.debug.video.orbit_zoom_speed");
+  m_locHoveredActor = loc.Get("camera_window.debug.video.hovered_actor");
+  m_locSelectedActor = loc.Get("camera_window.debug.video.selected_actor");
+  m_locTrafficVehicles = loc.Get("camera_window.debug.video.traffic_vehicles");
+  m_locSelectFromList = loc.Get("camera_window.debug.video.select_from_list");
+  m_locCaptureHovered = loc.Get("camera_window.debug.video.capture_hovered");
+  m_locCaptureSelected = loc.Get("camera_window.debug.video.capture_selected");
+  m_locNoActorToCapture = loc.Get("camera_window.debug.video.no_actor_to_capture");
+  m_locCaptureMyTruck = loc.Get("camera_window.debug.video.capture_my_truck");
+  m_locMyTruckNotFound = loc.Get("camera_window.debug.video.my_truck_not_found");
+  m_locSelectVehicle = loc.Get("camera_window.debug.traffic.select_vehicle");
+  m_locVehicleDetailsTraffic = loc.Get("camera_window.debug.traffic.vehicle_details_traffic");
+  m_locVehicleDetailsMine = loc.Get("camera_window.debug.traffic.vehicle_details_mine");
+  m_locPointerLabel = loc.Get("camera_window.debug.traffic.pointer_label");
+  m_locPatienceLabel = loc.Get("camera_window.debug.traffic.patience_label");
+  m_locSafetyLabel = loc.Get("camera_window.debug.traffic.safety_label");
+  m_locTargetSpeedLabel = loc.Get("camera_window.debug.traffic.target_speed_label");
+  m_locSpeedLimitLabel = loc.Get("camera_window.debug.traffic.speed_limit_label");
+  m_locCurrentSpeedLabel = loc.Get("camera_window.debug.traffic.current_speed_label");
+  m_locAccelerationLabel = loc.Get("camera_window.debug.traffic.acceleration_label");
+  m_locStatusUserControlled = loc.Get("camera_window.debug.traffic.status_user_controlled");
+  m_locCaptureSelectedVehicle = loc.Get("camera_window.debug.traffic.capture_selected_vehicle");
+}
 
 void CameraWindow::RenderContent() {
-  auto& loc = LocalizationManager::GetInstance();
+
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
 
   // --- Standardized UI Helpers ---
@@ -533,7 +505,7 @@ void CameraWindow::RenderContent() {
       if (default_val.has_value()) {
         char val_buf[32];
         snprintf(val_buf, sizeof(val_buf), format, default_val.value());
-        std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+        std::string def_text = m_locDefaultValuePrefix + ": " + val_buf;
         float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
 
         ImGui::SetCursorPosX(startX + 25.0f);
@@ -541,7 +513,7 @@ void CameraWindow::RenderContent() {
         if (Button(ICON_FA_ARROW_ROTATE_LEFT, TextStyle::Regular().Color(Colors::LIGHT_GRAY).HoverColor(Colors::GOLD), ImVec2(iconWidth + 8.0f, 0))) {
           setter(default_val.value());
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_locResetToDefaults.c_str());
 
         ImGui::SameLine();
         Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
@@ -560,7 +532,7 @@ void CameraWindow::RenderContent() {
       ImGui::Dummy(ImVec2(0, 2.0f));  // Bottom margin
       ImGui::PopID();
     } else {
-      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), m_locDataNotFound.c_str());
     }
   };
 
@@ -592,7 +564,7 @@ void CameraWindow::RenderContent() {
         if (def_val.has_value()) {
           char val_buf[32];
           snprintf(val_buf, sizeof(val_buf), format, def_val.value());
-          std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+          std::string def_text = m_locDefaultValuePrefix + ": " + val_buf;
           float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
 
           ImGui::SetCursorPosX(startX + 25.0f);
@@ -601,7 +573,7 @@ void CameraWindow::RenderContent() {
             *val = def_val.value();
             setter(x, y, z);
           }
-          if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+          if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_locResetToDefaults.c_str());
 
           ImGui::SameLine();
           Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
@@ -627,7 +599,7 @@ void CameraWindow::RenderContent() {
       if (changed) setter(x, y, z);
       ImGui::PopID();
     } else {
-      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), loc.Get(m_locDataNotFound).c_str());
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), m_locDataNotFound.c_str());
     }
   };
 
@@ -667,7 +639,7 @@ void CameraWindow::RenderContent() {
             if (is_rotation) d_val *= 57.29578f;
             char val_buf[32];
             snprintf(val_buf, sizeof(val_buf), format, d_val);
-            std::string def_text = loc.Get(m_locDefaultValuePrefix) + ": " + val_buf;
+            std::string def_text = m_locDefaultValuePrefix + ": " + val_buf;
             float iconWidth = ImGui::CalcTextSize(ICON_FA_ARROW_ROTATE_LEFT).x;
 
             ImGui::SetCursorPosX(startX + 25.0f);
@@ -680,7 +652,7 @@ void CameraWindow::RenderContent() {
                 setter(v1, v2);
               }
             }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", loc.Get(m_locResetToDefaults).c_str());
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", m_locResetToDefaults.c_str());
 
             ImGui::SameLine();
             Typography::Text(TextStyle::Regular().Disabled(), "%s", def_text.c_str());
@@ -711,7 +683,7 @@ void CameraWindow::RenderContent() {
         }
         ImGui::PopID();
       } else {
-        Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), loc.Get(m_locDataNotFound).c_str());
+        Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", header.c_str(), m_locDataNotFound.c_str());
       }
     };
 
@@ -741,7 +713,7 @@ void CameraWindow::RenderContent() {
       ImGui::EndGroup();
       ImGui::Dummy(ImVec2(0, 2.0f));
     } else {
-      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), m_locDataNotFound.c_str());
     }
   };
 
@@ -763,7 +735,7 @@ void CameraWindow::RenderContent() {
     if (getter(&value_1, &value_2)) {
       Typography::Text(TextStyle::Regular().Align(TextAlign::Center), format, value_1, value_2);
     } else {
-      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), loc.Get(m_locDataNotFound).c_str());
+      Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), m_locDataNotFound.c_str());
     }
   };
 
@@ -775,76 +747,76 @@ void CameraWindow::RenderContent() {
   };
 
   auto current_cam_type = m_gameCameraService.GetCurrentCameraType();
-  ImGui::Text(loc.Get(m_locCurrentCamera).c_str(), GameCameraTypeToString(current_cam_type), static_cast<int>(current_cam_type));
+  ImGui::Text(m_locCurrentCamera.c_str(), GameCameraTypeToString(current_cam_type), static_cast<int>(current_cam_type));
 
   Vector3* pCameraWorldCoords = reinterpret_cast<Vector3*>(gameData.GetCameraWorldCoordinatesPtr());
   if (pCameraWorldCoords) {
-    ImGui::Text(loc.Get(m_locCameraWorldCoordinates).c_str(), pCameraWorldCoords->x, pCameraWorldCoords->y, pCameraWorldCoords->z);
+    ImGui::Text(m_locCameraWorldCoordinates.c_str(), pCameraWorldCoords->x, pCameraWorldCoords->y, pCameraWorldCoords->z);
   } else {
-    ImGui::TextDisabled("%s", loc.Get(m_locCameraWorldCoordinatesNotFound).c_str());
+    ImGui::TextDisabled("%s", m_locCameraWorldCoordinatesNotFound.c_str());
   }
 
   ImGui::Separator();
   ImGui::Spacing();
 
-  ImGui::Text("%s", loc.Get(m_locSelectCamera).c_str());
+  ImGui::Text("%s", m_locSelectCamera.c_str());
   ImGui::Separator();
 
-  if (Button(loc.Get(m_locInterior).c_str())) {
+  if (Button(m_locInterior.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::InteriorCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::InteriorCamera;
   }
   // ImGui::SameLine(0.0f, 5.0f); //for Photo Camera
-  // if (Button(loc.Get(m_locPhoto).c_str())) {
+  // if (Button(m_locPhoto.c_str())) {
   //   m_gameCameraService.SwitchTo(GameCameraType::PhotoCamera);
   //   m_needsTabSwitch = true;
   //   m_activeTabType = GameCameraType::PhotoCamera;
   // }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locBehind).c_str())) {
+  if (Button(m_locBehind.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BehindCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BehindCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locTop).c_str())) {
+  if (Button(m_locTop.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TopCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TopCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locCabin).c_str())) {
+  if (Button(m_locCabin.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::CabinCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::CabinCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locWindow).c_str())) {
+  if (Button(m_locWindow.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WindowCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WindowCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locBumper).c_str())) {
+  if (Button(m_locBumper.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BumperCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BumperCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locWheel).c_str())) {
+  if (Button(m_locWheel.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WheelCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WheelCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locTV).c_str())) {
+  if (Button(m_locTV.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TVCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TVCamera;
   }
   ImGui::SameLine(0.0f, 5.0f);
-  if (Button(loc.Get(m_locDeveloperFreeCamera).c_str())) {
+  if (Button(m_locDeveloperFreeCamera.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::DeveloperFreeCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::DeveloperFreeCamera;
@@ -859,32 +831,32 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::InteriorCamera) {
       interiorTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabInteriorCamera).c_str(), nullptr, interiorTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabInteriorCamera.c_str(), nullptr, interiorTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::InteriorCamera);
       if (auto* interiorCam = dynamic_cast<GameCameraInterior*>(pCamera)) {
         auto& defaults = interiorCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFov), [&](float* fov) { return interiorCam->GetFov(fov); }, [&](float fov) { interiorCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return interiorCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFov, [&](float* fov) { return interiorCam->GetFov(fov); }, [&](float fov) { interiorCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return interiorCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locSeatPosition));
+        drawHeader(m_locSeatPosition);
         drawVector3(
-          loc.Get(m_locSeatPosition),
-          loc.Get(m_locSeatLr).c_str(),
-          loc.Get(m_locSeatUd).c_str(),
-          loc.Get(m_locSeatFb).c_str(),
+          m_locSeatPosition,
+          m_locSeatLr.c_str(),
+          m_locSeatUd.c_str(),
+          m_locSeatFb.c_str(),
           [&](float* seat_x, float* seat_y, float* seat_z) { return interiorCam->GetSeatPosition(seat_x, seat_y, seat_z); },
           [&](float seat_x, float seat_y, float seat_z) { interiorCam->SetSeatPosition(seat_x, seat_y, seat_z); },
           -1.5f,
           1.5f,
           ImVec4(defaults.seat_pos_x, defaults.seat_pos_y, defaults.seat_pos_z, 0));
 
-        drawHeader(loc.Get(m_locHeadRotation));
+        drawHeader(m_locHeadRotation);
         drawVector2(
-          loc.Get(m_locHeadRotation),
-          loc.Get(m_locYawLr).c_str(),
-          loc.Get(m_locPitchUd).c_str(),
+          m_locHeadRotation,
+          m_locYawLr.c_str(),
+          m_locPitchUd.c_str(),
           [&](float* head_yaw, float* head_pitch) { return interiorCam->GetHeadRotation(head_yaw, head_pitch); },
           [&](float head_yaw, float head_pitch) { interiorCam->SetHeadRotation(head_yaw, head_pitch); },
           -180.0f,
@@ -892,11 +864,11 @@ void CameraWindow::RenderContent() {
           true,
           ImVec2(defaults.yaw, defaults.pitch));
 
-        drawHeader(loc.Get(m_locMouseRotationLimits));
+        drawHeader(m_locMouseRotationLimits);
         drawVector2(
           "Horizontal Limits",
-          loc.Get(m_locLeftLimit).c_str(),
-          loc.Get(m_locRightLimit).c_str(),
+          m_locLeftLimit.c_str(),
+          m_locRightLimit.c_str(),
           [&](float* left, float* right) {
             float u, d;
             return interiorCam->GetRotationLimits(left, right, &u, &d);
@@ -912,8 +884,8 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.limit_left, defaults.limit_right));
         drawVector2(
           "Vertical Limits",
-          loc.Get(m_locUpLimit).c_str(),
-          loc.Get(m_locDownLimit).c_str(),
+          m_locUpLimit.c_str(),
+          m_locDownLimit.c_str(),
           [&](float* up, float* down) {
             float l, r;
             return interiorCam->GetRotationLimits(&l, &r, up, down);
@@ -928,11 +900,11 @@ void CameraWindow::RenderContent() {
           false,
           ImVec2(defaults.limit_up, defaults.limit_down));
 
-        drawHeader(loc.Get(m_locRotationDefaults));
+        drawHeader(m_locRotationDefaults);
         drawVector2(
-          loc.Get(m_locRotationDefaults),
-          loc.Get(m_locDefaultLr).c_str(),
-          loc.Get(m_locDefaultUd).c_str(),
+          m_locRotationDefaults,
+          m_locDefaultLr.c_str(),
+          m_locDefaultUd.c_str(),
           [&](float* default_lr, float* default_ud) { return interiorCam->GetRotationDefaults(default_lr, default_ud); },
           [&](float default_lr, float default_ud) { interiorCam->SetRotationDefaults(default_lr, default_ud); },
           -360.0f,
@@ -940,17 +912,17 @@ void CameraWindow::RenderContent() {
           false,
           ImVec2(defaults.mouse_lr_default, defaults.mouse_ud_default));
 
-        drawHeader(loc.Get(m_locAdvancedCoreSettings));
-        drawFloat(loc.Get(m_locNearPlane), [&](float* near_plane) { return interiorCam->GetNearPlane(near_plane); }, [&](float near_plane) { interiorCam->SetNearPlane(near_plane); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
-        drawFloat(loc.Get(m_locFarPlane), [&](float* far_plane) { return interiorCam->GetFarPlane(far_plane); }, [&](float far_plane) { interiorCam->SetFarPlane(far_plane); }, 100.0f, 10000.0f, "%.0f", defaults.far_plane);
+        drawHeader(m_locAdvancedCoreSettings);
+        drawFloat(m_locNearPlane, [&](float* near_plane) { return interiorCam->GetNearPlane(near_plane); }, [&](float near_plane) { interiorCam->SetNearPlane(near_plane); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
+        drawFloat(m_locFarPlane, [&](float* far_plane) { return interiorCam->GetFarPlane(far_plane); }, [&](float far_plane) { interiorCam->SetFarPlane(far_plane); }, 100.0f, 10000.0f, "%.0f", defaults.far_plane);
         drawFloat(
-          loc.Get(m_locMouseSensitivity), [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
+          m_locMouseSensitivity, [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
 
-        drawHeader(loc.Get(m_locInteriorLogicSettings));
-        drawFloat(loc.Get(m_locZoomFovFactor), [&](float* zoom_factor) { return interiorCam->GetZoomFovFactor(zoom_factor); }, [&](float zoom_factor) { interiorCam->SetZoomFovFactor(zoom_factor); }, 0.0f, 1.0f, "%.3f", defaults.zoom_fov_factor);
-        drawFloat(loc.Get(m_locZoomSpeedInterior), [&](float* zoom_speed) { return interiorCam->GetZoomSpeed(zoom_speed); }, [&](float zoom_speed) { interiorCam->SetZoomSpeed(zoom_speed); }, 0.0f, 10.0f, "%.3f", defaults.zoom_speed);
+        drawHeader(m_locInteriorLogicSettings);
+        drawFloat(m_locZoomFovFactor, [&](float* zoom_factor) { return interiorCam->GetZoomFovFactor(zoom_factor); }, [&](float zoom_factor) { interiorCam->SetZoomFovFactor(zoom_factor); }, 0.0f, 1.0f, "%.3f", defaults.zoom_fov_factor);
+        drawFloat(m_locZoomSpeedInterior, [&](float* zoom_speed) { return interiorCam->GetZoomSpeed(zoom_speed); }, [&](float zoom_speed) { interiorCam->SetZoomSpeed(zoom_speed); }, 0.0f, 10.0f, "%.3f", defaults.zoom_speed);
 
-        drawHeader(loc.Get(m_locAzimuthOverrides));
+        drawHeader(m_locAzimuthOverrides);
         size_t azimuth_count = interiorCam->GetAzimuthOverridesCount();
         if (azimuth_count > 0) {
           static int selected_azimuth_index = 0;
@@ -961,7 +933,7 @@ void CameraWindow::RenderContent() {
             az_defaults = &defaults.azimuth_overrides_defaults[selected_azimuth_index];
           }
 
-          std::string combo_label = loc.Get(m_locSelectRange) + " " + std::to_string(selected_azimuth_index);
+          std::string combo_label = m_locSelectRange + " " + std::to_string(selected_azimuth_index);
           float start_azimuth, end_azimuth;
           if (interiorCam->GetAzimuthOverrideStartAzimuth(selected_azimuth_index, &start_azimuth) && interiorCam->GetAzimuthOverrideEndAzimuth(selected_azimuth_index, &end_azimuth)) {
             combo_label += " [" + std::to_string((int)start_azimuth) + " : " + std::to_string((int)end_azimuth) + "]";
@@ -969,7 +941,7 @@ void CameraWindow::RenderContent() {
 
           drawCenteredCombo("##AzimuthCombo", combo_label, [&]() {
             for (size_t i = 0; i < azimuth_count; ++i) {
-              std::string item_name = loc.Get(m_locSelectRange) + " " + std::to_string(i);
+              std::string item_name = m_locSelectRange + " " + std::to_string(i);
               float cur_start, cur_end;
               if (interiorCam->GetAzimuthOverrideStartAzimuth(i, &cur_start) && interiorCam->GetAzimuthOverrideEndAzimuth(i, &cur_end)) {
                 item_name += " (" + std::to_string((int)cur_start) + " to " + std::to_string((int)cur_end) + ")";
@@ -979,9 +951,9 @@ void CameraWindow::RenderContent() {
           });
 
           drawVector2(
-            loc.Get(m_locAzimuthOverrides),
-            loc.Get(m_locRangeStartAzimuth).c_str(),
-            loc.Get(m_locRangeEndAzimuth).c_str(),
+            m_locAzimuthOverrides,
+            m_locRangeStartAzimuth.c_str(),
+            m_locRangeEndAzimuth.c_str(),
             [&](float* start, float* end) {
               bool r1 = interiorCam->GetAzimuthOverrideStartAzimuth(selected_azimuth_index, start);
               bool r2 = interiorCam->GetAzimuthOverrideEndAzimuth(selected_azimuth_index, end);
@@ -996,12 +968,12 @@ void CameraWindow::RenderContent() {
             false,
             az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_azimuth, az_defaults->end_azimuth)) : std::nullopt);
 
-          drawBool(loc.Get(m_locZoneIsOutside), [&](bool* val) { return interiorCam->GetAzimuthOverrideOutside(selected_azimuth_index, val); }, [&](bool val) { interiorCam->SetAzimuthOverrideOutside(selected_azimuth_index, val); });
+          drawBool(m_locZoneIsOutside, [&](bool* val) { return interiorCam->GetAzimuthOverrideOutside(selected_azimuth_index, val); }, [&](bool val) { interiorCam->SetAzimuthOverrideOutside(selected_azimuth_index, val); });
 
           drawVector2(
             "Up Limits",
-            loc.Get(m_locStartUpLimit).c_str(),
-            loc.Get(m_locEndUpLimit).c_str(),
+            m_locStartUpLimit.c_str(),
+            m_locEndUpLimit.c_str(),
             [&](float* start, float* end) {
               bool r1 = interiorCam->GetAzimuthOverrideStartUpLimit(selected_azimuth_index, start);
               bool r2 = interiorCam->GetAzimuthOverrideEndUpLimit(selected_azimuth_index, end);
@@ -1017,8 +989,8 @@ void CameraWindow::RenderContent() {
             az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_up_limit, az_defaults->end_up_limit)) : std::nullopt);
           drawVector2(
             "Down Limits",
-            loc.Get(m_locStartDownLimit).c_str(),
-            loc.Get(m_locEndDownLimit).c_str(),
+            m_locStartDownLimit.c_str(),
+            m_locEndDownLimit.c_str(),
             [&](float* start, float* end) {
               bool r1 = interiorCam->GetAzimuthOverrideStartDownLimit(selected_azimuth_index, start);
               bool r2 = interiorCam->GetAzimuthOverrideEndDownLimit(selected_azimuth_index, end);
@@ -1035,8 +1007,8 @@ void CameraWindow::RenderContent() {
 
           drawVector2(
             "Up-Down Defaults",
-            loc.Get(m_locStartUpDownDefault).c_str(),
-            loc.Get(m_locEndUpDownDefault).c_str(),
+            m_locStartUpDownDefault.c_str(),
+            m_locEndUpDownDefault.c_str(),
             [&](float* start, float* end) {
               bool r1 = interiorCam->GetAzimuthOverrideStartUpDownDefault(selected_azimuth_index, start);
               bool r2 = interiorCam->GetAzimuthOverrideEndUpDownDefault(selected_azimuth_index, end);
@@ -1052,8 +1024,8 @@ void CameraWindow::RenderContent() {
             az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_up_down_default, az_defaults->end_up_down_default)) : std::nullopt);
           drawVector2(
             "Left-Right Defaults",
-            loc.Get(m_locStartLeftRightDefault).c_str(),
-            loc.Get(m_locEndLeftRightDefault).c_str(),
+            m_locStartLeftRightDefault.c_str(),
+            m_locEndLeftRightDefault.c_str(),
             [&](float* start, float* end) {
               bool r1 = interiorCam->GetAzimuthOverrideStartLeftRightDefault(selected_azimuth_index, start);
               bool r2 = interiorCam->GetAzimuthOverrideEndLeftRightDefault(selected_azimuth_index, end);
@@ -1069,7 +1041,7 @@ void CameraWindow::RenderContent() {
             az_defaults ? std::optional<ImVec2>(ImVec2(az_defaults->start_left_right_default, az_defaults->end_left_right_default)) : std::nullopt);
 
           drawVector3(
-            loc.Get(m_locStartHeadOffset),
+            m_locStartHeadOffset,
             "X",
             "Y",
             "Z",
@@ -1080,7 +1052,7 @@ void CameraWindow::RenderContent() {
             az_defaults ? std::optional<ImVec4>(ImVec4(az_defaults->start_head_x, az_defaults->start_head_y, az_defaults->start_head_z, 0)) : std::nullopt);
 
           drawVector3(
-            loc.Get(m_locEndHeadOffset),
+            m_locEndHeadOffset,
             "X",
             "Y",
             "Z",
@@ -1090,15 +1062,15 @@ void CameraWindow::RenderContent() {
             1.5f,
             az_defaults ? std::optional<ImVec4>(ImVec4(az_defaults->end_head_x, az_defaults->end_head_y, az_defaults->end_head_z, 0)) : std::nullopt);
         } else {
-          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locAzimuthOverrides).c_str(), loc.Get(m_locDataNotFound).c_str());
+          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", m_locAzimuthOverrides.c_str(), m_locDataNotFound.c_str());
         }
 
-        drawHeader(loc.Get(m_locShakeSettings));
-        drawFloat(loc.Get(m_locShakeAnimStep), [&](float* shake_step) { return interiorCam->GetShakeAnimStep(shake_step); }, [&](float shake_step) { interiorCam->SetShakeAnimStep(shake_step); }, 0.0f, 1.0f, "%.4f", defaults.shake_step);
+        drawHeader(m_locShakeSettings);
+        drawFloat(m_locShakeAnimStep, [&](float* shake_step) { return interiorCam->GetShakeAnimStep(shake_step); }, [&](float shake_step) { interiorCam->SetShakeAnimStep(shake_step); }, 0.0f, 1.0f, "%.4f", defaults.shake_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locShakeAnimScaleMin).c_str(),
-          loc.Get(m_locShakeAnimScaleMax).c_str(),
+          m_locShakeAnimScaleMin.c_str(),
+          m_locShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = interiorCam->GetShakeAnimScaleMin(s_min);
             bool r2 = interiorCam->GetShakeAnimScaleMax(s_max);
@@ -1113,10 +1085,10 @@ void CameraWindow::RenderContent() {
           false,
           ImVec2(defaults.shake_min, defaults.shake_max),
           "%.4f");
-        drawFloat(loc.Get(m_locHandShakeLimit), [&](float* shake_limit) { return interiorCam->GetHandShakeLimit(shake_limit); }, [&](float shake_limit) { interiorCam->SetHandShakeLimit(shake_limit); }, 0.0f, 1.0f, "%.4f", defaults.hand_shake_limit);
-        drawFloat(loc.Get(m_locHandShakeSpeed), [&](float* shake_speed) { return interiorCam->GetHandShakeSpeed(shake_speed); }, [&](float shake_speed) { interiorCam->SetHandShakeSpeed(shake_speed); }, 0.0f, 10.0f, "%.3f", defaults.hand_shake_speed);
+        drawFloat(m_locHandShakeLimit, [&](float* shake_limit) { return interiorCam->GetHandShakeLimit(shake_limit); }, [&](float shake_limit) { interiorCam->SetHandShakeLimit(shake_limit); }, 0.0f, 1.0f, "%.4f", defaults.hand_shake_limit);
+        drawFloat(m_locHandShakeSpeed, [&](float* shake_speed) { return interiorCam->GetHandShakeSpeed(shake_speed); }, [&](float shake_speed) { interiorCam->SetHandShakeSpeed(shake_speed); }, 0.0f, 10.0f, "%.3f", defaults.hand_shake_speed);
 
-        drawHeader(loc.Get(m_locShakeAnimationArray));
+        drawHeader(m_locShakeAnimationArray);
         size_t shake_count = interiorCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index = 0;
@@ -1127,18 +1099,18 @@ void CameraWindow::RenderContent() {
             shake_def = &defaults.shake_anim_defaults[selected_shake_index];
           }
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index);
           drawCenteredCombo("##ShakeCombo", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index == (int)i)) selected_shake_index = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index == (int)i)) selected_shake_index = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) { return interiorCam->GetShakeAnim(selected_shake_index, x, y, z); },
             [&](float x, float y, float z) { interiorCam->SetShakeAnim(selected_shake_index, x, y, z); },
             -5.0f,
@@ -1146,16 +1118,16 @@ void CameraWindow::RenderContent() {
             shake_def ? std::optional<ImVec4>(ImVec4(shake_def->x, shake_def->y, shake_def->z, 0)) : std::nullopt,
             "%.5f");
         } else {
-          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locShakeAnimationArray).c_str(), loc.Get(m_locDataNotFound).c_str());
+          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", m_locShakeAnimationArray.c_str(), m_locDataNotFound.c_str());
         }
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           interiorCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locInteriorCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locInteriorCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -1164,33 +1136,33 @@ void CameraWindow::RenderContent() {
     // if (m_needsTabSwitch && m_activeTabType == GameCameraType::PhotoCamera) {
     //   photoTabFlags = ImGuiTabItemFlags_SetSelected;
     // }
-    // if (ImGui::BeginTabItem(loc.Get(m_locTabPhotoCamera).c_str(), nullptr, photoTabFlags)) {
+    // if (ImGui::BeginTabItem(m_locTabPhotoCamera.c_str(), nullptr, photoTabFlags)) {
     //   auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::PhotoCamera);
     //   if (auto* photoCam = dynamic_cast<GameCameraPhoto*>(pCamera)) {
     //     auto& defaults = photoCam->GetDefaults();
 
-    //     drawHeader(loc.Get(m_locLiveState));
-    //     drawFloat(loc.Get(m_locLivePitch), [&](float* p){ float y, r, z; return photoCam->GetLiveState(p, &y, &r, &z); }, [&](float p){ float cp, y, r, z; photoCam->GetLiveState(&cp, &y, &r, &z); photoCam->SetLiveState(p, y, r, z); },
-    //     -1.57f, 1.57f, "%.4f", defaults.live_pitch); drawFloat(loc.Get(m_locLiveYaw), [&](float* y){ float p, r, z; return photoCam->GetLiveState(&p, y, &r, &z); }, [&](float y){ float p, cy, r, z; photoCam->GetLiveState(&p, &cy, &r, &z);
-    //     photoCam->SetLiveState(p, y, r, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw); drawFloat(loc.Get(m_locRollFreeCam), [&](float* r){ float p, y, z; return photoCam->GetLiveState(&p, &y, r, &z); }, [&](float r){ float p, y, cr, z;
-    //     photoCam->GetLiveState(&p, &y, &cr, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_roll); drawFloat(loc.Get(m_locLiveZoom), [&](float* z){ float p, y, r; return photoCam->GetLiveState(&p, &y, &r, z); },
+    //     drawHeader(m_locLiveState);
+    //     drawFloat(m_locLivePitch, [&](float* p){ float y, r, z; return photoCam->GetLiveState(p, &y, &r, &z); }, [&](float p){ float cp, y, r, z; photoCam->GetLiveState(&cp, &y, &r, &z); photoCam->SetLiveState(p, y, r, z); },
+    //     -1.57f, 1.57f, "%.4f", defaults.live_pitch); drawFloat(m_locLiveYaw, [&](float* y){ float p, r, z; return photoCam->GetLiveState(&p, y, &r, &z); }, [&](float y){ float p, cy, r, z; photoCam->GetLiveState(&p, &cy, &r, &z);
+    //     photoCam->SetLiveState(p, y, r, z); }, -3.14f, 3.14f, "%.4f", defaults.live_yaw); drawFloat(m_locRollFreeCam, [&](float* r){ float p, y, z; return photoCam->GetLiveState(&p, &y, r, &z); }, [&](float r){ float p, y, cr, z;
+    //     photoCam->GetLiveState(&p, &y, &cr, &z); photoCam->SetLiveState(p, y, r, z); }, -1.57f, 1.57f, "%.4f", defaults.live_roll); drawFloat(m_locLiveZoom, [&](float* z){ float p, y, r; return photoCam->GetLiveState(&p, &y, &r, z); },
     //     [&](float z){ float p, y, r, cz; photoCam->GetLiveState(&p, &y, &r, &cz); photoCam->SetLiveState(p, y, r, z); }, 0.0f, 100.0f, "%.1f", defaults.live_zoom);
 
-    //     drawHeader(loc.Get(m_locPositionFreeCam));
-    //     drawVector3(loc.Get(m_locPositionFreeCam), "X", "Y", "Z",
+    //     drawHeader(m_locPositionFreeCam);
+    //     drawVector3(m_locPositionFreeCam, "X", "Y", "Z",
     //                [&](float* x, float* y, float* z){ return photoCam->GetPosition(x, y, z); },
     //                [&](float x, float y, float z){ photoCam->SetPosition(x, y, z); }, -50000.0f, 50000.0f, ImVec4(defaults.pos_x, defaults.pos_y, defaults.pos_z, 0));
 
-    //     drawHeader(loc.Get(m_locFovZoom));
-    //     drawFloat(loc.Get(m_locBaseFov), [&](float* fov){ return photoCam->GetFov(fov); }, [&](float fov){ photoCam->SetFov(fov); }, 1.0f, 120.0f, "%.1f", defaults.camera_fov);
+    //     drawHeader(m_locFovZoom);
+    //     drawFloat(m_locBaseFov, [&](float* fov){ return photoCam->GetFov(fov); }, [&](float fov){ photoCam->SetFov(fov); }, 1.0f, 120.0f, "%.1f", defaults.camera_fov);
 
     //     ImGui::Spacing();
     //     ImGui::Separator();
-    //     if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+    //     if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
     //       photoCam->ResetToDefaults();
     //     }
     //   } else {
-    //     ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
+    //     ImGui::TextDisabled("%s", m_locBehindCameraNotAvailable.c_str());
     //   }
     //   ImGui::EndTabItem();
     // }
@@ -1199,18 +1171,18 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::BehindCamera) {
       behindTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabBehindCamera).c_str(), nullptr, behindTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabBehindCamera.c_str(), nullptr, behindTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::BehindCamera);
       if (auto* behindCam = dynamic_cast<GameCameraBehind*>(pCamera)) {
         auto& defaults = behindCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovBehind), [&](float* fov) { return behindCam->GetFov(fov); }, [&](float fov) { behindCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return behindCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovBehind, [&](float* fov) { return behindCam->GetFov(fov); }, [&](float fov) { behindCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return behindCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locLiveState));
+        drawHeader(m_locLiveState);
         drawFloat(
-          loc.Get(m_locLivePitch),
+          m_locLivePitch,
           [&](float* p) {
             float y, z;
             return behindCam->GetLiveState(p, &y, &z);
@@ -1225,7 +1197,7 @@ void CameraWindow::RenderContent() {
           "%.4f",
           defaults.live_pitch);
         drawFloat(
-          loc.Get(m_locLiveYaw),
+          m_locLiveYaw,
           [&](float* y) {
             float p, z;
             return behindCam->GetLiveState(&p, y, &z);
@@ -1240,7 +1212,7 @@ void CameraWindow::RenderContent() {
           "%.4f",
           defaults.live_yaw);
         drawFloat(
-          loc.Get(m_locLiveZoom),
+          m_locLiveZoom,
           [&](float* z) {
             float p, y;
             return behindCam->GetLiveState(&p, &y, z);
@@ -1255,9 +1227,9 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.live_zoom);
 
-        drawHeader(loc.Get(m_locDistanceZoomSettings));
+        drawHeader(m_locDistanceZoomSettings);
         drawFloat(
-          loc.Get(m_locMinDistance),
+          m_locMinDistance,
           [&](float* v) {
             float mx, tm, d, td, s, l;
             return behindCam->GetDistanceSettings(v, &mx, &tm, &d, &td, &s, &l);
@@ -1272,7 +1244,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.distance_min);
         drawFloat(
-          loc.Get(m_locMaxDistance),
+          m_locMaxDistance,
           [&](float* v) {
             float mi, tm, d, td, s, l;
             return behindCam->GetDistanceSettings(&mi, v, &tm, &d, &td, &s, &l);
@@ -1287,7 +1259,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.distance_max);
         drawFloat(
-          loc.Get(m_locTrailerMaxOffset),
+          m_locTrailerMaxOffset,
           [&](float* v) {
             float mi, mx, d, td, s, l;
             return behindCam->GetDistanceSettings(&mi, &mx, v, &d, &td, &s, &l);
@@ -1302,7 +1274,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.distance_trailer_max_offset);
         drawFloat(
-          loc.Get(m_locDefaultDistance),
+          m_locDefaultDistance,
           [&](float* v) {
             float mi, mx, tm, td, s, l;
             return behindCam->GetDistanceSettings(&mi, &mx, &tm, v, &td, &s, &l);
@@ -1317,7 +1289,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.distance_default);
         drawFloat(
-          loc.Get(m_locTrailerDefaultDist),
+          m_locTrailerDefaultDist,
           [&](float* v) {
             float mi, mx, tm, d, s, l;
             return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, v, &s, &l);
@@ -1332,7 +1304,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.distance_trailer_default);
         drawFloat(
-          loc.Get(m_locZoomSpeed),
+          m_locZoomSpeed,
           [&](float* v) {
             float mi, mx, tm, d, td, l;
             return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, v, &l);
@@ -1347,7 +1319,7 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.distance_change_speed);
         drawFloat(
-          loc.Get(m_locDistanceLaziness),
+          m_locDistanceLaziness,
           [&](float* v) {
             float mi, mx, tm, d, td, s;
             return behindCam->GetDistanceSettings(&mi, &mx, &tm, &d, &td, &s, v);
@@ -1362,9 +1334,9 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.distance_laziness_speed);
 
-        drawHeader(loc.Get(m_locElevationPitchSettings));
+        drawHeader(m_locElevationPitchSettings);
         drawFloat(
-          loc.Get(m_locAzimuthLaziness),
+          m_locAzimuthLaziness,
           [&](float* v) {
             float mi, mx, d, td, h;
             return behindCam->GetElevationSettings(v, &mi, &mx, &d, &td, &h);
@@ -1379,7 +1351,7 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.azimuth_laziness_speed);
         drawFloat(
-          loc.Get(m_locMinElevation),
+          m_locMinElevation,
           [&](float* v) {
             float al, mx, d, td, h;
             return behindCam->GetElevationSettings(&al, v, &mx, &d, &td, &h);
@@ -1394,7 +1366,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.elevation_min);
         drawFloat(
-          loc.Get(m_locMaxElevation),
+          m_locMaxElevation,
           [&](float* v) {
             float al, mi, d, td, h;
             return behindCam->GetElevationSettings(&al, &mi, v, &d, &td, &h);
@@ -1409,7 +1381,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.elevation_max);
         drawFloat(
-          loc.Get(m_locDefaultElevation),
+          m_locDefaultElevation,
           [&](float* v) {
             float al, mi, mx, td, h;
             return behindCam->GetElevationSettings(&al, &mi, &mx, v, &td, &h);
@@ -1424,7 +1396,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.elevation_default);
         drawFloat(
-          loc.Get(m_locTrailerDefaultElev),
+          m_locTrailerDefaultElev,
           [&](float* v) {
             float al, mi, mx, d, h;
             return behindCam->GetElevationSettings(&al, &mi, &mx, &d, v, &h);
@@ -1439,7 +1411,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.elevation_trailer_default);
         drawFloat(
-          loc.Get(m_locHeightLimit),
+          m_locHeightLimit,
           [&](float* v) {
             float al, mi, mx, d, td;
             return behindCam->GetElevationSettings(&al, &mi, &mx, &d, &td, v);
@@ -1454,21 +1426,21 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.height_limit);
 
-        drawHeader(loc.Get(m_locPivotOffset));
+        drawHeader(m_locPivotOffset);
         drawVector3(
-          loc.Get(m_locPivotOffset),
-          loc.Get(m_locPivotX).c_str(),
-          loc.Get(m_locPivotY).c_str(),
-          loc.Get(m_locPivotZ).c_str(),
+          m_locPivotOffset,
+          m_locPivotX.c_str(),
+          m_locPivotY.c_str(),
+          m_locPivotZ.c_str(),
           [&](float* x, float* y, float* z) { return behindCam->GetPivot(x, y, z); },
           [&](float x, float y, float z) { behindCam->SetPivot(x, y, z); },
           -5.0f,
           5.0f,
           ImVec4(defaults.pivot_x, defaults.pivot_y, defaults.pivot_z, 0));
 
-        drawHeader(loc.Get(m_locDynamicOffset));
+        drawHeader(m_locDynamicOffset);
         drawFloat(
-          loc.Get(m_locMaxDynamicOffset),
+          m_locMaxDynamicOffset,
           [&](float* v) {
             float s1, s2, l;
             return behindCam->GetDynamicOffset(v, &s1, &s2, &l);
@@ -1483,7 +1455,7 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.dynamic_offset_max);
         drawFloat(
-          loc.Get(m_locDynOffsetSpeedMin),
+          m_locDynOffsetSpeedMin,
           [&](float* v) {
             float m, s2, l;
             return behindCam->GetDynamicOffset(&m, v, &s2, &l);
@@ -1498,7 +1470,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.dynamic_offset_speed_min);
         drawFloat(
-          loc.Get(m_locDynOffsetSpeedMax),
+          m_locDynOffsetSpeedMax,
           [&](float* v) {
             float m, s1, l;
             return behindCam->GetDynamicOffset(&m, &s1, v, &l);
@@ -1513,7 +1485,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.dynamic_offset_speed_max);
         drawFloat(
-          loc.Get(m_locDynOffsetLaziness),
+          m_locDynOffsetLaziness,
           [&](float* v) {
             float m, s1, s2;
             return behindCam->GetDynamicOffset(&m, &s1, &s2, v);
@@ -1528,10 +1500,10 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.dynamic_offset_laziness_speed);
 
-        drawHeader(loc.Get(m_locBehindCollisionSettings));
-        drawBool(loc.Get(m_locBehindValidation), [&](bool* v) { return behindCam->GetValidation(v); }, [&](bool v) { behindCam->SetValidation(v); });
+        drawHeader(m_locBehindCollisionSettings);
+        drawBool(m_locBehindValidation, [&](bool* v) { return behindCam->GetValidation(v); }, [&](bool v) { behindCam->SetValidation(v); });
         drawFloat(
-          loc.Get(m_locBehindValidationRadius),
+          m_locBehindValidationRadius,
           [&](float* v) {
             float s1, s2;
             return behindCam->GetValidationSettings(v, &s1, &s2);
@@ -1546,7 +1518,7 @@ void CameraWindow::RenderContent() {
           "%.3f",
           defaults.validation_radius);
         drawFloat(
-          loc.Get(m_locBehindValidationSpeedPos),
+          m_locBehindValidationSpeedPos,
           [&](float* v) {
             float r, s2;
             return behindCam->GetValidationSettings(&r, v, &s2);
@@ -1561,7 +1533,7 @@ void CameraWindow::RenderContent() {
           "%.3f",
           defaults.validation_speed_positive);
         drawFloat(
-          loc.Get(m_locBehindValidationSpeedNeg),
+          m_locBehindValidationSpeedNeg,
           [&](float* v) {
             float r, s1;
             return behindCam->GetValidationSettings(&r, &s1, v);
@@ -1575,14 +1547,14 @@ void CameraWindow::RenderContent() {
           10.0f,
           "%.3f",
           defaults.validation_speed_negative);
-        drawFloat(loc.Get(m_locBehindSpeedFovFactor), [&](float* v) { return behindCam->GetSpeedFovChangeFactor(v); }, [&](float v) { behindCam->SetSpeedFovChangeFactor(v); }, 0.0f, 1.0f, "%.4f", defaults.speed_fov_change_factor);
+        drawFloat(m_locBehindSpeedFovFactor, [&](float* v) { return behindCam->GetSpeedFovChangeFactor(v); }, [&](float v) { behindCam->SetSpeedFovChangeFactor(v); }, 0.0f, 1.0f, "%.4f", defaults.speed_fov_change_factor);
 
-        drawHeader(loc.Get(m_locBehindShakeSettings));
-        drawFloat(loc.Get(m_locBehindShakeAnimStep), [&](float* v) { return behindCam->GetShakeAnimStep(v); }, [&](float v) { behindCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locBehindShakeSettings);
+        drawFloat(m_locBehindShakeAnimStep, [&](float* v) { return behindCam->GetShakeAnimStep(v); }, [&](float v) { behindCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locBehindShakeAnimScaleMin).c_str(),
-          loc.Get(m_locBehindShakeAnimScaleMax).c_str(),
+          m_locBehindShakeAnimScaleMin.c_str(),
+          m_locBehindShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = behindCam->GetShakeAnimScaleMin(s_min);
             bool r2 = behindCam->GetShakeAnimScaleMax(s_max);
@@ -1598,24 +1570,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locBehindShakeAnimationArray));
+        drawHeader(m_locBehindShakeAnimationArray);
         size_t shake_count = behindCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_behind = 0;
           if (selected_shake_index_behind >= (int)shake_count) selected_shake_index_behind = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_behind);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_behind);
           drawCenteredCombo("##ShakeComboBehind", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_behind == (int)i)) selected_shake_index_behind = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_behind == (int)i)) selected_shake_index_behind = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               behindCam->GetShakeAnim(selected_shake_index_behind, *x, *y, *z);
               return true;
@@ -1629,11 +1601,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           behindCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locBehindCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locBehindCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -1642,18 +1614,18 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::TopCamera) {
       topTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabTopCamera).c_str(), nullptr, topTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabTopCamera.c_str(), nullptr, topTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::TopCamera);
       if (auto* topCam = dynamic_cast<GameCameraTop*>(pCamera)) {
         auto& defaults = topCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovTop), [&](float* fov) { return topCam->GetFov(fov); }, [&](float fov) { topCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return topCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovTop, [&](float* fov) { return topCam->GetFov(fov); }, [&](float fov) { topCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return topCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locHeightZoom));
+        drawHeader(m_locHeightZoom);
         drawFloat(
-          loc.Get(m_locMinimumHeight),
+          m_locMinimumHeight,
           [&](float* v) {
             float mx;
             return topCam->GetHeight(v, &mx);
@@ -1668,7 +1640,7 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.minimum_height);
         drawFloat(
-          loc.Get(m_locMaximumHeight),
+          m_locMaximumHeight,
           [&](float* v) {
             float mi;
             return topCam->GetHeight(&mi, v);
@@ -1683,12 +1655,12 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.maximum_height);
 
-        drawHeader(loc.Get(m_locMovement));
-        drawFloat(loc.Get(m_locMovementSpeed), [&](float* speed) { return topCam->GetSpeed(speed); }, [&](float speed) { topCam->SetSpeed(speed); }, 0.1f, 10.0f, "%.2f", defaults.speed);
+        drawHeader(m_locMovement);
+        drawFloat(m_locMovementSpeed, [&](float* speed) { return topCam->GetSpeed(speed); }, [&](float speed) { topCam->SetSpeed(speed); }, 0.1f, 10.0f, "%.2f", defaults.speed);
 
-        drawHeader(loc.Get(m_locDynamicOffsetTop));
+        drawHeader(m_locDynamicOffsetTop);
         drawFloat(
-          loc.Get(m_locForwardOffsetX),
+          m_locForwardOffsetX,
           [&](float* v) {
             float b;
             return topCam->GetOffsets(v, &b);
@@ -1703,7 +1675,7 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.x_offset_forward);
         drawFloat(
-          loc.Get(m_locBackwardOffsetX),
+          m_locBackwardOffsetX,
           [&](float* v) {
             float f;
             return topCam->GetOffsets(&f, v);
@@ -1718,9 +1690,9 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.x_offset_backward);
 
-        drawHeader(loc.Get(m_locTopDistanceSettings));
+        drawHeader(m_locTopDistanceSettings);
         drawFloat(
-          loc.Get(m_locForwardOffsetZ),
+          m_locForwardOffsetZ,
           [&](float* v) {
             float b;
             return topCam->GetOffsetsZ(v, &b);
@@ -1735,7 +1707,7 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.offset_forward);
         drawFloat(
-          loc.Get(m_locBackwardOffsetZ),
+          m_locBackwardOffsetZ,
           [&](float* v) {
             float f;
             return topCam->GetOffsetsZ(&f, v);
@@ -1750,9 +1722,9 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.offset_backward);
 
-        drawHeader(loc.Get(m_locTopAdaptiveSettings));
+        drawHeader(m_locTopAdaptiveSettings);
         drawBool(
-          loc.Get(m_locTopUseAdaptive),
+          m_locTopUseAdaptive,
           [&](bool* v) {
             float f;
             return topCam->GetAdaptiveSettings(&f, v);
@@ -1764,7 +1736,7 @@ void CameraWindow::RenderContent() {
             topCam->SetAdaptiveSettings(f, v);
           });
         drawFloat(
-          loc.Get(m_locTopHeightFactor),
+          m_locTopHeightFactor,
           [&](float* v) {
             bool u;
             return topCam->GetAdaptiveSettings(v, &u);
@@ -1780,9 +1752,9 @@ void CameraWindow::RenderContent() {
           "%.2f",
           defaults.camera_height_factor);
 
-        drawHeader(loc.Get(m_locAdvancedCoreSettings));
+        drawHeader(m_locAdvancedCoreSettings);
         drawFloat(
-          loc.Get(m_locTopNearPlane),
+          m_locTopNearPlane,
           [&](float* v) {
             float f;
             return topCam->GetPlaneSettings(v, &f);
@@ -1797,7 +1769,7 @@ void CameraWindow::RenderContent() {
           "%.3f",
           defaults.near_plane);
         drawFloat(
-          loc.Get(m_locTopFarPlane),
+          m_locTopFarPlane,
           [&](float* v) {
             float n;
             return topCam->GetPlaneSettings(&n, v);
@@ -1812,10 +1784,10 @@ void CameraWindow::RenderContent() {
           "%.1f",
           defaults.far_plane);
 
-        drawHeader(loc.Get(m_locTopCollisionSettings));
-        drawBool(loc.Get(m_locTopValidation), [&](bool* v) { return topCam->GetValidation(v); }, [&](bool v) { topCam->SetValidation(v); });
+        drawHeader(m_locTopCollisionSettings);
+        drawBool(m_locTopValidation, [&](bool* v) { return topCam->GetValidation(v); }, [&](bool v) { topCam->SetValidation(v); });
         drawFloat(
-          loc.Get(m_locTopValidationSpeedPos),
+          m_locTopValidationSpeedPos,
           [&](float* v) {
             float s2;
             return topCam->GetValidationSettings(v, &s2);
@@ -1830,7 +1802,7 @@ void CameraWindow::RenderContent() {
           "%.3f",
           defaults.validation_speed_positive);
         drawFloat(
-          loc.Get(m_locTopValidationSpeedNeg),
+          m_locTopValidationSpeedNeg,
           [&](float* v) {
             float s1;
             return topCam->GetValidationSettings(&s1, v);
@@ -1845,12 +1817,12 @@ void CameraWindow::RenderContent() {
           "%.3f",
           defaults.validation_speed_negative);
 
-        drawHeader(loc.Get(m_locTopShakeSettings));
-        drawFloat(loc.Get(m_locTopShakeAnimStep), [&](float* v) { return topCam->GetShakeAnimStep(v); }, [&](float v) { topCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locTopShakeSettings);
+        drawFloat(m_locTopShakeAnimStep, [&](float* v) { return topCam->GetShakeAnimStep(v); }, [&](float v) { topCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locTopShakeAnimScaleMin).c_str(),
-          loc.Get(m_locTopShakeAnimScaleMax).c_str(),
+          m_locTopShakeAnimScaleMin.c_str(),
+          m_locTopShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = topCam->GetShakeAnimScaleMin(s_min);
             bool r2 = topCam->GetShakeAnimScaleMax(s_max);
@@ -1866,24 +1838,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locTopShakeAnimationArray));
+        drawHeader(m_locTopShakeAnimationArray);
         size_t shake_count = topCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_top = 0;
           if (selected_shake_index_top >= (int)shake_count) selected_shake_index_top = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_top);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_top);
           drawCenteredCombo("##ShakeComboTop", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_top == (int)i)) selected_shake_index_top = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_top == (int)i)) selected_shake_index_top = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               topCam->GetShakeAnim(selected_shake_index_top, *x, *y, *z);
               return true;
@@ -1897,11 +1869,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           topCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locTopCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locTopCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -1910,21 +1882,21 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::CabinCamera) {
       cabinTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabCabinCamera).c_str(), nullptr, cabinTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabCabinCamera.c_str(), nullptr, cabinTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::CabinCamera);
       if (auto* cabinCam = dynamic_cast<GameCameraCabin*>(pCamera)) {
         auto& defaults = cabinCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovCabin), [&](float* fov) { return cabinCam->GetFov(fov); }, [&](float fov) { cabinCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return cabinCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovCabin, [&](float* fov) { return cabinCam->GetFov(fov); }, [&](float fov) { cabinCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return cabinCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locCabinShakeSettings));
-        drawFloat(loc.Get(m_locCabinShakeAnimStep), [&](float* v) { return cabinCam->GetShakeAnimStep(v); }, [&](float v) { cabinCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locCabinShakeSettings);
+        drawFloat(m_locCabinShakeAnimStep, [&](float* v) { return cabinCam->GetShakeAnimStep(v); }, [&](float v) { cabinCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locCabinShakeAnimScaleMin).c_str(),
-          loc.Get(m_locCabinShakeAnimScaleMax).c_str(),
+          m_locCabinShakeAnimScaleMin.c_str(),
+          m_locCabinShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = cabinCam->GetShakeAnimScaleMin(s_min);
             bool r2 = cabinCam->GetShakeAnimScaleMax(s_max);
@@ -1940,24 +1912,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locCabinShakeAnimationArray));
+        drawHeader(m_locCabinShakeAnimationArray);
         size_t shake_count = cabinCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_cabin = 0;
           if (selected_shake_index_cabin >= (int)shake_count) selected_shake_index_cabin = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_cabin);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_cabin);
           drawCenteredCombo("##ShakeComboCabin", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_cabin == (int)i)) selected_shake_index_cabin = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_cabin == (int)i)) selected_shake_index_cabin = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               cabinCam->GetShakeAnim(selected_shake_index_cabin, *x, *y, *z);
               return true;
@@ -1971,11 +1943,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           cabinCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locCabinCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locCabinCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -1984,18 +1956,18 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::WindowCamera) {
       windowTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabWindowCamera).c_str(), nullptr, windowTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabWindowCamera.c_str(), nullptr, windowTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::WindowCamera);
       if (auto* windowCam = dynamic_cast<GameCameraWindow*>(pCamera)) {
         auto& defaults = windowCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovWindow), [&](float* fov) { return windowCam->GetFov(fov); }, [&](float fov) { windowCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return windowCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovWindow, [&](float* fov) { return windowCam->GetFov(fov); }, [&](float fov) { windowCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return windowCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locHeadOffset));
+        drawHeader(m_locHeadOffset);
         drawVector3(
-          loc.Get(m_locHeadOffset),
+          m_locHeadOffset,
           "X",
           "Y",
           "Z",
@@ -2005,11 +1977,11 @@ void CameraWindow::RenderContent() {
           1.5f,
           ImVec4(defaults.head_offset_x, defaults.head_offset_y, defaults.head_offset_z, 0));
 
-        drawHeader(loc.Get(m_locLiveRotation));
+        drawHeader(m_locLiveRotation);
         drawVector2(
-          loc.Get(m_locLiveRotation),
-          loc.Get(m_locLiveYawWindow).c_str(),
-          loc.Get(m_locLivePitchWindow).c_str(),
+          m_locLiveRotation,
+          m_locLiveYawWindow.c_str(),
+          m_locLivePitchWindow.c_str(),
           [&](float* yaw, float* pitch) { return windowCam->GetLiveRotation(yaw, pitch); },
           [&](float yaw, float pitch) { windowCam->SetLiveRotation(yaw, pitch); },
           -3.14159f,
@@ -2018,11 +1990,11 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.live_yaw, defaults.live_pitch),
           "%.4f");
 
-        drawHeader(loc.Get(m_locMouseRotationLimits));
+        drawHeader(m_locMouseRotationLimits);
         drawVector2(
           "Horizontal Limits",
-          loc.Get(m_locLeftLimitWindow).c_str(),
-          loc.Get(m_locRightLimitWindow).c_str(),
+          m_locLeftLimitWindow.c_str(),
+          m_locRightLimitWindow.c_str(),
           [&](float* left, float* right) {
             float u, d;
             return windowCam->GetRotationLimits(left, right, &u, &d);
@@ -2038,8 +2010,8 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.mouse_left_limit, defaults.mouse_right_limit));
         drawVector2(
           "Vertical Limits",
-          loc.Get(m_locUpLimitWindow).c_str(),
-          loc.Get(m_locDownLimitWindow).c_str(),
+          m_locUpLimitWindow.c_str(),
+          m_locDownLimitWindow.c_str(),
           [&](float* up, float* down) {
             float l, r;
             return windowCam->GetRotationLimits(&l, &r, up, down);
@@ -2054,11 +2026,11 @@ void CameraWindow::RenderContent() {
           false,
           ImVec2(defaults.mouse_up_limit, defaults.mouse_down_limit));
 
-        drawHeader(loc.Get(m_locRotationDefaults));
+        drawHeader(m_locRotationDefaults);
         drawVector2(
-          loc.Get(m_locRotationDefaults),
-          loc.Get(m_locDefaultLrWindow).c_str(),
-          loc.Get(m_locDefaultUdWindow).c_str(),
+          m_locRotationDefaults,
+          m_locDefaultLrWindow.c_str(),
+          m_locDefaultUdWindow.c_str(),
           [&](float* lr, float* ud) { return windowCam->GetRotationDefaults(lr, ud); },
           [&](float lr, float ud) { windowCam->SetRotationDefaults(lr, ud); },
           -360.0f,
@@ -2066,10 +2038,10 @@ void CameraWindow::RenderContent() {
           false,
           ImVec2(defaults.mouse_lr_default, defaults.mouse_ud_default));
 
-        drawHeader(loc.Get(m_locInteriorLogicSettings));
-        drawBool(loc.Get(m_locWindowRelativeHeadtrackingAzimuth), [&](bool* v) { return windowCam->GetRelativeHeadtrackingAzimuth(v); }, [&](bool v) { windowCam->SetRelativeHeadtrackingAzimuth(v); });
+        drawHeader(m_locInteriorLogicSettings);
+        drawBool(m_locWindowRelativeHeadtrackingAzimuth, [&](bool* v) { return windowCam->GetRelativeHeadtrackingAzimuth(v); }, [&](bool v) { windowCam->SetRelativeHeadtrackingAzimuth(v); });
         drawFloat(
-          loc.Get(m_locWindowAutoCenterMoveDirection),
+          m_locWindowAutoCenterMoveDirection,
           [&](float* v) {
             int32_t raw;
             bool r = windowCam->GetAutoCenterMoveDirection(&raw);
@@ -2082,12 +2054,12 @@ void CameraWindow::RenderContent() {
           "%.0f",
           static_cast<float>(defaults.auto_center_move_direction));
 
-        drawHeader(loc.Get(m_locWindowShakeSettings));
-        drawFloat(loc.Get(m_locWindowShakeAnimStep), [&](float* v) { return windowCam->GetShakeAnimStep(v); }, [&](float v) { windowCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locWindowShakeSettings);
+        drawFloat(m_locWindowShakeAnimStep, [&](float* v) { return windowCam->GetShakeAnimStep(v); }, [&](float v) { windowCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locWindowShakeAnimScaleMin).c_str(),
-          loc.Get(m_locWindowShakeAnimScaleMax).c_str(),
+          m_locWindowShakeAnimScaleMin.c_str(),
+          m_locWindowShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = windowCam->GetShakeAnimScaleMin(s_min);
             bool r2 = windowCam->GetShakeAnimScaleMax(s_max);
@@ -2103,24 +2075,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locWindowShakeAnimationArray));
+        drawHeader(m_locWindowShakeAnimationArray);
         size_t shake_count = windowCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_window = 0;
           if (selected_shake_index_window >= (int)shake_count) selected_shake_index_window = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_window);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_window);
           drawCenteredCombo("##ShakeComboWindow", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_window == (int)i)) selected_shake_index_window = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_window == (int)i)) selected_shake_index_window = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               windowCam->GetShakeAnim(selected_shake_index_window, *x, *y, *z);
               return true;
@@ -2134,11 +2106,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           windowCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locWindowCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locWindowCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -2147,18 +2119,18 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::BumperCamera) {
       bumperTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabBumperCamera).c_str(), nullptr, bumperTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabBumperCamera.c_str(), nullptr, bumperTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::BumperCamera);
       if (auto* bumperCam = dynamic_cast<GameCameraBumper*>(pCamera)) {
         auto& defaults = bumperCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovBumper), [&](float* fov) { return bumperCam->GetFov(fov); }, [&](float fov) { bumperCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return bumperCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovBumper, [&](float* fov) { return bumperCam->GetFov(fov); }, [&](float fov) { bumperCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return bumperCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locOffsetBumper));
+        drawHeader(m_locOffsetBumper);
         drawVector3(
-          loc.Get(m_locOffsetBumper),
+          m_locOffsetBumper,
           "X",
           "Y",
           "Z",
@@ -2168,12 +2140,12 @@ void CameraWindow::RenderContent() {
           10.0f,
           ImVec4(defaults.offset_x, defaults.offset_y, defaults.offset_z, 0));
 
-        drawHeader(loc.Get(m_locBumperShakeSettings));
-        drawFloat(loc.Get(m_locBumperShakeAnimStep), [&](float* v) { return bumperCam->GetShakeAnimStep(v); }, [&](float v) { bumperCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locBumperShakeSettings);
+        drawFloat(m_locBumperShakeAnimStep, [&](float* v) { return bumperCam->GetShakeAnimStep(v); }, [&](float v) { bumperCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locBumperShakeAnimScaleMin).c_str(),
-          loc.Get(m_locBumperShakeAnimScaleMax).c_str(),
+          m_locBumperShakeAnimScaleMin.c_str(),
+          m_locBumperShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = bumperCam->GetShakeAnimScaleMin(s_min);
             bool r2 = bumperCam->GetShakeAnimScaleMax(s_max);
@@ -2189,24 +2161,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locBumperShakeAnimationArray));
+        drawHeader(m_locBumperShakeAnimationArray);
         size_t shake_count = bumperCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_bumper = 0;
           if (selected_shake_index_bumper >= (int)shake_count) selected_shake_index_bumper = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_bumper);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_bumper);
           drawCenteredCombo("##ShakeComboBumper", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_bumper == (int)i)) selected_shake_index_bumper = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_bumper == (int)i)) selected_shake_index_bumper = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               bumperCam->GetShakeAnim(selected_shake_index_bumper, *x, *y, *z);
               return true;
@@ -2220,11 +2192,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           bumperCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locBumperCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locBumperCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -2233,18 +2205,18 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::WheelCamera) {
       wheelTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabWheelCamera).c_str(), nullptr, wheelTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabWheelCamera.c_str(), nullptr, wheelTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::WheelCamera);
       if (auto* wheelCam = dynamic_cast<GameCameraWheel*>(pCamera)) {
         auto& defaults = wheelCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovWheel), [&](float* fov) { return wheelCam->GetFov(fov); }, [&](float fov) { wheelCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return wheelCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovWheel, [&](float* fov) { return wheelCam->GetFov(fov); }, [&](float fov) { wheelCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return wheelCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locOffsetWheel));
+        drawHeader(m_locOffsetWheel);
         drawVector3(
-          loc.Get(m_locOffsetWheel),
+          m_locOffsetWheel,
           "X",
           "Y",
           "Z",
@@ -2254,12 +2226,12 @@ void CameraWindow::RenderContent() {
           10.0f,
           ImVec4(defaults.offset_x, defaults.offset_y, defaults.offset_z, 0));
 
-        drawHeader(loc.Get(m_locWheelShakeSettings));
-        drawFloat(loc.Get(m_locWheelShakeAnimStep), [&](float* v) { return wheelCam->GetShakeAnimStep(v); }, [&](float v) { wheelCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locWheelShakeSettings);
+        drawFloat(m_locWheelShakeAnimStep, [&](float* v) { return wheelCam->GetShakeAnimStep(v); }, [&](float v) { wheelCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locWheelShakeAnimScaleMin).c_str(),
-          loc.Get(m_locWheelShakeAnimScaleMax).c_str(),
+          m_locWheelShakeAnimScaleMin.c_str(),
+          m_locWheelShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = wheelCam->GetShakeAnimScaleMin(s_min);
             bool r2 = wheelCam->GetShakeAnimScaleMax(s_max);
@@ -2275,24 +2247,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locWheelShakeAnimationArray));
+        drawHeader(m_locWheelShakeAnimationArray);
         size_t shake_count = wheelCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_wheel = 0;
           if (selected_shake_index_wheel >= (int)shake_count) selected_shake_index_wheel = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_wheel);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_wheel);
           drawCenteredCombo("##ShakeComboWheel", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_wheel == (int)i)) selected_shake_index_wheel = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_wheel == (int)i)) selected_shake_index_wheel = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               wheelCam->GetShakeAnim(selected_shake_index_wheel, *x, *y, *z);
               return true;
@@ -2306,11 +2278,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           wheelCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locWheelCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locWheelCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -2319,21 +2291,21 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::TVCamera) {
       tvTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabTVCamera).c_str(), nullptr, tvTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabTVCamera.c_str(), nullptr, tvTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::TVCamera);
       if (auto* tvCam = dynamic_cast<GameCameraTV*>(pCamera)) {
         auto& defaults = tvCam->GetDefaults();
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovTV), [&](float* fov) { return tvCam->GetFov(fov); }, [&](float fov) { tvCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return tvCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovTV, [&](float* fov) { return tvCam->GetFov(fov); }, [&](float fov) { tvCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return tvCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locDistanceTV));
-        drawFloat(loc.Get(m_locMaxDistanceTV), [&](float* v) { return tvCam->GetMaxDistance(v); }, [&](float v) { tvCam->SetMaxDistance(v); }, 0.0f, 500.0f, "%.1f", defaults.max_distance);
+        drawHeader(m_locDistanceTV);
+        drawFloat(m_locMaxDistanceTV, [&](float* v) { return tvCam->GetMaxDistance(v); }, [&](float v) { tvCam->SetMaxDistance(v); }, 0.0f, 500.0f, "%.1f", defaults.max_distance);
 
-        drawHeader(loc.Get(m_locPrefabUpliftTV));
+        drawHeader(m_locPrefabUpliftTV);
         drawVector3(
-          loc.Get(m_locPrefabUpliftTV),
+          m_locPrefabUpliftTV,
           "X",
           "Y",
           "Z",
@@ -2343,9 +2315,9 @@ void CameraWindow::RenderContent() {
           20.0f,
           ImVec4(defaults.prefab_uplift_x, defaults.prefab_uplift_y, defaults.prefab_uplift_z, 0));
 
-        drawHeader(loc.Get(m_locRoadUpliftTV));
+        drawHeader(m_locRoadUpliftTV);
         drawVector3(
-          loc.Get(m_locRoadUpliftTV),
+          m_locRoadUpliftTV,
           "X",
           "Y",
           "Z",
@@ -2355,12 +2327,12 @@ void CameraWindow::RenderContent() {
           20.0f,
           ImVec4(defaults.road_uplift_x, defaults.road_uplift_y, defaults.road_uplift_z, 0));
 
-        drawHeader(loc.Get(m_locTVShakeSettings));
-        drawFloat(loc.Get(m_locTVShakeAnimStep), [&](float* v) { return tvCam->GetShakeAnimStep(v); }, [&](float v) { tvCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
+        drawHeader(m_locTVShakeSettings);
+        drawFloat(m_locTVShakeAnimStep, [&](float* v) { return tvCam->GetShakeAnimStep(v); }, [&](float v) { tvCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
         drawVector2(
           "Shake Scale Range",
-          loc.Get(m_locTVShakeAnimScaleMin).c_str(),
-          loc.Get(m_locTVShakeAnimScaleMax).c_str(),
+          m_locTVShakeAnimScaleMin.c_str(),
+          m_locTVShakeAnimScaleMax.c_str(),
           [&](float* s_min, float* s_max) {
             bool r1 = tvCam->GetShakeAnimScaleMin(s_min);
             bool r2 = tvCam->GetShakeAnimScaleMax(s_max);
@@ -2376,24 +2348,24 @@ void CameraWindow::RenderContent() {
           ImVec2(defaults.shake_anim_scale_min, defaults.shake_anim_scale_max),
           "%.4f");
 
-        drawHeader(loc.Get(m_locTVShakeAnimationArray));
+        drawHeader(m_locTVShakeAnimationArray);
         size_t shake_count = tvCam->GetShakeAnimCount();
         if (shake_count > 0) {
           static int selected_shake_index_tv = 0;
           if (selected_shake_index_tv >= (int)shake_count) selected_shake_index_tv = 0;
 
-          std::string shake_label = loc.Get(m_locSelectFrame) + " " + std::to_string(selected_shake_index_tv);
+          std::string shake_label = m_locSelectFrame + " " + std::to_string(selected_shake_index_tv);
           drawCenteredCombo("##ShakeComboTV", shake_label, [&]() {
             for (size_t i = 0; i < shake_count; ++i) {
-              if (ImGui::Selectable((loc.Get(m_locSelectFrame) + " " + std::to_string(i)).c_str(), selected_shake_index_tv == (int)i)) selected_shake_index_tv = (int)i;
+              if (ImGui::Selectable((m_locSelectFrame + " " + std::to_string(i)).c_str(), selected_shake_index_tv == (int)i)) selected_shake_index_tv = (int)i;
             }
           });
 
           drawVector3(
-            loc.Get(m_locSelectFrame),
-            loc.Get(m_locPointX).c_str(),
-            loc.Get(m_locPointY).c_str(),
-            loc.Get(m_locPointZ).c_str(),
+            m_locSelectFrame,
+            m_locPointX.c_str(),
+            m_locPointY.c_str(),
+            m_locPointZ.c_str(),
             [&](float* x, float* y, float* z) {
               tvCam->GetShakeAnim(selected_shake_index_tv, *x, *y, *z);
               return true;
@@ -2407,11 +2379,11 @@ void CameraWindow::RenderContent() {
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           tvCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locTVCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locTVCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
@@ -2420,25 +2392,25 @@ void CameraWindow::RenderContent() {
     if (m_needsTabSwitch && m_activeTabType == GameCameraType::DeveloperFreeCamera) {
       freeCamTabFlags = ImGuiTabItemFlags_SetSelected;
     }
-    if (ImGui::BeginTabItem(loc.Get(m_locTabFreeCamera).c_str(), nullptr, freeCamTabFlags)) {
+    if (ImGui::BeginTabItem(m_locTabFreeCamera.c_str(), nullptr, freeCamTabFlags)) {
       auto* pCamera = m_gameCameraService.GetCamera(GameCameraType::DeveloperFreeCamera);
       if (auto* freeCam = dynamic_cast<GameCameraFree*>(pCamera)) {
-        drawHeader(loc.Get(m_locPositionFreeCam));
+        drawHeader(m_locPositionFreeCam);
         drawVector3(
-          loc.Get(m_locPositionFreeCam),
-          loc.Get(m_locPositionXFreeCam).c_str(),
-          loc.Get(m_locPositionYFreeCam).c_str(),
-          loc.Get(m_locPositionZFreeCam).c_str(),
+          m_locPositionFreeCam,
+          m_locPositionXFreeCam.c_str(),
+          m_locPositionYFreeCam.c_str(),
+          m_locPositionZFreeCam.c_str(),
           [&](float* x, float* y, float* z) { return freeCam->GetPosition(x, y, z); },
           [&](float x, float y, float z) { freeCam->SetPosition(x, y, z); },
           -50000.0f,
           50000.0f);
 
-        drawHeader(loc.Get(m_locOrientationFreeCam));
+        drawHeader(m_locOrientationFreeCam);
         drawVector2(
-          loc.Get(m_locOrientationFreeCam),
-          loc.Get(m_locMouseHorizontalFreeCam).c_str(),
-          loc.Get(m_locMouseVerticalFreeCam).c_str(),
+          m_locOrientationFreeCam,
+          m_locMouseHorizontalFreeCam.c_str(),
+          m_locMouseVerticalFreeCam.c_str(),
           [&](float* mx, float* my) {
             float r;
             return freeCam->GetOrientation(mx, my, &r);
@@ -2456,7 +2428,7 @@ void CameraWindow::RenderContent() {
           "%.1f");
 
         drawFloat(
-          loc.Get(m_locRollFreeCam),
+          m_locRollFreeCam,
           [&](float* r) {
             float mx, my;
             bool res = freeCam->GetOrientation(&mx, &my, r);
@@ -2472,72 +2444,72 @@ void CameraWindow::RenderContent() {
           180.0f,
           "%.1f");
 
-        drawHeader(loc.Get(m_locQuaternionFreeCam));
+        drawHeader(m_locQuaternionFreeCam);
         float qx, qy, qz, qw;
         if (freeCam->GetQuaternion(&qx, &qy, &qz, &qw)) {
           Typography::Text(TextStyle::Regular().Align(TextAlign::Center), "X: %.4f, Y: %.4f, Z: %.4f, W: %.4f", qx, qy, qz, qw);
         } else {
-          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", loc.Get(m_locQuaternionFreeCam).c_str(), loc.Get(m_locDataNotFound).c_str());
+          Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", m_locQuaternionFreeCam.c_str(), m_locDataNotFound.c_str());
         }
 
-        drawHeader(loc.Get(m_locFovZoom));
-        drawFloat(loc.Get(m_locBaseFovFreeCam), [&](float* fov) { return freeCam->GetFov(fov); }, [&](float fov) { freeCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f");
-        drawReadOnly(loc.Get(m_locFinalHFov), "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return freeCam->GetFinalFov(h_fov, v_fov); });
+        drawHeader(m_locFovZoom);
+        drawFloat(m_locBaseFovFreeCam, [&](float* fov) { return freeCam->GetFov(fov); }, [&](float fov) { freeCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f");
+        drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return freeCam->GetFinalFov(h_fov, v_fov); });
 
-        drawHeader(loc.Get(m_locMovementSpeedFreeCam));
-        drawFloat(loc.Get(m_locSpeedFreeCam), [&](float* speed) { return freeCam->GetSpeed(speed); }, [&](float speed) { freeCam->SetSpeed(speed); }, 0.1f, 500.0f, "%.1f");
+        drawHeader(m_locMovementSpeedFreeCam);
+        drawFloat(m_locSpeedFreeCam, [&](float* speed) { return freeCam->GetSpeed(speed); }, [&](float speed) { freeCam->SetSpeed(speed); }, 0.1f, 500.0f, "%.1f");
 
         ImGui::Spacing();
         ImGui::Separator();
-        if (Button(loc.Get(m_locResetToDefaults).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+        if (Button(m_locResetToDefaults.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
           freeCam->ResetToDefaults();
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locFreeCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locFreeCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }
 
-    if (ImGui::BeginTabItem(loc.Get(m_locTabDebug).c_str())) {
+    if (ImGui::BeginTabItem(m_locTabDebug.c_str())) {
       auto* debugCam = m_gameCameraService.GetDebugCamera();
       if (debugCam) {
         DebugCameraMode currentMode;
         if (debugCam->GetCurrentMode(&currentMode)) {
-          ImGui::Text(loc.Get(m_locCurrentModeDebug).c_str(), DebugCameraModeToString(currentMode), static_cast<int>(currentMode));
+          ImGui::Text(m_locCurrentModeDebug.c_str(), DebugCameraModeToString(currentMode), static_cast<int>(currentMode));
         } else {
-          ImGui::Text("%s", loc.Get(m_locCurrentModeNADebug).c_str());
+          ImGui::Text("%s", m_locCurrentModeNADebug.c_str());
         }
         ImGui::Separator();
 
         bool isEnabled = false;  // Default to false
         if (debugCam->GetEnabled(&isEnabled)) {
-          if (ImGui::Checkbox(loc.Get(m_locEnableDebugCamera).c_str(), &isEnabled)) {
+          if (ImGui::Checkbox(m_locEnableDebugCamera.c_str(), &isEnabled)) {
             debugCam->SetEnabled(isEnabled);
           }
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locEnableDebugCameraNotFound).c_str());
+          ImGui::TextDisabled("%s", m_locEnableDebugCameraNotFound.c_str());
         }
 
         ImGui::SameLine(0, 20);
 
         bool isGameUiVisible;
         if (debugCam->GetGameUiVisible(&isGameUiVisible)) {
-          if (ImGui::Checkbox(loc.Get(m_locCleanUI).c_str(), &isGameUiVisible)) {
+          if (ImGui::Checkbox(m_locCleanUI.c_str(), &isGameUiVisible)) {
             debugCam->SetGameUiVisible(isGameUiVisible);
           }
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locCleanUINotFound).c_str());
+          ImGui::TextDisabled("%s", m_locCleanUINotFound.c_str());
         }
 
         ImGui::SameLine(0, 20);
 
         bool isHudVisible;
         if (debugCam->GetHudVisible(&isHudVisible)) {
-          if (ImGui::Checkbox(loc.Get(m_locShowDebugHUD).c_str(), &isHudVisible)) {
+          if (ImGui::Checkbox(m_locShowDebugHUD.c_str(), &isHudVisible)) {
             debugCam->SetHudVisible(isHudVisible);
           }
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locShowDebugHUDNotFound).c_str());
+          ImGui::TextDisabled("%s", m_locShowDebugHUDNotFound.c_str());
         }
 
         ImGui::Separator();
@@ -2545,37 +2517,37 @@ void CameraWindow::RenderContent() {
         if (isEnabled)  // Use the value we already fetched
         {
           if (ImGui::BeginTabBar("DebugModeTabs")) {
-            if (ImGui::BeginTabItem(loc.Get(m_locSimpleDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locSimpleDebug.c_str())) {
               DebugCameraMode currentMode;
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::SIMPLE) {
                 debugCam->SetMode(DebugCameraMode::SIMPLE);
               }
-              ImGui::Text("%s", loc.Get(m_locBasicDebugCameraMode).c_str());
+              ImGui::Text("%s", m_locBasicDebugCameraMode.c_str());
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locVideoDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locVideoDebug.c_str())) {
               DebugCameraMode currentMode;
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::VIDEO) {
                 debugCam->SetMode(DebugCameraMode::VIDEO);
               }
 
-              ImGui::Text("%s", loc.Get(m_locSelectionLocks).c_str());
+              ImGui::Text("%s", m_locSelectionLocks.c_str());
               bool posLock, rotLock, orbit;
               if (debugCam->GetPosLock(&posLock)) {
-                if (ImGui::Checkbox(loc.Get(m_locPosLock).c_str(), &posLock)) debugCam->SetPosLock(posLock);
+                if (ImGui::Checkbox(m_locPosLock.c_str(), &posLock)) debugCam->SetPosLock(posLock);
               }
               ImGui::SameLine();
               if (debugCam->GetRotLock(&rotLock)) {
-                if (ImGui::Checkbox(loc.Get(m_locRotLock).c_str(), &rotLock)) debugCam->SetRotLock(rotLock);
+                if (ImGui::Checkbox(m_locRotLock.c_str(), &rotLock)) debugCam->SetRotLock(rotLock);
               }
               ImGui::SameLine();
               if (debugCam->GetOrbitMode(&orbit)) {
-                if (ImGui::Checkbox(loc.Get(m_locOrbitMode).c_str(), &orbit)) debugCam->SetOrbitMode(orbit);
+                if (ImGui::Checkbox(m_locOrbitMode.c_str(), &orbit)) debugCam->SetOrbitMode(orbit);
               }
 
               float orbitSpeed;
               if (debugCam->GetOrbitSpeed(&orbitSpeed)) {
-                if (ImGui::SliderFloat(loc.Get(m_locOrbitZoomSpeed).c_str(), &orbitSpeed, -100.0f, 100.0f, "%.2f")) {
+                if (ImGui::SliderFloat(m_locOrbitZoomSpeed.c_str(), &orbitSpeed, -100.0f, 100.0f, "%.2f")) {
                   debugCam->SetOrbitSpeed(orbitSpeed);
                 }
               }
@@ -2698,8 +2670,8 @@ void CameraWindow::RenderContent() {
               uintptr_t selectedObj = debugCam->GetSelectedObjectPtr();
               uintptr_t hoveredObj = debugCam->GetHoveredObjectPtr();
 
-              ImGui::Text((loc.Get(m_locHoveredActor) + "  0x%p").c_str(), (void*)hoveredObj);
-              ImGui::Text((loc.Get(m_locSelectedActor) + " 0x%p").c_str(), (void*)selectedObj);
+              ImGui::Text((m_locHoveredActor + "  0x%p").c_str(), (void*)hoveredObj);
+              ImGui::Text((m_locSelectedActor + " 0x%p").c_str(), (void*)selectedObj);
 
               ImGui::Spacing();
 
@@ -2708,10 +2680,10 @@ void CameraWindow::RenderContent() {
               const auto vehicles = objectService.GetAllVehiclesFullInfo();
               static int listIdx = -1;
 
-              std::string comboLabel = (listIdx != -1 && listIdx < vehicles.size()) ? loc.Get(m_locTabWheelCamera).c_str() + std::to_string(vehicles[listIdx].id) : loc.Get(m_locSelectFromList).c_str();
-              if (ImGui::BeginCombo(loc.Get(m_locTrafficVehicles).c_str(), comboLabel.c_str())) {
+              std::string comboLabel = (listIdx != -1 && listIdx < vehicles.size()) ? m_locTabWheelCamera.c_str() + std::to_string(vehicles[listIdx].id) : m_locSelectFromList.c_str();
+              if (ImGui::BeginCombo(m_locTrafficVehicles.c_str(), comboLabel.c_str())) {
                 for (int i = 0; i < vehicles.size(); ++i) {
-                  if (ImGui::Selectable((loc.Get(m_locTabWheelCamera).c_str() + std::to_string(vehicles[i].id)).c_str(), listIdx == i)) {
+                  if (ImGui::Selectable((m_locTabWheelCamera.c_str() + std::to_string(vehicles[i].id)).c_str(), listIdx == i)) {
                     listIdx = i;
                   }
                 }
@@ -2721,61 +2693,61 @@ void CameraWindow::RenderContent() {
               uintptr_t toCapture = (hoveredObj != 0) ? hoveredObj : ((listIdx != -1 && listIdx < vehicles.size()) ? vehicles[listIdx].pointer : 0);
 
               if (toCapture != 0) {
-                const char* btnText = (hoveredObj != 0) ? loc.Get(m_locCaptureHovered).c_str() : loc.Get(m_locCaptureSelected).c_str();
+                const char* btnText = (hoveredObj != 0) ? m_locCaptureHovered.c_str() : m_locCaptureSelected.c_str();
                 if (Button(btnText, TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(toCapture);
                 }
               } else {
                 ImGui::BeginDisabled();
-                Button(loc.Get(m_locNoActorToCapture).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
+                Button(m_locNoActorToCapture.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
               ImGui::Spacing();
               uintptr_t myTruck = objectService.GetPlayerVehiclePtr();
               if (myTruck != 0) {
-                if (Button(loc.Get(m_locCaptureMyTruck).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+                if (Button(m_locCaptureMyTruck.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(myTruck);
                 }
               } else {
                 ImGui::BeginDisabled();
-                Button(loc.Get(m_locMyTruckNotFound).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
+                Button(m_locMyTruckNotFound.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0));
                 ImGui::EndDisabled();
               }
 
               ImGui::Separator();
-              ImGui::Text("%s", loc.Get(m_locHUDPositionDebug).c_str());
-              if (Button(loc.Get(m_locTopLeftDebug).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+              ImGui::Text("%s", m_locHUDPositionDebug.c_str());
+              if (Button(m_locTopLeftDebug.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                 debugCam->SetHudPosition(DebugHudPosition::TopLeft);
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locBottomLeftDebug).c_str())) {
+              if (Button(m_locBottomLeftDebug.c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::BottomLeft);
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locTopRightDebug).c_str())) {
+              if (Button(m_locTopRightDebug.c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::TopRight);
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locBottomRightDebug).c_str())) {
+              if (Button(m_locBottomRightDebug.c_str())) {
                 debugCam->SetHudPosition(DebugHudPosition::BottomRight);
               }
 
               ImGui::SameLine();
               DebugHudPosition pos;
               if (debugCam->GetHudPosition(&pos)) {
-                ImGui::Text(loc.Get(m_locCurrentDebug).c_str(), DebugHudPositionToString(pos));
+                ImGui::Text(m_locCurrentDebug.c_str(), DebugHudPositionToString(pos));
               } else {
-                ImGui::Text("%s", loc.Get(m_locCurrentNADebug).c_str());
+                ImGui::Text("%s", m_locCurrentNADebug.c_str());
               }
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locTrafficDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locTrafficDebug.c_str())) {
               DebugCameraMode currentMode;
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::TRAFFIC) {
                 debugCam->SetMode(DebugCameraMode::TRAFFIC);
               }
-              ImGui::Text("%s", loc.Get(m_locCameraFocusesTraffic).c_str());
+              ImGui::Text("%s", m_locCameraFocusesTraffic.c_str());
               ImGui::Separator();
 
               // 1. Prepare data (My Truck + Traffic)
@@ -2812,7 +2784,7 @@ void CameraWindow::RenderContent() {
               }
 
               // 2. Render Selection Combo
-              if (ImGui::BeginCombo(loc.Get(m_locSelectVehicle).c_str(), preview.c_str())) {
+              if (ImGui::BeginCombo(m_locSelectVehicle.c_str(), preview.c_str())) {
                 for (int i = 0; i < allEntries.size(); ++i) {
                   if (ImGui::Selectable(allEntries[i].label.c_str(), selectedIdx == i)) {
                     selectedPtr = allEntries[i].ptr;
@@ -2835,17 +2807,17 @@ void CameraWindow::RenderContent() {
                 }
 
                 if (vInfo) {
-                  ImGui::Text(loc.Get(m_locVehicleDetailsTraffic).c_str(), vInfo->id);
-                  ImGui::Text((loc.Get(m_locPointerLabel) + " 0x%p").c_str(), (void*)vInfo->pointer);
-                  ImGui::Text((loc.Get(m_locPatienceLabel) + " %.2f").c_str(), vInfo->patience);
-                  ImGui::Text((loc.Get(m_locSafetyLabel) + " %.2f").c_str(), vInfo->safety);
-                  ImGui::Text((loc.Get(m_locTargetSpeedLabel) + " %.2f mph").c_str(), vInfo->target_speed * 2.23694f);
-                  ImGui::Text((loc.Get(m_locSpeedLimitLabel) + " %.2f mph").c_str(), vInfo->speed_limit * 2.23694f);
-                  ImGui::Text((loc.Get(m_locCurrentSpeedLabel) + " %.2f mph").c_str(), vInfo->current_speed * 2.23694f);
-                  ImGui::Text((loc.Get(m_locAccelerationLabel) + " %.2f").c_str(), vInfo->acceleration);
+                  ImGui::Text(m_locVehicleDetailsTraffic.c_str(), vInfo->id);
+                  ImGui::Text((m_locPointerLabel + " 0x%p").c_str(), (void*)vInfo->pointer);
+                  ImGui::Text((m_locPatienceLabel + " %.2f").c_str(), vInfo->patience);
+                  ImGui::Text((m_locSafetyLabel + " %.2f").c_str(), vInfo->safety);
+                  ImGui::Text((m_locTargetSpeedLabel + " %.2f mph").c_str(), vInfo->target_speed * 2.23694f);
+                  ImGui::Text((m_locSpeedLimitLabel + " %.2f mph").c_str(), vInfo->speed_limit * 2.23694f);
+                  ImGui::Text((m_locCurrentSpeedLabel + " %.2f mph").c_str(), vInfo->current_speed * 2.23694f);
+                  ImGui::Text((m_locAccelerationLabel + " %.2f").c_str(), vInfo->acceleration);
                 } else if (selectedPtr == myTruckPtr) {
-                  ImGui::Text("%s", loc.Get(m_locVehicleDetailsMine).c_str());
-                  ImGui::Text((loc.Get(m_locPointerLabel) + " 0x%p").c_str(), (void*)myTruckPtr);
+                  ImGui::Text("%s", m_locVehicleDetailsMine.c_str());
+                  ImGui::Text((m_locPointerLabel + " 0x%p").c_str(), (void*)myTruckPtr);
 
                   // Try to read speed/acceleration for player truck using VTable logic
                   float mySpeed = 0.0f;
@@ -2859,38 +2831,38 @@ void CameraWindow::RenderContent() {
                     if (GetAccelFn) myAccel = GetAccelFn((void*)(myTruckPtr + 16));
                   }
 
-                  ImGui::Text((loc.Get(m_locCurrentSpeedLabel) + " %.2f mph").c_str(), mySpeed * 2.23694f);
-                  ImGui::Text((loc.Get(m_locAccelerationLabel) + " %.2f").c_str(), myAccel);
-                  ImGui::Text("%s", loc.Get(m_locStatusUserControlled).c_str());
+                  ImGui::Text((m_locCurrentSpeedLabel + " %.2f mph").c_str(), mySpeed * 2.23694f);
+                  ImGui::Text((m_locAccelerationLabel + " %.2f").c_str(), myAccel);
+                  ImGui::Text("%s", m_locStatusUserControlled.c_str());
                 }
 
                 ImGui::Spacing();
 
-                if (Button(loc.Get(m_locCaptureSelectedVehicle).c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+                if (Button(m_locCaptureSelectedVehicle.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
                   debugCam->SetSelectedObjectPtr(selectedPtr);
                 }
               }
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locCinematicDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locCinematicDebug.c_str())) {
               DebugCameraMode currentMode;
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::CINEMATIC) {
                 debugCam->SetMode(DebugCameraMode::CINEMATIC);
               }
-              ImGui::Text("%s", loc.Get(m_locCinematicCameraMode).c_str());
+              ImGui::Text("%s", m_locCinematicCameraMode.c_str());
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locAnimatedDebug).c_str())) {
-              ImGui::Text("%s", loc.Get(m_locCreatePlayAnimations).c_str());
+            if (ImGui::BeginTabItem(m_locAnimatedDebug.c_str())) {
+              ImGui::Text("%s", m_locCreatePlayAnimations.c_str());
               ImGui::Separator();
 
               // Button to explicitly switch to this mode
-              if (Button(loc.Get(m_locActivateGameAnimatedMode).c_str())) {
+              if (Button(m_locActivateGameAnimatedMode.c_str())) {
                 debugCam->SetMode(DebugCameraMode::ANIMATED);
               }
 
               ImGui::Separator();
-              ImGui::TextUnformatted(loc.Get(m_locCustomAnimationControls).c_str());
+              ImGui::TextUnformatted(m_locCustomAnimationControls.c_str());
 
               // These static variables hold the UI state for this tab
               static float timeline_pos = 0.0f;
@@ -2909,28 +2881,28 @@ void CameraWindow::RenderContent() {
                 const char* statusText;
                 auto state = animController->GetPlaybackState();
                 if (state == GameCamera::GameCameraDebugAnimation::PlaybackState::Playing) {
-                  statusText = loc.Get(m_locPlayingStatus).c_str();
-                  if (Button(loc.Get(m_locPauseButton).c_str())) {
+                  statusText = m_locPlayingStatus.c_str();
+                  if (Button(m_locPauseButton.c_str())) {
                     animController->Pause();
                   }
                 } else {
-                  statusText = (state == GameCamera::GameCameraDebugAnimation::PlaybackState::Paused) ? loc.Get(m_locPausedStatus).c_str() : loc.Get(m_locStoppedStatus).c_str();
-                  if (Button(loc.Get(m_locPlayButton).c_str())) {
+                  statusText = (state == GameCamera::GameCameraDebugAnimation::PlaybackState::Paused) ? m_locPausedStatus.c_str() : m_locStoppedStatus.c_str();
+                  if (Button(m_locPlayButton.c_str())) {
                     animController->Play(current_item_index);
                   }
                 }
                 ImGui::SameLine();
-                if (Button(loc.Get(m_locStopButton).c_str())) {
+                if (Button(m_locStopButton.c_str())) {
                   animController->Stop();
                   // After stopping, immediately sync the UI to the reset state
                   timeline_pos = 0.0f;
                   current_item_index = 0;
                 }
                 ImGui::SameLine();
-                ImGui::Text(loc.Get(m_locStatusLabel).c_str(), statusText);
+                ImGui::Text(m_locStatusLabel.c_str(), statusText);
 
                 static bool reverse = false;
-                if (ImGui::Checkbox(loc.Get(m_locReversePlayback).c_str(), &reverse)) {
+                if (ImGui::Checkbox(m_locReversePlayback.c_str(), &reverse)) {
                   animController->SetReverse(reverse);
                 }
               }
@@ -2941,7 +2913,7 @@ void CameraWindow::RenderContent() {
               if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                 int stateCount = stateCam->GetStateCount();
                 if (stateCount > 1) {
-                  ImGui::Text("%s", loc.Get(m_locTimelineLabel).c_str());
+                  ImGui::Text("%s", m_locTimelineLabel.c_str());
                   ImGui::PushItemWidth(-1);
                   if (ImGui::SliderFloat("##Timeline", &timeline_pos, 0.0f, static_cast<float>(stateCount - 1) - 0.001f, "%.3f")) {
                     if (auto* animController = m_gameCameraService.GetDebugAnimationController()) {
@@ -2955,33 +2927,33 @@ void CameraWindow::RenderContent() {
 
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locStateCameraDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locStateCameraDebug.c_str())) {
               static GameCamera::GameCameraDebugState::CameraState newState = {};
               static int current_item = 0;
 
-              ImGui::Text("%s", loc.Get(m_locCreateStateCamera).c_str());
+              ImGui::Text("%s", m_locCreateStateCamera.c_str());
               ImGui::Separator();
 
-              if (Button(loc.Get(m_locSaveKeyframe).c_str())) {
+              if (Button(m_locSaveKeyframe.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->SaveState();
                 }
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locReloadFromFile).c_str())) {
+              if (Button(m_locReloadFromFile.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->ReloadStatesFromFile();
                 }
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locClearAllMemory).c_str())) {
+              if (Button(m_locClearAllMemory.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->ClearAllStatesInMemory();
                 }
               }
 
               ImGui::Separator();
-              ImGui::TextUnformatted(loc.Get(m_locAnimationControls).c_str());
+              ImGui::TextUnformatted(m_locAnimationControls.c_str());
 
               ImGui::Separator();
 
@@ -2993,24 +2965,24 @@ void CameraWindow::RenderContent() {
                 freeCam->GetFov(&newState.fov);
               }
 
-              ImGui::TextUnformatted(loc.Get(m_locAddEditState).c_str());
-              ImGui::InputFloat3(loc.Get(m_locPositionXYZ).c_str(), &newState.pos_x);
-              ImGui::InputFloat(loc.Get(m_locInternalValue).c_str(), &newState.internal_value);
-              ImGui::InputFloat4(loc.Get(m_locQuaternionXYZW).c_str(), &newState.q_x);
-              ImGui::InputFloat(loc.Get(m_locFOVLabel).c_str(), &newState.fov);
-              if (Button(loc.Get(m_locAddStateMemory).c_str())) {
+              ImGui::TextUnformatted(m_locAddEditState.c_str());
+              ImGui::InputFloat3(m_locPositionXYZ.c_str(), &newState.pos_x);
+              ImGui::InputFloat(m_locInternalValue.c_str(), &newState.internal_value);
+              ImGui::InputFloat4(m_locQuaternionXYZW.c_str(), &newState.q_x);
+              ImGui::InputFloat(m_locFOVLabel.c_str(), &newState.fov);
+              if (Button(m_locAddStateMemory.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->AddStateToMemory(newState);
                 }
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locUpdateStateMemory).c_str())) {
+              if (Button(m_locUpdateStateMemory.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->EditStateInMemory(current_item, newState);
                 }
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locDeleteStateMemory).c_str())) {
+              if (Button(m_locDeleteStateMemory.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->DeleteStateInMemory(current_item);
                   // Clamp current_item to be safe after deletion
@@ -3024,13 +2996,13 @@ void CameraWindow::RenderContent() {
               }
               ImGui::Separator();
 
-              if (Button(loc.Get(m_locPreviousState).c_str())) {
+              if (Button(m_locPreviousState.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->CycleState(0);
                 }
               }
               ImGui::SameLine();
-              if (Button(loc.Get(m_locNextState).c_str())) {
+              if (Button(m_locNextState.c_str())) {
                 if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                   stateCam->CycleState(1);
                 }
@@ -3046,14 +3018,14 @@ void CameraWindow::RenderContent() {
                   if (currentIndex >= 0 && currentIndex < stateCount) {
                     GameCamera::GameCameraDebugState::CameraState state_data;
                     if (stateCam->GetState(currentIndex, state_data)) {
-                      ImGui::Text(loc.Get(m_locActiveStateLabel).c_str(), currentIndex);
-                      ImGui::Text(loc.Get(m_locPosLabel).c_str(), state_data.pos_x, state_data.pos_y, state_data.pos_z);
-                      ImGui::Text(loc.Get(m_locInternalLabel).c_str(), state_data.internal_value);
-                      ImGui::Text(loc.Get(m_locQuatLabel).c_str(), state_data.q_x, state_data.q_y, state_data.q_z, state_data.q_w);
-                      ImGui::Text(loc.Get(m_locFOVValueLabel).c_str(), state_data.fov);
+                      ImGui::Text(m_locActiveStateLabel.c_str(), currentIndex);
+                      ImGui::Text(m_locPosLabel.c_str(), state_data.pos_x, state_data.pos_y, state_data.pos_z);
+                      ImGui::Text(m_locInternalLabel.c_str(), state_data.internal_value);
+                      ImGui::Text(m_locQuatLabel.c_str(), state_data.q_x, state_data.q_y, state_data.q_z, state_data.q_w);
+                      ImGui::Text(m_locFOVValueLabel.c_str(), state_data.fov);
                     }
                   } else {
-                    ImGui::Text("%s", loc.Get(m_locActiveStateNone).c_str());
+                    ImGui::Text("%s", m_locActiveStateNone.c_str());
                   }
                 }
               }
@@ -3062,18 +3034,18 @@ void CameraWindow::RenderContent() {
 
               if (auto* stateCam = m_gameCameraService.GetDebugStateCamera()) {
                 int stateCount = stateCam->GetStateCount();
-                ImGui::Text(loc.Get(m_locSavedStatesLabel).c_str(), stateCount);
+                ImGui::Text(m_locSavedStatesLabel.c_str(), stateCount);
 
                 if (stateCount > 0) {
                   // Ensure current_item is valid if states were deleted
                   if (current_item >= stateCount) {
                     current_item = stateCount - 1;
                   }
-                  std::string combo_label = loc.Get(m_locStatesComboLabel).c_str() + std::to_string(current_item);
-                  if (ImGui::BeginCombo(loc.Get(m_locStatesComboLabel).c_str(), combo_label.c_str())) {
+                  std::string combo_label = m_locStatesComboLabel.c_str() + std::to_string(current_item);
+                  if (ImGui::BeginCombo(m_locStatesComboLabel.c_str(), combo_label.c_str())) {
                     for (int i = 0; i < stateCount; ++i) {
                       bool is_selected = (current_item == i);
-                      std::string item_name = loc.Get(m_locStateItemLabel).c_str() + std::to_string(i);
+                      std::string item_name = m_locStateItemLabel.c_str() + std::to_string(i);
                       if (ImGui::Selectable(item_name.c_str(), is_selected)) {
                         current_item = i;
                         if (auto* animController = m_gameCameraService.GetDebugAnimationController()) {
@@ -3088,7 +3060,7 @@ void CameraWindow::RenderContent() {
                   }
                 } else {
                   // Display a disabled combo box or text if no states are saved
-                  ImGui::TextDisabled("%s", loc.Get(m_locNoStatesSaved).c_str());
+                  ImGui::TextDisabled("%s", m_locNoStatesSaved.c_str());
                 }
               }
 
@@ -3096,21 +3068,21 @@ void CameraWindow::RenderContent() {
 
               ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem(loc.Get(m_locOversizeDebug).c_str())) {
+            if (ImGui::BeginTabItem(m_locOversizeDebug.c_str())) {
               DebugCameraMode currentMode;
               if (debugCam->GetCurrentMode(&currentMode) && currentMode != DebugCameraMode::OVERSIZE) {
                 debugCam->SetMode(DebugCameraMode::OVERSIZE);
               }
-              ImGui::Text("%s", loc.Get(m_locCameraOversizedTrailers).c_str());
+              ImGui::Text("%s", m_locCameraOversizedTrailers.c_str());
               ImGui::EndTabItem();
             }
             ImGui::EndTabBar();
           }
         } else {
-          ImGui::TextDisabled("%s", loc.Get(m_locEnableDebugCameraToSelectMode).c_str());
+          ImGui::TextDisabled("%s", m_locEnableDebugCameraToSelectMode.c_str());
         }
       } else {
-        ImGui::TextDisabled("%s", loc.Get(m_locDebugCameraNotAvailable).c_str());
+        ImGui::TextDisabled("%s", m_locDebugCameraNotAvailable.c_str());
       }
       ImGui::EndTabItem();
     }

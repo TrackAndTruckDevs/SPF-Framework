@@ -5,6 +5,8 @@
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/IWindow.hpp"
 
+#include "SPF/Utils/Signal.hpp"
+
 #include "imgui.h"
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
@@ -37,6 +39,12 @@ class BaseWindow : public IWindow {
   void Focus() override;
 
   const char* GetWindowTitle() const override;
+
+  /**
+   * @brief Called when the framework UI language changes.
+   *        Override to re-fetch localized strings from LocalizationManager.
+   */
+  virtual void RefreshLocalization();
 
   // --- Custom Logic ---
   bool IsConfiguredAsDockable() const;
@@ -78,6 +86,13 @@ class BaseWindow : public IWindow {
   bool m_wasDockedLastFrame = true;
   ImVec2 m_lastPosition = {0, 0};
   ImVec2 m_lastSize = {0, 0};
+
+  // --- Language Change Handling ---
+  void OnFrameworkLanguageChanged(const std::string& componentName);
+  Utils::Sink<void(const std::string&)> m_langSink;
+  mutable std::string m_cachedTitle;
+  std::string m_cachedDockText;
+  std::string m_cachedUndockText;
 
   // --- Internal State ---
   bool m_isFocused = false;
