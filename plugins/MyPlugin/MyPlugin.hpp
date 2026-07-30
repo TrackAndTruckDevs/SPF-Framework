@@ -33,22 +33,29 @@
 // or in function prototypes declared in this .hpp file.
 // If an API is only used in the .cpp implementation (e.g., for a commented-out function body),
 
-// #include <SPF/SPF_API/SPF_Config_API.h>         // For SPF_Config_Handle
-// #include <SPF/SPF_API/SPF_Localization_API.h>   // For SPF_Localization_Handle
-// #include <SPF/SPF_API/SPF_KeyBinds_API.h>       // For SPF_KeyBinds_Handle
-// #include <SPF/SPF_API/SPF_UI_API.h>             // For SPF_UI_API, SPF_Window_Handle
-// #include <SPF/SPF_API/SPF_Icons.h>             // For Font Awesome 7 icon macros.
-// #include <SPF/SPF_API/SPF_Telemetry_API.h>      // For SPF_Telemetry_Handle
-// #include <SPF/SPF_API/SPF_Hooks_API.h>          // For SPF_Hooks_API, SPF_Hook_Handle
-// #include <SPF/SPF_API/SPF_GameConsole_API.h>    // For SPF_GameConsole_API
-// #include <SPF/SPF_API/SPF_VirtInput_API.h>      // For SPF_VirtInput_API, SPF_VirtualDevice_Handle
-// #include <SPF/SPF_API/SPF_Camera_API.h>         // For SPF_Camera_API
-// #include <SPF/SPF_API/SPF_Vehicle_API.h>        // For SPF_Vehicle_API, SPF_VehicleHandle
-// #include <SPF/SPF_API/SPF_GameLog_API.h>        // For SPF_GameLog_Callback_Handle
-// #include <SPF/SPF_API/SPF_JsonReader_API.h>     // For SPF_JsonValue_Handle, SPF_JsonReader_API (often with OnSettingChanged). Functions: Json_GetType, Json_GetString, etc.
-// #include <SPF/SPF_API/SPF_JsonWriter_API.h>     // For creating and modifying JSON structures in memory.
-// #include <SPF/SPF_API/SPF_JsonIO_API.h>         // For loading and saving JSON files.
+// #include <SPF/SPF_API/SPF_Camera_API.h>        // For interacting with and controlling the various in-game cameras.
+// #include <SPF/SPF_API/SPF_Climate_API.h>       // For reading and controlling the game's climate and weather systems.
+// #include <SPF/SPF_API/SPF_Config_API.h>        // For reading from and writing to the plugin's dedicated settings file.
 // #include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
+// #include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
+// #include <SPF/SPF_API/SPF_GameConsole_API.h>   // For executing commands in the in-game developer console.
+// #include <SPF/SPF_API/SPF_GameLog_API.h>       // For subscribing to the game's internal log output.
+// #include <SPF/SPF_API/SPF_GameWorld_API.h>     // For game world simulation control.
+// #include <SPF/SPF_API/SPF_Hooks_API.h>         // For intercepting and modifying native game functions.
+// #include <SPF/SPF_API/SPF_Icons.h>             // For Font Awesome 7 icon macros.
+// #include <SPF/SPF_API/SPF_JsonIO_API.h>        // For loading and saving JSON files.
+// #include <SPF/SPF_API/SPF_JsonReader_API.h>    // For safely reading JSON data provided by the framework in callbacks.
+// #include <SPF/SPF_API/SPF_JsonWriter_API.h>    // For creating and modifying JSON structures in memory.
+// #include <SPF/SPF_API/SPF_KeyBinds_API.h>      // For registering custom actions and binding them to keyboard/gamepad inputs.
+// #include <SPF/SPF_API/SPF_Localization_API.h>  // For handling multi-language strings from translation files.
+// #include <SPF/SPF_API/SPF_Logger_API.h>        // For logging messages to the framework's central logger.
+// #include <SPF/SPF_API/SPF_Manifest_API.h>      // For defining the plugin's metadata (name, version, required hooks, etc.) via BuildManifest.
+// #include <SPF/SPF_API/SPF_Plugin.h>            // Defines the core plugin export structures (SPF_Plugin_Exports, SPF_Core_API) and lifecycle functions. This is mandatory.
+// #include <SPF/SPF_API/SPF_Telemetry_API.h>     // For reading live game data (speed, RPM, job info, etc.).
+// #include <SPF/SPF_API/SPF_TelemetryData.h>
+// #include <SPF/SPF_API/SPF_UI_API.h>         // For creating and managing user interface windows and widgets.
+// #include <SPF/SPF_API/SPF_Vehicle_API.h>    // For inspecting vehicles and traffic.
+// #include <SPF/SPF_API/SPF_VirtInput_API.h>  // For creating virtual input devices (like a virtual gamepad) to simulate input.
 
 // =================================================================================================
 // 2. Standard Library Includes

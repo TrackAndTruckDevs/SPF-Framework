@@ -14,6 +14,7 @@
 // Including them is necessary to use any framework functionality. Each header corresponds to a
 // specific framework subsystem.
 #include <SPF/SPF_API/SPF_Camera_API.h>        // For interacting with and controlling the various in-game cameras.
+#include <SPF/SPF_API/SPF_Climate_API.h>       // For reading and controlling the game's climate and weather systems.
 #include <SPF/SPF_API/SPF_Config_API.h>        // For reading from and writing to the plugin's dedicated settings file.
 #include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
 #include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
@@ -115,6 +116,7 @@ struct PluginContext {
    */
   SPF_Vehicle_API* vehicleAPI = nullptr;
   SPF_GameWorld_API* gameworldAPI = nullptr;
+  const SPF_Climate_API* climateAPI = nullptr;
 
   /**
    * @brief Pointer to the JSON Writer API.
@@ -251,6 +253,13 @@ struct PluginContext {
    * `Detour_GameStringFormatting` hook function to decide whether to apply its modification.
    */
   bool isModificationActive = false;
+
+  /**
+   * @brief Flag to control automatic weather toggling.
+   * @details When true, the weather mode will flip between nice and bad
+   *          on every update tick, demonstrating real-time climate control.
+   */
+  bool weatherAutoToggle = false;
 
   // --- Hooking State ---
 
@@ -464,6 +473,11 @@ void RenderEnvironmentTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Camera" tab within the main window.
  */
 void RenderCameraTab(SPF_UI_API* ui, void* user_data);
+
+/**
+ * @brief Renders the content of the "Climate" tab, displaying weather API values.
+ */
+void RenderClimateTab(SPF_UI_API* ui, void* user_data);
 
 /**
  * @brief Renders the content of the "Traffic Inspector" tab.

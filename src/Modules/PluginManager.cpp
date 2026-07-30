@@ -11,6 +11,7 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/API/CameraApi.hpp"
+#include "SPF/Modules/API/ClimateApi.hpp"
 #include "SPF/Modules/API/ConfigApi.hpp"
 #include "SPF/Modules/API/EnvironmentApi.hpp"
 #include "SPF/Modules/API/FormattingApi.hpp"
@@ -557,6 +558,7 @@ void PluginManager::FillAPIs() {
   API::CameraApi::FillCameraAPI(&m_cameraAPI);
   API::VehicleApi::FillVehicleApi(&m_vehicleAPI);
   API::GameWorldApi::FillGameWorldApi(&m_gameworldAPI);
+  API::ClimateApi::FillClimateApi(&m_climateAPI);
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
@@ -593,6 +595,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.json_reader = &m_jsonReaderAPI;
   m_coreAPI.vehicle = &m_vehicleAPI;
   m_coreAPI.gameworld = &m_gameworldAPI;
+  m_coreAPI.climate = &m_climateAPI;
   m_coreAPI.environment = &m_environmentAPI;
   m_coreAPI.json_writer = &m_jsonWriterAPI;
   m_coreAPI.json_io = &m_jsonIOAPI;
