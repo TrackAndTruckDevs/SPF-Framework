@@ -742,8 +742,8 @@ bool GameCameraInterior::GetAzimuthOverrideOutside(size_t index, bool* out_val) 
   auto offset = gameData.GetAzimuthRangeOutsideOffset();
   if (!offset) return false;
 
-  // The bool type in reflection has a size of 4 bytes (0x39), so we read it as uint32_t
-  *out_val = (*reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(addr) + offset) != 0);
+  // The bool type in reflection has a size of 1 byte
+  *out_val = (*reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(addr) + offset) != 0);
   return true;
 }
 
@@ -755,8 +755,8 @@ void GameCameraInterior::SetAzimuthOverrideOutside(size_t index, bool val) {
   auto offset = gameData.GetAzimuthRangeOutsideOffset();
   if (!offset) return;
 
-  // Write as a 4-byte integer
-  *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(addr) + offset) = val ? 1 : 0;
+  // Write as a 1-byte integer
+  *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(addr) + offset) = val ? 1 : 0;
 }
 
 // start_up_limit
