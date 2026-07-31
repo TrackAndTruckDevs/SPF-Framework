@@ -4,6 +4,7 @@
 
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstddef>
@@ -14,80 +15,30 @@
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
 
+namespace {
+
+/**
+ * @brief Unique string anchor to locate the function that calls UpdateEnvironmentState.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+ * 140854c76  48 8D 0D E3 2C 94 01          LEA RCX,[0x142197960] = "Missing Headquarters %s"
+ */
+const char* UPDATE_ENV_STRING = "Missing Headquarters %s";
+
+/**
+ * @brief Pattern for the first CALL rel32 inside the anchor function — targets UpdateEnvironmentState.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+ * 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
+ */
+const char* UPDATE_ENV_CALL_SIG = "[CALL rel32]";
+
+}  // namespace
+
 bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
   logger->Info("Searching for GameWorld (Engine & Time) data using provided Ghidra signatures...");
 
   bool all_found = true;
-  const size_t SEARCH_RANGE = 4096;
-  uintptr_t pfnUpdateEnv = 0;  // Address of UpdateEnvironmentState
   uintptr_t addr = 0;          // General purpose address variable
-
-  // 1. Find the entry point of the UpdateTimeAdvance function.
-
-  /**
-   * SEARCH STRATEGY (Verified for Game Version 1.60):
-   * This function (UpdateTimeAdvance) handles time scrubbing during events
-   * like resting, using the ferry, or using Photo Mode.
-   * We locate it by searching for the time format string "%u:%02u".
-   *
-   * Since this common string might be used in multiple UI functions, we use a
-   * context signature that matches the specific math block where seconds are
-   * calculated (using the magic constant 0x88888889 for division by 60).
-   *
-   * Target Code Snippet (Ghidra 1.60):
-   * 1415f8a64 b8 89 88 88 88     MOV        EAX,0x88888889
-   * 1415f8a69 4c 8d 05 48 ad...  LEA        R8,[s_%u:%02u_1421637b8]
-   * 1415f8a70 41 f7 e6           MUL        R14D
-   * 1415f8a73 48 8d 4c 24 40     LEA        RCX=>local_48,[RSP + 0x40]
-   *
-   * After finding the string reference (Xref), we use GetFunctionStart (.pdata)
-   * to accurately find the function's entry point:
-   * 1415f8920 48 8b c4           MOV        RAX,RSP
-   * 1415f8923 55                 PUSH       RBP
-   * 1415f8924 48 81 ec 80...     SUB        RSP,0x80
-   */
-  const char* UPDATE_TIME_STRING = "%u:%02u";
-  // Context Strategy: Match magic constant 0x88888889 followed by a flexible LEA [RIP+...]
-  // 89 88 88 88      -> Magic constant (partial for 0x88888889)
-  // [0-16?]          -> Gap for compiler reordering (allows 0 to 16 bytes)
-  // [48-4F] 8D       -> REX (48-4F) + LEA opcode (8D)
-  // [05-3D]          -> ModR/M for RIP-relative addressing (any register)
-  const char* UPDATE_TIME_CONTEXT = "89 88 88 88 [0-16?] [48-4F] 8D [05-3D]";
-  uintptr_t pfnUpdateTimeAdvance = Utils::PatternFinder::FindFunctionByString(UPDATE_TIME_STRING, true, UPDATE_TIME_CONTEXT);
-
-  if (!pfnUpdateTimeAdvance) {
-    logger->Error("1. Failed to find UpdateTimeAdvance function start.");
-    return false;
-  }
-  logger->Debug("1. UpdateTimeAdvance found at 0x{:X}", pfnUpdateTimeAdvance);
-
-  /*
-   * 1.1 [OFFSET: Environment Object]
-   * This offset points to the actual environment object within the manager.
-   * Verified as 0x990 in v1.60.
-   *
-   * Ghidra 1.60 Analysis:
-   * 1415f8973 [48-4F] 8B [80-BF] 90 09 00 00  MOV RBX, qword ptr [RBX + 0x990]
-   * 1415f897a 49 8B C9                        MOV RCX, R9 (Marker)
-   *
-   * Strategy: Match MOV reg, [reg + offset32] followed by the RCX/R9 register bridge.
-   */
-  const char* p_obj_offset = "[48-4F] 8B [80-BF] ?? ?? ?? ?? 49 8B [C0-CF]";
-  uintptr_t addrObj = Utils::PatternFinder::Find(pfnUpdateTimeAdvance, SEARCH_RANGE, p_obj_offset);
-  if (addrObj) {
-    int32_t envOffset = Utils::PatternFinder::ReadInt32(addrObj + 3);
-    if (Utils::PatternFinder::IsSaneOffset(envOffset)) {
-      owner.SetEnvObjectOffset(envOffset);
-      logger->Debug("1.1 [OFFSET: Environment Object] Found: 0x{:X}", envOffset);
-    } else {
-      logger->Error("1.1 [OFFSET: Environment Object] Offset (0x{:X}) is insane.", envOffset);
-      all_found = false;
-    }
-  } else {
-    logger->Error("1.1 [OFFSET: Environment Object] FAILED to find signature.");
-    all_found = false;
-  }
 
   /*
    * 2. [DATA: Global Managers] (Environment & Time)
@@ -103,42 +54,36 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   const char* UNIQUE_LOG_STR = "[used_vehicles] %Iu used truck offers have expired";
   uintptr_t usedVehiclesXref = Utils::PatternFinder::FindFunctionByString(UNIQUE_LOG_STR, false);
   if (usedVehiclesXref) {
-    // 2.1 [DATA: Environment Manager Pointer]
+    // 2.1 [ANCHOR: GameplayManager MOV]
+    // This MOV loads the GameplayManager slot (DAT_143554c40) — the same slot that
+    // ManagerCoreDataFinder resolves. It is used here only as a positional anchor for
+    // the adjacent TimeManager search.
+    // TODO: Research — replace this anchor with an independent signature so the
+    // GameplayManager search is not duplicated across finders.
     addr = Utils::PatternFinder::Find(usedVehiclesXref, 64, "[48-4F] 8B [05-3D] ?? ?? ?? ??");
     if (addr) {
-      uintptr_t envPtr = Utils::PatternFinder::GetRipAddress(addr, 3, 7);
-      if (envPtr) {
-        owner.SetEnvironmentBasePtr(envPtr);
-        logger->Debug("2.1 [DATA: Environment Manager] Found at 0x{:X}", envPtr);
-
-        // 2.2 [DATA: Time Manager Pointer]
-        // Search for the second MOV instruction which loads the TimeManager (v1.60 behavior)
-        uintptr_t addrTime = Utils::PatternFinder::Find(addr + 7, 64, "[48-4F] 8B [05-3D] ?? ?? ?? ??");
-        if (addrTime) {
-          uintptr_t timePtr = Utils::PatternFinder::GetRipAddress(addrTime, 3, 7);
-          if (timePtr) {
-            owner.SetTimeMgrPtrAddr(timePtr);
-            logger->Debug("2.2 [DATA: Time Manager] Found at 0x{:X}", timePtr);
-          } else {
-            logger->Error("2.2 [DATA: Time Manager] Failed to resolve RIP address.");
-            all_found = false;
-          }
+      // 2.2 [DATA: Time Manager Pointer]
+      // Search for the second MOV instruction which loads the TimeManager (v1.60 behavior)
+      uintptr_t addrTime = Utils::PatternFinder::Find(addr + 7, 64, "[48-4F] 8B [05-3D] ?? ?? ?? ??");
+      if (addrTime) {
+        uintptr_t timePtr = Utils::PatternFinder::GetRipAddress(addrTime, 3, 7);
+        if (timePtr) {
+          owner.SetTimeMgrPtrAddr(timePtr);
+          logger->Debug("2.2 [DATA: Time Manager] Found at 0x{:X}", timePtr);
         } else {
-          // Fallback for v1.59: TimeManager and EnvironmentManager share the same pointer
-          owner.SetTimeMgrPtrAddr(envPtr);
-          logger->Info("2.2 [DATA: Time Manager] Second MOV not found. Using Environment pointer as fallback (v1.59 style).");
-        }
-
-        // 2.3 [DATA: Environment Adjustment] detection: look for LEA reg, [reg + adjustment]
-        uintptr_t addrLea = Utils::PatternFinder::Find(addr, 64, "48 8D [40-BF]");
-        if (addrLea) {
-          int8_t imm8 = Utils::PatternFinder::ReadInt8(addrLea + 3);
-          owner.SetEnvironmentAdjustment(static_cast<intptr_t>(imm8));
-          logger->Info("2.3 [DATA: Environment Adjustment] Detected: {} (via LEA)", imm8);
+          logger->Error("2.2 [DATA: Time Manager] Failed to resolve RIP address.");
+          all_found = false;
         }
       } else {
-        logger->Error("2.1 [DATA: Environment Manager] Failed to resolve RIP address.");
-        all_found = false;
+        // Fallback for v1.59: TimeManager shares the same pointer as the anchor MOV.
+        uintptr_t timePtr = Utils::PatternFinder::GetRipAddress(addr, 3, 7);
+        if (timePtr) {
+          owner.SetTimeMgrPtrAddr(timePtr);
+          logger->Info("2.2 [DATA: Time Manager] Second MOV not found. Using anchor pointer as fallback (v1.59 style).");
+        } else {
+          logger->Error("2.2 [DATA: Time Manager] Failed to resolve RIP address.");
+          all_found = false;
+        }
       }
     } else {
       logger->Error("2.1 [DATA: Environment Manager] FAILED to find signature.");
@@ -181,19 +126,17 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   }
 
   /*
-   * 3.1 [DATA: Simulation Time Offset & CALL: UpdateEnvironmentState]
+   * 3.1 [DATA: Simulation Time Offset]
    * This logic block at the end of UpdateSimulationTime saves the updated
-   * time (ms and sec) and triggers the environment state refresh.
+   * time (ms and sec).
    *
    * Ghidra 1.60 Analysis (Address: 14048a5c9):
    * 14048a5c9 f3 41 0f 11 b9 7c 3e 00 00  MOVSS dword ptr [R9 + 0x3e7c], XMM7
    * 14048a5d2 41 89 81 78 3e 00 00        MOV dword ptr [R9 + 0x3e78], EAX
-   * 14048a5d9 e8 12 9e 04 00              CALL UpdateEnvironmentState
    *
    * Chain Strategy:
    * 1. MOVSS [reg+off], XMM -> F3 [40-4F] 0F 11 [80-BF] ?? ?? ?? ??
    * 2. MOV   [reg+off], EAX -> [40-4F] 89 [80-BF] ?? ?? ?? ??
-   * 3. CALL  UpdateState    -> E8
    */
   const std::vector<std::string> timeUpdateChain = {"F3 [40-4F] 0F 11 [80-BF] ?? ?? ?? ??", "[40-4F] 89 [80-BF] ?? ?? ?? ??", "E8 ?? ?? ?? ??"};
 
@@ -208,19 +151,36 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
         logger->Debug("3.1 [DATA: Simulation Time Offset] Found: 0x{:X}", timeOffset);
       }
     }
-
-    // Find the CALL instruction (14048a5d9)
-    uintptr_t addrCall = Utils::PatternFinder::Find(addr, 32, "E8");
-    if (addrCall) {
-      uintptr_t pfnUpdateEnv_found = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
-      if (pfnUpdateEnv_found) {
-        owner.SetUpdateFnAddr(pfnUpdateEnv_found);
-        logger->Debug("3.1 [CALL: UpdateEnvironmentState] Found at 0x{:X}", pfnUpdateEnv_found);
-      }
-    }
   } else {
     logger->Error("3.1 [DATA: Simulation Time] FAILED to find logic chain.");
     all_found = false;
+  }
+
+  // 3.1b [CALL: UpdateEnvironmentState] — resolved via the unique string anchor.
+  {
+    Utils::FinderLog log(GetName());
+    auto phase = log.MakePhase("Environment State Update");
+
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+    // 140854c76  48 8D 0D E3 2C 94 01          LEA RCX,[0x142197960] = "Missing Headquarters %s"
+    uintptr_t pfnEnvOwner = Utils::PatternFinder::FindFunctionByString(UPDATE_ENV_STRING, true);
+    if (phase.Step(pfnEnvOwner, "Missing Headquarters function", "FN")) {
+      // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+      // 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
+      uintptr_t addrCall = Utils::PatternFinder::Find(pfnEnvOwner, 128, UPDATE_ENV_CALL_SIG);
+      if (phase.Step(addrCall, "UpdateEnvironmentState CALL", "RT")) {
+        uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
+        if (phase.Step(pfnUpdateEnv, "UpdateEnvironmentState", "FN")) {
+          owner.SetUpdateFnAddr(pfnUpdateEnv);
+        } else {
+          all_found = false;
+        }
+      } else {
+        all_found = false;
+      }
+    } else {
+      all_found = false;
+    }
   }
 
   const size_t SIM_TIME_SEARCH_RANGE = 1024;

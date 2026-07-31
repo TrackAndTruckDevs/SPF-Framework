@@ -3,8 +3,10 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/Finders/ClimateDataFinder.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Vec2.hpp"
 #include "SPF/Utils/Vec3.hpp"
 
@@ -49,9 +51,6 @@ void ClimateService::Shutdown() {
     logger->Info("ClimateService has been shut down.");
     m_isInitialized = false;
 
-    m_environmentBasePtr = 0;
-    m_environmentAdjustment = 0;
-    m_envObjectOffset = 0;
     m_updateFnAddr = 0;
 
     m_weatherModeOffset = 0;
@@ -145,7 +144,16 @@ void ClimateService::Shutdown() {
 
 void ClimateService::RegisterFinders() { m_dataFinders.push_back(std::make_unique<Finders::ClimateDataFinder>()); }
 
-bool ClimateService::IsReady() { return m_isInitialized && AreAllFindersReady(); }
+uintptr_t ClimateService::ResolveEnvironmentBase() const {
+  uintptr_t slot = ManagerCoreService::GetInstance().GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return 0;
+  return *(uintptr_t*)slot;
+}
+
+bool ClimateService::IsReady() {
+  return m_isInitialized && AreAllFindersReady() && ManagerCoreService::GetInstance().IsGameplayManagerReady() &&
+         ManagerCoreService::GetInstance().IsEnvObjectOffsetReady();
+}
 
 bool ClimateService::IsFinderReady(const char* name) const {
   for (const auto& finder : m_dataFinders) {
@@ -168,6 +176,14 @@ bool ClimateService::TryFindAllOffsets() {
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ClimateService");
 
+  // ClimateService depends on GameplayManager and its Environment Object offset
+  // (both resolved by ManagerCoreService). Do not resolve offsets until the
+  // manager is available to avoid null dereferences.
+  if (!ManagerCoreService::GetInstance().IsGameplayManagerReady() || !ManagerCoreService::GetInstance().IsEnvObjectOffsetReady()) {
+    logger->Debug("ClimateService: GameplayManager/EnvObjectOffset not resolved yet. Waiting for ManagerCoreService.");
+    return false;
+  }
+
   for (auto& finder : m_dataFinders) {
     if (!finder->IsReady()) {
       if (!finder->TryFindOffsets(*this)) {
@@ -187,9 +203,9 @@ bool ClimateService::TryFindAllOffsets() {
 
 std::string ClimateService::GetCurrentClimateName() {
   if (!m_isInitialized) return "unknown";
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return "unknown";
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return "unknown";
 
   uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);
@@ -204,9 +220,9 @@ std::vector<ClimateService::ClimateInfo> ClimateService::GetAvailableClimates() 
   std::vector<ClimateInfo> climates;
   if (!m_isInitialized) return climates;
 
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return climates;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env || !m_climateArrayOffset || !m_climateCountOffset) return climates;
 
   uintptr_t arrayPtr = *(uintptr_t*)(env + m_climateArrayOffset);
@@ -236,9 +252,9 @@ std::vector<ClimateService::ClimateInfo> ClimateService::GetAvailableClimates() 
 void ClimateService::SetClimate(uint64_t token, bool instant) {
   if (!m_isInitialized || !m_setClimateFnAddr) return;
 
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return;
 
   typedef void(__fastcall * SetClimate_t)(uintptr_t env, uint64_t* pToken, uint8_t instant);
@@ -253,9 +269,9 @@ void ClimateService::SetClimate(uint64_t token, bool instant) {
 
 int32_t ClimateService::GetActiveSunProfileIndex() {
   if (!m_isInitialized) return -1;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return -1;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return -1;
 
   int32_t raw0 = (int32_t)*(uint32_t*)(env + m_activeProfileIndexOffset);
@@ -265,9 +281,9 @@ int32_t ClimateService::GetActiveSunProfileIndex() {
 
 int32_t ClimateService::GetNextSunProfileIndex() {
   if (!m_isInitialized) return -1;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return -1;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return -1;
 
   int32_t raw0 = (int32_t)*(uint32_t*)(env + m_activeProfileIndexOffset);
@@ -307,9 +323,9 @@ float ClimateService::GetTransitionProgress() {
   uint64_t count = *(uint64_t*)(container + m_containerCountOffset);
   if (!profilesArray) return 0.0f;
 
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0.0f;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0.0f;
 
   int32_t raw0 = (int32_t)*(uint32_t*)(env + m_activeProfileIndexOffset);
@@ -357,18 +373,18 @@ float ClimateService::GetSunProfileElevation(int32_t index) {
 
 float ClimateService::GetSunAngle() {
   if (!m_isInitialized) return 0.0f;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0.0f;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0.0f;
   return *(float*)(env + m_sunAngleOffset);
 }
 
 float ClimateService::GetWeatherBlendProgress() {
   if (!m_isInitialized || !m_weatherBlendFnAddr) return 0.0f;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0.0f;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0.0f;
   typedef float(__fastcall * BlendFn)(uintptr_t env);
   return ((BlendFn)m_weatherBlendFnAddr)(env);
@@ -481,9 +497,9 @@ void ClimateService::SetBadWeatherFactor(float val) {
   *(float*)(m_badWeatherFactorPtr + 0x118) = val;
 
   if (!m_setWeatherModeFnAddr) return;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return;
 
   uint32_t curMode = *(uint32_t*)(env + m_weatherModeOffset);
@@ -494,18 +510,18 @@ void ClimateService::SetBadWeatherFactor(float val) {
 
 uint32_t ClimateService::GetBadWeatherMode() {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0;
   return *(uint32_t*)(env + m_nextWeatherModeOffset);
 }
 
 float ClimateService::GetRemainingBadWeatherTime() {
   if (!m_isInitialized) return 0.0f;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0.0f;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0.0f;
   if (!m_remainingBadWeatherOffset) return 0.0f;
   return *(float*)(env + m_remainingBadWeatherOffset);
@@ -517,11 +533,10 @@ float ClimateService::GetRemainingBadWeatherTime() {
 
 int32_t ClimateService::GetWeatherMode() {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  basePtr += m_environmentAdjustment;
 
-  uintptr_t env = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env || !m_weatherModeOffset) return 0;
 
   return *(int32_t*)(env + m_weatherModeOffset);
@@ -529,19 +544,18 @@ int32_t ClimateService::GetWeatherMode() {
 
 int32_t ClimateService::GetNextWeatherMode() {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  basePtr += m_environmentAdjustment;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env || !m_nextWeatherModeOffset) return 0;
   return *(int32_t*)(env + m_nextWeatherModeOffset);
 }
 
 void ClimateService::SetWeatherMode(int32_t mode, bool instant) {  // del ?
   if (!m_isInitialized || !m_setWeatherModeFnAddr) return;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return;
   typedef void(__fastcall * SetWeatherModeFn)(uintptr_t env, int32_t mode, char instant);
   ((SetWeatherModeFn)m_setWeatherModeFnAddr)(env, mode, (char)instant);
@@ -569,9 +583,9 @@ ProfileRef ClimateService::Profile(uint64_t index, bool isBad) {
 
 uintptr_t ClimateService::GetEnvObject() {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  return *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  return *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
 }
 
 void ClimateService::UpdateEnvironment(uintptr_t env) {
@@ -1023,9 +1037,9 @@ void ClimateService::SetNextVariationIndex(uint64_t varIdx) {
 
 uintptr_t ClimateService::GetClimateContainer(bool isBad) {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0;
 
   uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);
@@ -1036,9 +1050,9 @@ uintptr_t ClimateService::GetClimateContainer(bool isBad) {
 
 uintptr_t ClimateService::GetCurrentClimateContainer() {
   if (!m_isInitialized) return 0;
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  uintptr_t env = *(uintptr_t*)(basePtr + m_environmentAdjustment + m_envObjectOffset);
+  uintptr_t env = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!env) return 0;
 
   uintptr_t climate = *(uintptr_t*)(env + m_climatePtrOffset);

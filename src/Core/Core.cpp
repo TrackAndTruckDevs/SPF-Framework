@@ -10,6 +10,7 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
@@ -572,6 +573,7 @@ void Core::InitHooks() {
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
   ClimateService::GetInstance().Initialize();
+  ManagerCoreService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
@@ -716,13 +718,19 @@ void Core::PerformDeferredInitialization() {
     logger->Debug("FileSystem (UFS) offsets resolved.");
   }
 
-  // 3. Resolve GameWorld (Environment) offsets
+  // 3. Resolve Core Manager addresses (GameplayManager, ...)
+  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
+  if (managerService.TryFindAllOffsets()) {
+    logger->Debug("Manager Core addresses resolved.");
+  }
+
+  // 4. Resolve GameWorld (Environment) offsets
   auto& worldService = GameWorldService::GetInstance();
   if (worldService.TryFindAllOffsets()) {
     logger->Debug("GameWorld (Environment) offsets resolved.");
   }
 
-  // 4. Calculate framework build hash
+  // 5. Calculate framework build hash
   EnvironmentManager::GetInstance().CalculateBuildHash();
 
   m_deferredMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
@@ -850,6 +858,16 @@ void Core::OnGameWorldReady() {
       m_logger->Info("GameObjectVehicleService is now ready.");
     } else {
       m_logger->Warn("GameObjectVehicleService is not ready yet. Will retry on next event.");
+    }
+  }
+
+  // Finalize Manager Core data
+  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
+  if (!managerService.AreAllFindersReady()) {
+    if (managerService.TryFindAllOffsets()) {
+      m_logger->Info("ManagerCoreService is now ready.");
+    } else {
+      m_logger->Warn("ManagerCoreService is not ready yet. Will retry on next event.");
     }
   }
 

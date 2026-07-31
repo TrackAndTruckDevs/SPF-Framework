@@ -611,13 +611,20 @@ uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStar
 }
 
 uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
-  if (!str) return 0;
-  auto startFunc = std::chrono::high_resolution_clock::now();
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+
+  if (!str) {
+    logger->Error("FindFunctionByString: null string argument");
+    return 0;
+  }
+  auto startFunc = std::chrono::high_resolution_clock::now();
 
   // Find ALL occurrences of the string in memory
   auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
-  if (stringAddrs.empty()) return 0;
+  if (stringAddrs.empty()) {
+    logger->Error("FindFunctionByString('{}'): string not found in module memory", str);
+    return 0;
+  }
 
   std::vector<uintptr_t> allXrefs;
   for (uintptr_t sAddr : stringAddrs) {
@@ -635,17 +642,21 @@ uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, c
 
   auto endFunc = std::chrono::high_resolution_clock::now();
   auto msTotal = std::chrono::duration_cast<std::chrono::milliseconds>(endFunc - startFunc).count();
-  if (msTotal > 10) {
-    logger->Debug("FindFunctionByString('{}') took {} ms", str, msTotal);
+  if (msTotal > 1000) {
+    logger->Warn("FindFunctionByString('{}'): search took {} ms", str, msTotal);
   }
 
-  if (allXrefs.empty()) return 0;
+  if (allXrefs.empty()) {
+    logger->Error("FindFunctionByString('{}'): string found, but no XREFs point to it", str);
+    return 0;
+  }
 
   for (uintptr_t xref : allXrefs) {
     if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) {
       return findStart ? GetFunctionStart(xref) : xref;
     }
   }
+  logger->Error("FindFunctionByString('{}'): string found, but no XREF matched the context signature", str);
   return 0;
 }
 

@@ -4,7 +4,9 @@
 
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -36,10 +38,7 @@ void GameWorldService::Shutdown() {
     logger->Info("GameWorldService has been shut down.");
     m_isInitialized = false;
 
-    m_environmentBasePtr = 0;
-    m_environmentAdjustment = 0;
     m_timeMgrPtrAddr = 0;
-    m_envObjectOffset = 0;
     m_timeOffset = 0;
     m_simulationTimeOffset = 0;
     m_subMinuteSecondsOffset = 0;
@@ -58,11 +57,25 @@ void GameWorldService::Shutdown() {
 
 void GameWorldService::RegisterFinders() { m_dataFinders.push_back(std::make_unique<Finders::WorldDataFinder>()); }
 
+uintptr_t GameWorldService::ResolveEnvironmentBase() const {
+  uintptr_t slot = ManagerCoreService::GetInstance().GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return 0;
+  return *(uintptr_t*)slot;
+}
+
 bool GameWorldService::TryFindAllOffsets() {
   if (m_isInitialized) return true;
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameWorldService");
   logger->Info("Attempting to find all necessary game data offsets for GameWorldService.");
+
+  // GameWorldService depends on GameplayManager and its Environment Object offset
+  // (both resolved by ManagerCoreService). Do not resolve offsets until the
+  // manager is available to avoid null dereferences.
+  if (!ManagerCoreService::GetInstance().IsGameplayManagerReady() || !ManagerCoreService::GetInstance().IsEnvObjectOffsetReady()) {
+    logger->Debug("GameWorldService: GameplayManager/EnvObjectOffset not resolved yet. Waiting for ManagerCoreService.");
+    return false;
+  }
 
   bool all_critical_found_this_pass = true;
 
@@ -88,7 +101,10 @@ bool GameWorldService::TryFindAllOffsets() {
   return m_isInitialized;
 }
 
-bool GameWorldService::IsReady() { return m_isInitialized && AreAllFindersReady(); }
+bool GameWorldService::IsReady() {
+  return m_isInitialized && AreAllFindersReady() && ManagerCoreService::GetInstance().IsGameplayManagerReady() &&
+         ManagerCoreService::GetInstance().IsEnvObjectOffsetReady();
+}
 
 bool GameWorldService::IsFinderReady(const char* name) const {
   for (const auto& finder : m_dataFinders) {
@@ -113,11 +129,10 @@ uint32_t GameWorldService::GetPreviewTime() {
 
   // This retrieves the visual environment time (skybox/lighting state).
   // Note: This value is distinct from the actual game simulation clock.
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return 0;
-  basePtr += m_environmentAdjustment;
 
-  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  uintptr_t envObject = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
 
   if (!envObject) return 0;
 
@@ -129,11 +144,10 @@ void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
 
   uint32_t normalizedMinutes = totalMinutes % (1440 * 7);  // Use full week cycle for visual consistency
 
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return;
-  basePtr += m_environmentAdjustment;
 
-  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  uintptr_t envObject = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!envObject) return;
 
   // Update the visual time minutes (used for skybox and shadow calculations).
@@ -193,11 +207,10 @@ uint32_t GameWorldService::GetRealPlayTime() {
 }
 
 float GameWorldService::GetMapScale() {
-  if (!m_isInitialized || m_environmentBasePtr == 0) return 1.0f;
+  if (!m_isInitialized) return 1.0f;
 
-  uintptr_t envBaseObj = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t envBaseObj = ResolveEnvironmentBase();
   if (!envBaseObj) return 1.0f;
-  envBaseObj += m_environmentAdjustment;
 
   return *(float*)(envBaseObj + m_mapScaleOffset);
 }
@@ -265,11 +278,10 @@ double GameWorldService::GetRealDeltaTime() {
 void GameWorldService::SetSkyboxAutoUpdate(bool enabled) {
   if (!m_isInitialized) return;
 
-  uintptr_t basePtr = *(uintptr_t*)m_environmentBasePtr;
+  uintptr_t basePtr = ResolveEnvironmentBase();
   if (!basePtr) return;
-  basePtr += m_environmentAdjustment;
 
-  uintptr_t envObject = *(uintptr_t*)(basePtr + m_envObjectOffset);
+  uintptr_t envObject = *(uintptr_t*)(basePtr + ManagerCoreService::GetInstance().GetEnvObjectOffset());
   if (!envObject) return;
 
   *(int32_t*)(envObject + m_skyboxAutoUpdateOffset) = enabled ? 0 : 1;

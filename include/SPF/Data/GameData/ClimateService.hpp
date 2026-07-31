@@ -37,15 +37,10 @@ class ClimateService {
   bool TryFindAllOffsets();
 
   // --- Public Getters for Environment ---
-  uintptr_t GetEnvironmentBasePtr() const { return m_environmentBasePtr; }
-  intptr_t GetEnvObjectOffset() const { return m_envObjectOffset; }
   uintptr_t GetUpdateFnAddr() const { return m_updateFnAddr; }
 
   // --- Public Setters (for finders) ---
-  void SetEnvironmentBasePtr(uintptr_t val) { m_environmentBasePtr = val; }
-  void SetEnvObjectOffset(intptr_t val) { m_envObjectOffset = val; }
   void SetUpdateFnAddr(uintptr_t val) { m_updateFnAddr = val; }
-  void SetEnvironmentAdjustment(intptr_t val) { m_environmentAdjustment = val; }
 
   // --- Bad Weather (for finders) ---
   void SetBadWeatherFactorPtr(uintptr_t val) { m_badWeatherFactorPtr = val; }
@@ -414,6 +409,12 @@ class ClimateService {
   uintptr_t GetCurrentClimateContainer();
   void EnsureInitialKick();
 
+  /**
+   * @brief Resolves the GameplayManager instance pointer via ManagerCoreService.
+   * @return The GameplayManager object pointer (0 if not resolved yet).
+   */
+  uintptr_t ResolveEnvironmentBase() const;
+
   uintptr_t GetProfilePtr(ProfileRef prof);
 
   // --- Profile Data Helpers (always need ProfileRef) ---
@@ -458,9 +459,6 @@ class ClimateService {
   std::vector<std::unique_ptr<IClimateDataFinder>> m_dataFinders;
 
   // --- Environment Data Offsets and Pointers ---
-  uintptr_t m_environmentBasePtr = 0;
-  intptr_t m_environmentAdjustment = 0;
-  intptr_t m_envObjectOffset = 0;
   uintptr_t m_updateFnAddr = 0;
 
   // --- Weather and Environment Data ---

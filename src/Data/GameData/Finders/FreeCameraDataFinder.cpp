@@ -161,13 +161,15 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     uintptr_t cmpAddr = Utils::PatternFinder::Find(movAddr ? movAddr + 3 : funcStart, 100, "48 [4-8?] 0F");
 
     if (movAddr && cmpAddr) {
-      uintptr_t* pGlobalObjPtr = reinterpret_cast<uintptr_t*>(Utils::PatternFinder::GetRipAddress(movAddr, 3, 7));
+      // The MOV at movAddr loads the GameplayManager slot (FreecamGlobalObjectPtr) —
+      // the same slot that ManagerCoreDataFinder resolves. It is used here only as a
+      // positional anchor for the Context Offset CMP below.
+      // TODO: Research — replace this anchor with an independent signature so the
+      // GameplayManager search is not duplicated across finders.
       int32_t contextOff = Utils::PatternFinder::ReadInt32(cmpAddr + 3);
 
-      if (pGlobalObjPtr && Utils::PatternFinder::IsSaneOffset(contextOff)) {
-        owner.SetFreecamGlobalObjectPtr(pGlobalObjPtr);
+      if (Utils::PatternFinder::IsSaneOffset(contextOff)) {
         owner.SetFreecamContextOffset(contextOff);
-        logger->Info("[FreeCamera] STATIC FREECAM POINTER: 0x{:X}", (uintptr_t)pGlobalObjPtr);
         logger->Debug("[FreeCamera] Resolved ContextOffset: 0x{:X}", contextOff);
       } else {
         logger->Error("[FreeCamera] FAILED to resolve Freecam data from UpdateGameSession.");

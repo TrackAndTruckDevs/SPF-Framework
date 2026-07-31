@@ -3,6 +3,7 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 
 #include <cstdint>
@@ -29,7 +30,9 @@ class GameDataCameraService {
 
   void Initialize();
   void Shutdown();
-  bool IsReady() const { return m_isInitialized; }
+  bool IsReady() const {
+    return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady();
+  }
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
@@ -68,20 +71,20 @@ class GameDataCameraService {
 
   // --- Core Camera Manager Getters ---
 
-  uintptr_t GetCameraManagerPtrAddr() const { return m_pCameraManagerPtrAddr; }
-
   /**
    * @brief Returns the actual pointer to the Camera Manager object.
-   * Logic: Reads the global pointer and adds version-specific adjustment (v1.59+).
+   * Logic: Reads the CameraManager slot resolved by ManagerCoreService
+   *        (DAT_143554ca8) and dereferences it.
    *
    * Ghidra Reference (InitializeCamera):
-   * 1405c09f2 48 8b 1d af 42 f9 02    MOV RBX, qword ptr [DAT_143554ca8]
+   * 14067eaac 48 8B 0D F5 61 ED 02    MOV RCX, qword ptr [DAT_143554ca8]
    */
   uintptr_t GetCameraManager() const {
-    if (m_pCameraManagerPtrAddr == 0) return 0;
-    uintptr_t rawPtr = *reinterpret_cast<uintptr_t*>(m_pCameraManagerPtrAddr);
+    uintptr_t slot = ManagerCoreService::GetInstance().GetCameraManagerAddr();
+    if (slot == 0) return 0;
+    uintptr_t rawPtr = *(uintptr_t*)slot;
     if (rawPtr == 0) return 0;
-    return rawPtr + m_cameraManagerAdjustment;
+    return rawPtr;
   }
 
   intptr_t GetActiveCameraIdOffset() const { return m_activeCameraIdOffset; }
@@ -288,8 +291,6 @@ class GameDataCameraService {
   void SetHandShakeLimitOffset(intptr_t val) { m_hand_shake_limit_offset = val; }
   void SetHandShakeSpeedOffset(intptr_t val) { m_hand_shake_speed_offset = val; }
 
-  void SetCameraManagerPtrAddr(uintptr_t val) { m_pCameraManagerPtrAddr = val; }
-  void SetCameraManagerAdjustment(intptr_t val) { m_cameraManagerAdjustment = val; }
   void SetCameraArrayOffset(intptr_t val) { m_cameraArrayOffset = val; }
   void SetActiveCameraIdOffset(intptr_t val) { m_activeCameraIdOffset = val; }
   void SetCoreOffsetsFound(bool val) { m_coreOffsetsFound = val; }
@@ -419,8 +420,6 @@ class GameDataCameraService {
   void SetFlySpeedPtr(float* val) { m_pFreeCamSpeed = val; }
   void SetCameraWorldCoordinatesPtr(uintptr_t* val) { m_pCameraWorldCoordinatesPtr = val; }
 
-  uintptr_t* GetFreecamGlobalObjectPtr() const { return m_pFreecamGlobalObjectPtr; }
-  void SetFreecamGlobalObjectPtr(uintptr_t* val) { m_pFreecamGlobalObjectPtr = val; }
   void SetFreecamGlobalObjectAdjustment(intptr_t val) { m_freecamGlobalObjectAdjustment = val; }
 
   intptr_t GetFreecamContextOffset() const { return m_freecamContextOffset; }
@@ -429,10 +428,12 @@ class GameDataCameraService {
   /**
    * @brief Returns the actual, adjusted pointer to the Freecam Global object.
    * Handles v1.59+ pointer adjustments.
+   * @return The adjusted GameplayManager pointer (0 if not resolved yet).
    */
   uintptr_t GetFreecamGlobalObject() const {
-    if (m_pFreecamGlobalObjectPtr == nullptr) return 0;
-    uintptr_t rawPtr = *m_pFreecamGlobalObjectPtr;
+    uintptr_t slot = ManagerCoreService::GetInstance().GetGameplayManagerAddr();
+    if (slot == 0) return 0;
+    uintptr_t rawPtr = *(uintptr_t*)slot;
     if (rawPtr == 0) return 0;
     return rawPtr + m_freecamGlobalObjectAdjustment;
   }
@@ -490,8 +491,6 @@ class GameDataCameraService {
   std::map<GameCamera::GameCameraType, uintptr_t> m_verifiedCameras;
 
   // --- Core Camera Data ---
-  uintptr_t m_pCameraManagerPtrAddr = 0;
-  intptr_t m_cameraManagerAdjustment = 0;
   intptr_t m_cameraArrayOffset = 0;
   intptr_t m_activeCameraIdOffset = 0;
 
@@ -648,7 +647,6 @@ class GameDataCameraService {
   intptr_t m_freecam_mouse_x_offset = 0;
   intptr_t m_freecam_mouse_y_offset = 0;
   intptr_t m_freecam_roll_offset = 0;
-  uintptr_t* m_pFreecamGlobalObjectPtr = nullptr;
   intptr_t m_freecamGlobalObjectAdjustment = 0;
   intptr_t m_freecamContextOffset = 0;
 

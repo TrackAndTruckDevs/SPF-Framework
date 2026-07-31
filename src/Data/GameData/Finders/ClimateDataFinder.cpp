@@ -1,20 +1,3 @@
-/**
- * @file ClimateDataFinder.cpp
- *
- * @todo REFACTOR (next branch): Introduce Data::GameData::CoreDataService + CoreDataFinder
- *       (rename CoreCameraDataFinder -> CoreDataFinder). One service for all shared DAT_* globals.
- *
- *       Currently 3 finders independently resolve DAT_143554ca0 (GameplayManager):
- *         - ClimateDataFinder / GameWorldDataFinder via [48-4F] 8B [05-3D] near [used_vehicles]
- *         - FreeCameraDataFinder  via 48 8B [2-12?] 0F near [used_vehicles]  ← BUG!
- *
- *       FreeCameraDataFinder stores the result in SetFreecamGlobalObjectPtr, but
- *       DAT_143554ca0 is the GameplayManager, NOT a freecam global. The pattern
- *       matches by coincidence (MOV RDI, [RIP+...] ~10 bytes after the anchor).
- *       Fix: implement CoreDataFinder, remove duplicate searches, and correct
- *       FreeCameraDataFinder to search for the real freecam global.
- */
-
 #include "SPF/Data/GameData/Finders/ClimateDataFinder.hpp"
 
 #include "SPF/Namespace.hpp"
@@ -24,126 +7,71 @@
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
-#include <vector>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
+
+namespace {
+
+/**
+ * @brief Unique string anchor to locate the function that calls UpdateEnvironmentState.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+ * 140854c76  48 8D 0D E3 2C 94 01          LEA RCX,[0x142197960] = "Missing Headquarters %s"
+ */
+const char* UPDATE_ENV_STRING = "Missing Headquarters %s";
+
+/**
+ * @brief Pattern for the first CALL rel32 inside the anchor function — targets UpdateEnvironmentState.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+ * 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
+ */
+const char* UPDATE_ENV_CALL_SIG = "[CALL rel32]";
+
+}  // namespace
 
 bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
   logger->Info("Searching for Climate and Weather data using provided Ghidra signatures...");
 
   bool all_found = true;
-  const size_t SEARCH_RANGE = 4096;
   uintptr_t addr = 0;
 
-  // === SECTION 1: CORE ENVIRONMENT ANCHORS ===
-  // Used by: all ClimateService methods (GetWeatherMode, SetWeatherMode, SetRainIntensity,
-  //          GetCurrentClimateName, GetAvailableClimates, GetActiveSunProfileIndex,
-  //          GetNextSunProfileIndex, GetSunProfileCount, GetSunProfileName,
-  //          GetTransitionProgress, SetClimate, GetTemperature, SetTemperature,
-  //          GetWeight, SetWeight, EnsureInitialKick, GetActiveProfilePtr)
+  // === SECTION 1: ENVIRONMENT STATE UPDATE ===
+  // Used by: SetWeatherMode, SetRainIntensity, SetSkyboxIndex (to trigger env update)
+  {
+    Utils::FinderLog log(GetName());
+    auto phase = log.MakePhase("Environment State Update");
 
-  // 1. Find the entry point of the UpdateTimeAdvance function.
-  const char* UPDATE_TIME_STRING = "%u:%02u";
-  const char* UPDATE_TIME_CONTEXT = "89 88 88 88 [0-16?] [48-4F] 8D [05-3D]";
-  uintptr_t pfnUpdateTimeAdvance = Utils::PatternFinder::FindFunctionByString(UPDATE_TIME_STRING, true, UPDATE_TIME_CONTEXT);
-
-  if (!pfnUpdateTimeAdvance) {
-    logger->Error("Failed to find UpdateTimeAdvance function start.");
-    return false;
-  }
-  logger->Debug("1. UpdateTimeAdvance found at 0x{:X}", pfnUpdateTimeAdvance);
-
-  // 1.1 Environment Object offset
-  // Used by: all methods reading env object (GetWeatherMode, SetWeatherMode, etc.)
-  const char* p_obj_offset = "[48-4F] 8B [80-BF] ?? ?? ?? ?? 49 8B [C0-CF]";
-  uintptr_t addrObj = Utils::PatternFinder::Find(pfnUpdateTimeAdvance, SEARCH_RANGE, p_obj_offset);
-  if (addrObj) {
-    int32_t envOffset = Utils::PatternFinder::ReadInt32(addrObj + 3);
-    if (Utils::PatternFinder::IsSaneOffset(envOffset)) {
-      owner.SetEnvObjectOffset(envOffset);
-      logger->Debug("1.1 [OFFSET: Environment Object] Found: 0x{:X}", envOffset);
-    } else {
-      logger->Error("1.1 [OFFSET: Environment Object] Offset (0x{:X}) is insane.", envOffset);
-      all_found = false;
-    }
-  } else {
-    logger->Error("1.1 [OFFSET: Environment Object] FAILED to find signature.");
-    all_found = false;
-  }
-
-  // 1.2 Environment Manager base pointer
-  // Used by: all ClimateService methods that dereference m_environmentBasePtr
-  const char* UNIQUE_LOG_STR = "[used_vehicles] %Iu used truck offers have expired";
-  uintptr_t usedVehiclesXref = Utils::PatternFinder::FindFunctionByString(UNIQUE_LOG_STR, false);
-  if (usedVehiclesXref) {
-    addr = Utils::PatternFinder::Find(usedVehiclesXref, 64, "[48-4F] 8B [05-3D] ?? ?? ?? ??");
-    if (addr) {
-      uintptr_t envPtr = Utils::PatternFinder::GetRipAddress(addr, 3, 7);
-      if (envPtr) {
-        owner.SetEnvironmentBasePtr(envPtr);
-        logger->Debug("1.2.1 [DATA: Environment Manager] Found at 0x{:X}", envPtr);
-
-        uintptr_t addrLea = Utils::PatternFinder::Find(addr, 64, "48 8D [40-BF]");
-        if (addrLea) {
-          int8_t imm8 = Utils::PatternFinder::ReadInt8(addrLea + 3);
-          owner.SetEnvironmentAdjustment(static_cast<intptr_t>(imm8));
-          logger->Info("1.2.2 [DATA: Environment Adjustment] Detected: {} (via LEA)", imm8);
+    // 1. Locate the function that references the unique string anchor.
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+    // 140854c76  48 8D 0D E3 2C 94 01          LEA RCX,[0x142197960] = "Missing Headquarters %s"
+    uintptr_t pfnEnvOwner = Utils::PatternFinder::FindFunctionByString(UPDATE_ENV_STRING, true);
+    if (phase.Step(pfnEnvOwner, "Missing Headquarters function", "FN")) {
+      // 1.1 First CALL rel32 inside the function body — targets UpdateEnvironmentState.
+      // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
+      // 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
+      uintptr_t addrCall = Utils::PatternFinder::Find(pfnEnvOwner, 128, UPDATE_ENV_CALL_SIG);
+      if (phase.Step(addrCall, "UpdateEnvironmentState CALL", "RT")) {
+        uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
+        if (phase.Step(pfnUpdateEnv, "UpdateEnvironmentState", "FN")) {
+          owner.SetUpdateFnAddr(pfnUpdateEnv);
+        } else {
+          all_found = false;
         }
       } else {
-        logger->Error("1.2.1 [DATA: Environment Manager] Failed to resolve RIP address.");
         all_found = false;
       }
     } else {
-      logger->Error("1.2.1 [DATA: Environment Manager] FAILED to find signature.");
       all_found = false;
     }
-  } else {
-    logger->Error("1.2 [DATA: Global Managers] FAILED to find unique string reference.");
-    all_found = false;
   }
 
-  // === SECTION 2: ENVIRONMENT STATE UPDATE ===
-  // Used by: SetWeatherMode, SetRainIntensity, SetSkyboxIndex
-
-  // 2. Find the entry point of UpdateSimulationTime.
-  const char* UPDATE_SIM_TIME_SIG = "40 [0-1?] 56 48 [81-83] ec [1-4?] [3-30?] e8 ?? ?? ?? ?? 84 c0 0f 85 ?? ?? ?? ?? [40-4F] 8b [05-3D]";
-  uintptr_t pfnUpdateSimTime = Utils::PatternFinder::Find(UPDATE_SIM_TIME_SIG);
-
-  if (pfnUpdateSimTime) {
-    logger->Debug("2. [CALL: UpdateSimulationTime] Found at 0x{:X}", pfnUpdateSimTime);
-  } else {
-    logger->Error("2. Failed to find UpdateSimulationTime function start.");
-    return false;
-  }
-
-  // 2.1 UpdateEnvironmentState function pointer
-  // Used by: SetWeatherMode, SetRainIntensity, SetSkyboxIndex (to trigger env update)
-  const std::vector<std::string> timeUpdateChain = {"F3 [40-4F] 0F 11 [80-BF] ?? ?? ?? ??", "[40-4F] 89 [80-BF] ?? ?? ?? ??", "E8 ?? ?? ?? ??"};
-
-  addr = Utils::PatternFinder::FindChain(timeUpdateChain, 16, pfnUpdateSimTime);
-  if (addr) {
-    uintptr_t addrCall = Utils::PatternFinder::Find(addr, 32, "E8");
-    if (addrCall) {
-      uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
-      if (pfnUpdateEnv) {
-        owner.SetUpdateFnAddr(pfnUpdateEnv);
-        logger->Debug("2.1 [CALL: UpdateEnvironmentState] Found at 0x{:X}", pfnUpdateEnv);
-      }
-    }
-  } else {
-    logger->Error("2.1 [CALL: UpdateEnvironmentState] FAILED to find logic chain.");
-    all_found = false;
-  }
-
-  // === SECTION 3: WEATHER CONTROL ===
+  // === SECTION 2: WEATHER CONTROL ===
   // Used by: GetWeatherMode, SetWeatherMode, GetActiveProfileName, GetActiveProfilePtr
 
-  // 3. Find SetWeather function entry.
+  // 2. Find SetWeather function entry.
   const char* SET_WEATHER_STRING = "Restarting environment transition, possibly upcoming blending errors.";
   const char* SET_WEATHER_CONTEXT = "[MOV r32, [r64+off32]] [MOV r32, imm32] [MOVSS xmm, [r64+off32]]";
   uintptr_t SetWeatherFn = Utils::PatternFinder::FindFunctionByString(SET_WEATHER_STRING, true, SET_WEATHER_CONTEXT, 32);
@@ -168,7 +96,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       }
     }
 
-    // 3.2 Weather target offset (for GetNextWeatherMode)
+    // 2.2 Weather target offset (for GetNextWeatherMode)
     // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
     // * 1404df41d  89 91 74 3E 00 00             MOV dword ptr [RCX + 0x3e74],EDX
     uintptr_t addrTarget = Utils::PatternFinder::Find(addr + 2, 16, "[MOV [r64+off32], r32]");
@@ -180,7 +108,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       }
     }
 
-    // 3.3 Remaining bad weather time offset (env+0x4570)
+    // 2.3 Remaining bad weather time offset (env+0x4570)
     // /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
     // * 1404df451  F3 0F 11 83 70 45 00 00       MOVSS dword ptr [RBX + 0x4570],XMM0
     // * 1404df459  48 C7 83 60 45 00 00 FF FF FF FF MOV qword ptr [RBX + 0x4560],-0x1
@@ -199,7 +127,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       all_found = false;
     }
 
-    // 3.4 Env profile data pointer offset (env+0x2ae0)
+    // 2.4 Env profile data pointer offset (env+0x2ae0)
     // Used by: GetEnvProfileData (env_profile reflection attributes)
     // /--- Ghidra:(amtrucks_1_60.exe) Fun:(SetWeather[1404df3e0]) ---/
     // 1404df559  48 8B 83 E0 2A 00 00          MOV RAX,qword ptr [RBX + 0x2ae0]
@@ -644,9 +572,9 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       return ok;
     };
 
-    getAndSetEnv("lamps_on_elevation",  [&](auto v) { owner.SetLampsOnElevationOffset(v); });
-    getAndSetEnv("day_in_year",         [&](auto v) { owner.SetDayInYearOffset(v); });
-    getAndSetEnv("summer_time",         [&](auto v) { owner.SetSummerTimeOffset(v); });
+    getAndSetEnv("lamps_on_elevation", [&](auto v) { owner.SetLampsOnElevationOffset(v); });
+    getAndSetEnv("day_in_year", [&](auto v) { owner.SetDayInYearOffset(v); });
+    getAndSetEnv("summer_time", [&](auto v) { owner.SetSummerTimeOffset(v); });
     getAndSetEnv("thunderstorm_probability", [&](auto v) { owner.SetThunderstormProbabilityOffset(v); });
   }
 

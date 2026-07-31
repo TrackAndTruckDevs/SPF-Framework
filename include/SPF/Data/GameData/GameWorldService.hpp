@@ -31,15 +31,11 @@ class GameWorldService {
   bool TryFindAllOffsets();
 
   // --- Public Getters ---
-  uintptr_t GetEnvironmentBasePtr() const { return m_environmentBasePtr; }
-  intptr_t GetEnvObjectOffset() const { return m_envObjectOffset; }
   intptr_t GetTimeOffset() const { return m_timeOffset; }
   uintptr_t GetUpdateFnAddr() const { return m_updateFnAddr; }
 
   // --- Public Setters (for finders) ---
-  void SetEnvironmentBasePtr(uintptr_t val) { m_environmentBasePtr = val; }
   void SetTimeMgrPtrAddr(uintptr_t val) { m_timeMgrPtrAddr = val; }
-  void SetEnvObjectOffset(intptr_t val) { m_envObjectOffset = val; }
   void SetTimeOffset(intptr_t val) { m_timeOffset = val; }
   void SetSimulationTimeOffset(intptr_t val) { m_simulationTimeOffset = val; }
   void SetSubMinuteSecondsOffset(intptr_t val) { m_subMinuteSecondsOffset = val; }
@@ -51,7 +47,6 @@ class GameWorldService {
   void SetRealDeltaTimeOffset(intptr_t val) { m_realDeltaTimeOffset = val; }
   void SetSkyboxAutoUpdateOffset(intptr_t val) { m_skyboxAutoUpdateOffset = val; }
   void SetUpdateFnAddr(uintptr_t val) { m_updateFnAddr = val; }
-  void SetEnvironmentAdjustment(intptr_t val) { m_environmentAdjustment = val; }
   void SetGlobalHaltOffset(intptr_t val) { m_globalHaltOffset = val; }
   void SetSimulationHaltOffset(intptr_t val) { m_simulationHaltOffset = val; }
   void SetTrafficHaltOffset(intptr_t val) { m_trafficHaltOffset = val; }
@@ -86,17 +81,20 @@ class GameWorldService {
 
   void RegisterFinders();
 
+  /**
+   * @brief Resolves the GameplayManager instance pointer via ManagerCoreService.
+   * @return The GameplayManager object pointer (0 if not resolved yet).
+   */
+  uintptr_t ResolveEnvironmentBase() const;
+
   // --- Runtime State ---
   bool m_isInitialized = false;
   bool m_pluginHalted = false;
   std::vector<std::unique_ptr<IGameWorldDataFinder>> m_dataFinders;
 
   // --- World Data Offsets and Pointers ---
-  uintptr_t m_environmentBasePtr = 0;
-  intptr_t m_environmentAdjustment = 0;
   uintptr_t m_timeMgrPtrAddr = 0;
 
-  intptr_t m_envObjectOffset = 0;
   intptr_t m_timeOffset = 0;
 
   intptr_t m_simulationTimeOffset = 0;

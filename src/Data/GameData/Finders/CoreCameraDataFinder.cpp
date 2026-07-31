@@ -32,15 +32,7 @@ namespace Data::GameData::Finders {
 
 namespace {
 /*
- * Anchor #1: Camera Manager Pointer
- * Inside InitializeCamera: MOV RBX, qword ptr [DAT_143554ca8]; MOV EDI, EDX; MOV RSI, RCX
- * We mask the registers to stay robust against compiler changes.
- * Ghidra: 1405c09f2 48 8b 1d af 42 f9 02
- */
-const char* CAMERA_MANAGER_SIG = "48 8B 1D ?? ?? ?? ?? 8B [C0-FF] 48 8B [C0-FF]";
-
-/*
- * Anchor #2: Active Camera ID Offset
+ * Anchor #1: Active Camera ID Offset
  * Inside InitializeCamera: CMP dword ptr [RBX + 0x10], 0xE
  * Masking the ModRM byte [78-7F] to support different registers (RBX, RSI, RDI, etc.).
  * Ghidra: 1405c09fe 83 7b 10 0e
@@ -82,52 +74,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   bool all_found = true;
   const size_t SEARCH_RANGE = 512;
 
-  // --- STEP 1: Find Camera Manager ---
-  uintptr_t addrManager = Utils::PatternFinder::Find(pfnInitializeCamera, SEARCH_RANGE, CAMERA_MANAGER_SIG);
-  if (addrManager) {
-    uintptr_t pManagerPtrAddr = Utils::PatternFinder::GetRipAddress(addrManager, 3, 7);
-    if (pManagerPtrAddr) {
-      owner.SetCameraManagerPtrAddr(pManagerPtrAddr);
-      logger->Info("[CameraSystem] STATIC BASE POINTER: 0x{:X}", pManagerPtrAddr);
-
-      // --- Dynamic Pointer Adjustment Detection ---
-      /*
-       * In some engine builds, the global pointer does not point directly to the start
-       * of the Camera Manager object. Instead, the game adjusts the pointer immediately
-       * after loading it into a register.
-       *
-       * We scan a small window (64 bytes) following the initial load for:
-       * 1. ADD register, imm8 (48 83 C3 XX) -> Pointer moves forward
-       * 2. SUB register, imm8 (48 83 EB XX) -> Pointer moves backward
-       *
-       * If found, we store this adjustment to ensure all subsequent offsets
-       * (like the camera array at +0x38) are calculated from the true object base.
-       */
-      intptr_t adjustment = 0;
-      constexpr size_t ADJ_RANGE = 64;
-      uintptr_t addrAdd = Utils::PatternFinder::Find(addrManager, ADJ_RANGE, "48 83 C3");
-      if (addrAdd)
-        adjustment = static_cast<intptr_t>(Utils::PatternFinder::ReadInt8(addrAdd + 3));
-      else {
-        uintptr_t addrSub = Utils::PatternFinder::Find(addrManager, ADJ_RANGE, "48 83 EB");
-        if (addrSub) adjustment = -static_cast<intptr_t>(Utils::PatternFinder::ReadInt8(addrSub + 3));
-      }
-      owner.SetCameraManagerAdjustment(adjustment);
-      if (adjustment != 0) {
-        logger->Info("[CameraSystem] Camera Manager found at 0x{:X} (Applied Adjustment: {})", owner.GetCameraManager(), adjustment);
-      } else {
-        logger->Info("[CameraSystem] Camera Manager found at 0x{:X} (No adjustment detected, using direct address)", owner.GetCameraManager());
-      }
-    } else {
-      logger->Error("[CameraSystem] FAILED to resolve RIP address for Camera Manager");
-      all_found = false;
-    }
-  } else {
-    logger->Error("[CameraSystem] FAILED to find Camera Manager signature");
-    all_found = false;
-  }
-
-  // --- STEP 2: Find Camera Array Offset (Dynamic) ---
+  // --- STEP 1: Find Camera Array Offset (Dynamic) ---
   /*
    * We analyze 'GetCameraObjectByID' to find the offsets used for array access.
    * Ghidra Reference:
@@ -148,7 +95,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   }
   owner.SetCameraArrayOffset(finalArrayOffset);
 
-  // --- STEP 3: Find Active Camera ID Offset ---
+  // --- STEP 2: Find Active Camera ID Offset ---
   uintptr_t addrId = Utils::PatternFinder::Find(pfnInitializeCamera, SEARCH_RANGE, ACTIVE_CAMERA_ID_SIG);
   if (addrId) {
     int8_t offset = Utils::PatternFinder::ReadInt8(addrId + 2);
@@ -159,7 +106,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     all_found = false;
   }
 
-  // --- STEP 4: Initial Array Inventory & Registration ---
+  // --- STEP 3: Initial Array Inventory & Registration ---
   uintptr_t managerAddr = owner.GetCameraManager();
   if (managerAddr && finalArrayOffset) {
     uintptr_t pArray = *reinterpret_cast<uintptr_t*>(managerAddr + finalArrayOffset);
@@ -176,7 +123,7 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
     }
   }
 
-  // --- STEP 5: World Coordinates ---
+  // --- STEP 4: World Coordinates ---
   /*
    * We extract the address of the global world coordinates block.
    * Logic: Our signature matches a SUBSS instruction (8 bytes total).
