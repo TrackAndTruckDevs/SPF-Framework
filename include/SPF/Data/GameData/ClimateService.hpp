@@ -66,6 +66,27 @@ class ClimateService {
   void SetWeatherBlendProgressFnAddr(uintptr_t addr) { m_weatherBlendFnAddr = addr; }
   void SetTransitionDurationAddr(uintptr_t addr) { m_transitionDurationAddr = addr; }
 
+  // --- Core Getters (for finders) ---
+  uintptr_t GetBadWeatherFactorPtr() const { return m_badWeatherFactorPtr; }
+  intptr_t GetRemainingBadWeatherOffset() const { return m_remainingBadWeatherOffset; }
+  intptr_t GetWeatherModeOffset() const { return m_weatherModeOffset; }
+  intptr_t GetNextWeatherModeOffset() const { return m_nextWeatherModeOffset; }
+  intptr_t GetClimatePtrOffset() const { return m_climatePtrOffset; }
+  intptr_t GetClimateUnitIdOffset() const { return m_climateUnitIdOffset; }
+  intptr_t GetClimateArrayOffset() const { return m_climateArrayOffset; }
+  intptr_t GetClimateCountOffset() const { return m_climateCountOffset; }
+  uintptr_t GetSetWeatherModeFnAddr() const { return m_setWeatherModeFnAddr; }
+  uintptr_t GetSetClimateFnAddr() const { return m_setClimateFnAddr; }
+  intptr_t GetActiveProfileIndexOffset() const { return m_activeProfileIndexOffset; }
+  intptr_t GetNextProfileIndexOffset() const { return m_nextProfileIndexOffset; }
+  intptr_t GetContainerNiceOffset() const { return m_containerNiceOffset; }
+  intptr_t GetContainerBadOffset() const { return m_containerBadOffset; }
+  intptr_t GetProfilesArrayOffset() const { return m_profilesArrayOffset; }
+  intptr_t GetContainerCountOffset() const { return m_containerCountOffset; }
+  intptr_t GetSunAngleOffset() const { return m_sunAngleOffset; }
+  uintptr_t GetWeatherBlendProgressFnAddr() const { return m_weatherBlendFnAddr; }
+  uintptr_t GetTransitionDurationAddr() const { return m_transitionDurationAddr; }
+
   // --- Sun Profile Reflection Attribute Setters (for finders) ---
   void SetLowElevationOffset(intptr_t val) { m_lowElevationOffset = val; }
   intptr_t GetLowElevationOffset() const { return m_lowElevationOffset; }

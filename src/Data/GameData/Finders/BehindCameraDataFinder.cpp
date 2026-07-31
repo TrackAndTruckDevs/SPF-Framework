@@ -190,7 +190,7 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       uintptr_t yawBlock = PatternFinder::Find(pfnUpdateInput, FUNC_RANGE, YAW_LOGIC_SIG);
       if (phase.Step(yawBlock, "LiveYaw logic", "RT")) {
         int32_t liveYaw = PatternFinder::ReadInt32(yawBlock + 4);
-        phase.StepOffset(liveYaw, "LiveYaw", "RT");
+        phase.StepOffset(liveYaw, "LiveYaw", "OFF");
         if (PatternFinder::IsSaneOffset(liveYaw)) {
           owner.SetBehindLiveYawOffset(liveYaw);
         }
@@ -200,7 +200,7 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       uintptr_t pitchBlock = PatternFinder::Find(pfnUpdateInput, FUNC_RANGE, PITCH_LOGIC_SIG);
       if (phase.Step(pitchBlock, "LivePitch logic", "RT")) {
         int8_t livePitch = PatternFinder::ReadInt8(pitchBlock + 4);
-        phase.StepOffset(livePitch, "LivePitch", "RT");
+        phase.StepOffset(livePitch, "LivePitch", "OFF");
         if (PatternFinder::IsSaneOffset(livePitch)) {
           owner.SetBehindLivePitchOffset(static_cast<intptr_t>(livePitch));
         }
@@ -210,7 +210,7 @@ bool BehindCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       uintptr_t zoomBlock = PatternFinder::Find(pfnUpdateInput, FUNC_RANGE, ZOOM_LOGIC_SIG);
       if (phase.Step(zoomBlock, "LiveZoom logic", "RT")) {
         int32_t liveZoom = PatternFinder::ReadInt32(zoomBlock + 4);
-        phase.StepOffset(liveZoom, "LiveZoom", "RT");
+        phase.StepOffset(liveZoom, "LiveZoom", "OFF");
         if (PatternFinder::IsSaneOffset(liveZoom)) {
           owner.SetBehindLiveZoomOffset(liveZoom);
         }
