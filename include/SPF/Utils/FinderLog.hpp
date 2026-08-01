@@ -187,9 +187,15 @@ class FinderLog {
   }
 
   /**
-   * @brief Format an absolute address as a human-readable string relative to the module base.
+   * @brief Format an absolute address as a human-readable string.
    * @param addr Absolute address in process memory.
-   * @return Formatted string: "0xADDR (module_name +0xOFFSET)" or "(null)" if addr is 0.
+   * @return "0xADDR (module_name +0xOFFSET)" when addr lies inside the main module,
+   *         plain "0xADDR" otherwise, or "(null)" if addr is 0.
+   *
+   * @details The module-relative form is only produced when the address belongs to
+   *          the main module image. Runtime/heap pointers (camera managers, objects,
+   *          arrays) are printed as raw absolute addresses, since a module-relative
+   *          offset has no meaning there.
    */
   std::string Rel(uintptr_t addr) const;
   /**
@@ -206,6 +212,7 @@ class FinderLog {
 
  private:
   void InitModuleInfo();
+  bool IsInModule(uintptr_t addr) const;
 
   std::string m_name;
   std::shared_ptr<Logging::Logger> m_logger;

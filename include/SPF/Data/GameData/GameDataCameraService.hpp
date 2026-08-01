@@ -95,6 +95,12 @@ class GameDataCameraService {
    */
   intptr_t GetCameraArrayOffset() const { return m_cameraArrayOffset; }
 
+  /**
+   * @brief Returns the offset to the camera slot count inside Camera Manager.
+   * Read by GetCameraObjectByID's bounds check (typically 0x40).
+   */
+  intptr_t GetCameraCountOffset() const { return m_cameraCountOffset; }
+
   // --- Public Getters (Generic / Global) ---
   intptr_t GetCameraFovOffset() const { return m_camera_fov_offset; }
   intptr_t GetNearPlaneOffset() const { return m_near_plane_offset; }
@@ -292,6 +298,7 @@ class GameDataCameraService {
   void SetHandShakeSpeedOffset(intptr_t val) { m_hand_shake_speed_offset = val; }
 
   void SetCameraArrayOffset(intptr_t val) { m_cameraArrayOffset = val; }
+  void SetCameraCountOffset(intptr_t val) { m_cameraCountOffset = val; }
   void SetActiveCameraIdOffset(intptr_t val) { m_activeCameraIdOffset = val; }
   void SetCoreOffsetsFound(bool val) { m_coreOffsetsFound = val; }
 
@@ -492,6 +499,7 @@ class GameDataCameraService {
 
   // --- Core Camera Data ---
   intptr_t m_cameraArrayOffset = 0;
+  intptr_t m_cameraCountOffset = 0;
   intptr_t m_activeCameraIdOffset = 0;
 
   // --- Shared / Global Data ---

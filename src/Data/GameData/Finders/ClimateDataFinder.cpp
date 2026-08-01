@@ -234,7 +234,7 @@ const char* BAD_WEATHER_FACTOR_LEA_SIG = "[LEA r64, [rip+off32]]";
 
 bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
   Utils::FinderLog log(GetName());
-  log.Info("Searching for Climate and Weather data using provided Ghidra signatures...");
+  log.Info("Searching for Climate and Weather data...");
 
   bool all_found = true;
 
