@@ -178,13 +178,31 @@ class PatternFinder {
   static uintptr_t GetFunctionEnd(uintptr_t address);
 
   /**
-   * @brief Finds all instructions that reference a target address (RIP-relative).
+   * @brief Finds all RIP-relative data references to a target address.
    *
    * @param targetAddr The absolute address being referenced.
    * @param moduleName Name of the module to scan (nullptr for main EXE).
-   * @return std::vector<uintptr_t> List of instruction addresses (LEA, MOV, etc.).
+   * @return std::vector<uintptr_t> List of referencing instruction addresses (LEA/MOV reg, [rip+disp32]).
+   *
+   * @details Scans the executable sections of the module for RIP-relative LEA/MOV
+   *          (48-4F 8D/8B 05 disp32) instructions. For direct CALL sites use
+   *          FindCallXrefs instead. The cache is built once per module and reused
+   *          for all targets.
    */
   static std::vector<uintptr_t> FindXrefs(uintptr_t targetAddr, const char* moduleName = nullptr);
+
+  /**
+   * @brief Finds all direct relative CALL sites that jump to a target function.
+   *
+   * @param targetFunc Absolute address of the called function.
+   * @param moduleName Name of the module to scan (nullptr for main EXE).
+   * @return std::vector<uintptr_t> Addresses of the CALL rel32 (E8 disp32) instructions.
+   *
+   * @details Scans the executable sections of the module for direct relative calls
+   *          (E8 disp32) and resolves each target via GetRipAddress. The cache is
+   *          built once per module and reused for all targets.
+   */
+  static std::vector<uintptr_t> FindCallXrefs(uintptr_t targetFunc, const char* moduleName = nullptr);
 
   /**
    * @brief Finds all 8-byte aligned data pointers pointing to a target address.
@@ -343,7 +361,8 @@ class PatternFinder {
   std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache;       ///< className -> {attrName -> offset}
   std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;                               ///< string -> [addresses]
   std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;                                ///< targetAddr -> [pointer_locations]
-  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache;  ///< moduleName -> {targetAddr -> [xref_locations]}
+  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache;      ///< moduleName -> {targetAddr -> [data xref_locations]}
+  std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_callXrefCache;  ///< moduleName -> {targetFunc -> [call site locations]}
   std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache;                          ///< moduleName -> [sections]
 };
 

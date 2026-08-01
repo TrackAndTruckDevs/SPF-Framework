@@ -2717,7 +2717,7 @@ void CameraWindow::RenderContent() {
 
               ImGui::Separator();
               ImGui::Text("%s", m_locHUDPositionDebug.c_str());
-              if (Button(m_locTopLeftDebug.c_str(), TextStyle::DefaultButton(), ImVec2(-1, 0))) {
+              if (Button(m_locTopLeftDebug.c_str(), TextStyle::DefaultButton())) {
                 debugCam->SetHudPosition(DebugHudPosition::TopLeft);
               }
               ImGui::SameLine();
