@@ -38,7 +38,6 @@ void GameWorldService::Shutdown() {
     logger->Info("GameWorldService has been shut down.");
     m_isInitialized = false;
 
-    m_timeMgrPtrAddr = 0;
     m_timeOffset = 0;
     m_simulationTimeOffset = 0;
     m_subMinuteSecondsOffset = 0;
@@ -166,18 +165,24 @@ void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
 }
 
 uint32_t GameWorldService::GetSimulationTime() {
-  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return 0;
+  if (!m_isInitialized) return 0;
 
-  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
+  if (!timeMgrPtrAddr) return 0;
+
+  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
   if (!timeMgr) return 0;
 
   return *(uint32_t*)(timeMgr + m_simulationTimeOffset);
 }
 
 void GameWorldService::SetSimulationTime(uint32_t totalMinutes) {
-  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return;
+  if (!m_isInitialized) return;
 
-  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
+  if (!timeMgrPtrAddr) return;
+
+  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
   if (!timeMgr) return;
 
   *(uint32_t*)(timeMgr + m_simulationTimeOffset) = totalMinutes;
@@ -185,9 +190,12 @@ void GameWorldService::SetSimulationTime(uint32_t totalMinutes) {
 }
 
 uint32_t GameWorldService::GetRealPlayTime() {
-  if (!m_isInitialized || m_timeMgrPtrAddr == 0) return 0;
+  if (!m_isInitialized) return 0;
 
-  uintptr_t timeMgr = *(uintptr_t*)m_timeMgrPtrAddr;
+  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
+  if (!timeMgrPtrAddr) return 0;
+
+  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
   if (!timeMgr) return 0;
 
   // In version 1.60+, Real Play Time is part of an array_t<uint32_t>.

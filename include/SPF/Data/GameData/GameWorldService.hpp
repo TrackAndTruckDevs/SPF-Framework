@@ -32,10 +32,21 @@ class GameWorldService {
 
   // --- Public Getters ---
   intptr_t GetTimeOffset() const { return m_timeOffset; }
+  intptr_t GetSimulationTimeOffset() const { return m_simulationTimeOffset; }
+  intptr_t GetSubMinuteSecondsOffset() const { return m_subMinuteSecondsOffset; }
+  intptr_t GetRealPlayTimeOffset() const { return m_realPlayTimeOffset; }
+  intptr_t GetRealPlaySecondsOffset() const { return m_realPlaySecondsOffset; }
+  intptr_t GetMapScaleOffset() const { return m_mapScaleOffset; }
+  intptr_t GetGlobalWarpOffset() const { return m_globalWarpOffset; }
+  intptr_t GetPauseStatusOffset() const { return m_pauseStatusOffset; }
+  intptr_t GetGlobalHaltOffset() const { return m_globalHaltOffset; }
+  intptr_t GetSimulationHaltOffset() const { return m_simulationHaltOffset; }
+  intptr_t GetTrafficHaltOffset() const { return m_trafficHaltOffset; }
+  intptr_t GetRealDeltaTimeOffset() const { return m_realDeltaTimeOffset; }
+  intptr_t GetSkyboxAutoUpdateOffset() const { return m_skyboxAutoUpdateOffset; }
   uintptr_t GetUpdateFnAddr() const { return m_updateFnAddr; }
 
   // --- Public Setters (for finders) ---
-  void SetTimeMgrPtrAddr(uintptr_t val) { m_timeMgrPtrAddr = val; }
   void SetTimeOffset(intptr_t val) { m_timeOffset = val; }
   void SetSimulationTimeOffset(intptr_t val) { m_simulationTimeOffset = val; }
   void SetSubMinuteSecondsOffset(intptr_t val) { m_subMinuteSecondsOffset = val; }
@@ -93,8 +104,6 @@ class GameWorldService {
   std::vector<std::unique_ptr<IGameWorldDataFinder>> m_dataFinders;
 
   // --- World Data Offsets and Pointers ---
-  uintptr_t m_timeMgrPtrAddr = 0;
-
   intptr_t m_timeOffset = 0;
 
   intptr_t m_simulationTimeOffset = 0;

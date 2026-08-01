@@ -4,58 +4,53 @@
 
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <chrono>
 #include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
+using namespace Utils;
+
 namespace {
 /**
  * @brief Signature for the dynamic CVar value offset.
  * Search range: Inside the GetAndCache function body.
  *
- * Logic (FOV-style cache):
- * 1. Set the 'is_updated' flag (MOV byte ptr [reg + offset - 2], 1).
- * 2. [GAP] Potential alignment.
- * 3. Write the resolved float value (MOVSS dword ptr [reg + offset], XMM0).
- *
- * Ghidra Reference (v1.50+ @ 1401d7521):
- * 1401d7521 c6 83 16 01 00 00 01  MOV byte ptr [RBX + 0x116], 0x1
- * 1401d7528 f3 0f 11 83 18 01 00 00 MOVSS dword ptr [RBX + 0x118], XMM0
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(GetAndCache[1401d7480]) ---/
+ * 1401d7521  C6 83 16 01 00 00 01          MOV byte ptr [RBX + 0x116],0x1
+ * 1401d7528  F3 0F 11 83 18 01 00 00       MOVSS dword ptr [RBX + 0x118],XMM0
  */
-const char* CVAR_VAL_OFFSET_SIG = "C6 [80-87] [0-6?] F3";
+const char* CVAR_VAL_OFFSET_SIG = "[MOV byte ptr [r64+off32], imm8] [MOVSS [r64+off32], xmm]";
 
 /**
  * @brief String anchor used to find the g_flyspeed CVar object via XREFs.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+ * 14053ea95  48 8D 0D 24 12 BF 01          LEA RCX,[0x14212fcc0] = "Camera speed: %.2f"
  */
 const char* FLY_SPEED_STRING = "Camera speed: %.2f";
 
 /*
  * Anchor #3: Freecam Move Function (Position & Quaternions)
  * We search for the unique sequence inside Freecam_Move that reads local coordinates.
- * Using a flexible GAP [30-60?] to skip intermediate LEA/CALL instructions.
- * The filter [01-FF] ensures we find the version with an offset (Freecam),
- * filtering out the generic one (ID 0 offset).
- *
- * Ghidra Reference (Freecam_Move @ 140771140):
- * 140771140 48 83 ec 48                SUB RSP, 0x48
- * 140771144 f3 0f 10 0a                MOVSS XMM1, [RDX]
- * ... [GAP] ...
- * 14077117a 41 0f 10 5a 40             MOVUPS XMM3, [R10 + 0x40] <-- Our Target
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(Freecam_Move[140771140]) ---/
+ * 14077117a  41 0F 10 5A 40                MOVUPS XMM3,xmmword ptr [R10 + 0x40]
+ * 14077117f  41 BB 01 00 00 00             MOV R11D,0x1
+ * 140771185  45 33 C9                      XOR R9D,R9D
+ * 140771188  0F 11 5C 24 20                MOVUPS xmmword ptr [RSP + 0x20],XMM3
+ * 14077118d  F3 0F 10 4C 24 24             MOVSS XMM1,dword ptr [RSP + 0x24]
  */
-const char* FREECAM_MOVE_SIG = "48 83 EC 48 F3 0F 10 [08-0F] 4C 8B [D0-D7] [30-60?] 41 0F 10 [58-5F] [01-FF]";
+const char* FREECAM_POS_SIG = "41 [MOVUPS xmm, [r64+off8]] [MOV r32, imm32] 45 [XOR r32, r32] [MOVUPS [r64+off8], xmm] [MOVSS xmm, [r64+off8]]";
 }  // namespace
 
 bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
-  auto startTime = std::chrono::steady_clock::now();
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("--- [FreeCamera] Starting Stable Discovery ---");
-  bool all_found = true;
+  if (m_isReady) return true;
 
-  // --- STEP 1: Find Fly Speed (g_flyspeed CVar) ---
+  FinderLog log(GetName());
+  log.Info("Searching for Free Camera data...");
+
+  // ── Phase 1: Fly Speed (g_flyspeed CVar) ──
   /*
    * NEW LOGIC: String Anchor -> XREF -> Backward Scan.
    * This is much more robust than global LEA scans.
@@ -64,141 +59,106 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
    * 2. Find the instruction that loads this string (XREF).
    * 3. From that XREF, scan BACKWARDS to find the CVar object and the caching function.
    */
-  uintptr_t strAddr = Utils::PatternFinder::FindString(FLY_SPEED_STRING);
-  if (strAddr) {
-    logger->Debug("[FreeCamera] Found Fly Speed string at 0x{:X}", strAddr);
-    auto xrefs = Utils::PatternFinder::FindXrefs(strAddr);
-    if (!xrefs.empty()) {
-      uintptr_t xrefAddr = xrefs[0];
-      logger->Debug("[FreeCamera] Found string XREF at 0x{:X}", xrefAddr);
+  {
+    auto phase = log.MakePhase("Fly Speed (g_flyspeed CVar)");
 
-      // 1.1 Find the CVar object (LEA backward from string xref)
-      // Ghidra: 14053ea86 48 8d 0d 53 38 6b 02    LEA RCX,[PTR_PTR_142bf22e0]
-      uintptr_t objectLea = Utils::PatternFinder::FindBackward(xrefAddr - 1, 100, "48 8D [0D-3D]");
+    uintptr_t strAddr = PatternFinder::FindString(FLY_SPEED_STRING);
+    if (phase.Step(strAddr, "Fly Speed string", "REF")) {
+      auto xrefs = PatternFinder::FindXrefs(strAddr);
+      uintptr_t xrefAddr = !xrefs.empty() ? xrefs[0] : 0;
+      if (phase.Step(xrefAddr, "Fly Speed string XREF", "REF")) {
+        // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+        // * 14053ea95  48 8D 0D 24 12 BF 01          LEA RCX,[0x14212fcc0]
+        // 1.1 Find the CVar object (LEA backward from string xref)
+        // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+        // * 14053ea86  48 8D 0D 53 38 6B 02          LEA RCX,[0x142bf22e0]
+        uintptr_t objectLea = PatternFinder::FindBackward(xrefAddr - 1, 32, "[LEA r64, [rip+off32]]");
 
-      // 1.2 Find the CVar cache function (CALL backward from string xref)
-      // Ghidra: 14053ea8d e8 ee 89 c9 ff          CALL GetAndCache_DefaultFOV
-      uintptr_t callAddr = Utils::PatternFinder::FindBackward(xrefAddr - 1, 100, "E8");
+        // 1.2 Find the CVar cache function (CALL backward from string xref)
+        // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+        // * 14053ea8d  E8 EE 89 C9 FF                CALL 0x1401d7480
+        uintptr_t callAddr = PatternFinder::FindBackward(xrefAddr - 1, 32, "[CALL rel32]");
 
-      if (objectLea && callAddr) {
-        logger->Debug("[FreeCamera] Anchors found: LEA=0x{:X}, CALL=0x{:X}", objectLea, callAddr);
-        uintptr_t pCVarObjPtrAddr = Utils::PatternFinder::GetRipAddress(objectLea, 3, 7);
-        uintptr_t pfnGetAndCache = Utils::PatternFinder::GetRipAddress(callAddr, 1, 5);
+        bool okLea = phase.Step(objectLea, "CVar object LEA", "RT");
+        bool okCall = phase.Step(callAddr, "GetAndCache CALL", "RT");
+        if (okLea && okCall) {
+          uintptr_t pCVarObjPtrAddr = PatternFinder::GetRipAddress(objectLea, 3, 7);
+          uintptr_t pfnGetAndCache = PatternFinder::GetRipAddress(callAddr, 1, 5);
 
-        if (pCVarObjPtrAddr && pfnGetAndCache) {
-          logger->Debug("[FreeCamera] Resolved internal: CVarPtrAddr=0x{:X}, CacheFunc=0x{:X}", pCVarObjPtrAddr, pfnGetAndCache);
+          bool okObjPtr = phase.Step(pCVarObjPtrAddr, "CVar object ptr", "DATA");
+          bool okCache = phase.Step(pfnGetAndCache, "GetAndCache", "FN");
+          if (okObjPtr && okCache) {
+            // 1.3 Resolve the internal value offset from the GetAndCache function body
+            // We search for the MOVSS instruction that writes the float value.
+            uintptr_t valWriteAddr = PatternFinder::Find(pfnGetAndCache, 256, CVAR_VAL_OFFSET_SIG);
+            if (phase.Step(valWriteAddr, "CVar value write", "RT")) {
+              // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(GetAndCache[1401d7480]) ---/
+              // * 1401d7528  F3 0F 11 83 18 01 00 00       MOVSS dword ptr [RBX + 0x118],XMM0
+              uintptr_t addrF3 = PatternFinder::Find(valWriteAddr, 15, "[MOVSS [r64+off32], xmm]");
+              int32_t valOffset = PatternFinder::ReadInt32(addrF3 + 4);
 
-          // 1.3 Resolve the internal value offset from the GetAndCache function body
-          // We search for the MOVSS instruction that writes the float value.
-          uintptr_t valWriteAddr = Utils::PatternFinder::Find(pfnGetAndCache, 300, CVAR_VAL_OFFSET_SIG);
-          if (valWriteAddr) {
-            logger->Debug("[FreeCamera] Found offset write instruction at 0x{:X}", valWriteAddr);
-
-            // Find the F3 byte (MOVSS start) and read its displacement at +4 using ReadInt32
-            uintptr_t addrF3 = Utils::PatternFinder::Find(valWriteAddr, 15, "F3");
-            int32_t valOffset = Utils::PatternFinder::ReadInt32(addrF3 + 4);
-
-            // The address resolved from LEA is already the object base.
-            // We do NOT dereference it.
-            uintptr_t pCVarObj = pCVarObjPtrAddr;
-            if (pCVarObj && Utils::PatternFinder::IsSaneOffset(valOffset)) {
-              float* pFlySpeed = reinterpret_cast<float*>(pCVarObj + valOffset);
-              owner.SetFlySpeedPtr(pFlySpeed);
-              logger->Debug("[FreeCamera] Fly Speed resolved successfully at 0x{:X} (Offset: 0x{:X})", (uintptr_t)pFlySpeed, valOffset);
-            } else {
-              logger->Error("[FreeCamera] FAILED: Invalid CVar object (0x{:X}) or offset (0x{:X})", pCVarObj, valOffset);
-              all_found = false;
+              // The address resolved from LEA is already the object base.
+              // We do NOT dereference it.
+              uintptr_t pCVarObj = pCVarObjPtrAddr;
+              if (phase.StepOffset(valOffset, "CVar value offset", "OFF") && pCVarObj) {
+                float* pFlySpeed = reinterpret_cast<float*>(pCVarObj + valOffset);
+                owner.SetFlySpeedPtr(pFlySpeed);
+              }
             }
-          } else {
-            logger->Error("[FreeCamera] FAILED to resolve CVar value offset from function body at 0x{:X}", pfnGetAndCache);
-            all_found = false;
           }
-        } else {
-          logger->Error("[FreeCamera] FAILED to resolve RIP addresses for LEA/CALL.");
-          all_found = false;
         }
-      } else {
-        if (!objectLea) logger->Error("[FreeCamera] FAILED to find LEA anchor backward from 0x{:X}", xrefAddr);
-        if (!callAddr) logger->Error("[FreeCamera] FAILED to find CALL anchor backward from 0x{:X}", xrefAddr);
-        all_found = false;
       }
-    } else {
-      logger->Error("[FreeCamera] FAILED to find XREFs for Fly Speed string at 0x{:X}", strAddr);
-      all_found = false;
     }
-  } else {
-    logger->Error("[FreeCamera] FAILED to find 'Camera speed' anchor string.");
-    all_found = false;
   }
 
-  // --- STEP 1.5: Freecam Global Object & Context Offset ---
+  // ── Phase 2: Freecam Global Context ──
   /*
-   * NEW LOGIC: World Context Discovery via UpdateGameSession.
-   * This retrieves the primary pointer and offset needed for stable activation.
-   *
-   * Logic:
-   * 1. Find the unique string "[used_vehicles] %Iu used truck offers have expired (%Iu offers valid)".
-   * 2. Trace back to the start of UpdateGameSession() (Ghidra: 1408523d0).
-   * 3. Extract GlobalPtr and Context Offset from the prologue instructions.
-   *
-   * Ghidra Reference (v1.60 @ 1408523d0):
-   * 1408523dc 48 8b 3d ad 28 d0 02    MOV RDI, qword ptr [FreecamGlobalObjectPtr]
-   * ...
-   * 1408523f2 48 83 bf a8 31 00 00 00 CMP qword ptr [RDI + 0x31a8], 0x0
-   *
-   * Targets:
-   * - FreecamGlobalObjectPtr: The RIP-relative pointer at 1408523dc.
-   * - ContextOffset: The 32-bit displacement (0x31A8) at 1408523f2.
+   * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateGameSession[140852380]) ---/
+   * 140852380  48 8B C4                      MOV RAX,RSP
    */
-  uintptr_t funcStart = Utils::PatternFinder::FindFunctionByString("[used_vehicles] %Iu used truck offers have expired (%Iu offers valid)", true);
+  {
+    auto phase = log.MakePhase("Freecam Global Context");
 
-  if (funcStart) {
-    logger->Debug("[FreeCamera] Found UpdateGameSession at 0x{:X}", funcStart);
+    uintptr_t funcStart = PatternFinder::FindFunctionByString("[used_vehicles] %Iu used truck offers have expired (%Iu offers valid)", true);
+    if (phase.Step(funcStart, "UpdateGameSession", "FN")) {
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateGameSession[140852380]) ---/
+      // * 14085238c  48 8B 3D AD 28 D0 02          MOV RDI,qword ptr [0x143554c40]
+      uintptr_t movAddr = PatternFinder::Find(funcStart, 64, "[MOV r64, [rip+off32]]");
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateGameSession[140852380]) ---/
+      // * 1408523a2  48 83 BF A8 31 00 00 00       CMP qword ptr [RDI + 0x31a8],0x0
+      uintptr_t cmpAddr = PatternFinder::Find(movAddr ? movAddr + 3 : funcStart, 64, "48 83 BF ? ? ? ? 00");
 
-    // Find Global Object MOV (48 8B [2-12?] 0F)
-    uintptr_t movAddr = Utils::PatternFinder::Find(funcStart, 100, "48 8B [2-12?] 0F");
-    // Find Context Offset CMP (48 [4-8?] 0F)
-    uintptr_t cmpAddr = Utils::PatternFinder::Find(movAddr ? movAddr + 3 : funcStart, 100, "48 [4-8?] 0F");
+      bool okMov = phase.Step(movAddr, "GameplayManager slot MOV", "RT");
+      bool okCmp = phase.Step(cmpAddr, "Context offset CMP", "RT");
+      if (okMov && okCmp) {
+        // The MOV at movAddr loads the GameplayManager slot (FreecamGlobalObjectPtr) —
+        // the same slot that ManagerCoreDataFinder resolves. It is used here only as a
+        // positional anchor for the Context Offset CMP below.
+        // TODO: Research — replace this anchor with an independent signature so the
+        // GameplayManager search is not duplicated across finders.
+        int32_t contextOff = PatternFinder::ReadInt32(cmpAddr + 3);
 
-    if (movAddr && cmpAddr) {
-      // The MOV at movAddr loads the GameplayManager slot (FreecamGlobalObjectPtr) —
-      // the same slot that ManagerCoreDataFinder resolves. It is used here only as a
-      // positional anchor for the Context Offset CMP below.
-      // TODO: Research — replace this anchor with an independent signature so the
-      // GameplayManager search is not duplicated across finders.
-      int32_t contextOff = Utils::PatternFinder::ReadInt32(cmpAddr + 3);
-
-      if (Utils::PatternFinder::IsSaneOffset(contextOff)) {
-        owner.SetFreecamContextOffset(contextOff);
-        logger->Debug("[FreeCamera] Resolved ContextOffset: 0x{:X}", contextOff);
-      } else {
-        logger->Error("[FreeCamera] FAILED to resolve Freecam data from UpdateGameSession.");
-        all_found = false;
+        if (phase.StepOffset(contextOff, "FreecamContextOffset", "OFF")) {
+          owner.SetFreecamContextOffset(contextOff);
+        }
       }
-    } else {
-      if (!movAddr) logger->Error("[FreeCamera] FAILED to find Global MOV anchor.");
-      if (!cmpAddr) logger->Error("[FreeCamera] FAILED to find Context CMP anchor.");
-      all_found = false;
     }
-  } else {
-    logger->Warn("[FreeCamera] FAILED to find 'mandatory_break_soon' anchor string.");
-    all_found = false;
   }
 
-  // --- STEP 2: Position & Quaternion Offsets ---
-  uintptr_t addrMove = Utils::PatternFinder::Find(FREECAM_MOVE_SIG);
-  if (addrMove) {
-    /*
-     * Our signature matches the whole block. The offset byte is at the very end.
-     * Logic: Pattern length is roughly 16-20 bytes (depending on GAP).
-     * Pattern ends with 41 0F 10 [58-5F] [OFFSET].
-     * The Find result points to the START (48 83 EC 48).
-     * We use a sub-search to find the MOVUPS instruction exactly.
-     */
-    uintptr_t movAddr = Utils::PatternFinder::Find(addrMove, 150, "41 0F 10 [58-5F] [01-FF] 41");
-    if (movAddr) {
-      int8_t posX = Utils::PatternFinder::ReadInt8(movAddr + 4);
-      if (Utils::PatternFinder::IsSaneOffset(posX)) {
+  // ── Phase 3: Position & Quaternion Offsets ──
+  {
+    auto phase = log.MakePhase("Position & Quaternion Offsets");
+
+    // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(Freecam_Move[140771140]) ---/
+    // * 14077117a  41 0F 10 5A 40                MOVUPS XMM3,xmmword ptr [R10 + 0x40]
+    // * 14077117f  41 BB 01 00 00 00             MOV R11D,0x1
+    // * 140771185  45 33 C9                      XOR R9D,R9D
+    // * 140771188  0F 11 5C 24 20                MOVUPS xmmword ptr [RSP + 0x20],XMM3
+    // * 14077118d  F3 0F 10 4C 24 24             MOVSS XMM1,dword ptr [RSP + 0x24]
+    uintptr_t movAddr = PatternFinder::Find(FREECAM_POS_SIG);
+    if (phase.Step(movAddr, "Freecam_Move MOVUPS anchor", "RT")) {
+      int8_t posX = PatternFinder::ReadInt8(movAddr + 4);
+      if (phase.StepOffset(posX, "PosX offset", "OFF")) {
         owner.SetFreecamPosXOffset(posX);
         owner.SetFreecamPosYOffset(posX + 4);
         owner.SetFreecamPosZOffset(posX + 8);
@@ -209,74 +169,57 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
         owner.SetFreecamQuatYOffset(quatX + 4);
         owner.SetFreecamQuatZOffset(quatX + 8);
         owner.SetFreecamQuatWOffset(quatX + 12);
-
-        logger->Debug("[FreeCamera] Position Offsets resolved: X=0x{:X}, QuatX=0x{:X}", posX, quatX);
-      } else {
-        logger->Error("[FreeCamera] Position offset 0x{:X} is INVALID.", posX);
-        all_found = false;
       }
-    } else {
-      logger->Error("[FreeCamera] FAILED to find MOVUPS anchor inside Move function.");
-      all_found = false;
     }
-  } else {
-    logger->Error("[FreeCamera] FAILED to find Freecam_Move function.");
-    all_found = false;
   }
 
-  // --- STEP 3: Orientation Offsets (Yaw/Pitch/Roll) ---
+  // ── Phase 4: Orientation Offsets (Yaw/Pitch/Roll) ──
   /*
-   * NEW LOGIC: Search near the start of DebugCamera_HandleInput for RCX-based loads.
-   * Ghidra Reference (DebugCamera_HandleInput @ 14053e760):
-   * 14053e7aa 48 8d 79 10          LEA RDI, [RCX + 0x10]           <-- YAW Offset
+   * LEA RDI, [RCX + 0x10]           <-- YAW Offset
    * ...
-   * 14053e7cb f3 44 0f 10 41 14    MOVSS XMM8, dword ptr [RCX+0x14] <-- PITCH Offset
+   * MOVSS XMM8, dword ptr [RCX+0x14] <-- PITCH Offset
    *
    * Patterns focus on RCX as the base register to avoid catching stack setups (RAX/RBP).
    */
-  auto& cameraHooks = Hooks::CameraHooks::GetInstance();
-  uintptr_t pfnHandleInput = cameraHooks.GetDebugCameraHandleInputFunc();
-  if (pfnHandleInput) {
-    // 3.1 Find Yaw Anchor: LEA [reg], [RCX + offset] -> 48 8D [78-7B]
-    uintptr_t addrYaw = Utils::PatternFinder::Find(pfnHandleInput, 150, "48 8D [78-7B]");
+  {
+    auto phase = log.MakePhase("Orientation Offsets");
 
-    // 3.2 Find Pitch Anchor: MOVSS [xmm], [RCX + offset] -> F3 44 0F 10 [40-43]
-    uintptr_t addrPitch = Utils::PatternFinder::Find(pfnHandleInput, 150, "F3 44 0F 10 [40-43]");
+    auto& cameraHooks = Hooks::CameraHooks::GetInstance();
+    // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+    // * 14053e760  48 8B C4                      MOV RAX,RSP
+    uintptr_t pfnHandleInput = cameraHooks.GetDebugCameraHandleInputFunc();
+    if (phase.Step(pfnHandleInput, "DebugCamera_HandleInput", "FN")) {
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+      // * 14053e7aa  48 8D 79 10                   LEA RDI,[RCX + 0x10]
+      uintptr_t addrYaw = PatternFinder::Find(pfnHandleInput, 150, "[LEA r64, [r64+off8]]");
 
-    if (addrYaw && addrPitch) {
-      int8_t yawOff = Utils::PatternFinder::ReadInt8(addrYaw + 3);
-      int8_t pitchOff = Utils::PatternFinder::ReadInt8(addrPitch + 5);
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
+      // * 14053e7cb  F3 44 0F 10 41 14             MOVSS XMM8,dword ptr [RCX + 0x14]
+      uintptr_t addrPitch = PatternFinder::Find(pfnHandleInput, 150, "F3 44 0F 10 [40-43]");
 
-      if (Utils::PatternFinder::IsSaneOffset(yawOff) && Utils::PatternFinder::IsSaneOffset(pitchOff)) {
-        owner.SetFreecamMouseXOffset(yawOff);
-        owner.SetFreecamMouseYOffset(pitchOff);
-        owner.SetFreecamRollOffset(pitchOff + 4);  // Roll (Tilt) consistently follows Pitch
+      bool okYaw = phase.Step(addrYaw, "Yaw LEA anchor", "RT");
+      bool okPitch = phase.Step(addrPitch, "Pitch MOVSS anchor", "RT");
+      if (okYaw && okPitch) {
+        int8_t yawOff = PatternFinder::ReadInt8(addrYaw + 3);
+        int8_t pitchOff = PatternFinder::ReadInt8(addrPitch + 5);
 
-        logger->Debug("[FreeCamera] Orientation resolved: Yaw=0x{:X}, Pitch=0x{:X}, Roll=0x{:X}", yawOff, pitchOff, (uint8_t)(pitchOff + 4));
-      } else {
-        logger->Error("[FreeCamera] Resolved Orientation offsets are INVALID (Yaw: 0x{:X}, Pitch: 0x{:X})", yawOff, pitchOff);
-        all_found = false;
+        bool okYawOff = phase.StepOffset(yawOff, "Yaw offset", "OFF");
+        bool okPitchOff = phase.StepOffset(pitchOff, "Pitch offset", "OFF");
+        if (okYawOff && okPitchOff) {
+          owner.SetFreecamMouseXOffset(yawOff);
+          owner.SetFreecamMouseYOffset(pitchOff);
+          owner.SetFreecamRollOffset(pitchOff + 4);  // Roll (Tilt) consistently follows Pitch
+        }
       }
-    } else {
-      if (!addrYaw) logger->Error("[FreeCamera] FAILED to find Yaw anchor (LEA RCX).");
-      if (!addrPitch) logger->Error("[FreeCamera] FAILED to find Pitch anchor (MOVSS RCX).");
-      all_found = false;
     }
-  } else {
-    logger->Error("[FreeCamera] CRITICAL: HandleInput function pointer is missing. Skipping orientation discovery.");
-    all_found = false;
   }
 
-  m_isReady = all_found;
-  auto endTime = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+  // --- Final Readiness Check ---
+  m_isReady = owner.GetFlySpeedPtr() != nullptr && owner.GetFreecamContextOffset() != 0 && owner.GetFreecamPosXOffset() != 0 && owner.GetFreecamPosYOffset() != 0 && owner.GetFreecamPosZOffset() != 0 &&
+              owner.GetFreecamMysteryFloatOffset() != 0 && owner.GetFreecamQuatXOffset() != 0 && owner.GetFreecamQuatYOffset() != 0 && owner.GetFreecamQuatZOffset() != 0 && owner.GetFreecamQuatWOffset() != 0 &&
+              owner.GetFreecamMouseXOffset() != 0 && owner.GetFreecamMouseYOffset() != 0 && owner.GetFreecamRollOffset() != 0;
 
-  if (all_found) {
-    logger->Info("[FreeCamera] Discovery completed successfully. ({} ms)", duration);
-  } else {
-    logger->Error("[FreeCamera] Discovery FAILED. ({} ms)", duration);
-  }
-  return all_found;
+  return log.Finish(m_isReady);
 }
 
 }  // namespace Data::GameData::Finders

@@ -81,6 +81,7 @@ void ManagerCoreService::Reset() {
   m_gameplayManagerAddr = 0;
   m_cameraManagerAddr = 0;
   m_envObjectOffset = 0;
+  m_timeMgrPtrAddr = 0;
 }
 
 }  // namespace Data::GameData

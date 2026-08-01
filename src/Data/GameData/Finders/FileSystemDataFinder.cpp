@@ -29,7 +29,8 @@ const char* UFS_GET_MANAGER_ACCESSOR_SIG = "[SUB r64, imm8] [MOVSXD r64, r32] 48
 
 /**
  * @brief Unique error string to find UFS_RegisterMount entry point.
- * Verified Address (v1.60): 140155fc0
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
+ * 14015646e  4C 8D 0D 43 6B F6 01          LEA R9,[0x1420bcfb8] "[ufs] The table of UFS mo..."
  */
 const char* UFS_REGISTER_MOUNT_STR = "[ufs] The table of UFS mounted devices is full";
 
@@ -88,12 +89,16 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
     uintptr_t pfnGetManager = PatternFinder::Find(UFS_GET_MANAGER_ACCESSOR_SIG);
     if (phase.Step(pfnGetManager, "GetManagerAccessor")) {
       // 1.1 Managers Count Pointer
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_14014fc50[14014fc50]) ---/
+      // * 14014fc57  48 3B 15 D2 48 49 02          CMP RDX,qword ptr [0x1425e4530]
       uintptr_t addrCmp = PatternFinder::Find(pfnGetManager, 64, "48 3b [05-3d]");
       uintptr_t countAddr = addrCmp ? PatternFinder::GetRipAddress(addrCmp, 3, 7) : 0;
       if (countAddr) owner.SetManagersCountAddr(countAddr);
       phase.Step(countAddr, "Managers Count", "PTR");
 
       // 1.2 Managers Array Pointer
+      // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_14014fc50[14014fc50]) ---/
+      // * 14014fc60  48 8B 05 C1 48 49 02          MOV RAX,qword ptr [0x1425e4528]
       uintptr_t addrMov = PatternFinder::Find(pfnGetManager, 64, "[MOV r64, [rip+off32]]");
       uintptr_t arrayAddr = addrMov ? PatternFinder::GetRipAddress(addrMov, 3, 7) : 0;
       if (arrayAddr) owner.SetDevicesArrayAddr(arrayAddr);
@@ -113,12 +118,13 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
     uintptr_t pfnRegisterMount = PatternFinder::FindFunctionByString(UFS_REGISTER_MOUNT_STR, true);
     if (phase.Step(pfnRegisterMount, "UFS_RegisterMount")) {
       // 2.1 Node offsets (DevicePtr, VirtualPath)
-      uintptr_t addrNode = PatternFinder::Find(pfnRegisterMount, 2048, MOUNT_NODE_STRUCT_SIG);
+      uintptr_t addrNode = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_NODE_STRUCT_SIG);
       if (addrNode) {
         uint8_t modrm1 = *reinterpret_cast<uint8_t*>(addrNode + 2);
         int32_t deviceOff = (modrm1 >= 0x80) ? PatternFinder::ReadInt32(addrNode + 3) : PatternFinder::ReadInt8(addrNode + 3);
-
-        uintptr_t addrLea = PatternFinder::Find(addrNode + 2, 32, "[LEA r64, [r64+off8]]");
+        // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
+        // * 140156101  48 8D 48 18                   LEA RCX,[RAX + 0x18]
+        uintptr_t addrLea = PatternFinder::Find(addrNode + 4, 32, "[LEA r64, [r64+off8]]");
         if (addrLea) {
           uint8_t modrm2 = *reinterpret_cast<uint8_t*>(addrLea + 2);
           int32_t vpathOff = (modrm2 >= 0x80) ? PatternFinder::ReadInt32(addrLea + 3) : PatternFinder::ReadInt8(addrLea + 3);
@@ -137,7 +143,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       }
 
       // StringBuffer offset
-      uintptr_t addrStr = PatternFinder::Find(pfnRegisterMount, 2048, MOUNT_STR_BUFF_SIG);
+      uintptr_t addrStr = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_STR_BUFF_SIG);
       if (addrStr) {
         uint8_t modrm = *reinterpret_cast<uint8_t*>(addrStr + 2);
         int32_t strBuffOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrStr + 3) : (modrm >= 0x40) ? PatternFinder::ReadInt8(addrStr + 3) : 0;
@@ -149,7 +155,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       }
 
       // Mount List Head offset
-      uintptr_t addrInc = PatternFinder::Find(pfnRegisterMount, 2048, MOUNT_LIST_HEAD_SIG);
+      uintptr_t addrInc = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_LIST_HEAD_SIG);
       if (addrInc) {
         uint8_t modrm = *reinterpret_cast<uint8_t*>(addrInc + 2);
         int32_t listHeadOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrInc + 3) : PatternFinder::ReadInt8(addrInc + 3);
@@ -161,7 +167,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       }
 
       // Physical Device Path offset
-      uintptr_t addrPhys = PatternFinder::Find(pfnRegisterMount, 4096, PHYS_PATH_SIG);
+      uintptr_t addrPhys = PatternFinder::Find(pfnRegisterMount, 1024, PHYS_PATH_SIG);
       if (addrPhys) {
         uint8_t modrm = *reinterpret_cast<uint8_t*>(addrPhys + 2);
         int32_t physOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrPhys + 3) : (modrm >= 0x40) ? PatternFinder::ReadInt8(addrPhys + 3) : 0;

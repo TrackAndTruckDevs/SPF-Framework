@@ -354,10 +354,10 @@ void GameCameraDebugState::ReloadStatesFromFile() {
   uintptr_t pDebugCameraContext = dataService.GetDebugCameraContextPtr();
   intptr_t countOffset = dataService.GetStateCountOffset();
   intptr_t indexOffset = dataService.GetStateCurrentIndexOffset();
-  intptr_t managerOffset = dataService.GetStateManagerOffset();
+  intptr_t contextOffset = dataService.GetStateContextOffset();
 
   // 2. Validate everything
-  if (!pfnLoadStates || !pDebugCameraContext || countOffset == 0 || indexOffset == 0 || managerOffset == 0) {
+  if (!pfnLoadStates || !pDebugCameraContext || countOffset == 0 || indexOffset == 0 || contextOffset == 0) {
     logger->Error("Cannot reload states: required native function or offsets not found.");
     return;
   }
@@ -374,9 +374,9 @@ void GameCameraDebugState::ReloadStatesFromFile() {
   *(uint64_t*)(pDebugCamera + indexOffset) = 0;
 
   // 4. Call the native function to load the states from /home/cams.txt
-  // The function expects a pointer to the state manager struct
+  // The function expects a pointer to the state context struct
   logger->Info("Calling native LoadStatesFromFile function.");
-  pfnLoadStates((void*)(pDebugCamera + managerOffset));
+  pfnLoadStates((void*)(pDebugCamera + contextOffset));
 }
 
 void GameCameraDebugState::DeleteStateInMemory(int index) {

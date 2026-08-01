@@ -317,7 +317,6 @@ void GameDataCameraService::Shutdown() {
   m_gameUiVisibleOffset = 0;
   m_pfnAddCameraState = nullptr;
   m_stateContextOffset = 0;
-  m_stateManagerOffset = 0;
   m_pfnCycleSavedState = nullptr;
   m_pfnApplyState = nullptr;
   m_pfnLoadStatesFromFile = nullptr;

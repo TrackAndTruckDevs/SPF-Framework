@@ -50,6 +50,20 @@ const char* CAMERA_MANAGER_STR = "unknown camera mode '%s'";
  */
 const char* CAMERA_MANAGER_SIG = "[MOV r64, [rip+off32]]";
 
+/**
+ * @brief Unique string anchor to locate the function that references the TimeManager.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1403e4b50[1403e4b50]) ---/
+ * 1403e4cdf  48 8D 0D C2 A5 D2 01          LEA RCX,[0x14210f2a8] = "Economy not present."
+ */
+const char* TIME_MANAGER_STR = "Economy not present.";
+
+/**
+ * @brief Pattern for the CMP that checks the TimeManager pointer slot.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1403e4b50[1403e4b50]) ---/
+ * 1403e4cd5  48 83 3D D3 8E B0 02 00       CMP qword ptr [0x142eedbb0],0x0
+ */
+const char* TIME_MANAGER_CMP_SIG = "48 83 3D ? ? ? ? 00";
+
 }  // namespace
 
 bool ManagerCoreDataFinder::TryFindOffsets(ManagerCoreService& owner) {
@@ -95,8 +109,27 @@ bool ManagerCoreDataFinder::TryFindOffsets(ManagerCoreService& owner) {
     }
   }
 
+  // ── Phase 3: TimeManager ──
+  {
+    auto phase = log.MakePhase("TimeManager");
+
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1403e4b50[1403e4b50]) ---/
+    // 1403e4cdf  48 8D 0D C2 A5 D2 01          LEA RCX,[0x14210f2a8] = "Economy not present."
+    uintptr_t stringXref = PatternFinder::FindFunctionByString(TIME_MANAGER_STR, false);
+    if (phase.Step(stringXref, "Economy not present string XREF", "REF")) {
+      // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1403e4b50[1403e4b50]) ---/
+      // 1403e4cd5  48 83 3D D3 8E B0 02 00       CMP qword ptr [0x142eedbb0],0x0
+      uintptr_t cmpAddr = PatternFinder::FindBackward(stringXref, 32, TIME_MANAGER_CMP_SIG);
+      if (phase.Step(cmpAddr, "TimeManager CMP", "RT")) {
+        uintptr_t timeManager = PatternFinder::GetRipAddress(cmpAddr, 3, 8);
+        phase.Step(timeManager, "TimeManager", "DATA");
+        if (PatternFinder::IsValidAddress(timeManager)) owner.SetTimeMgrPtrAddr(timeManager);
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
-  m_isReady = PatternFinder::IsValidAddress(owner.GetGameplayManagerAddr()) && PatternFinder::IsValidAddress(owner.GetCameraManagerAddr());
+  m_isReady = PatternFinder::IsValidAddress(owner.GetGameplayManagerAddr()) && PatternFinder::IsValidAddress(owner.GetCameraManagerAddr()) && owner.GetTimeMgrPtrAddr() != 0;
 
   return log.Finish(m_isReady);
 }

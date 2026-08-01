@@ -278,7 +278,6 @@ class GameDataCameraService {
   intptr_t GetGameUiVisibleOffset() const { return m_gameUiVisibleOffset; }
   void* GetAddCameraStateFunc() const { return m_pfnAddCameraState; }
   intptr_t GetStateContextOffset() const { return m_stateContextOffset; }
-  intptr_t GetStateManagerOffset() const { return m_stateManagerOffset; }
   void* GetCycleSavedStateFunc() const { return m_pfnCycleSavedState; }
   void* GetApplyStateFunc() const { return m_pfnApplyState; }
   void* GetLoadStatesFromFileFunc() const { return m_pfnLoadStatesFromFile; }
@@ -465,7 +464,6 @@ class GameDataCameraService {
   void SetGameUiVisibleOffset(intptr_t val) { m_gameUiVisibleOffset = val; }
   void SetAddCameraStateFunc(void* val) { m_pfnAddCameraState = val; }
   void SetStateContextOffset(intptr_t val) { m_stateContextOffset = val; }
-  void SetStateManagerOffset(intptr_t val) { m_stateManagerOffset = val; }
   void SetCycleSavedStateFunc(void* val) { m_pfnCycleSavedState = val; }
   void SetApplyStateFunc(void* val) { m_pfnApplyState = val; }
   void SetLoadStatesFromFileFunc(void* val) { m_pfnLoadStatesFromFile = val; }
@@ -681,7 +679,6 @@ class GameDataCameraService {
   intptr_t m_gameUiVisibleOffset = 0;
   void* m_pfnAddCameraState = nullptr;
   intptr_t m_stateContextOffset = 0;
-  intptr_t m_stateManagerOffset = 0;
   void* m_pfnCycleSavedState = nullptr;
   void* m_pfnApplyState = nullptr;
   void* m_pfnLoadStatesFromFile = nullptr;
