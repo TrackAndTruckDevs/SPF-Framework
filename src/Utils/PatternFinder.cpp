@@ -4,6 +4,7 @@
 
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternTemplates.hpp"
+#include "SPF/Utils/SEHGuard.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
 #include <algorithm>
@@ -23,7 +24,6 @@
 #include <vector>
 #include <winnt.h>
 
-
 SPF_NS_BEGIN
 namespace Utils {
 
@@ -32,6 +32,26 @@ namespace Utils {
 // ===========================================================================
 
 namespace {
+
+/**
+ * @brief Invokes a memory-scanning/reading lambda inside an SEH guard.
+ * @tparam ResultT Return type of the guarded operation.
+ * @param methodName Name used in the ERROR log when the guard fires.
+ * @param fallback Value returned when the guarded call raises an exception.
+ * @param fn The lambda performing raw memory reads.
+ * @return fn() result, or fallback if an exception occurred.
+ *
+ * @details Any access violation inside fn is caught by Utils::InvokeSafe,
+ *          logged as ERROR, and the fallback is returned instead of crashing.
+ */
+template <typename ResultT, typename Fn>
+ResultT SafeScan(const char* methodName, ResultT fallback, Fn&& fn) {
+  ResultT result = fallback;
+  DWORD exceptionCode = 0;
+  if (Utils::InvokeSafe([&]() { result = fn(); }, &exceptionCode)) return result;
+  Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Error("{}: memory access exception (code 0x{:X})", methodName, exceptionCode);
+  return fallback;
+}
 
 /**
  * @brief High-performance scanner using SIMD-accelerated memchr for initial matches.
@@ -203,133 +223,143 @@ PatternFinder& PatternFinder::GetInstance() {
 // ===========================================================================
 
 uintptr_t PatternFinder::Find(const char* signature) {
-  auto signatureVec = SignatureToVector(signature);
-  if (signatureVec.empty()) return 0;
-  uintptr_t result = Find(nullptr, signatureVec);
-  if (!result) {
-    Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Error("Find: Signature not found: '{}'", signature);
-  }
-  return result;
+  return SafeScan<uintptr_t>("Find", 0, [&]() -> uintptr_t {
+    auto signatureVec = SignatureToVector(signature);
+    if (signatureVec.empty()) return 0;
+    uintptr_t result = Find(nullptr, signatureVec);
+    if (!result) {
+      Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Error("Find: Signature not found: '{}'", signature);
+    }
+    return result;
+  });
 }
 
 uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature) {
-  auto signatureVec = SignatureToVector(signature);
-  if (signatureVec.empty() || base == 0 || size == 0) return 0;
+  return SafeScan<uintptr_t>("Find(block)", 0, [&]() -> uintptr_t {
+    auto signatureVec = SignatureToVector(signature);
+    if (signatureVec.empty() || base == 0 || size == 0) return 0;
 
-  // Follow JMP thunk if present at the start address
-  uint8_t* pBase = reinterpret_cast<uint8_t*>(base);
-  if (pBase[0] == 0xE9) {  // JMP rel32
-    uintptr_t target = GetRipAddress(base, 1, 5);
-    if (target) {
-      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
-      logger->Info("Find: Following JMP thunk from 0x{:X} to 0x{:X}", base, target);
-      base = target;
-    }
-  }
-
-  size_t minLen = 0;
-  for (const auto& m : signatureVec) minLen += m.minCount;
-  if (size < minLen) return 0;
-
-  const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
-  const auto& first = signatureVec[0];
-
-  for (uintptr_t i = 0; i <= size - minLen; ++i) {
-    // Optimization: Skip bytes that don't match the first matcher
-    if (first.type == ByteMatcher::EXACT) {
-      const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
-      if (!found) break;
-      i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-    } else if (!first.optional && !first.Matches(data[i])) {
-      continue;
+    // Follow JMP thunk if present at the start address
+    uint8_t* pBase = reinterpret_cast<uint8_t*>(base);
+    if (pBase[0] == 0xE9) {  // JMP rel32
+      uintptr_t target = GetRipAddress(base, 1, 5);
+      if (target) {
+        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+        logger->Info("Find: Following JMP thunk from 0x{:X} to 0x{:X}", base, target);
+        base = target;
+      }
     }
 
-    size_t matchLen = 0;
-    if (MatchInternal(data + i, size - i, signatureVec, 0, 0, matchLen)) return base + i;
-  }
-  return 0;
+    size_t minLen = 0;
+    for (const auto& m : signatureVec) minLen += m.minCount;
+    if (size < minLen) return 0;
+
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
+    const auto& first = signatureVec[0];
+
+    for (uintptr_t i = 0; i <= size - minLen; ++i) {
+      // Optimization: Skip bytes that don't match the first matcher
+      if (first.type == ByteMatcher::EXACT) {
+        const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
+        if (!found) break;
+        i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
+      } else if (!first.optional && !first.Matches(data[i])) {
+        continue;
+      }
+
+      size_t matchLen = 0;
+      if (MatchInternal(data + i, size - i, signatureVec, 0, 0, matchLen)) return base + i;
+    }
+    return 0;
+  });
 }
 
 uintptr_t PatternFinder::FindBackward(uintptr_t startAddress, size_t searchRange, const char* signature) {
-  auto signatureVec = SignatureToVector(signature);
-  if (signatureVec.empty() || startAddress == 0 || searchRange == 0) return 0;
+  return SafeScan<uintptr_t>("FindBackward", 0, [&]() -> uintptr_t {
+    auto signatureVec = SignatureToVector(signature);
+    if (signatureVec.empty() || startAddress == 0 || searchRange == 0) return 0;
 
-  size_t patternLen = 0;
-  for (const auto& m : signatureVec) patternLen += m.minCount;
+    size_t patternLen = 0;
+    for (const auto& m : signatureVec) patternLen += m.minCount;
 
-  /*
-   * BACKWARD SEARCH LOGIC:
-   * We iterate through memory by moving the START point of our comparison window backwards.
-   * However, for each start point, we perform a standard FORWARD match of the signature.
-   *
-   * Example: Signature "48 8D" (LEA)
-   * Memory: [48] [8D] [0D] [AA] [BB] <--- startAddress
-   * 1. Start at [BB]: Does not match "48 8D"
-   * 2. Move to [AA]: Does not match
-   * 3. ...
-   * 4. Move to [48]: [48][8D] matches! Result = address of [48].
-   */
-  for (uintptr_t i = 0; i < searchRange; ++i) {
-    uintptr_t currentStart = startAddress - i;
-    size_t matchLen = 0;
-    if (MatchInternal(reinterpret_cast<const uint8_t*>(currentStart), searchRange - i, signatureVec, 0, 0, matchLen)) {
-      return currentStart;
+    /*
+     * BACKWARD SEARCH LOGIC:
+     * We iterate through memory by moving the START point of our comparison window backwards.
+     * However, for each start point, we perform a standard FORWARD match of the signature.
+     *
+     * Example: Signature "48 8D" (LEA)
+     * Memory: [48] [8D] [0D] [AA] [BB] <--- startAddress
+     * 1. Start at [BB]: Does not match "48 8D"
+     * 2. Move to [AA]: Does not match
+     * 3. ...
+     * 4. Move to [48]: [48][8D] matches! Result = address of [48].
+     */
+    for (uintptr_t i = 0; i < searchRange; ++i) {
+      uintptr_t currentStart = startAddress - i;
+      size_t matchLen = 0;
+      if (MatchInternal(reinterpret_cast<const uint8_t*>(currentStart), searchRange - i, signatureVec, 0, 0, matchLen)) {
+        return currentStart;
+      }
     }
-  }
 
-  return 0;
+    return 0;
+  });
 }
 
 uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const unsigned char* signature, size_t signatureSize) {
-  if (!base || !size || !signature || !signatureSize || size < signatureSize) return 0;
+  return SafeScan<uintptr_t>("Find(raw)", 0, [&]() -> uintptr_t {
+    if (!base || !size || !signature || !signatureSize || size < signatureSize) return 0;
 
-  const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
-  uint8_t firstByte = signature[0];
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(base);
+    uint8_t firstByte = signature[0];
 
-  for (uintptr_t i = 0; i <= size - signatureSize;) {
-    const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, firstByte, size - signatureSize - i + 1));
-    if (!found) break;
+    for (uintptr_t i = 0; i <= size - signatureSize;) {
+      const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, firstByte, size - signatureSize - i + 1));
+      if (!found) break;
 
-    uintptr_t foundIdx = reinterpret_cast<uintptr_t>(found) - base;
-    bool match = true;
-    for (size_t j = 1; j < signatureSize; ++j) {
-      if (signature[j] != '?' && found[j] != signature[j]) {
-        match = false;
-        break;
+      uintptr_t foundIdx = reinterpret_cast<uintptr_t>(found) - base;
+      bool match = true;
+      for (size_t j = 1; j < signatureSize; ++j) {
+        if (signature[j] != '?' && found[j] != signature[j]) {
+          match = false;
+          break;
+        }
       }
+      if (match) return reinterpret_cast<uintptr_t>(found);
+      i = foundIdx + 1;
     }
-    if (match) return reinterpret_cast<uintptr_t>(found);
-    i = foundIdx + 1;
-  }
-  return 0;
+    return 0;
+  });
 }
 
 uintptr_t PatternFinder::FindChain(const std::vector<std::string>& signatures, size_t maxGap, uintptr_t startAddress, size_t searchRange) {
-  if (signatures.empty()) return 0;
-  std::vector<std::vector<ByteMatcher>> compiledSigs;
-  for (const auto& sig : signatures) compiledSigs.push_back(SignatureToVector(sig));
+  return SafeScan<uintptr_t>("FindChain", 0, [&]() -> uintptr_t {
+    if (signatures.empty()) return 0;
+    std::vector<std::vector<ByteMatcher>> compiledSigs;
+    for (const auto& sig : signatures) compiledSigs.push_back(SignatureToVector(sig));
 
-  auto sections = GetModuleSections(nullptr);
-  if (sections.empty()) return 0;
+    auto sections = GetModuleSections(nullptr);
+    if (sections.empty()) return 0;
 
-  uintptr_t moduleBase = sections.front().base;
-  uintptr_t moduleEnd = sections.back().base + sections.back().size;
-  uintptr_t searchBase = (startAddress == 0) ? moduleBase : startAddress;
-  uintptr_t searchLimit = (startAddress != 0) ? (startAddress + (searchRange > 0 ? searchRange : 4096)) : moduleEnd;
-  if (searchLimit > moduleEnd) searchLimit = moduleEnd;
+    uintptr_t moduleBase = sections.front().base;
+    uintptr_t moduleEnd = sections.back().base + sections.back().size;
+    uintptr_t searchBase = (startAddress == 0) ? moduleBase : startAddress;
+    uintptr_t searchLimit = (startAddress != 0) ? (startAddress + (searchRange > 0 ? searchRange : 4096)) : moduleEnd;
+    if (searchLimit > moduleEnd) searchLimit = moduleEnd;
 
-  size_t firstMinLen = 0;
-  for (const auto& m : compiledSigs[0]) firstMinLen += m.minCount;
-  if (searchLimit < searchBase + firstMinLen) return 0;
+    size_t firstMinLen = 0;
+    for (const auto& m : compiledSigs[0]) firstMinLen += m.minCount;
+    if (searchLimit < searchBase + firstMinLen) return 0;
 
-  for (uintptr_t i = searchBase; i <= searchLimit - firstMinLen; ++i) {
-    size_t matchLen = 0;
-    if (MatchInternal(reinterpret_cast<const uint8_t*>(i), searchLimit - i, compiledSigs[0], 0, 0, matchLen)) {
-      if (compiledSigs.size() == 1) return i;
-      if (FindChainRecursive(compiledSigs, 1, i + matchLen, maxGap, searchLimit)) return i;
+    for (uintptr_t i = searchBase; i <= searchLimit - firstMinLen; ++i) {
+      size_t matchLen = 0;
+      if (MatchInternal(reinterpret_cast<const uint8_t*>(i), searchLimit - i, compiledSigs[0], 0, 0, matchLen)) {
+        if (compiledSigs.size() == 1) return i;
+        if (FindChainRecursive(compiledSigs, 1, i + matchLen, maxGap, searchLimit)) return i;
+      }
     }
-  }
-  return 0;
+    return 0;
+  });
 }
 
 // ===========================================================================
@@ -337,106 +367,108 @@ uintptr_t PatternFinder::FindChain(const std::vector<std::string>& signatures, s
 // ===========================================================================
 
 uintptr_t PatternFinder::FindAttributeOffset(const char* className, const char* attributeName) {
-  auto& instance = GetInstance();
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+  return SafeScan<uintptr_t>("FindAttributeOffset", 0, [&]() -> uintptr_t {
+    auto& instance = GetInstance();
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
 
-  if (instance.m_reflectionCache.count(className)) {
-    auto& classMap = instance.m_reflectionCache[className];
-    if (classMap.count(attributeName)) return classMap[attributeName];
-    // Optimization: If the class descriptor was already harvested but attribute is missing,
-    // it's likely not in the table. Skip Module scan.
-  }
+    if (instance.m_reflectionCache.count(className)) {
+      auto& classMap = instance.m_reflectionCache[className];
+      if (classMap.count(attributeName)) return classMap[attributeName];
+      // Optimization: If the class descriptor was already harvested but attribute is missing,
+      // it's likely not in the table. Skip Module scan.
+    }
 
-  // Find attribute name string (with null terminator for higher accuracy and harvesting speed)
-  std::vector<uintptr_t> attrStrAddrs;
-  if (instance.m_stringCache.count(attributeName)) {
-    attrStrAddrs = instance.m_stringCache[attributeName];
-  } else {
-    // For reflection table strings, we search WITH null terminator (+1) to avoid false partial matches
-    attrStrAddrs = FindAllRawInternal(nullptr, (const uint8_t*)attributeName, strlen(attributeName) + 1, true);
-    instance.m_stringCache[attributeName] = attrStrAddrs;
-  }
+    // Find attribute name string (with null terminator for higher accuracy and harvesting speed)
+    std::vector<uintptr_t> attrStrAddrs;
+    if (instance.m_stringCache.count(attributeName)) {
+      attrStrAddrs = instance.m_stringCache[attributeName];
+    } else {
+      // For reflection table strings, we search WITH null terminator (+1) to avoid false partial matches
+      attrStrAddrs = FindAllRawInternal(nullptr, (const uint8_t*)attributeName, strlen(attributeName) + 1, true);
+      instance.m_stringCache[attributeName] = attrStrAddrs;
+    }
 
-  if (attrStrAddrs.empty()) {
-    logger->Error("FindAttributeOffset: String for attribute '{}' NOT FOUND in memory", attributeName);
-    return 0;
-  }
+    if (attrStrAddrs.empty()) {
+      logger->Error("FindAttributeOffset: String for attribute '{}' NOT FOUND in memory", attributeName);
+      return 0;
+    }
 
-  for (uintptr_t attrStrAddr : attrStrAddrs) {
-    std::vector<uintptr_t> allAttrXrefs = FindDataPointers(attrStrAddr);
-    for (uintptr_t xref : allAttrXrefs) {
-      /* [xref-24]:Offset, [xref-16]:TypeID, [xref]:NamePtr, [xref+8]:OwnerPtr */
-      uintptr_t entryOwner = *reinterpret_cast<uintptr_t*>(xref + 8);
-      if (PointerLeadsToString(entryOwner, className)) {
-        logger->Debug("FindAttributeOffset: Harvesting class '{}'...", className);
-        std::vector<uintptr_t> allClassAttrs = FindDataPointers(entryOwner);
-        auto& classMap = instance.m_reflectionCache[className];
+    for (uintptr_t attrStrAddr : attrStrAddrs) {
+      std::vector<uintptr_t> allAttrXrefs = FindDataPointers(attrStrAddr);
+      for (uintptr_t xref : allAttrXrefs) {
+        /* [xref-24]:Offset, [xref-16]:TypeID, [xref]:NamePtr, [xref+8]:OwnerPtr */
+        uintptr_t entryOwner = *reinterpret_cast<uintptr_t*>(xref + 8);
+        if (PointerLeadsToString(entryOwner, className)) {
+          logger->Debug("FindAttributeOffset: Harvesting class '{}'...", className);
+          std::vector<uintptr_t> allClassAttrs = FindDataPointers(entryOwner);
+          auto& classMap = instance.m_reflectionCache[className];
 
-        // Get data sections once for faster validation
-        auto sections = GetModuleSections(nullptr);
-        auto isInDataSection = [&](uintptr_t addr) {
-          for (const auto& s : sections) {
-            if (s.name == ".data" || s.name == ".rdata" || s.name == "DATA") {
-              if (addr >= s.base && addr < s.base + s.size) return true;
-            }
-          }
-          return false;
-        };
-
-        for (uintptr_t pOwnerPtr : allClassAttrs) {
-          // Hard Validation:
-          // 1. Must be 8-byte aligned (pointers in reflection table always are)
-          if (pOwnerPtr % 8 != 0) continue;
-          // 2. Must be in a valid data section to avoid hitting code or stack
-          if (!isInDataSection(pOwnerPtr)) continue;
-
-          uintptr_t pNamePtr = pOwnerPtr - 8;
-
-          // 3. Safety check for the pointer address itself
-          MEMORY_BASIC_INFORMATION mbi;
-          if (VirtualQuery(reinterpret_cast<void*>(pNamePtr), &mbi, sizeof(mbi)) == 0) continue;
-          if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
-
-          uintptr_t nameAddr = *reinterpret_cast<uintptr_t*>(pNamePtr);
-          if (!nameAddr || nameAddr < 0x10000 || nameAddr > 0x00007FFFFFFFFFFF) continue;
-
-          try {
-            const char* fName = reinterpret_cast<const char*>(nameAddr);
-
-            // 4. Double check if nameAddr is readable
-            if (VirtualQuery(fName, &mbi, sizeof(mbi)) == 0) continue;
-            if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
-
-            // Safe check for printable string
-            if (fName[0] >= 0x20 && fName[0] <= 0x7E) {
-              int32_t off = ReadInt32(pNamePtr - 24);
-              if (off == 0) off = static_cast<int32_t>(GetSizeFromTypeId(*reinterpret_cast<uint64_t*>(pNamePtr - 16)));
-
-              if (IsSaneOffset(off)) {
-                std::string attrName;
-                for (int k = 0; k < 128; ++k) {
-                  if (fName[k] == 0) break;
-                  if (fName[k] < 0x20 || fName[k] > 0x7E) {
-                    attrName.clear();
-                    break;
-                  }
-                  attrName += fName[k];
-                }
-                if (!attrName.empty()) classMap[attrName] = static_cast<uintptr_t>(off);
+          // Get data sections once for faster validation
+          auto sections = GetModuleSections(nullptr);
+          auto isInDataSection = [&](uintptr_t addr) {
+            for (const auto& s : sections) {
+              if (s.name == ".data" || s.name == ".rdata" || s.name == "DATA") {
+                if (addr >= s.base && addr < s.base + s.size) return true;
               }
             }
-          } catch (...) {
+            return false;
+          };
+
+          for (uintptr_t pOwnerPtr : allClassAttrs) {
+            // Hard Validation:
+            // 1. Must be 8-byte aligned (pointers in reflection table always are)
+            if (pOwnerPtr % 8 != 0) continue;
+            // 2. Must be in a valid data section to avoid hitting code or stack
+            if (!isInDataSection(pOwnerPtr)) continue;
+
+            uintptr_t pNamePtr = pOwnerPtr - 8;
+
+            // 3. Safety check for the pointer address itself
+            MEMORY_BASIC_INFORMATION mbi;
+            if (VirtualQuery(reinterpret_cast<void*>(pNamePtr), &mbi, sizeof(mbi)) == 0) continue;
+            if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
+
+            uintptr_t nameAddr = *reinterpret_cast<uintptr_t*>(pNamePtr);
+            if (!nameAddr || nameAddr < 0x10000 || nameAddr > 0x00007FFFFFFFFFFF) continue;
+
+            try {
+              const char* fName = reinterpret_cast<const char*>(nameAddr);
+
+              // 4. Double check if nameAddr is readable
+              if (VirtualQuery(fName, &mbi, sizeof(mbi)) == 0) continue;
+              if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS))) continue;
+
+              // Safe check for printable string
+              if (fName[0] >= 0x20 && fName[0] <= 0x7E) {
+                int32_t off = ReadInt32(pNamePtr - 24);
+                if (off == 0) off = static_cast<int32_t>(GetSizeFromTypeId(*reinterpret_cast<uint64_t*>(pNamePtr - 16)));
+
+                if (IsSaneOffset(off)) {
+                  std::string attrName;
+                  for (int k = 0; k < 128; ++k) {
+                    if (fName[k] == 0) break;
+                    if (fName[k] < 0x20 || fName[k] > 0x7E) {
+                      attrName.clear();
+                      break;
+                    }
+                    attrName += fName[k];
+                  }
+                  if (!attrName.empty()) classMap[attrName] = static_cast<uintptr_t>(off);
+                }
+              }
+            } catch (...) {
+            }
           }
+          if (classMap.count(attributeName)) return classMap[attributeName];
+          int32_t finalOff = ReadInt32(xref - 24);
+          if (IsSaneOffset(finalOff)) return static_cast<uintptr_t>(finalOff);
         }
-        if (classMap.count(attributeName)) return classMap[attributeName];
-        int32_t finalOff = ReadInt32(xref - 24);
-        if (IsSaneOffset(finalOff)) return static_cast<uintptr_t>(finalOff);
       }
     }
-  }
 
-  logger->Error("FindAttributeOffset: FAILED to find attribute '{}' in class '{}'", attributeName, className);
-  return 0;
+    logger->Error("FindAttributeOffset: FAILED to find attribute '{}' in class '{}'", attributeName, className);
+    return 0;
+  });
 }
 
 size_t PatternFinder::GetSizeFromTypeId(uint64_t typeId) {
@@ -450,143 +482,194 @@ size_t PatternFinder::GetSizeFromTypeId(uint64_t typeId) {
 // ===========================================================================
 
 uintptr_t PatternFinder::GetFunctionStart(uintptr_t address) {
-  if (address == 0) return 0;
+  return SafeScan<uintptr_t>("GetFunctionStart", address, [&]() -> uintptr_t {
+    if (address == 0) return 0;
 
-  DWORD64 imageBase = 0;
-  PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
+    DWORD64 imageBase = 0;
+    PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
 
-  if (funcEntry && imageBase) {
-    // Resolve chained function entries (funclets/cold code/reordered blocks)
-    while (true) {
-      try {
-        uint8_t* unwindInfoBytes = reinterpret_cast<uint8_t*>(imageBase + funcEntry->UnwindData);
-        if (!unwindInfoBytes) break;
+    if (funcEntry && imageBase) {
+      // Resolve chained function entries (funclets/cold code/reordered blocks)
+      while (true) {
+        try {
+          uint8_t* unwindInfoBytes = reinterpret_cast<uint8_t*>(imageBase + funcEntry->UnwindData);
+          if (!unwindInfoBytes) break;
 
-        // Flags are stored in the high 5 bits of the first byte
-        uint8_t flags = unwindInfoBytes[0] >> 3;
+          // Flags are stored in the high 5 bits of the first byte
+          uint8_t flags = unwindInfoBytes[0] >> 3;
 
-        // UNW_FLAG_CHAININFO = 0x4
-        if ((flags & 0x4) != 0) {
-          uint8_t countOfCodes = unwindInfoBytes[2];
-          int alignedCodes = (countOfCodes + 1) & ~1;
-          PRUNTIME_FUNCTION chainedEntry = reinterpret_cast<PRUNTIME_FUNCTION>(unwindInfoBytes + 4 + (alignedCodes * 2));
-          funcEntry = chainedEntry;
-          continue;
+          // UNW_FLAG_CHAININFO = 0x4
+          if ((flags & 0x4) != 0) {
+            uint8_t countOfCodes = unwindInfoBytes[2];
+            int alignedCodes = (countOfCodes + 1) & ~1;
+            PRUNTIME_FUNCTION chainedEntry = reinterpret_cast<PRUNTIME_FUNCTION>(unwindInfoBytes + 4 + (alignedCodes * 2));
+            funcEntry = chainedEntry;
+            continue;
+          }
+        } catch (...) {
+          break;
         }
-      } catch (...) {
         break;
       }
-      break;
+      return static_cast<uintptr_t>(imageBase + funcEntry->BeginAddress);
     }
-    return static_cast<uintptr_t>(imageBase + funcEntry->BeginAddress);
-  }
 
-  // Fallback for functions without .pdata (e.g. leaf functions or non-metadata code)
-  auto isPadding = [](uint8_t b) -> bool { return b == 0xCC || b == 0x90; };
+    // Fallback for functions without .pdata (e.g. leaf functions or non-metadata code)
+    auto isPadding = [](uint8_t b) -> bool { return b == 0xCC || b == 0x90; };
 
-  auto isLikelyPrologue = [](const uint8_t* p) -> bool {
-    if (p[0] == 0x48 && p[1] == 0x8B && p[2] == 0xC4) return true;
-    if (p[0] == 0x48 && p[1] == 0x83 && p[2] == 0xEC) return true;
-    if (p[0] == 0x48 && p[1] == 0x81 && p[2] == 0xEC) return true;
-    if (p[0] == 0x55 || p[0] == 0x53 || p[0] == 0x56 || p[0] == 0x57) return true;
-    if (p[0] == 0x40 && (p[1] == 0x53 || p[1] == 0x55 || p[1] == 0x56 || p[1] == 0x57)) return true;
-    if (p[0] == 0x41 && (p[1] >= 0x54 && p[1] <= 0x57)) return true;
-    if ((p[0] == 0x48 || p[0] == 0x4C) && p[1] == 0x89 && p[3] == 0x24) return true;
-    if (p[0] == 0x48 && p[1] == 0x89 && p[2] == 0xE5) return true;
-    if (p[0] == 0x48 && p[1] == 0x8D && p[2] == 0x6C && p[3] == 0x24) return true;
-    return false;
-  };
+    auto isLikelyPrologue = [](const uint8_t* p) -> bool {
+      if (p[0] == 0x48 && p[1] == 0x8B && p[2] == 0xC4) return true;
+      if (p[0] == 0x48 && p[1] == 0x83 && p[2] == 0xEC) return true;
+      if (p[0] == 0x48 && p[1] == 0x81 && p[2] == 0xEC) return true;
+      if (p[0] == 0x55 || p[0] == 0x53 || p[0] == 0x56 || p[0] == 0x57) return true;
+      if (p[0] == 0x40 && (p[1] == 0x53 || p[1] == 0x55 || p[1] == 0x56 || p[1] == 0x57)) return true;
+      if (p[0] == 0x41 && (p[1] >= 0x54 && p[1] <= 0x57)) return true;
+      if ((p[0] == 0x48 || p[0] == 0x4C) && p[1] == 0x89 && p[3] == 0x24) return true;
+      if (p[0] == 0x48 && p[1] == 0x89 && p[2] == 0xE5) return true;
+      if (p[0] == 0x48 && p[1] == 0x8D && p[2] == 0x6C && p[3] == 0x24) return true;
+      return false;
+    };
 
-  auto isBoundary = [&isPadding](const uint8_t* p) -> bool {
-    if (isPadding(p[-1])) return true;
-    if (p[-1] == 0xC3) return true;  // ret
-    if (p[-1] == 0xE9) return true;  // jmp rel32
-    return false;
-  };
+    auto isBoundary = [&isPadding](const uint8_t* p) -> bool {
+      if (isPadding(p[-1])) return true;
+      if (p[-1] == 0xC3) return true;  // ret
+      if (p[-1] == 0xE9) return true;  // jmp rel32
+      return false;
+    };
 
-  // Scan backwards from address to find the true function boundary
-  uintptr_t limit = (address > 0x2000) ? (address - 0x2000) : 0;
-  for (uintptr_t addr = address; addr > limit; --addr) {
-    if (addr < 2) break;
-    const uint8_t* p = reinterpret_cast<const uint8_t*>(addr);
-    if (isBoundary(p) && (addr % 16 == 0 || isLikelyPrologue(p))) {
-      return addr;
+    // Scan backwards from address to find the true function boundary
+    uintptr_t limit = (address > 0x2000) ? (address - 0x2000) : 0;
+    for (uintptr_t addr = address; addr > limit; --addr) {
+      if (addr < 2) break;
+      const uint8_t* p = reinterpret_cast<const uint8_t*>(addr);
+      if (isBoundary(p) && (addr % 16 == 0 || isLikelyPrologue(p))) {
+        return addr;
+      }
     }
-  }
 
-  return address;
+    return address;
+  });
 }
 
 uintptr_t PatternFinder::GetFunctionEnd(uintptr_t address) {
-  if (address == 0) return 0;
-  DWORD64 imageBase = 0;
-  PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
-  if (funcEntry && imageBase) {
-    return static_cast<uintptr_t>(imageBase + funcEntry->EndAddress);
-  }
-  return 0;
+  return SafeScan<uintptr_t>("GetFunctionEnd", address, [&]() -> uintptr_t {
+    if (address == 0) return 0;
+    DWORD64 imageBase = 0;
+    PRUNTIME_FUNCTION funcEntry = RtlLookupFunctionEntry(static_cast<DWORD64>(address), &imageBase, nullptr);
+    if (funcEntry && imageBase) {
+      return static_cast<uintptr_t>(imageBase + funcEntry->EndAddress);
+    }
+    return 0;
+  });
 }
 std::vector<uintptr_t> PatternFinder::FindXrefs(uintptr_t targetAddr, const char* moduleName) {
-  auto& instance = GetInstance();
-  std::string modKey = moduleName ? moduleName : "";
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+  return SafeScan<std::vector<uintptr_t>>("FindXrefs", {}, [&]() -> std::vector<uintptr_t> {
+    auto& instance = GetInstance();
+    std::string modKey = moduleName ? moduleName : "";
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
 
-  // Check if cache for this module exists
-  if (instance.m_xrefCache.count(modKey)) {
+    // Check if cache for this module exists
+    if (instance.m_xrefCache.count(modKey)) {
+      auto& modCache = instance.m_xrefCache[modKey];
+      return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
+    }
+
+    // Build XREF cache for the module
+    auto startCache = std::chrono::high_resolution_clock::now();
+    logger->Debug("Building XREF cache for module '{}' (one-time scan)...", modKey);
+
     auto& modCache = instance.m_xrefCache[modKey];
-    return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
-  }
+    auto sections = GetModuleSections(moduleName);
 
-  // Build XREF cache for the module
-  auto startCache = std::chrono::high_resolution_clock::now();
-  logger->Debug("Building XREF cache for module '{}' (one-time scan)...", modKey);
+    for (const auto& sec : sections) {
+      if (sec.name != ".text" && sec.name != "CODE" && sec.name != "INIT") continue;
+      if (sec.size < 7) continue;
 
-  auto& modCache = instance.m_xrefCache[modKey];
-  auto sections = GetModuleSections(moduleName);
-
-  for (const auto& sec : sections) {
-    if (sec.name != ".text" && sec.name != "CODE" && sec.name != "INIT") continue;
-    if (sec.size < 7) continue;
-
-    const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
-    for (uintptr_t i = 0; i <= sec.size - 7; ++i) {
-      const uint8_t* p = data + i;
-      if ((p[0] >= 0x48 && p[0] <= 0x4F) && (p[1] == 0x8D || p[1] == 0x8B) && (p[2] & 0x07) == 0x05) {
-        uintptr_t ripTarget = GetRipAddress(sec.base + i, 3, 7);
-        if (ripTarget) {
-          modCache[ripTarget].push_back(sec.base + i);
+      const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
+      for (uintptr_t i = 0; i <= sec.size - 7; ++i) {
+        const uint8_t* p = data + i;
+        if ((p[0] >= 0x48 && p[0] <= 0x4F) && (p[1] == 0x8D || p[1] == 0x8B) && (p[2] & 0x07) == 0x05) {
+          uintptr_t ripTarget = GetRipAddress(sec.base + i, 3, 7);
+          if (ripTarget) {
+            modCache[ripTarget].push_back(sec.base + i);
+          }
         }
       }
     }
-  }
 
-  auto endCache = std::chrono::high_resolution_clock::now();
-  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endCache - startCache).count();
-  logger->Info("XREF cache for '{}' ready: {} entries found in {} ms", modKey.empty() ? "main" : modKey, modCache.size(), ms);
+    auto endCache = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endCache - startCache).count();
+    logger->Info("XREF cache for '{}' ready: {} entries found in {} ms", modKey.empty() ? "main" : modKey, modCache.size(), ms);
 
-  return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
+    return modCache.count(targetAddr) ? modCache[targetAddr] : std::vector<uintptr_t>();
+  });
+}
+
+std::vector<uintptr_t> PatternFinder::FindCallXrefs(uintptr_t targetFunc, const char* moduleName) {
+  return SafeScan<std::vector<uintptr_t>>("FindCallXrefs", {}, [&]() -> std::vector<uintptr_t> {
+    auto& instance = GetInstance();
+    std::string modKey = moduleName ? moduleName : "";
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+
+    // Check if cache for this module exists
+    if (instance.m_callXrefCache.count(modKey)) {
+      auto& modCache = instance.m_callXrefCache[modKey];
+      return modCache.count(targetFunc) ? modCache[targetFunc] : std::vector<uintptr_t>();
+    }
+
+    // Build CALL XREF cache for the module
+    auto startCache = std::chrono::high_resolution_clock::now();
+    logger->Debug("Building CALL XREF cache for module '{}' (one-time scan)...", modKey);
+
+    auto& modCache = instance.m_callXrefCache[modKey];
+    auto sections = GetModuleSections(moduleName);
+
+    for (const auto& sec : sections) {
+      if (sec.name != ".text" && sec.name != "CODE" && sec.name != "INIT") continue;
+      if (sec.size < 5) continue;
+
+      const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
+      for (uintptr_t i = 0; i <= sec.size - 5; ++i) {
+        // Direct relative call: CALL rel32 (E8 disp32). Target = addr + 5 + rel32.
+        if (data[i] == 0xE8) {
+          uintptr_t callTarget = GetRipAddress(sec.base + i, 1, 5);
+          if (callTarget) {
+            modCache[callTarget].push_back(sec.base + i);
+          }
+        }
+      }
+    }
+
+    auto endCache = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endCache - startCache).count();
+    logger->Info("CALL XREF cache for '{}' ready: {} entries found in {} ms", modKey.empty() ? "main" : modKey, modCache.size(), ms);
+
+    return modCache.count(targetFunc) ? modCache[targetFunc] : std::vector<uintptr_t>();
+  });
 }
 
 std::vector<uintptr_t> PatternFinder::FindDataPointers(uintptr_t targetAddr, const char* moduleName) {
-  auto& instance = GetInstance();
-  if (instance.m_pointerCache.count(targetAddr)) return instance.m_pointerCache[targetAddr];
-  auto start = std::chrono::high_resolution_clock::now();
-  std::vector<uintptr_t> pointers;
-  auto sections = GetModuleSections(moduleName);
-  for (const auto& sec : sections) {
-    if (sec.name == ".text" || sec.name == "INIT" || sec.name == ".pdata") continue;
-    if (sec.size < 8) continue;
-    for (uintptr_t i = 0; i <= sec.size - 8; i += 8) {
-      if (*reinterpret_cast<uintptr_t*>(sec.base + i) == targetAddr) pointers.push_back(sec.base + i);
+  return SafeScan<std::vector<uintptr_t>>("FindDataPointers", {}, [&]() -> std::vector<uintptr_t> {
+    auto& instance = GetInstance();
+    if (instance.m_pointerCache.count(targetAddr)) return instance.m_pointerCache[targetAddr];
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<uintptr_t> pointers;
+    auto sections = GetModuleSections(moduleName);
+    for (const auto& sec : sections) {
+      if (sec.name == ".text" || sec.name == "INIT" || sec.name == ".pdata") continue;
+      if (sec.size < 8) continue;
+      for (uintptr_t i = 0; i <= sec.size - 8; i += 8) {
+        if (*reinterpret_cast<uintptr_t*>(sec.base + i) == targetAddr) pointers.push_back(sec.base + i);
+      }
     }
-  }
-  instance.m_pointerCache[targetAddr] = pointers;
-  auto end = std::chrono::high_resolution_clock::now();
-  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-  if (ms > 5) {
-    Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Debug("FindDataPointers for 0x{:X} took {} ms", targetAddr, ms);
-  }
-  return pointers;
+    instance.m_pointerCache[targetAddr] = pointers;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    if (ms > 5) {
+      Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Debug("FindDataPointers for 0x{:X} took {} ms", targetAddr, ms);
+    }
+    return pointers;
+  });
 }
 
 uintptr_t PatternFinder::FindVTable(const char* signature, int offsetPos, int instructionSize) {
@@ -594,74 +677,103 @@ uintptr_t PatternFinder::FindVTable(const char* signature, int offsetPos, int in
   return instrAddr ? GetRipAddress(instrAddr, offsetPos, instructionSize) : 0;
 }
 
-uintptr_t PatternFinder::GetVTableFunction(uintptr_t vtableAddr, int index) { return vtableAddr ? *reinterpret_cast<uintptr_t*>(vtableAddr + (index * 8)) : 0; }
+uintptr_t PatternFinder::GetVTableFunction(uintptr_t vtableAddr, int index) {
+  return SafeScan<uintptr_t>("GetVTableFunction", 0, [&]() -> uintptr_t { return vtableAddr ? *reinterpret_cast<uintptr_t*>(vtableAddr + (index * 8)) : 0; });
+}
 
 uintptr_t PatternFinder::FindFunctionByConstant(uint32_t constant, bool findStart) {
-  auto sections = GetModuleSections(nullptr);
-  for (const auto& sec : sections) {
-    if (sec.size < 4 || sec.name == ".pdata") continue;
-    for (uintptr_t i = 0; i <= sec.size - 4; ++i) {
-      if (*reinterpret_cast<uint32_t*>(sec.base + i) == constant) {
-        auto xrefs = FindXrefs(sec.base + i);
-        if (!xrefs.empty()) return findStart ? GetFunctionStart(xrefs[0]) : xrefs[0];
+  return SafeScan<uintptr_t>("FindFunctionByConstant", 0, [&]() -> uintptr_t {
+    auto sections = GetModuleSections(nullptr);
+    for (const auto& sec : sections) {
+      if (sec.size < 4 || sec.name == ".pdata") continue;
+      for (uintptr_t i = 0; i <= sec.size - 4; ++i) {
+        if (*reinterpret_cast<uint32_t*>(sec.base + i) == constant) {
+          auto xrefs = FindXrefs(sec.base + i);
+          if (!xrefs.empty()) return findStart ? GetFunctionStart(xrefs[0]) : xrefs[0];
+        }
       }
     }
-  }
-  return 0;
+    return 0;
+  });
 }
 
 uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, const char* contextSig, size_t contextRange) {
-  if (!str) return 0;
-  auto startFunc = std::chrono::high_resolution_clock::now();
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+  return SafeScan<uintptr_t>("FindFunctionByString", 0, [&]() -> uintptr_t {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
 
-  // Find ALL occurrences of the string in memory
-  auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
-  if (stringAddrs.empty()) return 0;
-
-  std::vector<uintptr_t> allXrefs;
-  for (uintptr_t sAddr : stringAddrs) {
-    // Get direct XREFs (LEA/MOV [REG], [RIP+offset])
-    std::vector<uintptr_t> xrefs = FindXrefs(sAddr);
-    allXrefs.insert(allXrefs.end(), xrefs.begin(), xrefs.end());
-
-    // Get indirect pointers (data pointers to this string)
-    std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
-    for (uintptr_t ptrAddr : ptrs) {
-      auto indirect = FindXrefs(ptrAddr);
-      allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
+    if (!str) {
+      logger->Error("FindFunctionByString: null string argument");
+      return 0;
     }
-  }
+    auto startFunc = std::chrono::high_resolution_clock::now();
 
-  auto endFunc = std::chrono::high_resolution_clock::now();
-  auto msTotal = std::chrono::duration_cast<std::chrono::milliseconds>(endFunc - startFunc).count();
-  if (msTotal > 10) {
-    logger->Debug("FindFunctionByString('{}') took {} ms", str, msTotal);
-  }
-
-  if (allXrefs.empty()) return 0;
-
-  for (uintptr_t xref : allXrefs) {
-    if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) {
-      return findStart ? GetFunctionStart(xref) : xref;
+    // Find ALL occurrences of the string in memory
+    auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
+    if (stringAddrs.empty()) {
+      logger->Error("FindFunctionByString('{}'): string not found in module memory", str);
+      return 0;
     }
-  }
-  return 0;
+
+    std::vector<uintptr_t> allXrefs;
+    for (uintptr_t sAddr : stringAddrs) {
+      // Get direct XREFs (LEA/MOV [REG], [RIP+offset])
+      std::vector<uintptr_t> xrefs = FindXrefs(sAddr);
+      allXrefs.insert(allXrefs.end(), xrefs.begin(), xrefs.end());
+
+      // Get indirect pointers (data pointers to this string)
+      std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
+      for (uintptr_t ptrAddr : ptrs) {
+        auto indirect = FindXrefs(ptrAddr);
+        allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
+      }
+    }
+
+    auto endFunc = std::chrono::high_resolution_clock::now();
+    auto msTotal = std::chrono::duration_cast<std::chrono::milliseconds>(endFunc - startFunc).count();
+    if (msTotal > 1000) {
+      logger->Warn("FindFunctionByString('{}'): search took {} ms", str, msTotal);
+    }
+
+    if (allXrefs.empty()) {
+      logger->Error("FindFunctionByString('{}'): string found, but no XREFs point to it", str);
+      return 0;
+    }
+
+    for (uintptr_t xref : allXrefs) {
+      if (!contextSig || (Find(xref - contextRange, contextRange * 2, contextSig) != 0)) {
+        return findStart ? GetFunctionStart(xref) : xref;
+      }
+    }
+    logger->Error("FindFunctionByString('{}'): string found, but no XREF matched the context signature", str);
+    return 0;
+  });
 }
 
 // ===========================================================================
 // SECTION 4: Safe Memory Access & Utilities
 // ===========================================================================
 
-int32_t PatternFinder::ReadInt32(uintptr_t address) { return address ? *reinterpret_cast<int32_t*>(address) : 0; }
-int8_t PatternFinder::ReadInt8(uintptr_t address) { return address ? *reinterpret_cast<int8_t*>(address) : 0; }
-int64_t PatternFinder::ReadInt64(uintptr_t address) { return address ? *reinterpret_cast<int64_t*>(address) : 0; }
-float PatternFinder::ReadFloat(uintptr_t address) { return address ? *reinterpret_cast<float*>(address) : 0.0f; }
-double PatternFinder::ReadDouble(uintptr_t address) { return address ? *reinterpret_cast<double*>(address) : 0.0; }
+int32_t PatternFinder::ReadInt32(uintptr_t address) {
+  return SafeScan<int32_t>("ReadInt32", 0, [&]() { return address ? *reinterpret_cast<int32_t*>(address) : 0; });
+}
+int8_t PatternFinder::ReadInt8(uintptr_t address) {
+  return SafeScan<int8_t>("ReadInt8", 0, [&]() { return address ? *reinterpret_cast<int8_t*>(address) : 0; });
+}
+int64_t PatternFinder::ReadInt64(uintptr_t address) {
+  return SafeScan<int64_t>("ReadInt64", 0, [&]() { return address ? *reinterpret_cast<int64_t*>(address) : 0; });
+}
+float PatternFinder::ReadFloat(uintptr_t address) {
+  return SafeScan<float>("ReadFloat", 0.0f, [&]() { return address ? *reinterpret_cast<float*>(address) : 0.0f; });
+}
+double PatternFinder::ReadDouble(uintptr_t address) {
+  return SafeScan<double>("ReadDouble", 0.0, [&]() { return address ? *reinterpret_cast<double*>(address) : 0.0; });
+}
 
 uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize) {
-  if (!instructionAddr) return 0;
-  return instructionAddr + instructionSize + ReadInt32(instructionAddr + offsetPos);
+  return SafeScan<uintptr_t>("GetRipAddress", 0, [&]() -> uintptr_t {
+    if (!instructionAddr) return 0;
+    return instructionAddr + instructionSize + ReadInt32(instructionAddr + offsetPos);
+  });
 }
 
 bool PatternFinder::IsSaneOffset(int32_t offset) { return offset > 0 && offset < 0x6000; }
@@ -676,25 +788,27 @@ bool PatternFinder::IsValidAddress(uintptr_t addr) {
 }
 
 uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
-  if (!str) return 0;
-  size_t len = strlen(str);
-  // Scan ALL sections for generic strings for reliability, but use high-performance memchr
-  auto results = FindAllRawInternal(moduleName, (const uint8_t*)str, len, false);
-  if (results.empty()) return 0;
+  return SafeScan<uintptr_t>("FindString", 0, [&]() -> uintptr_t {
+    if (!str) return 0;
+    size_t len = strlen(str);
+    // Scan ALL sections for generic strings for reliability, but use high-performance memchr
+    auto results = FindAllRawInternal(moduleName, (const uint8_t*)str, len, false);
+    if (results.empty()) return 0;
 
-  // Prioritize exact (null-terminated) matches to avoid substring false positives (e.g. "abc" inside "abc.sii")
-  auto sections = GetModuleSections(moduleName);
-  for (uintptr_t addr : results) {
-    for (const auto& sec : sections) {
-      if (addr >= sec.base && addr + len < sec.base + sec.size) {
-        if (reinterpret_cast<const char*>(addr)[len] == '\0') return addr;
-        break;  // Found the section, move to next result
+    // Prioritize exact (null-terminated) matches to avoid substring false positives (e.g. "abc" inside "abc.sii")
+    auto sections = GetModuleSections(moduleName);
+    for (uintptr_t addr : results) {
+      for (const auto& sec : sections) {
+        if (addr >= sec.base && addr + len < sec.base + sec.size) {
+          if (reinterpret_cast<const char*>(addr)[len] == '\0') return addr;
+          break;  // Found the section, move to next result
+        }
       }
     }
-  }
 
-  // Fallback to the first occurrence if no null-terminated match is found
-  return results[0];
+    // Fallback to the first occurrence if no null-terminated match is found
+    return results[0];
+  });
 }
 
 std::vector<PatternFinder::MemorySection> PatternFinder::GetModuleSections(const char* moduleName) {
@@ -937,30 +1051,32 @@ std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const s
 }
 
 uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatcher>& signature) {
-  auto sections = GetModuleSections(moduleName);
-  size_t minLen = 0;
-  for (const auto& m : signature) minLen += m.minCount;
+  return SafeScan<uintptr_t>("Find(signature)", 0, [&]() -> uintptr_t {
+    auto sections = GetModuleSections(moduleName);
+    size_t minLen = 0;
+    for (const auto& m : signature) minLen += m.minCount;
 
-  const auto& first = signature[0];
+    const auto& first = signature[0];
 
-  for (const auto& sec : sections) {
-    if (sec.size < minLen) continue;
-    const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
+    for (const auto& sec : sections) {
+      if (sec.size < minLen) continue;
+      const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
 
-    for (uintptr_t i = 0; i <= sec.size - minLen; ++i) {
-      if (first.type == ByteMatcher::EXACT) {
-        const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
-        if (!found) break;
-        i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-      } else if (!first.optional && !first.Matches(data[i])) {
-        continue;
+      for (uintptr_t i = 0; i <= sec.size - minLen; ++i) {
+        if (first.type == ByteMatcher::EXACT) {
+          const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
+          if (!found) break;
+          i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
+        } else if (!first.optional && !first.Matches(data[i])) {
+          continue;
+        }
+
+        size_t matchLen = 0;
+        if (MatchInternal(data + i, sec.size - i, signature, 0, 0, matchLen)) return sec.base + i;
       }
-
-      size_t matchLen = 0;
-      if (MatchInternal(data + i, sec.size - i, signature, 0, 0, matchLen)) return sec.base + i;
     }
-  }
-  return 0;
+    return 0;
+  });
 }
 
 }  // namespace Utils

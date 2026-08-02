@@ -4,121 +4,102 @@
 
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <cstddef>
 #include <cstdint>
 
 SPF_NS_BEGIN
 namespace Data::GameData::Finders {
+using namespace Utils;
+
+namespace {
+
+/*
+ * ANCHOR #1: Base FOV (UpdateCameraProjection initialization)
+ *
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateCameraProjection[140771010]) ---/
+ * 140771032  F3 0F 10 51 20                MOVSS XMM2,dword ptr [RCX + 0x20]
+ * 140771037  48 83 C1 38                   ADD RCX,0x38
+ */
+const char* BASE_FOV_SIG = "[MOVSS xmm, [r64+off8]] [ADD r64, imm8]";
+
+/*
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateCameraProjection[140771010]) ---/
+ * 140771050  F3 0F 11 5B 38                MOVSS dword ptr [RBX + 0x38],XMM3
+ * 140771055  EB 05                         JMP 0x14077105c
+ */
+const char* HORIZ_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
+
+/*
+ * ANCHOR #3: Vertical FOV Final (Limit check block)
+ *
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateCameraProjection[140771010]) ---/
+ * 140771066  F3 0F 11 43 3C                MOVSS dword ptr [RBX + 0x3c],XMM0
+ * 14077106b  EB 05                         JMP 0x140771072
+ * 14077106d  F3 0F 10 43 3C                MOVSS XMM0,dword ptr [RBX + 0x3c]
+ */
+const char* VERT_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
+
+}  // namespace
+
 bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(GetName());
-  logger->Info("Searching for shared FOV offsets (Dynamic Pattern Search)...");
+  if (m_isReady) return true;
+
+  FinderLog log(GetName());
 
   auto& cameraHooks = Hooks::CameraHooks::GetInstance();
   auto pfnUpdateCameraProjection = cameraHooks.GetUpdateCameraProjectionFunc();
 
   if (!pfnUpdateCameraProjection) {
-    logger->Warn("Cannot find FOV offsets: UpdateCameraProjection function pointer is not ready. Will retry...");
-    return false;
+    log.Warn("Cannot find FOV offsets: UpdateCameraProjection function pointer is not ready. Will retry...");
+    return log.Finish(false);
   }
 
-  bool all_found = true;
-  const size_t SEARCH_RANGE = 512;
+  // ── Phase 1: Base FOV ──
+  {
+    auto phase = log.MakePhase("Base FOV");
 
-  /*
-   * ANCHOR #1: Base FOV (UpdateCameraProjection initialization)
-   *
-   * Expected offset for Game Version 1.58: 0x20
-   *
-   * Signature breakdown:
-   * 0F B6 41 2C           | MOVZX EAX, byte ptr [RCX + 0x2c]
-   * 48 8D 51 3C           | LEA RDX, [RCX + 0x3c]
-   * F3 0F 5E CA           | DIVSS XMM1, XMM2
-   * 48 8B D9              | MOV RBX, RCX
-   * ?? ?? ?? ??           | MOV [RSP + offset], AL (88 44 24 20)
-   * F3 0F 10 51 ??        | MOVSS XMM2, dword ptr [RCX + 0x20] -> Base FOV
-   */
-  const char* p_base_fov = "0F B6 41 2C 48 8D 51 3C F3 0F 5E CA 48 8B D9 ?? ?? ?? ?? F3 0F 10 51 ??";
-  uintptr_t addr = Utils::PatternFinder::Find((uintptr_t)pfnUpdateCameraProjection, SEARCH_RANGE, p_base_fov);
-  if (addr) {
-    int8_t baseFovOffset = Utils::PatternFinder::ReadInt8(addr + 23);
-    if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(baseFovOffset))) {
-      owner.SetFovBaseOffset(baseFovOffset);
-      logger->Debug("FOV Anchor #1 found: BaseFovOffset=0x{:X}", (uint8_t)baseFovOffset);
-    } else {
-      logger->Error("FOV Anchor #1: BaseFov INVALID (0x{:X})", (uint8_t)baseFovOffset);
-      all_found = false;
+    uintptr_t addr = PatternFinder::Find((uintptr_t)pfnUpdateCameraProjection, 64, BASE_FOV_SIG);
+    if (phase.Step(addr, "FOV Anchor #1 (Base FOV)", "RT")) {
+      int8_t baseFovOffset = PatternFinder::ReadInt8(addr + 4);
+      if (phase.StepOffset(baseFovOffset, "BaseFovOffset", "OFF")) {
+        owner.SetFovBaseOffset(baseFovOffset);
+      }
     }
-  } else {
-    logger->Error("FAILED to find FOV Anchor #1 (Base FOV) in UpdateCameraProjection");
-    all_found = false;
   }
 
-  /*
-   * ANCHOR #2: Horizontal FOV Final (Limit check block)
-   *
-   * Expected offset for Game Version 1.58: 0x38
-   *
-   * Signature breakdown:
-   * F3 0F 10 5B ??        | MOVSS XMM3, dword ptr [RBX + 0x30]
-   * 0F 57 C9              | XORPS XMM1, XMM1
-   * 0F 2F D9              | COMISS XMM3, XMM1
-   * 76 07                 | JBE ...
-   * F3 0F 11 5B ??        | MOVSS dword ptr [RBX + 0x38], XMM3 -> Horizontal FOV Final
-   */
-  const char* p_horiz_fov = "F3 0F 10 5B ?? 0F 57 C9 0F 2F D9 76 07 F3 0F 11 5B ??";
-  addr = Utils::PatternFinder::Find((uintptr_t)pfnUpdateCameraProjection, SEARCH_RANGE, p_horiz_fov);
-  if (addr) {
-    int8_t horizFovOffset = Utils::PatternFinder::ReadInt8(addr + 17);
-    if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(horizFovOffset))) {
-      owner.SetFovHorizFinalOffset(horizFovOffset);
-      logger->Debug("FOV Anchor #2 found: HorizFovOffset=0x{:X}", (uint8_t)horizFovOffset);
-    } else {
-      logger->Error("FOV Anchor #2: HorizFov INVALID (0x{:X})", (uint8_t)horizFovOffset);
-      all_found = false;
+  // ── Phase 2: Horizontal FOV Final ──
+  uintptr_t addr = 0;
+  {
+    auto phase = log.MakePhase("Horizontal FOV Final");
+
+    addr = PatternFinder::Find((uintptr_t)pfnUpdateCameraProjection, 96, HORIZ_FOV_SIG);
+    if (phase.Step(addr, "FOV Anchor #2 (Horizontal FOV)", "RT")) {
+      int8_t horizFovOffset = PatternFinder::ReadInt8(addr + 4);
+      if (phase.StepOffset(horizFovOffset, "HorizFovOffset", "OFF")) {
+        owner.SetFovHorizFinalOffset(horizFovOffset);
+      }
     }
-  } else {
-    logger->Error("FAILED to find FOV Anchor #2 (Horizontal FOV) in UpdateCameraProjection");
-    all_found = false;
   }
 
-  /*
-   * ANCHOR #3: Vertical FOV Final (Limit check block)
-   *
-   * Expected offset for Game Version 1.58: 0x3C
-   *
-   * Signature breakdown:
-   * F3 0F 10 43 ??        | MOVSS XMM0, dword ptr [RBX + 0x34]
-   * 0F 2F C1              | COMISS XMM0, XMM1
-   * 76 07                 | JBE ...
-   * F3 0F 11 43 ??        | MOVSS dword ptr [RBX + 0x3C], XMM0 -> Vertical FOV Final
-   */
-  const char* p_vert_fov = "F3 0F 10 43 ?? 0F 2F C1 76 07 F3 0F 11 43 ??";
-  addr = Utils::PatternFinder::Find((uintptr_t)pfnUpdateCameraProjection, SEARCH_RANGE, p_vert_fov);
-  if (addr) {
-    int8_t vertFovOffset = Utils::PatternFinder::ReadInt8(addr + 14);
-    if (Utils::PatternFinder::IsSaneOffset(static_cast<int32_t>(vertFovOffset))) {
-      owner.SetFovVertFinalOffset(vertFovOffset);
-      logger->Debug("FOV Anchor #3 found: VertFovOffset=0x{:X}", (uint8_t)vertFovOffset);
-    } else {
-      logger->Error("FOV Anchor #3: VertFov INVALID (0x{:X})", (uint8_t)vertFovOffset);
-      all_found = false;
+  // ── Phase 3: Vertical FOV Final ──
+  {
+    auto phase = log.MakePhase("Vertical FOV Final");
+
+    if (addr) addr = PatternFinder::Find(addr + 5, 32, VERT_FOV_SIG);
+    if (phase.Step(addr, "FOV Anchor #3 (Vertical FOV)", "RT")) {
+      int8_t vertFovOffset = PatternFinder::ReadInt8(addr + 4);
+      if (phase.StepOffset(vertFovOffset, "VertFovOffset", "OFF")) {
+        owner.SetFovVertFinalOffset(vertFovOffset);
+      }
     }
-  } else {
-    logger->Error("FAILED to find FOV Anchor #3 (Vertical FOV) in UpdateCameraProjection");
-    all_found = false;
   }
 
-  m_isReady = all_found;
-  if (all_found) {
-    logger->Info("Successfully found all shared FOV offsets dynamically.");
-  } else {
-    logger->Error("Failed to find one or more shared FOV offsets.");
-  }
+  // --- Final Readiness Check ---
+  m_isReady = owner.GetFovBaseOffset() != 0 && owner.GetFovHorizFinalOffset() != 0 && owner.GetFovVertFinalOffset() != 0;
 
-  return m_isReady;
+  return log.Finish(m_isReady);
 }
 }  // namespace Data::GameData::Finders
 SPF_NS_END

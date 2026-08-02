@@ -17,6 +17,7 @@
 #include "SPF/Data/GameData/Finders/ViewportDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/WheelCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/WindowCameraDataFinder.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
@@ -71,6 +72,13 @@ bool GameDataCameraService::TryFindAllOffsets() {
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
   bool all_critical_found = true;
+
+  // GameDataCameraService depends on CameraManager (resolved by ManagerCoreService).
+  // Do not resolve offsets until the manager is available to avoid null dereferences.
+  if (!ManagerCoreService::GetInstance().IsCameraManagerReady()) {
+    logger->Debug("GameDataCameraService: CameraManager not resolved yet. Waiting for ManagerCoreService.");
+    return false;
+  }
 
   for (const auto& finder : m_dataFinders) {
     if (!finder->IsReady()) {
@@ -153,8 +161,6 @@ void GameDataCameraService::Shutdown() {
   m_dataFinders.clear();
 
   // Reset ALL internal pointers and offsets to 0
-  m_pCameraManagerPtrAddr = 0;
-  m_cameraManagerAdjustment = 0;
   m_cameraArrayOffset = 0;
   m_activeCameraIdOffset = 0;
   m_pFreeCamSpeed = nullptr;
@@ -311,7 +317,6 @@ void GameDataCameraService::Shutdown() {
   m_gameUiVisibleOffset = 0;
   m_pfnAddCameraState = nullptr;
   m_stateContextOffset = 0;
-  m_stateManagerOffset = 0;
   m_pfnCycleSavedState = nullptr;
   m_pfnApplyState = nullptr;
   m_pfnLoadStatesFromFile = nullptr;

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <fileapi.h>
 #include <libloaderapi.h>
+#include <memoryapi.h>
 #include <minwindef.h>
 #include <string>
 #include <string_view>
@@ -54,11 +55,18 @@ void FinderLog::InitModuleInfo() {
 
 std::string FinderLog::Rel(uintptr_t addr) const {
   if (addr == 0) return "(null)";
-  if (m_moduleBase == 0) {
+  if (!IsInModule(addr)) {
     return fmt::format("0x{:X}", addr);
   }
   uintptr_t offset = addr - m_moduleBase;
   return fmt::format("0x{:X} (\"{}\"+{:X})", addr, m_moduleName, offset);
+}
+
+bool FinderLog::IsInModule(uintptr_t addr) const {
+  if (m_moduleBase == 0) return false;
+  MEMORY_BASIC_INFORMATION mbi;
+  if (VirtualQuery(reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)) == 0) return false;
+  return reinterpret_cast<uintptr_t>(mbi.AllocationBase) == m_moduleBase;
 }
 
 bool FinderLog::ValidateAddr(uintptr_t addr) const { return PatternFinder::IsValidAddress(addr); }
