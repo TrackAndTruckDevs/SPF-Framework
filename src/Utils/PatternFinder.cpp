@@ -218,6 +218,12 @@ PatternFinder& PatternFinder::GetInstance() {
   return instance;
 }
 
+void PatternFinder::ClearXrefCache() {
+  PatternFinder& instance = GetInstance();
+  instance.m_xrefCache.clear();
+  instance.m_callXrefCache.clear();
+}
+
 // ===========================================================================
 // SECTION 1: Pattern Matching Core
 // ===========================================================================

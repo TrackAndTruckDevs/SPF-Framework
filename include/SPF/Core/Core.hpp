@@ -5,6 +5,7 @@
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -241,6 +242,10 @@ class Core {
   bool m_telemetryReady = false;
   bool m_inputReady = false;
   bool m_handlersBound = false;
+  // Written by the deferred init thread, read by telemetry frame start.
+  std::atomic<bool> m_deferredInitDone = false;
+  // Set once per telemetry session when OnGameWorldReady is fired.
+  bool m_worldReadyFired = false;
 
   // --- Timing Statistics ---
   std::chrono::steady_clock::time_point m_preloadStartTime;

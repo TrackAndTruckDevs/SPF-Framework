@@ -35,6 +35,12 @@ class PatternFinder {
   PatternFinder(const PatternFinder&) = delete;
   PatternFinder& operator=(const PatternFinder&) = delete;
 
+  /**
+   * @brief Clears all cached cross-reference lookups (data xrefs and call-site xrefs).
+   * @details Used at framework shutdown to release memory held by the pattern finder.
+   */
+  static void ClearXrefCache();
+
   // ===========================================================================
   // SECTION 1: Pattern Matching Core
   // ===========================================================================

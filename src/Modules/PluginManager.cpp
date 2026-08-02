@@ -146,6 +146,10 @@ void PluginManager::Init(EventManager& eventManager, HandleManager& handleManage
   m_telemetryService = &telemetryService;
   m_inputService = &inputService;
 
+  // PluginManager is a singleton; reset session state on every re-init so plugins
+  // do not get a premature OnGameWorldReady via ActivatePlugins().
+  m_isGameWorldReady = false;
+
   m_onGameWorldReadySink = std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnGameWorldReady);
   m_onGameWorldReadySink->Connect<&PluginManager::OnGameWorldReady>(this);
 

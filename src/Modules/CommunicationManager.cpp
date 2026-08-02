@@ -67,6 +67,23 @@ Core::InitializationReport CommunicationManager::Initialize() {
 void CommunicationManager::Shutdown() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("CommunicationManager");
   logger->Info("Shutting down CommunicationManager...");
+
+  // 1. Cancel queued requests and wait for in-flight API work to finish.
+  m_apiService.Shutdown();
+
+  // 2. Drop references to pending futures (non-blocking release of shared state).
+  m_updateFuture.reset();
+  m_patronsFuture.reset();
+  m_releaseNotesFuture.reset();
+  m_trackUsageFuture.reset();
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_pluginUpdateFutures.clear();
+  }
+
+  // 3. Disconnect from all signals.
+  m_onRequestTrackUsageSink.reset();
+  m_onErrorReportSinkChangedSink.reset();
 }
 
 void CommunicationManager::Update() {

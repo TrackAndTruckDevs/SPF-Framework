@@ -19,11 +19,13 @@
 #include <cstddef>
 #include <exception>
 #include <fmt/format.h>
+#include <functional>
 #include <future>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -57,6 +59,48 @@ namespace System {
 // --- ApiService Implementation ---
 
 ApiService::ApiService() { m_state.lastCheckTime = std::chrono::steady_clock::now() - HEALTH_CHECK_INTERVAL - std::chrono::seconds(1); }
+
+ApiService::~ApiService() { Shutdown(); }
+
+void ApiService::WorkerLoop() {
+  while (true) {
+    std::function<void()> task;
+    {
+      std::unique_lock<std::mutex> lock(m_taskMutex);
+      m_taskCV.wait(lock, [this] { return m_shutdown || !m_tasks.empty(); });
+      if (m_shutdown) break;
+      task = std::move(m_tasks.front());
+      m_tasks.pop();
+    }
+    task();
+  }
+}
+
+void ApiService::EnsureWorkerStarted() {
+  std::lock_guard<std::mutex> lock(m_taskMutex);
+  if (m_workerThread.joinable()) return;
+  m_workerThread = std::thread(&ApiService::WorkerLoop, this);
+}
+
+void ApiService::PostTask(std::function<void()> task) {
+  EnsureWorkerStarted();
+  {
+    std::lock_guard<std::mutex> lock(m_taskMutex);
+    m_tasks.push(std::move(task));
+  }
+  m_taskCV.notify_one();
+}
+
+void ApiService::Shutdown() {
+  {
+    std::lock_guard<std::mutex> lock(m_taskMutex);
+    m_shutdown = true;
+  }
+  m_taskCV.notify_all();
+  if (m_workerThread.joinable()) {
+    m_workerThread.join();
+  }
+}
 
 ServiceStatus ApiService::GetLastStatus() const {
   std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -205,7 +249,7 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
   auto promise = std::make_shared<std::promise<ApiResult<UpdateInfo>>>();
   std::future<ApiResult<UpdateInfo>> future = promise->get_future();
 
-  std::thread([this, promise, baseUrl, major, minor, patch, channel, lang]() {
+  PostTask([this, promise, baseUrl, major, minor, patch, channel, lang]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<UpdateInfo> apiResult;
 
@@ -279,7 +323,7 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
     }
 
     promise->set_value(apiResult);
-  }).detach();
+  });
 
   return future;
 }
@@ -288,7 +332,7 @@ std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const s
   auto promise = std::make_shared<std::promise<ApiResult<ChangelogData>>>();
   std::future<ApiResult<ChangelogData>> future = promise->get_future();
 
-  std::thread([this, promise, baseUrl, major, minor, patch, lang]() {
+  PostTask([this, promise, baseUrl, major, minor, patch, lang]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<ChangelogData> apiResult;
 
@@ -337,7 +381,7 @@ std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const s
     }
 
     promise->set_value(apiResult);
-  }).detach();
+  });
 
   return future;
 }
@@ -346,7 +390,7 @@ std::future<ApiResult<std::vector<Patron>>> ApiService::FetchPatronsAsync(const 
   auto promise = std::make_shared<std::promise<ApiResult<std::vector<Patron>>>>();
   std::future<ApiResult<std::vector<Patron>>> future = promise->get_future();
 
-  std::thread([this, promise, baseUrl]() {
+  PostTask([this, promise, baseUrl]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<std::vector<Patron>> apiResult;
 
@@ -404,7 +448,7 @@ std::future<ApiResult<std::vector<Patron>>> ApiService::FetchPatronsAsync(const 
     }
 
     promise->set_value(apiResult);
-  }).detach();
+  });
 
   return future;
 }
@@ -415,7 +459,7 @@ std::future<void> ApiService::TrackUsageAsync(const std::string& baseUrl, std::s
   auto promise = std::make_shared<std::promise<void>>();
   std::future<void> future = promise->get_future();
 
-  std::thread([this, promise, baseUrl, uuid, sessionId, buildHash, version, game, gameVersion, plugins, logs]() {
+  PostTask([this, promise, baseUrl, uuid, sessionId, buildHash, version, game, gameVersion, plugins, logs]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
 
     if (!EnsureConnectivity(baseUrl)) {
@@ -447,7 +491,7 @@ std::future<void> ApiService::TrackUsageAsync(const std::string& baseUrl, std::s
       logger->Error("Error in TrackUsageAsync: {}", e.what());
     }
     promise->set_value();
-  }).detach();
+  });
 
   return future;
 }
@@ -456,7 +500,7 @@ std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAs
   auto promise = std::make_shared<std::promise<ApiResult<GithubReleaseInfo>>>();
   std::future<ApiResult<GithubReleaseInfo>> future = promise->get_future();
 
-  std::thread([promise, owner, repo]() {
+  PostTask([promise, owner, repo]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<GithubReleaseInfo> apiResult;
 
@@ -517,7 +561,7 @@ std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAs
     }
 
     promise->set_value(apiResult);
-  }).detach();
+  });
 
   return future;
 }

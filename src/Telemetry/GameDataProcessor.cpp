@@ -52,7 +52,7 @@ void GameDataProcessor::Initialize(const scs_telemetry_init_params_v100_t* const
                 m_gameState.telemetry_game_version_minor);
 }
 
-void GameDataProcessor::Shutdown() { m_gameWorldReadyNotified = false; }
+void GameDataProcessor::Shutdown() {}
 
 void GameDataProcessor::HandleConfiguration(const scs_telemetry_configuration_t* info) {
   if (strcmp(info->id, SCS_TELEMETRY_CONFIG_substances) == 0) {
@@ -94,12 +94,6 @@ void GameDataProcessor::HandleFrameStart(const scs_telemetry_frame_start_t* cons
   m_timestamps.simulation = info->simulation_time;
   m_timestamps.render = info->render_time;
   m_timestamps.paused_simulation = info->paused_simulation_time;
-
-  if (m_timestamps.simulation > 0 && !m_gameWorldReadyNotified) {
-    m_eventManager.System.OnGameWorldReady.Call();
-    m_gameWorldReadyNotified = true;
-    m_logger.Info("Game world is now considered ready (simulation > 0).");
-  }
 }
 
 void GameDataProcessor::HandlePaused() { m_gameState.paused = true; }

@@ -49,8 +49,6 @@ class GameDataProcessor {
   GameContext& m_context;
   Events::EventManager& m_eventManager;
 
-  bool m_gameWorldReadyNotified = false;
-
   SCS::GameState m_gameState;
   SCS::Timestamps m_timestamps;
   SCS::CommonData m_commonData;

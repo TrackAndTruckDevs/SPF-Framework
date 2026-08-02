@@ -41,6 +41,7 @@
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 #include "SPF/UI/ImGuiInputConsumer.hpp"
 #include "SPF/UI/UIManager.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "nlohmann/json_fwd.hpp"
@@ -316,6 +317,16 @@ void Core::Reset() {
   if (m_deferredInitThread.joinable()) {
     m_deferredInitThread.join();
   }
+
+  // Reset one-shot state for the new telemetry session.
+  m_deferredInitDone.store(false);
+  m_worldReadyFired = false;
+
+  // Drop any deferred tasks that never executed (they may capture freed manager state).
+  {
+    std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+    m_deferredTasks.clear();
+  }
 }
 
 void Core::FullShutdown() {
@@ -371,6 +382,15 @@ void Core::FullShutdown() {
   if (m_deferredInitThread.joinable()) {
     m_deferredInitThread.join();
   }
+
+  // Drop any deferred tasks that never executed (they may capture freed manager state).
+  {
+    std::lock_guard<std::mutex> lock(m_deferredTasksMutex);
+    m_deferredTasks.clear();
+  }
+
+  // Release pattern-finder caches (xref/string/pointer lookups) before unloading the game.
+  Utils::PatternFinder::ClearXrefCache();
 
   // Step 7: The logger factory is the very last thing to be shut down.
   // This is called last because all previous steps may want to log messages.
@@ -631,6 +651,10 @@ void Core::ShutdownUI() {
 void Core::ShutdownManagers() {
   m_logger->Info("--> Shutting down managers...");
   m_keyBindsManager.reset();
+  if (m_communicationManager) {
+    // Cancel in-flight API requests and disconnect sinks before destruction.
+    m_communicationManager->Shutdown();
+  }
   m_communicationManager.reset();  //  Reset CommunicationManager
   m_apiService.reset();            //  Reset ApiService
   // m_inputManager.reset();
@@ -732,6 +756,8 @@ void Core::PerformDeferredInitialization() {
 
   // 5. Calculate framework build hash
   EnvironmentManager::GetInstance().CalculateBuildHash();
+
+  m_deferredInitDone.store(true);
 
   m_deferredMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
   logger->Info("Background tasks completed successfully ({} ms).", m_deferredMs);
@@ -1145,10 +1171,16 @@ void Core::ProcessHookDependenciesForPlugin(const std::string& pluginName, bool 
 }
 
 void Core::OnTelemetryFrameStart() {
-  // Get delta time from the service that calculates it
-  const float dt = m_telemetryService->GetDeltaTime();
+  // Fire world-ready only when the world is loaded AND background init finished.
+  // OnGameWorldReady fires once per telemetry session; on a reload inside the
+  // world it may otherwise fire before ManagerCore is resolved (deferred thread).
+  if (!m_worldReadyFired && m_deferredInitDone && m_telemetryService && m_telemetryService->GetTimestamps().simulation > 0) {
+    m_worldReadyFired = true;
+    m_logger->Info("World loaded and deferred init complete. Firing OnGameWorldReady.");
+    m_eventManager->System.OnGameWorldReady.Call();
+  }
 
-  // Update managers that need per-frame updates
+  const float dt = m_telemetryService ? m_telemetryService->GetDeltaTime() : 0.0f;
   if (GameCameraManager::GetInstance().IsInstalled()) {
     GameCameraManager::GetInstance().Update(dt);
   }

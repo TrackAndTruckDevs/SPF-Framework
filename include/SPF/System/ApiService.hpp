@@ -2,14 +2,18 @@
 
 #include "SPF/Namespace.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <map>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 
@@ -110,7 +114,7 @@ struct GithubReleaseInfo {
 class ApiService {
  public:
   ApiService();
-  ~ApiService() = default;
+  ~ApiService();
 
   // Asynchronously fetches the latest update information using the new get_framework_update.php.
   std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel, const std::string& lang);
@@ -133,6 +137,12 @@ class ApiService {
    */
   ServiceStatus GetLastStatus() const;
 
+  /**
+   * @brief Cancels queued requests, waits for in-flight work and releases the background worker thread.
+   * @details Idempotent; safe to call multiple times. The destructor invokes this automatically.
+   */
+  void Shutdown();
+
  private:
   struct ConnectivityState {
     ServiceStatus status = ServiceStatus::Unknown;
@@ -144,6 +154,29 @@ class ApiService {
   ConnectivityState m_state;
   mutable std::mutex m_stateMutex;
   std::condition_variable m_connectivityCV;
+
+  // --- Background task queue (replaces detached worker threads) ---
+  std::thread m_workerThread;
+  std::mutex m_taskMutex;
+  std::condition_variable m_taskCV;
+  std::queue<std::function<void()>> m_tasks;
+  std::atomic<bool> m_shutdown{false};
+
+  /**
+   * @brief Background worker loop that executes queued tasks until shutdown.
+   */
+  void WorkerLoop();
+
+  /**
+   * @brief Lazily starts the background worker thread on first use.
+   */
+  void EnsureWorkerStarted();
+
+  /**
+   * @brief Enqueues a task for the background worker thread.
+   * @param task The task to execute asynchronously.
+   */
+  void PostTask(std::function<void()> task);
 
   /**
    * @brief Performs a health check if needed (based on time threshold).
