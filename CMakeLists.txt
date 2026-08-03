@@ -2,8 +2,8 @@
 cmake_minimum_required(VERSION 4.4)
 
 # Define our project.
-project(SPF VERSION 1.2.0 LANGUAGES CXX)
-add_compile_definitions(_AMD64_)
+project(SPF VERSION 1.2.1 LANGUAGES CXX)
+add_compile_definitions(_AMD64_ NOMINMAX)
 
 # --- C++ Standard & IWYU ---
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -573,7 +573,7 @@ message(STATUS "  ==================== END CONFIGURATION =================")
 # build/compile_commands.json. When using CMake presets the file
 # ends up in build/<preset>/compile_commands.json instead.
 # This POST_BUILD step copies it so clangd can find it.
-if(CMAKE_EXPORT_COMPILE_COMMANDS)
+if(CMAKE_EXPORT_COMPILE_COMMANDS AND NOT CMAKE_GENERATOR MATCHES "Visual Studio")
     string(COMPARE NOTEQUAL "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/build" NON_DEFAULT_BUILD)
     if(NON_DEFAULT_BUILD)
         set(CLANGD_LINK "${CMAKE_SOURCE_DIR}/build/compile_commands.json")
