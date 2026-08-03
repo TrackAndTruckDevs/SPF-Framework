@@ -110,3 +110,40 @@ Forces the framework to re-scan game memory for offsets.
 | **`GW_SetGamePaused(paused)`** | `void` | Sets the simulation paused/unpaused state. |
 | **`GW_SetEngineHalt(halted)`** | `void` | Hard halts all engine systems (physics, traffic, logic updates). |
 | **`GW_GetRealDeltaTime()`** | `double` | Returns the real frame delta time (in seconds). |
+
+### City Data & Geometry
+
+| Function | Return Type | Description |
+|---|---|---|
+| **`GW_GetCityCount()`** | `uint32_t` | Gets the total number of cities in the current game world (or `0` if not ready). |
+| **`GW_GetCityName(index, out_buffer, buffer_size)`** | `int` | Copies the raw name of a city into the provided buffer. Returns full length or `-1`. |
+| **`GW_GetCityPosition(uid, out_x, out_y, out_z)`** | `bool` | Resolves the averaged world position coordinates of a city by its UID. |
+| **`GW_GetCityUid(index)`** | `uint32_t` | Gets the UID of a city by its cache index (returns `0` if invalid). |
+| **`GW_SetCityPosition(uid, x, y, z)`** | `bool` | Sets the world position of a city by its UID (fixed-point 1/256 write). |
+| **`GW_GetCityPointCount(index)`** | `uint32_t` | Gets the number of geometry points for a city. |
+| **`GW_GetCityPoint(index, point_index, out_x, out_y, out_z)`** | `bool` | Resolves the i-th geometry point of a city. |
+| **`GW_GetCityItemScale(index)`** | `float` | Gets the kdop item scale factor (bounding scale factor). |
+| **`GW_GetCityItemRadius(index)`** | `float` | Gets the kdop item bounding radius. |
+| **`GW_SetCityItemScale(index, val)`** | `bool` | Sets the kdop item bounding scale factor. |
+| **`GW_SetCityItemRadius(index, val)`** | `bool` | Sets the kdop item bounding radius. |
+| **`GW_GetCityNameLocalized(index, out_buffer, buffer_size)`** | `int` | Copies the localized display name of a city into the provided buffer. |
+| **`GW_GetCityShortName(index, out_buffer, buffer_size)`** | `int` | Copies the short name of a city into the provided buffer. |
+| **`GW_GetCityShortNameLocalized(index, out_buffer, buffer_size)`** | `int` | Copies the localized short name of a city into the provided buffer. |
+| **`GW_GetCityGroup(index)`** | `uint32_t` | Gets the city group ID. |
+| **`GW_SetCityGroup(index, val)`** | `bool` | Sets the city group ID. |
+| **`GW_GetCityPinScaleFactor(index)`** | `float` | Gets the city pin scale factor. |
+| **`GW_SetCityPinScaleFactor(index, val)`** | `bool` | Sets the city pin scale factor (first element of array). |
+| **`GW_GetCityMapXOffsets(index, out, max_count)`** | `bool` | Reads the per-zoom map X offsets array of a city. |
+| **`GW_GetCityMapYOffsets(index, out, max_count)`** | `bool` | Reads the per-zoom map Y offsets array of a city. |
+| **`GW_SetCityMapXOffsets(index, values, count)`** | `bool` | Writes the per-zoom map X offsets array of a city. |
+| **`GW_SetCityMapYOffsets(index, values, count)`** | `bool` | Writes the per-zoom map Y offsets array of a city. |
+| **`GW_GetCityPriceCoef(index)`** | `float` | Gets the city price coefficient. |
+| **`GW_SetCityPriceCoef(index, val)`** | `bool` | Sets the city price coefficient. |
+| **`GW_GetCityCountry(index)`** | `uint32_t` | Gets the country ID reference of a city. |
+| **`GW_SetCityCountry(index, val)`** | `bool` | Sets the country ID reference of a city. |
+| **`GW_GetCityPopulation(index)`** | `uint32_t` | Gets the population of a city. |
+| **`GW_SetCityPopulation(index, val)`** | `bool` | Sets the population of a city. |
+| **`GW_GetCityKeyCity(index)`** | `bool` | Checks if a city is marked as a key city. |
+| **`GW_SetCityKeyCity(index, val)`** | `bool` | Sets the key city flag of a city. |
+| **`GW_GetCityTimeZone(index)`** | `uint32_t` | Gets the time zone ID of a city. |
+| **`GW_SetCityTimeZone(index, val)`** | `bool` | Sets the time zone ID of a city. |
