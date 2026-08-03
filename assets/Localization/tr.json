@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "Güncelleme Bildirimleri",
                     "description": "Framework veya eklentiler için yeni güncellemeler yayınlandığında bildirim alırsınız."
+                },
+                "scale": {
+                    "title": "Arayüz Ölçeği",
+                    "description": "UI yazı tiplerinin ve pencerelerinin boyutunu ayarlar."
                 }
             }
         },

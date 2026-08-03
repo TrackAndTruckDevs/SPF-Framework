@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "업데이트 알림 표시",
                     "description": "프레임워크나 플러그인의 업데이트가 있을 때 알림을 표시합니다."
+                },
+                "scale": {
+                    "title": "인터페이스 비율",
+                    "description": "UI 글꼴 및 창의 크기를 조정합니다."
                 }
             }
         },

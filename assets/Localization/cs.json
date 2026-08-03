@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "Upozorňovat na aktualizace",
                     "description": "Jakmile bude k dispozici aktualizace frameworku nebo pluginu, zobrazí se oznámení.."
+                },
+                "scale": {
+                    "title": "Měřítko rozhraní",
+                    "description": "Upravuje velikost písem a oken rozhraní."
                 }
             }
         },
