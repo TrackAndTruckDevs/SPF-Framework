@@ -33,7 +33,7 @@ constexpr ImVec4 MAGENTA = ImVec4(1.00f, 0.00f, 1.00f, 1.00f);
 
 class Style {
  public:
-  static void ApplyGameStyle();
+  static void ApplyGameStyle(float scaleFactor = 1.0f);
 };
 }  // namespace UI
 SPF_NS_END

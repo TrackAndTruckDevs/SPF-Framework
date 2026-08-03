@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "Powiadamiaj o aktualizacjach",
                     "description": "Gdy dostępna będzie aktualizacja frameworka lub wtyczek, zobaczysz powiadomienie."
+                },
+                "scale": {
+                    "title": "Skala interfejsu",
+                    "description": "Dostosowuje rozmiar czcionek i okien interfejsu użytkownika."
                 }
             }
         },

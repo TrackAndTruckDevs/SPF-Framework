@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "Notificar sobre atualizações",
                     "description": "Você receberá notificações quando houver atualizações disponíveis para o framework ou plugins."
+                },
+                "scale": {
+                    "title": "Escala da interface",
+                    "description": "Ajusta o tamanho das fontes e janelas da interface do usuário."
                 }
             }
         },

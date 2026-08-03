@@ -244,6 +244,10 @@
                 "show_update_notifications": {
                     "title": "更新通知",
                     "description": "当框架或插件有可用更新时，您将收到通知。"
+                },
+                "scale": {
+                    "title": "界面缩放",
+                    "description": "调整用户界面字体和窗口的大小。"
                 }
             }
         },

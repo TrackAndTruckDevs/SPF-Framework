@@ -6,7 +6,7 @@
 
 SPF_NS_BEGIN
 namespace UI {
-void Style::ApplyGameStyle() {
+void Style::ApplyGameStyle(float scaleFactor) {
   ImGuiStyle& style = ImGui::GetStyle();
 
   // Colors
@@ -86,6 +86,12 @@ void Style::ApplyGameStyle() {
 
   // Alignment
   style.WindowMenuButtonPosition = ImGuiDir_Right;
+
+  // Scale all sizes
+  style.ScaleAllSizes(scaleFactor);
+  style.MouseCursorScale = 1.0f;
+  style.GrabMinSize = 12.0f;
+  ImGui::GetIO().FontGlobalScale = scaleFactor;
 }
 }  // namespace UI
 SPF_NS_END

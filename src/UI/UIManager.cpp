@@ -522,6 +522,16 @@ void RenderWindow(IWindow* window, ImGuiID mainDockspaceId, bool isShellVisible)
 }
 
 void UIManager::Update() {
+  static float lastAppliedScale = -1.0f;
+  if (m_uiScaleFactor != lastAppliedScale) {
+    lastAppliedScale = m_uiScaleFactor;
+    auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+    if (logger) {
+      logger->Info("Applying UI Scale: {}", m_uiScaleFactor);
+    }
+    Style::ApplyGameStyle(m_uiScaleFactor);
+  }
+
   // 1. Process unload queue at the beginning of the update phase
   m_pluginManager->ProcessUnloadQueue();
 
@@ -775,7 +785,10 @@ void UIManager::InitializeImGui() {
   ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;
-  Style::ApplyGameStyle();
+  if (m_configService) {
+    m_uiScaleFactor = m_configService->GetValue("framework", "settings.scale", 1.0f).get<float>();
+  }
+  Style::ApplyGameStyle(m_uiScaleFactor);
 
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("UIManager");
   logger->Info("Loading and preparing embedded fonts...");
@@ -1053,6 +1066,21 @@ void UIManager::DestroyWindowsForOwner(const std::string& owner) {
 }
 
 bool UIManager::OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) {
+  if (systemName == "settings" && componentName == "framework" && keyPath == "scale") {
+    float newScale = 1.0f;
+    const nlohmann::ordered_json* val = &newValue;
+    if (newValue.is_object() && newValue.contains("_value")) {
+      val = &newValue["_value"];
+    }
+    if (val->is_number()) {
+      newScale = val->get<float>();
+    }
+    if (newScale != m_uiScaleFactor) {
+      m_uiScaleFactor = newScale;
+    }
+    return true;
+  }
+
   if (systemName != "ui") {
     return false;  // This component only handles UI settings.
   }

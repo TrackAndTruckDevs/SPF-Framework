@@ -213,6 +213,8 @@ class UIManager : public Config::IConfigurable {
 
   std::shared_ptr<NotificationWindow> m_notificationWindow;
 
+  float m_uiScaleFactor = 1.0f;
+
   std::unordered_map<std::string, Events::System::OnPluginUpdateAvailable> m_pluginUpdates;
 
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginDidLoad&)>> m_onPluginDidLoadSink;

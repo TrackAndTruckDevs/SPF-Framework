@@ -53,13 +53,14 @@ inline const ManifestData& GetFrameworkManifestData() {
       // .settings (top-level settings block, including config.settings)
       .settings = nlohmann::json::parse(R"json(
             {
+              "scale": 1.0,
               "plugin_states": {},
               "hook_states": {},
               "framework": {
                 "connect": true,
                 "framework_instance_id": "",
-                "version": "",
-                "developer_mode": false
+                "developer_mode": false,
+                "version": ""
               },
               "notification_duration": 3.0,
               "show_update_notifications": true
@@ -260,6 +261,12 @@ inline const ManifestData& GetFrameworkManifestData() {
           "settings_window.setting_names.settings.show_update_notifications.title",
           "settings_window.setting_names.settings.show_update_notifications.description",
           false},
+         {"scale",
+          "settings_window.setting_names.settings.scale.title",
+          "settings_window.setting_names.settings.scale.description",
+          false,
+          "slider",
+          nlohmann::ordered_json::parse(R"json({ "min": 0.75, "max": 1.25, "format": "%.2f" })json")},
          {"notification_duration",
           "settings_window.setting_names.settings.notification_duration.title",
           "settings_window.setting_names.settings.notification_duration.description",
