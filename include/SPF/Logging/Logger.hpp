@@ -120,7 +120,7 @@ class ILogSink {
 
  protected:
   std::string m_name;
-  std::string m_formatter_pattern = "[{timestamp:%Y-%m-%d %H:%M:%S.%e}] [{level}] [{logger_name}] {message}";
+  std::string m_formatter_pattern = "[{timestamp:%Y-%m-%d %H:%M:%S}] [{thread}] [{level}] [{logger_name}] {message}";
 };
 
 /**
