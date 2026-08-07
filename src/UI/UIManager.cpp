@@ -799,6 +799,18 @@ void UIManager::InitializeImGui() {
   const ImWchar* glyph_ranges_japanese = io.Fonts->GetGlyphRangesJapanese();
   const ImWchar* glyph_ranges_korean = io.Fonts->GetGlyphRangesKorean();
 
+  // Merges all CJK glyph ranges (Chinese, Japanese, Korean) into the font that
+  // is currently being built, using the same pixel size as the base font so the
+  // glyphs scale consistently.
+  auto mergeCjk = [&](float sizePixels) {
+    ImFontConfig cjk_config;
+    cjk_config.MergeMode = true;
+    cjk_config.PixelSnapH = true;
+    io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, sizePixels, &cjk_config, glyph_ranges_chinese);
+    io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, sizePixels, &cjk_config, glyph_ranges_japanese);
+    io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansKRRegular_compressed_data, Font_NotoSansKRRegular_compressed_size, sizePixels, &cjk_config, glyph_ranges_korean);
+  };
+
   // 1. Main UI Font (Regular) with Cyrillic support
   // This is the default font at index 0 of the font atlas.
   m_fonts["regular"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansRegular_compressed_data, Font_NotoSansRegular_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
@@ -821,12 +833,7 @@ void UIManager::InitializeImGui() {
   logger->Info("Successfully merged FontAwesome7 (Brands) icon font from memory.");
 
   // Merge CJK font
-  ImFontConfig cjk_config;
-  cjk_config.MergeMode = true;
-  cjk_config.PixelSnapH = true;
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, 18.0f, &cjk_config, glyph_ranges_chinese);
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, 18.0f, &cjk_config, glyph_ranges_japanese);
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansKRRegular_compressed_data, Font_NotoSansKRRegular_compressed_size, 18.0f, &cjk_config, glyph_ranges_korean);
+  mergeCjk(18.0f);
   logger->Info("Successfully merged CJK font into the main font.");
 
   // 3. Typist Fonts (Bold, Italic, etc.)
@@ -837,63 +844,76 @@ void UIManager::InitializeImGui() {
   logger->Info("Successfully loaded bold font (NotoSans-Bold) and merged icons from memory.");
 
   // Merge CJK font into bold
-  ImFontConfig cjk_config_bold;
-  cjk_config_bold.MergeMode = true;
-  cjk_config_bold.PixelSnapH = true;
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, 18.0f, &cjk_config_bold, glyph_ranges_chinese);
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansSCRegular_compressed_data, Font_NotoSansSCRegular_compressed_size, 18.0f, &cjk_config_bold, glyph_ranges_japanese);
-  io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansKRRegular_compressed_data, Font_NotoSansKRRegular_compressed_size, 18.0f, &cjk_config_bold, glyph_ranges_korean);
+  mergeCjk(18.0f);
   logger->Info("Successfully merged CJK font into the bold font.");
 
-  m_fonts["italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansItalic_compressed_data, Font_NotoSansItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
+m_fonts["italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansItalic_compressed_data, Font_NotoSansItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
   // Merge Font Awesome icons
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into italic
+  mergeCjk(18.0f);
   logger->Info("Successfully loaded italic font (NotoSans-Italic) and merged icons.");
 
   m_fonts["bold_italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansBoldItalic_compressed_data, Font_NotoSansBoldItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
   // Merge Font Awesome icons
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into bold-italic
+  mergeCjk(18.0f);
   logger->Info("Successfully loaded bold-italic font (NotoSans-BoldItalic) and merged icons.");
 
   m_fonts["medium"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
   // Merge Font Awesome icons into the medium font
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into medium
+  mergeCjk(18.0f);
   logger->Info("Successfully loaded medium font (NotoSans-Medium) and merged icons from memory.");
 
   m_fonts["medium_italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMediumItalic_compressed_data, Font_NotoSansMediumItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
   // Merge Font Awesome icons
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into medium-italic
+  mergeCjk(18.0f);
   logger->Info("Successfully loaded medium-italic font (NotoSans-MediumItalic) and merged icons.");
 
   // 4. Heading Fonts (Medium)
   m_fonts["h1"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 24.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 20.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 20.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into h1
+  mergeCjk(24.0f);
 
   m_fonts["h2"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 22.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 18.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 18.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into h2
+  mergeCjk(22.0f);
 
   m_fonts["h3"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansMedium_compressed_data, Font_NotoSansMedium_compressed_size, 20.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into h3
+  mergeCjk(20.0f);
 
   // New Large Bold Font for Main Headers
   m_fonts["h1_large_bold"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansBold_compressed_data, Font_NotoSansBold_compressed_size, 32.0f, nullptr, glyph_ranges_cyrillic);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 28.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 28.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into h1_large_bold
+  mergeCjk(32.0f);
 
-  logger->Info("Successfully loaded heading fonts (h1, h2, h3, h1_large_bold) and merged icons from memory.");
+  logger->Info("Successfully loaded heading fonts (h1, h2, h3, h1_large_bold) and merged icons.");
 
   // 5. Monospaced Font
   m_fonts["monospace"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_RobotoMonoRegular_compressed_data, Font_RobotoMonoRegular_compressed_size, 17.0f, nullptr, io.Fonts->GetGlyphRangesDefault());
   // Merge Font Awesome icons
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 15.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 15.0f, &icon_config_fab, icon_ranges_fab);
+  // Merge CJK font into monospace
+  mergeCjk(17.0f);
   logger->Info("Successfully loaded monospaced font (RobotoMono-Regular) and merged icons.");
 }
 
