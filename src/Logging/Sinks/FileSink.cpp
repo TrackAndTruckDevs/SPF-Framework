@@ -80,6 +80,7 @@ void FileSink::Log(const LogMessage& msg) {
                                 fmt::arg("timestamp", localTime),
                                 fmt::arg("thread", threadIdDec),
                                 fmt::arg("level", LogLevelToString(msg.level)),
+                                fmt::arg("source_type", msg.is_plugin ? "P" : "F"),
                                 fmt::arg("logger_name", msg.logger_name),
                                 fmt::arg("message", fmt::to_string(msg.formatted_message)));
   } else {
@@ -88,6 +89,7 @@ void FileSink::Log(const LogMessage& msg) {
                                 fmt::arg("timestamp", fmt::format("{:%Y-%m-%d %H:%M:%S}Z", localTime)),
                                 fmt::arg("thread", threadIdDec),
                                 fmt::arg("level", LogLevelToString(msg.level)),
+                                fmt::arg("source_type", msg.is_plugin ? "P" : "F"),
                                 fmt::arg("logger_name", msg.logger_name),
                                 fmt::arg("message", fmt::to_string(msg.formatted_message)));
   }

@@ -19,7 +19,6 @@
 #include <mutex>
 #include <string>
 
-
 SPF_NS_BEGIN
 namespace Logging {
 

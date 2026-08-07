@@ -3,6 +3,9 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Utils/SEHGuard.hpp"
+#include "SPF/Modules/PluginManager.hpp"
+#include "SPF/Config/IConfigService.hpp"
+#include "SPF/Config/ComponentInfo.hpp"
 
 #include "fmt/base.h"
 #include "fmt/format.h"
@@ -92,6 +95,24 @@ const std::vector<LogLevel>& GetAllLogLevels() {
 
 Logger::Logger(std::string name) : m_name(std::move(name)) {}
 
+bool Logger::IsPlugin() const {
+  if (m_isPluginInit.load(std::memory_order_relaxed)) {
+    return m_isPlugin;
+  }
+
+  auto* configService = Modules::PluginManager::GetInstance().GetConfigService();
+  if (configService) {
+    const auto& componentInfoMap = configService->GetAllComponentInfo();
+    auto compIt = componentInfoMap.find(m_name);
+    if (compIt != componentInfoMap.end()) {
+      m_isPlugin = !compIt->second.isFramework;
+      m_isPluginInit.store(true, std::memory_order_relaxed);
+    }
+  }
+
+  return m_isPlugin;
+}
+
 std::vector<std::shared_ptr<ILogSink>> Logger::GetSinks() const {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_sinks;
@@ -140,7 +161,12 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
   }
 
   // Create the message object
-  LogMessage msg{.timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .formatted_message = std::move(buffer)};
+  LogMessage msg{.timestamp = std::chrono::system_clock::now(),
+                 .level = level,
+                 .thread_id = std::this_thread::get_id(),
+                 .logger_name = m_name,
+                 .is_plugin = IsPlugin(),
+                 .formatted_message = std::move(buffer)};
 
   // Lock the mutex and dispatch the message to all sinks
   std::lock_guard<std::mutex> lock(m_mutex);

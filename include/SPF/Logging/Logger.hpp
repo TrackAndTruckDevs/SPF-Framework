@@ -78,6 +78,7 @@ struct LogMessage {
   LogLevel level;                                   // Message level
   std::thread::id thread_id;                        // ID of the thread that sent the log
   fmt::string_view logger_name;                     // Name of the logger (e.g., "Core", "Renderer")
+  bool is_plugin;                                   // True if this message comes from a plugin logger
   fmt::memory_buffer formatted_message;             // The formatted message
 };
 
@@ -120,7 +121,7 @@ class ILogSink {
 
  protected:
   std::string m_name;
-  std::string m_formatter_pattern = "[{timestamp:%Y-%m-%d %H:%M:%S}] [{thread}] [{level}] [{logger_name}] {message}";
+  std::string m_formatter_pattern = "[{timestamp:%Y-%m-%d %H:%M:%S}] [{thread}] [{level}] [{source_type}] [{logger_name}] {message}";
 };
 
 /**
@@ -149,6 +150,12 @@ class Logger {
    * This method is thread-safe.
    */
   LogLevel GetLevel() const;
+
+  /**
+   * @brief Returns whether this logger belongs to a plugin component.
+   * Resolves dynamically and caches the result thread-safely.
+   */
+  bool IsPlugin() const;
 
   /**
    * @brief Returns the number of sinks attached to this logger.
@@ -246,6 +253,8 @@ class Logger {
   std::vector<std::shared_ptr<ILogSink>> m_sinks;
   mutable std::mutex m_mutex;
   std::atomic<LogLevel> m_level = LogLevel::Info;  // Default level
+  mutable bool m_isPlugin = false;
+  mutable std::atomic<bool> m_isPluginInit{false};
 
   // For throttling
   std::unordered_map<size_t, std::chrono::steady_clock::time_point> m_throttle_map;
