@@ -54,6 +54,8 @@ class PatternFinder {
    *                  - Length Wildcard: "[1-5?]" (matches between 1 and 5 bytes of any value)
    *                  - Byte Range: "[40-4C]" (matches any byte value from 0x40 to 0x4C inclusive)
    *                  - OR Operator: "[80|BF]" or "[80|BF|C0]" (matches one of the listed byte values)
+   *                  - Optional Instruction: "[<template>]?" (the whole instruction may be present or absent;
+   *                    greedy: tries to match it first, then skips it entirely)
    *                                 Supports embedded ranges as well: "[80|BF|C0-C5]"
    *                  - Nibble Ranges: "4[8-B]" (matches 0x48..0x4B), "[4-7]8" (matches 0x48, 0x58, 0x68, 0x78),
    *                                   or "[4-7][8-B]" (great for matching variable register encodings)
@@ -110,14 +112,15 @@ class PatternFinder {
    * @brief Represents a rule for matching a single byte in a pattern.
    */
   struct ByteMatcher {
-    enum Type { EXACT, WILDCARD, RANGE, LIST, SIB_CONDITIONAL };
-    Type type;         ///< Match type (exact byte, any byte, value range, or list of values)
+    enum Type { EXACT, WILDCARD, RANGE, LIST, SIB_CONDITIONAL, GROUP };
+    Type type;         ///< Match type (exact byte, any byte, value range, list of values, or nested group)
     uint8_t min;       ///< Minimum value for EXACT or RANGE
     uint8_t max;       ///< Maximum value for RANGE
-    int minCount = 1;  ///< For future support of variable length wildcards
+    int minCount = 1;  ///< Minimum byte count this matcher can consume (0 if optional)
     int maxCount = 1;
     bool optional = false;
-    std::vector<uint8_t> values;  ///< Values for LIST type
+    std::vector<uint8_t> values;             ///< Values for LIST type
+    std::vector<ByteMatcher> group;          ///< Sub-matchers for GROUP type (optional instruction)
 
     /**
      * @brief Checks if a byte satisfies the matching rule.

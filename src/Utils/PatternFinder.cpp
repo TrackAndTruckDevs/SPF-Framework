@@ -269,7 +269,7 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature
         const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
         if (!found) break;
         i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-      } else if (!first.optional && !first.Matches(data[i])) {
+      } else if (!first.optional && first.type != ByteMatcher::GROUP && !first.Matches(data[i])) {
         continue;
       }
 
@@ -868,6 +868,25 @@ bool PatternFinder::MatchInternal(const uint8_t* data, size_t dataSize, const st
 
   const auto& m = matchers[matcherIdx];
 
+  // GROUP — optional instruction. Try matching the whole group first (greedy),
+  // then fall back to skipping it entirely if it is optional.
+  if (m.type == ByteMatcher::GROUP) {
+    size_t subMatchLen = 0;
+    if (MatchInternal(data, dataSize, m.group, dataIdx, 0, subMatchLen)) {
+      if (m.optional) {
+        // Option 1a: consume the group and continue.
+        if (MatchInternal(data, dataSize, matchers, subMatchLen, matcherIdx + 1, matchLen)) return true;
+        // Option 1b: the group matched but the tail failed — skip the group and continue.
+        if (MatchInternal(data, dataSize, matchers, dataIdx, matcherIdx + 1, matchLen)) return true;
+        return false;
+      }
+      return MatchInternal(data, dataSize, matchers, subMatchLen, matcherIdx + 1, matchLen);
+    }
+    // Group did not match in-place.
+    if (m.optional) return MatchInternal(data, dataSize, matchers, dataIdx, matcherIdx + 1, matchLen);
+    return false;
+  }
+
   // SIB conditional — check preceding ModRM byte
   if (m.type == ByteMatcher::SIB_CONDITIONAL) {
     if (dataIdx > 0) {
@@ -931,12 +950,56 @@ std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const s
   std::vector<ByteMatcher> matchers;
   std::string templated = ReplaceTemplates(signature);
   std::string normalized = NormalizeSignature(templated);
-  std::stringstream ss(normalized);
-  std::string part;
+
+  // Tokenize, treating brace-wrapped groups "{...}" (and their trailing "?") as single tokens.
+  std::vector<std::string> tokens;
+  for (size_t i = 0; i < normalized.size(); ++i) {
+    if (normalized[i] == ' ') continue;
+    if (normalized[i] == '{') {
+      int depth = 0;
+      size_t j = i;
+      for (; j < normalized.size(); ++j) {
+        if (normalized[j] == '{') ++depth;
+        else if (normalized[j] == '}') {
+          --depth;
+          if (depth == 0) break;
+        }
+      }
+      size_t end = j < normalized.size() && j + 1 < normalized.size() && normalized[j + 1] == '?' ? j + 2 : j + 1;
+      tokens.push_back(normalized.substr(i, end - i));
+      i = end - 1;
+    } else {
+      size_t j = normalized.find(' ', i);
+      if (j == std::string::npos) j = normalized.size();
+      tokens.push_back(normalized.substr(i, j - i));
+      i = j;
+    }
+  }
+
   static const std::regex rangeRegex(R"(\[([0-9A-Fa-f]{1,2})-([0-9A-Fa-f]{1,2})\])");
   static const std::regex countRegex(R"(\[([0-9]+)-([0-9]+)\?\])");
 
-  while (ss >> part) {
+  for (auto part : tokens) {
+    // Brace group { ... }? — a nested sub-pattern matched atomically; optional if it ends with '?'.
+    if (!part.empty() && part.front() == '{') {
+      bool groupOptional = part.back() == '?';
+      size_t innerStart = 1;
+      size_t innerLen = part.size() - (groupOptional ? 3 : 2);  // strip '{', '}' and optional '?'
+      std::string inner = part.substr(innerStart, innerLen);
+      ByteMatcher bm;
+      bm.type = ByteMatcher::GROUP;
+      bm.group = SignatureToVector(inner);
+      bm.optional = groupOptional;
+      bm.minCount = 0;
+      bm.maxCount = 0;
+      for (const auto& sub : bm.group) {
+        bm.minCount += sub.minCount;
+        bm.maxCount += sub.maxCount;
+      }
+      if (groupOptional) bm.minCount = 0;
+      matchers.push_back(bm);
+      continue;
+    }
     // SIB conditional token — determines SIB presence from preceding ModRM byte
     if (part == "[SIB?]") {
       ByteMatcher bm;
@@ -1073,7 +1136,7 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
           const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
           if (!found) break;
           i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-        } else if (!first.optional && !first.Matches(data[i])) {
+        } else if (!first.optional && first.type != ByteMatcher::GROUP && !first.Matches(data[i])) {
           continue;
         }
 

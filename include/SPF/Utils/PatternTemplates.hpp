@@ -1195,8 +1195,15 @@ inline std::string ReplaceTemplates(std::string signature) {
   for (const auto& [name, replacement] : sorted) {
     size_t pos = 0;
     while ((pos = signature.find(name, pos)) != std::string::npos) {
-      signature.replace(pos, name.length(), replacement);
-      pos += replacement.length();
+      size_t afterName = pos + name.length();
+      // "[<template>]?" -> whole instruction is optional: wrap in an optional group.
+      if (afterName < signature.size() && signature[afterName] == '?') {
+        signature.replace(pos, name.length() + 1, "{" + replacement + "}?");
+        pos += replacement.length() + 3;
+      } else {
+        signature.replace(pos, name.length(), replacement);
+        pos += replacement.length();
+      }
     }
   }
   return signature;
