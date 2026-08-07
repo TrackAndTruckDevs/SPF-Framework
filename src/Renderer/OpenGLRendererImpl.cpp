@@ -6,6 +6,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
@@ -153,6 +154,8 @@ void OpenGLRendererImpl::OnInit(HDC hdc) {
 
   // Initialize ImGui for Win32 and OpenGL
   if (ImGui_ImplWin32_Init(OpenGLHook::MainWindow) && ImGui_ImplOpenGL3_Init("#version 130")) {
+    // Install the IME data handler so CJK composition shows at the caret.
+    UI::IMESupport::Install(OpenGLHook::MainWindow);
     m_renderer.OnRendererInit();
     m_isImGuiInitialized = true;
     m_logger->Info("ImGui OpenGL implementation initialized successfully.");
@@ -179,6 +182,7 @@ void OpenGLRendererImpl::OnPresent(HDC hdc) {
   // Start the ImGui frame
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplWin32_NewFrame();
+  UI::IMESupport::PreFrame();
   ImGui::NewFrame();
 
   // Ask the UIManager to render all windows

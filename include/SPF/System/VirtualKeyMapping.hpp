@@ -28,6 +28,11 @@ class VirtualKeyMapping {
   // Converts a Windows virtual-key code to the framework's key enum
   Keyboard FromWinAPI(WPARAM wParam) const;
 
+  // Converts a Windows virtual-key code to the framework's key enum, resolving
+  // the left/right side of generic modifier codes (VK_CONTROL/VK_MENU) from the
+  // extended-key flag (WM_KEYDOWN lParam bit 24).
+  Keyboard FromWinAPI(WPARAM wParam, bool isExtended) const;
+
  private:
   // Private constructor and destructor for singleton pattern
   VirtualKeyMapping();

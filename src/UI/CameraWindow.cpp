@@ -119,7 +119,7 @@ void CameraWindow::RefreshLocalization() {
   m_locSelectCamera = loc.Get("camera_window.select_camera");
   m_locInterior = loc.Get("camera_window.interior");
   m_locBehind = loc.Get("camera_window.behind");
-  m_locPhoto = loc.Get("camera_window.photo");
+  // m_locPhoto = loc.Get("camera_window.photo");
   m_locTop = loc.Get("camera_window.top");
   m_locCabin = loc.Get("camera_window.cabin");
   m_locWindow = loc.Get("camera_window.window");
@@ -436,7 +436,7 @@ void CameraWindow::RefreshLocalization() {
   m_locNoStatesSaved = loc.Get("camera_window.debug.no_states_saved");
   m_locOversizeDebug = loc.Get("camera_window.debug.oversize_debug");
   m_locCameraOversizedTrailers = loc.Get("camera_window.debug.camera_oversized_trailers");
-  m_locDebugCameraNotAvailable = loc.Get("camera_window.debug.debug_camera_not_available");
+  m_locDebugCameraNotAvailable = loc.Get("camera_window.free_camera.not_available");
   m_locSelectionLocks = loc.Get("camera_window.debug.video.selection_locks");
   m_locPosLock = loc.Get("camera_window.debug.video.pos_lock");
   m_locRotLock = loc.Get("camera_window.debug.video.rot_lock");

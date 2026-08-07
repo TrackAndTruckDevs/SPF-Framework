@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Не призначено"
         },
+        "table": {
+            "setting": "Налаштування",
+            "value": "Значення"
+        },
         "component_selector": {
             "tooltip": "Вибір плагіна для налаштувань"
         },

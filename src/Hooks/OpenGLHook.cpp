@@ -42,6 +42,8 @@ LPVOID g_pSwapBuffersTarget = nullptr;
 void RestoreWndProcOpenGL() {
   if (g_originalWndProcOpenGL != nullptr && OpenGLHook::MainWindow != nullptr) {
     SetWindowLongPtr(OpenGLHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProcOpenGL);
+    RemovePropW(OpenGLHook::MainWindow, L"SPF_WndProcHook");
+    RemovePropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc");
     GetLogger()->Info("Restored original OpenGL WndProc.");
     g_originalWndProcOpenGL = nullptr;
   }
@@ -136,7 +138,18 @@ BOOL WINAPI new_wglSwapBuffers(HDC hDC) {
     OpenGLHook::MainWindow = WindowFromDC(hDC);
     logger->Info("Game HWND captured via HDC: {0:p}", static_cast<void*>(OpenGLHook::MainWindow));
 
+    WNDPROC old_wnd_proc = (WNDPROC)GetPropW(OpenGLHook::MainWindow, L"SPF_WndProcHook");
+    if (old_wnd_proc != nullptr) {
+      WNDPROC prev_original = (WNDPROC)GetPropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc");
+      if (prev_original != nullptr) {
+        SetWindowLongPtr(OpenGLHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)prev_original);
+        logger->Info("Cleaned up previous WndProc hook.");
+      }
+    }
+
     g_originalWndProcOpenGL = reinterpret_cast<WNDPROC>(SetWindowLongPtr(OpenGLHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcOpenGL)));
+    SetPropW(OpenGLHook::MainWindow, L"SPF_WndProcHook", (HANDLE)WndProcOpenGL);
+    SetPropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProcOpenGL);
     logger->Info("Original OpenGL WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProcOpenGL));
 
     OpenGLHook::OnInit.Call(hDC);

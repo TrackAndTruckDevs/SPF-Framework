@@ -75,6 +75,8 @@ bool g_isInited = false;
 void RestoreWndProc() {
   if (g_originalWndProc != nullptr && D3D11Hook::MainWindow != nullptr) {
     SetWindowLongPtr(D3D11Hook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
+    RemovePropW(D3D11Hook::MainWindow, L"SPF_WndProcHook");
+    RemovePropW(D3D11Hook::MainWindow, L"SPF_OriginalWndProc");
     GetLogger()->Info("Restored original WndProc.");
     g_originalWndProc = nullptr;
   }
@@ -274,7 +276,20 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
         D3D11Hook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);
       } else {
         GetLogger()->Info("First-time initialization. Hooking WndProc and firing OnInit...");
+        
+        WNDPROC old_wnd_proc = (WNDPROC)GetPropW(D3D11Hook::MainWindow, L"SPF_WndProcHook");
+        if (old_wnd_proc != nullptr) {
+          WNDPROC prev_original = (WNDPROC)GetPropW(D3D11Hook::MainWindow, L"SPF_OriginalWndProc");
+          if (prev_original != nullptr) {
+            SetWindowLongPtr(D3D11Hook::MainWindow, GWLP_WNDPROC, (LONG_PTR)prev_original);
+            GetLogger()->Info("Cleaned up previous WndProc hook.");
+          }
+        }
+
         g_originalWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(D3D11Hook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcD3D)));
+        SetPropW(D3D11Hook::MainWindow, L"SPF_WndProcHook", (HANDLE)WndProcD3D);
+        SetPropW(D3D11Hook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProc);
+        
         GetLogger()->Info("Original WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProc));
 
         D3D11Hook::OnInit.Call(pSwapChain, device.Get());

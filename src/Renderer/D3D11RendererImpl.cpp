@@ -6,6 +6,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/UIManager.hpp"
 
 #include "imgui.h"
@@ -155,6 +156,8 @@ void D3D11RendererImpl::OnInit(IDXGISwapChain* swapChain, ID3D11Device* device) 
   ImGui_ImplWin32_Init(m_hWnd);
   ImGui_ImplDX11_Init(m_device.Get(), m_context.Get());
 
+  // Install the IME data handler so CJK composition shows at the caret.
+  IMESupport::Install(m_hWnd);
   m_renderer.OnRendererInit();
   m_logger->Info("ImGui D3D11 implementation initialized successfully.");
 }
@@ -170,6 +173,7 @@ void D3D11RendererImpl::OnPresent(IDXGISwapChain* swapChain) {
   // Start a new ImGui frame.
   ImGui_ImplDX11_NewFrame();
   ImGui_ImplWin32_NewFrame();
+  UI::IMESupport::PreFrame();
   ImGui::NewFrame();
 
   // Set our render target on the device context. All ImGui draw calls will render to this target.

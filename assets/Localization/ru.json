@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Не назначено"
         },
+        "table": {
+            "setting": "Настройка",
+            "value": "Значение"
+        },
         "component_selector": {
             "tooltip": "Выберите плагин для настройки"
         },

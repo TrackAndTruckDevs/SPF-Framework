@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Nepřiřazeno"
         },
+        "table": {
+            "setting": "Nastavení",
+            "value": "Hodnota"
+        },
         "component_selector": {
             "tooltip": "Vyberte plugin pro konfiguraci"
         },

@@ -265,6 +265,10 @@
             },
             "unassigned_text": "할당되지 않음"
         },
+        "table": {
+            "setting": "설정",
+            "value": "값"
+        },
         "component_selector": {
             "tooltip": "구성할 플러그인 선택"
         },

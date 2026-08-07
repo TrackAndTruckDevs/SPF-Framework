@@ -6,6 +6,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Windows.hpp"
 
@@ -343,6 +344,8 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* de
   if (ImGui_ImplWin32_Init(desc.OutputWindow) && ImGui_ImplDX12_Init(&initInfo)) {
     m_logger->Info("ImGui D3D12 backend initialized successfully.");
     ImGui_ImplDX12_CreateDeviceObjects();
+    // Install the IME data handler so CJK composition shows at the caret.
+    UI::IMESupport::Install(desc.OutputWindow);
     m_renderer.OnRendererInit();  // Signal to Core that we are ready for late-init tasks.
     m_isImGuiInitialized = true;
   } else {
@@ -374,6 +377,7 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
   // Start a new ImGui frame.
   ImGui_ImplDX12_NewFrame();
   ImGui_ImplWin32_NewFrame();
+  UI::IMESupport::PreFrame();
   ImGui::NewFrame();
 
   // Allow the UIManager to render all registered windows.

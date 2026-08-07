@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Atanmamış"
         },
+        "table": {
+            "setting": "Ayar",
+            "value": "Değer"
+        },
         "component_selector": {
             "tooltip": "Yapılandırmak için eklenti seçin"
         },

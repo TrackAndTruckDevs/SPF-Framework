@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Nieprzypisany"
         },
+        "table": {
+            "setting": "Ustawienie",
+            "value": "Wartość"
+        },
         "component_selector": {
             "tooltip": "Wybierz wtyczkę do skonfigurowania"
         },

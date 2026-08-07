@@ -87,6 +87,8 @@ bool g_isExecuteHooked = false;
 void RestoreWndProcD3D12() {
   if (g_originalWndProcD3D12 != nullptr && D3D12Hook::MainWindow != nullptr) {
     SetWindowLongPtr(D3D12Hook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProcD3D12);
+    RemovePropW(D3D12Hook::MainWindow, L"SPF_WndProcHook");
+    RemovePropW(D3D12Hook::MainWindow, L"SPF_OriginalWndProc");
     GetLogger()->Info("Restored original D3D12 WndProc.");
     g_originalWndProcD3D12 = nullptr;
   }
@@ -332,7 +334,20 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain3_Present(IDXGISwapChain3* pSwapChai
         logger->Info("Game HWND captured: {0:p}", static_cast<void*>(D3D12Hook::MainWindow));
 
         logger->Info("First-time D3D12 initialization. Hooking WndProc and firing OnInit...");
+        
+        WNDPROC old_wnd_proc = (WNDPROC)GetPropW(D3D12Hook::MainWindow, L"SPF_WndProcHook");
+        if (old_wnd_proc != nullptr) {
+          WNDPROC prev_original = (WNDPROC)GetPropW(D3D12Hook::MainWindow, L"SPF_OriginalWndProc");
+          if (prev_original != nullptr) {
+            SetWindowLongPtr(D3D12Hook::MainWindow, GWLP_WNDPROC, (LONG_PTR)prev_original);
+            logger->Info("Cleaned up previous WndProc hook.");
+          }
+        }
+
         g_originalWndProcD3D12 = reinterpret_cast<WNDPROC>(SetWindowLongPtr(D3D12Hook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcD3D12)));
+        SetPropW(D3D12Hook::MainWindow, L"SPF_WndProcHook", (HANDLE)WndProcD3D12);
+        SetPropW(D3D12Hook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProcD3D12);
+        
         logger->Info("Original D3D12 WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProcD3D12));
 
         D3D12Hook::OnInit.Call(pSwapChain, device.Get(), g_pGameCommandQueue);

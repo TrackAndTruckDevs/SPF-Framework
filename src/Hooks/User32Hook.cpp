@@ -82,6 +82,29 @@ static bool ProcessSingleKey(int vkCode, bool isDownWinAPI, bool isDownPhysical)
     }
   }
 
+  // Modifier keys must always stay unblocked so their real OS state reaches
+  // ImGui's backend, which derives io.KeyMods/io.KeyCtrl from GetKeyState().
+  // Without this, copy/paste shortcuts (Ctrl+C/V) never fire while a text field
+  // is focused, because the capture guard blocks the modifier reads.
+  if (key == SPF::System::Keyboard::LControl || key == SPF::System::Keyboard::RControl ||
+      key == SPF::System::Keyboard::LShift   || key == SPF::System::Keyboard::RShift ||
+      key == SPF::System::Keyboard::LAlt     || key == SPF::System::Keyboard::RAlt) {
+    return false;
+  }
+
+  // Multimedia and system keys (volume, media transport, browser, launcher)
+  // are hardware-managed by the OS and must keep working even while ImGui
+  // captures the keyboard, so a focused text field never swallows them.
+  using K = SPF::System::Keyboard;
+  if (key == K::VolumeMute   || key == K::VolumeDown || key == K::VolumeUp ||
+      key == K::MediaNextTrack || key == K::MediaPrevTrack || key == K::MediaStop ||
+      key == K::MediaPlayPause || key == K::BrowserBack || key == K::BrowserForward ||
+      key == K::BrowserRefresh || key == K::BrowserStop || key == K::BrowserSearch ||
+      key == K::BrowserFavorites || key == K::BrowserHome || key == K::LaunchMail ||
+      key == K::LaunchMediaSelect || key == K::LaunchApp1 || key == K::LaunchApp2) {
+    return false;
+  }
+
   return blocked;
 }
 

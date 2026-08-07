@@ -139,8 +139,10 @@ void SettingsWindow::RefreshLocalization() {
   m_noConfigurableComponentsKey = loc.Get("settings_window.main_area.no_configurable_components");
   m_componentInfoErrorKey = loc.Get("settings_window.main_area.component_info_error");
   m_noConfigurableSystemsKey = loc.Get("settings_window.main_area.no_configurable_systems");
-  m_keybindsNotAvailableKey = loc.Get("settings_window.keybinds_drawer.not_available");
+  m_keybindsNotAvailableKey = loc.Get("settings_window.keybinds_drawer.table.not_available");
   m_nullValueFormatKey = loc.Get("settings_window.main_area.null_value_format");
+  m_settingHeaderKey = loc.Get("settings_window.table.setting");
+  m_valueHeaderKey = loc.Get("settings_window.table.value");
 }
 
 void SettingsWindow::OnFocusComponent(const Events::UI::FocusComponentInSettingsWindow& e) {
@@ -643,8 +645,8 @@ void SettingsWindow::RenderKeybindsSettings() {
         // --- Actions Table (for this plugin) ---
         ImGuiTableFlags actions_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
         if (ImGui::BeginTable(("actions_table_" + ownerName).c_str(), 2, actions_flags)) {
-          ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthStretch);
-          ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthStretch);
+          ImGui::TableSetupColumn(m_keybindsActionHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
+          ImGui::TableSetupColumn(m_keybindsKeyHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
 
           bool canBeModified;
           if (ownerName == "framework") {
@@ -1068,8 +1070,8 @@ void SettingsWindow::RenderContent() {
               if (headerIsOpen) {
                 // --- Settings Table ---
                 if (ImGui::BeginTable(("table_" + systemName).c_str(), 2, ImGuiTableFlags_BordersInnerV)) {
-                  ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch);
-                  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+                  ImGui::TableSetupColumn(m_settingHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
+                  ImGui::TableSetupColumn(m_valueHeaderKey.c_str(), ImGuiTableColumnFlags_WidthStretch);
 
                   DrawSettingsRows(systemSettings, systemName, "");
 

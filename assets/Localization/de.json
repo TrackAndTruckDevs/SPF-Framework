@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Nicht zugewiesen"
         },
+        "table": {
+            "setting": "Einstellung",
+            "value": "Wert"
+        },
         "component_selector": {
             "tooltip": "Plugin zur Konfiguration auswählen"
         },

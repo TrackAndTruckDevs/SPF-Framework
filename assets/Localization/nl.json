@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Niet toegewezen"
         },
+        "table": {
+            "setting": "Instelling",
+            "value": "Waarde"
+        },
         "component_selector": {
             "tooltip": "Selecteer plugin om te configureren"
         },

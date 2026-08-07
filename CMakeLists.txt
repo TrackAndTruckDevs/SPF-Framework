@@ -345,6 +345,7 @@ add_library(SPF SHARED
     "src/UI/MainWindow.cpp"
     "src/UI/NotificationWindow.cpp"
     "src/UI/UIManager.cpp"
+    "src/UI/IMESupport.cpp"
     "src/UI/WelcomeWindow.cpp"
     "src/UI/Resources/spf_logo.cpp"
     "src/UI/MarkdownRenderer.cpp"
@@ -420,10 +421,10 @@ target_include_directories(SPF
 # --- Linking Dependencies ---
 # Separate Windows system libs: MSVC requires '.lib' names, MinGW/Linux requires '-l' flags
 if(MSVC)
-    set(WINDOWS_SYSTEM_LIBS d3d11 d3d12 dxgi dinput8 dxguid opengl32.lib Psapi.lib xinput.lib)
+    set(WINDOWS_SYSTEM_LIBS d3d11 d3d12 dxgi dinput8 dxguid opengl32.lib Psapi.lib xinput.lib imm32.lib)
 else()
     # MinGW / GCC / Clang (Linux cross-compiling)
-    set(WINDOWS_SYSTEM_LIBS d3d11 d3d12 dxgi dinput8 dxguid opengl32 psapi xinput1_4 dwmapi d3dcompiler)
+    set(WINDOWS_SYSTEM_LIBS d3d11 d3d12 dxgi dinput8 dxguid opengl32 psapi xinput1_4 dwmapi d3dcompiler imm32)
 endif()
 # --- End of Linking Dependencies ---
 

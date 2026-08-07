@@ -184,6 +184,18 @@ ImGuiKey TranslateOurKeyToImGuiKey(System::Keyboard key) {
       return ImGuiKey_Keypad8;
     case System::Keyboard::Numpad9:
       return ImGuiKey_Keypad9;
+    case System::Keyboard::NumpadDecimal:
+      return ImGuiKey_KeypadDecimal;
+    case System::Keyboard::Oem102:
+      return ImGuiKey_Oem102;
+    case System::Keyboard::CapsLock:
+      return ImGuiKey_CapsLock;
+    case System::Keyboard::NumLock:
+      return ImGuiKey_NumLock;
+    case System::Keyboard::ScrollLock:
+      return ImGuiKey_ScrollLock;
+    case System::Keyboard::PrintScreen:
+      return ImGuiKey_PrintScreen;
     case System::Keyboard::F1:
       return ImGuiKey_F1;
     case System::Keyboard::F2:
@@ -214,6 +226,24 @@ ImGuiKey TranslateOurKeyToImGuiKey(System::Keyboard key) {
       return ImGuiKey_F14;
     case System::Keyboard::F15:
       return ImGuiKey_F15;
+    case System::Keyboard::F16:
+      return ImGuiKey_F16;
+    case System::Keyboard::F17:
+      return ImGuiKey_F17;
+    case System::Keyboard::F18:
+      return ImGuiKey_F18;
+    case System::Keyboard::F19:
+      return ImGuiKey_F19;
+    case System::Keyboard::F20:
+      return ImGuiKey_F20;
+    case System::Keyboard::F21:
+      return ImGuiKey_F21;
+    case System::Keyboard::F22:
+      return ImGuiKey_F22;
+    case System::Keyboard::F23:
+      return ImGuiKey_F23;
+    case System::Keyboard::F24:
+      return ImGuiKey_F24;
     case System::Keyboard::Pause:
       return ImGuiKey_Pause;
     default:

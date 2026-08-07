@@ -13,16 +13,18 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Renderer/Renderer.hpp"
+#include "SPF/System/Keyboard.hpp"
 #include "SPF/System/VirtualKeyMapping.hpp"
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include "imgui.h"
 
 #include <cstdint>
 #include <cstdlib>
+#include <imm.h>
 #include <minwindef.h>
 #include <windef.h>
-
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -32,6 +34,7 @@ SPF_NS_BEGIN
 namespace Events::Proxies {
 using namespace SPF::Logging;
 using namespace SPF::Rendering;
+using namespace SPF::UI;
 
 WndProcEventProxy::WndProcEventProxy(EventManager& eventManager, Renderer& renderer)
     : EventProxyBase(eventManager), m_renderer(renderer), m_d3d11Sink(Hooks::D3D11Hook::OnWndProc), m_d3d12Sink(Hooks::D3D12Hook::OnWndProc), m_openGLSink(Hooks::OpenGLHook::OnWndProc) {
@@ -77,6 +80,30 @@ void WndProcEventProxy::SetBlockWndProc(bool block) {
 }
 
 void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  if (uMsg == WM_IME_SETCONTEXT) {
+    if (wParam == TRUE) {
+      lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
+      lParam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
+    }
+  }
+
+  if (uMsg == WM_IME_SETCONTEXT || uMsg == WM_IME_STARTCOMPOSITION || uMsg == WM_IME_COMPOSITION || uMsg == WM_IME_ENDCOMPOSITION || uMsg == WM_IME_NOTIFY || uMsg == WM_IME_CHAR || uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP) {
+    if (IMESupport::OnWndProc(hWnd, uMsg, wParam, lParam)) {
+      SetBlockWndProc(true);
+      return;
+    }
+  }
+
+  // Block keyboard navigation keys from ImGui while composing
+  if (IMESupport::IsComposing() && IMESupport::ShowingCandidates()) {
+    if (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN || uMsg == WM_KEYUP || uMsg == WM_SYSKEYUP) {
+      if (wParam == VK_UP || wParam == VK_DOWN || wParam == VK_LEFT || wParam == VK_RIGHT || wParam == VK_RETURN || wParam == VK_SPACE || wParam == VK_ESCAPE || wParam == VK_PRIOR || wParam == VK_NEXT || (wParam >= '1' && wParam <= '9')) {
+        SetBlockWndProc(false);
+        return;
+      }
+    }
+  }
+
   // Let ImGui have the first chance to process the message.
   if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
     // If ImGui consumes the message, block it from the game and stop further processing here.
@@ -94,15 +121,20 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_SYSKEYUP: {
       auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
 
+      // Resolve the key including the left/right side of generic modifier codes
+      // (VK_CONTROL/VK_MENU) from the extended-key flag (lParam bit 24).
+      const bool isExtended = (lParam & (1u << 24)) != 0;
+      const SPF::System::Keyboard key = keyMapper.FromWinAPI(wParam, isExtended);
+
       // Check if this is a virtual release we sent ourselves to fix blocking chords
-      uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(keyMapper.FromWinAPI(wParam));
+      uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(key);
       if (SPF::Input::InputManager::GetInstance().IsPendingVirtualRelease(hardwareCode)) {
         // Ignore this event for the framework
         break;
       }
 
       bool isPressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
-      SPF::Input::KeyboardEvent event{keyMapper.FromWinAPI(wParam), isPressed};
+      SPF::Input::KeyboardEvent event{key, isPressed};
 
       // Publish the event to our InputManager. If it returns true, it means the event
       // was consumed (e.g., by a keybind) and should be blocked from the game.

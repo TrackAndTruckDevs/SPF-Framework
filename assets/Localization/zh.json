@@ -265,6 +265,10 @@
             },
             "unassigned_text": "未分配"
         },
+        "table": {
+            "setting": "设置",
+            "value": "值"
+        },
         "component_selector": {
             "tooltip": "选择要配置的插件"
         },

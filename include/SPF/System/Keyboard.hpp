@@ -112,6 +112,54 @@ enum class Keyboard {
   F15,
   Pause,
 
+  // System / lock keys
+  CapsLock,
+  NumLock,
+  ScrollLock,
+  PrintScreen,
+
+  // Numpad extras
+  NumpadDecimal,
+
+  // OEM special keys
+  Oem8,
+  Oem102,
+
+  // Extended function keys
+  F16,
+  F17,
+  F18,
+  F19,
+  F20,
+  F21,
+  F22,
+  F23,
+  F24,
+
+  // Media keys
+  VolumeMute,
+  VolumeDown,
+  VolumeUp,
+  MediaNextTrack,
+  MediaPrevTrack,
+  MediaStop,
+  MediaPlayPause,
+
+  // Browser keys
+  BrowserBack,
+  BrowserForward,
+  BrowserRefresh,
+  BrowserStop,
+  BrowserSearch,
+  BrowserFavorites,
+  BrowserHome,
+
+  // Application / launch keys
+  LaunchMail,
+  LaunchMediaSelect,
+  LaunchApp1,
+  LaunchApp2,
+
   Count
 };
 

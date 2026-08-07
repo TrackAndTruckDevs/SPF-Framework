@@ -50,6 +50,7 @@
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "imgui.h"
@@ -773,6 +774,8 @@ void UIManager::RenderAll() {
       }
     }
   }
+
+  UI::IMESupport::Render();
 
   ProcessTransitions();
 

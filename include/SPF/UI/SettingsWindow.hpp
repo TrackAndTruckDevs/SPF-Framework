@@ -159,6 +159,8 @@ class SettingsWindow : public BaseWindow {
   std::string m_componentInfoErrorKey;
   std::string m_noConfigurableSystemsKey;
   std::string m_keybindsNotAvailableKey;
+  std::string m_settingHeaderKey;
+  std::string m_valueHeaderKey;
   std::string m_nullValueFormatKey;
 
   float m_keybindsDrawerHeight = 0.0f;

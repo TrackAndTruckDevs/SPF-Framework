@@ -29,7 +29,10 @@ EventDispatcher::EventDispatcher(EventManager& manager)
       OnRequestDeleteBinding(manager.System.OnRequestDeleteBinding) {}
 
 // --- EventManager Implementation ---
-void EventManager::Init(Rendering::Renderer& renderer) { m_proxies.emplace_back(std::make_unique<Proxies::WndProcEventProxy>(*this, renderer)); }
+void EventManager::Init(Rendering::Renderer& renderer) {
+  m_proxies.clear();
+  m_proxies.emplace_back(std::make_unique<Proxies::WndProcEventProxy>(*this, renderer));
+}
 
 EventDispatcher EventManager::CreateEventDispatcher() { return EventDispatcher(*this); }
 }  // namespace Events

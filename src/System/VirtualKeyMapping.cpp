@@ -152,6 +152,40 @@ void VirtualKeyMapping::InitializeMapping() {
   addMapping(Keyboard::F14, "KEY_F14");
   addMapping(Keyboard::F15, "KEY_F15");
   addMapping(Keyboard::Pause, "KEY_PAUSE");
+  addMapping(Keyboard::CapsLock, "KEY_CAPSLOCK");
+  addMapping(Keyboard::NumLock, "KEY_NUMLOCK");
+  addMapping(Keyboard::ScrollLock, "KEY_SCROLLLOCK");
+  addMapping(Keyboard::PrintScreen, "KEY_PRINTSCREEN");
+  addMapping(Keyboard::NumpadDecimal, "KEY_NUMPADDECIMAL");
+  addMapping(Keyboard::Oem8, "KEY_OEM8");
+  addMapping(Keyboard::Oem102, "KEY_OEM102");
+  addMapping(Keyboard::F16, "KEY_F16");
+  addMapping(Keyboard::F17, "KEY_F17");
+  addMapping(Keyboard::F18, "KEY_F18");
+  addMapping(Keyboard::F19, "KEY_F19");
+  addMapping(Keyboard::F20, "KEY_F20");
+  addMapping(Keyboard::F21, "KEY_F21");
+  addMapping(Keyboard::F22, "KEY_F22");
+  addMapping(Keyboard::F23, "KEY_F23");
+  addMapping(Keyboard::F24, "KEY_F24");
+  addMapping(Keyboard::VolumeMute, "KEY_VOLUME_MUTE");
+  addMapping(Keyboard::VolumeDown, "KEY_VOLUME_DOWN");
+  addMapping(Keyboard::VolumeUp, "KEY_VOLUME_UP");
+  addMapping(Keyboard::MediaNextTrack, "KEY_MEDIA_NEXT_TRACK");
+  addMapping(Keyboard::MediaPrevTrack, "KEY_MEDIA_PREV_TRACK");
+  addMapping(Keyboard::MediaStop, "KEY_MEDIA_STOP");
+  addMapping(Keyboard::MediaPlayPause, "KEY_MEDIA_PLAY_PAUSE");
+  addMapping(Keyboard::BrowserBack, "KEY_BROWSER_BACK");
+  addMapping(Keyboard::BrowserForward, "KEY_BROWSER_FORWARD");
+  addMapping(Keyboard::BrowserRefresh, "KEY_BROWSER_REFRESH");
+  addMapping(Keyboard::BrowserStop, "KEY_BROWSER_STOP");
+  addMapping(Keyboard::BrowserSearch, "KEY_BROWSER_SEARCH");
+  addMapping(Keyboard::BrowserFavorites, "KEY_BROWSER_FAVORITES");
+  addMapping(Keyboard::BrowserHome, "KEY_BROWSER_HOME");
+  addMapping(Keyboard::LaunchMail, "KEY_LAUNCH_MAIL");
+  addMapping(Keyboard::LaunchMediaSelect, "KEY_LAUNCH_MEDIA_SELECT");
+  addMapping(Keyboard::LaunchApp1, "KEY_LAUNCH_APP1");
+  addMapping(Keyboard::LaunchApp2, "KEY_LAUNCH_APP2");
 
   // Initialize Display Names
   m_keyToDisplayName[Keyboard::Unknown] = "Unknown";
@@ -256,9 +290,61 @@ void VirtualKeyMapping::InitializeMapping() {
   m_keyToDisplayName[Keyboard::F14] = "F14";
   m_keyToDisplayName[Keyboard::F15] = "F15";
   m_keyToDisplayName[Keyboard::Pause] = "Pause";
+  m_keyToDisplayName[Keyboard::CapsLock] = "Caps Lock";
+  m_keyToDisplayName[Keyboard::NumLock] = "Num Lock";
+  m_keyToDisplayName[Keyboard::ScrollLock] = "Scroll Lock";
+  m_keyToDisplayName[Keyboard::PrintScreen] = "Print Screen";
+  m_keyToDisplayName[Keyboard::NumpadDecimal] = "Numpad .";
+  m_keyToDisplayName[Keyboard::Oem8] = "OEM 8";
+  m_keyToDisplayName[Keyboard::Oem102] = "OEM 102";
+  m_keyToDisplayName[Keyboard::F16] = "F16";
+  m_keyToDisplayName[Keyboard::F17] = "F17";
+  m_keyToDisplayName[Keyboard::F18] = "F18";
+  m_keyToDisplayName[Keyboard::F19] = "F19";
+  m_keyToDisplayName[Keyboard::F20] = "F20";
+  m_keyToDisplayName[Keyboard::F21] = "F21";
+  m_keyToDisplayName[Keyboard::F22] = "F22";
+  m_keyToDisplayName[Keyboard::F23] = "F23";
+  m_keyToDisplayName[Keyboard::F24] = "F24";
+  m_keyToDisplayName[Keyboard::VolumeMute] = "Volume Mute";
+  m_keyToDisplayName[Keyboard::VolumeDown] = "Volume Down";
+  m_keyToDisplayName[Keyboard::VolumeUp] = "Volume Up";
+  m_keyToDisplayName[Keyboard::MediaNextTrack] = "Media Next";
+  m_keyToDisplayName[Keyboard::MediaPrevTrack] = "Media Prev";
+  m_keyToDisplayName[Keyboard::MediaStop] = "Media Stop";
+  m_keyToDisplayName[Keyboard::MediaPlayPause] = "Play / Pause";
+  m_keyToDisplayName[Keyboard::BrowserBack] = "Browser Back";
+  m_keyToDisplayName[Keyboard::BrowserForward] = "Browser Forward";
+  m_keyToDisplayName[Keyboard::BrowserRefresh] = "Browser Refresh";
+  m_keyToDisplayName[Keyboard::BrowserStop] = "Browser Stop";
+  m_keyToDisplayName[Keyboard::BrowserSearch] = "Browser Search";
+  m_keyToDisplayName[Keyboard::BrowserFavorites] = "Browser Favorites";
+  m_keyToDisplayName[Keyboard::BrowserHome] = "Browser Home";
+  m_keyToDisplayName[Keyboard::LaunchMail] = "Launch Mail";
+  m_keyToDisplayName[Keyboard::LaunchMediaSelect] = "Launch Media";
+  m_keyToDisplayName[Keyboard::LaunchApp1] = "Launch App 1";
+  m_keyToDisplayName[Keyboard::LaunchApp2] = "Launch App 2";
 }
 
-Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const {
+Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const { return FromWinAPI(wParam, false); }
+
+Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam, bool isExtended) const {
+  // The generic modifier codes (VK_CONTROL/VK_MENU/VK_SHIFT) represent "either
+  // side". Windows reports them in WM_KEYDOWN instead of the left/right specific
+  // codes, so handedness must come from the extended-key flag (lParam bit 24).
+  // Right Shift is distinguished by its scancode (0x36) rather than the extended
+  // flag, so it cannot be told apart here and defaults to the left key.
+  switch (wParam) {
+    case VK_CONTROL:
+      return isExtended ? System::Keyboard::RControl : System::Keyboard::LControl;
+    case VK_MENU:
+      return isExtended ? System::Keyboard::RAlt : System::Keyboard::LAlt;
+    case VK_SHIFT:
+      return System::Keyboard::LShift;
+    default:
+      break;
+  }
+
   switch (wParam) {
     case 'A':
       return System::Keyboard::A;
@@ -334,6 +420,15 @@ Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const {
       return System::Keyboard::Num9;
     case VK_ESCAPE:
       return System::Keyboard::Escape;
+    case VK_CAPITAL:
+      return System::Keyboard::CapsLock;
+    case VK_NUMLOCK:
+      return System::Keyboard::NumLock;
+    case VK_SCROLL:
+      return System::Keyboard::ScrollLock;
+    case VK_SNAPSHOT:
+    case VK_PRINT:
+      return System::Keyboard::PrintScreen;
     case VK_LCONTROL:
       return System::Keyboard::LControl;
     case VK_LSHIFT:
@@ -350,7 +445,7 @@ Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const {
       return System::Keyboard::RAlt;
     case VK_RWIN:
       return System::Keyboard::RSystem;
-    case VK_MENU:
+    case VK_APPS:
       return System::Keyboard::Menu;
     case VK_OEM_4:
       return System::Keyboard::LBracket;
@@ -430,6 +525,12 @@ Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const {
       return System::Keyboard::Numpad8;
     case VK_NUMPAD9:
       return System::Keyboard::Numpad9;
+    case VK_DECIMAL:
+      return System::Keyboard::NumpadDecimal;
+    case VK_OEM_8:
+      return System::Keyboard::Oem8;
+    case VK_OEM_102:
+      return System::Keyboard::Oem102;
     case VK_F1:
       return System::Keyboard::F1;
     case VK_F2:
@@ -460,8 +561,62 @@ Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam) const {
       return System::Keyboard::F14;
     case VK_F15:
       return System::Keyboard::F15;
+    case VK_F16:
+      return System::Keyboard::F16;
+    case VK_F17:
+      return System::Keyboard::F17;
+    case VK_F18:
+      return System::Keyboard::F18;
+    case VK_F19:
+      return System::Keyboard::F19;
+    case VK_F20:
+      return System::Keyboard::F20;
+    case VK_F21:
+      return System::Keyboard::F21;
+    case VK_F22:
+      return System::Keyboard::F22;
+    case VK_F23:
+      return System::Keyboard::F23;
+    case VK_F24:
+      return System::Keyboard::F24;
     case VK_PAUSE:
       return System::Keyboard::Pause;
+    case VK_VOLUME_MUTE:
+      return System::Keyboard::VolumeMute;
+    case VK_VOLUME_DOWN:
+      return System::Keyboard::VolumeDown;
+    case VK_VOLUME_UP:
+      return System::Keyboard::VolumeUp;
+    case VK_MEDIA_NEXT_TRACK:
+      return System::Keyboard::MediaNextTrack;
+    case VK_MEDIA_PREV_TRACK:
+      return System::Keyboard::MediaPrevTrack;
+    case VK_MEDIA_STOP:
+      return System::Keyboard::MediaStop;
+    case VK_MEDIA_PLAY_PAUSE:
+      return System::Keyboard::MediaPlayPause;
+    case VK_BROWSER_BACK:
+      return System::Keyboard::BrowserBack;
+    case VK_BROWSER_FORWARD:
+      return System::Keyboard::BrowserForward;
+    case VK_BROWSER_REFRESH:
+      return System::Keyboard::BrowserRefresh;
+    case VK_BROWSER_STOP:
+      return System::Keyboard::BrowserStop;
+    case VK_BROWSER_SEARCH:
+      return System::Keyboard::BrowserSearch;
+    case VK_BROWSER_FAVORITES:
+      return System::Keyboard::BrowserFavorites;
+    case VK_BROWSER_HOME:
+      return System::Keyboard::BrowserHome;
+    case VK_LAUNCH_MAIL:
+      return System::Keyboard::LaunchMail;
+    case VK_LAUNCH_MEDIA_SELECT:
+      return System::Keyboard::LaunchMediaSelect;
+    case VK_LAUNCH_APP1:
+      return System::Keyboard::LaunchApp1;
+    case VK_LAUNCH_APP2:
+      return System::Keyboard::LaunchApp2;
     default:
       return System::Keyboard::Unknown;
   }

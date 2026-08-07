@@ -265,6 +265,10 @@
             },
             "unassigned_text": "Non assigné"
         },
+        "table": {
+            "setting": "Paramètre",
+            "value": "Valeur"
+        },
         "component_selector": {
             "tooltip": "Sélectionner le plugin à configurer"
         },

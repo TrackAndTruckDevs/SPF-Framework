@@ -265,6 +265,10 @@
             },
             "unassigned_text": "未割り当て"
         },
+        "table": {
+            "setting": "設定",
+            "value": "値"
+        },
         "component_selector": {
             "tooltip": "設定するプラグインを選択"
         },

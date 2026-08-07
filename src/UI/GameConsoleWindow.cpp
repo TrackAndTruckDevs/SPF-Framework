@@ -26,6 +26,7 @@ constexpr int MAX_HISTORY_SIZE = 20;
 
 GameConsoleWindow::GameConsoleWindow(const std::string& owner, const std::string& id, Events::EventManager& eventManager) : BaseWindow(owner, id), m_eventManager(eventManager), m_hookManager(HookManager::GetInstance()) {
   m_titleLocalizationKey = "game_console_window.title";
+  RefreshLocalization();
 }
 
 int GameConsoleWindow::HistoryCallback(ImGuiInputTextCallbackData* data) {

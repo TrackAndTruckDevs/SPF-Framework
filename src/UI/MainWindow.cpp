@@ -98,8 +98,8 @@ void MainWindow::RefreshLocalization() {
   m_locTierMagnateHeader = loc.Get("patrons_popup.tiers.magnate");
   m_locTierManagerHeader = loc.Get("patrons_popup.tiers.manager");
   m_locTierMasterHeader = loc.Get("patrons_popup.tiers.master");
-  m_locTierHaulerHeader = loc.Get("patrons_popup.tiers.hauler");
-  m_locTierDriverHeader = loc.Get("patrons_popup.tiers.driver");
+  // m_locTierHaulerHeader = loc.Get("patrons_popup.tiers.hauler");
+  // m_locTierDriverHeader = loc.Get("patrons_popup.tiers.driver");
   m_locUpdateButtonTooltip = loc.Get("main_window.update_button_tooltip");
   m_locVersionLabel = loc.Get("main_window.version_label");
   m_locUpdateChecking = loc.Get("main_window.update_checking");
