@@ -46,6 +46,7 @@
 #include "SPF/Utils/Windows.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <cstring>
 #include <errhandlingapi.h>
@@ -78,6 +79,7 @@ using namespace SPF::Telemetry::SCS;
 // --- Static Member Variable Definitions ---
 std::vector<std::string> PluginManager::s_available_languages_cache;
 std::vector<const char*> PluginManager::s_available_languages_c_str_cache;
+std::atomic<bool> PluginManager::s_alive{true};
 
 // --- Singleton Access ---
 PluginManager& PluginManager::GetInstance() {
@@ -85,9 +87,12 @@ PluginManager& PluginManager::GetInstance() {
   return instance;
 }
 
+bool PluginManager::IsAlive() { return s_alive.load(std::memory_order_acquire); }
+void PluginManager::MarkNotAlive() { s_alive.store(false, std::memory_order_release); }
+
 // --- Lifecycle ---
 PluginManager::PluginManager() = default;
-PluginManager::~PluginManager() = default;
+PluginManager::~PluginManager() { MarkNotAlive(); }
 
 std::vector<std::string> PluginManager::GetDiscoveredPluginNames() const {
   std::vector<std::string> names;

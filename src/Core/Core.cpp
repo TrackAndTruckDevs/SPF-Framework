@@ -43,6 +43,7 @@
 #include "SPF/UI/ImGuiInputConsumer.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
+#include "SPF/Utils/SEHGuard.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "nlohmann/json_fwd.hpp"
@@ -335,6 +336,15 @@ void Core::FullShutdown() {
     return;
   }
   m_lifecycleState = LifecycleState::ShuttingDown;
+
+  // From this point nothing may query the plugin manager (its config service
+  // dies in step 6): logging falls back to cached results instead.
+  PluginManager::MarkNotAlive();
+
+  // The MinGW SEH guard registers a process-wide vectored handler; if it
+  // outlives the DLL, the next exception anywhere in the game crashes in
+  // unloaded-module memory.
+  Utils::detail::RemoveHandler();
 
   m_logger->Info("--- Core Full Shutdown sequence started ---");
 

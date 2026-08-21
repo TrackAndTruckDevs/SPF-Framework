@@ -2,7 +2,6 @@
 
 #include "SPF/Namespace.hpp"
 
-#include "SPF/Utils/SEHGuard.hpp"
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ComponentInfo.hpp"
@@ -100,6 +99,11 @@ bool Logger::IsPlugin() const {
     return m_isPlugin;
   }
 
+  // Teardown safety: game threads can still be logging while the framework is
+  // being unloaded (sdk unload mid-session) — never touch a dying manager.
+  if (!Modules::PluginManager::IsAlive()) {
+    return m_isPlugin;
+  }
   auto* configService = Modules::PluginManager::GetInstance().GetConfigService();
   if (configService) {
     const auto& componentInfoMap = configService->GetAllComponentInfo();
@@ -154,10 +158,15 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
   fmt::memory_buffer buffer;
 
   DWORD exceptionCode = 0;
-  bool formatOk = Utils::InvokeSafe([&]() { fmt::vformat_to(std::back_inserter(buffer), format_str, args); }, &exceptionCode);
-
-  if (!formatOk) {
-    fmt::format_to(std::back_inserter(buffer), "[LOG FORMAT ERROR: 0x{:08X}] {}", exceptionCode, format_str);
+  bool formatOk = true;
+  // Plain try/catch: formatting is pure computation over checked arguments and
+  // fmt reports failures via C++ exceptions. A VEH guard here would lazily
+  // install a process-wide handler from any logging thread (see SEHGuard).
+  try {
+    fmt::vformat_to(std::back_inserter(buffer), format_str, args);
+  } catch (...) {
+    formatOk = false;
+    exceptionCode = 0xE06D7363;
   }
 
   // Create the message object

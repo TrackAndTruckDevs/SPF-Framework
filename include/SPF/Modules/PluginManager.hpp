@@ -25,6 +25,7 @@
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Signal.hpp"
 
+#include <atomic>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -55,6 +56,12 @@ class PluginManager {
  public:
   static PluginManager& GetInstance();
   void LoadAllDiscoveredPluginManifests();
+
+  // True while the singleton and its dependencies (config service) are
+  // valid. Hot paths like logging must check this instead of touching the
+  // manager during/after teardown (sdk unload can free us mid-session).
+  static bool IsAlive();
+  static void MarkNotAlive();
 
   std::vector<std::string> GetDiscoveredPluginNames() const;
   bool IsPluginLoaded(const std::string& pluginName) const;
@@ -172,6 +179,7 @@ class PluginManager {
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;
+  static std::atomic<bool> s_alive;
 };
 }  // namespace Modules
 

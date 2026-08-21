@@ -2,10 +2,12 @@
 
 #include "SPF/Namespace.hpp"
 
+#include <atomic>
 #include <csetjmp>
 #include <errhandlingapi.h>
 #include <excpt.h>
 #include <minwindef.h>
+#include <mutex>
 #include <winnt.h>
 
 SPF_NS_BEGIN
@@ -23,6 +25,11 @@ inline bool InvokeSafe(Fn&& fn, DWORD* outCode = nullptr) {
     return false;
   }
 }
+
+namespace detail {
+// No process-wide handler is installed on MSVC; nothing to remove on teardown.
+inline void RemoveHandler() {}
+}  // namespace detail
 #else
 // ---------- MinGW/GCC: Vectored Exception Handler + try/catch ----------
 namespace detail {
@@ -52,13 +59,39 @@ inline LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ep) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
+inline PVOID& HandlerHandle() {
+  static PVOID handle = nullptr;
+  return handle;
+}
+
+// Once the handler is removed (full shutdown, DLL about to unload) it must
+// never come back: lazy installers like logging would otherwise resurrect a
+// process-wide pointer into freed memory. Reset()/sdk reinit never touches
+// this — the latch lives exactly as long as this DLL instance.
+inline std::atomic<bool>& HandlerRemoved() {
+  static std::atomic<bool> removed{false};
+  return removed;
+}
+
 inline bool EnsureHandlerInstalled() {
-  static bool installed = false;
-  if (!installed) {
-    AddVectoredExceptionHandler(1, VectoredHandler);
-    installed = true;
+  if (HandlerRemoved().load(std::memory_order_acquire)) {
+    return false;
   }
-  return installed;
+  // Logging starts on every thread early; call_once keeps the install single.
+  static std::once_flag installOnce;
+  std::call_once(installOnce, [] { HandlerHandle() = AddVectoredExceptionHandler(1, VectoredHandler); });
+  return HandlerHandle() != nullptr;
+}
+
+// Must run before the DLL unloads: the OS keeps the raw function pointer in a
+// process-wide handler list, so an unloaded module would crash the game on the
+// next first-chance exception anywhere in the process.
+inline void RemoveHandler() {
+  HandlerRemoved().store(true, std::memory_order_release);
+  if (PVOID handle = HandlerHandle()) {
+    RemoveVectoredExceptionHandler(handle);
+    HandlerHandle() = nullptr;
+  }
 }
 }  // namespace detail
 
