@@ -67,22 +67,29 @@ The framework initializes your plugin in stages, calling the functions you provi
 
 ---
 **3. `OnGameWorldReady()`** (Optional)
-*   **When:** Called once per session, after `OnActivated`, at the moment the player loads into the game world (e.g., can drive the truck).
-*   **Purpose:** This is the ideal place to initialize logic that depends on game-world objects being available (e.g., camera hooks, reading detailed vehicle data). It provides a reliable signal that the game is "in-game" and ready.
+*   **When:** Called **every time** the game world is loaded or reloaded — after `OnActivated` on first load, and again after any world reload (profile change, quick load, etc.). Before each invocation, the framework fires `OnWorldUnloaded` and resets all world-scoped services.
+*   **Purpose:** This is the ideal place to (re-)initialize logic that depends on game-world objects being available (e.g., camera hooks, reading detailed vehicle data). It provides a reliable signal that the game is "in-game" and ready.
+*   **Important:** If your plugin stores world-scoped state (hooks, cached pointers, etc.), make sure to clean it up in `OnWorldUnloaded` before this callback fires again.
 *   **Available API:** All services via the `core_api` pointer stored during `OnActivated`.
 
 ---
-**4. `OnUpdate()`** (Optional)
+**4. `OnWorldUnloaded()`** (Optional)
+*   **When:** Called **every time** the game world is being unloaded, **before** the framework resets world-scoped services and fires `OnGameWorldReady` again.
+*   **Purpose:** This is the reverse of `OnGameWorldReady`. Use it to unhook game hooks, release world-scoped resources, and clear any cached pointers. After this callback returns, the framework will reset world-scoped services and then fire `OnGameWorldReady` when the new world is loaded.
+*   **Available API:** All services via the `core_api` pointer stored during `OnActivated`.
+
+---
+**5. `OnUpdate()`** (Optional)
 *   **When:** Called on every frame of the game loop.
 *   **Purpose:** For logic that needs to run continuously, like updating data or animations. For performance, avoid heavy computations in this function. If you don't need it, leave the function pointer `NULL` in `SPF_Plugin_Exports`.
 
 ---
-**5. `OnRegisterUI(SPF_UI_API* ui_api)`** (Optional)
+**6. `OnRegisterUI(SPF_UI_API* ui_api)`** (Optional)
 *   **When:** Called once when the framework's UI system is ready.
 *   **Purpose:** If your plugin adds custom UI windows (as defined in your manifest), this is where you register their rendering functions with the UI system.
 
 ---
-**6. `OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath)`** (Optional)
+**7. `OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath)`** (Optional)
 *   **When:** Called whenever a custom setting defined in your plugin's manifest is changed by the user or code.
 *   **Purpose:** Allows you to react to configuration changes in real-time.
 *   **Parameters:**
@@ -91,7 +98,7 @@ The framework initializes your plugin in stages, calling the functions you provi
 *   **Workflow:** Use the provided `config_handle` and `keyPath` with the `SPF_Config_API` functions to get the new value. See the `SPF_Config_API` documentation for details.
 
 ---
-**7. `OnUnload()`**
+**8. `OnUnload()`**
 *   **When:** Called just before your plugin DLL is unloaded from memory.
 *   **Purpose:** Perform all necessary cleanup. Free any memory you allocated, save any pending data, and ensure your plugin shuts down cleanly.
 

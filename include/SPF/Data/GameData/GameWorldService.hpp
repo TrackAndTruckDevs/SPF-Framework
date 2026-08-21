@@ -3,6 +3,7 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
+#include "SPF/Data/GameData/IWorldScopedService.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +19,7 @@ namespace Data::GameData {
  * @class GameWorldService
  * @brief A service that provides memory offsets and pointers for core game world data (time, engine state).
  */
-class GameWorldService {
+class GameWorldService : public IWorldScopedService {
  public:
   static GameWorldService& GetInstance();
 
@@ -31,6 +32,11 @@ class GameWorldService {
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
+
+  // --- IWorldScopedService ---
+  const char* GetName() const override { return "GameWorldService"; }
+  void ResetForWorldReload() override { Shutdown(); }
+  bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
 
   // --- Public Getters ---
   intptr_t GetTimeOffset() const { return m_timeOffset; }

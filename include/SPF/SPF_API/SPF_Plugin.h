@@ -223,15 +223,19 @@ typedef struct {
   void (*OnActivated)(const SPF_Core_API* core_api);
 
   /**
-   * @brief (Optional) Called once after the game world has been fully loaded.
+   * @brief (Optional) Called every time the game world is loaded.
    *
-   * @details This function is called by the framework after the game world is
-   *          fully loaded and all in-game objects are available. It is the ideal
-   *          place to initialize logic that depends on these in-game objects
-   *          (e.g., installing game-specific hooks, reading vehicle data, etc.).
+   * @details This function is called by the framework every time the game world
+   *          is loaded or reloaded (e.g. on profile change, quick load, etc.).
+   *          On each invocation the framework has already reset all world-scoped
+   *          services, so this is the ideal place to (re-)initialize logic that
+   *          depends on in-game objects (installing hooks, reading vehicle data,
+   *          etc.).
+   *
+   *          If your plugin stores world-scoped state, make sure to clear it in
+   *          OnWorldUnloaded before this callback fires again.
    */
   void (*OnGameWorldReady)();
-
   /**
    * @brief (Optional) Called when the framework's global interface language is changed.
    * @details This allows plugins to automatically synchronize their own language
@@ -239,6 +243,19 @@ typedef struct {
    * @param langCode The new language code (e.g., "en", "uk").
    */
   void (*OnLanguageChanged)(const char* langCode);
+  /**
+   * @brief (Optional) Called when the game world is being unloaded (before reload).
+   *
+   * @details This function is called by the framework BEFORE the world is unloaded
+   *          and services are reset. Plugins MUST use this callback to unhook their
+   *          hooks and release any world-scoped resources. After this callback returns,
+   *          the framework will reset world-scoped services and then fire OnGameWorldReady
+   *          when the new world is loaded.
+   *
+   *          This is the REVERSE of OnGameWorldReady — it fires once per reload,
+   *          before cleanup, so plugins can cleanly detach from the old world.
+   */
+  void (*OnWorldUnloaded)();
 
 } SPF_Plugin_Exports;
 

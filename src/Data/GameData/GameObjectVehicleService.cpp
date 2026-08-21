@@ -5,6 +5,7 @@
 #include "SPF/Data/GameData/Finders/ObjectVehicleManagerFinder.hpp"
 #include "SPF/Data/GameData/IObjectDataFinder.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -19,6 +20,8 @@ GameObjectVehicleService& GameObjectVehicleService::GetInstance() {
   return instance;
 }
 
+GameObjectVehicleService::GameObjectVehicleService() { WorldServiceRegistry::Get().Register(this); }
+
 void GameObjectVehicleService::Initialize() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameObjectVehicleService");
   logger->Info("Initializing Game Object Vehicle Service...");
@@ -28,6 +31,33 @@ void GameObjectVehicleService::Initialize() {
 
   m_isInitialized = false;
   logger->Info("Game Object Vehicle Service initialization finished. Waiting for critical offsets.");
+}
+
+void GameObjectVehicleService::Reset() {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameObjectVehicleService");
+  logger->Info("Game Object Vehicle Service has been reset.");
+
+  m_isInitialized = false;
+  m_pTrafficManagerAddr = 0;
+  m_trafficManagerAdjustment = 0;
+  m_localPlayerControllerOffset = 0;
+  m_playerVehicleInControllerOffset = 0;
+  m_pArrayObjectOffset = 0;
+  m_vehicleCountOffset = 0;
+  m_spawnedVehicleStructSize = 0;
+  m_vehicleIdOffset = 0;
+  m_patienceOffset = 0;
+  m_safetyOffset = 0;
+  m_targetSpeedOffset = 0;
+  m_speedLimitOffset = 0;
+  m_laneSpeedInputOffset = 0;
+  m_vehicleSubObjectOffset = 0;
+  m_vtableGetCurrentSpeedOffset = 0;
+  m_vtableGetAccelerationOffset = 0;
+
+  for (const auto& finder : m_dataFinders) {
+    finder->Reset();
+  }
 }
 
 void GameObjectVehicleService::RegisterFinders() {

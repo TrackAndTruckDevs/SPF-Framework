@@ -108,6 +108,23 @@ This section lists the functions used to subscribe to telemetry data updates.
 | `Tel_RegisterForSpecialEvents`| `SPF_Telemetry_SpecialEvents_Callback`| Registers for one-time gameplay event flags. |
 | `Tel_RegisterForGameplayEvents`| `SPF_Telemetry_GameplayEvents_Callback`| Registers for detailed data for the most recent event. |
 | `Tel_RegisterForGearboxConstants`|`SPF_Telemetry_GearboxConstants_Callback`| Registers for H-shifter layout information changes. |
+| `Tel_RegisterForWorldReload` | `SPF_Telemetry_WorldReload_Callback` | Registers for world (re)load detection (raw SCS `timer_restart` signal). |
+
+### World Reload Detection
+
+`Tel_RegisterForWorldReload` exposes the raw SCS SDK signal (`SCS_TELEMETRY_FRAME_START_FLAG_timer_restart`): the game's frame timers were reset and started counting from zero again, which happens every time a new world starts loading — including the very first load.
+
+> [!NOTE]
+> This is the **raw** SDK signal. For framework-ordered lifecycle events use the plugin exports instead: `OnWorldUnloaded` fires before the framework resets its world-scoped services, and `OnGameWorldReady` fires when the new world is fully loaded. The telemetry callback may fire earlier in the same frame than both of them.
+
+```c
+void OnWorldReload(void* user_data) {
+    // A new world started loading (raw SCS timer_restart signal).
+}
+
+// In OnActivated:
+s_coreAPI->telemetry->Tel_RegisterForWorldReload(s_telemetryHandle, OnWorldReload, NULL);
+```
 
 ## Data Structure Reference
 

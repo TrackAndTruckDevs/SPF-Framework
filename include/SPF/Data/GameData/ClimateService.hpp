@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+#include "SPF/Data/GameData/IWorldScopedService.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -22,7 +23,7 @@ struct ProfileRef {
   bool isBad;  // false = nice, true = bad
 };
 
-class ClimateService {
+class ClimateService : public IWorldScopedService {
  public:
   static ClimateService& GetInstance();
 
@@ -35,6 +36,11 @@ class ClimateService {
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
+
+  // --- IWorldScopedService ---
+  const char* GetName() const override { return "ClimateService"; }
+  void ResetForWorldReload() override { Shutdown(); }
+  bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
 
   // --- Public Getters for Environment ---
   uintptr_t GetUpdateFnAddr() const { return m_updateFnAddr; }

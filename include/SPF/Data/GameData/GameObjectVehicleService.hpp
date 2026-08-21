@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SPF/Namespace.hpp"
+#include "SPF/Data/GameData/IWorldScopedService.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -12,7 +13,7 @@ namespace Data::GameData {
 
 class IObjectDataFinder;  // Forward declaration
 
-class GameObjectVehicleService {
+class GameObjectVehicleService : public IWorldScopedService {
  public:
   struct VehicleFullInfo {
     int32_t id;
@@ -36,6 +37,11 @@ class GameObjectVehicleService {
   void Reset();
   bool AreAllFindersReady() const;
   bool IsFinderReady(const char* finderName) const;
+
+  // --- IWorldScopedService ---
+  const char* GetName() const override { return "GameObjectVehicleService"; }
+  void ResetForWorldReload() override { Reset(); }
+  bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
 
   // --- Public Getters ---
   uintptr_t GetTrafficManagerAddr() const {
@@ -97,7 +103,7 @@ class GameObjectVehicleService {
   void SetVtableGetAccelerationOffset(uintptr_t offset) { m_vtableGetAccelerationOffset = offset; }
 
  private:
-  GameObjectVehicleService() = default;
+  GameObjectVehicleService();
   ~GameObjectVehicleService() = default;
 
   void RegisterFinders();

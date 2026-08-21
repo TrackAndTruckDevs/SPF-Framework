@@ -196,7 +196,7 @@ class Core {
   std::mutex m_deferredTasksMutex;
 
   // --- Event Handlers ---
-  void OnGameWorldReady();
+  void FinalizeWorldInitialization();
   void OnTelemetryFrameStart();
   void OnRequestPluginStateChange(const Events::UI::RequestPluginStateChange& e);
   void OnPluginWillBeUnloaded(const Events::OnPluginWillBeUnloaded& e);
@@ -236,6 +236,7 @@ class Core {
   void ShutdownTelemetry();
   void InitInputService(const scs_input_init_params_t* params);
   void ShutdownInputService();
+  void ResetWorldScopedServices();
 
   HMODULE m_module;
   LifecycleState m_lifecycleState;
@@ -244,8 +245,7 @@ class Core {
   bool m_handlersBound = false;
   // Written by the deferred init thread, read by telemetry frame start.
   std::atomic<bool> m_deferredInitDone = false;
-  // Set once per telemetry session when OnGameWorldReady is fired.
-  bool m_worldReadyFired = false;
+  bool m_worldLoadedOnce = false;
 
   // --- Timing Statistics ---
   std::chrono::steady_clock::time_point m_preloadStartTime;
@@ -295,7 +295,6 @@ class Core {
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestBindingPropertyUpdate&)>> m_onRequestBindingPropertyUpdateSink;
   std::unique_ptr<Utils::Sink<void(const Events::Config::OnKeybindsModified&)>> m_onKeybindsModifiedSink;
   std::unique_ptr<Utils::Sink<void()>> m_onTelemetryFrameStartSink;
-  std::unique_ptr<Utils::Sink<void()>> m_onGameWorldReadySink;
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestExecuteCommand&)>> m_onRequestExecuteCommandSink;
   //  Sinks for Update and Patrons
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>> m_onRequestUpdateCheckSink;

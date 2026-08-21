@@ -11,6 +11,7 @@
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
@@ -98,7 +99,6 @@ Core::Core(HMODULE module)
       m_onRequestBindingPropertyUpdateSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestBindingPropertyUpdate&)>>(m_eventManager->System.OnRequestBindingPropertyUpdate)),
       m_onKeybindsModifiedSink(std::make_unique<Utils::Sink<void(const Events::Config::OnKeybindsModified&)>>(m_eventManager->System.OnKeybindsModified)),
       m_onTelemetryFrameStartSink(std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnTelemetryFrameStart)),
-      m_onGameWorldReadySink(std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnGameWorldReady)),
       m_onRequestExecuteCommandSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestExecuteCommand&)>>(m_eventManager->System.OnRequestExecuteCommand))
       //  Initialize new Sinks
       ,
@@ -320,7 +320,6 @@ void Core::Reset() {
 
   // Reset one-shot state for the new telemetry session.
   m_deferredInitDone.store(false);
-  m_worldReadyFired = false;
 
   // Drop any deferred tasks that never executed (they may capture freed manager state).
   {
@@ -683,7 +682,6 @@ void Core::ShutdownServices() {
   m_onRequestBindingPropertyUpdateSink.reset();
   m_onKeybindsModifiedSink.reset();
   m_onTelemetryFrameStartSink.reset();
-  m_onGameWorldReadySink.reset();
   m_onRequestExecuteCommandSink.reset();
 
   //  Update and Patrons sinks
@@ -838,7 +836,6 @@ void Core::BindEventHandlers() {
   m_onRequestBindingPropertyUpdateSink->Connect<&Core::OnRequestBindingPropertyUpdate>(this);
   m_onKeybindsModifiedSink->Connect<&Core::OnKeybindsModified>(this);
   m_onTelemetryFrameStartSink->Connect<&Core::OnTelemetryFrameStart>(this);
-  m_onGameWorldReadySink->Connect<&Core::OnGameWorldReady>(this);
   m_onRequestExecuteCommandSink->Connect<&Core::OnRequestExecuteCommand>(this);
   //  Connect new Sinks
   m_onRequestUpdateCheckSink->Connect<&Core::OnRequestUpdateCheck>(this);
@@ -861,8 +858,8 @@ void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted
 
 void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
 
-void Core::OnGameWorldReady() {
-  m_logger->Info("OnGameWorldReady event received. Finalizing component initialization...");
+void Core::FinalizeWorldInitialization() {
+  m_logger->Info("Finalizing world initialization...");
 
   // Lazy-install CameraHooks now that they are needed for the GameCameraManager.
   auto& cameraHooks = Hooks::CameraHooks::GetInstance();
@@ -872,49 +869,20 @@ void Core::OnGameWorldReady() {
     Hooks::HookManager::GetInstance().InstallFeatureHook(&cameraHooks);
   }
 
-  // Finalize Camera data and manager
+  // Re-resolve every registered world-scoped data service BEFORE installing
+  // the camera manager: it depends on camera data being ready. The registry
+  // orders services by priority, so dependency roots resolve first.
+  for (auto* service : Data::GameData::WorldServiceRegistry::Get().All()) {
+    if (service->TryFinalizeWorldInit()) {
+      m_logger->Info("{} is now ready.", service->GetName());
+    } else {
+      m_logger->Warn("{} is not ready yet (waiting for dependencies or game data).", service->GetName());
+    }
+  }
+
+  // Install the camera manager last: all finders are ready at this point.
   if (!GameCameraManager::GetInstance().IsInstalled()) {
     GameCameraManager::GetInstance().Install();
-  }
-
-  // Finalize Vehicle data
-  auto& vehicleService = Data::GameData::GameObjectVehicleService::GetInstance();
-  if (!vehicleService.AreAllFindersReady()) {
-    if (vehicleService.TryFindAllOffsets()) {
-      m_logger->Info("GameObjectVehicleService is now ready.");
-    } else {
-      m_logger->Warn("GameObjectVehicleService is not ready yet. Will retry on next event.");
-    }
-  }
-
-  // Finalize Manager Core data
-  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
-  if (!managerService.AreAllFindersReady()) {
-    if (managerService.TryFindAllOffsets()) {
-      m_logger->Info("ManagerCoreService is now ready.");
-    } else {
-      m_logger->Warn("ManagerCoreService is not ready yet. Will retry on next event.");
-    }
-  }
-
-  // Finalize GameWorld data
-  auto& worldService = Data::GameData::GameWorldService::GetInstance();
-  if (!worldService.AreAllFindersReady()) {
-    if (worldService.TryFindAllOffsets()) {
-      m_logger->Info("GameWorldService is now ready.");
-    } else {
-      m_logger->Warn("GameWorldService is not ready yet. Will retry on next event.");
-    }
-  }
-
-  // Finalize Climate data
-  auto& climateService = Data::GameData::ClimateService::GetInstance();
-  if (!climateService.AreAllFindersReady()) {
-    if (climateService.TryFindAllOffsets()) {
-      m_logger->Info("ClimateService is now ready.");
-    } else {
-      m_logger->Warn("ClimateService is not ready yet. Will retry on next event.");
-    }
   }
 }
 void Core::LogInitializationReports(const std::vector<InitializationReport>& reports) {
@@ -1172,11 +1140,19 @@ void Core::ProcessHookDependenciesForPlugin(const std::string& pluginName, bool 
 
 void Core::OnTelemetryFrameStart() {
   // Fire world-ready only when the world is loaded AND background init finished.
-  // OnGameWorldReady fires once per telemetry session; on a reload inside the
-  // world it may otherwise fire before ManagerCore is resolved (deferred thread).
-  if (!m_worldReadyFired && m_deferredInitDone && m_telemetryService && m_telemetryService->GetTimestamps().simulation > 0) {
-    m_worldReadyFired = true;
-    m_logger->Info("World loaded and deferred init complete. Firing OnGameWorldReady.");
+  if (m_deferredInitDone && m_telemetryService->ConsumeTimerRestart()) {
+    if (m_worldLoadedOnce) {
+      m_logger->Info("World reload detected. Firing OnWorldUnloading, resetting services, then finalizing.");
+      // Notify plugins to unhook from the old world
+      m_eventManager->System.OnWorldUnloading.Call();
+      // Reset world-scoped services so they re-find offsets in the new world
+      ResetWorldScopedServices();
+    } else {
+      m_logger->Info("First world load detected. Finalizing world initialization.");
+      m_worldLoadedOnce = true;
+    }
+    // Core finalizes its own world-scoped state directly, then notifies external consumers.
+    FinalizeWorldInitialization();
     m_eventManager->System.OnGameWorldReady.Call();
   }
 
@@ -1184,6 +1160,22 @@ void Core::OnTelemetryFrameStart() {
   if (GameCameraManager::GetInstance().IsInstalled()) {
     GameCameraManager::GetInstance().Update(dt);
   }
+}
+
+void Core::ResetWorldScopedServices() {
+  m_logger->Info("Resetting world-scoped services for reload...");
+
+  // Every registered world-scoped service clears its own state; new services
+  // join automatically via WorldServiceRegistry self-registration.
+  for (auto* service : Data::GameData::WorldServiceRegistry::Get().All()) {
+    service->ResetForWorldReload();
+  }
+
+  // Camera stack: full uninstall so it re-installs on new world
+  GameCameraManager::GetInstance().Uninstall();
+  Hooks::CameraHooks::GetInstance().Uninstall();
+
+  m_logger->Info("World-scoped services reset complete.");
 }
 void Core::InitTelemetry(const scs_telemetry_init_params_t* params) {
   m_logger->Info("--- Initializing Telemetry Module ---");

@@ -3,6 +3,7 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/IManagerDataFinder.hpp"
+#include "SPF/Data/GameData/IWorldScopedService.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -16,7 +17,7 @@ namespace Data::GameData {
  * @class ManagerCoreService
  * @brief A singleton service that owns and runs core manager finders (GameplayManager, ...).
  */
-class ManagerCoreService {
+class ManagerCoreService : public IWorldScopedService {
  public:
   static ManagerCoreService& GetInstance();
 
@@ -28,6 +29,11 @@ class ManagerCoreService {
   bool TryFindAllOffsets();
   bool AreAllFindersReady() const;
   bool IsFinderReady(const char* finderName) const;
+
+  // --- IWorldScopedService ---
+  const char* GetName() const override { return "ManagerCoreService"; }
+  void ResetForWorldReload() override { Reset(); }
+  bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
   bool IsGameplayManagerReady() const { return m_isInitialized && m_gameplayManagerAddr != 0; }
   bool IsCameraManagerReady() const { return m_isInitialized && m_cameraManagerAddr != 0; }
   bool IsEnvObjectOffsetReady() const { return m_isInitialized && m_envObjectOffset != 0; }
@@ -47,7 +53,7 @@ class ManagerCoreService {
   void SetTimeMgrPtrAddr(uintptr_t addr) { m_timeMgrPtrAddr = addr; }
 
  private:
-  ManagerCoreService() = default;
+  ManagerCoreService();
   ~ManagerCoreService() = default;
 
   void RegisterFinders();

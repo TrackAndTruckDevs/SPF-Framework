@@ -38,6 +38,7 @@ class IManagerDataFinder {
    * @return True if ready, false otherwise.
    */
   bool IsReady() const { return m_isReady; }
+  void Reset() { m_isReady = false; }
 
  protected:
   bool m_isReady = false;

@@ -5,6 +5,7 @@
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/SEHGuard.hpp"
@@ -103,8 +104,8 @@ bool WriteRecordFloat(uintptr_t record, intptr_t attrOffset, float val) {
 }
 
 // Layout of an embedded array_t<float> object: { vptr@+0, data@+8, count@+0x10, cap@+0x18 }.
-constexpr intptr_t kArrayDataOffset = 0x08;    // array_t<T> -> element buffer
-constexpr intptr_t kArrayCountOffset = 0x10;   // array_t<T> -> element count
+constexpr intptr_t kArrayDataOffset = 0x08;   // array_t<T> -> element buffer
+constexpr intptr_t kArrayCountOffset = 0x10;  // array_t<T> -> element count
 
 /** Number of per-zoom map offset entries. */
 constexpr size_t kMapOffsetsCount = 8;
@@ -177,7 +178,7 @@ bool WriteRecordFloatArray(uintptr_t record, intptr_t attrOffset, const float* v
 
 }  // namespace
 
-GameWorldService::GameWorldService() = default;
+GameWorldService::GameWorldService() { WorldServiceRegistry::Get().Register(this); }
 
 GameWorldService& GameWorldService::GetInstance() {
   static GameWorldService instance;
@@ -211,6 +212,9 @@ void GameWorldService::Shutdown() {
     m_cityCache.clear();
     m_cityCacheDataPtr = 0;
     m_cityCacheCount = 0;
+    for (const auto& finder : m_dataFinders) {
+      finder->Reset();
+    }
   }
 }
 
@@ -224,11 +228,12 @@ uintptr_t GameWorldService::ResolveEnvironmentBase() const {
 
 bool GameWorldService::TryFindAllOffsets() {
   if (m_isInitialized) return true;
-
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameWorldService");
   // GameWorldService depends on GameplayManager and its Environment Object offset
   // (both resolved by ManagerCoreService). Do not resolve offsets until the
   // manager is available to avoid null dereferences.
   if (!ManagerCoreService::GetInstance().IsGameplayManagerReady() || !ManagerCoreService::GetInstance().IsEnvObjectOffsetReady()) {
+    logger->Warn("GameWorldService: WorldService not resolved yet. Waiting for ManagerCoreService.");
     return false;
   }
 
@@ -252,10 +257,7 @@ bool GameWorldService::TryFindAllOffsets() {
   return m_isInitialized;
 }
 
-bool GameWorldService::IsReady() {
-  return m_isInitialized && AreAllFindersReady() && ManagerCoreService::GetInstance().IsGameplayManagerReady() &&
-         ManagerCoreService::GetInstance().IsEnvObjectOffsetReady();
-}
+bool GameWorldService::IsReady() { return m_isInitialized && AreAllFindersReady() && ManagerCoreService::GetInstance().IsGameplayManagerReady() && ManagerCoreService::GetInstance().IsEnvObjectOffsetReady(); }
 
 bool GameWorldService::IsFinderReady(const char* name) const {
   for (const auto& finder : m_dataFinders) {

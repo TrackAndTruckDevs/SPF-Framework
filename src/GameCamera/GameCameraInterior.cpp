@@ -5,6 +5,7 @@
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -663,7 +664,10 @@ size_t GameCameraInterior::GetAzimuthOverridesCount() const {
 
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   // Number of elements lies behind the offset: azimuthOverrides + 16
-  return static_cast<size_t>(*reinterpret_cast<uint64_t*>(pCam + offset + 16));
+  if (IsBadReadPtr(reinterpret_cast<void*>(pCam + offset + 16), sizeof(uint64_t))) return 0;
+  uint64_t count = *reinterpret_cast<uint64_t*>(pCam + offset + 16);
+  if (count > 64) return 0;
+  return static_cast<size_t>(count);
 }
 
 void* GameCameraInterior::GetAzimuthOverrideAddress(size_t index) const {
@@ -676,10 +680,14 @@ void* GameCameraInterior::GetAzimuthOverrideAddress(size_t index) const {
 
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   // The pointer to the beginning of the array lies at the offset: azimuthOverrides + 8
+  if (IsBadReadPtr(reinterpret_cast<void*>(pCam + offset + 8), sizeof(void*))) return nullptr;
   void** data = *reinterpret_cast<void***>(pCam + offset + 8);
   if (!data) return nullptr;
-
-  return data[index];
+  if (IsBadReadPtr(data + index, sizeof(void*))) return nullptr;
+  void* elem = data[index];
+  if (!elem) return nullptr;
+  if (IsBadReadPtr(elem, sizeof(void*))) return nullptr;
+  return elem;
 }
 
 // start_azimuth
@@ -1031,7 +1039,10 @@ size_t GameCameraInterior::GetShakeAnimCount() const {
 
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   // SCS vector structure: [ptr(0), capacity(8), count(16)]
-  return static_cast<size_t>(*reinterpret_cast<uint64_t*>(pCam + offset + 16));
+  if (IsBadReadPtr(reinterpret_cast<void*>(pCam + offset + 16), sizeof(uint64_t))) return 0;
+  uint64_t count = *reinterpret_cast<uint64_t*>(pCam + offset + 16);
+  if (count > 64) return 0;
+  return static_cast<size_t>(count);
 }
 
 bool GameCameraInterior::GetShakeAnim(size_t index, float* out_x, float* out_y, float* out_z) const {
@@ -1042,10 +1053,12 @@ bool GameCameraInterior::GetShakeAnim(size_t index, float* out_x, float* out_y, 
 
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   // Based on memory dump, the data pointer is at offset + 8
+  if (IsBadReadPtr(reinterpret_cast<void*>(pCam + offset + 8), sizeof(void*))) return false;
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
   if (!pData) return false;
 
   // Packed float3 (12 bytes per element)
+  if (IsBadReadPtr(reinterpret_cast<void*>(pData + (index * 12)), sizeof(float) * 3)) return false;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
 
   if (out_x) *out_x = pVec[0];
@@ -1063,9 +1076,12 @@ void GameCameraInterior::SetShakeAnim(size_t index, float x, float y, float z) {
 
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   // Based on memory dump, the data pointer is at offset + 8
+  if (IsBadReadPtr(reinterpret_cast<void*>(pCam + offset + 8), sizeof(void*))) return;
   uintptr_t pData = *reinterpret_cast<uintptr_t*>(pCam + offset + 8);
   if (!pData) return;
 
+  // Packed float3 (12 bytes per element)
+  if (IsBadWritePtr(reinterpret_cast<void*>(pData + (index * 12)), sizeof(float) * 3)) return;
   float* pVec = reinterpret_cast<float*>(pData + (index * 12));
   pVec[0] = x;
   pVec[1] = y;

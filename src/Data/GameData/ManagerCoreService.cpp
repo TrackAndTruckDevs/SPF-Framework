@@ -4,6 +4,7 @@
 
 #include "SPF/Data/GameData/Finders/ManagerCoreDataFinder.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 
 #include <memory>
 #include <vector>
@@ -16,6 +17,8 @@ ManagerCoreService& ManagerCoreService::GetInstance() {
   static ManagerCoreService instance;
   return instance;
 }
+
+ManagerCoreService::ManagerCoreService() { WorldServiceRegistry::Get().Register(this, 0); }
 
 void ManagerCoreService::Initialize() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ManagerCoreService");
@@ -82,6 +85,9 @@ void ManagerCoreService::Reset() {
   m_cameraManagerAddr = 0;
   m_envObjectOffset = 0;
   m_timeMgrPtrAddr = 0;
+  for (const auto& finder : m_dataFinders) {
+    finder->Reset();
+  }
 }
 
 }  // namespace Data::GameData

@@ -115,6 +115,7 @@ class PluginManager {
   void RegisterUIForPlugin(const LoadedPlugin& plugin);
 
   void OnGameWorldReady();
+  void OnWorldUnloading();
 
   // --- Safe Invocation Helpers (SEH-wrapped) ---
   bool SafeCallOnLoad(LoadedPlugin& plugin, SPF_Load_API* api);
@@ -123,6 +124,7 @@ class PluginManager {
   bool SafeCallOnUnload(LoadedPlugin& plugin);
   bool SafeCallOnUpdate(LoadedPlugin& plugin);
   bool SafeCallOnGameWorldReady(LoadedPlugin& plugin);
+  bool SafeCallOnWorldUnloaded(LoadedPlugin& plugin);
   bool SafeCallOnSettingChanged(LoadedPlugin& plugin, SPF_Config_Handle* handle, const char* keyPath);
   bool SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* langCode);
 
@@ -142,6 +144,7 @@ class PluginManager {
   std::vector<std::string> m_unloadQueue;
 
   std::unique_ptr<Utils::Sink<void()>> m_onGameWorldReadySink;
+  std::unique_ptr<Utils::Sink<void()>> m_onWorldUnloadingSink;
 
   std::vector<std::unique_ptr<Hooks::IHook>> m_pluginHooks;
 

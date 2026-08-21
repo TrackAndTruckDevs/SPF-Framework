@@ -102,6 +102,7 @@ class EventManager {
     // --- Telemetry Events ---
     Utils::Signal<void()> OnTelemetryFrameStart;
     Utils::Signal<void()> OnGameWorldReady;
+    Utils::Signal<void()> OnWorldUnloading;
     Events::Telemetry::TelemetryEventSignals Telemetry;  // New member for all telemetry signals
   };
 

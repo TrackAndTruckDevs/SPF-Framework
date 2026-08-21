@@ -3,6 +3,7 @@
 #include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
+#include "SPF/Data/GameData/IWorldScopedService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 
@@ -21,7 +22,7 @@ namespace Data::GameData {
  * This class acts as a central repository for camera-related memory data.
  * It manages a collection of ICameraDataFinder objects and stores verified camera addresses.
  */
-class GameDataCameraService {
+class GameDataCameraService : public IWorldScopedService {
  public:
   static GameDataCameraService& GetInstance();
 
@@ -30,6 +31,19 @@ class GameDataCameraService {
 
   void Initialize();
   void Shutdown();
+  /**
+   * @brief Clears world-scoped state in preparation for a world reload.
+   * @details Keeps finder instances alive but resets their readiness flags so
+   * TryFindAllOffsets() re-resolves everything in the newly loaded world.
+   * Static offsets and function pointers are preserved; only cached
+   * world-object pointers are invalidated.
+   */
+  void Reset();
+
+  // --- IWorldScopedService ---
+  const char* GetName() const override { return "GameDataCameraService"; }
+  void ResetForWorldReload() override { Reset(); }
+  bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
   bool IsReady() const {
     return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady();
   }

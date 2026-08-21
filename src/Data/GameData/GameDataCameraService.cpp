@@ -18,6 +18,7 @@
 #include "SPF/Data/GameData/Finders/WheelCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/WindowCameraDataFinder.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
@@ -28,7 +29,7 @@
 SPF_NS_BEGIN
 namespace Data::GameData {
 
-GameDataCameraService::GameDataCameraService() = default;
+GameDataCameraService::GameDataCameraService() { WorldServiceRegistry::Get().Register(this); }
 
 GameDataCameraService& GameDataCameraService::GetInstance() {
   static GameDataCameraService instance;
@@ -76,7 +77,7 @@ bool GameDataCameraService::TryFindAllOffsets() {
   // GameDataCameraService depends on CameraManager (resolved by ManagerCoreService).
   // Do not resolve offsets until the manager is available to avoid null dereferences.
   if (!ManagerCoreService::GetInstance().IsCameraManagerReady()) {
-    logger->Debug("GameDataCameraService: CameraManager not resolved yet. Waiting for ManagerCoreService.");
+    logger->Warn("GameDataCameraService: CameraManager not resolved yet. Waiting for ManagerCoreService.");
     return false;
   }
 
@@ -329,5 +330,28 @@ void GameDataCameraService::Shutdown() {
   m_animationTimerOffset = 0;
 }
 
+void GameDataCameraService::Reset() {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameDataCameraService");
+  logger->Info("Resetting Camera Data Service for world reload...");
+
+  m_isInitialized = false;
+  m_coreOffsetsFound = false;
+  m_verifiedCameras.clear();
+  m_discoveredAddresses.clear();
+
+  // Clear cached world pointers (they become dangling after a reload).
+  // Static offsets and function pointers stay valid and are re-found by
+  // the finders during the next TryFindAllOffsets() pass anyway.
+  m_pFreeCamSpeed = nullptr;
+  m_pCameraWorldCoordinatesPtr = nullptr;
+  m_pDebugCameraContext = 0;
+  m_pCacheableCvarObject = 0;
+  m_pCameraParamsObject = 0;
+
+  // Reset finder readiness so every finder re-scans in the new world.
+  for (const auto& finder : m_dataFinders) {
+    finder->Reset();
+  }
+}
 }  // namespace Data::GameData
 SPF_NS_END

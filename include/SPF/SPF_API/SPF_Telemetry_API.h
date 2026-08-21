@@ -166,6 +166,13 @@ typedef void (*SPF_Telemetry_GameplayEvents_Callback)(const char* event_id, cons
 typedef void (*SPF_Telemetry_GearboxConstants_Callback)(const SPF_GearboxConstants* data, void* user_data);
 
 /**
+ * @brief Callback for when the game's frame timers are restarted, which happens
+ *        when a new world starts loading (including the very first load).
+ * @param user_data The custom pointer you provided when registering the callback.
+ */
+typedef void (*SPF_Telemetry_WorldReload_Callback)(void* user_data);
+
+/**
  * @struct SPF_Telemetry_API
  * @brief API for accessing telemetry data from the game.
  *
@@ -491,6 +498,20 @@ typedef struct SPF_Telemetry_API {
    * @return The number of characters written to the buffer, or the required buffer size if the provided buffer is too small.
    */
   int (*Tel_GetLastGameplayEventId)(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
+
+  /**
+   * @brief Registers a callback for world (re)load detection.
+   * @details Fired when the SCS SDK reports that its frame timers were restarted
+   *          (SCS_TELEMETRY_FRAME_START_FLAG_timer_restart), i.e. a new world has
+   *          started loading. This is the RAW SDK signal: it also fires on the
+   *          very first world load. For framework-ordered lifecycle events use
+   *          the plugin exports OnWorldUnloaded / OnGameWorldReady instead.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when the world starts loading.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForWorldReload)(SPF_Telemetry_Handle* h, SPF_Telemetry_WorldReload_Callback callback, void* user_data);
 
 } SPF_Telemetry_API;
 

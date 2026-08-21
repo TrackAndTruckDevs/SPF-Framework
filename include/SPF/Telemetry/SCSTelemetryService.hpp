@@ -75,6 +75,11 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   const std::string& GetLastGameplayEventId() const override;
   float GetDeltaTime() const override;
 
+  // --- World Reload Detection ---
+  // Returns true if the SCS SDK flagged a timer restart in the last frame
+  // (timers counting from zero again => a new world started loading).
+  bool ConsumeTimerRestart();
+
   // --- Signal Accessors (ITelemetryService Implementation) ---
   Utils::Signal<void(const SPF::Telemetry::SCS::GameState&)>& GetGameStateSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::Timestamps&)>& GetTimestampsSignal() override;
@@ -90,6 +95,7 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   Utils::Signal<void(const SPF::Telemetry::SCS::SpecialEvents&)>& GetSpecialEventsSignal() override;
   Utils::Signal<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)>& GetGameplayEventsSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::GearboxConstants&)>& GetGearboxConstantsSignal() override;
+  Utils::Signal<void()>& GetTimerRestartSignal() override;
 
   // --- Static Callbacks for SCS SDK ---
   static void StaticConfigurationCallback(scs_event_t event, const void* event_info, scs_context_t context);
@@ -139,6 +145,7 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   // Delta time calculation
   float m_deltaTime = 0.0f;
   std::chrono::steady_clock::time_point m_lastFrameTime;
+  bool m_timerRestarted = false;
 };
 
 }  // namespace Telemetry

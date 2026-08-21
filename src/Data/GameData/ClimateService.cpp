@@ -4,6 +4,7 @@
 
 #include "SPF/Data/GameData/Finders/ClimateDataFinder.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -24,7 +25,7 @@ namespace Data::GameData {
 // Singleton / Lifecycle
 // ============================================================================
 
-ClimateService::ClimateService() = default;
+ClimateService::ClimateService() { WorldServiceRegistry::Get().Register(this); }
 
 ClimateService& ClimateService::GetInstance() {
   static ClimateService instance;
@@ -139,6 +140,9 @@ void ClimateService::Shutdown() {
 
     m_badWeatherFactorPtr = 0;
     m_remainingBadWeatherOffset = 0;
+  for (const auto& finder : m_dataFinders) {
+    finder->Reset();
+  }
   }
 }
 
@@ -180,7 +184,7 @@ bool ClimateService::TryFindAllOffsets() {
   // (both resolved by ManagerCoreService). Do not resolve offsets until the
   // manager is available to avoid null dereferences.
   if (!ManagerCoreService::GetInstance().IsGameplayManagerReady() || !ManagerCoreService::GetInstance().IsEnvObjectOffsetReady()) {
-    logger->Debug("ClimateService: GameplayManager/EnvObjectOffset not resolved yet. Waiting for ManagerCoreService.");
+    logger->Warn("ClimateService: GameplayManager/EnvObjectOffset not resolved yet. Waiting for ManagerCoreService.");
     return false;
   }
 

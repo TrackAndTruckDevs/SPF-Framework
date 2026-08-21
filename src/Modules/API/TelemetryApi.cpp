@@ -994,6 +994,7 @@ void TelemetryApi::FillTelemetryApi(SPF_Telemetry_API* api) {
   api->Tel_RegisterForSpecialEvents = &TelemetryApi::Tel_RegisterForSpecialEvents;
   api->Tel_RegisterForGameplayEvents = &TelemetryApi::Tel_RegisterForGameplayEvents;
   api->Tel_RegisterForGearboxConstants = &TelemetryApi::Tel_RegisterForGearboxConstants;
+  api->Tel_RegisterForWorldReload = &TelemetryApi::Tel_RegisterForWorldReload;
 }
 
 // --- Event Subscription (New RAII-based C-API Proxies) ---
@@ -1204,6 +1205,21 @@ SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForGearboxConstants(SPF
   SubscriptionHandler<SPF::Telemetry::SCS::GearboxConstants>::InvokerFunction invoker = [callback](const SPF::Telemetry::SCS::GearboxConstants& cpp_data, void* ud) { TelemetryApi::InvokeGearboxConstantsCallback(cpp_data, callback, ud); };
 
   telemetryHandle->m_subscriptionHandlers.emplace_back(std::make_unique<SubscriptionHandler<SPF::Telemetry::SCS::GearboxConstants>>(pm.GetTelemetryService()->GetGearboxConstantsSignal(), invoker, user_data));
+  return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
+}
+
+SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForWorldReload(SPF_Telemetry_Handle* h, SPF_Telemetry_WorldReload_Callback callback, void* user_data) {
+  auto& pm = PluginManager::GetInstance();
+  if (!h || !callback || !pm.GetTelemetryService()) return nullptr;
+
+  Handles::TelemetryHandle* telemetryHandle = reinterpret_cast<Handles::TelemetryHandle*>(h);
+  if (!telemetryHandle) {
+    return nullptr;
+  }
+
+  WorldReloadSubscriptionHandler::InvokerFunction invoker = [callback](void* ud) { callback(ud); };
+
+  telemetryHandle->m_subscriptionHandlers.emplace_back(std::make_unique<WorldReloadSubscriptionHandler>(pm.GetTelemetryService()->GetTimerRestartSignal(), invoker, user_data));
   return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
 }
 

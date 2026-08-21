@@ -152,6 +152,8 @@ void PluginManager::Init(EventManager& eventManager, HandleManager& handleManage
 
   m_onGameWorldReadySink = std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnGameWorldReady);
   m_onGameWorldReadySink->Connect<&PluginManager::OnGameWorldReady>(this);
+  m_onWorldUnloadingSink = std::make_unique<Utils::Sink<void()>>(m_eventManager->System.OnWorldUnloading);
+  m_onWorldUnloadingSink->Connect<&PluginManager::OnWorldUnloading>(this);
 
   API::JsonReaderApi::FillJsonReaderApi(&m_jsonReaderAPI);
   API::JsonWriterApi::FillJsonWriterApi(&m_jsonWriterAPI);
@@ -464,6 +466,18 @@ void PluginManager::OnGameWorldReady() {
   }
 }
 
+void PluginManager::OnWorldUnloading() {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (!logger) return;
+
+  logger->Info("--- Firing OnWorldUnloaded for all loaded plugins ---");
+  for (const auto& [name, plugin] : m_plugins) {
+    if (plugin->exports.OnWorldUnloaded) {
+      SafeCallOnWorldUnloaded(*plugin);
+    }
+  }
+}
+
 void PluginManager::NotifyPluginOfSettingChange(const std::string& pluginName, const std::string& keyPath) {
   auto it = m_plugins.find(pluginName);
   if (it != m_plugins.end()) {
@@ -696,6 +710,21 @@ bool PluginManager::SafeCallOnGameWorldReady(LoadedPlugin& plugin) {
   if (!InvokeInternal([&]() { plugin.exports.OnGameWorldReady(); }, &exceptionCode)) {
     if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnGameWorldReady() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
     plugin.exports.OnGameWorldReady = nullptr;
+    return false;
+  }
+  return true;
+}
+
+bool PluginManager::SafeCallOnWorldUnloaded(LoadedPlugin& plugin) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PluginManager");
+  if (logger) logger->Debug("  -> [SafeCall] Calling OnWorldUnloaded() for plugin '{}'...", plugin.name);
+
+  if (!plugin.exports.OnWorldUnloaded) return true;
+
+  DWORD exceptionCode = 0;
+  if (!InvokeInternal([&]() { plugin.exports.OnWorldUnloaded(); }, &exceptionCode)) {
+    if (logger) logger->Error("Plugin '{}' FAILURE: Crashed during OnWorldUnloaded() (Exception: 0x{:08X}).", plugin.name, exceptionCode);
+    plugin.exports.OnWorldUnloaded = nullptr;
     return false;
   }
   return true;

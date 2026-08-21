@@ -110,6 +110,12 @@ struct TelemetryEventSignals {
    * @param data The new gearbox configuration constants.
    */
   Utils::Signal<void(const SPF::Telemetry::SCS::GearboxConstants& data)> OnGearboxConstantsChanged;
+
+  /**
+   * @brief Fired when the SCS frame timers restart (a new world started loading).
+   * @details Raw SDK signal: fires on the first world load and on every reload.
+   */
+  Utils::Signal<void()> OnTimerRestart;
 };
 
 }  // namespace Events::Telemetry

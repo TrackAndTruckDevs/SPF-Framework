@@ -69,6 +69,22 @@ class TelemetryApi {
     Utils::Sink<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)> m_sink;
   };
 
+  // Handler for payload-less world reload events
+  struct WorldReloadSubscriptionHandler : public BaseSubscriptionHandler {
+    using InvokerFunction = std::function<void(void* user_data_ptr)>;
+
+    WorldReloadSubscriptionHandler(Utils::Signal<void()>& signal, InvokerFunction invoker_func, void* user_data_ptr)
+        : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal) {
+      m_sink.template Connect<&WorldReloadSubscriptionHandler::OnEvent>(this);
+    }
+
+    void OnEvent() { m_invoker_func(m_user_data_ptr); }
+
+    InvokerFunction m_invoker_func;
+    void* m_user_data_ptr;
+    Utils::Sink<void()> m_sink;
+  };
+
   static void FillTelemetryApi(SPF_Telemetry_API* api);
 
   // --- Event-Driven Callback Invocation & Conversion ---
@@ -104,6 +120,7 @@ class TelemetryApi {
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForSpecialEvents(SPF_Telemetry_Handle* h, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForGameplayEvents(SPF_Telemetry_Handle* h, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForGearboxConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForWorldReload(SPF_Telemetry_Handle* h, SPF_Telemetry_WorldReload_Callback callback, void* user_data);
 
  private:
   static SPF_Telemetry_Handle* Tel_GetContext(const char* pluginName);

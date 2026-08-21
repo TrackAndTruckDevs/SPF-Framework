@@ -99,7 +99,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     cpr
     GIT_REPOSITORY https://github.com/libcpr/cpr.git
-    GIT_TAG 1.14.1 # Latest stable version
+    GIT_TAG 1.14.2 # Latest stable version
 )
 
 # Declare md4c dependency
@@ -569,20 +569,20 @@ message(STATUS "")
 message(STATUS "  ==================== END CONFIGURATION =================")
 
 
-# --- clangd compile_commands.json (POST_BUILD) ---
-# clangd (via .clangd's CompilationDatabase: build) looks for
-# build/compile_commands.json. When using CMake presets the file
-# ends up in build/<preset>/compile_commands.json instead.
-# This POST_BUILD step copies it so clangd can find it.
+# --- clangd compile_commands.json (sync) ---
+# clangd (via .clangd's CompilationDatabase: .) reads the single
+# compile_commands.json from the project root. With CMake presets the
+# file ends up in build/<preset>/compile_commands.json, so it's synced
+# to the root here on every build (ALL target), independent of preset.
 if(CMAKE_EXPORT_COMPILE_COMMANDS AND NOT CMAKE_GENERATOR MATCHES "Visual Studio")
     string(COMPARE NOTEQUAL "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/build" NON_DEFAULT_BUILD)
     if(NON_DEFAULT_BUILD)
-        set(CLANGD_LINK "${CMAKE_SOURCE_DIR}/build/compile_commands.json")
-        message(STATUS "  clangd:    synced after build → ${CLANGD_LINK}")
-        add_custom_command(TARGET SPF POST_BUILD
+        set(CLANGD_LINK "${CMAKE_SOURCE_DIR}/compile_commands.json")
+        message(STATUS "  clangd:    synced on every build -> ${CLANGD_LINK}")
+        add_custom_target(clangd_compile_commands ALL
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${CMAKE_BINARY_DIR}/compile_commands.json"
-                "${CLANGD_LINK}"
+            "${CMAKE_BINARY_DIR}/compile_commands.json"
+            "${CLANGD_LINK}"
             COMMENT "  clangd:    synced compile_commands.json"
         )
     endif()

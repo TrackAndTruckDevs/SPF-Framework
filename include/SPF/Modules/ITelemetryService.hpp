@@ -61,6 +61,7 @@ class ITelemetryService {
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::SpecialEvents&)>& GetSpecialEventsSignal() = 0;
   virtual Utils::Signal<void(const char*, const SPF::Telemetry::SCS::GameplayEvents&)>& GetGameplayEventsSignal() = 0;
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::GearboxConstants&)>& GetGearboxConstantsSignal() = 0;
+  virtual Utils::Signal<void()>& GetTimerRestartSignal() = 0;
 
   /**
    * @brief Gets the time elapsed since the last frame.

@@ -373,6 +373,12 @@ void SCSTelemetryService::HandleFrameStart(const scs_telemetry_frame_start_t* in
   m_lastFrameTime = currentTime;
 
   m_gameDataProcessor->HandleFrameStart(info);
+  // SCS flags a timer restart when frame timers are reset and count from zero
+  // again (new world started loading). Surface it for the world-reload detector.
+  m_timerRestarted = (info->flags & SCS_TELEMETRY_FRAME_START_FLAG_timer_restart) != 0;
+  if (m_timerRestarted) {
+    m_eventManager.System.Telemetry.OnTimerRestart.Call();
+  }
 
   // Post-process calculations that depend on multiple processors
   const auto& jobConstants = m_jobProcessor->GetJobConstants();
@@ -413,6 +419,12 @@ void SCSTelemetryService::HandleFrameStart(const scs_telemetry_frame_start_t* in
 
   // Reset single-frame event flags AFTER plugins have had a chance to process them.
   m_eventsProcessor->HandleFrameStart();
+}
+
+bool SCSTelemetryService::ConsumeTimerRestart() {
+  const bool restarted = m_timerRestarted;
+  m_timerRestarted = false;
+  return restarted;
 }
 
 void SCSTelemetryService::StaticPausedCallback(scs_event_t, const void*, scs_context_t context) {
@@ -497,6 +509,8 @@ Utils::Signal<void(const SCS::SpecialEvents&)>& SCSTelemetryService::GetSpecialE
 Utils::Signal<void(const char*, const SCS::GameplayEvents&)>& SCSTelemetryService::GetGameplayEventsSignal() { return m_eventManager.System.Telemetry.OnGameplayEventsUpdated; }
 
 Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearboxConstantsSignal() { return m_eventManager.System.Telemetry.OnGearboxConstantsChanged; }
+
+Utils::Signal<void()>& SCSTelemetryService::GetTimerRestartSignal() { return m_eventManager.System.Telemetry.OnTimerRestart; }
 
 }  // namespace Telemetry
 SPF_NS_END
