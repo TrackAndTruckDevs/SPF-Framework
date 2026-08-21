@@ -276,9 +276,10 @@ void Core::Reset() {
   m_logger->Info("-> [Reset] Step 1/5: Unloading plugins...");
   PluginManager::GetInstance().UnloadAllPlugins();
 
-  // Explicitly uninstall the camera manager to reset its state and camera instances.
-  // This must be done before hooks are disabled.
-  GameCameraManager::GetInstance().Uninstall();
+  // Full world-scoped teardown: data services drop cached world state and the
+  // camera stack uninstalls. The world may change while the framework is down
+  // (exit to menu, another save), so nothing world-scoped survives a Reset.
+  ResetWorldScopedServices();
 
   // Step 2: Disable all hooks before shutting down the renderer.
   m_logger->Info("-> [Reset] Step 2/5: Disabling all hooks...");
@@ -320,6 +321,7 @@ void Core::Reset() {
 
   // Reset one-shot state for the new telemetry session.
   m_deferredInitDone.store(false);
+  m_worldLoadedOnce = false;
 
   // Drop any deferred tasks that never executed (they may capture freed manager state).
   {
@@ -1140,20 +1142,28 @@ void Core::ProcessHookDependenciesForPlugin(const std::string& pluginName, bool 
 
 void Core::OnTelemetryFrameStart() {
   // Fire world-ready only when the world is loaded AND background init finished.
-  if (m_deferredInitDone && m_telemetryService->ConsumeTimerRestart()) {
-    if (m_worldLoadedOnce) {
-      m_logger->Info("World reload detected. Firing OnWorldUnloading, resetting services, then finalizing.");
-      // Notify plugins to unhook from the old world
-      m_eventManager->System.OnWorldUnloading.Call();
-      // Reset world-scoped services so they re-find offsets in the new world
-      ResetWorldScopedServices();
-    } else {
-      m_logger->Info("First world load detected. Finalizing world initialization.");
-      m_worldLoadedOnce = true;
+  if (m_deferredInitDone && m_telemetryService) {
+    // SCS sends timer_restart only when a world STARTS loading. A framework
+    // reset + re-init can happen while a world is already loaded (the player
+    // can toggle the framework mid-session), so a fresh session also detects
+    // an in-progress world via the simulation timestamp.
+    const bool timerRestarted = m_telemetryService->ConsumeTimerRestart();
+    const bool worldAlreadyLoaded = !m_worldLoadedOnce && m_telemetryService->GetTimestamps().simulation > 0;
+    if (timerRestarted || worldAlreadyLoaded) {
+      if (m_worldLoadedOnce) {
+        m_logger->Info("World reload detected. Firing OnWorldUnloading, resetting services, then finalizing.");
+        // Notify plugins to unhook from the old world
+        m_eventManager->System.OnWorldUnloading.Call();
+        // Reset world-scoped services so they re-find offsets in the new world
+        ResetWorldScopedServices();
+      } else {
+        m_logger->Info("First world load detected. Finalizing world initialization.");
+        m_worldLoadedOnce = true;
+      }
+      // Core finalizes its own world-scoped state directly, then notifies external consumers.
+      FinalizeWorldInitialization();
+      m_eventManager->System.OnGameWorldReady.Call();
     }
-    // Core finalizes its own world-scoped state directly, then notifies external consumers.
-    FinalizeWorldInitialization();
-    m_eventManager->System.OnGameWorldReady.Call();
   }
 
   const float dt = m_telemetryService ? m_telemetryService->GetDeltaTime() : 0.0f;

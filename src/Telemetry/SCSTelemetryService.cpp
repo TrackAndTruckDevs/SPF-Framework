@@ -373,9 +373,10 @@ void SCSTelemetryService::HandleFrameStart(const scs_telemetry_frame_start_t* in
   m_lastFrameTime = currentTime;
 
   m_gameDataProcessor->HandleFrameStart(info);
-  // SCS flags a timer restart when frame timers are reset and count from zero
-  // again (new world started loading). Surface it for the world-reload detector.
-  m_timerRestarted = (info->flags & SCS_TELEMETRY_FRAME_START_FLAG_timer_restart) != 0;
+  // SCS flags a timer restart when frame timers reset and count from zero again
+  // (a new world started loading). Latch it until Core consumes it, so a restart
+  // frame arriving before deferred init completes is not lost to the next frame.
+  m_timerRestarted |= (info->flags & SCS_TELEMETRY_FRAME_START_FLAG_timer_restart) != 0;
   if (m_timerRestarted) {
     m_eventManager.System.Telemetry.OnTimerRestart.Call();
   }
