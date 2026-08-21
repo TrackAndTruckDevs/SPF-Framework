@@ -273,8 +273,12 @@ void Core::Reset() {
   m_lifecycleState = LifecycleState::ShuttingDown;
   m_logger->Info("--- Core Reset sequence started (partial shutdown) ---");
 
-  // Step 1: Unload all plugins while subsystems are still active.
-  m_logger->Info("-> [Reset] Step 1/5: Unloading plugins...");
+  // Step 1: Disable all hooks before shutting down the renderer.
+  m_logger->Info("-> [Reset] Step 1/5: Disabling all hooks...");
+  HookManager::GetInstance().UninstallAllHooks();
+
+  // Step 2: Unload all plugins (their draw callbacks can no longer run).
+  m_logger->Info("-> [Reset] Step 2/5: Unloading plugins...");
   PluginManager::GetInstance().UnloadAllPlugins();
 
   // Full world-scoped teardown: data services drop cached world state and the
@@ -282,11 +286,11 @@ void Core::Reset() {
   // (exit to menu, another save), so nothing world-scoped survives a Reset.
   ResetWorldScopedServices();
 
-  // Step 2: Disable all hooks before shutting down the renderer.
-  m_logger->Info("-> [Reset] Step 2/5: Disabling all hooks...");
-  HookManager::GetInstance().UninstallAllHooks();
-
   // Step 3: Shutdown renderer backend and then UI.
+  // UIManager is a singleton that outlives this cycle; without this it keeps
+  // a dangling pointer into the destroyed renderer until SetRenderer() runs
+  // again next session. Plugin API calls in between would use freed memory.
+  UIManager::GetInstance().SetRenderer(nullptr);
   m_logger->Info("-> [Reset] Step 3/5: Shutting down Renderer and UI...");
   m_renderer.reset();
   ShutdownUI();
@@ -348,19 +352,22 @@ void Core::FullShutdown() {
 
   m_logger->Info("--- Core Full Shutdown sequence started ---");
 
-  // Step 1: Unload all plugins while subsystems are still active.
-  m_logger->Info("-> [Shutdown] Step 1/7: Unloading plugins...");
-  PluginManager::GetInstance().UnloadAllPlugins();
-
-  // Step 2: Shutdown session-based managers.
-  m_logger->Info("-> [Shutdown] Step 2/7: Shutting down session managers...");
-  ShutdownManagers();
-
-  // Step 3: Completely remove all hooks.
-  m_logger->Info("-> [Shutdown] Step 3/7: Removing all hooks...");
+  // Step 1: Completely remove all hooks
+  m_logger->Info("-> [Shutdown] Step 1/7: Removing all hooks...");
   HookManager::GetInstance().RemoveAllHooks();
 
+  // Step 2: Unload all plugins (their draw callbacks can no longer run).
+  m_logger->Info("-> [Shutdown] Step 2/7: Unloading plugins...");
+  PluginManager::GetInstance().UnloadAllPlugins();
+
+  // Step 3: Shutdown session-based managers.
+  m_logger->Info("-> [Shutdown] Step 3/7: Shutting down session managers...");
+  ShutdownManagers();
+
   // Step 4: Shutdown renderer backend and UI.
+  // Same dangling-pointer contract as in Reset(): clear it before the
+  // renderer dies, the singleton outlives the object.
+  UIManager::GetInstance().SetRenderer(nullptr);
   m_logger->Info("-> [Shutdown] Step 4/7: Shutting down Renderer and UI...");
   m_renderer.reset();
   ShutdownUI();
