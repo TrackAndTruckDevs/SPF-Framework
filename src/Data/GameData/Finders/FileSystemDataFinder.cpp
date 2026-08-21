@@ -36,34 +36,38 @@ const char* UFS_REGISTER_MOUNT_STR = "[ufs] The table of UFS mounted devices is 
 
 /**
  * @brief Signature for Node Structure (DevicePtr and VirtualPath).
+ * The trailing "[<instr>]?" marks an optional instruction: in v1.57 the
+ * "LEA RAX,[rip]" is absent, in v1.60 it is present. The optional group lets
+ * a single signature cover both versions.
  *
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
  * 1401560fd  48 89 48 10                   MOV qword ptr [RAX + 0x10],RCX -> [Device offset]
  * 140156101  48 8D 48 18                   LEA RCX,[RAX + 0x18] -> [VirtualPath]
- * 140156105  48 8D 05 12 41 BA 01          LEA RAX,[0x141cfa21e]
+ * 140156105  48 8D 05 12 41 BA 01          LEA RAX,[0x141cfa21e]  <-- optional
  * 14015610c  4C 89 61 10                   MOV qword ptr [RCX + 0x10],R12
  */
-const char* MOUNT_NODE_STRUCT_SIG = "[MOV [r64+off8], r64] [LEA r64, [r64+off8]] [LEA r64, [rip+off32]] [MOV [r64+off8], r64]";
+const char* MOUNT_NODE_STRUCT_SIG = "[MOV [r64+off8], r64] [LEA r64, [r64+off8]] [LEA r64, [rip+off32]]? [MOV [r64+off8], r64]";
 
 /**
  * @brief Signature for StringBuffer offset within node registration.
  *
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
  * 140156110  48 89 41 08                   MOV qword ptr [RCX + 0x8],RAX -> [StringBuffer]
- * 140156114  48 8D 05 95 28 F5 01          LEA RAX,[0x1420a89b0]
+ * 140156114  48 8D 05 95 28 F5 01          LEA RAX,[0x1420a89b0] or for versions < 1.60  4C 89 61 10 MOV qword ptr [RCX + 0x10],R12
  * 14015611b  48 89 01                      MOV qword ptr [RCX],RAX
  */
-const char* MOUNT_STR_BUFF_SIG = "[MOV [r64+off8], r64] [LEA r64, [rip+off32]] [MOV [r64], r64]";
+const char* MOUNT_STR_BUFF_SIG = "[MOV [r64+off8], r64] {[LEA r64, [rip+off32]] | [MOV [r64+off8], r64]} [MOV [r64], r64]";
+//const char* MOUNT_STR_BUFF_SIG = "48 89 41";
 
 /**
  * @brief Signature for Mount List Head anchor.
  * Links the list pointer load to subsequent stack operations for uniqueness.
  *
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
- * 1401560c6  49 8B 9D 88 00 00 00          MOV RBX,qword ptr [R13 + 0x88] -> [Mount list head]
+ * 1401560c6  49 8B 9D 88 00 00 00          MOV RBX,qword ptr [R13 + 0x88] -> [Mount list head] or for versions < 1.60 49 8B 5F 70 MOV RBX,qword ptr [R15 + 0x70]
  * 1401560cd  88 44 24 54                   MOV byte ptr [RSP + 0x54],AL
  */
-const char* MOUNT_LIST_HEAD_SIG = "[MOV r64, [r64+off32]] [MOV [r64+off8], r8]";
+const char* MOUNT_LIST_HEAD_SIG = "{[MOV r64, [r64+off32]] | [MOV r64, [r64+off8]]} [MOV [r64+off8], r8]";
 
 /**
  * @brief Signature for Physical Device Path offset.
@@ -74,6 +78,50 @@ const char* MOUNT_LIST_HEAD_SIG = "[MOV r64, [r64+off32]] [MOV [r64+off8], r8]";
  * 14015633a  48 8D 05 F7 21 F5 01          LEA RAX,[0x1420a8538]
  */
 const char* PHYS_PATH_SIG = "[MOV r64, [r64+off8]] [LEA r64, [rip+off32]]";
+
+/**
+ * @brief Reads the memory displacement of an addressing instruction and its length.
+ *
+ * The instruction is expected to start at a REX-prefixed form (byte0 = REX,
+ * byte1 = opcode, byte2 = ModRM), which all templates in this file use.
+ * Handles optional SIB byte (ModRM R/M = 100) and disp8/disp32.
+ *
+ * @param addr Address of the first byte (REX prefix).
+ * @param outLength Optional: receives the instruction length up to the end of the displacement.
+ * @return int32_t The signed displacement value, or 0 when no displacement exists.
+ */
+int32_t ReadInstructionDisp(uintptr_t addr, int& outLength) {
+  uint8_t modrm = *reinterpret_cast<uint8_t*>(addr + 2);
+  bool hasSib = (modrm & 0x07) == 0x04;
+  uintptr_t dispAddr = addr + 3 + (hasSib ? 1 : 0);
+  int dispSize;
+  int32_t disp;
+  switch ((modrm >> 6) & 0x3) {
+    case 0:
+      if ((modrm & 0x07) == 0x05) {  // Mod=00, R/M=101 -> disp32
+        dispSize = 4;
+        disp = PatternFinder::ReadInt32(dispAddr);
+      } else {
+        dispSize = 0;
+        disp = 0;
+      }
+      break;
+    case 1:  // Mod=01 -> disp8
+      dispSize = 1;
+      disp = PatternFinder::ReadInt8(dispAddr);
+      break;
+    case 2:  // Mod=10 -> disp32
+      dispSize = 4;
+      disp = PatternFinder::ReadInt32(dispAddr);
+      break;
+    default:  // Mod=11 -> register, no displacement
+      dispSize = 0;
+      disp = 0;
+      break;
+  }
+  outLength = 3 + (hasSib ? 1 : 0) + dispSize;
+  return disp;
+}
 
 }  // namespace
 
@@ -120,14 +168,14 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       // 2.1 Node offsets (DevicePtr, VirtualPath)
       uintptr_t addrNode = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_NODE_STRUCT_SIG);
       if (addrNode) {
-        uint8_t modrm1 = *reinterpret_cast<uint8_t*>(addrNode + 2);
-        int32_t deviceOff = (modrm1 >= 0x80) ? PatternFinder::ReadInt32(addrNode + 3) : PatternFinder::ReadInt8(addrNode + 3);
+        int nodeLen = 0;
+        int32_t deviceOff = ReadInstructionDisp(addrNode, nodeLen);
         // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
         // * 140156101  48 8D 48 18                   LEA RCX,[RAX + 0x18]
-        uintptr_t addrLea = PatternFinder::Find(addrNode + 4, 32, "[LEA r64, [r64+off8]]");
+        uintptr_t addrLea = PatternFinder::Find(addrNode + nodeLen, 32, "[LEA r64, [r64+off8]]");
         if (addrLea) {
-          uint8_t modrm2 = *reinterpret_cast<uint8_t*>(addrLea + 2);
-          int32_t vpathOff = (modrm2 >= 0x80) ? PatternFinder::ReadInt32(addrLea + 3) : PatternFinder::ReadInt8(addrLea + 3);
+          int leaLen = 0;
+          int32_t vpathOff = ReadInstructionDisp(addrLea, leaLen);
 
           bool devOk = phase.StepOffset(deviceOff, "Device offset", "NODE");
           bool vpOk = phase.StepOffset(vpathOff, "VirtualPath", "NODE");
@@ -145,8 +193,8 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       // StringBuffer offset
       uintptr_t addrStr = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_STR_BUFF_SIG);
       if (addrStr) {
-        uint8_t modrm = *reinterpret_cast<uint8_t*>(addrStr + 2);
-        int32_t strBuffOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrStr + 3) : (modrm >= 0x40) ? PatternFinder::ReadInt8(addrStr + 3) : 0;
+        int strLen = 0;
+        int32_t strBuffOff = ReadInstructionDisp(addrStr, strLen);
         if (phase.StepOffset(strBuffOff, "StringBuffer", "STR")) {
           owner.SetStringBufferOffset(strBuffOff);
         }
@@ -157,8 +205,8 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       // Mount List Head offset
       uintptr_t addrInc = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_LIST_HEAD_SIG);
       if (addrInc) {
-        uint8_t modrm = *reinterpret_cast<uint8_t*>(addrInc + 2);
-        int32_t listHeadOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrInc + 3) : PatternFinder::ReadInt8(addrInc + 3);
+        int listLen = 0;
+        int32_t listHeadOff = ReadInstructionDisp(addrInc, listLen);
         if (phase.StepOffset(listHeadOff, "Mount list head", "CNT")) {
           owner.SetMountListHeadOffset(listHeadOff);
         }
@@ -169,8 +217,8 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       // Physical Device Path offset
       uintptr_t addrPhys = PatternFinder::Find(pfnRegisterMount, 1024, PHYS_PATH_SIG);
       if (addrPhys) {
-        uint8_t modrm = *reinterpret_cast<uint8_t*>(addrPhys + 2);
-        int32_t physOff = (modrm >= 0x80) ? PatternFinder::ReadInt32(addrPhys + 3) : (modrm >= 0x40) ? PatternFinder::ReadInt8(addrPhys + 3) : 0;
+        int physLen = 0;
+        int32_t physOff = ReadInstructionDisp(addrPhys, physLen);
         if (phase.StepOffset(physOff, "Physical path", "PATH")) {
           owner.SetPhysicalDevicePathOffset(physOff);
         }

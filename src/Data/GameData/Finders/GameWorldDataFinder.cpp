@@ -53,7 +53,14 @@ const char* UPDATE_SIM_TIME_CALL_SIG = "[CALL rel32] [MOV r64, [r64+off32]]";
  * 14048a5c9  F3 41 0F 11 B9 7C 3E 00 00    MOVSS dword ptr [R9 + 0x3e7c],XMM7
  * 14048a5d2  41 89 81 78 3E 00 00          MOV dword ptr [R9 + 0x3e78],EAX
  */
-const char* TIME_OFF_SIG = "F3 41 0F 11 B9 ? ? ? ? 41 [MOV [r64+off32], r32]";
+
+ /** /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140512c30[140512c30]) ---/
+* 140512d83  F3 41 0F 11 81 7C 3E 00 00    MOVSS dword ptr [R9 + 0x3e7c],XMM0
+* 140512d8c  41 89 81 78 3E 00 00          MOV dword ptr [R9 + 0x3e78],EAX
+* 140512d93  E8 58 16 FC FF                CALL 0x1404d43f0
+*/
+//const char* TIME_OFF_SIG = "F3 41 0F 11 ? ? ? ? ? 41 [MOV [r64+off32], r32]";
+const char* TIME_OFF_SIG = "F3 41 0F 11 81 ? ? ? ? 41 [MOV [r64+off32], r32] [CALL rel32]";
 
 /**
  * @brief Signature that tracks where sub-minute seconds are added and then saved.
@@ -91,7 +98,7 @@ const char* DELTA_SIG = "F2 48 0F 2A 80";
  * 14048a5b2  45 39 B1 0C 47 00 00          CMP dword ptr [R9 + 0x470c],R14D
  * 14048a5b9  75 23                         JNZ 0x14048a5de
  */
-const char* SKYBOX_SIG = "45 [CMP [r64+off32], r32] [JNE rel8]";
+const char* SKYBOX_SIG = "[45|41] [6-7?] [JNE rel8]";
 
 /**
  * @brief Unique string anchor to locate the CoreEngine_UpdateLoop function.
@@ -236,8 +243,10 @@ const char* GOTO_CITY_NOT_FOUND_STRING = "City '%s' not found!";
  * @brief MOV that reads the prism::string buffer pointer.
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(con_cmd_goto[14041c3a0]) ---/
  * 14041d106  48 8B 50 08                   MOV RDX,qword ptr [RAX + 0x8]
+ * 14041d10a  48 89 4D 18                   MOV qword ptr [RBP + 0x18],RCX
+ * 14041d10e  4C 89 7D 20                   MOV qword ptr [RBP + 0x20],R15
  */
-const char* KDOP_STRING_BUF_SIG = "[MOV r64, [r64+off8]]";
+const char* KDOP_STRING_BUF_SIG = "[MOV r64, [r64+off8]] [MOV [r64+off8], r64] [MOV [r64+off8], r64] ";
 
 }  // namespace
 
@@ -247,10 +256,10 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   FinderLog log(GetName());
   log.Info("Searching for GameWorld (Engine & Time) data using provided Ghidra signatures...");
 
-  uintptr_t addr = 0;              // General purpose address variable
-  uintptr_t pfnUpdateSimTime = 0;  // Entry point of UpdateSimulationTime
-  uintptr_t pfnCoreEngineLoop = 0; // Entry point of CoreEngine_UpdateLoop
-  uintptr_t addrData = 0;          // Kdop array data MOV (Phase 15 -> 16)
+  uintptr_t addr = 0;               // General purpose address variable
+  uintptr_t pfnUpdateSimTime = 0;   // Entry point of UpdateSimulationTime
+  uintptr_t pfnCoreEngineLoop = 0;  // Entry point of CoreEngine_UpdateLoop
+  uintptr_t addrData = 0;           // Kdop array data MOV (Phase 15 -> 16)
 
   // ── Phase 1: UpdateSimulationTime Function ──
   /*
@@ -286,7 +295,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   {
     auto phase = log.MakePhase("Simulation Time Offset");
 
-    uintptr_t addrChain = PatternFinder::Find(pfnUpdateSimTime, 512, TIME_OFF_SIG);
+    uintptr_t addrChain = PatternFinder::Find(TIME_OFF_SIG);
     if (phase.Step(addrChain, "Simulation Time logic chain", "RT")) {
       // Find the MOV instruction within the chain (14048a5d2)
       uintptr_t addrMov = PatternFinder::Find(addrChain, 32, "41 [MOV [r64+off32], r32]");
@@ -335,7 +344,12 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
     uintptr_t addrConst = PatternFinder::Find(pfnUpdateSimTime, 512, "B8 6D C1 16 6C");
     if (phase.Step(addrConst, "Simulation Time magic constant", "RT")) {
+      // Prefer the forward scan (v1.60: MOV follows the constant); fall back to
+      // a backward scan (v1.59: the time read precedes the constant).
       uintptr_t addrMov = PatternFinder::Find(addrConst, 32, "44 [MOV r32, [r64+off32]]");
+      if (addrMov == 0) {
+        addrMov = PatternFinder::FindBackward(addrConst, 32, "44 [MOV r32, [r64+off32]]");
+      }
       if (phase.Step(addrMov, "Simulation Time MOV", "RT")) {
         int32_t simTimeOff = PatternFinder::ReadInt32(addrMov + 3);
         if (phase.StepOffset(simTimeOff, "Simulation Time Offset", "OFF")) {
@@ -403,10 +417,20 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
       uintptr_t addrMin = PatternFinder::Find(addrSec, 128, "[LEA r64, [r64+off32]]");
       int32_t realMinOff = addrMin ? PatternFinder::ReadInt32(addrMin + 3) : 0;
 
-      bool okMin = phase.Step(addrMin, "Real Play minute LEA", "RT");
+      if (addrMin != 0) {
+        phase.Step(addrMin, "Real Play minute LEA", "RT");
+      } else {
+        // v1.59 has no LEA; the minute field is incremented directly.
+        // /--- Ghidra:(amtrucks_1_59_2.exe) Fun:(UpdateSimulationTime[140418320]) ---/
+        // 140418595  FF 86 C8 01 00 00             INC dword ptr [RSI + 0x1c8]
+        uintptr_t addrMinInc = PatternFinder::Find(addrSec, 64, "[INC dword ptr [r64+off32]]");
+        realMinOff = addrMinInc ? PatternFinder::ReadInt32(addrMinInc + 2) : 0;
+        phase.Step(addrMinInc, "Real Play minute INC", "RT");
+      }
+
       bool okSecOff = phase.StepOffset(realSecOff, "Real Play Seconds Offset", "OFF");
       bool okMinOff = phase.StepOffset(realMinOff, "Real Play Minutes Offset", "OFF");
-      if (okMin && okSecOff && okMinOff) {
+      if (okSecOff && okMinOff) {
         owner.SetRealPlaySecondsOffset(realSecOff);
         owner.SetRealPlayTimeOffset(realMinOff);
       }
@@ -738,11 +762,10 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = owner.GetTimeOffset() != 0 && owner.GetUpdateFnAddr() != 0 && owner.GetSimulationTimeOffset() != 0 && owner.GetSubMinuteSecondsOffset() != 0 && owner.GetMapScaleOffset() != 0 &&
-              owner.GetRealPlayTimeOffset() != 0 && owner.GetRealPlaySecondsOffset() != 0 && owner.GetGlobalWarpOffset() != 0 && owner.GetPauseStatusOffset() != 0 && owner.GetRealDeltaTimeOffset() != 0 &&
-              owner.GetSkyboxAutoUpdateOffset() != 0 && owner.GetGlobalHaltOffset() != 0 && owner.GetSimulationHaltOffset() != 0 && owner.GetTrafficHaltOffset() != 0 && owner.GetKdopArrayOffset() != 0 &&
-              owner.GetKdopCountOffset() != 0 && owner.GetCityItemTypeOffset() != 0 && owner.GetCityRecordOffset() != 0 && owner.GetCityFlagsOffset() != 0 && owner.GetCityUidOffset() != 0 &&
-              owner.GetCityScaleOffset() != 0 && owner.GetCityRadiusOffset() != 0 && owner.GetCityVtablePointCountSlot() != 0 && owner.GetCityVtableGetPointSlot() != 0 &&
+  m_isReady = owner.GetTimeOffset() != 0 && owner.GetUpdateFnAddr() != 0 && owner.GetSimulationTimeOffset() != 0 && owner.GetSubMinuteSecondsOffset() != 0 && owner.GetMapScaleOffset() != 0 && owner.GetRealPlayTimeOffset() != 0 &&
+              owner.GetRealPlaySecondsOffset() != 0 && owner.GetGlobalWarpOffset() != 0 && owner.GetPauseStatusOffset() != 0 && owner.GetRealDeltaTimeOffset() != 0 && owner.GetSkyboxAutoUpdateOffset() != 0 && owner.GetGlobalHaltOffset() != 0 &&
+              owner.GetSimulationHaltOffset() != 0 && owner.GetTrafficHaltOffset() != 0 && owner.GetKdopArrayOffset() != 0 && owner.GetKdopCountOffset() != 0 && owner.GetCityItemTypeOffset() != 0 && owner.GetCityRecordOffset() != 0 &&
+              owner.GetCityFlagsOffset() != 0 && owner.GetCityUidOffset() != 0 && owner.GetCityScaleOffset() != 0 && owner.GetCityRadiusOffset() != 0 && owner.GetCityVtablePointCountSlot() != 0 && owner.GetCityVtableGetPointSlot() != 0 &&
               owner.GetCityPointScale() > 0.0f && owner.GetCityStringBufOffset() != 0;
 
   return log.Finish(m_isReady);

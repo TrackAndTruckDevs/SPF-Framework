@@ -366,43 +366,43 @@ void GameCameraManager::RegisterCameras() {
 
   auto interiorCam = std::make_unique<GameCameraInterior>();
   m_cameras[interiorCam->GetType()] = std::move(interiorCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraInterior).name());
+  logger->Info("  -> Registered GameCameraInterior");
 
   auto behindCam = std::make_unique<GameCameraBehind>();
   m_cameras[behindCam->GetType()] = std::move(behindCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraBehind).name());
+  logger->Info("  -> Registered GameCameraBehind");
 
   auto topCam = std::make_unique<GameCameraTop>();
   m_cameras[topCam->GetType()] = std::move(topCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraTop).name());
+  logger->Info("  -> Registered GameCameraTop");
 
   auto cabinCam = std::make_unique<GameCameraCabin>();
   m_cameras[cabinCam->GetType()] = std::move(cabinCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraCabin).name());
+  logger->Info("  -> Registered GameCameraCabin");
 
   auto windowCam = std::make_unique<GameCameraWindow>();
   m_cameras[windowCam->GetType()] = std::move(windowCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraWindow).name());
+  logger->Info("  -> Registered GameCameraWindow");
 
   auto bumperCam = std::make_unique<GameCameraBumper>();
   m_cameras[bumperCam->GetType()] = std::move(bumperCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraBumper).name());
+  logger->Info("  -> Registered GameCameraBumper");
 
   auto wheelCam = std::make_unique<GameCameraWheel>();
   m_cameras[wheelCam->GetType()] = std::move(wheelCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraWheel).name());
+  logger->Info("  -> Registered GameCameraWheel");
 
   auto tvCam = std::make_unique<GameCameraTV>();
   m_cameras[tvCam->GetType()] = std::move(tvCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraTV).name());
+  logger->Info("  -> Registered GameCameraTV");
 
   auto freeCam = std::make_unique<GameCameraFree>();
   m_cameras[freeCam->GetType()] = std::move(freeCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraFree).name());
+  logger->Info("  -> Registered GameCameraFree");
 
   auto photoCam = std::make_unique<GameCameraPhoto>();
   m_cameras[photoCam->GetType()] = std::move(photoCam);
-  logger->Info("  -> Registered {}", typeid(GameCameraPhoto).name());
+  logger->Info("  -> Registered GameCameraPhoto");
 
   // Future cameras will be registered here...
 }
