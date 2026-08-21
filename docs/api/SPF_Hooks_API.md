@@ -16,6 +16,7 @@ The SPF pattern scanner supports advanced syntax:
 - **Wildcards**: `?` or `??` matches any single byte.
 - **Ranges**: `[XX-YY]` matches any byte within the specified hex range (e.g., `[40-7F]`).
 - **Named Templates**: Pre-defined instruction patterns like `[CMP r64, [r64+off32]]` for convenience.
+- **Alternation**: `{[LEA r64, [rip+off32]]|[MOV [r64], r64]}` matches exactly one of the listed sub-sequences (branches may span multiple instructions).
 
 ### Signature Syntax
 
@@ -32,6 +33,8 @@ The pattern scanner is designed to be both flexible and precise. Using ranges is
 | `[XX\|YY]` | OR operator (matches one of the listed byte values or sub-ranges)|`[80\|BF]`, `[80\|BF\|C0-C5]` | 
 | `X[Y-Z]` or `[X-Y]Z` | Nibble ranges (matches variable registers/opcodes by high/low nibble) | `4[8-B]`, `[4-7]8`, `[4-7][8-B]` |
 | `[Template Name]` | Named instruction template (see `PatternTemplates.hpp`) | `[CMP r64, [r64+off32]]`, `[JAE rel32]`, `[MOV r64, [r64+sib+off32]]` |
+| `[Template Name]?` | Optional instruction: the whole template may match or be skipped entirely | `[MOV r64, [r64+off8]]?` |
+| `{A\|B\|C}` | Alternation: exactly one of the listed sub-sequences must match; branches may span multiple instructions and nest; a trailing `?` after `}` makes it optional | `{[LEA r64, [rip+off32]]\|[MOV [r64], r64]}` |
 
 > **Tip:** Templates can be mixed with raw hex in the same signature. The pattern `[MOV r64, [r64+off8]] 8b [80-bf]` works.
 >

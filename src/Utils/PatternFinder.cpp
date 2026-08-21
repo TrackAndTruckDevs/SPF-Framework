@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <winnt.h>
 
@@ -207,6 +208,33 @@ static bool TrySplitNibbles(const std::string& part, std::string& highStr, std::
   return true;
 }
 
+/**
+ * @brief Splits an alternation group body on its top-level '|' separators.
+ * @param body Group body with the outer braces already stripped.
+ * @return Branch strings (surrounding spaces are harmless for the tokenizer).
+ * @details Depth-aware: '|' inside nested "[...]" (byte OR-lists like "8[b|9]")
+ *          or nested "{...}" groups is not a separator.
+ */
+static std::vector<std::string> SplitTopLevelAlternatives(const std::string& body) {
+  std::vector<std::string> branches;
+  std::string current;
+  int depth = 0;
+  for (char c : body) {
+    if (c == '[' || c == '{') {
+      ++depth;
+    } else if (c == ']' || c == '}') {
+      --depth;
+    }
+    if (c == '|' && depth == 0) {
+      branches.push_back(current);
+      current.clear();
+    } else {
+      current += c;
+    }
+  }
+  branches.push_back(current);
+  return branches;
+}
 }  // anonymous namespace
 
 // ===========================================================================
@@ -269,7 +297,7 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature
         const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, size - minLen - i + 1));
         if (!found) break;
         i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-      } else if (!first.optional && first.type != ByteMatcher::GROUP && !first.Matches(data[i])) {
+      } else if (!first.optional && first.type != ByteMatcher::GROUP && first.type != ByteMatcher::ALTERNATION && !first.Matches(data[i])) {
         continue;
       }
 
@@ -887,6 +915,20 @@ bool PatternFinder::MatchInternal(const uint8_t* data, size_t dataSize, const st
     return false;
   }
 
+  // ALTERNATION — exactly one of the listed sub-sequences. Branches are tried
+  // left to right; a matching branch continues with the remaining matchers so
+  // a failed tail can still backtrack into the next branch.
+  if (m.type == ByteMatcher::ALTERNATION) {
+    for (const auto& alt : m.alternatives) {
+      size_t subMatchLen = 0;
+      if (!MatchInternal(data, dataSize, alt, dataIdx, 0, subMatchLen)) continue;
+      if (MatchInternal(data, dataSize, matchers, subMatchLen, matcherIdx + 1, matchLen)) return true;
+    }
+    // No branch produced a full tail match — skip the whole group if optional.
+    if (m.optional) return MatchInternal(data, dataSize, matchers, dataIdx, matcherIdx + 1, matchLen);
+    return false;
+  }
+
   // SIB conditional — check preceding ModRM byte
   if (m.type == ByteMatcher::SIB_CONDITIONAL) {
     if (dataIdx > 0) {
@@ -959,7 +1001,8 @@ std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const s
       int depth = 0;
       size_t j = i;
       for (; j < normalized.size(); ++j) {
-        if (normalized[j] == '{') ++depth;
+        if (normalized[j] == '{')
+          ++depth;
         else if (normalized[j] == '}') {
           --depth;
           if (depth == 0) break;
@@ -981,20 +1024,50 @@ std::vector<PatternFinder::ByteMatcher> PatternFinder::SignatureToVector(const s
 
   for (auto part : tokens) {
     // Brace group { ... }? — a nested sub-pattern matched atomically; optional if it ends with '?'.
+    // With top-level '|' separators inside ("{A|B}") it becomes an ALTERNATION: exactly one branch matches.
     if (!part.empty() && part.front() == '{') {
       bool groupOptional = part.back() == '?';
       size_t innerStart = 1;
       size_t innerLen = part.size() - (groupOptional ? 3 : 2);  // strip '{', '}' and optional '?'
       std::string inner = part.substr(innerStart, innerLen);
+      std::vector<std::string> branches = SplitTopLevelAlternatives(inner);
+      // A stray separator (e.g. "{A|}") is a typo — fail loudly instead of silently
+      // narrowing the pattern to the surviving branch.
+      bool hasEmptyBranch = false;
+      for (const auto& branch : branches) {
+        if (branch.find_first_not_of(' ') == std::string::npos) hasEmptyBranch = true;
+      }
+      if (hasEmptyBranch && branches.size() > 1) {
+        Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder")->Error("SignatureToVector: empty alternation branch in '{{{}}}'", inner);
+        return {};
+      }
       ByteMatcher bm;
-      bm.type = ByteMatcher::GROUP;
-      bm.group = SignatureToVector(inner);
       bm.optional = groupOptional;
       bm.minCount = 0;
       bm.maxCount = 0;
-      for (const auto& sub : bm.group) {
-        bm.minCount += sub.minCount;
-        bm.maxCount += sub.maxCount;
+      if (branches.size() <= 1) {
+        // Single sequence — plain atomic group (existing behavior).
+        bm.type = ByteMatcher::GROUP;
+        bm.group = SignatureToVector(branches[0]);
+        for (const auto& sub : bm.group) {
+          bm.minCount += sub.minCount;
+          bm.maxCount += sub.maxCount;
+        }
+      } else {
+        // Alternation — exactly one of the listed sequences must match.
+        bm.type = ByteMatcher::ALTERNATION;
+        for (auto& branch : branches) {
+          std::vector<ByteMatcher> compiled = SignatureToVector(branch);
+          int branchMin = 0;
+          int branchMax = 0;
+          for (const auto& sub : compiled) {
+            branchMin += sub.minCount;
+            branchMax += sub.maxCount;
+          }
+          if (bm.alternatives.empty() || branchMin < bm.minCount) bm.minCount = branchMin;
+          if (bm.alternatives.empty() || branchMax > bm.maxCount) bm.maxCount = branchMax;
+          bm.alternatives.push_back(std::move(compiled));
+        }
       }
       if (groupOptional) bm.minCount = 0;
       matchers.push_back(bm);
@@ -1136,7 +1209,7 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
           const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
           if (!found) break;
           i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
-        } else if (!first.optional && first.type != ByteMatcher::GROUP && !first.Matches(data[i])) {
+        } else if (!first.optional && first.type != ByteMatcher::GROUP && first.type != ByteMatcher::ALTERNATION && !first.Matches(data[i])) {
           continue;
         }
 

@@ -39,6 +39,11 @@
  *      `[MOV r64, [r64+sib+off32]]` (MOV with SIB-indexed addressing + 32-bit displacement).
  *      All available templates are defined in `PatternTemplates.hpp` and can be mixed
  *      with raw hex in the same signature string.
+ *    - **Optional Instruction**: Append `?` to a template to make the whole instruction
+ *      optional (e.g., `[MOV [r64+off8], r64]?` matches with or without that MOV).
+ *    - **Alternation**: Use `{A|B|C}` to require exactly one of the listed sub-sequences
+ *      (e.g., `{[LEA r64, [rip+off32]]|[MOV [r64+off8], r64]}`). Branches may span multiple
+ *      tokens and nest; a trailing `?` after `}` makes the whole alternation optional.
  *
  *    **Recommended Workflow**: Use the official Ghidra script to quickly generate
  *    signatures from selected instructions in your disassembler. The script supports
@@ -128,6 +133,11 @@ typedef SPF_Hook_Handle* (*SPF_Hook_Register_t)(const char* pluginName, const ch
  *                                    or "[JAE rel32]" for common instruction patterns.
  *                                    All templates are defined in PatternTemplates.hpp.
  *                                    See the header documentation for a full list.
+ *                  - Optional Instruction: "[<template>]?" (the whole instruction may be present or absent,
+ *                    e.g. "[MOV r64, [r64+off8]]?" matches with or without that MOV)
+ *                  - Alternation: "{A|B}" (exactly one of the listed sub-sequences must match; branches may
+ *                    span multiple tokens and nest, e.g. "{[LEA r64, [rip+off32]]|[MOV [r64], r64]}";
+ *                    a trailing '?' after '}' makes the whole alternation optional)
  * @return The memory address where the pattern was found, or 0 if not found.
  */
 typedef uintptr_t (*SPF_Hook_FindPattern_t)(const char* signature);

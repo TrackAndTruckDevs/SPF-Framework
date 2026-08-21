@@ -57,6 +57,9 @@ class PatternFinder {
    *                  - Optional Instruction: "[<template>]?" (the whole instruction may be present or absent;
    *                    greedy: tries to match it first, then skips it entirely)
    *                                 Supports embedded ranges as well: "[80|BF|C0-C5]"
+   *                  - Alternation: "{[MOV r64, [r64+off8]]|[MOV r64, [r64+off32]]}" (exactly one of the
+   *                    listed sub-sequences; branches may span multiple tokens and nest; a trailing '?'
+   *                    after '}' makes the whole alternation optional: "{A|B}?")
    *                  - Nibble Ranges: "4[8-B]" (matches 0x48..0x4B), "[4-7]8" (matches 0x48, 0x58, 0x68, 0x78),
    *                                   or "[4-7][8-B]" (great for matching variable register encodings)
    * @return uintptr_t The absolute memory address of the first match, or 0 if not found.
@@ -112,8 +115,8 @@ class PatternFinder {
    * @brief Represents a rule for matching a single byte in a pattern.
    */
   struct ByteMatcher {
-    enum Type { EXACT, WILDCARD, RANGE, LIST, SIB_CONDITIONAL, GROUP };
-    Type type;         ///< Match type (exact byte, any byte, value range, list of values, or nested group)
+    enum Type { EXACT, WILDCARD, RANGE, LIST, SIB_CONDITIONAL, GROUP, ALTERNATION };
+    Type type;         ///< Match type (exact byte, any byte, value range, list of values, nested group, or alternation)
     uint8_t min;       ///< Minimum value for EXACT or RANGE
     uint8_t max;       ///< Maximum value for RANGE
     int minCount = 1;  ///< Minimum byte count this matcher can consume (0 if optional)
@@ -121,6 +124,7 @@ class PatternFinder {
     bool optional = false;
     std::vector<uint8_t> values;             ///< Values for LIST type
     std::vector<ByteMatcher> group;          ///< Sub-matchers for GROUP type (optional instruction)
+    std::vector<std::vector<ByteMatcher>> alternatives;  ///< Branches for ALTERNATION type (exactly one must match)
 
     /**
      * @brief Checks if a byte satisfies the matching rule.
