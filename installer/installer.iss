@@ -2,14 +2,14 @@
 ; See https://jrsoftware.org/ishelp/ for documentation
 
 #define MyAppName "SPF Framework"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.2.1"
 #define MyAppPublisher "TrackAndTruckDevs"
 #define MyAppURL "https://github.com/TrackAndTruckDevs/SPF-Framework"
 #define MySteamAppIdATS "270880"
 #define MySteamAppIdETS2 "227300"
 
 [Setup]
-AppId={{11a9f0ff-558b-4844-8804-7e9e2328ba27}}
+AppId={{11a9f0ff-558b-4844-8804-7e9e2328ba27}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -24,7 +24,10 @@ OutputBaseFilename=spf-framework
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern polar includetitlebar
-UninstallDisplayIcon={app}\bin\win_x64\plugins\spf-framework.dll
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+UsedUserAreasWarning=no
+UninstallDisplayIcon={app}\icon.ico
 ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
@@ -60,6 +63,7 @@ Source: "dist\spf-framework.dll"; DestDir: "{code:GetInstallDir|ATS}\bin\win_x64
 Source: "dist\spfAssets\*"; DestDir: "{code:GetInstallDir|ATS}\bin\win_x64\plugins\spfAssets"; Check: IsGameSelected('ATS'); Flags: recursesubdirs createallsubdirs
 Source: "dist\spf-framework.dll"; DestDir: "{code:GetInstallDir|ETS2}\bin\win_x64\plugins"; Check: IsGameSelected('ETS2'); Flags: replacesameversion
 Source: "dist\spfAssets\*"; DestDir: "{code:GetInstallDir|ETS2}\bin\win_x64\plugins\spfAssets"; Check: IsGameSelected('ETS2'); Flags: recursesubdirs createallsubdirs
+Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 ; Create the user plugins directory but never remove it on uninstall
@@ -72,7 +76,9 @@ Name: "{autodesktop}\{cm:ETS2PluginsShortcutName}"; Filename: "{code:GetInstallD
 
 [Registry]
 ; Write version info after successful installation
-Root: HKLM; Subkey: "Software\SPF_Framework"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"; Check: IsGameSelected('ATS') or IsGameSelected('ETS2')
+Root: HKCU; Subkey: "Software\SPF_Framework"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"; Check: IsGameSelected('ATS') or IsGameSelected('ETS2')
+Root: HKCU; Subkey: "Software\SPF_Framework"; ValueType: string; ValueName: "DllPathATS"; ValueData: "{code:GetInstallDir|ATS}\bin\win_x64\plugins\spf-framework.dll"; Check: IsGameSelected('ATS'); Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\SPF_Framework"; ValueType: string; ValueName: "DllPathETS2"; ValueData: "{code:GetInstallDir|ETS2}\bin\win_x64\plugins\spf-framework.dll"; Check: IsGameSelected('ETS2'); Flags: uninsdeletevalue
 
 [CustomMessages]
 english.TaskInstallForATS=Install for the game American Truck Simulator
@@ -477,6 +483,9 @@ danish.ETS2PluginsShortcutName=ETS2 Plugin-mappe
 finnish.ETS2PluginsShortcutName=ETS2-lisäosakansio
 
 [Code]
+const
+  SPFRegKey = 'Software\SPF_Framework';
+
 var
   ATSPath, ETS2Path: String;
   PathsPage: TWizardPage;
@@ -637,8 +646,12 @@ var
   InstalledVersion: String;
 begin
   Result := True;
-  // Check for existing installation version
-  if RegQueryStringValue(HKLM, 'Software\SPF_Framework', 'Version', InstalledVersion) then
+  InstalledVersion := '';
+  // Current installs store data under HKCU; HKLM is the legacy
+  // location used by administrative installations up to 1.2.x.
+  if not RegQueryStringValue(HKCU, SPFRegKey, 'Version', InstalledVersion) then
+    RegQueryStringValue(HKLM, SPFRegKey, 'Version', InstalledVersion);
+  if InstalledVersion <> '' then
   begin
     Log(Format(CustomMessage('FoundInstalledVersionLog'), [InstalledVersion]));
     Log(Format(CustomMessage('ThisInstallerVersionLog'), ['{#MyAppVersion}']));
@@ -752,5 +765,36 @@ begin
   else
   begin
       Result := Result + CustomMessage('NoGameSelectedMsg') + NewLine;
+  end;
+end;
+
+// --- Legacy cleanup & data migration ---------------------------------------
+
+procedure CleanupLegacyUninstallKey;
+begin
+  // Stale uninstall key left by installers up to 1.2.x.
+  RegDeleteKeyIncludingSubkeys(HKLM,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{11a9f0ff-558b-4844-8804-7e9e2328ba27}}_is1');
+end;
+
+procedure MigrateLegacyVersion;
+var
+  V: String;
+begin
+  // Administrative installs up to 1.2.x stored Version under HKLM;
+  // carry it over to HKCU when there is no value yet.
+  if not RegQueryStringValue(HKCU, SPFRegKey, 'Version', V) then
+    if RegQueryStringValue(HKLM, SPFRegKey, 'Version', V) then
+      RegWriteStringValue(HKCU, SPFRegKey, 'Version', V);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  case CurStep of
+    ssInstall:
+      CleanupLegacyUninstallKey;
+    ssPostInstall:
+      if IsGameSelected('ATS') or IsGameSelected('ETS2') then
+        MigrateLegacyVersion;
   end;
 end;
