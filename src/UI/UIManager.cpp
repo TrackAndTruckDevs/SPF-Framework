@@ -780,6 +780,20 @@ void UIManager::RenderAll() {
   ProcessTransitions();
 
   m_wasShellVisibleLastFrame = isShellVisible;
+
+#if IMGUI_VERSION_NUM >= 19123
+  // Report duplicate-ID conflicts to the log (the ImGui overlay stays enabled).
+  // Detection is hover-based; log once per conflicting ID, no per-frame spam.
+  ImGuiContext* ctx = ImGui::GetCurrentContext();
+  if (ctx->HoveredIdPreviousFrameItemCount > 1 && ctx->HoveredIdPreviousFrame != m_lastLoggedConflictId) {
+    const char* windowName = (ctx->HoveredWindow != nullptr) ? ctx->HoveredWindow->Name : "<no window>";
+    SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("ID conflict: {} visible items share ID {:#x} in window '{}'",
+                                                                        ctx->HoveredIdPreviousFrameItemCount, ctx->HoveredIdPreviousFrame, windowName);
+    m_lastLoggedConflictId = ctx->HoveredIdPreviousFrame;
+  } else if (ctx->HoveredIdPreviousFrameItemCount <= 1) {
+    m_lastLoggedConflictId = 0;
+  }
+#endif
 }
 
 void UIManager::InitializeImGui() {
@@ -788,6 +802,16 @@ void UIManager::InitializeImGui() {
   ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;
+
+#if IMGUI_VERSION_NUM >= 19123
+  // Route ImGui recoverable errors (Begin/End mismatch, style/ID stack
+  // imbalance, widgets outside windows, etc.) into the framework log.
+  // On-screen error tooltip is replaced by log output.
+  io.ConfigErrorRecoveryEnableTooltip = false;
+  ImGui::GetCurrentContext()->ErrorCallback = [](ImGuiContext*, void*, const char* msg) {
+    SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("{}", msg);
+  };
+#endif
   if (m_configService) {
     m_uiScaleFactor = m_configService->GetValue("framework", "settings.scale", 1.0f).get<float>();
   }

@@ -79,9 +79,11 @@ static void RenderFloatVar(VarRenderContext& ctx, const char* name, uint64_t cou
   auto& loc = LocalizationManager::GetInstance();
 
   if (blendedGetter && blendedSetter && blendProgress >= 0.0f) {
+    ImGui::PushID("blend");
     auto _bl = fmt::format(fmt::runtime(loc.Get("climate_window.blend_label")), blendProgress * 100.0f);
     RenderBlendedFloat(_bl.c_str(), blendedGetter(), minVal, maxVal, fmt, blendedSetter);
     ImGui::Separator();
+    ImGui::PopID();
   }
 
   for (uint64_t i = 0; i < count; ++i) {
@@ -113,7 +115,9 @@ static void RenderFloatVar(VarRenderContext& ctx, const char* name, uint64_t cou
 
   if (renderNext) {
     ImGui::Separator();
+    ImGui::PushID("next");
     renderNext();
+    ImGui::PopID();
   }
   ImGui::TreePop();
   ImGui::PopID();
@@ -130,9 +134,11 @@ static void RenderVec3Var(VarRenderContext& ctx, const char* name, uint64_t coun
   auto& loc = LocalizationManager::GetInstance();
 
   if (blendedGetter && blendedSetter && blendProgress >= 0.0f) {
+    ImGui::PushID("blend");
     auto _bl = fmt::format(fmt::runtime(loc.Get("climate_window.blend_label")), blendProgress * 100.0f);
     RenderBlendedVec3(_bl.c_str(), blendedGetter(), maxVal, fmt, blendedSetter);
     ImGui::Separator();
+    ImGui::PopID();
   }
 
   for (uint64_t i = 0; i < count; ++i) {
@@ -171,7 +177,9 @@ static void RenderVec3Var(VarRenderContext& ctx, const char* name, uint64_t coun
 
   if (renderNext) {
     ImGui::Separator();
+    ImGui::PushID("next");
     renderNext();
+    ImGui::PopID();
   }
   ImGui::TreePop();
   ImGui::PopID();
@@ -217,7 +225,9 @@ static void RenderTextureVar(VarRenderContext& ctx, const char* name, uint64_t c
 
   if (renderNext) {
     ImGui::Separator();
+    ImGui::PushID("next");
     renderNext();
+    ImGui::PopID();
   }
   ImGui::TreePop();
   ImGui::PopID();
@@ -261,7 +271,9 @@ static void RenderIntVar(VarRenderContext& ctx, const char* name, uint64_t count
 
   if (renderNext) {
     ImGui::Separator();
+    ImGui::PushID("next");
     renderNext();
+    ImGui::PopID();
   }
   ImGui::TreePop();
   ImGui::PopID();
@@ -278,9 +290,11 @@ static void RenderVec2Var(VarRenderContext& ctx, const char* name, uint64_t coun
   auto& loc = LocalizationManager::GetInstance();
 
   if (blendedGetter && blendedSetter && blendProgress >= 0.0f) {
+    ImGui::PushID("blend");
     auto _bl = fmt::format(fmt::runtime(loc.Get("climate_window.blend_label")), blendProgress * 100.0f);
     RenderBlendedVec2(_bl.c_str(), blendedGetter(), maxVal, fmt, blendedSetter);
     ImGui::Separator();
+    ImGui::PopID();
   }
 
   for (uint64_t i = 0; i < count; ++i) {
@@ -313,7 +327,9 @@ static void RenderVec2Var(VarRenderContext& ctx, const char* name, uint64_t coun
 
   if (renderNext) {
     ImGui::Separator();
+    ImGui::PushID("next");
     renderNext();
+    ImGui::PopID();
   }
   ImGui::TreePop();
   ImGui::PopID();

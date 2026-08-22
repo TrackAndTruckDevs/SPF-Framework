@@ -210,6 +210,7 @@ class UIManager : public Config::IConfigurable {
   std::string m_lastFocusedDockedWindowId;
   bool m_wasShellVisibleLastFrame = false;
   bool m_isMouseControlOverridden = false;
+  ImGuiID m_lastLoggedConflictId = 0;  // Last ImGui duplicate-ID conflict reported to the log.
 
   std::shared_ptr<NotificationWindow> m_notificationWindow;
 
