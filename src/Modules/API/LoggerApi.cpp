@@ -6,14 +6,14 @@
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/HandleManager.hpp"
-#include "SPF/Modules/PluginManager.hpp"  // For accessing the singleton
+#include "SPF/Modules/PluginManager.hpp"
 #include "SPF/SPF_API/SPF_Logger_API.h"
 
+#include "fmt/core.h"
+
 #include <chrono>
-#include <cstdarg>  // For va_list
+#include <cstdarg>
 #include <cstdint>
-#include <fmt/core.h>
-#include <fmt/format.h>
 #include <memory>
 #include <utility>
 

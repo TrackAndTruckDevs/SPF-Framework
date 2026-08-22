@@ -6,13 +6,13 @@
 
 #include "fmt/base.h"
 
+#include "fmt/format.h"
+#include "fmt/std.h"    // IWYU pragma: keep
+
 #include <charconv>
 #include <chrono>
 #include <ctime>
 #include <filesystem>
-#include <fmt/chrono.h>
-#include <fmt/format.h>
-#include <fmt/std.h>
 #include <ios>
 #include <ostream>
 #include <stdexcept>

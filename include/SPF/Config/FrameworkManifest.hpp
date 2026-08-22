@@ -58,7 +58,6 @@ inline const ManifestData& GetFrameworkManifestData() {
               "hook_states": {},
               "framework": {
                 "connect": true,
-                "framework_instance_id": "",
                 "developer_mode": false,
                 "version": ""
               },

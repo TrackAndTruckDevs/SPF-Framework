@@ -4,14 +4,13 @@
 
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
+#include "fmt/format.h"
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
 #include <filesystem>
-#include <fmt/format.h>
 #include <map>
 #include <mutex>
 #include <string>

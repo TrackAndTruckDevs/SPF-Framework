@@ -5,12 +5,11 @@
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
+#include "fmt/format.h"
 
-#include <fmt/format.h>
 #include <mutex>
 #include <string>
 #include <vector>
-
 
 SPF_NS_BEGIN
 namespace Logging::Sinks {

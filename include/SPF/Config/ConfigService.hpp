@@ -54,7 +54,7 @@ class ConfigService : public IConfigService {
                              const nlohmann::ordered_json& newValue) override;
   nlohmann::ordered_json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const override;
   const nlohmann::ordered_json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
-  std::string GetOrCreateFrameworkInstanceId() override;
+  std::string GetFrameworkInstanceId() override;
   System::InstallationStatus GetInstallationStatus() const override;
   bool IsConnectionAllowed() override;
   void ResetToDefault(const std::string& systemName, const std::string& keyPath, Core::InitializationReport* report) override;

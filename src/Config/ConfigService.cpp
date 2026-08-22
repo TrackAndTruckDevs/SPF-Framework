@@ -26,16 +26,20 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <libloaderapi.h>
 #include <map>
+#include <minwindef.h>
 #include <objbase.h>
 #include <optional>
 #include <set>
 #include <string>
+#include <stringapiset.h>
 #include <utility>
 #include <vector>
 #include <winerror.h>
+#include <winnls.h>
 #include <winnt.h>
-
+#include <winreg.h>
 
 SPF_NS_BEGIN
 
@@ -58,6 +62,41 @@ void InjectMetadata(nlohmann::ordered_json& target, const std::string& titleKey,
       target["_meta"]["descriptionKey"] = descriptionKey;
     }
   }
+}
+
+constexpr wchar_t kSpfRegSubKey[] = L"Software\\SPF_Framework";
+
+std::string WideToUtf8(const std::wstring& wide) {
+  if (wide.empty()) return {};
+  int size = WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), nullptr, 0, nullptr, nullptr);
+  std::string out(size, '\0');
+  WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()), out.data(), size, nullptr, nullptr);
+  return out;
+}
+
+std::wstring Utf8ToWide(const std::string& text) {
+  if (text.empty()) return {};
+  int size = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
+  std::wstring out(size, L'\0');
+  MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), out.data(), size);
+  return out;
+}
+
+std::string ReadRegString(const wchar_t* valueName) {
+  DWORD size = 0;
+  if (RegGetValueW(HKEY_CURRENT_USER, kSpfRegSubKey, valueName, RRF_RT_REG_SZ, nullptr, nullptr, &size) != ERROR_SUCCESS || size < sizeof(wchar_t)) return {};
+  std::wstring buf(size / sizeof(wchar_t), L'\0');
+  if (RegGetValueW(HKEY_CURRENT_USER, kSpfRegSubKey, valueName, RRF_RT_REG_SZ, nullptr, buf.data(), &size) != ERROR_SUCCESS) return {};
+  while (!buf.empty() && buf.back() == L'\0') buf.pop_back();
+  return WideToUtf8(buf);
+}
+
+void WriteRegString(const char* valueName, const std::string& data) {
+  HKEY key = nullptr;
+  if (RegCreateKeyExW(HKEY_CURRENT_USER, kSpfRegSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr, &key, nullptr) != ERROR_SUCCESS) return;
+  std::wstring wide = Utf8ToWide(data);
+  RegSetValueExW(key, Utf8ToWide(valueName).c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(wide.c_str()), static_cast<DWORD>((wide.size() + 1) * sizeof(wchar_t)));
+  RegCloseKey(key);
 }
 
 // Helper to convert a dot-separated path to a JSON pointer, automatically descending into _value wrappers if they exist.
@@ -455,8 +494,7 @@ nlohmann::ordered_json GetSystemSettingsAsJson(const ManifestData& manifest, con
  * @param componentName The name of the component whose settings are being merged.
  * @param currentPath The current path within the JSON hierarchy for logging purposes.
  */
-void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_json& defaults, const nlohmann::ordered_json& user, InitializationReport& report,
-                      const std::string& componentName, const std::string& currentPath = "") {
+void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_json& defaults, const nlohmann::ordered_json& user, InitializationReport& report, const std::string& componentName, const std::string& currentPath = "") {
   // Pass 1: Iterate through defaults to merge existing keys and apply defaults
   for (auto it = defaults.begin(); it != defaults.end(); ++it) {
     const std::string& key = it.key();
@@ -486,11 +524,7 @@ void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_js
           // Type mismatch between user's simple value and the inner default value.
           target[key] = defaultValue;
           report.Warnings.push_back(InitializationReport::Issue{
-            fmt::format("Type mismatch for key '{}' in component '{}'. User value type '{}' is incompatible with internal default type '{}'. Using default.",
-                        newPath,
-                        componentName,
-                        userValue.type_name(),
-                        defaultInnerValue.type_name()),
+            fmt::format("Type mismatch for key '{}' in component '{}'. User value type '{}' is incompatible with internal default type '{}'. Using default.", newPath, componentName, userValue.type_name(), defaultInnerValue.type_name()),
             componentName + "." + newPath});
         }
       }
@@ -501,11 +535,7 @@ void MergeJsonObjects(nlohmann::ordered_json& target, const nlohmann::ordered_js
       // Case 4: All other combinations are type mismatches.
       else {
         target[key] = defaultValue;
-        report.Warnings.push_back(InitializationReport::Issue{fmt::format("Type mismatch for key '{}' in component '{}'. Expected '{}' but got '{}'. Using default value.",
-                                                                          newPath,
-                                                                          componentName,
-                                                                          defaultValue.type_name(),
-                                                                          userValue.type_name()),
+        report.Warnings.push_back(InitializationReport::Issue{fmt::format("Type mismatch for key '{}' in component '{}'. Expected '{}' but got '{}'. Using default value.", newPath, componentName, defaultValue.type_name(), userValue.type_name()),
                                                               componentName + "." + newPath});
       }
     } else {
@@ -880,8 +910,7 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
     nlohmann::ordered_json finalConfig = defaultSettings;
 
     if (IsUserConfigAllowed(manifest)) {
-      std::filesystem::path userConfigPath =
-        (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+      std::filesystem::path userConfigPath = (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
       if (std::filesystem::exists(userConfigPath)) {
         try {
@@ -927,6 +956,14 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
             }
           }
         }
+      }
+    }
+    // TODO: remove this migration prune after a couple of releases
+    if (componentName == "framework" && finalConfig.contains("framework")) {
+      nlohmann::ordered_json& frameworkSettings = finalConfig["framework"];
+      if (frameworkSettings.is_object() && frameworkSettings.contains("framework_instance_id")) {
+        frameworkSettings.erase("framework_instance_id");
+        m_dirtyComponents.insert(componentName);
       }
     }
     m_isolatedConfigs[systemName][componentName] = finalConfig;
@@ -1017,18 +1054,13 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
               }
             }
           } catch (const std::exception& e) {
-            report.Warnings.push_back(
-              {fmt::format("Could not parse binding '{}' for action '{}' in component '{}'. Error: {}", key_value.dump(), fullActionKey, componentName, e.what()), fullActionKey});
+            report.Warnings.push_back({fmt::format("Could not parse binding '{}' for action '{}' in component '{}'. Error: {}", key_value.dump(), fullActionKey, componentName, e.what()), fullActionKey});
             continue;  // Skip this invalid binding
           }
 
           if (conflict) {
             m_dirtyComponents.insert(componentName);
-            report.Warnings.push_back({fmt::format("Keybind conflict for action '{}' in component '{}'. The key '{}' is already taken. This binding will be ignored.",
-                                                   fullActionKey,
-                                                   componentName,
-                                                   key_value.dump()),
-                                       fullActionKey});
+            report.Warnings.push_back({fmt::format("Keybind conflict for action '{}' in component '{}'. The key '{}' is already taken. This binding will be ignored.", fullActionKey, componentName, key_value.dump()), fullActionKey});
           } else {
             successful_keys.push_back(key_value);
             usedKeyValues.push_back(key_value);
@@ -1419,8 +1451,7 @@ void ConfigService::ResetToDefault(const std::string& systemName, const std::str
   }
 }
 
-void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
-                                  const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) {
+void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding, const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) {
   auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
   // 1. Find owner of the action being changed. This is for marking dirty files.
@@ -1598,8 +1629,7 @@ void ConfigService::DeleteBinding(const std::string& actionFullName, const nlohm
   }
 }
 
-void ConfigService::UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName,
-                                          const nlohmann::ordered_json& newValue) {
+void ConfigService::UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) {
   auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
   auto ownerIt = m_keybindOwnership.find(actionFullName);
@@ -1733,8 +1763,7 @@ void ConfigService::SaveAllDirty() {
   logger->Info("--- Saving all dirty configurations to disk ---");
 
   for (const auto& componentName : m_dirtyComponents) {
-    std::filesystem::path userConfigPath =
-      (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+    std::filesystem::path userConfigPath = (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
     nlohmann::ordered_json fullConfigToSave;
     try {
@@ -1951,8 +1980,7 @@ void ConfigService::CheckDirtyKeybinds(InitializationReport& report) {
   for (const auto& [componentName, manifest] : m_manifests) {
     if (!IsUserConfigAllowed(manifest)) continue;
 
-    std::filesystem::path userConfigPath =
-      (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
+    std::filesystem::path userConfigPath = (componentName == "framework") ? PathManager::GetConfigFilePath("framework_settings.json") : PathManager::GetPluginConfigDir(componentName) / "settings.json";
 
     if (!std::filesystem::exists(userConfigPath)) continue;
 
@@ -2026,21 +2054,16 @@ const std::map<std::string, nlohmann::ordered_json>& ConfigService::GetAggregate
 
 System::InstallationStatus ConfigService::GetInstallationStatus() const { return m_installationStatus; }
 
-std::string ConfigService::GetOrCreateFrameworkInstanceId() {
-  const std::string keyPath = "settings.framework.framework_instance_id";
+std::string ConfigService::GetFrameworkInstanceId() {
+  auto logger = LoggerFactory::GetInstance().GetLogger("ConfigService");
 
-  // 1. Try to get the existing ID
-  nlohmann::ordered_json existingIdJson = GetValue("framework", keyPath, "");
-  if (existingIdJson.is_string()) {
-    std::string existingId = existingIdJson.get<std::string>();
-    if (!existingId.empty()) {
-      return existingId;
+  std::string instanceId = ReadRegString(L"framework_instance_id");
+  if (instanceId.empty()) {
+    GUID guid;
+    if (FAILED(CoCreateGuid(&guid))) {
+      logger->Error("Failed to generate framework instance id");
+      return "generation_failed";
     }
-  }
-
-  // 2. If not found, generate a new one
-  GUID guid;
-  if (SUCCEEDED(CoCreateGuid(&guid))) {
     char guid_cstr[39];
     snprintf(guid_cstr,
              sizeof(guid_cstr),
@@ -2057,17 +2080,34 @@ std::string ConfigService::GetOrCreateFrameworkInstanceId() {
              guid.Data4[6],
              guid.Data4[7]);
 
-    std::string newId(guid_cstr);
-
-    // 3. Save the new ID back to the config
-    // SetValue expects a dot-separated path starting with the system name.
-    SetValue("framework", keyPath, newId);
-
-    return newId;
+    instanceId = guid_cstr;
+    WriteRegString("framework_instance_id", instanceId);
+    logger->Info("Generated new framework instance id");
   }
 
-  // Fallback in case CoCreateGuid fails
-  return "generation_failed";
+  // Mirror live installation facts into the registry.
+  const auto& components = GetAllComponentInfo();
+  auto frameworkInfo = components.find("framework");
+  if (frameworkInfo != components.end() && frameworkInfo->second.version && !frameworkInfo->second.version->empty()) {
+    WriteRegString("Version", *frameworkInfo->second.version);
+  }
+
+  const std::string& gameCode = EnvironmentManager::GetInstance().GetGameInfo().code;
+  const char* suffix = nullptr;
+  if (gameCode == "ats")
+    suffix = "ATS";
+  else if (gameCode == "eut2")
+    suffix = "ETS2";
+
+  HMODULE thisModule = nullptr;
+  if (suffix && GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCWSTR>(&kSpfRegSubKey), &thisModule)) {
+    wchar_t dllPath[MAX_PATH]{};
+    if (GetModuleFileNameW(thisModule, dllPath, MAX_PATH) > 0) {
+      WriteRegString((std::string("DllPath") + suffix).c_str(), WideToUtf8(dllPath));
+    }
+  }
+
+  return instanceId;
 }
 
 bool ConfigService::IsConnectionAllowed() {

@@ -94,10 +94,13 @@ struct IConfigService {
   virtual const std::map<std::string, ComponentInfo>& GetAllComponentInfo() const = 0;
 
   /**
-   * @brief Gets or creates the unique, anonymous identifier for this framework installation.
+   * @brief Gets the unique, anonymous identifier for this framework installation.
+   * @details Stored in the registry under HKCU\Software\SPF_Framework and generated
+   * there on first access. Every call also refreshes the stored Version and the
+   * current game's DLL path.
    * @return A string containing the framework instance UUID.
    */
-  virtual std::string GetOrCreateFrameworkInstanceId() = 0;
+  virtual std::string GetFrameworkInstanceId() = 0;
 
   /**
    * @brief Gets the installation status based on the version stored in the configuration.

@@ -154,7 +154,12 @@ void CommunicationManager::Update() {
       m_releaseNotesState.status = ResourceStatus::Error;
       m_releaseNotesState.lastErrorTime = now;
       m_releaseNotesState.lastErrorMessage = result.errorMessage;
-      logger->Warn("Failed to fetch release notes: {}", result.errorMessage.value_or("unknown error"));
+      const std::string error = result.errorMessage.value_or("unknown error");
+      if (error == "api.error.version_not_found" || error == "api.error.content_not_found") {
+        logger->Info("No release notes published for this version yet.");
+      } else {
+        logger->Warn("Failed to fetch release notes: {}", error);
+      }
     }
   }
 
@@ -441,7 +446,7 @@ void CommunicationManager::RequestTrackUsage() {
   }
 
   m_trackUsageFuture =
-    m_apiService.TrackUsageAsync(*it->second.websiteUrl, m_configService.GetOrCreateFrameworkInstanceId(), m_sessionId, env.GetFrameworkInfo().buildHash, *it->second.version, env.GetGameInfo().name, env.GetGameInfo().version, currentPlugins, logs);
+    m_apiService.TrackUsageAsync(*it->second.websiteUrl, m_configService.GetFrameworkInstanceId(), m_sessionId, env.GetFrameworkInfo().buildHash, *it->second.version, env.GetGameInfo().name, env.GetGameInfo().version, currentPlugins, logs);
   m_lastUsageTrackTime = std::chrono::steady_clock::now();
   m_hasInitialTrackingSent = true;
 }

@@ -26,12 +26,12 @@
 #include "SPF/Utils/Windows.hpp"
 
 #include "fmt/base.h"
+#include "fmt/format.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
 #include <cstddef>
 #include <filesystem>
-#include <fmt/format.h>
 #include <map>
 #include <shellapi.h>
 #include <string>

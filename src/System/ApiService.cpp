@@ -11,14 +11,13 @@
 #include "cpr/error.h"
 #include "cpr/response.h"
 #include "cpr/timeout.h"
-#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "fmt/format.h"
+#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include <chrono>
-#include <cpr/cpr.h>  // Include cpr
 #include <cstddef>
 #include <exception>
-#include <fmt/format.h>
 #include <functional>
 #include <future>
 #include <map>
@@ -29,6 +28,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 // IWYU insists on a direct provider for _s functions.
@@ -349,7 +349,22 @@ std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const s
 
       cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_NOTES_PATH}, cpr::Header{{"Content-Type", "application/json"}, {"X-API-Key", API_CLIENT_SECRET}}, cpr::Body{requestBody.dump()}, cpr::Timeout{10000}, cpr::ConnectTimeout{5000});
 
-      if (r.error.code != cpr::ErrorCode::OK || r.status_code != 200) {
+      if (r.error.code != cpr::ErrorCode::OK) {
+        apiResult.success = false;
+        apiResult.errorMessage = "api.error.generic";
+        promise->set_value(apiResult);
+        return;
+      }
+
+      if (r.status_code == 404) {
+        // No published release/notes for this version — a normal state, not an error.
+        apiResult.success = false;
+        apiResult.errorMessage = "api.error.version_not_found";
+        promise->set_value(apiResult);
+        return;
+      }
+
+      if (r.status_code != 200) {
         apiResult.success = false;
         apiResult.errorMessage = "api.error.generic";
         promise->set_value(apiResult);

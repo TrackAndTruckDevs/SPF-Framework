@@ -544,6 +544,9 @@ void Core::InitManagersAndPlugins() {
     reports.push_back(reconReport);
   }
 
+  // Refresh installation identity and its registry mirror (needs reconciled component info)
+  m_configService->GetFrameworkInstanceId();
+
   // Phase 4: Initialize managers that depend on plugin manifests.
   m_logger->Info("-> [Init] Initializing Localization, KeyBinds, and UI managers...");
   reports.push_back(LocalizationManager::GetInstance().Initialize(m_configService->GetAllComponentSettings("localization")));
