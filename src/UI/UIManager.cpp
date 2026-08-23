@@ -1198,21 +1198,31 @@ void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCo
     logger->Debug("Update check completed. Available: {}", data.updateAvailable);
 
     if (data.updateAvailable) {
-      bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
-      logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
-
-      if (showNotifications) {
-        logger->Info("Showing update notification...");
-        std::string versionStr = "v." + e.result.data->latestVersion.full;
-        std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
-        SPF_Notification_Params params{};
-        params.message = updateMsg.c_str();
-        params.type = SPF_NOTIFICATION_INFO;
-        params.mode = SPF_NOTIF_MODE_TOP;
-        params.duration = 5.0f;
-        UIManager::GetInstance().ShowNotificationEx(&params);
+      // Patches (same base, higher revision) are handled by OnPatchUpdateDetected.
+      // Skip the major "update available" toast for patch-type updates.
+      const auto& latest = data.latestVersion.ver;
+      const auto currentVer = System::Version::FromString(
+          m_configService->GetValue("framework", "settings.framework.version", "0.0.0").get<std::string>());
+      if (currentVer && latest.major == currentVer->major && latest.minor == currentVer->minor &&
+          latest.patch == currentVer->patch && latest.revision > currentVer->revision) {
+        logger->Debug("Update is a patch (v{}). Skipping 'update available' toast — handled by auto-patch.", data.latestVersion.full);
       } else {
-        logger->Debug("Update notifications are disabled in settings.");
+        bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+        logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
+
+        if (showNotifications) {
+          logger->Info("Showing update notification...");
+          std::string versionStr = "v." + e.result.data->latestVersion.full;
+          std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
+          SPF_Notification_Params params{};
+          params.message = updateMsg.c_str();
+          params.type = SPF_NOTIFICATION_INFO;
+          params.mode = SPF_NOTIF_MODE_TOP;
+          params.duration = 5.0f;
+          UIManager::GetInstance().ShowNotificationEx(&params);
+        } else {
+          logger->Debug("Update notifications are disabled in settings.");
+        }
       }
     }
   } else if (!e.result.success) {
@@ -1354,6 +1364,11 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   auto climateWindow = std::make_shared<ClimateWindow>("framework", "climate_window", Data::GameData::ClimateService::GetInstance());
   RegisterWindow(climateWindow);
 
+  // Notifications (Global) — must be created before the status check block below,
+  // because PatchUpdated fires ShowNotificationEx which needs m_notificationWindow.
+  m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
+  RegisterWindow(m_notificationWindow);
+
   // Welcome Window - Only created and registered on fresh installation or framework update
   const auto& fwInfo = System::EnvironmentManager::GetInstance().GetFrameworkInfo();
   if (fwInfo.installStatus == System::InstallationStatus::NewInstall) {
@@ -1375,10 +1390,6 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
     // When they arrive, OnReleaseNotesReceived will show the window.
     m_communicationManager->RequestReleaseNotesFetch();
   }
-
-  // Notifications (Global)
-  m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
-  RegisterWindow(m_notificationWindow);
 
   // Apply initial developer mode filter
   bool initialDevMode = m_configService->GetValue("framework", "settings.framework.developer_mode", false).get<bool>();
