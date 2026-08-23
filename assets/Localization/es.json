@@ -24,6 +24,9 @@
         "version_label": "Tu versión ",
         "update_checking": "Buscando actualizaciones...",
         "update_available_notification": "### {}\n Nueva actualización disponible **{}**\n Para saber más, visite el sitio web",
+        "patch_downloading": "Descargando el parche **v{}**...",
+        "patch_updated_restart": "### SPF Framework actualizado a **{}**\n Reinicia el juego para aplicar la actualización.",
+        "patch_applied": "SPF Framework actualizado a **v{}**",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "Sobre nosotros / Contactos",
@@ -245,6 +248,10 @@
                     "title": "Notificar sobre actualizaciones",
                     "description": "Recibirá notificaciones cuando haya actualizaciones disponibles para el framework o los plugins."
                 },
+                    "auto_patch": {
+                        "title": "Actualizaciones de parches automáticas",
+                        "description": "Descarga y aplica automáticamente correcciones entre versiones principales."
+                    },
                 "scale": {
                     "title": "Escala de la interfaz",
                     "description": "Ajusta el tamaño de las fuentes y ventanas de la interfaz de usuario."

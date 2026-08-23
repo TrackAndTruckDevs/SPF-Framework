@@ -24,6 +24,9 @@
         "version_label": "あなたのバージョン ",
         "update_checking": "アップデートを確認中...",
         "update_available_notification": "### {}\n 新しいアップデートが利用可能です：**{}**\n 詳細については、ウェブサイトをご覧ください",
+        "patch_downloading": "パッチ **v{}** をダウンロード中...",
+        "patch_updated_restart": "### SPF Framework を **{}** に更新しました\n 更新を適用するにはゲームを再起動してください。",
+        "patch_applied": "SPF Framework を **v{}** に更新しました",
         "menu": {
             "manual": "マニュアル / FAQ",
             "about": "私たちについて / 連絡先",
@@ -245,6 +248,10 @@
                     "title": "アップデートの通知",
                     "description": "フレームワークやプラグインのアップデートが利用可能な場合、通知が表示されます."
                 },
+                    "auto_patch": {
+                        "title": "自動パッチ更新",
+                        "description": "メジャーリリース間の修正パッチを自動的にダウンロードして適用します。"
+                    },
                 "scale": {
                     "title": "インターフェースのスケール",
                     "description": "UIのフォントとウィンドウのサイズを調整します。"

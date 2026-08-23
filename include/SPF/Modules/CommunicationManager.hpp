@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-
 SPF_NS_BEGIN
 namespace Modules {
 
@@ -90,6 +89,11 @@ class CommunicationManager {
    * @brief Ensures connection permission is loaded from config.
    */
   void EnsurePermission();
+
+  /**
+   * @brief Checks if the fetched update is a hotfix patch for the running base version and starts the automatic apply flow.
+   */
+  void TryStartPatchUpdate(const System::UpdateInfo& info);
 
   bool ShouldPerformRequest(ResourceStatus status, std::chrono::steady_clock::time_point lastErrorTime, bool forceRefresh);
 

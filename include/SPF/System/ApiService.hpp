@@ -6,6 +6,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <map>
@@ -15,7 +16,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
 
 SPF_NS_BEGIN
 namespace System {
@@ -75,6 +75,14 @@ struct ChangelogData {
 };
 
 /**
+ * @brief Result of a file download performed by ApiService::DownloadFileAsync.
+ */
+struct FileDownloadResult {
+  bool success = false;
+  std::string errorMessage;
+};
+
+/**
  * @brief Holds information about the latest framework update.
  */
 struct UpdateInfo {
@@ -117,7 +125,10 @@ class ApiService {
   ~ApiService();
 
   // Asynchronously fetches the latest update information using the new get_framework_update.php.
-  std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel, const std::string& lang);
+  std::future<ApiResult<UpdateInfo>> FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, int revision, const std::string& channel, const std::string& lang);
+
+  // Asynchronously downloads a remote file to disk (streamed, no full in-memory buffer).
+  std::future<FileDownloadResult> DownloadFileAsync(const std::string& url, const std::filesystem::path& destination);
 
   // Asynchronously fetches localized release notes for a specific version using get_release_notes.php.
   std::future<ApiResult<ChangelogData>> FetchReleaseNotesAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& lang);
@@ -126,8 +137,8 @@ class ApiService {
   std::future<ApiResult<std::vector<Patron>>> FetchPatronsAsync(const std::string& baseUrl);
 
   // Asynchronously sends anonymous usage data and grouped logs.
-  std::future<void> TrackUsageAsync(const std::string& baseUrl, std::string uuid, std::string sessionId, std::string buildHash, std::string version, std::string game,
-                                    std::string gameVersion, std::map<std::string, bool> plugins, std::vector<LogReportEntry> logs);
+  std::future<void> TrackUsageAsync(const std::string& baseUrl, std::string uuid, std::string sessionId, std::string buildHash, std::string version, std::string game, std::string gameVersion, std::map<std::string, bool> plugins,
+                                    std::vector<LogReportEntry> logs);
 
   // Asynchronously fetches the latest release from GitHub.
   std::future<ApiResult<GithubReleaseInfo>> FetchGithubLatestReleaseAsync(const std::string& owner, const std::string& repo);

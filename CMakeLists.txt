@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 4.4)
 
 # Define our project.
 project(SPF VERSION 1.2.1 LANGUAGES CXX)
+if(NOT PROJECT_VERSION_TWEAK)
+  set(PROJECT_VERSION_TWEAK 0)
+endif()
 add_compile_definitions(_AMD64_ NOMINMAX)
 
 # --- C++ Standard & IWYU ---
@@ -359,6 +362,7 @@ add_library(SPF SHARED
     "src/System/PathManager.cpp"
     "src/System/EnvironmentManager.cpp"
     "src/System/ApiService.cpp"
+    "src/System/SelfUpdater.cpp"
     "src/Utils/PatternFinder.cpp"
     "src/Utils/FinderLog.cpp"
     "src/Utils/HashUtils.cpp"

@@ -6,6 +6,7 @@
 
 #include "cpr/api.h"
 #include "cpr/body.h"
+#include "cpr/callback.h"
 #include "cpr/connect_timeout.h"
 #include "cpr/cprtypes.h"
 #include "cpr/error.h"
@@ -17,9 +18,13 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <future>
+#include <ios>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -27,6 +32,7 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -245,11 +251,11 @@ std::optional<Version> Version::FromString(const std::string& versionStr) {
 }
 
 // --- ApiService Implementation ---
-std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, const std::string& channel, const std::string& lang) {
+std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::string& baseUrl, int major, int minor, int patch, int revision, const std::string& channel, const std::string& lang) {
   auto promise = std::make_shared<std::promise<ApiResult<UpdateInfo>>>();
   std::future<ApiResult<UpdateInfo>> future = promise->get_future();
 
-  PostTask([this, promise, baseUrl, major, minor, patch, channel, lang]() {
+  PostTask([this, promise, baseUrl, major, minor, patch, revision, channel, lang]() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<UpdateInfo> apiResult;
 
@@ -264,7 +270,7 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
 
       logger->Debug("Checking for framework updates (current v{}.{}.{})...", major, minor, patch);
 
-      json requestBody = {{"major", major}, {"minor", minor}, {"patch", patch}, {"channel", channel}, {"lang", lang}};
+      json requestBody = {{"major", major}, {"minor", minor}, {"patch", patch}, {"revision", revision}, {"channel", channel}, {"lang", lang}};
 
       cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_UPDATE_PATH}, cpr::Header{{"Content-Type", "application/json"}, {"X-API-Key", API_CLIENT_SECRET}}, cpr::Body{requestBody.dump()}, cpr::Timeout{10000}, cpr::ConnectTimeout{5000});
 
@@ -290,25 +296,32 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
       UpdateInfo info;
       info.updateAvailable = data.value("update_available", false);
 
+      // Null-safe string extraction — .value() returns null when key exists but value is JSON null
+      auto safeString = [](const json& j, const std::string& key, const std::string& def) -> std::string {
+        auto it = j.find(key);
+        return (it != j.end() && it->is_string()) ? it->get<std::string>() : def;
+      };
+
       if (info.updateAvailable) {
         // Safe extraction of "version"
         json v = data.value("version", json::object());
         info.latestVersion.ver.major = v.value("major", 0);
         info.latestVersion.ver.minor = v.value("minor", 0);
         info.latestVersion.ver.patch = v.value("patch", 0);
-        info.latestVersion.full = v.value("full", "unknown");
+        info.latestVersion.ver.revision = v.value("revision", 0);
+        info.latestVersion.full = safeString(v, "full", "unknown");
 
-        info.downloadUrl = data.value("download_url", "");
+        info.downloadUrl = safeString(data, "download_url", "");
 
         // Safe extraction of "md5"
         json m = data.value("md5", json::object());
-        info.md5.archive = m.value("archive", "");
-        info.md5.binary = m.value("binary", "");
+        info.md5.archive = safeString(m, "archive", "");
+        info.md5.binary = safeString(m, "binary", "");
 
         // Safe extraction of "content"
         json c = data.value("content", json::object());
-        info.content.title = c.value("title", "");
-        info.content.markdown = c.value("markdown", "");
+        info.content.title = safeString(c, "title", "");
+        info.content.markdown = safeString(c, "markdown", "");
 
         logger->Info("Update available: v{} -> v{}", fmt::format("{}.{}.{}", major, minor, patch), info.latestVersion.full);
       }
@@ -323,6 +336,52 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
     }
 
     promise->set_value(apiResult);
+  });
+
+  return future;
+}
+
+std::future<FileDownloadResult> ApiService::DownloadFileAsync(const std::string& url, const std::filesystem::path& destination) {
+  auto promise = std::make_shared<std::promise<FileDownloadResult>>();
+  std::future<FileDownloadResult> future = promise->get_future();
+
+  PostTask([promise, url, destination]() {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
+    FileDownloadResult result;
+
+    try {
+      logger->Debug("Downloading file from {}...", url);
+
+      std::ofstream file(destination, std::ios::binary | std::ios::trunc);
+      if (!file.is_open()) {
+        result.errorMessage = "failed_to_open_destination";
+        promise->set_value(result);
+        return;
+      }
+
+      cpr::WriteCallback writeCallback([&file](std::string_view data, intptr_t /*userdata*/) -> bool {
+        file.write(data.data(), static_cast<std::streamsize>(data.size()));
+        return file.good();
+      });
+
+      cpr::Response r = cpr::Get(cpr::Url{url}, cpr::WriteCallback{writeCallback}, cpr::Timeout{120000}, cpr::ConnectTimeout{5000});
+      file.close();
+
+      if (r.error.code != cpr::ErrorCode::OK || r.status_code != 200) {
+        result.errorMessage = fmt::format("http_error_{}", r.status_code);
+        promise->set_value(result);
+        return;
+      }
+
+      result.success = true;
+      logger->Info("File downloaded successfully ({} bytes).", r.downloaded_bytes);
+    } catch (const std::exception& e) {
+      logger->Error("File Download Error: {}", e.what());
+      result.success = false;
+      result.errorMessage = "download_exception";
+    }
+
+    promise->set_value(result);
   });
 
   return future;

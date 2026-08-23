@@ -35,9 +35,10 @@
 #include "SPF/UI/Fonts/NotoSansRegular.h"
 #include "SPF/UI/Fonts/NotoSansSCRegular.h"
 #include "SPF/UI/Fonts/RobotoMonoRegular.h"
-#include "SPF/UI/GameConsoleWindow.hpp"   // Added for GameConsoleWindow creation
-#include "SPF/UI/GameWorldWindow.hpp"     // Added for GameWorldWindow creation
-#include "SPF/UI/HooksWindow.hpp"         // Added for HooksWindow creation
+#include "SPF/UI/GameConsoleWindow.hpp"  // Added for GameConsoleWindow creation
+#include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
+#include "SPF/UI/HooksWindow.hpp"        // Added for HooksWindow creation
+#include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/InfoWindow.hpp"          // Added for InfoWindow creation
 #include "SPF/UI/LoggerWindow.hpp"        // Added for LoggerWindow creation
 #include "SPF/UI/MainWindow.hpp"          // Added for MainWindow creation
@@ -50,7 +51,6 @@
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
-#include "SPF/UI/IMESupport.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "imgui.h"
@@ -91,10 +91,12 @@ UIManager::UIManager()
       m_keyBindsManager(nullptr),
       m_pluginManager(nullptr),
       m_communicationManager(nullptr),
-      m_onPluginDidLoadSink(nullptr),         // will be initialized in Init()
-      m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
-      m_onReleaseNotesReceivedSink(nullptr),  // will be initialized in Init()
-      m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
+      m_onPluginDidLoadSink(nullptr),          // will be initialized in Init()
+      m_onPluginWillBeUnloadedSink(nullptr),   // will be initialized in Init()
+      m_onReleaseNotesReceivedSink(nullptr),   // will be initialized in Init()
+      m_onPluginUpdateAvailableSink(nullptr),  // will be initialized in Init()
+      m_onPatchUpdateDetectedSink(nullptr),    // will be initialized in Init()
+      m_onPatchApplyCompletedSink(nullptr)     // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
 }
@@ -115,11 +117,15 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
   m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
   m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
+  m_onPatchUpdateDetectedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>>(m_eventManager->System.OnPatchUpdateDetected);
+  m_onPatchApplyCompletedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>>(m_eventManager->System.OnPatchApplyCompleted);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
   m_onReleaseNotesReceivedSink->Connect<&UIManager::OnReleaseNotesReceived>(this);
   m_onPluginUpdateAvailableSink->Connect<&UIManager::NotifyPluginUpdateAvailable>(this);
+  m_onPatchUpdateDetectedSink->Connect<&UIManager::NotifyPatchUpdateDetected>(this);
+  m_onPatchApplyCompletedSink->Connect<&UIManager::NotifyPatchApplyCompleted>(this);
 }
 
 void UIManager::CloseFocusedWindow() {
@@ -787,8 +793,7 @@ void UIManager::RenderAll() {
   ImGuiContext* ctx = ImGui::GetCurrentContext();
   if (ctx->HoveredIdPreviousFrameItemCount > 1 && ctx->HoveredIdPreviousFrame != m_lastLoggedConflictId) {
     const char* windowName = (ctx->HoveredWindow != nullptr) ? ctx->HoveredWindow->Name : "<no window>";
-    SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("ID conflict: {} visible items share ID {:#x} in window '{}'",
-                                                                        ctx->HoveredIdPreviousFrameItemCount, ctx->HoveredIdPreviousFrame, windowName);
+    SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("ID conflict: {} visible items share ID {:#x} in window '{}'", ctx->HoveredIdPreviousFrameItemCount, ctx->HoveredIdPreviousFrame, windowName);
     m_lastLoggedConflictId = ctx->HoveredIdPreviousFrame;
   } else if (ctx->HoveredIdPreviousFrameItemCount <= 1) {
     m_lastLoggedConflictId = 0;
@@ -808,9 +813,7 @@ void UIManager::InitializeImGui() {
   // imbalance, widgets outside windows, etc.) into the framework log.
   // On-screen error tooltip is replaced by log output.
   io.ConfigErrorRecoveryEnableTooltip = false;
-  ImGui::GetCurrentContext()->ErrorCallback = [](ImGuiContext*, void*, const char* msg) {
-    SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("{}", msg);
-  };
+  ImGui::GetCurrentContext()->ErrorCallback = [](ImGuiContext*, void*, const char* msg) { SPF::Logging::LoggerFactory::GetInstance().GetLogger("ImGui")->Error("{}", msg); };
 #endif
   if (m_configService) {
     m_uiScaleFactor = m_configService->GetValue("framework", "settings.scale", 1.0f).get<float>();
@@ -874,7 +877,7 @@ void UIManager::InitializeImGui() {
   mergeCjk(18.0f);
   logger->Info("Successfully merged CJK font into the bold font.");
 
-m_fonts["italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansItalic_compressed_data, Font_NotoSansItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
+  m_fonts["italic"] = io.Fonts->AddFontFromMemoryCompressedTTF(Font_NotoSansItalic_compressed_data, Font_NotoSansItalic_compressed_size, 18.0f, nullptr, glyph_ranges_cyrillic);
   // Merge Font Awesome icons
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7_compressed_data, Font_FontAwesome7_compressed_size, 16.0f, &icon_config_fa, icon_ranges_fa);
   io.Fonts->AddFontFromMemoryCompressedTTF(Font_FontAwesome7Brands_compressed_data, Font_FontAwesome7Brands_compressed_size, 16.0f, &icon_config_fab, icon_ranges_fab);
@@ -1253,6 +1256,41 @@ void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdate
   }
 }
 
+void UIManager::NotifyPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e) {
+  auto& loc = Localization::LocalizationManager::GetInstance();
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+  const std::string version = e.info.latestVersion.full;
+
+  logger->Info("Hotfix patch v{} detected, downloading automatically...", version);
+  std::string msg = loc.GetFormatted("framework", "main_window.patch_downloading", version);
+  SPF_Notification_Params params{};
+  params.message = msg.c_str();
+  params.type = SPF_NOTIFICATION_INFO;
+  params.mode = SPF_NOTIF_MODE_TOP;
+  params.duration = 5.0f;
+  UIManager::GetInstance().ShowNotificationEx(&params);
+}
+
+void UIManager::NotifyPatchApplyCompleted(const Events::System::OnPatchApplyCompleted& e) {
+  auto& loc = Localization::LocalizationManager::GetInstance();
+  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
+
+  if (!e.success) {
+    // Patch failures are logged only, they must never block the user.
+    logger->Warn("Automatic patch update to v{} failed: {}", e.version, e.errorMessage);
+    return;
+  }
+
+  logger->Info("Patch v{} applied. Restart required.", e.version);
+  std::string msg = loc.GetFormatted("framework", "main_window.patch_updated_restart", e.version);
+  SPF_Notification_Params params{};
+  params.message = msg.c_str();
+  params.type = SPF_NOTIFICATION_SUCCESS;
+  params.mode = SPF_NOTIF_MODE_TOP;
+  params.duration = 8.0f;
+  UIManager::GetInstance().ShowNotificationEx(&params);
+}
+
 void UIManager::CreateAndRegisterFrameworkWindows() {
   // Ensure dependencies are valid
   assert(m_eventManager);
@@ -1322,6 +1360,16 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
     auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
     welcomeWindow->SetVisibility(true);
     RegisterWindow(welcomeWindow);
+  } else if (fwInfo.installStatus == System::InstallationStatus::PatchUpdated) {
+    // Hotfix patches carry no release notes - just a brief confirmation.
+    auto& loc = Localization::LocalizationManager::GetInstance();
+    std::string msg = loc.GetFormatted("framework", "main_window.patch_applied", fwInfo.version);
+    SPF_Notification_Params params{};
+    params.message = msg.c_str();
+    params.type = SPF_NOTIFICATION_SUCCESS;
+    params.mode = SPF_NOTIF_MODE_TOP;
+    params.duration = 5.0f;
+    UIManager::GetInstance().ShowNotificationEx(&params);
   } else if (fwInfo.installStatus == System::InstallationStatus::Updated) {
     // If updated, we request release notes from the server.
     // When they arrive, OnReleaseNotesReceived will show the window.

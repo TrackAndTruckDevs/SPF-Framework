@@ -24,6 +24,9 @@
         "version_label": "您的版本 ",
         "update_checking": "正在检查更新...",
         "update_available_notification": "### {}\n 发现新版本 **{}**\n 欲知更多信息，请访问官方网站",
+        "patch_downloading": "正在下载补丁 **v{}**...",
+        "patch_updated_restart": "### SPF Framework 已更新至 **{}**\n 请重启游戏以应用更新。",
+        "patch_applied": "SPF Framework 已更新至 **v{}**",
         "menu": {
             "manual": "手册 / 常见问题",
             "about": "关于我们 / 联系方式",
@@ -245,6 +248,10 @@
                     "title": "更新通知",
                     "description": "当框架或插件有可用更新时，您将收到通知。"
                 },
+                    "auto_patch": {
+                        "title": "自动补丁更新",
+                        "description": "在大版本之间自动下载并应用修复补丁。"
+                    },
                 "scale": {
                     "title": "界面缩放",
                     "description": "调整用户界面字体和窗口的大小。"

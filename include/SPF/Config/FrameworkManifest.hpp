@@ -59,6 +59,7 @@ inline const ManifestData& GetFrameworkManifestData() {
               "framework": {
                 "connect": true,
                 "developer_mode": false,
+                "auto_patch": true,
                 "version": ""
               },
               "notification_duration": 3.0,
@@ -256,6 +257,10 @@ inline const ManifestData& GetFrameworkManifestData() {
          {"hook_states", "settings_window.setting_names.settings.hook_states.title", "settings_window.setting_names.settings.hook_states.description", true},
          {"framework", std::nullopt, std::nullopt, true},
          {"framework.developer_mode", std::nullopt, std::nullopt, true},
+         {"framework.auto_patch",
+          "settings_window.setting_names.settings.auto_patch.title",
+          "settings_window.setting_names.settings.auto_patch.description",
+          true},
          {"show_update_notifications",
           "settings_window.setting_names.settings.show_update_notifications.title",
           "settings_window.setting_names.settings.show_update_notifications.description",

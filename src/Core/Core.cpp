@@ -38,6 +38,7 @@
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
+#include "SPF/System/SelfUpdater.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 #include "SPF/UI/ImGuiInputConsumer.hpp"
@@ -107,7 +108,9 @@ Core::Core(HMODULE module)
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
       m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
       m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
-      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
+      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)),
+      m_onPatchUpdateDetectedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>>(m_eventManager->System.OnPatchUpdateDetected)),
+      m_onPatchApplyCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>>(m_eventManager->System.OnPatchApplyCompleted)) {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -137,6 +140,9 @@ void Core::Preload() {
 
   // Initialize EnvironmentManager early so framework information is available during UI initialization.
   EnvironmentManager::GetInstance().Initialize(m_module);
+
+  // Remove leftovers from a previous patch session (.old backup, temp files).
+  System::SelfUpdater::StartupCleanup();
 
   // Initialize services that do not depend on the game SDK.
   InitServices();
@@ -500,6 +506,7 @@ void Core::InitManagersAndPlugins() {
   // Phase 1: Create session-based managers.
   m_logger->Info("-> [Init] Creating session manager instances (KeyBinds, UI)...");
   m_apiService = std::make_unique<System::ApiService>();
+  m_selfUpdater = std::make_unique<System::SelfUpdater>(*m_apiService);
   m_communicationManager = std::make_unique<Modules::CommunicationManager>(*m_eventManager, *m_apiService, *m_configService);
   m_keyBindsManager = std::make_unique<KeyBindsManager>(*m_inputManager, *m_eventManager);
   m_configurableServices.push_back(m_keyBindsManager.get());
@@ -672,6 +679,7 @@ void Core::ShutdownUI() {
 void Core::ShutdownManagers() {
   m_logger->Info("--> Shutting down managers...");
   m_keyBindsManager.reset();
+  m_selfUpdater.reset();  // Drop any in-flight patch future before ApiService dies
   if (m_communicationManager) {
     // Cancel in-flight API requests and disconnect sinks before destruction.
     m_communicationManager->Shutdown();
@@ -712,6 +720,8 @@ void Core::ShutdownServices() {
   m_onUpdateCheckCompletedSink.reset();
   m_onPatronsFetchCompletedSink.reset();
   m_onUsageTrackingCompletedSink.reset();
+  m_onPatchUpdateDetectedSink.reset();
+  m_onPatchApplyCompletedSink.reset();
 
   // Config service is last, saving all pending changes to disk.
   m_logger->Info("    -> Saving configuration and shutting down ConfigService...");
@@ -831,6 +841,8 @@ void Core::Update() {
   if (m_communicationManager) {
     m_communicationManager->Update();
   }
+
+  ProcessSelfUpdaterResult();
 }
 
 void Core::ImGuiRender() {
@@ -865,6 +877,7 @@ void Core::BindEventHandlers() {
   m_onUpdateCheckCompletedSink->Connect<&Core::OnUpdateCheckCompleted>(this);
   m_onPatronsFetchCompletedSink->Connect<&Core::OnPatronsFetchCompleted>(this);
   m_onUsageTrackingCompletedSink->Connect<&Core::OnUsageTrackingCompleted>(this);
+  m_onPatchUpdateDetectedSink->Connect<&Core::OnPatchUpdateDetected>(this);
   m_handlersBound = true;
 }
 
@@ -879,6 +892,21 @@ void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& 
 void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
 
 void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
+
+void Core::OnPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e) {
+  if (m_selfUpdater) {
+    m_selfUpdater->ApplyPatchAsync(e.info);
+  }
+}
+
+void Core::ProcessSelfUpdaterResult() {
+  if (!m_selfUpdater) return;
+
+  auto result = m_selfUpdater->PollResult();
+  if (result) {
+    m_eventManager->System.OnPatchApplyCompleted.Call({result->success, result->version, result->errorMessage});
+  }
+}
 
 void Core::FinalizeWorldInitialization() {
   m_logger->Info("Finalizing world initialization...");

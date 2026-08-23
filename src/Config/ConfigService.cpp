@@ -677,6 +677,9 @@ void ConfigService::Finalize(InitializationReport* report) {
             if (*currentVerOpt < *storedVerOpt) {
               m_installationStatus = InstallationStatus::Downgraded;
               report->InfoMessages.push_back(fmt::format("Downgrade detected: Stored version {} is newer than current {}.", storedVersion, currentVersion));
+            } else if (storedVerOpt->major == currentVerOpt->major && storedVerOpt->minor == currentVerOpt->minor && storedVerOpt->patch == currentVerOpt->patch) {
+              m_installationStatus = InstallationStatus::PatchUpdated;
+              report->InfoMessages.push_back(fmt::format("Hotfix patch detected: Stored version {} updated to {}.", storedVersion, currentVersion));
             } else {
               m_installationStatus = InstallationStatus::Updated;
               report->InfoMessages.push_back(fmt::format("Update detected: Stored version {} is older than current {}.", storedVersion, currentVersion));

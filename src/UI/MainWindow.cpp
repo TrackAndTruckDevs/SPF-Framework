@@ -526,15 +526,15 @@ void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompl
     m_lastUpdateError.reset();
 
     if (m_lastUpdateInfo->updateAvailable) {
-      // For now, determining status based on version presence
-      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable;  // Default
+      m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
 
       auto currentVerOpt = System::Version::FromString(m_frameworkVersion);
       if (currentVerOpt) {
-        if (m_lastUpdateInfo->latestVersion.ver.major > currentVerOpt->major)
+        const auto& lv = m_lastUpdateInfo->latestVersion.ver;
+        if (lv.major == currentVerOpt->major && lv.minor == currentVerOpt->minor && lv.patch == currentVerOpt->patch && lv.revision > currentVerOpt->revision)
+          m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::PatchAvailable;
+        else if (lv.major > currentVerOpt->major)
           m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MajorAvailable;
-        else if (m_lastUpdateInfo->latestVersion.ver.minor > currentVerOpt->minor)
-          m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::MinorAvailable;
       }
     } else {
       m_currentUpdateStatus = Modules::CommunicationManager::UpdateStatus::UpToDate;

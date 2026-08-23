@@ -24,6 +24,9 @@
         "version_label": "Jouw versie ",
         "update_checking": "Controleren op updates...",
         "update_available_notification": "### {}\n Nieuwe update beschikbaar **{}**\n Ga naar de website voor meer informatie",
+        "patch_downloading": "Patch **v{}** wordt gedownload...",
+        "patch_updated_restart": "### SPF Framework bijgewerkt naar **{}**\n Herstart het spel om de update toe te passen.",
+        "patch_applied": "SPF Framework bijgewerkt naar **v{}**",
         "menu": {
             "manual": "Handleiding / FAQ",
             "about": "Over Ons / Contact",
@@ -245,6 +248,10 @@
                     "title": "Meldingen over updates",
                     "description": "Je ontvangt meldingen wanneer er updates beschikbaar zijn voor het framework of de plug-ins."
                 },
+                    "auto_patch": {
+                        "title": "Automatische patch-updates",
+                        "description": "Download en installeer hotfixes tussen grote releases automatisch."
+                    },
                 "scale": {
                     "title": "Interface schaal",
                     "description": "Past de grootte van de UI-lettertypen en vensters aan."

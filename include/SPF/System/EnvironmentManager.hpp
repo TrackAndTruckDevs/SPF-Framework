@@ -18,15 +18,15 @@
 #include <minwindef.h>
 #include <string>
 
-
 SPF_NS_BEGIN
 namespace System {
 
 enum class InstallationStatus {
-  SameVersion,  // Everything is up to date
-  NewInstall,   // First run (no config file)
-  Updated,      // Stored version is lower than current or missing
-  Downgraded    // Stored version is newer than current
+  SameVersion,   // Everything is up to date
+  NewInstall,    // First run (no config file)
+  Updated,       // Stored version is lower than current or missing
+  PatchUpdated,  // Only the revision component differs (hotfix patch was applied)
+  Downgraded     // Stored version is newer than current
 };
 
 struct FrameworkInfo {

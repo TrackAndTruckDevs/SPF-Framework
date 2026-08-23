@@ -24,6 +24,9 @@
         "version_label": "현재 버전 ",
         "update_checking": "업데이트 확인 중...",
         "update_available_notification": "### {}\n 새로운 업데이트 **{}**를 이용할 수 있습니다\n 자세한 내용은 웹사이트를 방문해 주세요",
+        "patch_downloading": "패치 **v{}** 다운로드 중...",
+        "patch_updated_restart": "### SPF Framework가 **{}**(으)로 업데이트되었습니다\n 업데이트를 적용하려면 게임을 재시작하세요.",
+        "patch_applied": "SPF Framework가 **v{}**(으)로 업데이트되었습니다",
         "menu": {
             "manual": "매뉴얼 / FAQ",
             "about": "소개 / 연락처",
@@ -245,6 +248,10 @@
                     "title": "업데이트 알림 표시",
                     "description": "프레임워크나 플러그인의 업데이트가 있을 때 알림을 표시합니다."
                 },
+                    "auto_patch": {
+                        "title": "자동 패치 업데이트",
+                        "description": "대형 릴리스 사이의 핫픽스를 자동으로 다운로드하여 적용합니다."
+                    },
                 "scale": {
                     "title": "인터페이스 비율",
                     "description": "UI 글꼴 및 창의 크기를 조정합니다."

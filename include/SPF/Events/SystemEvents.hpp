@@ -47,5 +47,21 @@ struct OnPluginUpdateAvailable {
   std::string downloadUrl;
 };
 
+/**
+ * @brief Fired by the CommunicationManager when a hotfix patch (same base version, higher revision) is available.
+ */
+struct OnPatchUpdateDetected {
+  const SPF::System::UpdateInfo& info;
+};
+
+/**
+ * @brief Fired by the Core after a patch download/apply attempt has finished.
+ */
+struct OnPatchApplyCompleted {
+  bool success;
+  std::string version;
+  std::string errorMessage;
+};
+
 }  // namespace Events::System
 SPF_NS_END

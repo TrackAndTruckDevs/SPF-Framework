@@ -28,7 +28,6 @@
 #include <unordered_map>
 #include <vector>
 
-
 SPF_NS_BEGIN
 
 namespace Events {
@@ -105,6 +104,8 @@ class UIManager : public Config::IConfigurable {
   void NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
   void NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
   void NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e);
+  void NotifyPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e);
+  void NotifyPatchApplyCompleted(const Events::System::OnPatchApplyCompleted& e);
 
   const Events::System::OnPluginUpdateAvailable* GetPluginUpdate(const std::string& pluginId) const;
 
@@ -222,6 +223,8 @@ class UIManager : public Config::IConfigurable {
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>> m_onPluginWillBeUnloadedSink;
   std::unique_ptr<Utils::Sink<void(const System::ChangelogData&)>> m_onReleaseNotesReceivedSink;
   std::unique_ptr<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>> m_onPluginUpdateAvailableSink;
+  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>> m_onPatchUpdateDetectedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>> m_onPatchApplyCompletedSink;
 };
 }  // namespace UI
 
