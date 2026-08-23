@@ -136,28 +136,31 @@ std::string LocalizationManager::GetComponentLanguage(const std::string& compone
 }
 
 bool LocalizationManager::SetComponentLanguage(const std::string& componentName, const std::string& langCode) {
-  std::lock_guard lock(m_mutex);
-  if (LoadLanguageFile(componentName, langCode)) {
-    m_currentLanguages[componentName] = langCode;
-    if (componentName == FRAMEWORK_COMPONENT_NAME) {
-      OnFrameworkLanguageChanged.Call(componentName);
+  bool shouldNotify = false;
+  {
+    std::lock_guard lock(m_mutex);
+    if (LoadLanguageFile(componentName, langCode)) {
+      m_currentLanguages[componentName] = langCode;
+      shouldNotify = (componentName == FRAMEWORK_COMPONENT_NAME);
+    } else {
+      auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
+      logger->Warn("Translation file for '{}' not found for component '{}'. Attempting to load default '{}'.", langCode, componentName, DEFAULT_LANGUAGE);
+
+      if (langCode != DEFAULT_LANGUAGE && LoadLanguageFile(componentName, DEFAULT_LANGUAGE)) {
+        m_currentLanguages[componentName] = DEFAULT_LANGUAGE;
+        shouldNotify = (componentName == FRAMEWORK_COMPONENT_NAME);
+      } else {
+        logger->Error("Default translation file '{}.json' also not found for component '{}'. Localization will be disabled.", DEFAULT_LANGUAGE, componentName);
+        m_translations.erase(componentName);
+        return false;
+      }
     }
-    return true;
   }
 
-  auto logger = LoggerFactory::GetInstance().GetLogger("Localization");
-  logger->Warn("Translation file for '{}' not found for component '{}'. Attempting to load default '{}'.", langCode, componentName, DEFAULT_LANGUAGE);
-
-  if (langCode != DEFAULT_LANGUAGE) {
-    if (LoadLanguageFile(componentName, DEFAULT_LANGUAGE)) {
-      m_currentLanguages[componentName] = DEFAULT_LANGUAGE;
-      return true;  // Fallback succeeded
-    }
+  if (shouldNotify) {
+    OnFrameworkLanguageChanged.Call(componentName);
   }
-
-  logger->Error("Default translation file '{}.json' also not found for component '{}'. Localization will be disabled.", DEFAULT_LANGUAGE, componentName);
-  m_translations.erase(componentName);
-  return false;
+  return true;
 }
 
 bool LocalizationManager::LanguageFileExists(const std::string& componentName, const std::string& langCode) const {
