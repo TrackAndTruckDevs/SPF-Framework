@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 4.4)
 
 # Define our project.
-project(SPF VERSION 1.2.1 LANGUAGES CXX)
+project(SPF VERSION 1.2.2 LANGUAGES CXX)
 if(NOT PROJECT_VERSION_TWEAK)
   set(PROJECT_VERSION_TWEAK 0)
 endif()
