@@ -40,6 +40,11 @@ set_target_properties(${PLUGIN_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/${PLUGIN_NAME}"
 )
 
+
+# --- Code Signing (reuses cmake/sign.cmake — see root CMakeLists.txt) ---
+# Cert config: SPF_SIGN_CERT + SPF_SIGN_PASS in CMakeUserPresets.json.
+include(${CMAKE_SOURCE_DIR}/cmake/sign.cmake)
+spf_sign_target(${PLUGIN_NAME})
 # --- Deployment ---
 # Deploys to ATS and/or ETS2 game dirs via the shared macro.
 # Paths come from ATS_PLUGINS_DIR / ETS2_PLUGINS_DIR in CMakeUserPresets.json.

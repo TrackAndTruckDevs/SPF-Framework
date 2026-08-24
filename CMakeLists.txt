@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 4.4)
 # Define our project.
 project(SPF VERSION 1.2.2 LANGUAGES CXX)
 if(NOT PROJECT_VERSION_TWEAK)
-  set(PROJECT_VERSION_TWEAK 0)
+    set(PROJECT_VERSION_TWEAK 0)
 endif()
 add_compile_definitions(_AMD64_ NOMINMAX)
 
@@ -367,7 +367,6 @@ add_library(SPF SHARED
     "src/Utils/FinderLog.cpp"
     "src/Utils/HashUtils.cpp"
     "src/Utils/SystemUtils.cpp"
-    "src/Utils/AvMitigation.cpp"
     "src/GameConsole/GameConsole.cpp"
     "src/System/Keyboard.cpp"
     "src/Input/InputManager.cpp"
@@ -378,13 +377,6 @@ add_library(SPF SHARED
 set_target_properties(SPF PROPERTIES OUTPUT_NAME "spf-framework")
 if(MINGW)
     set_target_properties(SPF PROPERTIES PREFIX "")
-endif()
-
-# --- Anti-Virus Heuristic Mitigation ---
-# Aggressive size optimization (/Os) can sometimes produce code patterns 
-# that resemble packed malware or shellcode.
-if(MSVC)
-    target_compile_options(SPF PRIVATE "$<$<CONFIG:Release>:/Ot>")
 endif()
 
 # --- Linker Options ---
@@ -404,8 +396,18 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     )
 elseif(MINGW)
     # MinGW cross-compiler (GCC/Clang in GNU linker mode)
+    file(WRITE "${CMAKE_BINARY_DIR}/spf-framework.version" "{
+            global:
+                scs_telemetry_init;
+                scs_telemetry_shutdown;
+                scs_input_init;
+                scs_input_shutdown;
+            local:
+                *;
+            };
+        ")
     target_link_options(SPF PRIVATE
-        "-Wl,--export-all-symbols"
+        "-Wl,--version-script=${CMAKE_BINARY_DIR}/spf-framework.version"
         ${MINGW_STATIC_FLAGS}
         ${MINGW_WINPTHREAD_FLAGS}
     )
@@ -444,6 +446,20 @@ target_link_libraries(SPF PRIVATE
 
 # --- PLUGINS INCLUSION ---
 add_subdirectory(plugins)
+
+# --- Code Signing ---
+# Set SPF_SIGN_CERT to your .pfx path in CMakeUserPresets.json
+# Linux/WSL: osslsigncode is required: sudo apt install osslsigncode
+# Windows:   signtool is required — install Windows SDK (Visual Studio Installer → Individual Components → Windows 10/11 SDK)
+set(SPF_SIGN_CERT "" CACHE FILEPATH "Path to .pfx certificate (set in CMakeUserPresets.json)")
+set(SPF_SIGN_PASS "" CACHE STRING "Certificate password (empty if none)")
+
+# --- Reusable signing macro (see cmake/sign.cmake) ---
+# Config: set SPF_SIGN_CERT + SPF_SIGN_PASS in CMakeUserPresets.json.
+# Usage for plugins: add "include(${CMAKE_SOURCE_DIR}/cmake/sign.cmake)" + "spf_sign_target(${PLUGIN_NAME})".
+message(STATUS "  [SIGN]     ${SPF_SIGN_CERT}")
+include(sign)
+spf_sign_target(${PROJECT_NAME})
 
 # --- Automatic Deployment ---
 # Paths are set via CMakePresets.json / CMakeUserPresets.json:

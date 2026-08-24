@@ -1,15 +1,30 @@
 {
-  "version": 11,
+  "version": 12,
   "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
 
   "$comment": [
-    "User-specific CMake presets.",
+    "============================================================================",
+    "  TEMPLATE — copy to CMakeUserPresets.json and edit for your setup.",
     "",
-    "Edit the environment variables in `base-user-env` below",
-    "to set your game path and RC compiler paths.",
+    "  Usage:",
+    "    1. cp CMakeUserPresets.json.example CMakeUserPresets.json",
+    "    2. Fill in your paths in `base-user-env` below",
+    "    3. cmake --preset <your-preset> && cmake --build --preset <your-preset>",
     "",
-    "To add a new user preset, inherit from `base-user-env` and any",
-    "configurePreset from CMakePresets.json, then add it to the list."
+    "  Available presets (inherit from base-user-env):",
+    "    user-win-release | user-win-debug | user-win-relwithdebinfo | user-win-minsizerel",
+    "    user-ninja-release | user-ninja-debug | user-ninja-relwithdebinfo | user-ninja-minsizerel",
+    "    user-mingw-release | user-mingw-debug | user-mingw-relwithdebinfo | user-mingw-minsizerel",
+    "    user-mingw-make-release | user-mingw-make-debug | user-mingw-make-relwithdebinfo | user-mingw-make-minsizerel",
+    "",
+    "  ATS_PLUGINS_DIR and ETS2_PLUGINS_DIR example",
+    " 'F:/SteamLibrary/steamapps/common/American Truck Simulator/bin/win_x64/plugins' ",
+    " 'F:/SteamLibrary/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins' ",
+    "",
+    "  SPF_SIGN_CERT example",
+    " '$env{HOME}/.config/spf-certs/spf-cacert.pfx' ",
+    "",
+    "============================================================================"
   ],
 
   "configurePresets": [

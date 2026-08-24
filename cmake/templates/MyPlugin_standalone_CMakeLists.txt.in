@@ -10,6 +10,10 @@ cmake_minimum_required(VERSION 4.4)
 
 project(MyPlugin VERSION 1.0.0 LANGUAGES CXX)
 
+if(NOT PROJECT_VERSION_TWEAK)
+  set(PROJECT_VERSION_TWEAK 0)
+endif()
+
 add_compile_definitions(_AMD64_)
 
 # --- C++ Standard ---
@@ -94,8 +98,11 @@ endif()
 # )
 #
 # # Windows version resource (.rc file)
-# # See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
-# target_sources(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/version.rc")
+# See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
+if(WIN32 OR MINGW)
+    configure_file(version.rc.in version.rc @ONLY)
+    target_sources(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
+endif()
 # --- End of Optional Additions ---
 
 # --- Output Properties ---
@@ -104,6 +111,65 @@ set_target_properties(${PLUGIN_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/${PLUGIN_NAME}"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins/${PLUGIN_NAME}"
 )
+
+# --- Code Signing ---
+# Set SPF_SIGN_CERT to your .pfx path in CMakeUserPresets.json
+# Linux/WSL: osslsigncode is required: sudo apt install osslsigncode
+# Windows:   signtool is required — install Windows SDK (Visual Studio Installer → Individual Components → Windows 10/11 SDK)
+set(SPF_SIGN_CERT "" CACHE FILEPATH "Path to .pfx certificate (set in CMakeUserPresets.json)")
+set(SPF_SIGN_PASS "" CACHE STRING "Certificate password (empty if none)")
+
+message(STATUS "  [SIGN]     ${SPF_SIGN_CERT}")
+
+if(SPF_SIGN_CERT AND EXISTS "${SPF_SIGN_CERT}")
+    # Try osslsigncode first (works on Linux, WSL, macOS, and Windows if installed)
+    find_program(OSLSIGNCODE_EXECUTABLE osslsigncode)
+    if(OSLSIGNCODE_EXECUTABLE)
+        message(STATUS "           ✅ signing enabled (osslsigncode)")
+        set(_SIGN_ARGS sign -pkcs12 "${SPF_SIGN_CERT}")
+        if(SPF_SIGN_PASS)
+            list(APPEND _SIGN_ARGS -pass "${SPF_SIGN_PASS}")
+        endif()
+        list(APPEND _SIGN_ARGS
+            -in "$<TARGET_FILE:${PLUGIN_NAME}>"
+            -out "$<TARGET_FILE:${PLUGIN_NAME}>_signed"
+        )
+        add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+            COMMAND "${OSLSIGNCODE_EXECUTABLE}" ${_SIGN_ARGS}
+            COMMAND ${CMAKE_COMMAND} -E rename
+                "$<TARGET_FILE:${PLUGIN_NAME}>_signed"
+                "$<TARGET_FILE:${PLUGIN_NAME}>"
+            COMMENT "  ✅ signing: ${PLUGIN_NAME}.dll (Track'n'Truck Devs)"
+        )
+    else()
+        # Fallback: try signtool from Windows SDK
+        find_program(SIGNTOOL_EXECUTABLE signtool
+            HINTS
+                "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x64"
+                "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
+                "C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64"
+        )
+        if(SIGNTOOL_EXECUTABLE)
+            message(STATUS "           ✅ signing enabled (signtool)")
+            set(_SIGN_CMD "${SIGNTOOL_EXECUTABLE}" sign
+                /f "${SPF_SIGN_CERT}"
+                /td sha256 /fd sha256
+            )
+            if(SPF_SIGN_PASS)
+                list(APPEND _SIGN_CMD /p "${SPF_SIGN_PASS}")
+            endif()
+            list(APPEND _SIGN_CMD "$<TARGET_FILE:${PLUGIN_NAME}>")
+            add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+                COMMAND ${_SIGN_CMD}
+                COMMENT "  ✅ signing: ${PLUGIN_NAME}.dll (Track'n'Truck Devs)"
+            )
+        else()
+            message(WARNING "  ⚠️  no signing tool found (install osslsigncode or signtool) — DLL will NOT be signed")
+        endif()
+    endif()
+else()
+    message(STATUS "           ⚠️  no cert set — signing skipped")
+endif()
 
 # --- Deployment ---
 # Paths are set via CMakePresets.json / CMakeUserPresets.json:
@@ -231,7 +297,7 @@ message(STATUS "  ==================== END CONFIGURATION =================")
 if(CMAKE_EXPORT_COMPILE_COMMANDS AND NOT CMAKE_GENERATOR MATCHES "Visual Studio")
     string(COMPARE NOTEQUAL "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/build" NON_DEFAULT_BUILD)
     if(NON_DEFAULT_BUILD)
-        set(CLANGD_LINK "${CMAKE_SOURCE_DIR}/build/compile_commands.json")
+        set(CLANGD_LINK "${CMAKE_SOURCE_DIR}/compile_commands.json")
         message(STATUS "  clangd:    synced after build → ${CLANGD_LINK}")
         add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
