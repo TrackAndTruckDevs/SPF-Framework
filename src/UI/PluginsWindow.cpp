@@ -15,6 +15,8 @@
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/Utils/Windows.hpp"
 
+#include "fmt/base.h"
+#include "fmt/format.h"
 #include "imgui.h"
 
 #include <algorithm>
@@ -155,7 +157,7 @@ void PluginsWindow::RenderContent() {
         float updateWidth = 0.0f;
         std::string updateText;
         if (showUpdate) {
-          updateText = loc.GetFormatted("framework", m_locStatusUpdateAvailable, updateInfo->latestVersion);
+          updateText = fmt::vformat(m_locStatusUpdateAvailable, fmt::make_format_args(updateInfo->latestVersion));
           float updateTextWidth = Typography::CalcTextSize(updateText.c_str(), TextStyle::Bold()).x;
           float githubBtnWidth = Typography::CalcTextSize(ICON_FA_GITHUB).x + framePaddingX * 2.0f;
           updateWidth = updateTextWidth + spacing + githubBtnWidth;
