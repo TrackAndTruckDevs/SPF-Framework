@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraDebugAnimation
  * @brief Provides a high-level, clean API for controlling the debug camera animation system.
@@ -92,5 +88,4 @@ class GameCameraDebugAnimation {
    */
   void UpdateAnimation(float dt);
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

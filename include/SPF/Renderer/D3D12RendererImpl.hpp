@@ -1,9 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/RendererBase.hpp"
+#include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <cstddef>
@@ -16,21 +16,11 @@
 #include <winnt.h>
 #include <wrl/client.h>  // For ComPtr
 
-SPF_NS_BEGIN
-
 // Use ComPtr for managing COM object lifetimes
 template <typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-// Forward declarations are already handled by the includes
-namespace UI {
-class UIManager;
-}
-namespace Logging {
-class Logger;
-}  // namespace Logging
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 /**
  * @class D3D12RendererImpl
@@ -98,6 +88,4 @@ class D3D12RendererImpl : public RendererBase {
   Utils::Sink<void(IDXGISwapChain3* swapChain, UINT width, UINT height)> m_onAfterResizeSink;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/EnvironmentApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Environment_API.h"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -23,8 +21,7 @@ struct SPF_Environment_Handle {
   std::string pluginName;
 };
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 /**
  * @brief Helper function to safely copy a string into a C-style buffer.
@@ -203,5 +200,4 @@ void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
   api->Env_GetActiveProfileType = &EnvironmentApi::Env_GetActiveProfileType;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

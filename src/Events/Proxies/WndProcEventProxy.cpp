@@ -1,7 +1,5 @@
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/EventProxyBase.hpp"
 #include "SPF/Events/UIEvents.hpp"
@@ -29,9 +27,7 @@
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-SPF_NS_BEGIN
-
-namespace Events::Proxies {
+namespace SPF::Events::Proxies {
 using namespace SPF::Logging;
 using namespace SPF::Rendering;
 using namespace SPF::UI;
@@ -209,6 +205,4 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
   SetBlockWndProc(blockMessage);
 }
-}  // namespace Events::Proxies
-
-SPF_NS_END
+}  // namespace SPF::Events::Proxies

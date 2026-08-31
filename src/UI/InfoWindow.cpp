@@ -1,7 +1,5 @@
 #include "SPF/UI/InfoWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -18,8 +16,7 @@
 #include <stringapiset.h>
 #include <winnls.h>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace System;
 using namespace Localization;
 
@@ -241,5 +238,4 @@ void InfoWindow::RenderStatusTab() {
   Typography::Text(TextStyle::Regular().Color(status.isSteamOverlayActive ? Colors::GREEN : Colors::GRAY), "%s", status.isSteamOverlayActive ? m_locStatusDllLoaded.c_str() : m_locStatusDllNotLoaded.c_str());
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

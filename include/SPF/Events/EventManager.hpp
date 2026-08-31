@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventProxyBase.hpp"
 #include "SPF/Events/PluginEvents.hpp"
@@ -14,14 +12,11 @@
 #include <memory>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 class Renderer;  // Forward-declaration
 }
+namespace SPF::Events {
 
-namespace Events {
-// Forward-declaration
 class EventManager;
 
 // Structure providing controlled access to EventManager signals
@@ -82,13 +77,13 @@ class EventManager {
     Utils::Signal<void(const UI::RequestExecuteCommand&)> OnRequestExecuteCommand;
     Utils::Signal<void(const UI::RequestUpdateCheck&)> OnRequestUpdateCheck;
     Utils::Signal<void(const UI::RequestPatronsFetch&)> OnRequestPatronsFetch;
-    Utils::Signal<void(const System::OnRequestTrackUsage&)> OnRequestTrackUsage;
+    Utils::Signal<void(const OnRequestTrackUsage&)> OnRequestTrackUsage;
 
     // --- System Events (Completion/Notification) ---
-    Utils::Signal<void(const System::OnUpdateCheckCompleted&)> OnUpdateCheckCompleted;
-    Utils::Signal<void(const System::OnPatronsFetchCompleted&)> OnPatronsFetchCompleted;
-    Utils::Signal<void(const System::OnUsageTrackingCompleted&)> OnUsageTrackingCompleted;
-    Utils::Signal<void(const System::OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
+    Utils::Signal<void(const OnUpdateCheckCompleted&)> OnUpdateCheckCompleted;
+    Utils::Signal<void(const OnPatronsFetchCompleted&)> OnPatronsFetchCompleted;
+    Utils::Signal<void(const OnUsageTrackingCompleted&)> OnUsageTrackingCompleted;
+    Utils::Signal<void(const OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
 
     // --- SCS Input Events ---
     Utils::Signal<void(const Input::InputDeviceActivityChanged&)> OnInputDeviceActivityChanged;
@@ -127,6 +122,4 @@ class EventManager {
   // Method to get a dispatcher through which other systems subscribe to events
   EventDispatcher CreateEventDispatcher();
 };
-}  // namespace Events
-
-SPF_NS_END
+}  // namespace SPF::Events

@@ -1,13 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstddef>
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraDebugState
  * @brief Manages the functionality related to the 'animated' debug camera mode,
@@ -76,5 +72,4 @@ class GameCameraDebugState {
 
   static constexpr size_t NATIVE_STATE_SIZE = 0x24;  // 36 bytes (9 floats)
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

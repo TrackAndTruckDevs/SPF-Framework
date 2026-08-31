@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"  // For Input::PressType
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/Keyboard.hpp"
@@ -14,8 +12,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 class KeyboardInput : public IBindableInput {
  public:
   explicit KeyboardInput(const nlohmann::ordered_json& config);
@@ -37,5 +34,4 @@ class KeyboardInput : public IBindableInput {
   System::Keyboard m_key;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

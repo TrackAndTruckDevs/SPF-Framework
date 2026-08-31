@@ -1,30 +1,15 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventProxyBase.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Renderer/Renderer.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <memory>
 #include <minwindef.h>
 #include <windef.h>
 
-// Forward-declarations
-SPF_NS_BEGIN
-namespace Rendering {
-class Renderer;
-}
-namespace Logging {
-class Logger;
-}
-namespace Events {
-class EventManager;
-}
-SPF_NS_END
-
-SPF_NS_BEGIN
-
-namespace Events::Proxies {
+namespace SPF::Events::Proxies {
 
 class WndProcEventProxy : public EventProxyBase {
  public:
@@ -44,6 +29,4 @@ class WndProcEventProxy : public EventProxyBase {
   Utils::Sink<void(HWND, UINT, WPARAM, LPARAM)> m_openGLSink;
 };
 
-}  // namespace Events::Proxies
-
-SPF_NS_END
+}  // namespace SPF::Events::Proxies

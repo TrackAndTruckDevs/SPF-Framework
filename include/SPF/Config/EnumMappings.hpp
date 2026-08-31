@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 
 #include <map>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 // Enum definitions that are used across UI and backend for configuration.
 // Moved here for centralization.
 
@@ -27,19 +23,15 @@ struct PressTypeInfo {
   std::string loc_key;
 };
 
-static inline const std::map<Input::PressType, PressTypeInfo> PressTypeMap = {{Input::PressType::Short, {"short", "enums.press_type.short"}},
-                                                                              {Input::PressType::Long, {"long", "enums.press_type.long"}}};
+static inline const std::map<Input::PressType, PressTypeInfo> PressTypeMap = {{Input::PressType::Short, {"short", "enums.press_type.short"}}, {Input::PressType::Long, {"long", "enums.press_type.long"}}};
 
 struct ConsumptionPolicyInfo {
   std::string string_id;
   std::string loc_key;
 };
 
-static inline const std::map<ConsumptionPolicy, ConsumptionPolicyInfo> ConsumptionPolicyMap = {
-  {ConsumptionPolicy::Never, {"never", "enums.consumption_policy.never"}},
-  {ConsumptionPolicy::OnUIFocus, {"on_ui_focus", "enums.consumption_policy.on_ui_focus"}},
-  {ConsumptionPolicy::Always, {"always", "enums.consumption_policy.always"}},
-  {ConsumptionPolicy::Manual, {"manual", "enums.consumption_policy.manual"}}};
-}  // namespace Config
-
-SPF_NS_END
+static inline const std::map<ConsumptionPolicy, ConsumptionPolicyInfo> ConsumptionPolicyMap = {{ConsumptionPolicy::Never, {"never", "enums.consumption_policy.never"}},
+                                                                                               {ConsumptionPolicy::OnUIFocus, {"on_ui_focus", "enums.consumption_policy.on_ui_focus"}},
+                                                                                               {ConsumptionPolicy::Always, {"always", "enums.consumption_policy.always"}},
+                                                                                               {ConsumptionPolicy::Manual, {"manual", "enums.consumption_policy.manual"}}};
+}  // namespace SPF::Config

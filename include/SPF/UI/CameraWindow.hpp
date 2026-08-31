@@ -1,21 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-// Forward-declare the service it depends on
-namespace GameCamera {
-class GameCameraManager;
-}
-
-namespace UI {
+namespace SPF::UI {
 /**
  * @class CameraWindow
  * @brief A UI window for testing and demonstrating the GameCamera service.
@@ -27,8 +18,6 @@ class CameraWindow : public BaseWindow {
   CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService);
 
  protected:
-
-
   void RenderContent() override;
   void RefreshLocalization() override;
 
@@ -432,5 +421,4 @@ class CameraWindow : public BaseWindow {
   std::string m_locStatusUserControlled;
   std::string m_locCaptureSelectedVehicle;
 };
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

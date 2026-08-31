@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraDebugState.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraFree.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"
@@ -12,9 +10,7 @@
 #include <cstdint>
 #include <cstring>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraDebugState::GameCameraDebugState() = default;
 
 void GameCameraDebugState::SaveState() {
@@ -419,5 +415,4 @@ void GameCameraDebugState::DeleteStateInMemory(int index) {
     logger->Info("State count decremented. New count: {}.", stateCount - 1);
   }
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

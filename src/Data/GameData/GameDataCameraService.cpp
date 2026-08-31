@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/BehindCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/BumperCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/CabinCameraDataFinder.hpp"
@@ -26,8 +24,7 @@
 #include <cstring>
 #include <memory>
 
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 GameDataCameraService::GameDataCameraService() { WorldServiceRegistry::Get().Register(this); }
 
@@ -353,5 +350,4 @@ void GameDataCameraService::Reset() {
     finder->Reset();
   }
 }
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

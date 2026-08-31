@@ -1,7 +1,5 @@
 #include "SPF/UI/SettingsWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -46,9 +44,7 @@
 #include <sec_api/string_s.h>
 #endif
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 using namespace SPF::Logging;
 using namespace SPF::System;
@@ -2163,6 +2159,4 @@ void SettingsWindow::OnInputCaptureConflict(const Input::InputCaptureConflict& e
   // The conflict popup will handle closing itself or returning to the capture state.
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
@@ -12,9 +10,7 @@
 #include <string>
 #include <string_view>
 
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 class FinderLog {
  public:
@@ -224,5 +220,4 @@ class FinderLog {
   bool m_finished = false;
 };
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

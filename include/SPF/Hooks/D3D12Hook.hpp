@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
 #include <minwindef.h>
@@ -12,9 +10,7 @@ struct IDXGISwapChain3;  // Or IDXGISwapChain4 for more advanced features if nee
 struct ID3D12Device;
 struct ID3D12CommandQueue;
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 
 /**
  * @class D3D12Hook
@@ -48,6 +44,4 @@ class D3D12Hook {
   D3D12Hook() = default;
 };
 
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraDebug.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/DebugCameraMode.hpp"
 #include "SPF/GameCamera/DebugHudPosition.hpp"
@@ -9,9 +7,7 @@
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 // Define the function signature for the SetDebugCameraMode function
 using SetDebugCameraModeFunc = void(__fastcall*)(uintptr_t, int);
 
@@ -709,5 +705,4 @@ uintptr_t GameCameraDebug::GetHoveredObjectPtr() const {
 //   cachedTextures = currentTextures;
 //   return cachedTextures;
 // }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

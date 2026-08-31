@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/HooksApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/SPF_API/SPF_Hooks_API.h"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -11,8 +9,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 void HooksApi::FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister) {
   if (!api) return;
@@ -146,5 +143,4 @@ void HooksApi::Memory_WriteVector3(uintptr_t address, float x, float y, float z)
   }
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

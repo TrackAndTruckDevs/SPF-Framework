@@ -1,13 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @brief Manages hooks for functions in user32.dll.
  *
@@ -44,6 +39,4 @@ class User32Hook {
    */
   static void SendVirtualKeyRelease(uint32_t hardwareCode);
 };
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

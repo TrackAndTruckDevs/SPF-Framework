@@ -1,10 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 // Represents abstract gamepad buttons and axes, independent of the underlying API (XInput, DirectInput).
 enum class GamepadButton {
   Unknown,
@@ -68,6 +64,4 @@ enum class GamepadButton {
   POV3Left,
   POV3Right
 };
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

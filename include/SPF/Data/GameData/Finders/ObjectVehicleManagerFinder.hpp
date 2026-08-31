@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/IObjectDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 /**
  * @class ObjectManagerFinder
@@ -18,5 +14,4 @@ class ObjectManagerFinder : public IObjectDataFinder {
   virtual bool TryFindOffsets(GameObjectVehicleService& owner) override;
 };
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

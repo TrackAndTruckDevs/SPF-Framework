@@ -1,11 +1,13 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
+#include "SPF/Events/ConfigEvents.hpp"
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
 #include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/UI/BaseWindow.hpp"
+#include "SPF/Utils/Signal.hpp"
 
 #include "nlohmann/json_fwd.hpp"
 
@@ -17,33 +19,12 @@
 #include <utility>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Events {
-class EventManager;
-namespace UI {
-struct FocusComponentInSettingsWindow;
-}
-namespace Config {
-struct OnKeybindsModified;
-}
-}  // namespace Events
-namespace Utils {
-template <typename>
-class Sink;
-}
-
-namespace UI {
+namespace SPF::UI {
 class SettingsWindow : public BaseWindow {
  public:
-  SettingsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, const std::vector<std::string>& logLevels,
-                 Events::EventManager& eventManager);
+  SettingsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, const std::vector<std::string>& logLevels, Events::EventManager& eventManager);
 
  protected:
-
-
   void RenderContent() override;
   void RefreshLocalization() override;
 
@@ -169,6 +150,4 @@ class SettingsWindow : public BaseWindow {
   bool m_keybindsDrawerExpanded = false;
   bool m_keybindsDrawerDragging = false;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

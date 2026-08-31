@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraDebug.hpp"
 #include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
 #include "SPF/GameCamera/GameCameraDebugState.hpp"
@@ -15,9 +13,7 @@
 #include <memory>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraManager
  * @brief A high-level service for managing and controlling all game cameras.
@@ -88,5 +84,4 @@ class GameCameraManager : public Hooks::IHook {
   std::unique_ptr<GameCameraDebugState> m_debugStateCamera;
   std::unique_ptr<GameCameraDebugAnimation> m_debugAnimationController;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

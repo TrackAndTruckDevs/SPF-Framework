@@ -1,14 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_GameWorld_API.h"
 
 #include <cstddef>
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class GameWorldApi {
  public:
   static void FillGameWorldApi(SPF_GameWorld_API* gameworld_api);
@@ -71,5 +68,4 @@ class GameWorldApi {
   static uint32_t T_GW_GetCityTimeZone(uint32_t index);
   static bool T_GW_SetCityTimeZone(uint32_t index, uint32_t val);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

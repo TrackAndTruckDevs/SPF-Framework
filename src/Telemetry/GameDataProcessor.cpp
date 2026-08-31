@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/GameDataProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
@@ -12,8 +10,7 @@
 #include <cstdint>
 #include <cstring>
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 using namespace SPF::Logging;
 
 GameDataProcessor::GameDataProcessor(Logger& logger, GameContext& context, Events::EventManager& eventManager) : m_logger(logger), m_context(context), m_eventManager(eventManager) {}
@@ -129,5 +126,4 @@ void GameDataProcessor::RecalculateRealTimeDurations() {
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

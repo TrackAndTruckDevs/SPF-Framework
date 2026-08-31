@@ -1,13 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Config_API.h"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class ConfigApi {
  public:
   static void FillConfigApi(SPF_Config_API* api);
@@ -35,5 +32,4 @@ class ConfigApi {
   static SPF_Config_Handle* Cfg_CreateCustomContext(const char* filePath);
   static void Cfg_SetAutoSave(SPF_Config_Handle* h, bool enabled);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

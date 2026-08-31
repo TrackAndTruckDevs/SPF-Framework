@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Game.hpp"
 
 #include <chrono>
@@ -18,14 +16,13 @@
 #include <minwindef.h>
 #include <string>
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 
 enum class InstallationStatus {
-  SameVersion,   // Everything is up to date
-  NewInstall,    // First run (no config file)
-  Updated,       // Stored version is lower than current or missing
-  Downgraded     // Stored version is newer than current
+  SameVersion,  // Everything is up to date
+  NewInstall,   // First run (no config file)
+  Updated,      // Stored version is lower than current or missing
+  Downgraded    // Stored version is newer than current
 };
 
 struct FrameworkInfo {
@@ -112,5 +109,4 @@ class EnvironmentManager {
   const std::chrono::milliseconds CACHE_TTL{5000};
 };
 
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

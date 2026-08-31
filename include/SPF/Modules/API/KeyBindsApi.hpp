@@ -1,11 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_KeyBinds_API.h"
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class KeyBindsApi {
  public:
   static void FillKeyBindsApi(SPF_KeyBinds_API* api);
@@ -27,12 +24,10 @@ class KeyBindsApi {
   static SPF_AccumulatorMode Kbind_GetBindingAccumulatorMode(SPF_KeyBinds_Handle* h, const char* actionName, int index);
   static int Kbind_GetBindingName(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size);
 
-  static void Kbind_RegisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName, const char* titleKey, const char* descKey, SPF_Keybind_Callback_Ex callback,
-                                           void* user_data);
+  static void Kbind_RegisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName, const char* titleKey, const char* descKey, SPF_Keybind_Callback_Ex callback, void* user_data);
 
   static void Kbind_UnregisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName);
   static int Kbind_GetActionCount(SPF_KeyBinds_Handle* h);
   static int Kbind_GetActionNameByIndex(SPF_KeyBinds_Handle* h, int index, char* out_buffer, int buffer_size);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

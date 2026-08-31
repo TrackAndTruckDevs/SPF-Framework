@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"  // For Error logging
 #include "SPF/Modules/PluginManager.hpp"  // For GetInstance
 #include "SPF/SPF_API/SPF_UI_API.h"       // For SPF_DrawCallback and SPF_Window_Flags
@@ -14,8 +12,7 @@
 #include <minwindef.h>
 #include <string>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 /**
  * @brief A window implementation used as a proxy for windows declared by plugins.
  *
@@ -47,8 +44,7 @@ class PluginProxyWindow : public BaseWindow {
   void RenderContent() override {
     if (m_hasCrashed) {
       ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "CRITICAL: Window rendering disabled.");
-      ImGui::TextWrapped("The plugin '%s' caused an access violation (crash) during UI execution. This usually happens due to ABI mismatch or uninitialized pointers.",
-                         m_componentName.c_str());
+      ImGui::TextWrapped("The plugin '%s' caused an access violation (crash) during UI execution. This usually happens due to ABI mismatch or uninitialized pointers.", m_componentName.c_str());
       ImGui::Spacing();
       if (Button("Try to Reload Rendering")) {
         m_hasCrashed = false;
@@ -63,8 +59,7 @@ class PluginProxyWindow : public BaseWindow {
       if (!InvokeSafe(builder, &exceptionCode)) {
         auto logger = Logging::LoggerFactory::GetInstance().GetLogger("UIManager");
         if (logger) {
-          logger->Error(
-            "Plugin '{}' crashed during UI rendering (Exception: 0x{:08X}). The framework intercepted the crash to prevent game instability.", m_componentName, exceptionCode);
+          logger->Error("Plugin '{}' crashed during UI rendering (Exception: 0x{:08X}). The framework intercepted the crash to prevent game instability.", m_componentName, exceptionCode);
         }
         m_hasCrashed = true;
       }
@@ -115,5 +110,4 @@ class PluginProxyWindow : public BaseWindow {
   SPF_WindowFlags m_spfFlags = SPF_WINDOW_FLAG_NONE;
   bool m_hasCrashed = false;
 };
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

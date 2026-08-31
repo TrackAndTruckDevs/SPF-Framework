@@ -1,11 +1,8 @@
 #include "SPF/Handles/GameLogCallbackHandle.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Modules/GameLogEventManager.hpp"  // For GetInstance()
 
-SPF_NS_BEGIN
-namespace Handles {
+namespace SPF::Handles {
 
 GameLogCallbackHandle::GameLogCallbackHandle(GameLogCallback callback, void* user_data) : callback(callback), user_data(user_data) {
   // No action needed here, registration happens in GameLogApi::T_RegisterCallback
@@ -16,5 +13,4 @@ GameLogCallbackHandle::~GameLogCallbackHandle() {
   Modules::GameLogEventManager::GetInstance().UnregisterCallback(callback, user_data);
 }
 
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

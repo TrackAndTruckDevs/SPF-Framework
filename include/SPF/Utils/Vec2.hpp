@@ -1,10 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 /**
  * @brief A simple 2D vector.
@@ -25,6 +21,4 @@ using Vec2f = Vec2<float>;
 using Vec2i = Vec2<int>;
 using Vec2u = Vec2<unsigned int>;
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

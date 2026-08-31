@@ -1,7 +1,5 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -18,9 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Localization {
+namespace SPF::Localization {
 using namespace SPF::Logging;
 using namespace SPF::System;
 
@@ -305,5 +301,4 @@ bool LocalizationManager::OnSettingChanged(const std::string& systemName, const 
 
   return true;
 }
-}  // namespace Localization
-SPF_NS_END
+}  // namespace SPF::Localization

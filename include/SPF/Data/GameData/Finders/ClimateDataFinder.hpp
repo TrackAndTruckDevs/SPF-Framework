@@ -5,13 +5,9 @@
 
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/IClimateDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 /**
  * @class ClimateDataFinder
@@ -30,5 +26,4 @@ class ClimateDataFinder : public IClimateDataFinder {
   const char* GetName() const override { return "ClimateDataFinder"; }
 };
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

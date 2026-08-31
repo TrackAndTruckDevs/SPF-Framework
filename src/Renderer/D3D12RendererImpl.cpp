@@ -1,7 +1,5 @@
 #include "SPF/Renderer/D3D12RendererImpl.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/D3D12Hook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
@@ -30,8 +28,7 @@
 #include <winnt.h>
 #include <winscard.h>
 
-SPF_NS_BEGIN
-namespace Rendering {
+namespace SPF::Rendering {
 
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
@@ -540,5 +537,4 @@ void D3D12RendererImpl::WaitForLastSubmittedFrame() {
   WaitForSingleObject(m_fenceEvent, INFINITE);
 }
 
-}  // namespace Rendering
-SPF_NS_END
+}  // namespace SPF::Rendering

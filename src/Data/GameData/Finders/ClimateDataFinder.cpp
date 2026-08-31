@@ -1,15 +1,12 @@
 #include "SPF/Data/GameData/Finders/ClimateDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 namespace {
 
@@ -725,14 +722,12 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
     getAndSetEnv("thunderstorm_probability", [&](auto v) { owner.SetThunderstormProbabilityOffset(v); });
   }
 
-  m_isReady = all_found &&
-              (owner.GetUpdateFnAddr() != 0 && owner.GetSetWeatherModeFnAddr() != 0 && owner.GetRemainingBadWeatherOffset() != 0 && owner.GetClimatePtrOffset() != 0 && owner.GetClimateUnitIdOffset() != 0 &&
-               owner.GetClimateArrayOffset() != 0 && owner.GetClimateCountOffset() != 0 && owner.GetActiveProfileIndexOffset() != 0 && owner.GetNextProfileIndexOffset() != 0 && owner.GetContainerNiceOffset() != 0 &&
-               owner.GetContainerBadOffset() != 0 && owner.GetContainerCountOffset() != 0 && owner.GetProfilesArrayOffset() != 0 && owner.GetSunAngleOffset() != 0 && owner.GetWeatherBlendProgressFnAddr() != 0 &&
-               owner.GetBadWeatherFactorPtr() != 0);
+  m_isReady =
+    all_found && (owner.GetUpdateFnAddr() != 0 && owner.GetSetWeatherModeFnAddr() != 0 && owner.GetRemainingBadWeatherOffset() != 0 && owner.GetClimatePtrOffset() != 0 && owner.GetClimateUnitIdOffset() != 0 && owner.GetClimateArrayOffset() != 0 &&
+                  owner.GetClimateCountOffset() != 0 && owner.GetActiveProfileIndexOffset() != 0 && owner.GetNextProfileIndexOffset() != 0 && owner.GetContainerNiceOffset() != 0 && owner.GetContainerBadOffset() != 0 &&
+                  owner.GetContainerCountOffset() != 0 && owner.GetProfilesArrayOffset() != 0 && owner.GetSunAngleOffset() != 0 && owner.GetWeatherBlendProgressFnAddr() != 0 && owner.GetBadWeatherFactorPtr() != 0);
 
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

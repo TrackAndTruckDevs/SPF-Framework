@@ -1,7 +1,5 @@
 #include "SPF/Modules/JoystickAxisInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Modules/IBindableInput.hpp"
 
 #include "fmt/format.h"
@@ -14,8 +12,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 JoystickAxisInput::JoystickAxisInput(const nlohmann::ordered_json& config) {
   if (config.contains("key")) {
@@ -176,5 +173,4 @@ std::string JoystickAxisInput::GetDisplayName() const { return fmt::format("Joys
 
 bool JoystickAxisInput::IsValid() const { return m_axisIndex >= 0 && m_axisIndex < 16; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

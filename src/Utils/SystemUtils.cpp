@@ -1,7 +1,5 @@
 #include "SPF/Utils/SystemUtils.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include <corecrt.h>
 #include <cstddef>
 #include <libloaderapi.h>
@@ -20,9 +18,7 @@
 // Define RtlGetVersion prototype if not available via headers
 typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 std::string SystemUtils::GetSystemLocaleName() {
   wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
@@ -63,6 +59,4 @@ std::string SystemUtils::GetSystemArchitecture() {
   return "x64";
 }
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

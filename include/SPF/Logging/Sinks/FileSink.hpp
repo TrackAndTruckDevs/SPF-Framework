@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
@@ -10,9 +8,7 @@
 #include <fstream>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 
 /**
  * @brief A log sink that writes all messages to the specified file.
@@ -54,6 +50,4 @@ class FileSink : public Logging::ILogSink {
   std::ofstream m_file;
 };
 
-}  // namespace Logging::Sinks
-
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

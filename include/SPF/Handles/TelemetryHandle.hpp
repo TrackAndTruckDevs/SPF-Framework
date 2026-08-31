@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
 #include "SPF/Modules/API/TelemetryApi.hpp"  // Include for BaseSubscriptionHandler
 
@@ -9,9 +7,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Handles {
+namespace SPF::Handles {
 class TelemetryHandle : public IHandle {
  public:
   const std::string pluginName;
@@ -22,5 +18,4 @@ class TelemetryHandle : public IHandle {
   // Using unique_ptr to BaseSubscriptionHandler allows polymorphism and RAII.
   std::vector<std::unique_ptr<Modules::API::TelemetryApi::BaseSubscriptionHandler>> m_subscriptionHandlers;
 };
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

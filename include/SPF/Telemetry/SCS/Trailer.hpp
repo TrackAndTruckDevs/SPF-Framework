@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/SCS/Common.hpp"
 
 #include "scssdk_value.h"
@@ -10,10 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace SPF::Telemetry::SCS {
 
-SPF_NS_BEGIN
-namespace Telemetry {
-namespace SCS {
 struct TrailerConstants {
   std::string id;
   std::string cargo_accessory_id;
@@ -49,6 +45,4 @@ struct Trailer {
   TrailerData data;
   bool channels_registered = false;  // Internal flag for the processor
 };
-}  // namespace SCS
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry::SCS

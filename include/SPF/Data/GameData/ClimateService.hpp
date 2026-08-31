@@ -1,19 +1,15 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
+#include "SPF/Utils/Vec2.hpp"
+#include "SPF/Utils/Vec3.hpp"
 
 #include <cstdint>
 #include <memory>
 #include <string>
-#include "SPF/Utils/Vec2.hpp"
-#include "SPF/Utils/Vec3.hpp"
-
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 // Forward declarations
 class IClimateDataFinder;
@@ -264,45 +260,45 @@ class ClimateService : public IWorldScopedService {
   static ProfileRef Profile(uint64_t index, bool isBad);
 
   // ─── Sun Profile Attribute Macros (ProfileRef only — no overloads) ─────
-#define SPF_FLOAT_VAR_ATTR(api, member) \
-  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); } \
-  float Get##api(ProfileRef prof) { return GetProfileFloat(m_##member##Offset, prof); } \
-  void Set##api(ProfileRef prof, float val) { SetProfileFloat(m_##member##Offset, prof, val); } \
-  float Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileFloatByIndex(m_##member##Offset, prof, varIdx); } \
+#define SPF_FLOAT_VAR_ATTR(api, member)                                                                                                  \
+  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); }                                        \
+  float Get##api(ProfileRef prof) { return GetProfileFloat(m_##member##Offset, prof); }                                                  \
+  void Set##api(ProfileRef prof, float val) { SetProfileFloat(m_##member##Offset, prof, val); }                                          \
+  float Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileFloatByIndex(m_##member##Offset, prof, varIdx); }         \
   void Set##api##ByIndex(ProfileRef prof, uint64_t varIdx, float val) { SetProfileFloatByIndex(m_##member##Offset, prof, varIdx, val); } \
-  float GetBlended##api() { return GetBlendedFloat(m_##member##Offset); } \
+  float GetBlended##api() { return GetBlendedFloat(m_##member##Offset); }                                                                \
   void SetBlended##api(float val, float minVal, float maxVal) { SetBlendedFloat(m_##member##Offset, val, minVal, maxVal); }
 
-#define SPF_VEC3_ATTR(api, member) \
-  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); } \
-  Utils::Vector3 Get##api(ProfileRef prof) { return GetProfileVec3(m_##member##Offset, prof); } \
-  void Set##api(ProfileRef prof, const Utils::Vector3& val) { SetProfileVec3(m_##member##Offset, prof, val); } \
-  Utils::Vector3 Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileVec3ByIndex(m_##member##Offset, prof, varIdx); } \
+#define SPF_VEC3_ATTR(api, member)                                                                                                                      \
+  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); }                                                       \
+  Utils::Vector3 Get##api(ProfileRef prof) { return GetProfileVec3(m_##member##Offset, prof); }                                                         \
+  void Set##api(ProfileRef prof, const Utils::Vector3& val) { SetProfileVec3(m_##member##Offset, prof, val); }                                          \
+  Utils::Vector3 Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileVec3ByIndex(m_##member##Offset, prof, varIdx); }                \
   void Set##api##ByIndex(ProfileRef prof, uint64_t varIdx, const Utils::Vector3& val) { SetProfileVec3ByIndex(m_##member##Offset, prof, varIdx, val); } \
-  Utils::Vector3 GetBlended##api() { return GetBlendedVec3(m_##member##Offset); } \
+  Utils::Vector3 GetBlended##api() { return GetBlendedVec3(m_##member##Offset); }                                                                       \
   void SetBlended##api(const Utils::Vector3& val, float maxComponent) { SetBlendedVec3(m_##member##Offset, val, maxComponent); }
 
-#define SPF_INT_VAR_ATTR(api, member) \
-  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); } \
-  int32_t Get##api(ProfileRef prof) { return GetProfileInt(m_##member##Offset, prof); } \
-  void Set##api(ProfileRef prof, int32_t val) { SetProfileInt(m_##member##Offset, prof, val); } \
+#define SPF_INT_VAR_ATTR(api, member)                                                                                            \
+  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); }                                \
+  int32_t Get##api(ProfileRef prof) { return GetProfileInt(m_##member##Offset, prof); }                                          \
+  void Set##api(ProfileRef prof, int32_t val) { SetProfileInt(m_##member##Offset, prof, val); }                                  \
   int32_t Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileIntByIndex(m_##member##Offset, prof, varIdx); } \
   void Set##api##ByIndex(ProfileRef prof, uint64_t varIdx, int32_t val) { SetProfileIntByIndex(m_##member##Offset, prof, varIdx, val); }
 
-#define SPF_TEXTURE_ATTR(api, member) \
-  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); } \
-  std::string Get##api(ProfileRef prof) { return GetProfileTexture(m_##member##Offset, prof); } \
-  void Set##api(ProfileRef prof, const std::string& val) { SetProfileTexture(m_##member##Offset, prof, val); } \
+#define SPF_TEXTURE_ATTR(api, member)                                                                                                    \
+  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); }                                        \
+  std::string Get##api(ProfileRef prof) { return GetProfileTexture(m_##member##Offset, prof); }                                          \
+  void Set##api(ProfileRef prof, const std::string& val) { SetProfileTexture(m_##member##Offset, prof, val); }                           \
   std::string Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileTextureByIndex(m_##member##Offset, prof, varIdx); } \
   void Set##api##ByIndex(ProfileRef prof, uint64_t varIdx, const std::string& val) { SetProfileTextureByIndex(m_##member##Offset, prof, varIdx, val); }
 
-#define SPF_VEC2_ATTR(api, member) \
-  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); } \
-  Utils::Vec2f Get##api(ProfileRef prof) { return GetProfileVec2(m_##member##Offset, prof); } \
-  void Set##api(ProfileRef prof, const Utils::Vec2f& val) { SetProfileVec2(m_##member##Offset, prof, val); } \
-  Utils::Vec2f Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileVec2ByIndex(m_##member##Offset, prof, varIdx); } \
+#define SPF_VEC2_ATTR(api, member)                                                                                                                    \
+  uint64_t Get##api##Count(ProfileRef prof) { return GetProfileCount(m_##member##Offset, prof); }                                                     \
+  Utils::Vec2f Get##api(ProfileRef prof) { return GetProfileVec2(m_##member##Offset, prof); }                                                         \
+  void Set##api(ProfileRef prof, const Utils::Vec2f& val) { SetProfileVec2(m_##member##Offset, prof, val); }                                          \
+  Utils::Vec2f Get##api##ByIndex(ProfileRef prof, uint64_t varIdx) { return GetProfileVec2ByIndex(m_##member##Offset, prof, varIdx); }                \
   void Set##api##ByIndex(ProfileRef prof, uint64_t varIdx, const Utils::Vec2f& val) { SetProfileVec2ByIndex(m_##member##Offset, prof, varIdx, val); } \
-  Utils::Vec2f GetBlended##api() { return GetBlendedVec2(m_##member##Offset); } \
+  Utils::Vec2f GetBlended##api() { return GetBlendedVec2(m_##member##Offset); }                                                                       \
   void SetBlended##api(const Utils::Vec2f& val, float maxComponent) { SetBlendedVec2(m_##member##Offset, val, maxComponent); }
 
   // --- Scalar (raw radians in memory, API returns degrees; sun_direction is int32_t -1/0/1) ---
@@ -360,7 +356,7 @@ class ClimateService : public IWorldScopedService {
   SPF_INT_VAR_ATTR(Weight, weight)
   SPF_INT_VAR_ATTR(WindType, windType)
 
-   // --- Vec2 ---
+  // --- Vec2 ---
   SPF_VEC2_ATTR(CloudShadowAreaSize, cloudShadowAreaSize)
   SPF_VEC2_ATTR(CloudShadowSpeed, cloudShadowSpeed)
   SPF_VEC2_ATTR(SnowFlakeSizeRange, snowFlakeSizeRange)
@@ -593,5 +589,4 @@ class ClimateService : public IWorldScopedService {
   intptr_t m_thunderstormProbabilityOffset = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

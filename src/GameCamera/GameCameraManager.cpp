@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraBehind.hpp"
 #include "SPF/GameCamera/GameCameraBumper.hpp"
@@ -29,8 +27,7 @@
 
 using namespace SPF::Data::GameData;
 
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraManager::GameCameraManager() {}
 
 GameCameraManager& GameCameraManager::GetInstance() {
@@ -420,5 +417,4 @@ GameCameraDebug* GameCameraManager::GetDebugCamera() { return m_debugCamera.get(
 GameCameraDebugState* GameCameraManager::GetDebugStateCamera() { return m_debugStateCamera.get(); }
 
 GameCameraDebugAnimation* GameCameraManager::GetDebugAnimationController() { return m_debugAnimationController.get(); }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

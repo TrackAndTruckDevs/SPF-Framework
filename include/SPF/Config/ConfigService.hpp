@@ -1,11 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ManifestData.hpp"
 #include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Hooks/IHook.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 
 #include "nlohmann/json_fwd.hpp"
@@ -17,13 +17,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Events {
-class EventManager;
-}
-
-namespace Config {
+namespace SPF::Config {
 // Enum to define the processing strategy for a configuration system
 enum class MergeStrategy {
   PriorityMerge,  // For shared systems like keybinds
@@ -47,11 +41,9 @@ class ConfigService : public IConfigService {
   const nlohmann::ordered_json* GetMergedConfig(const std::string& systemName) const override;
   const std::map<std::string, nlohmann::ordered_json>* GetAllComponentSettings(const std::string& systemName) const override;
   void SetValue(const std::string& componentName, const std::string& jsonPath, const nlohmann::ordered_json& value) override;
-  void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
-                     const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) override;
+  void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding, const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) override;
   void DeleteBinding(const std::string& actionFullName, const nlohmann::ordered_json& bindingToDelete) override;
-  void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName,
-                             const nlohmann::ordered_json& newValue) override;
+  void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) override;
   nlohmann::ordered_json GetValue(const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& defaultValue) const override;
   const nlohmann::ordered_json* GetValuePtr(const std::string& componentName, const std::string& keyPath) const override;
   std::string GetFrameworkInstanceId() override;
@@ -148,6 +140,4 @@ class ConfigService : public IConfigService {
   std::set<std::string> m_disabledAutoSave;
 };
 
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

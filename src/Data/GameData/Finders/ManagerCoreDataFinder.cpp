@@ -1,16 +1,12 @@
 #include "SPF/Data/GameData/Finders/ManagerCoreDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -134,5 +130,4 @@ bool ManagerCoreDataFinder::TryFindOffsets(ManagerCoreService& owner) {
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

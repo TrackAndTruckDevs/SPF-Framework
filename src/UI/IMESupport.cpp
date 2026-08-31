@@ -1,7 +1,5 @@
 #include "SPF/UI/IMESupport.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include "imgui.h"
@@ -12,17 +10,15 @@
 #include <cstdint>
 #include <imm.h>
 #include <minwindef.h>
+#include <string>
 #include <stringapiset.h>
+#include <vector>
 #include <windef.h>
 #include <winnls.h>
 #include <winnt.h>
 #include <winuser.h>
-#include <string>
-#include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 #if defined(_MSC_VER)
 #pragma comment(lib, "imm32")
@@ -51,7 +47,7 @@ static float s_imeInputLineHeight = 0.0f;
 struct ClickableArea {
   ImVec2 min;
   ImVec2 max;
-  int action; // -1 for Prev, -2 for Next, >=0 for candidate index
+  int action;  // -1 for Prev, -2 for Next, >=0 for candidate index
 };
 
 static std::vector<ClickableArea> s_clickableAreas;
@@ -122,8 +118,7 @@ void IMESupport::Install(HWND hwnd) {
   ImGuiPlatformIO& platform = ImGui::GetPlatformIO();
   platform.Platform_SetImeDataFn = &IMESupport::SetImeDataFn;
 
-  Logging::LoggerFactory::GetInstance().GetLogger("IMESupport")
-      ->Info("IME support installed for HWND {0:p}.", static_cast<void*>(hwnd));
+  Logging::LoggerFactory::GetInstance().GetLogger("IMESupport")->Info("IME support installed for HWND {0:p}.", static_cast<void*>(hwnd));
 }
 
 void IMESupport::SetImeDataFn(ImGuiContext* /*unused*/, ImGuiViewport* viewport, ImGuiPlatformImeData* data) {
@@ -206,8 +201,7 @@ bool IMESupport::OnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         break;
       }
 
-      bool hit_window = (mouse_pos.x >= s_windowMin.x && mouse_pos.x <= s_windowMax.x &&
-                         mouse_pos.y >= s_windowMin.y && mouse_pos.y <= s_windowMax.y);
+      bool hit_window = (mouse_pos.x >= s_windowMin.x && mouse_pos.x <= s_windowMax.x && mouse_pos.y >= s_windowMin.y && mouse_pos.y <= s_windowMax.y);
       if (!hit_window) {
         break;
       }
@@ -216,8 +210,7 @@ bool IMESupport::OnWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       s_blockNextLButtonUp = true;
 
       for (const auto& area : s_clickableAreas) {
-        if (mouse_pos.x >= area.min.x && mouse_pos.x <= area.max.x &&
-            mouse_pos.y >= area.min.y && mouse_pos.y <= area.max.y) {
+        if (mouse_pos.x >= area.min.x && mouse_pos.x <= area.max.x && mouse_pos.y >= area.min.y && mouse_pos.y <= area.max.y) {
           s_pendingAction = area.action;
           break;
         }
@@ -313,10 +306,8 @@ void IMESupport::Render() {
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.9f));
   ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 0.8f));
 
-  ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                           ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
-                           ImGuiWindowFlags_NoNav | ImGuiWindowFlags_Tooltip;
+  ImGuiWindowFlags flags =
+    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_Tooltip;
 
   if (ImGui::Begin("##IME_Candidate_Window", nullptr, flags)) {
     if (!s_compositionStrUTF8.empty()) {
@@ -331,31 +322,30 @@ void IMESupport::Render() {
       size_t end_idx = std::min(start_idx + s_candidatePageSize, s_candidatesUTF8.size());
       size_t total_pages = (s_candidatesUTF8.size() + s_candidatePageSize - 1) / s_candidatePageSize;
       size_t current_page = s_candidatePageStart / s_candidatePageSize;
-      
+
       ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
-      
+
       ImVec2 item_pad(6.0f, 3.0f);
-      
+
       for (size_t i = start_idx; i < end_idx; ++i) {
         if (i > start_idx) {
           ImGui::SameLine(0.0f, 12.0f);
         }
-        
+
         bool is_selected = (i == s_selectedCandidate);
         std::string cand_text = std::to_string((i - start_idx) + 1) + ". " + s_candidatesUTF8[i];
-        
+
         ImVec2 text_size = ImGui::CalcTextSize(cand_text.c_str());
         ImVec2 size(text_size.x + item_pad.x * 2.0f, text_size.y + item_pad.y * 2.0f);
-        
+
         ImGui::Dummy(size);
-        
+
         ImVec2 min_p = ImGui::GetItemRectMin();
         ImVec2 max_p = ImGui::GetItemRectMax();
-        
+
         ImVec2 mouse_pos = ImGui::GetIO().MousePos;
-        bool is_hovered = (mouse_pos.x >= min_p.x && mouse_pos.x <= max_p.x &&
-                           mouse_pos.y >= min_p.y && mouse_pos.y <= max_p.y);
-        
+        bool is_hovered = (mouse_pos.x >= min_p.x && mouse_pos.x <= max_p.x && mouse_pos.y >= min_p.y && mouse_pos.y <= max_p.y);
+
         ImU32 text_color = ImGui::GetColorU32(ImGuiCol_Text);
         if (is_selected) {
           ImGui::GetWindowDrawList()->AddRectFilled(min_p, max_p, ImGui::GetColorU32(ImGuiCol_HeaderActive), 3.0f);
@@ -366,30 +356,29 @@ void IMESupport::Render() {
         } else {
           text_color = ImGui::GetColorU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
         }
-        
+
         ImGui::GetWindowDrawList()->AddText(ImVec2(min_p.x + item_pad.x, min_p.y + item_pad.y), text_color, cand_text.c_str());
-        
-        s_clickableAreas.push_back({ min_p, max_p, static_cast<int>(i) });
+
+        s_clickableAreas.push_back({min_p, max_p, static_cast<int>(i)});
       }
-      
+
       ImGui::PopStyleVar();
-      
+
       if (total_pages > 1) {
         ImGui::Separator();
-        
+
         bool has_prev = (current_page > 0);
         ImVec2 btn_pad(8.0f, 4.0f);
         ImVec2 prev_size = ImGui::CalcTextSize("<");
         ImVec2 prev_btn_size(prev_size.x + btn_pad.x * 2.0f, prev_size.y + btn_pad.y * 2.0f);
-        
+
         ImGui::Dummy(prev_btn_size);
         ImVec2 prev_min = ImGui::GetItemRectMin();
         ImVec2 prev_max = ImGui::GetItemRectMax();
-        
+
         ImVec2 mouse_pos = ImGui::GetIO().MousePos;
-        bool prev_hovered = has_prev && (mouse_pos.x >= prev_min.x && mouse_pos.x <= prev_max.x &&
-                                         mouse_pos.y >= prev_min.y && mouse_pos.y <= prev_max.y);
-        
+        bool prev_hovered = has_prev && (mouse_pos.x >= prev_min.x && mouse_pos.x <= prev_max.x && mouse_pos.y >= prev_min.y && mouse_pos.y <= prev_max.y);
+
         ImU32 prev_text_color;
         if (has_prev) {
           if (prev_hovered) {
@@ -402,32 +391,31 @@ void IMESupport::Render() {
         } else {
           prev_text_color = ImGui::GetColorU32(ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
         }
-        
+
         ImGui::GetWindowDrawList()->AddText(ImVec2(prev_min.x + btn_pad.x, prev_min.y + btn_pad.y), prev_text_color, "<");
-        s_clickableAreas.push_back({ prev_min, prev_max, -1 });
-        
+        s_clickableAreas.push_back({prev_min, prev_max, -1});
+
         ImGui::SameLine(0.0f, 12.0f);
-        
+
         std::string page_str = "Page " + std::to_string(current_page + 1) + "/" + std::to_string(total_pages);
         ImVec2 page_size = ImGui::CalcTextSize(page_str.c_str());
         ImVec2 page_btn_size(page_size.x, page_size.y + btn_pad.y * 2.0f);
         ImGui::Dummy(page_btn_size);
         ImVec2 page_min = ImGui::GetItemRectMin();
         ImGui::GetWindowDrawList()->AddText(ImVec2(page_min.x, page_min.y + btn_pad.y), ImGui::GetColorU32(ImGuiCol_Text), page_str.c_str());
-        
+
         ImGui::SameLine(0.0f, 12.0f);
-        
+
         bool has_next = (current_page + 1 < total_pages);
         ImVec2 next_size = ImGui::CalcTextSize(">");
         ImVec2 next_btn_size(next_size.x + btn_pad.x * 2.0f, next_size.y + btn_pad.y * 2.0f);
-        
+
         ImGui::Dummy(next_btn_size);
         ImVec2 next_min = ImGui::GetItemRectMin();
         ImVec2 next_max = ImGui::GetItemRectMax();
-        
-        bool next_hovered = has_next && (mouse_pos.x >= next_min.x && mouse_pos.x <= next_max.x &&
-                                         mouse_pos.y >= next_min.y && mouse_pos.y <= next_max.y);
-        
+
+        bool next_hovered = has_next && (mouse_pos.x >= next_min.x && mouse_pos.x <= next_max.x && mouse_pos.y >= next_min.y && mouse_pos.y <= next_max.y);
+
         ImU32 next_text_color;
         if (has_next) {
           if (next_hovered) {
@@ -440,9 +428,9 @@ void IMESupport::Render() {
         } else {
           next_text_color = ImGui::GetColorU32(ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
         }
-        
+
         ImGui::GetWindowDrawList()->AddText(ImVec2(next_min.x + btn_pad.x, next_min.y + btn_pad.y), next_text_color, ">");
-        s_clickableAreas.push_back({ next_min, next_max, -2 });
+        s_clickableAreas.push_back({next_min, next_max, -2});
       }
     }
     s_windowMin = ImGui::GetWindowPos();
@@ -455,13 +443,9 @@ void IMESupport::Render() {
   ImGui::PopStyleVar(2);
 }
 
-bool IMESupport::IsComposing() {
-  return s_isComposing;
-}
+bool IMESupport::IsComposing() { return s_isComposing; }
 
-bool IMESupport::ShowingCandidates() {
-  return s_showCandidates;
-}
+bool IMESupport::ShowingCandidates() { return s_showCandidates; }
 
 bool IMESupport::IsMouseHoveringWindow() {
   if (!s_isComposing || !s_showCandidates || s_imeHwnd == nullptr) {
@@ -471,8 +455,7 @@ bool IMESupport::IsMouseHoveringWindow() {
   if (GetCursorPos(&pt)) {
     ScreenToClient(s_imeHwnd, &pt);
     ImVec2 mouse_pos(static_cast<float>(pt.x), static_cast<float>(pt.y));
-    return (mouse_pos.x >= s_windowMin.x && mouse_pos.x <= s_windowMax.x &&
-            mouse_pos.y >= s_windowMin.y && mouse_pos.y <= s_windowMax.y);
+    return (mouse_pos.x >= s_windowMin.x && mouse_pos.x <= s_windowMax.x && mouse_pos.y >= s_windowMin.y && mouse_pos.y <= s_windowMax.y);
   }
   return false;
 }
@@ -493,6 +476,4 @@ void IMESupport::PreFrame() {
     }
   }
 }
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

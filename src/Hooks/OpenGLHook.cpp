@@ -1,7 +1,5 @@
 #include "SPF/Hooks/OpenGLHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/Windows.hpp"
 
@@ -14,8 +12,7 @@
 
 #pragma comment(lib, "opengl32.lib")
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 using namespace SPF::Logging;
 
 namespace {
@@ -174,5 +171,4 @@ LRESULT CALLBACK WndProcOpenGL(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 }
 
 }  // namespace
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

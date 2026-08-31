@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/BaseHook.hpp"  // Change from IHook.hpp
 
-
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @class GameLogHook
  * @brief A manageable hook for capturing game log messages.
@@ -26,5 +22,4 @@ class GameLogHook : public BaseHook {  // Inherit from BaseHook
   void* GetDetourFunc() override;
   void** GetOriginalFuncPtr() override;
 };
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

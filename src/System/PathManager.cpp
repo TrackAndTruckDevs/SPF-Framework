@@ -1,7 +1,5 @@
 #include "SPF/System/PathManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -14,8 +12,7 @@
 #include <stdexcept>
 #include <string>
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 // Definition of static class members
 std::filesystem::path PathManager::m_basePath;
 std::filesystem::path PathManager::m_frameworkDllPath;
@@ -271,5 +268,4 @@ std::string PathManager::ResolveVirtualPath(const char* virtualPath) {
   return "";
 }
 
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

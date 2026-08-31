@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
@@ -14,10 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 
 /**
  * @brief Represents a single report entry for an error or warning.
@@ -35,9 +30,7 @@ struct LogReportEntry {
  * @brief Hash function for LogReportEntry to allow grouping in a map.
  */
 struct LogReportEntryHash {
-  std::size_t operator()(const LogReportEntry& e) const {
-    return std::hash<std::string>{}(e.loggerName) ^ (std::hash<int>{}(static_cast<int>(e.level)) << 1) ^ (std::hash<std::string>{}(e.message) << 2);
-  }
+  std::size_t operator()(const LogReportEntry& e) const { return std::hash<std::string>{}(e.loggerName) ^ (std::hash<int>{}(static_cast<int>(e.level)) << 1) ^ (std::hash<std::string>{}(e.message) << 2); }
 };
 
 /**
@@ -69,6 +62,4 @@ class ErrorReportSink : public ILogSink {
   std::unordered_map<LogReportEntry, uint32_t, LogReportEntryHash> m_pendingLogs;
 };
 
-}  // namespace Logging::Sinks
-
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

@@ -1,15 +1,11 @@
 #include "SPF/System/JoystickButtonMapping.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "fmt/format.h"
 
 #include <fmt/core.h>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 
 JoystickButtonMapping& JoystickButtonMapping::GetInstance() {
   static JoystickButtonMapping instance;
@@ -51,6 +47,4 @@ std::string JoystickButtonMapping::GetButtonDisplayName(int buttonIndex) const {
   return fmt::format("Button {}", buttonIndex + 1);
 }
 
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

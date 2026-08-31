@@ -1,7 +1,5 @@
 #include "SPF/UI/HooksWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Hooks/IHook.hpp"
@@ -14,8 +12,7 @@
 #include <cctype>  // for isxdigit
 #include <string>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Hooks;
 using namespace SPF::Events;
 using namespace SPF::Localization;
@@ -88,5 +85,4 @@ void HooksWindow::RenderContent() {
     }
   }
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

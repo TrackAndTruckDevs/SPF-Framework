@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
@@ -10,9 +8,7 @@
 #include <string>
 #include <utility>  // For std::pair
 
-
-SPF_NS_BEGIN
-namespace Events::UI {
+namespace SPF::Events::UI {
 /**
  * @brief Fired by the WndProc proxy when the game window changes size.
  */
@@ -114,5 +110,4 @@ struct RequestUpdateCheck {
 struct RequestPatronsFetch {
   bool force = false;
 };
-}  // namespace Events::UI
-SPF_NS_END
+}  // namespace SPF::Events::UI

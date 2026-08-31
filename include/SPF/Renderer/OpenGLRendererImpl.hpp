@@ -1,28 +1,16 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/RendererBase.hpp"
+#include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <cstddef>
 #include <memory>
 #include <windef.h>
 
-SPF_NS_BEGIN
-
-namespace UI {
-class UIManager;
-}
-namespace Logging {
-class Logger;
-}
-namespace Hooks {
-class OpenGLHook;
-}
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 class OpenGLRendererImpl : public RendererBase {
  public:
@@ -52,6 +40,4 @@ class OpenGLRendererImpl : public RendererBase {
   Utils::Sink<void(HDC hdc)> m_onPresentSink;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

@@ -1,7 +1,5 @@
 #include "SPF/UI/NotificationWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/Icons.hpp"
@@ -18,9 +16,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 NotificationWindow::NotificationWindow(const std::string& componentName, const std::string& windowId) : BaseWindow(componentName, windowId) {
   m_isVisible = true;  // Always visible manager
@@ -370,6 +366,4 @@ void NotificationWindow::GetTypeStyle(const NotificationData& notif, const char*
   }
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
@@ -10,9 +8,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Config {
+namespace SPF::Config {
 
 // --- Info Block ---
 /**
@@ -207,5 +203,4 @@ struct ManifestData {
   std::vector<WindowMetadata> uiMetadata;                     ///< @brief Metadata for UI windows.
 };
 
-}  // namespace Config
-SPF_NS_END
+}  // namespace SPF::Config

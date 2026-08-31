@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
 
@@ -9,24 +8,20 @@
 #include <cstddef>
 #include <memory>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations of types from other modules
-namespace Core {
+namespace SPF::Core {
 class Core;
-}
-namespace Events {
+}  // namespace SPF::Core
+
+namespace SPF::Events {
 class EventManager;
-}
-namespace Logging {
-class Logger;
-}
-namespace UI {
+}  // namespace SPF::Events
+
+namespace SPF::UI {
 class UIManager;
-}
+}  // namespace SPF::UI
+
 // Forward declarations of types from this module (Rendering)
-namespace Rendering {
+namespace SPF::Rendering {
 class RendererBase;
 class D3D11RendererImpl;
 class D3D12RendererImpl;
@@ -114,6 +109,4 @@ class Renderer {
   std::chrono::steady_clock::time_point m_lastFrameTime;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

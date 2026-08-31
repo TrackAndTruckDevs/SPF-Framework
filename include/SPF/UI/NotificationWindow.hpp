@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_UI_API.h"  // For SPF_Notification_DisplayMode
 #include "SPF/UI/BaseWindow.hpp"
 
@@ -13,10 +11,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 /**
  * @brief Framework-owned window for displaying temporary notifications.
@@ -84,6 +79,4 @@ class NotificationWindow : public BaseWindow {
   void RenderSingleNotification(NotificationData& notif, int index);
 };
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

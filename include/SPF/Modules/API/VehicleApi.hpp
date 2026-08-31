@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class VehicleApi {
  public:
   static void FillVehicleApi(SPF_Vehicle_API* vehicle_api);
@@ -37,5 +33,4 @@ class VehicleApi {
   static float T_Vehicle_GetCurrentSpeed(SPF_VehicleHandle h);
   static float T_Vehicle_GetAcceleration(SPF_VehicleHandle h);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

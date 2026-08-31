@@ -1,16 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstddef>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Utils {
+namespace SPF::Utils {
 
 /**
  * @class PatternFinder
@@ -122,8 +118,8 @@ class PatternFinder {
     int minCount = 1;  ///< Minimum byte count this matcher can consume (0 if optional)
     int maxCount = 1;
     bool optional = false;
-    std::vector<uint8_t> values;             ///< Values for LIST type
-    std::vector<ByteMatcher> group;          ///< Sub-matchers for GROUP type (optional instruction)
+    std::vector<uint8_t> values;                         ///< Values for LIST type
+    std::vector<ByteMatcher> group;                      ///< Sub-matchers for GROUP type (optional instruction)
     std::vector<std::vector<ByteMatcher>> alternatives;  ///< Branches for ALTERNATION type (exactly one must match)
 
     /**
@@ -371,13 +367,12 @@ class PatternFinder {
   static uintptr_t Find(const char* moduleName, const std::vector<ByteMatcher>& signature);
 
   // --- Performance Caches ---
-  std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache;       ///< className -> {attrName -> offset}
-  std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;                               ///< string -> [addresses]
-  std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;                                ///< targetAddr -> [pointer_locations]
+  std::unordered_map<std::string, std::unordered_map<std::string, uintptr_t>> m_reflectionCache;           ///< className -> {attrName -> offset}
+  std::unordered_map<std::string, std::vector<uintptr_t>> m_stringCache;                                   ///< string -> [addresses]
+  std::unordered_map<uintptr_t, std::vector<uintptr_t>> m_pointerCache;                                    ///< targetAddr -> [pointer_locations]
   std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_xrefCache;      ///< moduleName -> {targetAddr -> [data xref_locations]}
   std::unordered_map<std::string, std::unordered_map<uintptr_t, std::vector<uintptr_t>>> m_callXrefCache;  ///< moduleName -> {targetFunc -> [call site locations]}
-  std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache;                          ///< moduleName -> [sections]
+  std::unordered_map<std::string, std::vector<MemorySection>> m_sectionCache;                              ///< moduleName -> [sections]
 };
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

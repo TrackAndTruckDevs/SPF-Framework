@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraCabin.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -9,9 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraCabin::GameCameraCabin() {}
 
 void GameCameraCabin::OnActivate() {
@@ -221,5 +217,4 @@ void GameCameraCabin::SetShakeAnim(size_t index, float x, float y, float z) {
   pVec[1] = y;
   pVec[2] = z;
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

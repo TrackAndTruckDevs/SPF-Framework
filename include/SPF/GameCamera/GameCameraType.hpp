@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 // Internal, type-safe enum for camera types using standardized names
 enum class GameCameraType {
   DeveloperFreeCamera = 0,
@@ -18,5 +15,4 @@ enum class GameCameraType {
   PhotoCamera = 13,
   Unknown = -1,
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

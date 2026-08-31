@@ -1,7 +1,5 @@
 #include "SPF/UI/UIElements.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 
@@ -10,8 +8,7 @@
 
 #include <cstddef>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 bool Button(const char* label, const TextStyle& style, const ImVec2& size, const char* tooltip) {
   ImGuiWindow* window = ImGui::GetCurrentWindow();
   if (window->SkipItems) return false;
@@ -82,5 +79,4 @@ bool Button(const char* label, const TextStyle& style, const ImVec2& size, const
   return pressed;
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

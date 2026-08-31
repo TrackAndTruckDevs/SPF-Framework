@@ -1,8 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-#include "SPF/Input/InputEvents.hpp"
 #include "SPF/System/Keyboard.hpp"
 
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
@@ -13,13 +10,15 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
+namespace SPF::Input {
+struct MouseMoveEvent;
+struct MouseButtonEvent;
+struct KeyboardEvent;
+struct GamepadEvent;
+struct JoystickEvent;
+}  // namespace SPF::Input
 
-namespace Input {
-struct ButtonState;
-}
-
-namespace Modules {
+namespace SPF::Modules {
 enum class InputType { Keyboard, Gamepad, Mouse, Joystick, Chord, GamepadAxis, MouseAxis, JoystickAxis, Unknown };
 
 /**
@@ -105,5 +104,4 @@ struct IBindableInput {
   virtual InputType GetType() const = 0;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

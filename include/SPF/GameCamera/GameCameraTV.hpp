@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
 #include <cstddef>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 class GameCameraTV : public IGameCamera {
  public:
   struct CameraData {
@@ -76,5 +72,4 @@ class GameCameraTV : public IGameCamera {
   CameraData m_defaultCameraData;
   bool m_defaultsSaved = false;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

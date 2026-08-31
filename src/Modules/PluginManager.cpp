@@ -1,7 +1,5 @@
 #include "SPF/Modules/PluginManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ManifestData.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -47,8 +45,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cctype>
-#include <cstring>
 #include <errhandlingapi.h>
 #include <exception>
 #include <filesystem>
@@ -63,10 +59,8 @@
 
 using SPF_GetPlugin_t = bool (*)(SPF_Plugin_Exports*);
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 using namespace SPF::Localization;
-using namespace SPF::Handles;
 using namespace SPF::System;
 using namespace SPF::Config;
 using namespace SPF::UI;
@@ -766,5 +760,5 @@ bool PluginManager::SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* 
   }
   return true;
 }
-}  // namespace Modules
-SPF_NS_END  // namespace Modules
+}  // namespace SPF::Modules
+   // namespace Modules

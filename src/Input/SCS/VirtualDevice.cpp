@@ -1,7 +1,5 @@
 #include "SPF/Input/SCS/VirtualDevice.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <algorithm>
@@ -12,9 +10,7 @@
 #include <utility>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Input::SCS {
+namespace SPF::Input::SCS {
 // Helper to find an input index by name.
 // Returns -1 if not found.
 int find_input_index(const std::vector<std::string>& names, const std::string& name) {
@@ -114,5 +110,4 @@ scs_input_device_t VirtualDevice::ToSCSSDKDevice(scs_context_t context, scs_inpu
   return device_info;
 }
 
-}  // namespace Input::SCS
-SPF_NS_END
+}  // namespace SPF::Input::SCS

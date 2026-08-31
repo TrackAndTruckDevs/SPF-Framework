@@ -1,7 +1,5 @@
 #include "SPF/Modules/GamepadInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -15,8 +13,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 using namespace SPF::System;
 
 GamepadInput::GamepadInput(const nlohmann::ordered_json& config) {
@@ -60,5 +57,4 @@ bool GamepadInput::IsSameAs(const IBindableInput& other) const {
 
 float GamepadInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

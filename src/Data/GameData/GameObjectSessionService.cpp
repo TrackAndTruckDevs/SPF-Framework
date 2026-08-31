@@ -1,16 +1,12 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/SessionDataFinder.hpp"
 #include "SPF/Data/GameData/ISessionDataFinder.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <memory>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 GameObjectSessionService& GameObjectSessionService::GetInstance() {
   static GameObjectSessionService instance;
@@ -63,5 +59,4 @@ bool GameObjectSessionService::AreAllFindersReady() const {
   return true;
 }
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

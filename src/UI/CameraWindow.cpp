@@ -1,7 +1,5 @@
 #include "SPF/UI/CameraWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/GameCamera/DebugCameraMode.hpp"
@@ -37,14 +35,12 @@
 #include <string>
 #include <vector>
 
-
 using namespace SPF::GameCamera;
 using namespace SPF::Utils;
 using namespace SPF::Data::GameData;
 using namespace SPF::Localization;
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 namespace {
 const char* DebugCameraModeToString(GameCamera::DebugCameraMode mode) {
   switch (mode) {
@@ -466,7 +462,6 @@ void CameraWindow::RefreshLocalization() {
 }
 
 void CameraWindow::RenderContent() {
-
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
 
   // --- Standardized UI Helpers ---
@@ -915,8 +910,7 @@ void CameraWindow::RenderContent() {
         drawHeader(m_locAdvancedCoreSettings);
         drawFloat(m_locNearPlane, [&](float* near_plane) { return interiorCam->GetNearPlane(near_plane); }, [&](float near_plane) { interiorCam->SetNearPlane(near_plane); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
         drawFloat(m_locFarPlane, [&](float* far_plane) { return interiorCam->GetFarPlane(far_plane); }, [&](float far_plane) { interiorCam->SetFarPlane(far_plane); }, 100.0f, 10000.0f, "%.0f", defaults.far_plane);
-        drawFloat(
-          m_locMouseSensitivity, [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
+        drawFloat(m_locMouseSensitivity, [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
 
         drawHeader(m_locInteriorLogicSettings);
         drawFloat(m_locZoomFovFactor, [&](float* zoom_factor) { return interiorCam->GetZoomFovFactor(zoom_factor); }, [&](float zoom_factor) { interiorCam->SetZoomFovFactor(zoom_factor); }, 0.0f, 1.0f, "%.3f", defaults.zoom_fov_factor);
@@ -3104,5 +3098,4 @@ void CameraWindow::RenderContent() {
 
   m_needsTabSwitch = false;
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

@@ -1,18 +1,13 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <memory>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Handles {
+namespace SPF::Handles {
 struct IHandle;
 }
 
-namespace Modules {
+namespace SPF::Modules {
 /**
  * @class HandleManager
  * @brief An internal service that manages the lifecycle of API handles.
@@ -51,6 +46,4 @@ class HandleManager {
   class HandleManagerImpl;
   std::unique_ptr<HandleManagerImpl> m_pimpl;
 };
-}  // namespace Modules
-
-SPF_NS_END
+}  // namespace SPF::Modules

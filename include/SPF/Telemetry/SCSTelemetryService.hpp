@@ -1,8 +1,14 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Telemetry/ControlsProcessor.hpp"
+#include "SPF/Telemetry/EventsProcessor.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/GameDataProcessor.hpp"
+#include "SPF/Telemetry/GearboxProcessor.hpp"
+#include "SPF/Telemetry/JobProcessor.hpp"
 #include "SPF/Telemetry/SCS/Common.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/SCS/Events.hpp"
@@ -12,6 +18,8 @@
 #include "SPF/Telemetry/SCS/Trailer.hpp"
 #include "SPF/Telemetry/SCS/Truck.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Telemetry/TrailerProcessor.hpp"
+#include "SPF/Telemetry/TruckProcessor.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <chrono>
@@ -19,29 +27,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Events {
-class EventManager;
-}
-namespace Telemetry {
-class GameContext;
-// Forward declare all the processor classes
-class GameDataProcessor;
-class TruckProcessor;
-class TrailerProcessor;
-class JobProcessor;
-class EventsProcessor;
-class ControlsProcessor;
-class GearboxProcessor;
-}  // namespace Telemetry
-
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class SCSTelemetryService
  * @brief The public-facing implementation of the ITelemetryService for SCS SDK.
@@ -148,5 +134,4 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   bool m_timerRestarted = false;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

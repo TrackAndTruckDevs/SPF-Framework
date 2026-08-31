@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/GameLogApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/GameLogCallbackHandle.hpp"  // Include the new handle
 #include "SPF/Modules/GameLogEventManager.hpp"
 #include "SPF/Modules/HandleManager.hpp"  // For HandleManager definition
@@ -11,8 +9,7 @@
 #include <memory>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 SPF_GameLog_Handle* GameLogApi::GLog_GetContext(const char* pluginName) {
   // For GameLog, the context is just the plugin name. We use it to group handles.
@@ -41,5 +38,4 @@ void GameLogApi::FillGameLogApi(SPF_GameLog_API* api) {
   api->GLog_RegisterCallback = &GameLogApi::GLog_RegisterCallback;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

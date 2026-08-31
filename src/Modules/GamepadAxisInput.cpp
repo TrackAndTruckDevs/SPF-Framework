@@ -1,7 +1,5 @@
 #include "SPF/Modules/GamepadAxisInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -16,8 +14,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 using namespace SPF::System;
 
 GamepadAxisInput::GamepadAxisInput(const nlohmann::ordered_json& config) {
@@ -223,5 +220,4 @@ std::string GamepadAxisInput::GetDisplayName() const {
 
 bool GamepadAxisInput::IsValid() const { return m_axis != GamepadButton::Unknown; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,7 +1,7 @@
-#include "SPF/Namespace.hpp"
 
-SPF_NS_BEGIN
-namespace UI::Resources {
+
+
+namespace SPF::UI::Resources {
 
 extern const unsigned int spf_logo_size = 316901;
 extern const unsigned char spf_logo_data[316901] =
@@ -6249,4 +6249,3 @@ extern const unsigned char spf_logo_data[316901] =
 
 } // namespace UI::Resources
 
-SPF_NS_END

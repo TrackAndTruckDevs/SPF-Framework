@@ -1,17 +1,13 @@
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/ManagerCoreDataFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 ManagerCoreService& ManagerCoreService::GetInstance() {
   static ManagerCoreService instance;
@@ -90,5 +86,4 @@ void ManagerCoreService::Reset() {
   }
 }
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

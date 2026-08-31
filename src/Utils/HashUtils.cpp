@@ -1,7 +1,5 @@
 #include "SPF/Utils/HashUtils.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
 #include <bcrypt.h>
@@ -15,16 +13,13 @@
 #include <string>
 #include <vector>
 
-
 #pragma comment(lib, "bcrypt.lib")
 
 #ifndef NT_SUCCESS
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 std::string HashUtils::CalculateFileMD5(const std::filesystem::path& path) {
   if (!std::filesystem::exists(path)) return "";
@@ -95,6 +90,4 @@ std::string HashUtils::CalculateFileMD5(const std::filesystem::path& path) {
   return ss.str();
 }
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

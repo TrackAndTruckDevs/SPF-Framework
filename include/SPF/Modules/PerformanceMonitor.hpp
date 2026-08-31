@@ -1,13 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstddef>
 #include <deque>
 
-
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 /**
  * @class PerformanceMonitor
@@ -70,5 +66,4 @@ class PerformanceMonitor {
                                       // std::deque<float> m_smoothedFpsHistory; // Smoothed FPS history (calculation commented out)
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,7 +1,5 @@
 #include "SPF/Renderer/D3D11RendererImpl.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/D3D11Hook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
@@ -24,9 +22,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
 using namespace SPF::UI;
@@ -227,6 +223,4 @@ void D3D11RendererImpl::CleanupRenderTarget() {
   }
 }
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

@@ -1,11 +1,8 @@
 #include "SPF/UI/UIStyle.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "imgui.h"
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 void Style::ApplyGameStyle(float scaleFactor) {
   ImGuiStyle& style = ImGui::GetStyle();
 
@@ -93,5 +90,4 @@ void Style::ApplyGameStyle(float scaleFactor) {
   style.GrabMinSize = 12.0f;
   ImGui::GetIO().FontGlobalScale = scaleFactor;
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

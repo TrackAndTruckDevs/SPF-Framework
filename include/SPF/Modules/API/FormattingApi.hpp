@@ -1,13 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Formatting_API.h"
 
 #include <cstddef>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 class FormattingApi {
  public:
@@ -23,5 +20,4 @@ class FormattingApi {
   static int Fmt_Format(char* buffer, size_t buffer_size, const char* format, ...);
 };
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

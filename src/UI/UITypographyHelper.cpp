@@ -1,7 +1,5 @@
 #include "SPF/UI/UITypographyHelper.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/UI/MarkdownRenderer.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/UI/UIStyle.hpp"
@@ -13,10 +11,7 @@
 #include <stdarg.h>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 // --- TextStyle Factory Methods ---
 
@@ -236,5 +231,4 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
   ImGui::EndGroup();
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

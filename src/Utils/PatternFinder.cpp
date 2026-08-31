@@ -1,7 +1,5 @@
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternTemplates.hpp"
 #include "SPF/Utils/SEHGuard.hpp"
@@ -25,8 +23,7 @@
 #include <vector>
 #include <winnt.h>
 
-SPF_NS_BEGIN
-namespace Utils {
+namespace SPF::Utils {
 
 // ===========================================================================
 // PRIVATE HELPERS
@@ -1221,5 +1218,4 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
   });
 }
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -19,8 +17,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 /**
  * @brief Manages all communications with the remote API, providing caching and smart request handling.
@@ -77,11 +74,11 @@ class CommunicationManager {
   // --- Signals ---
   Utils::Signal<void(const System::UpdateInfo&)> OnUpdateInfoReceived;
   Utils::Signal<void(const System::ChangelogData&)> OnReleaseNotesReceived;
-  Utils::Signal<void(const Events::System::OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
+  Utils::Signal<void(const Events::OnPluginUpdateAvailable&)> OnPluginUpdateAvailable;
 
  private:
   // --- Event Handlers ---
-  void OnRequestTrackUsage(const Events::System::OnRequestTrackUsage& e);
+  void OnRequestTrackUsage(const Events::OnRequestTrackUsage& e);
   void OnErrorReportSinkChanged(std::shared_ptr<Logging::Sinks::ErrorReportSink> newSink);
 
   // --- Internal Helpers ---
@@ -132,9 +129,8 @@ class CommunicationManager {
   std::optional<std::future<void>> m_trackUsageFuture;
 
   // --- Sinks ---
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnRequestTrackUsage&)>> m_onRequestTrackUsageSink;
+  std::unique_ptr<Utils::Sink<void(const Events::OnRequestTrackUsage&)>> m_onRequestTrackUsageSink;
   std::unique_ptr<Utils::Sink<void(std::shared_ptr<Logging::Sinks::ErrorReportSink>)>> m_onErrorReportSinkChangedSink;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

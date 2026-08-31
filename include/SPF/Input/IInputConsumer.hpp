@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 
-
-SPF_NS_BEGIN
-namespace Input {
+namespace SPF::Input {
 class IInputConsumer {
  public:
   virtual ~IInputConsumer() = default;
@@ -30,5 +26,4 @@ class IInputConsumer {
   virtual bool IsCapturingMouse() { return false; }
 };
 
-}  // namespace Input
-SPF_NS_END
+}  // namespace SPF::Input

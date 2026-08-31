@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
 
@@ -11,9 +9,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 /**
  * @class GameWorldService
@@ -306,5 +302,4 @@ class GameWorldService : public IWorldScopedService {
   intptr_t m_cityStringBufOffset = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

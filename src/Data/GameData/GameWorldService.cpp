@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/GameWorldService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
@@ -16,8 +14,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 namespace {
 
@@ -877,5 +874,4 @@ bool GameWorldService::SetCityTimeZone(uint32_t index, uint32_t val) {
   return WriteRecordU32(m_cityCache[index].record, m_timeZoneOffset, val);
 }
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

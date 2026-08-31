@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
@@ -10,15 +9,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward-declaration
-namespace Events {
-class EventManager;
-}
-
-namespace UI {
+namespace SPF::UI {
 class GameConsoleWindow : public BaseWindow {
  public:
   GameConsoleWindow(const std::string& owner, const std::string& id, Events::EventManager& eventManager);
@@ -41,6 +32,4 @@ class GameConsoleWindow : public BaseWindow {
   std::string m_cachedEnableHookText;
   std::string m_cachedHooksWindowTitle;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

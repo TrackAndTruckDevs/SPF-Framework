@@ -1,15 +1,10 @@
 #include "SPF/System/MouseButtonMapping.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include <algorithm>  // For std::transform
 #include <cctype>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 
 MouseButtonMapping& MouseButtonMapping::GetInstance() {
   static MouseButtonMapping instance;
@@ -92,6 +87,4 @@ MouseButton MouseButtonMapping::FromWinAPI(int vKey) const {
   }
 }
 
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

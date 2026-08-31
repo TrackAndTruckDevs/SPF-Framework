@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraFree.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
@@ -9,9 +7,7 @@
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraFree::GameCameraFree() {
   // Constructor
 }
@@ -301,5 +297,4 @@ bool GameCameraFree::GetFreecamMysteryFloat(float* out_mystery) const {
   }
   return false;
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"  // For JoystickEvent
 #include "SPF/Modules/IBindableInput.hpp"
 
@@ -13,8 +11,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 /**
  * @class JoystickInput
@@ -56,5 +53,4 @@ class JoystickInput : public IBindableInput {
   int m_buttonIndex = -1;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

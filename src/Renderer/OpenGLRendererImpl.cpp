@@ -1,7 +1,5 @@
 #include "SPF/Renderer/OpenGLRendererImpl.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/OpenGLHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
@@ -22,8 +20,7 @@
 #include <windef.h>
 #include <wingdi.h>
 
-SPF_NS_BEGIN
-namespace Rendering {
+namespace SPF::Rendering {
 
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
@@ -198,5 +195,4 @@ void OpenGLRendererImpl::OnPresent(HDC hdc) {
   }
 }
 
-}  // namespace Rendering
-SPF_NS_END
+}  // namespace SPF::Rendering

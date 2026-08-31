@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/EventsProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
@@ -10,8 +8,7 @@
 #include <cstring>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 
 EventsProcessor::EventsProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context), m_lastGameplayEventId("") {}
 
@@ -86,5 +83,4 @@ void EventsProcessor::HandleGameplayEvent(const scs_telemetry_gameplay_event_t* 
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

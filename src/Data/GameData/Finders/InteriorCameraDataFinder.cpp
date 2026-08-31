@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/Finders/InteriorCameraDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -11,8 +9,7 @@
 #include <cstdint>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -201,12 +198,11 @@ bool InteriorCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
               owner.GetInteriorYawOffset() != 0 && owner.GetInteriorPitchOffset() != 0 && owner.GetInteriorAzimuthOverridesOffset() != 0 && owner.GetAzimuthRangeOutsideOffset() != 0 && owner.GetAzimuthRangeStartAzimuthOffset() != 0 &&
               owner.GetAzimuthRangeEndAzimuthOffset() != 0 && owner.GetAzimuthRangeStartUpLimitOffset() != 0 && owner.GetAzimuthRangeEndUpLimitOffset() != 0 && owner.GetAzimuthRangeStartDownLimitOffset() != 0 &&
               owner.GetAzimuthRangeEndDownLimitOffset() != 0 && owner.GetAzimuthRangeStartUpDownDefaultOffset() != 0 && owner.GetAzimuthRangeEndUpDownDefaultOffset() != 0 && owner.GetAzimuthRangeStartLeftRightDefaultOffset() != 0 &&
-              owner.GetAzimuthRangeEndLeftRightDefaultOffset() != 0 && owner.GetAzimuthRangeStartHeadOffsetOffset() != 0 && owner.GetAzimuthRangeEndHeadOffsetOffset() != 0 && owner.GetZoomFovFactorOffset() != 0 &&
-              owner.GetZoomSpeedOffset() != 0 && owner.GetCameraFovOffset() != 0 && owner.GetNearPlaneOffset() != 0 && owner.GetFarPlaneOffset() != 0 && owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 &&
-              owner.GetShakeAnimScaleMinOffset() != 0 && owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetHandShakeLimitOffset() != 0 && owner.GetHandShakeSpeedOffset() != 0 && owner.GetShakeAnimOffset() != 0;
+              owner.GetAzimuthRangeEndLeftRightDefaultOffset() != 0 && owner.GetAzimuthRangeStartHeadOffsetOffset() != 0 && owner.GetAzimuthRangeEndHeadOffsetOffset() != 0 && owner.GetZoomFovFactorOffset() != 0 && owner.GetZoomSpeedOffset() != 0 &&
+              owner.GetCameraFovOffset() != 0 && owner.GetNearPlaneOffset() != 0 && owner.GetFarPlaneOffset() != 0 && owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 &&
+              owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetHandShakeLimitOffset() != 0 && owner.GetHandShakeSpeedOffset() != 0 && owner.GetShakeAnimOffset() != 0;
 
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

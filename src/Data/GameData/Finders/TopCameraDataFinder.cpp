@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/Finders/TopCameraDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -11,8 +9,7 @@
 #include <cstdint>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
@@ -127,5 +124,4 @@ bool TopCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

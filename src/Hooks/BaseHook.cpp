@@ -1,7 +1,5 @@
 #include "SPF/Hooks/BaseHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
@@ -12,8 +10,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 
 BaseHook::BaseHook(std::string name, std::string displayName, std::string signature, std::string ownerName, bool isEnabled)
     : m_name(std::move(name)),
@@ -146,5 +143,4 @@ void BaseHook::Remove() {
   }
 }
 
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

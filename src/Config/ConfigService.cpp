@@ -1,7 +1,5 @@
 #include "SPF/Config/ConfigService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Config/ManifestData.hpp"
@@ -41,9 +39,7 @@
 #include <winnt.h>
 #include <winreg.h>
 
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 using namespace SPF::Logging;
 using namespace SPF::System;
 using namespace SPF::Core;
@@ -2412,6 +2408,4 @@ void ConfigService::SetAutoSave(const std::string& contextId, bool enabled) {
   }
 }
 
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

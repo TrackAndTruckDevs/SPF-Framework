@@ -4,10 +4,8 @@
  */
 
 #pragma once
-#include "SPF/Namespace.hpp"
 
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 // Forward declaration
 class ClimateService;
@@ -44,5 +42,4 @@ class IClimateDataFinder {
   bool m_isReady = false;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

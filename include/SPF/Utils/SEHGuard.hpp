@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <atomic>
 #include <csetjmp>
 #include <errhandlingapi.h>
@@ -10,8 +8,7 @@
 #include <mutex>
 #include <winnt.h>
 
-SPF_NS_BEGIN
-namespace Utils {
+namespace SPF::Utils {
 
 #ifdef _MSC_VER
 // ---------- MSVC: native __try/__except (catches both SEH and C++ with /EHa) ----------
@@ -118,5 +115,4 @@ inline bool InvokeSafe(Fn&& fn, DWORD* outCode = nullptr) {
 }
 #endif
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

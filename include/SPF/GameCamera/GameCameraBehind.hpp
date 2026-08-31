@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
 #include <cstddef>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraBehind
  * @brief Represents the chase camera (ID 1, 'behind_rotation_basic').
@@ -87,8 +83,7 @@ class GameCameraBehind : public IGameCamera {
 
   // --- Public API for Behind Camera ---
   bool GetLiveState(float* out_pitch, float* out_yaw, float* out_zoom) const;
-  bool GetDistanceSettings(float* out_min, float* out_max, float* out_trailer_max_offset, float* out_def, float* out_trailer_def, float* out_change_speed,
-                           float* out_laziness) const;
+  bool GetDistanceSettings(float* out_min, float* out_max, float* out_trailer_max_offset, float* out_def, float* out_trailer_def, float* out_change_speed, float* out_laziness) const;
   bool GetElevationSettings(float* out_azimuth_laziness, float* out_min, float* out_max, float* out_def, float* out_trailer_def, float* out_height_limit) const;
   bool GetPivot(float* out_x, float* out_y, float* out_z) const;
   bool GetDynamicOffset(float* out_max, float* out_speed_min, float* out_speed_max, float* out_laziness) const;
@@ -134,5 +129,4 @@ class GameCameraBehind : public IGameCamera {
   CameraData m_defaultCameraData;
   bool m_defaultsSaved = false;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-namespace Handles {
+namespace SPF::Handles {
 /**
  * @brief Base interface for all API handles.
  *
@@ -13,5 +10,4 @@ namespace Handles {
 struct IHandle {
   virtual ~IHandle() = default;
 };
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

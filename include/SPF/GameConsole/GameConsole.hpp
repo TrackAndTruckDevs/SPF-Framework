@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
+
 
 #include "SPF/Hooks/IHook.hpp"
 
@@ -8,7 +8,7 @@
 #include <string>
 
 
-SPF_NS_BEGIN
+
 /**
  * @class GameConsole
  * @brief A manageable service for executing in-game console commands.
@@ -40,7 +40,7 @@ SPF_NS_BEGIN
  *
  * Our implementation hooks the ENQUEUER function and submits our commands to queue 1.
  */
-class GameConsole : public Hooks::IHook {
+class GameConsole : public SPF::Hooks::IHook {
  public:
   static GameConsole& GetInstance();
 
@@ -86,4 +86,3 @@ class GameConsole : public Hooks::IHook {
   uintptr_t m_hookedAddress = 0;
   ExecuteCommandFn m_ExecuteGameCommand = nullptr;
 };
-SPF_NS_END

@@ -1,22 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCS/Gearbox.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Telemetry {
-class GameContext;
-}
-
-namespace Telemetry {
+namespace SPF::Telemetry {
 class GearboxProcessor {
  public:
   GearboxProcessor(Logging::Logger& logger, GameContext& context);
@@ -35,5 +24,4 @@ class GearboxProcessor {
   SCS::GearboxConstants m_gearboxConstants;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

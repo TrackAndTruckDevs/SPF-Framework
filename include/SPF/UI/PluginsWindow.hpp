@@ -1,20 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Events {
-class EventManager;
-}
-
-namespace UI {
+namespace SPF::UI {
 class PluginsWindow : public BaseWindow {
  public:
   PluginsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, Events::EventManager& eventManager);
@@ -44,6 +36,4 @@ class PluginsWindow : public BaseWindow {
   std::string m_locStatusUpdateAvailable;
   std::string m_locTooltipUpdateAvailable;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

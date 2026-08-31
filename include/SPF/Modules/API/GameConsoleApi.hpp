@@ -1,11 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_GameConsole_API.h"
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class GameConsoleApi {
  public:
   static void FillGameConsoleApi(SPF_GameConsole_API* api);
@@ -13,5 +10,4 @@ class GameConsoleApi {
  private:
   static void GCon_ExecuteCommand(const char* command);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

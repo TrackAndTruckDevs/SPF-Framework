@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Modules/ITelemetryService.hpp"
 #include "SPF/Telemetry/SCS/Common.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/SCS/Events.hpp"
@@ -16,21 +15,12 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Modules {
-class ITelemetryService;
-}
-
-namespace UI {
+namespace SPF::UI {
 class TelemetryWindow : public BaseWindow {
  public:
   TelemetryWindow(const std::string& componentName, const std::string& windowId, Modules::ITelemetryService& telemetryService);
 
  protected:
-
-
   void RenderContent() override;
   void RefreshLocalization() override;
 
@@ -347,6 +337,4 @@ class TelemetryWindow : public BaseWindow {
   std::string m_locGenericDimmed;
   std::string m_locGenericFull;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

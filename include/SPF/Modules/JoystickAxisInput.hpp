@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Modules/IBindableInput.hpp"
 
 #include "nlohmann/json_fwd.hpp"
@@ -11,8 +9,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 class JoystickAxisInput : public IBindableInput {
  public:
@@ -45,5 +42,4 @@ class JoystickAxisInput : public IBindableInput {
   mutable float m_lastValue = 0.0f;  // For smoothing
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

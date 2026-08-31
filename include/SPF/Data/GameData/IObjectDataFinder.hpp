@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 // Forward declare the service classes to avoid circular dependencies
 class GameObjectVehicleService;
@@ -41,5 +38,4 @@ class IObjectDataFinder {
   bool m_isReady = false;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

@@ -1,13 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Logger_API.h"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 class LoggerApi {
  public:
@@ -27,5 +24,4 @@ class LoggerApi {
   static void LogThrottled(SPF_Logger_Handle* h, SPF_LogLevel level, const char* throttle_key, uint32_t throttle_ms, const char* message);
 };
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

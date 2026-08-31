@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/GearboxProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
@@ -10,8 +8,7 @@
 #include <cstdint>
 #include <cstring>
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 
 GearboxProcessor::GearboxProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context) {}
 
@@ -40,5 +37,4 @@ void GearboxProcessor::HandleConfiguration(const scs_telemetry_configuration_t* 
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

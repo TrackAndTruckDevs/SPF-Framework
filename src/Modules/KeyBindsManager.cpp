@@ -1,7 +1,5 @@
 #include "SPF/Modules/KeyBindsManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Core/InitializationReport.hpp"
@@ -33,8 +31,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 using namespace SPF::Logging;
 using namespace SPF::Input;
 using namespace SPF::System;
@@ -954,5 +951,4 @@ const Binding* KeyBindsManager::FindBestBinding(uint32_t triggerHardwareCode, In
   return bestBinding;
 }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,10 +1,8 @@
 #include "SPF/Logging/Logger.hpp"
 
-#include "SPF/Namespace.hpp"
-
-#include "SPF/Modules/PluginManager.hpp"
-#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ComponentInfo.hpp"
+#include "SPF/Config/IConfigService.hpp"
+#include "SPF/Modules/PluginManager.hpp"
 
 #include "fmt/base.h"
 #include "fmt/format.h"
@@ -24,9 +22,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Logging {
+namespace SPF::Logging {
 
 bool TryParseLogLevel(const std::string& levelStr, LogLevel& outLevel) {
   std::string lowerLevelStr = levelStr;
@@ -170,12 +166,7 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
   }
 
   // Create the message object
-  LogMessage msg{.timestamp = std::chrono::system_clock::now(),
-                 .level = level,
-                 .thread_id = std::this_thread::get_id(),
-                 .logger_name = m_name,
-                 .is_plugin = IsPlugin(),
-                 .formatted_message = std::move(buffer)};
+  LogMessage msg{.timestamp = std::chrono::system_clock::now(), .level = level, .thread_id = std::this_thread::get_id(), .logger_name = m_name, .is_plugin = IsPlugin(), .formatted_message = std::move(buffer)};
 
   // Lock the mutex and dispatch the message to all sinks
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -211,6 +202,4 @@ void Logger::LogThrottledManual(LogLevel level, const char* throttle_key, std::c
   Log(level, message);
 }
 
-}  // namespace Logging
-
-SPF_NS_END
+}  // namespace SPF::Logging

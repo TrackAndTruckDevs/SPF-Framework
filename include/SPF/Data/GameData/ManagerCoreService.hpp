@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/IManagerDataFinder.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
 
@@ -9,9 +7,7 @@
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 /**
  * @class ManagerCoreService
@@ -66,5 +62,4 @@ class ManagerCoreService : public IWorldScopedService {
   std::vector<std::unique_ptr<IManagerDataFinder>> m_dataFinders;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

@@ -1,7 +1,5 @@
 #include "SPF/Hooks/DInput8Hook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -36,8 +34,7 @@
 
 // --- End of new hook pool implementation ---
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 namespace {
 // Helper function to convert WCHAR strings to UTF-8 std::string using Windows API
 std::string WstringToUtf8(const wchar_t* wstr) {
@@ -776,5 +773,4 @@ void DInput8Hook::Remove() {
     g_hookCount = 0;
   }
 }
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

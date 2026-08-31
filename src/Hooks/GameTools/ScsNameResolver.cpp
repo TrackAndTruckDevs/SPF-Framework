@@ -1,7 +1,5 @@
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/SEHGuard.hpp"
@@ -11,9 +9,7 @@
 #include <minwindef.h>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Hooks::GameTools {
+namespace SPF::Hooks::GameTools {
 
 // ============================================================================
 // Static members
@@ -33,9 +29,7 @@ size_t ScsNameResolver::ScsStringWriter::EnsureCapacity(ScsNameResolver::ScsStri
 // ============================================================================
 // Constructor / Singleton
 // ============================================================================
-ScsNameResolver::ScsNameResolver() {
-  ScsStringWriter::g_vtable[2] = reinterpret_cast<void*>(ScsStringWriter::EnsureCapacity);
-}
+ScsNameResolver::ScsNameResolver() { ScsStringWriter::g_vtable[2] = reinterpret_cast<void*>(ScsStringWriter::EnsureCapacity); }
 
 ScsNameResolver& ScsNameResolver::GetInstance() {
   static ScsNameResolver instance;
@@ -146,9 +140,7 @@ void ScsNameResolver::Uninstall() {
   }
 }
 
-void ScsNameResolver::Remove() {
-  Uninstall();
-}
+void ScsNameResolver::Remove() { Uninstall(); }
 
 // ============================================================================
 // Public API
@@ -212,15 +204,12 @@ std::string ScsNameResolver::DecodeToken(uint64_t token) {
 uint64_t ScsNameResolver::ResolveUnitToken(uint32_t unitId) {
   if (!m_unitIdToTokenFn) return 0;
 
-  typedef uint64_t*(__fastcall* UnitIdToToken_t)(uint64_t* out, uint32_t unitId, uint64_t param3);
+  typedef uint64_t*(__fastcall * UnitIdToToken_t)(uint64_t* out, uint32_t unitId, uint64_t param3);
   uint64_t result = 0;
-  bool calledOk = Utils::InvokeSafe([&]() {
-    ((UnitIdToToken_t)m_unitIdToTokenFn)(&result, unitId, 0);
-  });
+  bool calledOk = Utils::InvokeSafe([&]() { ((UnitIdToToken_t)m_unitIdToTokenFn)(&result, unitId, 0); });
 
   if (!calledOk) return 0;
   return result;
 }
 
-}  // namespace Hooks::GameTools
-SPF_NS_END
+}  // namespace SPF::Hooks::GameTools

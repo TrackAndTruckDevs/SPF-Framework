@@ -1,14 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <functional>
 #include <type_traits>
 
-
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 template <typename>
 class Delegate;
@@ -117,6 +112,4 @@ auto Dlg(T* content) noexcept {
   return Delegate<std::remove_pointer_t<FunctionPtr_t<decltype(CtxFuncAddr), T>>>{ConnectArg_v<CtxFuncAddr>, content};
 }
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

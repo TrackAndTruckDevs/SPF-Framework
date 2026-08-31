@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 class GameObjectSessionService;
 
@@ -19,5 +16,4 @@ class ISessionDataFinder {
   virtual const char* GetName() const = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

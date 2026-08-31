@@ -1,13 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 #include <unordered_map>
 
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 
 /**
  * @class JoystickButtonMapping
@@ -78,6 +74,4 @@ class JoystickButtonMapping {
   std::unordered_map<int, std::string> m_buttonToString;
 };
 
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

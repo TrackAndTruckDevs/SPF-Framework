@@ -11,8 +11,6 @@
  */
 #include "SPF/Hooks/GameLogHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/BaseHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/GameLogEventManager.hpp"
@@ -77,8 +75,7 @@ void Detour_GameLog(int level, const char* format, va_list args) {
 }
 }  // namespace
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 
 GameLogHook::GameLogHook() : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework") {}
 
@@ -91,5 +88,4 @@ void* GameLogHook::GetDetourFunc() { return reinterpret_cast<void*>(&Detour_Game
 
 void** GameLogHook::GetOriginalFuncPtr() { return reinterpret_cast<void**>(&o_GameLog); }
 
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

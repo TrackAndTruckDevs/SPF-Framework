@@ -1,7 +1,5 @@
 #include "SPF/UI/LoggerWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -25,8 +23,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Logging;
 using namespace SPF::Localization;
 
@@ -330,5 +327,4 @@ void LoggerWindow::RenderContent() {
   if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) ImGui::SetScrollHereY(1.0f);
   ImGui::EndChild();
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

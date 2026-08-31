@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/UIApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/WindowHandle.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Modules/HandleManager.hpp"
@@ -29,8 +27,7 @@ struct SPF_TextStyle_Handle_t {
   SPF::UI::TextStyle style;
 };
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 using namespace SPF::UI;
 using namespace SPF::Handles;
 
@@ -1663,5 +1660,4 @@ void UIApi::FillUIApi(SPF_UI_API* api) {
   api->UI_DrawList_AddTextWithFontHandle = &UIApi::UI_DrawList_AddTextWithFontHandle;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

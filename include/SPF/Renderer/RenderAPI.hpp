@@ -1,10 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 // Enum to represent the graphics API being used by the game.
 enum class RenderAPI {
@@ -14,6 +10,4 @@ enum class RenderAPI {
   OpenGL,
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

@@ -1,10 +1,7 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/IWindow.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
 #include "imgui.h"
@@ -14,10 +11,7 @@
 #include <set>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 class BaseWindow : public IWindow {
  public:
   BaseWindow(std::string componentName, std::string windowId);
@@ -104,6 +98,4 @@ class BaseWindow : public IWindow {
   std::string m_titleLocalizationKey;
   std::string m_defaultTitle;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

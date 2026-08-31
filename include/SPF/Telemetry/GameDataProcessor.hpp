@@ -1,25 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCS/Common.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Telemetry {
-class GameContext;
-}
-namespace Events {
-class EventManager;
-}
-
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class GameDataProcessor
  * @brief Processes and owns common game state, time, and scale data.
@@ -54,5 +41,4 @@ class GameDataProcessor {
   SCS::CommonData m_commonData;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

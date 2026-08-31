@@ -1,7 +1,5 @@
 #include "SPF/Core/Core.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
@@ -14,7 +12,7 @@
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
-#include "SPF/Events/Proxies/WndProcEventProxy.hpp"
+#include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Events/UIEvents.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"
@@ -75,8 +73,7 @@ using namespace SPF::Input;
 using namespace SPF::GameCamera;
 using namespace SPF::Data::GameData;
 
-SPF_NS_BEGIN
-namespace Core {
+namespace SPF::Core {
 Core::Core(HMODULE module)
     : m_module(module),
       m_lifecycleState(LifecycleState::Stopped),
@@ -105,10 +102,9 @@ Core::Core(HMODULE module)
       ,
       m_onRequestUpdateCheckSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>>(m_eventManager->System.OnRequestUpdateCheck)),
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
-      m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
-      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
-      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted))
-      {}
+      m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
+      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
+      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -832,7 +828,6 @@ void Core::Update() {
   if (m_communicationManager) {
     m_communicationManager->Update();
   }
-
 }
 
 void Core::ImGuiRender() {
@@ -876,12 +871,11 @@ void Core::OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e) { m_com
 
 void Core::OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e) { m_communicationManager->RequestPatronsFetch(e.force); }
 
-void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) { UIManager::GetInstance().NotifyUpdateCheckCompleted(e); }
+void Core::OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) { UIManager::GetInstance().NotifyUpdateCheckCompleted(e); }
 
-void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
+void Core::OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
 
-void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
-
+void Core::OnUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e) {}
 
 void Core::FinalizeWorldInitialization() {
   m_logger->Info("Finalizing world initialization...");
@@ -1257,5 +1251,4 @@ void Core::ScheduleTask(std::chrono::milliseconds delay, std::function<void()> a
   m_deferredTasks.push_back({triggerTime, std::move(action)});
 }
 
-}  // namespace Core
-SPF_NS_END
+}  // namespace SPF::Core

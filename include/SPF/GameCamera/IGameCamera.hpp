@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class IGameCamera
  * @brief An interface for a specific game camera implementation.
@@ -66,5 +62,4 @@ class IGameCamera {
   // Flag to ensure the default state is only captured once.
   bool m_defaultsSaved = false;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

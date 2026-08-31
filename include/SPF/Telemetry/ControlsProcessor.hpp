@@ -1,22 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Telemetry {
-class GameContext;
-}
-
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class ControlsProcessor
  * @brief Processes and owns user input and effective control values.
@@ -39,5 +28,4 @@ class ControlsProcessor {
   SCS::Controls m_controls;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

@@ -1,7 +1,5 @@
 #include "SPF/Hooks/HookManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 // --- Framework Includes ---
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -19,8 +17,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 HookManager& HookManager::GetInstance() {
   static HookManager instance;
   return instance;
@@ -259,5 +256,4 @@ void HookManager::RemoveAllHooks() {
 
   logger->Info("All hooks removed.");
 }
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

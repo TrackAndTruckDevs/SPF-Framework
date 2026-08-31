@@ -1,7 +1,5 @@
 #include "SPF/UI/TelemetryWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
 #include "SPF/Telemetry/SCS/Common.hpp"
@@ -25,10 +23,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 using namespace SPF::Telemetry;
 using namespace SPF::Modules;
@@ -627,11 +622,8 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(m_locLabelEngineEnabled.c_str(), truckData.engine_enabled ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         ImGui::Text(m_locLabelDifferentialLock.c_str(), truckData.differential_lock ? m_locGenericEngaged.c_str() : m_locGenericOff.c_str());
         ImGui::Text(m_locLabelWipers.c_str(), truckData.wipers ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
-        ImGui::Text(
-          m_locLabelTruckLiftAxle.c_str(), truckData.lift_axle ? m_locGenericLifted.c_str() : m_locGenericDown.c_str(), truckData.lift_axle_indicator ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
-        ImGui::Text(m_locLabelTrailerLiftAxle.c_str(),
-                    truckData.trailer_lift_axle ? m_locGenericLifted.c_str() : m_locGenericDown.c_str(),
-                    truckData.trailer_lift_axle_indicator ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
+        ImGui::Text(m_locLabelTruckLiftAxle.c_str(), truckData.lift_axle ? m_locGenericLifted.c_str() : m_locGenericDown.c_str(), truckData.lift_axle_indicator ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
+        ImGui::Text(m_locLabelTrailerLiftAxle.c_str(), truckData.trailer_lift_axle ? m_locGenericLifted.c_str() : m_locGenericDown.c_str(), truckData.trailer_lift_axle_indicator ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
 
         ImGui::SeparatorText(m_locLabelLights.c_str());
         ImGui::Text(m_locFormatBlinkerState.c_str(),
@@ -650,8 +642,7 @@ void TelemetryWindow::RenderContent() {
           return m_locGenericOff.c_str();
         };
         ImGui::Text(m_locLabelAuxLights.c_str(), aux_status_to_str(truckData.light_aux_front), aux_status_to_str(truckData.light_aux_roof), truckData.light_beacon ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
-        ImGui::Text(
-          m_locLabelBrakeReverseLights.c_str(), truckData.light_brake ? m_locGenericOn.c_str() : m_locGenericOff.c_str(), truckData.light_reverse ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
+        ImGui::Text(m_locLabelBrakeReverseLights.c_str(), truckData.light_brake ? m_locGenericOn.c_str() : m_locGenericOff.c_str(), truckData.light_reverse ? m_locGenericOn.c_str() : m_locGenericOff.c_str());
         ImGui::Text(m_locLabelDashboardBacklight.c_str(), truckData.dashboard_backlight);
 
         ImGui::SeparatorText(m_locLabelBrakes.c_str());
@@ -872,8 +863,7 @@ void TelemetryWindow::RenderContent() {
           const auto& data = gameplayEvents.job_delivered;
           ImGui::Text(m_locLabelEventJobDelivered.c_str(), data.revenue, data.earned_xp, data.cargo_damage * 100.0f);
           ImGui::Text(m_locLabelEventJobDeliveredDetails.c_str(), data.distance_km, data.delivery_time);
-          ImGui::Text(
-            m_locLabelEventJobDeliveredFlags.c_str(), data.auto_park_used ? m_locGenericYes.c_str() : m_locGenericNo.c_str(), data.auto_load_used ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
+          ImGui::Text(m_locLabelEventJobDeliveredFlags.c_str(), data.auto_park_used ? m_locGenericYes.c_str() : m_locGenericNo.c_str(), data.auto_load_used ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         } else if (lastEventId == SCS_TELEMETRY_GAMEPLAY_EVENT_job_cancelled) {
           const auto& data = gameplayEvents.job_cancelled;
           ImGui::Text(m_locLabelEventJobCancelled.c_str(), data.penalty);
@@ -919,5 +909,4 @@ void TelemetryWindow::OnGameplayEventUpdate(const char* event_id, const Telemetr
 }
 void TelemetryWindow::OnGearboxConstantsUpdate(const Telemetry::SCS::GearboxConstants& data) { m_gearboxConstants = data; }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

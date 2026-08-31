@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 
@@ -14,8 +12,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 /**
  * @class ChordInput
@@ -57,5 +54,4 @@ class ChordInput : public IBindableInput {
   std::vector<std::unique_ptr<IBindableInput>> m_inputs;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

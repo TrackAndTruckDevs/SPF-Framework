@@ -1,11 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 
-SPF_NS_BEGIN
-namespace Events {
+namespace SPF::Events {
 /**
  * @brief Event generated immediately before a plugin is loaded.
  * Listeners can use this event to prepare resources for the plugin.
@@ -30,5 +27,4 @@ struct OnPluginWillBeUnloaded {
   const std::string& pluginName;
 };
 
-}  // namespace Events
-SPF_NS_END
+}  // namespace SPF::Events

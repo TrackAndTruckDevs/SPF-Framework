@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 /**
  * @class DebugCameraAnimationDataFinder
  * @brief Finds pointers and offsets related to the debug camera animation system.
@@ -18,5 +14,4 @@ class DebugCameraAnimationDataFinder : public ICameraDataFinder {
  protected:
   bool TryFindOffsets(GameDataCameraService& owner) override;
 };
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

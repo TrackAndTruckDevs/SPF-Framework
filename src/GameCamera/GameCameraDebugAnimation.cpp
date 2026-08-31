@@ -1,16 +1,12 @@
 #include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"  // Required for ApplyState
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraDebugAnimation::GameCameraDebugAnimation() {
   // This is now initialized in the Update method to ensure it's ready when needed.
 }
@@ -222,5 +218,4 @@ void GameCameraDebugAnimation::UpdateAnimation(float dt) {
   // Revert to the previous mode immediately after
   *(int*)(pDebugCamera + modeOffset) = originalMode;
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

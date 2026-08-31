@@ -1,7 +1,5 @@
 #include "SPF/Logging/Sinks/ErrorReportSink.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include <mutex>
@@ -9,10 +7,7 @@
 #include <utility>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 
 ErrorReportSink::ErrorReportSink() {}
 
@@ -57,6 +52,4 @@ bool ErrorReportSink::HasPendingLogs() const {
   return !m_pendingLogs.empty();
 }
 
-}  // namespace Logging::Sinks
-
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

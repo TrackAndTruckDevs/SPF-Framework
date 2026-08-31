@@ -1,7 +1,5 @@
 #include "SPF/Hooks/XInputHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -307,9 +305,7 @@ static DWORD InternalProcessXInputState(DWORD dwUserIndex, XINPUT_STATE* pState,
   return result;
 }
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 bool XInputHook::Install() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
 
@@ -399,6 +395,4 @@ void XInputHook::Remove() {
   oXInputGetState = nullptr;
   oXInputGetStateEx = nullptr;
 }
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

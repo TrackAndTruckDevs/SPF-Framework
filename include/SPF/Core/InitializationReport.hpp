@@ -1,11 +1,8 @@
 #pragma once
-#include "SPF/Namespace.hpp"
-
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Core {
+namespace SPF::Core {
 struct InitializationReport {
   struct Issue {
     // Human-readable message for logging
@@ -25,5 +22,4 @@ struct InitializationReport {
 
   bool HasIssues() const { return !Warnings.empty() || !Errors.empty(); }
 };
-}  // namespace Core
-SPF_NS_END
+}  // namespace SPF::Core

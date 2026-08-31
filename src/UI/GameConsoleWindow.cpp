@@ -1,7 +1,5 @@
 #include "SPF/UI/GameConsoleWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -14,9 +12,7 @@
 #include <cstring>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Hooks;
 using namespace SPF::Localization;
 
@@ -107,5 +103,4 @@ void GameConsoleWindow::RenderContent() {
     ImGui::Text(m_cachedEnableHookText.c_str(), m_cachedHooksWindowTitle.c_str());
   }
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

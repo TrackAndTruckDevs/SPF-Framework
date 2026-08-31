@@ -1,7 +1,5 @@
 #include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
@@ -11,8 +9,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 
 LoggerWindowSink::LoggerWindowSink() { m_name = "ui_sink"; }
 
@@ -33,5 +30,4 @@ void LoggerWindowSink::Clear() {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_items.clear();
 }
-}  // namespace Logging::Sinks
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

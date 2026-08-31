@@ -1,7 +1,5 @@
 #include "SPF/System/EnvironmentManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -24,8 +22,7 @@
 #include <processenv.h>
 #include <string>
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 
 EnvironmentManager& EnvironmentManager::GetInstance() {
   static EnvironmentManager instance;
@@ -242,5 +239,4 @@ void EnvironmentManager::RefreshDynamicStatus() {
   m_status.isSteamOverlayActive = (GetModuleHandleA("GameOverlayRenderer64.dll") != NULL);
 }
 
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

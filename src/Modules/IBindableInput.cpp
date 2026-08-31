@@ -1,10 +1,6 @@
 #include "SPF/Modules/IBindableInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
-
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 // Base class has no implementation for most methods,
 // but we can provide a default for IsSameAs.
 bool IBindableInput::IsSameAs(const IBindableInput& other) const {
@@ -12,5 +8,4 @@ bool IBindableInput::IsSameAs(const IBindableInput& other) const {
   // This is a robust fallback for any input type.
   return this->ToJson() == other.ToJson();
 }
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

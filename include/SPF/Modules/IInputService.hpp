@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Input/SCS/VirtualDevice.hpp"
 #include "scssdk_input_device.h"
 
 #include <string>  // Added for std::string
@@ -9,13 +8,7 @@
 // Forward declaration for the SDK init params
 struct scs_input_init_params_t;
 
-SPF_NS_BEGIN
-
-namespace Input::SCS {
-class VirtualDevice;
-}  // namespace Input::SCS
-
-namespace Modules {
+namespace SPF::Modules {
 /**
  * @class IInputService
  * @brief An abstract interface for a service that registers and manages
@@ -65,5 +58,4 @@ class IInputService {
   virtual bool IsRestartRequiredForComponent(const std::string& componentName) const = 0;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

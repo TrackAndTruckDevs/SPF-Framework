@@ -1,14 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 #include <unordered_map>
 
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 
 // Represents the different mouse buttons that can be bound.
 // The integer values correspond to the offsets from DIMOFS_BUTTON0 in DirectInput.
@@ -86,6 +81,4 @@ class MouseButtonMapping {
   std::unordered_map<MouseButton, std::string> m_buttonToDisplayName;
 };
 
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

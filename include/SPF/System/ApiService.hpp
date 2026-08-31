@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -17,8 +15,7 @@
 #include <thread>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 
 /**
  * @brief A simple structure to hold parsed semantic versioning info.
@@ -192,5 +189,4 @@ class ApiService {
    */
   bool EnsureConnectivity(const std::string& baseUrl);
 };
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

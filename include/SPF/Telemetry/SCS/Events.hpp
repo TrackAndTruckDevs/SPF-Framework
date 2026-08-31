@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 #include <string>
 
+namespace SPF::Telemetry::SCS {
 
-SPF_NS_BEGIN
-namespace Telemetry {
-namespace SCS {
 // Holds data for the 'job_cancelled' event
 struct JobCancelledEvent {
   int64_t penalty = 0;
@@ -67,6 +63,4 @@ struct SpecialEvents {
   bool train = false;
 };
 
-}  // namespace SCS
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry::SCS

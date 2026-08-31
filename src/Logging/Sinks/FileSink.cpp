@@ -1,13 +1,10 @@
 #include "SPF/Logging/Sinks/FileSink.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 
 #include "fmt/base.h"
-
 #include "fmt/format.h"
-#include "fmt/std.h"    // IWYU pragma: keep
+#include "fmt/std.h"  // IWYU pragma: keep
 
 #include <charconv>
 #include <chrono>
@@ -18,9 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 
 FileSink::FileSink(const std::filesystem::path& filename, const std::string& name, bool append) {
   m_name = name;
@@ -97,6 +92,4 @@ void FileSink::Log(const LogMessage& msg) {
   m_file << formatted_log << std::endl;
 }
 
-}  // namespace Logging::Sinks
-
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

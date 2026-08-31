@@ -1,10 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/ManifestData.hpp"  // Required for ManifestData type
 #include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Hooks/IHook.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
@@ -16,14 +15,7 @@
 #include <utility>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Hooks {
-class IHook;
-}  // namespace Hooks
-
-namespace Config {
+namespace SPF::Config {
 /**
  * @brief Interface for the central configuration service.
  *
@@ -174,8 +166,7 @@ struct IConfigService {
    * @param newBinding The new JSON object for the binding.
    * @param bindingToClear Optional: if the input was taken from another action, this holds the action name and binding JSON to clear.
    */
-  virtual void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding,
-                             const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) = 0;
+  virtual void UpdateBinding(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const nlohmann::ordered_json& newBinding, const std::optional<std::pair<std::string, nlohmann::ordered_json>>& bindingToClear) = 0;
 
   /**
    * @brief Deletes a specific binding from an action.
@@ -191,8 +182,7 @@ struct IConfigService {
    * @param propertyName The name of the JSON property to change (e.g., "press_type").
    * @param newValue The new value for the property.
    */
-  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName,
-                                     const nlohmann::ordered_json& newValue) = 0;
+  virtual void UpdateBindingProperty(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding, const std::string& propertyName, const nlohmann::ordered_json& newValue) = 0;
 
   /**
    * @brief Resets a specific key in a component's config to its default value from the manifest.
@@ -272,6 +262,4 @@ struct IConfigService {
    */
   virtual void SetAutoSave(const std::string& contextId, bool enabled) = 0;
 };
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
 #include "SPF/System/Keyboard.hpp"
 
@@ -13,12 +12,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Modules {
-class IBindableInput;
-}
-namespace Input {
+namespace SPF::Input {
 enum class PressType { Short, Long };
 
 struct MouseMoveEvent {
@@ -108,5 +102,4 @@ struct InputDeviceActivityChanged {
   bool isActive;
 };
 
-}  // namespace Input
-SPF_NS_END
+}  // namespace SPF::Input

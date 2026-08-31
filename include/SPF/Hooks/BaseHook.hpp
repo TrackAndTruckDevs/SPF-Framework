@@ -1,14 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/IHook.hpp"
 
 #include <cstdint>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 
 /**
  * @class BaseHook
@@ -73,5 +70,4 @@ class BaseHook : public IHook {
   bool m_isEnabled = false;
   uintptr_t m_hookedAddress = 0;
 };
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

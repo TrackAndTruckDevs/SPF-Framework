@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <cstdint>
@@ -9,9 +7,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class ConfigAttributeReader
  * @brief A helper class to safely read attributes from the null-terminated
@@ -57,5 +53,4 @@ class ConfigAttributeReader {
   const scs_named_value_t* m_attributes;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

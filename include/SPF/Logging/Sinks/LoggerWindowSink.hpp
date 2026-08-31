@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"  // Correct include for ILogSink
 
 #include "fmt/base.h"
@@ -10,9 +8,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Logging::Sinks {
+namespace SPF::Logging::Sinks {
 /**
  * @brief A sink that collects log messages in memory for UI rendering.
  * This class is thread-safe.
@@ -64,5 +60,4 @@ class LoggerWindowSink : public ILogSink  // Use the fully qualified name
   mutable std::mutex m_mutex;
   std::vector<DisplayMessage> m_items;
 };
-}  // namespace Logging::Sinks
-SPF_NS_END
+}  // namespace SPF::Logging::Sinks

@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/VirtualInputApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/InputDeviceHandle.hpp"
 #include "SPF/Input/SCS/VirtualDevice.hpp"
 #include "SPF/Modules/HandleManager.hpp"
@@ -16,9 +14,7 @@
 #include <string>
 #include <utility>
 
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 SPF_VirtualDevice_Handle* VirtualInputApi::Virt_CreateDevice(const char* pluginName, const char* deviceName, const char* displayName, SPF_InputDeviceType type) {
   auto& pm = PluginManager::GetInstance();
@@ -98,5 +94,4 @@ void VirtualInputApi::FillVirtualInputApi(SPF_VirtInput_API* api) {
   api->Virt_SetAxisValue = &VirtualInputApi::Virt_SetAxisValue;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

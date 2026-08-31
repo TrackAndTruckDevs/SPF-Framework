@@ -1,14 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/IInputConsumer.hpp"
 #include "SPF/Input/InputEvents.hpp"
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 class ImGuiInputConsumer : public Input::IInputConsumer {
  public:
   // Keyboard events
@@ -23,6 +18,4 @@ class ImGuiInputConsumer : public Input::IInputConsumer {
   bool IsCapturingKeyboard() override;
   bool IsCapturingMouse() override;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

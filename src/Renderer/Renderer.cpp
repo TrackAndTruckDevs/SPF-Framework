@@ -1,7 +1,5 @@
 #include "SPF/Renderer/Renderer.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Core/Core.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/D3D11Hook.hpp"
@@ -25,8 +23,7 @@
 #include <windef.h>
 #include <winnt.h>
 
-SPF_NS_BEGIN
-namespace Rendering {
+namespace SPF::Rendering {
 using namespace SPF::Logging;
 using namespace SPF::UI;
 using namespace SPF::Hooks;
@@ -162,5 +159,4 @@ void Renderer::OnRendererRenderImGui() {
   m_core.ImGuiRender();
 }
 
-}  // namespace Rendering
-SPF_NS_END
+}  // namespace SPF::Rendering

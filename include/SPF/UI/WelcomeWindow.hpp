@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/IWindow.hpp"
@@ -12,10 +10,7 @@
 #include <memory>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 enum class WelcomeMode { FirstInstall, FrameworkUpdate };
 
@@ -83,6 +78,4 @@ class WelcomeWindow : public IWindow {
   std::string m_locBtnGo;
 };
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

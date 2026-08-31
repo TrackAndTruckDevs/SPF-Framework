@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/TelemetryApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/TelemetryHandle.hpp"
 #include "SPF/Modules/HandleManager.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
@@ -31,8 +29,7 @@
 #include <sec_api/string_s.h>
 #endif
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace Telemetry::SCS;
 
@@ -1223,5 +1220,4 @@ SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForWorldReload(SPF_Tele
   return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

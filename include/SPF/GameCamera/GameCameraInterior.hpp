@@ -1,16 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
 #include <cstddef>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraInterior
  * @brief Represents the interior cabin camera (ID 2).
@@ -180,5 +176,4 @@ class GameCameraInterior : public IGameCamera {
   CameraData m_defaultCameraData;
   bool m_defaultsSaved = false;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

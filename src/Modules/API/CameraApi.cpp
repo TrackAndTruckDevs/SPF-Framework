@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/CameraApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/GameCamera/DebugCameraMode.hpp"
 #include "SPF/GameCamera/DebugHudPosition.hpp"
@@ -25,8 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 using namespace SPF::GameCamera;
 using namespace SPF::Data::GameData;
 using namespace SPF::Utils;
@@ -2362,5 +2359,4 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_SetWheelShakeAnim = &T_Camera_SetWheelShakeAnim;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

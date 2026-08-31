@@ -1,16 +1,18 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Renderer/ITexture.hpp"
+#include "SPF/Renderer/Renderer.hpp"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/System/ApiService.hpp"
 #include "SPF/UI/IWindow.hpp"
@@ -28,26 +30,7 @@
 #include <unordered_map>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Events {
-class EventManager;
-}
-namespace Input {
-class InputManager;
-}
-namespace Modules {
-class PluginManager;
-class CommunicationManager;
-}  // namespace Modules
-namespace Config {
-struct IConfigService;
-}
-namespace Rendering {
-class Renderer;
-}
-
-namespace UI {
+namespace SPF::UI {
 class IWindow;
 class NotificationWindow;  // Forward declaration
 
@@ -100,12 +83,12 @@ class UIManager : public Config::IConfigurable {
   void NotifyInputCaptureConflict(const Input::InputCaptureConflict& e);
 
   //  API related notifications
-  void NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
-  void NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
-  void NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
-  void NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e);
+  void NotifyUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e);
+  void NotifyPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e);
+  void NotifyUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e);
+  void NotifyPluginUpdateAvailable(const Events::OnPluginUpdateAvailable& e);
 
-  const Events::System::OnPluginUpdateAvailable* GetPluginUpdate(const std::string& pluginId) const;
+  const Events::OnPluginUpdateAvailable* GetPluginUpdate(const std::string& pluginId) const;
 
   void ToggleMouseOverridden();
   void SetMouseOverride(bool overridden) { m_isMouseControlOverridden = overridden; }
@@ -215,13 +198,11 @@ class UIManager : public Config::IConfigurable {
 
   float m_uiScaleFactor = 1.0f;
 
-  std::unordered_map<std::string, Events::System::OnPluginUpdateAvailable> m_pluginUpdates;
+  std::unordered_map<std::string, Events::OnPluginUpdateAvailable> m_pluginUpdates;
 
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginDidLoad&)>> m_onPluginDidLoadSink;
   std::unique_ptr<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>> m_onPluginWillBeUnloadedSink;
   std::unique_ptr<Utils::Sink<void(const System::ChangelogData&)>> m_onReleaseNotesReceivedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>> m_onPluginUpdateAvailableSink;
+  std::unique_ptr<Utils::Sink<void(const Events::OnPluginUpdateAvailable&)>> m_onPluginUpdateAvailableSink;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

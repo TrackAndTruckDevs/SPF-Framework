@@ -1,8 +1,7 @@
 #include "SPF/Input/InputManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/EnumMappings.hpp"
+#include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/User32Hook.hpp"
 #include "SPF/Input/IInputConsumer.hpp"
 #include "SPF/Input/InputEvents.hpp"
@@ -10,6 +9,7 @@
 #include "SPF/Modules/ChordInput.hpp"
 #include "SPF/Modules/GamepadAxisInput.hpp"
 #include "SPF/Modules/GamepadInput.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/JoystickAxisInput.hpp"
 #include "SPF/Modules/JoystickInput.hpp"
@@ -42,9 +42,7 @@
 #include <winnt.h>
 #include <xinput.h>
 
-SPF_NS_BEGIN
-
-namespace Input {
+namespace SPF::Input {
 using namespace SPF::Logging;
 using namespace SPF::System;
 
@@ -1428,5 +1426,4 @@ void InputManager::UpdateCaptureUI() {
   m_eventManager.System.OnInputCaptureUpdate.Call(update);
 }
 
-}  // namespace Input
-SPF_NS_END
+}  // namespace SPF::Input

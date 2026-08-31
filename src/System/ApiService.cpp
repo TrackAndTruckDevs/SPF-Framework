@@ -1,7 +1,5 @@
 #include "SPF/System/ApiService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include "cpr/api.h"
@@ -59,8 +57,7 @@ constexpr const char* API_CLIENT_SECRET = "SPF_API_SEC_6ccfd2c1-7b9d-48e1-9f0a-3
 constexpr auto HEALTH_CHECK_INTERVAL = std::chrono::minutes(5);
 }  // namespace
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 
 // --- ApiService Implementation ---
 
@@ -635,5 +632,4 @@ std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAs
   return future;
 }
 
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

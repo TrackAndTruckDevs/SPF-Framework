@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Climate_API.h"
 
 #include <cstdint>
@@ -9,9 +7,9 @@
 #ifdef SPF_CL_DECL_FLOAT
 #undef SPF_CL_DECL_FLOAT
 #endif
-#define SPF_CL_DECL_FLOAT(name)                                                                      \
-  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                         \
-  static float T_Climate_Get##name(SPF_Climate_ProfileRef profile);                                   \
+#define SPF_CL_DECL_FLOAT(name)                                                                        \
+  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                          \
+  static float T_Climate_Get##name(SPF_Climate_ProfileRef profile);                                    \
   static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, float value);                        \
   static float T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx);             \
   static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, float value); \
@@ -21,49 +19,48 @@
 #ifdef SPF_CL_DECL_INT32
 #undef SPF_CL_DECL_INT32
 #endif
-#define SPF_CL_DECL_INT32(name)                                                                      \
-  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                         \
-  static int32_t T_Climate_Get##name(SPF_Climate_ProfileRef profile);                                 \
-  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, int32_t value);                      \
-  static int32_t T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx);           \
+#define SPF_CL_DECL_INT32(name)                                                              \
+  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                \
+  static int32_t T_Climate_Get##name(SPF_Climate_ProfileRef profile);                        \
+  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, int32_t value);            \
+  static int32_t T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx); \
   static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, int32_t value);
 
 #ifdef SPF_CL_DECL_VECTOR3
 #undef SPF_CL_DECL_VECTOR3
 #endif
-#define SPF_CL_DECL_VECTOR3(name)                                                                    \
-  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                         \
-  static void T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3* out);           \
-  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3 v);              \
+#define SPF_CL_DECL_VECTOR3(name)                                                                                   \
+  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                                       \
+  static void T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3* out);                        \
+  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3 v);                           \
   static void T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3* out); \
-  static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3 v); \
-  static void T_Climate_GetBlended##name(SPF_Climate_Vector3* out);                                    \
+  static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3 v);    \
+  static void T_Climate_GetBlended##name(SPF_Climate_Vector3* out);                                                 \
   static void T_Climate_SetBlended##name(SPF_Climate_Vector3 v, float maxComp);
 
 #ifdef SPF_CL_DECL_VECTOR2
 #undef SPF_CL_DECL_VECTOR2
 #endif
-#define SPF_CL_DECL_VECTOR2(name)                                                                    \
-  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                         \
-  static void T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2* out);           \
-  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2 v);              \
+#define SPF_CL_DECL_VECTOR2(name)                                                                                   \
+  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                                       \
+  static void T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2* out);                        \
+  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2 v);                           \
   static void T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2* out); \
-  static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2 v); \
-  static void T_Climate_GetBlended##name(SPF_Climate_Vector2* out);                                    \
+  static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2 v);    \
+  static void T_Climate_GetBlended##name(SPF_Climate_Vector2* out);                                                 \
   static void T_Climate_SetBlended##name(SPF_Climate_Vector2 v, float maxComp);
 
 #ifdef SPF_CL_DECL_TEXTURE
 #undef SPF_CL_DECL_TEXTURE
 #endif
-#define SPF_CL_DECL_TEXTURE(name)                                                                    \
-  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                         \
-  static int T_Climate_Get##name(SPF_Climate_ProfileRef profile, char* buf, int sz);                   \
-  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, const char* val);                    \
+#define SPF_CL_DECL_TEXTURE(name)                                                                           \
+  static uint64_t T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile);                               \
+  static int T_Climate_Get##name(SPF_Climate_ProfileRef profile, char* buf, int sz);                        \
+  static void T_Climate_Set##name(SPF_Climate_ProfileRef profile, const char* val);                         \
   static int T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, char* buf, int sz); \
   static void T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, const char* val);
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 /**
  * @brief Bridges the C climate API to the internal ClimateService singleton.
@@ -218,5 +215,4 @@ class ClimateApi {
   SPF_CL_DECL_TEXTURE(CloudShadowTexture)
 };
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

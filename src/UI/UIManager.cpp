@@ -1,7 +1,5 @@
 #include "SPF/UI/UIManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
@@ -16,6 +14,10 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/SPF_API/SPF_Icons.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
@@ -71,9 +73,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Logging;
 using namespace SPF::Input;
 
@@ -91,9 +91,9 @@ UIManager::UIManager()
       m_keyBindsManager(nullptr),
       m_pluginManager(nullptr),
       m_communicationManager(nullptr),
-      m_onPluginDidLoadSink(nullptr),          // will be initialized in Init()
-      m_onPluginWillBeUnloadedSink(nullptr),   // will be initialized in Init()
-      m_onReleaseNotesReceivedSink(nullptr),   // will be initialized in Init()
+      m_onPluginDidLoadSink(nullptr),         // will be initialized in Init()
+      m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
+      m_onReleaseNotesReceivedSink(nullptr),  // will be initialized in Init()
       m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
@@ -114,7 +114,7 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_onPluginDidLoadSink = std::make_unique<Utils::Sink<void(const Events::OnPluginDidLoad&)>>(m_eventManager->System.OnPluginDidLoad);
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
   m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
-  m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
+  m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
@@ -315,7 +315,7 @@ void UIManager::HideNotification(SPF_Notification_Handle handle) {
   }
 }
 
-const Events::System::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
+const Events::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
   auto it = m_pluginUpdates.find(pluginId);
   if (it != m_pluginUpdates.end()) {
     return &it->second;
@@ -1184,7 +1184,7 @@ void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e)
   }
 }
 
-void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+void UIManager::NotifyUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) {
   auto& loc = Localization::LocalizationManager::GetInstance();
   auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
   if (e.result.success && e.result.data.has_value()) {
@@ -1218,15 +1218,15 @@ void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCo
   }
 }
 
-void UIManager::NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
+void UIManager::NotifyPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) {
   for (const auto& window : m_windows) {
     window->OnPatronsFetchCompleted(e);
   }
 }
 
-void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
+void UIManager::NotifyUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e) {}
 
-void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e) {
+void UIManager::NotifyPluginUpdateAvailable(const Events::OnPluginUpdateAvailable& e) {
   m_pluginUpdates[e.pluginId] = e;
 
   auto& loc = Localization::LocalizationManager::GetInstance();
@@ -1341,6 +1341,4 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   }
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

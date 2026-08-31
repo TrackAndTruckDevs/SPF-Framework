@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/LocalizationApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/LocalizationHandle.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Modules/HandleManager.hpp"  // Required for GetInstance()->m_handleManager
@@ -19,8 +17,7 @@
 #include <sec_api/string_s.h>
 #endif
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 // Trampolines that are exposed to plugins via the C-API
 
@@ -98,5 +95,4 @@ void LocalizationApi::FillLocalizationApi(SPF_Localization_API* api) {
   api->Loc_HasLanguage = &LocalizationApi::Loc_HasLanguage;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,7 +1,5 @@
 #include "SPF/UI/GameWorldWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -16,9 +14,7 @@
 #include <cstdio>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace Localization;
 
 GameWorldWindow::GameWorldWindow(const std::string& componentName, const std::string& windowId, Data::GameData::GameWorldService& worldService) : BaseWindow(componentName, windowId), m_worldService(worldService) {
@@ -511,5 +507,4 @@ void GameWorldWindow::RenderContent() {
   ImGui::Spacing();
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

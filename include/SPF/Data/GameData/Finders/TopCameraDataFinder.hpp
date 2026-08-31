@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 /**
  * @class TopCameraDataFinder
  * @brief Finds all memory offsets related to the top-down camera.
@@ -17,5 +13,4 @@ class TopCameraDataFinder : public ICameraDataFinder {
   const char* GetName() const override { return "TopCameraDataFinder"; }
 };
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

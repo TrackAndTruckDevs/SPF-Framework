@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/ManifestApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ManifestData.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/SPF_API/SPF_Manifest_API.h"  // Builder definitions
@@ -15,8 +13,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace SPF::Config;
 
@@ -365,5 +362,4 @@ ManifestData ManifestApi::BuildManifest(SPF_GetManifestAPI_Func pGetManifestFunc
   return manifest;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

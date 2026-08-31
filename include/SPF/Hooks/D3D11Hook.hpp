@@ -1,19 +1,14 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
 #include <minwindef.h>
 #include <windef.h>
 
-
 struct IDXGISwapChain;
 struct ID3D11Device;
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 
 /**
  * @class D3D11Hook
@@ -81,6 +76,4 @@ class D3D11Hook {
   D3D11Hook() = default;
 };
 
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

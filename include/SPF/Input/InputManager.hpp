@@ -1,10 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/EnumMappings.hpp"
-#include "SPF/Events/EventManager.hpp"
+#include "SPF/Input/IInputConsumer.hpp"
 #include "SPF/Input/InputEvents.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
 #include "SPF/System/GamepadButtonMapping.hpp"
 #include "SPF/System/Keyboard.hpp"
@@ -26,21 +25,19 @@
 #include <winnt.h>
 #include <xinput.h>
 
-SPF_NS_BEGIN
-
 // Forward declaration to avoid circular dependencies
-namespace System {
+namespace SPF::System {
 enum class DeviceType;
 }  // namespace System
-namespace Input {
+namespace SPF::Input {
 class IInputConsumer;
 }  // namespace Input
-
-namespace Events {
+namespace SPF::Events {
 struct GamepadEvent;
+class EventManager;
 }  // namespace Events
 
-namespace Input {
+namespace SPF::Input {
 struct ButtonState {
   bool isDown = false;
   bool wasDown = false;  // State in the previous frame
@@ -80,8 +77,7 @@ class InputManager {
   void Shutdown();
 
   // --- Axis Configuration (Called by KeyBindsManager when config changes) ---
-  void SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold,
-                         float sensitivity = 1.0f, float rMin = -1.0f, float rMax = 1.0f);
+  void SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold, float sensitivity = 1.0f, float rMin = -1.0f, float rMax = 1.0f);
   void ResetAxisProperties();
 
   /**
@@ -299,5 +295,4 @@ class InputManager {
   bool m_isXInputDeviceActive = false;
 };
 
-}  // namespace Input
-SPF_NS_END
+}  // namespace SPF::Input

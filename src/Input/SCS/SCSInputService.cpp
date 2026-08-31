@@ -1,7 +1,5 @@
 #include "SPF/Input/SCS/SCSInputService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Input/SCS/VirtualDevice.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -12,9 +10,7 @@
 #include <memory>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Input::SCS {
+namespace SPF::Input::SCS {
 SCSInputService::SCSInputService(Logging::Logger& logger, Events::EventManager& eventManager) : m_logger(logger), m_eventManager(eventManager) {}
 
 SCSInputService::~SCSInputService() = default;
@@ -122,5 +118,4 @@ void SCSInputService::HandleActivityChange(bool isActive) {
   m_eventManager.System.OnInputDeviceActivityChanged.Call({deviceName, isActive});
 }
 
-}  // namespace Input::SCS
-SPF_NS_END
+}  // namespace SPF::Input::SCS

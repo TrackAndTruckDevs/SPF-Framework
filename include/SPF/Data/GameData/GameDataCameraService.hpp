@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
@@ -12,9 +10,7 @@
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 /**
  * @class GameDataCameraService
  * @brief Central repository for camera memory offsets and verified object pointers.
@@ -44,9 +40,7 @@ class GameDataCameraService : public IWorldScopedService {
   const char* GetName() const override { return "GameDataCameraService"; }
   void ResetForWorldReload() override { Reset(); }
   bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
-  bool IsReady() const {
-    return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady();
-  }
+  bool IsReady() const { return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady(); }
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
@@ -705,5 +699,4 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_animationTimerOffset = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

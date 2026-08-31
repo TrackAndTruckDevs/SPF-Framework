@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/TelemetryEvents.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -37,8 +35,7 @@
 #include <sec_api/stdio_s.h>
 #endif
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 using namespace Modules;
 
 SCSTelemetryService::SCSTelemetryService(Logging::Logger& logger, GameContext& context, Events::EventManager& eventManager) : m_logger(logger), m_context(context), m_eventManager(eventManager) {
@@ -513,5 +510,4 @@ Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearb
 
 Utils::Signal<void()>& SCSTelemetryService::GetTimerRestartSignal() { return m_eventManager.System.Telemetry.OnTimerRestart; }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry
