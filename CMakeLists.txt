@@ -362,7 +362,6 @@ add_library(SPF SHARED
     "src/System/PathManager.cpp"
     "src/System/EnvironmentManager.cpp"
     "src/System/ApiService.cpp"
-    "src/System/SelfUpdater.cpp"
     "src/Utils/PatternFinder.cpp"
     "src/Utils/FinderLog.cpp"
     "src/Utils/HashUtils.cpp"

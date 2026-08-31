@@ -50,8 +50,6 @@ struct OnUpdateCheckCompleted;
 struct OnPatronsFetchCompleted;
 struct OnUsageTrackingCompleted;
 struct OnPluginUpdateAvailable;
-struct OnPatchUpdateDetected;
-struct OnPatchApplyCompleted;
 }  // namespace System
 }  // namespace Events
 namespace Utils {
@@ -89,8 +87,6 @@ struct IConfigService;
 
 namespace System {
 class ApiService;
-class SelfUpdater;
-struct PatchApplyResult;
 }  // namespace System
 
 namespace Telemetry {
@@ -223,8 +219,6 @@ class Core {
   void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
   void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
   void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
-  void OnPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e);
-  void ProcessSelfUpdaterResult();
   void ProcessHookDependenciesForPlugin(const std::string& pluginName, bool isEnabled);
 
   // --- Init/Shutdown Helpers ---
@@ -278,7 +272,6 @@ class Core {
   std::unique_ptr<Modules::HandleManager> m_handleManager;
   std::unique_ptr<System::ApiService> m_apiService;
   std::unique_ptr<Modules::CommunicationManager> m_communicationManager;
-  std::unique_ptr<System::SelfUpdater> m_selfUpdater;
   std::vector<Config::IConfigurable*> m_configurableServices;
 
   std::unique_ptr<Telemetry::GameContext> m_gameContext;
@@ -309,8 +302,6 @@ class Core {
   std::unique_ptr<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>> m_onUpdateCheckCompletedSink;
   std::unique_ptr<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>> m_onPatronsFetchCompletedSink;
   std::unique_ptr<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>> m_onUsageTrackingCompletedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>> m_onPatchUpdateDetectedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>> m_onPatchApplyCompletedSink;
 
   // --- UI Components ---
   std::unique_ptr<UI::ImGuiInputConsumer> m_imguiInputConsumer;

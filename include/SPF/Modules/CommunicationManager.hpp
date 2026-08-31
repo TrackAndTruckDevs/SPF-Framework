@@ -93,7 +93,6 @@ class CommunicationManager {
   /**
    * @brief Checks if the fetched update is a hotfix patch for the running base version and starts the automatic apply flow.
    */
-  void TryStartPatchUpdate(const System::UpdateInfo& info);
 
   bool ShouldPerformRequest(ResourceStatus status, std::chrono::steady_clock::time_point lastErrorTime, bool forceRefresh);
 

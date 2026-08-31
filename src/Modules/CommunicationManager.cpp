@@ -102,7 +102,6 @@ void CommunicationManager::Update() {
 
       if (result.data) {
         OnUpdateInfoReceived.Call(*result.data);
-        TryStartPatchUpdate(*result.data);
       }
     } else {
       if (result.errorMessage.value_or("") == "api.error.forbidden") {
@@ -288,30 +287,6 @@ void CommunicationManager::RequestUpdateCheck(bool forceRefresh) {
 
   m_updateState.status = ResourceStatus::Loading;
   m_updateFuture = m_apiService.FetchUpdateInfoAsync(*it->second.websiteUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, versionOpt->revision, channel, currentLang);
-}
-
-void CommunicationManager::TryStartPatchUpdate(const System::UpdateInfo& info) {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("CommunicationManager");
-
-  const auto& allComponents = m_configService.GetAllComponentInfo();
-  auto it = allComponents.find("framework");
-  if (it == allComponents.end() || !it->second.version) return;
-
-  auto currentVer = System::Version::FromString(*it->second.version);
-  if (!currentVer) return;
-
-  const auto& latest = info.latestVersion.ver;
-  const bool isPatch = latest.major == currentVer->major && latest.minor == currentVer->minor && latest.patch == currentVer->patch && latest.revision > currentVer->revision;
-  if (!isPatch) return;
-
-  const bool autoPatch = m_configService.GetValue("framework", "settings.framework.auto_patch", true).get<bool>();
-  if (!autoPatch) {
-    logger->Info("Patch v{} detected but automatic patch updates are disabled.", info.latestVersion.full);
-    return;
-  }
-
-  logger->Info("Hotfix patch available: {} -> {}. Starting automatic update...", currentVer->ToString(), info.latestVersion.full);
-  m_eventManager.System.OnPatchUpdateDetected.Call({info});
 }
 
 void CommunicationManager::RequestPluginUpdateChecks() {

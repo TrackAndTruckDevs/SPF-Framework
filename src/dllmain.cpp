@@ -9,7 +9,6 @@
 #include <minwindef.h>
 #include <winnt.h>
 
-
 static std::unique_ptr<SPF::Core::Core> g_Core;
 
 /**

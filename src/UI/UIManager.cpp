@@ -94,9 +94,7 @@ UIManager::UIManager()
       m_onPluginDidLoadSink(nullptr),          // will be initialized in Init()
       m_onPluginWillBeUnloadedSink(nullptr),   // will be initialized in Init()
       m_onReleaseNotesReceivedSink(nullptr),   // will be initialized in Init()
-      m_onPluginUpdateAvailableSink(nullptr),  // will be initialized in Init()
-      m_onPatchUpdateDetectedSink(nullptr),    // will be initialized in Init()
-      m_onPatchApplyCompletedSink(nullptr)     // will be initialized in Init()
+      m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
 }
@@ -117,15 +115,11 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
   m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
   m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
-  m_onPatchUpdateDetectedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>>(m_eventManager->System.OnPatchUpdateDetected);
-  m_onPatchApplyCompletedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>>(m_eventManager->System.OnPatchApplyCompleted);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
   m_onReleaseNotesReceivedSink->Connect<&UIManager::OnReleaseNotesReceived>(this);
   m_onPluginUpdateAvailableSink->Connect<&UIManager::NotifyPluginUpdateAvailable>(this);
-  m_onPatchUpdateDetectedSink->Connect<&UIManager::NotifyPatchUpdateDetected>(this);
-  m_onPatchApplyCompletedSink->Connect<&UIManager::NotifyPatchApplyCompleted>(this);
 }
 
 void UIManager::CloseFocusedWindow() {
@@ -1198,31 +1192,21 @@ void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCo
     logger->Debug("Update check completed. Available: {}", data.updateAvailable);
 
     if (data.updateAvailable) {
-      // Patches (same base, higher revision) are handled by OnPatchUpdateDetected.
-      // Skip the major "update available" toast for patch-type updates.
-      const auto& latest = data.latestVersion.ver;
-      const auto currentVer = System::Version::FromString(
-          m_configService->GetValue("framework", "settings.framework.version", "0.0.0").get<std::string>());
-      if (currentVer && latest.major == currentVer->major && latest.minor == currentVer->minor &&
-          latest.patch == currentVer->patch && latest.revision > currentVer->revision) {
-        logger->Debug("Update is a patch (v{}). Skipping 'update available' toast — handled by auto-patch.", data.latestVersion.full);
-      } else {
-        bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
-        logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
+      const bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+      logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
 
-        if (showNotifications) {
-          logger->Info("Showing update notification...");
-          std::string versionStr = "v." + e.result.data->latestVersion.full;
-          std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
-          SPF_Notification_Params params{};
-          params.message = updateMsg.c_str();
-          params.type = SPF_NOTIFICATION_INFO;
-          params.mode = SPF_NOTIF_MODE_TOP;
-          params.duration = 5.0f;
-          UIManager::GetInstance().ShowNotificationEx(&params);
-        } else {
-          logger->Debug("Update notifications are disabled in settings.");
-        }
+      if (showNotifications) {
+        logger->Info("Showing update notification...");
+        std::string versionStr = "v." + e.result.data->latestVersion.full;
+        std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
+        SPF_Notification_Params params{};
+        params.message = updateMsg.c_str();
+        params.type = SPF_NOTIFICATION_INFO;
+        params.mode = SPF_NOTIF_MODE_TOP;
+        params.duration = 5.0f;
+        UIManager::GetInstance().ShowNotificationEx(&params);
+      } else {
+        logger->Debug("Update notifications are disabled in settings.");
       }
     }
   } else if (!e.result.success) {
@@ -1264,41 +1248,6 @@ void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdate
   } else {
     logger->Debug("Update notifications are disabled in settings.");
   }
-}
-
-void UIManager::NotifyPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e) {
-  auto& loc = Localization::LocalizationManager::GetInstance();
-  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-  const std::string version = e.info.latestVersion.full;
-
-  logger->Info("Hotfix patch v{} detected, downloading automatically...", version);
-  std::string msg = loc.GetFormatted("framework", "main_window.patch_downloading", version);
-  SPF_Notification_Params params{};
-  params.message = msg.c_str();
-  params.type = SPF_NOTIFICATION_INFO;
-  params.mode = SPF_NOTIF_MODE_TOP;
-  params.duration = 5.0f;
-  UIManager::GetInstance().ShowNotificationEx(&params);
-}
-
-void UIManager::NotifyPatchApplyCompleted(const Events::System::OnPatchApplyCompleted& e) {
-  auto& loc = Localization::LocalizationManager::GetInstance();
-  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-
-  if (!e.success) {
-    // Patch failures are logged only, they must never block the user.
-    logger->Warn("Automatic patch update to v{} failed: {}", e.version, e.errorMessage);
-    return;
-  }
-
-  logger->Info("Patch v{} applied. Restart required.", e.version);
-  std::string msg = loc.GetFormatted("framework", "main_window.patch_updated_restart", e.version);
-  SPF_Notification_Params params{};
-  params.message = msg.c_str();
-  params.type = SPF_NOTIFICATION_SUCCESS;
-  params.mode = SPF_NOTIF_MODE_TOP;
-  params.duration = 8.0f;
-  UIManager::GetInstance().ShowNotificationEx(&params);
 }
 
 void UIManager::CreateAndRegisterFrameworkWindows() {
@@ -1365,7 +1314,7 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   RegisterWindow(climateWindow);
 
   // Notifications (Global) — must be created before the status check block below,
-  // because PatchUpdated fires ShowNotificationEx which needs m_notificationWindow.
+  // because Updated fires ShowNotificationEx which needs m_notificationWindow.
   m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
   RegisterWindow(m_notificationWindow);
 
@@ -1375,16 +1324,6 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
     auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
     welcomeWindow->SetVisibility(true);
     RegisterWindow(welcomeWindow);
-  } else if (fwInfo.installStatus == System::InstallationStatus::PatchUpdated) {
-    // Hotfix patches carry no release notes - just a brief confirmation.
-    auto& loc = Localization::LocalizationManager::GetInstance();
-    std::string msg = loc.GetFormatted("framework", "main_window.patch_applied", fwInfo.version);
-    SPF_Notification_Params params{};
-    params.message = msg.c_str();
-    params.type = SPF_NOTIFICATION_SUCCESS;
-    params.mode = SPF_NOTIF_MODE_TOP;
-    params.duration = 5.0f;
-    UIManager::GetInstance().ShowNotificationEx(&params);
   } else if (fwInfo.installStatus == System::InstallationStatus::Updated) {
     // If updated, we request release notes from the server.
     // When they arrive, OnReleaseNotesReceived will show the window.

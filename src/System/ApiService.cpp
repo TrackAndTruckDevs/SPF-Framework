@@ -313,11 +313,6 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
 
         info.downloadUrl = safeString(data, "download_url", "");
 
-        // Safe extraction of "md5"
-        json m = data.value("md5", json::object());
-        info.md5.archive = safeString(m, "archive", "");
-        info.md5.binary = safeString(m, "binary", "");
-
         // Safe extraction of "content"
         json c = data.value("content", json::object());
         info.content.title = safeString(c, "title", "");

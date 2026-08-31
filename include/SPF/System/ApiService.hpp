@@ -92,10 +92,6 @@ struct UpdateInfo {
     std::string full;
   } latestVersion;
   std::string downloadUrl;
-  struct {
-    std::string archive;
-    std::string binary;
-  } md5;
   ChangelogData content;
 };
 
