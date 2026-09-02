@@ -44,14 +44,6 @@ namespace ExamplePlugin {
 // =================================================================================================
 
 /**
- * @brief A constant for the plugin's name.
- * @details Using a constant avoids "magic strings" (hard-coded strings scattered in the code)
- * and makes it easy to rename the plugin in one place. It is used to identify the plugin
- * by the framework for logging, configuration, and other services.
- */
-const char* PLUGIN_NAME = "ExamplePlugin";
-
-/**
  * @brief The single, global instance of the plugin's context.
  * @details This is defined once here and declared as `extern` in the header, making it the central
  * point for accessing all plugin state. This pattern is crucial for managing state in a C-style,
@@ -73,26 +65,28 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
   // stability, ensuring compatibility even if the plugin and framework are built with different
   // compilers or settings.
 
-  // --- 2.1. Plugin Information ---
-  // This section provides the basic identity of your plugin.
+    // --- 2.1. Plugin Information ---
+    // This section provides the basic identity of your plugin.
+    // NOTE: PLUGIN_NAME, PLUGIN_VERSION, and PLUGIN_AUTHOR are defined via CMakeLists.txt
+    // (target_compile_definitions). To change them, edit the project() VERSION and the
+    // set(PLUGIN_NAME ...) / set(RC_COMPANY ...) lines in your CMakeLists.txt file.
   {
-    // `name`: The unique programmatic name of your plugin. No spaces or special characters.
-    // This is used for internal identification, folder names, and config files.
-    // CRITICAL: This MUST match the name used in `Cfg_GetContext` calls for various APIs.
+    // `name`: (Optional) A unique name for the plugin (e.g., "MyPlugin").
+    // If not specified, the framework will use the name of your DLL file, but specifying it
+    // here is recommended to avoid potential conflicts.
     api->Info_SetName(h, PLUGIN_NAME);
 
-    // `version`: The version of your plugin. It's a best practice to follow Semantic Versioning (semver.org).
-    // Example: "1.0.0", "2.1.0-beta", etc.
-    api->Info_SetVersion(h, "1.2.2");
+    // `version`: (Optional) The plugin's version string (e.g., "1.0.0").
+    api->Info_SetVersion(h, PLUGIN_VERSION);
 
     // Recommended to fill in
-    // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.6").
+    // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.0").
     // If the user's framework version is lower than this, the plugin will be disabled. And a warning will be shown
     // This prevents crashes due to API changes.
-    api->Info_SetMinFrameworkVersion(h, "1.2.2");
+    api->Info_SetMinFrameworkVersion(h, PLUGIN_VERSION);
 
     // `author`: (Optional) Your name or your organization's name.
-    api->Info_SetAuthor(h, "Your Name");
+    api->Info_SetAuthor(h, PLUGIN_AUTHOR);
 
     //---Optional Social and Project Links ---
     api->Info_SetEmail(h, "mailto:your.email@example.com");

@@ -8,8 +8,7 @@
 
 cmake_minimum_required(VERSION 4.4)
 
-project(MyPlugin VERSION 1.0.0 LANGUAGES CXX)
-
+project(MyPlugin VERSION 0.0.0 LANGUAGES CXX)
 if(NOT PROJECT_VERSION_TWEAK)
   set(PROJECT_VERSION_TWEAK 0)
 endif()
@@ -47,8 +46,9 @@ endif()
 # ======================================================================
 #  YOU CAN EDIT BELOW
 # ======================================================================
-#  Plugin name -- change this to match your plugin's directory name.
-set(PLUGIN_NAME MyPlugin)
+# Define the name and author of your plugin
+set(PLUGIN_NAME "MyPlugin")
+set(RC_COMPANY "Track'n'Truck Devs")
 
 #  Source files that will be compiled into the plugin DLL.
 #  Add your .cpp files here as needed.
@@ -97,11 +97,29 @@ endif()
 #     version.lib
 # )
 #
+# Expose CMake project() values as C++ preprocessor macros
+# so PLUGIN_NAME and PLUGIN_VERSION and PLUGIN_AUTHOR stay in sync automatically.
+target_compile_definitions(${PLUGIN_NAME} PRIVATE
+    PLUGIN_NAME="${PLUGIN_NAME}"
+    PLUGIN_VERSION="${PROJECT_VERSION}"
+    PLUGIN_AUTHOR="${RC_COMPANY}"
+)
+
 # # Windows version resource (.rc file)
 # See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
 if(WIN32 OR MINGW)
-    configure_file(version.rc.in version.rc @ONLY)
-    target_sources(${PLUGIN_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
+    set(RC_DESCRIPTION "${PLUGIN_NAME} - SPF Plugin")
+    set(RC_INTERNAL_NAME "${PLUGIN_NAME}.dll")
+    set(RC_FILENAME "${PLUGIN_NAME}.dll")
+    set(RC_PRODUCT "${PLUGIN_NAME}")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/version.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+        @ONLY
+    )
+    target_sources(${PLUGIN_NAME} PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+    )
 endif()
 # --- End of Optional Additions ---
 
@@ -257,6 +275,35 @@ else()
     add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "  ⚠️  ${PLUGIN_NAME}: [ETS2] skipped - no path set in preset"
     )
+endif()
+
+# --- Installer Stage (for maintainers / release automation only) ---
+# Set INSTALLER_STAGE_DIR in your CMakeUserPresets.json to enable automatic
+# staging of the compiled DLL + assets into a distribution folder.
+# Regular contributors can leave it unset — this block is skipped entirely.
+message(STATUS "")
+message(STATUS "  [Installer] ${INSTALLER_STAGE_DIR}")
+if(INSTALLER_STAGE_DIR)
+    file(MAKE_DIRECTORY "${INSTALLER_STAGE_DIR}")
+endif()
+if(INSTALLER_STAGE_DIR AND EXISTS "${INSTALLER_STAGE_DIR}")
+    message(STATUS "           ✅ staged successfully")
+    add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALLER_STAGE_DIR}/localization"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${PLUGIN_NAME}>" "${INSTALLER_STAGE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/localization" "${INSTALLER_STAGE_DIR}/localization"
+        COMMENT "Staging files for installer at ${INSTALLER_STAGE_DIR}"
+    )
+    add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "  ✅  Installer stage OK"
+    )
+elseif(INSTALLER_STAGE_DIR)
+    message(STATUS "           ❌ directory not found")
+    add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "  ❌  Installer stage NOT FOUND"
+    )
+else()
+    message(STATUS "           ⚠️  not configured (maintainer use only)")
 endif()
 
 message(STATUS "")

@@ -13,13 +13,39 @@ if(MSVC)
     endforeach()
 endif()
 
-# Define the name of our plugin
-set(PLUGIN_NAME ExamplePlugin)
+# Define the name and author of your plugin
+set(PLUGIN_NAME "ExamplePlugin")
+set(RC_COMPANY "Track'n'Truck Devs")
 
 # Create the plugin as a shared library (DLL)
 add_library(${PLUGIN_NAME} SHARED
     "ExamplePlugin.cpp"
 )
+
+# Expose CMake project() values as C++ preprocessor macros
+# so PLUGIN_NAME and PLUGIN_VERSION and PLUGIN_AUTHOR stay in sync automatically.
+target_compile_definitions(${PLUGIN_NAME} PRIVATE
+    PLUGIN_NAME="${PLUGIN_NAME}"
+    PLUGIN_VERSION="${PROJECT_VERSION}"
+    PLUGIN_AUTHOR="${RC_COMPANY}"
+)
+
+# # Windows version resource (.rc file)
+# See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
+if(WIN32 OR MINGW)
+    set(RC_DESCRIPTION "${PLUGIN_NAME} - SPF Plugin")
+    set(RC_INTERNAL_NAME "${PLUGIN_NAME}.dll")
+    set(RC_FILENAME "${PLUGIN_NAME}.dll")
+    set(RC_PRODUCT "${PLUGIN_NAME}")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/version.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+        @ONLY
+    )
+    target_sources(${PLUGIN_NAME} PRIVATE
+        "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+    )
+endif()
 
 # The plugin needs to link against the main SPF library
 # to resolve the API function calls at runtime.

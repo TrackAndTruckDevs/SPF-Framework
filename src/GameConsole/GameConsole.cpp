@@ -1,7 +1,5 @@
 #include "SPF/GameConsole/GameConsole.hpp"
 
-
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
@@ -9,8 +7,6 @@
 #include <cstdint>
 #include <psapi.h>
 #include <string>
-
-
 
 GameConsole& GameConsole::GetInstance() {
   static GameConsole instance;
@@ -45,8 +41,8 @@ bool GameConsole::Install() {
    * 1401dc892 48 81 ec ...   SUB RSP, 0xc40
    */
   uintptr_t address = SPF::Utils::PatternFinder::FindFunctionByString(m_stringSignature.c_str(),
-                                                                 true,                // Auto-backtrack to PUSH RBX / SUB RSP
-                                                                 m_signature.c_str()  // Context: CALL + XOR AL, AL
+                                                                      true,                // Auto-backtrack to PUSH RBX / SUB RSP
+                                                                      m_signature.c_str()  // Context: CALL + XOR AL, AL
   );
 
   if (address) {

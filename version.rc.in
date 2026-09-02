@@ -1,6 +1,6 @@
 #include <winres.h>
 
-// Version info for spf-framework.dll
+// Version info for @RC_FILENAME@
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@
  PRODUCTVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@
@@ -18,13 +18,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0" // Language: English (US), Encoding: Unicode
         BEGIN
-            VALUE "CompanyName",      "Track'n'Truck Devs"
-            VALUE "FileDescription",  "SPF Framework - Core Library"
+            VALUE "CompanyName",      "@RC_COMPANY@"
+            VALUE "FileDescription",  "@RC_DESCRIPTION@"
             VALUE "FileVersion",      "@PROJECT_VERSION@"
-            VALUE "InternalName",     "spf-framework.dll"
-            VALUE "LegalCopyright",   "Copyright (C) 2026 Track'n'Truck Devs"
-            VALUE "OriginalFilename", "spf-framework.dll"
-            VALUE "ProductName",      "SPF Framework"
+            VALUE "InternalName",     "@RC_INTERNAL_NAME@"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 @RC_COMPANY@"
+            VALUE "OriginalFilename", "@RC_FILENAME@"
+            VALUE "ProductName",      "@RC_PRODUCT@"
             VALUE "ProductVersion",   "@PROJECT_VERSION@"
         END
     END

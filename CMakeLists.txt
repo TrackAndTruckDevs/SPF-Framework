@@ -6,6 +6,7 @@ project(SPF VERSION 1.2.2 LANGUAGES CXX)
 if(NOT PROJECT_VERSION_TWEAK)
     set(PROJECT_VERSION_TWEAK 0)
 endif()
+set(PROJECT_DISPLAY_NAME "SPF Framework")
 add_compile_definitions(_AMD64_ NOMINMAX)
 
 # --- C++ Standard & IWYU ---
@@ -205,9 +206,15 @@ set(SPF_FONT_HEADERS
     "include/SPF/UI/Fonts/RobotoMonoRegular.h"
 )
 
-# --- Windows Resource File ---
+# # Windows version resource (.rc file)
+# See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
 set(SPF_PLATFORM_SOURCES)
 if(WIN32 OR MINGW)
+    set(RC_COMPANY "Track'n'Truck Devs")
+    set(RC_DESCRIPTION "${PROJECT_DISPLAY_NAME} - Core Library")
+    set(RC_INTERNAL_NAME "spf-framework.dll")
+    set(RC_FILENAME "spf-framework.dll")
+    set(RC_PRODUCT "${PROJECT_DISPLAY_NAME}")
     configure_file(version.rc.in version.rc @ONLY)
     list(APPEND SPF_PLATFORM_SOURCES
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
@@ -441,6 +448,14 @@ target_link_libraries(SPF PRIVATE
     nlohmann_json::nlohmann_json
     cpr::cpr
     ${WINDOWS_SYSTEM_LIBS}
+)
+
+# Expose project() values as C++ preprocessor macros
+# so framework version stays in sync automatically.
+target_compile_definitions(SPF PRIVATE
+    PROJECT_NAME="${PROJECT_DISPLAY_NAME}"
+    PROJECT_VERSION="${PROJECT_VERSION}"
+    PROJECT_AUTHOR="${RC_COMPANY}"
 )
 
 # --- PLUGINS INCLUSION ---

@@ -12,20 +12,11 @@
 #include "SPF/SPF_API/SPF_Manifest_API.h"
 #include "SPF/SPF_API/SPF_Plugin.h"
 
-#include <cstring>  // For C-style string manipulation functions like strncpy_s.
-
 namespace MyPlugin {
 
 // =================================================================================================
 // 1. Constants & Global State
 // =================================================================================================
-
-/**
- * @brief A constant for the plugin's name.
- * @details This MUST match the name used in `Cfg_GetContext` calls for various APIs
- * and the plugin's directory name.
- */
-const char* PLUGIN_NAME = "MyPlugin";
 
 /**
  * @brief The single, global instance of the plugin's context.
@@ -43,6 +34,9 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
 
   // --- 2.1. Plugin Information ---
   // This section provides the basic identity of your plugin.
+  // NOTE: PLUGIN_NAME, PLUGIN_VERSION, and PLUGIN_AUTHOR are defined via CMakeLists.txt
+  // (target_compile_definitions). To change them, edit the project() VERSION and the
+  // set(PLUGIN_NAME ...) / set(RC_COMPANY ...) lines in your CMakeLists.txt file.
   {
     // `name`: (Optional) A unique name for the plugin (e.g., "MyPlugin").
     // If not specified, the framework will use the name of your DLL file, but specifying it
@@ -50,7 +44,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     api->Info_SetName(h, PLUGIN_NAME);
 
     // `version`: (Optional) The plugin's version string (e.g., "1.0.0").
-    api->Info_SetVersion(h, "0.1.0");
+    api->Info_SetVersion(h, PLUGIN_VERSION);
 
     // Recommended to fill in
     // The minimum SPF Framework version required for this plugin to work correctly (e.g. "1.0.0").
@@ -59,7 +53,7 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
     api->Info_SetMinFrameworkVersion(h, "1.0.0");
 
     // `author`: (Optional) The name of the author or organization.
-    api->Info_SetAuthor(h, "Your Name/Organization");
+    api->Info_SetAuthor(h, PLUGIN_AUTHOR);
 
     // `descriptionLiteral`: (Optional) A simple, hardcoded description for your plugin.
     // This is used as a fallback if the localized description key is not found.
