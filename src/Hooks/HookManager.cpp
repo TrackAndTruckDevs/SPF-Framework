@@ -5,8 +5,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 
 // --- System Hook Includes (Critical) ---
-#include "SPF/Hooks/D3D11Hook.hpp"
-#include "SPF/Hooks/D3D12Hook.hpp"
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Hooks/DInput8Hook.hpp"
 #include "SPF/Hooks/OpenGLHook.hpp"
 #include "SPF/Hooks/User32Hook.hpp"
@@ -58,31 +57,23 @@ bool HookManager::IsHookRequired(const std::string& hookName) const { return m_h
 
 bool HookManager::InstallGraphicsHooks(Rendering::RenderAPI api) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
-  logger->Info("Installing graphics hooks for the detected API...");
+  logger->Info("Installing graphics hooks...");
 
-  switch (api) {
-    case Rendering::RenderAPI::D3D11:
-      if (!D3D11Hook::Install()) {
-        logger->Critical("Failed to install D3D11 hooks. Framework will not function.");
-        return false;
-      }
-      break;
-    case Rendering::RenderAPI::D3D12:
-      if (!D3D12Hook::Install()) {
-        logger->Critical("Failed to install D3D12 hooks. Framework will not function.");
-        return false;
-      }
-      break;
-    case Rendering::RenderAPI::OpenGL:
-      if (!OpenGLHook::Install()) {
-        logger->Critical("Failed to install OpenGL hooks. Framework will not function.");
-        return false;
-      }
-      break;
-    case Rendering::RenderAPI::Unknown:
-    default:
-      logger->Critical("No supported graphics API was detected. Cannot install graphics hooks.");
+  if (api == Rendering::RenderAPI::OpenGL) {
+    if (!OpenGLHook::Install()) {
+      logger->Critical("Failed to install OpenGL hooks. Framework will not function.");
       return false;
+    }
+  } else {
+    if (!DXGIHook::Install()) {
+      logger->Critical("Failed to install DXGI hooks. Framework will not function.");
+      return false;
+    }
+    if (api == Rendering::RenderAPI::Unknown) {
+      if (!OpenGLHook::Install()) {
+        logger->Warn("Failed to install OpenGL hooks. This is non-critical if the game is not using OpenGL.");
+      }
+    }
   }
 
   logger->Info("Graphics hooks installed successfully.");
@@ -228,8 +219,7 @@ void HookManager::UninstallAllHooks() {
   XInputHook::Uninstall();
   User32Hook::Uninstall();
   DInput8Hook::Uninstall();
-  D3D12Hook::Uninstall();
-  D3D11Hook::Uninstall();
+  DXGIHook::Uninstall();
   OpenGLHook::Uninstall();
 
   m_failedFeatureHooks.clear();
@@ -250,8 +240,7 @@ void HookManager::RemoveAllHooks() {
   XInputHook::Remove();
   User32Hook::Remove();
   DInput8Hook::Remove();
-  D3D12Hook::Remove();
-  D3D11Hook::Remove();
+  DXGIHook::Remove();
   OpenGLHook::Remove();
 
   logger->Info("All hooks removed.");

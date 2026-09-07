@@ -21,6 +21,7 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/Windows.hpp"
 
+#include <_mingw.h>
 #include <corecrt.h>
 #include <cstddef>
 #include <d3d11.h>

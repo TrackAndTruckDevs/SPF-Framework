@@ -7,8 +7,8 @@
 #include "SPF/Utils/Signal.hpp"
 
 #include <cstddef>
-#include <d3d12.h>    // For ID3D12Device, ID3D12CommandQueue, ID3D12DescriptorHeap
-#include <dxgi1_4.h>  // For IDXGISwapChain3
+#include <d3d12.h>
+#include <dxgi.h>  // For IDXGISwapChain
 #include <memory>
 #include <minwindef.h>
 #include <mutex>
@@ -40,10 +40,10 @@ class D3D12RendererImpl : public RendererBase {
   void RefreshFontAtlas() override;
 
  private:
-  void OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue);
-  void OnD3D12Present(IDXGISwapChain3* swapChain);
-  void OnD3D12BeforeResize(IDXGISwapChain3* swapChain, UINT width, UINT height);
-  void OnD3D12AfterResize(IDXGISwapChain3* swapChain, UINT width, UINT height);
+  void OnD3D12Init(IDXGISwapChain* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue);
+  void OnD3D12Present(IDXGISwapChain* swapChain);
+  void OnD3D12BeforeResize(IDXGISwapChain* swapChain, UINT width, UINT height);
+  void OnD3D12AfterResize(IDXGISwapChain* swapChain, UINT width, UINT height);
 
   UI::UIManager& m_uiManager;
   std::shared_ptr<Logging::Logger> m_logger;
@@ -77,15 +77,15 @@ class D3D12RendererImpl : public RendererBase {
   bool m_isImGuiInitialized = false;
   bool m_renderTargetsCreated = false;
 
-  void CreateRenderTarget(IDXGISwapChain3* swapChain);
+  void CreateRenderTarget(IDXGISwapChain* swapChain);
   void CleanupRenderTarget();
   void WaitForLastSubmittedFrame();
 
-  // Sinks for D3D12Hook signals
-  Utils::Sink<void(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue)> m_onInitSink;
-  Utils::Sink<void(IDXGISwapChain3* swapChain)> m_onPresentSink;
-  Utils::Sink<void(IDXGISwapChain3* swapChain, UINT width, UINT height)> m_onBeforeResizeSink;
-  Utils::Sink<void(IDXGISwapChain3* swapChain, UINT width, UINT height)> m_onAfterResizeSink;
+  // Sinks for DXGIHook signals
+  Utils::Sink<void(IDXGISwapChain* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue)> m_onInitSink;
+  Utils::Sink<void(IDXGISwapChain* swapChain)> m_onPresentSink;
+  Utils::Sink<void(IDXGISwapChain* swapChain, UINT width, UINT height)> m_onBeforeResizeSink;
+  Utils::Sink<void(IDXGISwapChain* swapChain, UINT width, UINT height)> m_onAfterResizeSink;
 };
 
 }  // namespace SPF::Rendering

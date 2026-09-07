@@ -32,6 +32,7 @@
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
+#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
@@ -599,14 +600,13 @@ void Core::InitUI() {
 void Core::InitHooks() {
   m_logger->Info("--- Initializing Low-Level Systems (Renderer and Hooks) ---");
 
-  // 1. Create the renderer. Its constructor will perform API detection.
-  m_logger->Info("-> [Init] Creating Renderer and detecting API...");
+  // 1. Create the renderer. API detection is deferred to first Present call via DXGIHook.
+  m_logger->Info("-> [Init] Creating Renderer...");
   m_renderer = std::make_unique<Renderer>(*this, *m_eventManager, UIManager::GetInstance());
   UIManager::GetInstance().SetRenderer(m_renderer.get());
-  auto detectedAPI = m_renderer->GetDetectedAPI();
 
   // 2. Initialize standalone services that don't depend on hooks.
-  m_logger->Info("-> [Init] Initializing standalone services...");
+  m_logger->Info("-> [Init] Installing standalone services...");
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
@@ -615,19 +615,18 @@ void Core::InitHooks() {
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
-  // 4. Initialize core systems that may be used by hooks.
+  // 3. Initialize core systems that may be used by hooks.
   m_logger->Info("-> [Init] Initializing EventManager and InputManager...");
   m_eventManager->Init(*m_renderer);
   m_inputManager->Initialize();
 
-  // 5. Install hooks based on detected API.
+  // 4. Install hooks. DXGIHook uses runtime probe (GetDevice at first Present)
+  //    to detect D3D11 vs D3D12 — no static API detection needed.
   auto& hookManager = HookManager::GetInstance();
 
-  m_logger->Info("-> [Init] Installing graphics hooks for detected API...");
-  if (!hookManager.InstallGraphicsHooks(detectedAPI)) {
-    // If this fails, a critical error is already logged by the manager.
-    // We can't proceed with rendering.
-    m_logger->Error("Graphics hook installation failed. UI will not be available.");
+  m_logger->Info("-> [Init] Installing DXGI hook...");
+  if (!hookManager.InstallGraphicsHooks(Rendering::RenderAPI::Unknown)) {
+    m_logger->Error("DXGI hook installation failed. UI will not be available.");
   }
 
   m_logger->Info("-> [Init] Installing other system and feature hooks...");
@@ -635,9 +634,9 @@ void Core::InitHooks() {
     m_logger->Warn("Failed to install one or more system/feature hooks.");
   }
 
-  // 6. Finalize renderer initialization. This will create the specific implementation
-  // and connect to the now-installed graphics hook signals.
-  m_logger->Info("-> [Init] Initializing Renderer backend...");
+  // 5. Connect renderer to DXGIHook::OnAPIDetected. The renderer impl will be
+  //    created when DXGIHook fires OnAPIDetected on the first real Present call.
+  m_logger->Info("-> [Init] Connecting renderer to deferred API detection...");
   if (m_renderer) {
     m_renderer->Init();
   }

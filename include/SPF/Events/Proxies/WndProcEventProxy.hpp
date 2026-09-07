@@ -24,8 +24,7 @@ class WndProcEventProxy : public EventProxyBase {
   Rendering::Renderer& m_renderer;
 
   // Sinks for different hooks
-  Utils::Sink<void(HWND, UINT, WPARAM, LPARAM)> m_d3d11Sink;
-  Utils::Sink<void(HWND, UINT, WPARAM, LPARAM)> m_d3d12Sink;
+  Utils::Sink<void(HWND, UINT, WPARAM, LPARAM)> m_dxgiSink;
   Utils::Sink<void(HWND, UINT, WPARAM, LPARAM)> m_openGLSink;
 };
 

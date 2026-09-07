@@ -3,8 +3,7 @@
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/EventProxyBase.hpp"
 #include "SPF/Events/UIEvents.hpp"
-#include "SPF/Hooks/D3D11Hook.hpp"
-#include "SPF/Hooks/D3D12Hook.hpp"
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Hooks/OpenGLHook.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
@@ -33,45 +32,21 @@ using namespace SPF::Rendering;
 using namespace SPF::UI;
 
 WndProcEventProxy::WndProcEventProxy(EventManager& eventManager, Renderer& renderer)
-    : EventProxyBase(eventManager), m_renderer(renderer), m_d3d11Sink(Hooks::D3D11Hook::OnWndProc), m_d3d12Sink(Hooks::D3D12Hook::OnWndProc), m_openGLSink(Hooks::OpenGLHook::OnWndProc) {
+    : EventProxyBase(eventManager), m_renderer(renderer), m_dxgiSink(Hooks::DXGIHook::OnWndProc), m_openGLSink(Hooks::OpenGLHook::OnWndProc) {
   m_logger = LoggerFactory::GetInstance().GetLogger("WndProcEventProxy");
-
-  RenderAPI api = m_renderer.GetDetectedAPI();
-  switch (api) {
-    case RenderAPI::D3D11:
-      m_d3d11Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
-      m_logger->Info("Proxy created and connected to D3D11Hook::OnWndProc.");
-      break;
-    case RenderAPI::D3D12:
-      m_d3d12Sink.Connect<&WndProcEventProxy::OnWndProc>(this);
-      m_logger->Info("Proxy created and connected to D3D12Hook::OnWndProc.");
-      break;
-    case RenderAPI::OpenGL:
-      m_openGLSink.Connect<&WndProcEventProxy::OnWndProc>(this);
-      m_logger->Info("Proxy created and connected to OpenGLHook::OnWndProc.");
-      break;
-    default:
-      m_logger->Warn("WndProcEventProxy created, but no compatible graphics hook was detected to connect to.");
-      break;
-  }
+  m_dxgiSink.Connect<&WndProcEventProxy::OnWndProc>(this);
+  m_openGLSink.Connect<&WndProcEventProxy::OnWndProc>(this);
+  m_logger->Info("Proxy created and connected to both DXGIHook and OpenGLHook WndProc signals.");
 }
 
 void WndProcEventProxy::SetBlockWndProc(bool block) {
   if (!block) return;
 
   RenderAPI api = m_renderer.GetDetectedAPI();
-  switch (api) {
-    case RenderAPI::D3D11:
-      SPF::Hooks::D3D11Hook::block_wndproc_message = true;
-      break;
-    case RenderAPI::D3D12:
-      SPF::Hooks::D3D12Hook::block_wndproc_message = true;
-      break;
-    case RenderAPI::OpenGL:
-      SPF::Hooks::OpenGLHook::block_wndproc_message = true;
-      break;
-    default:
-      break;
+  if (api == RenderAPI::OpenGL) {
+    SPF::Hooks::OpenGLHook::block_wndproc_message = true;
+  } else {
+    SPF::Hooks::DXGIHook::block_wndproc_message = true;
   }
 }
 

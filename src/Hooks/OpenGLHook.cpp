@@ -1,6 +1,8 @@
 #include "SPF/Hooks/OpenGLHook.hpp"
 
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include <GL/gl.h>
@@ -149,6 +151,7 @@ BOOL WINAPI new_wglSwapBuffers(HDC hDC) {
     SetPropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProcOpenGL);
     logger->Info("Original OpenGL WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProcOpenGL));
 
+    DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::OpenGL);
     OpenGLHook::OnInit.Call(hDC);
   }
 
