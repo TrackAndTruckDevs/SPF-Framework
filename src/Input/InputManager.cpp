@@ -914,7 +914,8 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
         shouldBlock = !m_gameControlsMouseButtons;
         break;
       case Config::ConsumptionPolicy::Manual:
-        shouldBlock = bestShort->programmaticallyBlocked;
+        shouldBlock = bestShort ? bestShort->programmaticallyBlocked
+                                : (bestLong ? bestLong->programmaticallyBlocked : false);
         break;
       default:
         shouldBlock = false;
