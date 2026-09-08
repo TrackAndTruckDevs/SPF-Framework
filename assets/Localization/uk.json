@@ -1276,6 +1276,23 @@
             "thunderstorm_probability": "Ймовірність грози"
         }
     },
+    "sound_window": {
+        "title": "Звуки (FMOD)",
+        "not_ready": "Сервіс звуків недоступний.",
+        "bank_combo_label": "Банк звуків",
+        "event_combo_label": "Подія",
+        "none": "-- Немає вибору --",
+        "banks_found": "Знайдено банків: %d",
+        "events_found": "  |  Подій: %d",
+        "bank_info_title": "Інформація про банк",
+        "event_info_title": "Інформація про подію",
+        "bank_path": "Шлях банку:",
+        "event_count": "Кількість подій:",
+        "event_path": "Шлях події:",
+        "guid": "GUID:",
+        "refresh": "Оновити",
+        "no_selection": "Виберіть елемент зі списку."
+    },
     "info_window": {
         "title": "Інформація про оточення",
         "tabs": {

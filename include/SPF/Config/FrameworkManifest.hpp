@@ -155,7 +155,9 @@ inline const ManifestData& GetFrameworkManifestData() {
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 8, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"climate_window",
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 9, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
-                         {"info_window", {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 10, .allowUndocking = false, .autoScroll = false}}}},
+                         {"sound_window",
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 10, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
+                         {"info_window", {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 11, .allowUndocking = false, .autoScroll = false}}}},
 
       // --- Metadata for framework's own settings ---
       .customSettingsMetadata =
@@ -196,6 +198,7 @@ inline const ManifestData& GetFrameworkManifestData() {
         {"camera_window", "settings_window.setting_names.ui.windows.camera_window.title", ""},
         {"gameworld_window", "settings_window.setting_names.ui.windows.gameworld_window.title", ""},
         {"climate_window", "settings_window.setting_names.ui.windows.climate_window.title", ""},
+        {"sound_window", "settings_window.setting_names.ui.windows.sound_window.title", ""},
         {"info_window", "settings_window.setting_names.ui.windows.info_window.title", ""},
 
         // Generic metadata for window properties

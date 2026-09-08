@@ -8,6 +8,7 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
@@ -611,6 +612,7 @@ void Core::InitHooks() {
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
   ClimateService::GetInstance().Initialize();
+  SoundService::GetInstance().Initialize();
   ManagerCoreService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
@@ -759,7 +761,7 @@ void Core::PerformDeferredInitialization() {
   }
 
   // 3. Resolve Core Manager addresses (GameplayManager, ...)
-  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
+  auto& managerService = ManagerCoreService::GetInstance();
   if (managerService.TryFindAllOffsets()) {
     logger->Debug("Manager Core addresses resolved.");
   }
@@ -768,6 +770,12 @@ void Core::PerformDeferredInitialization() {
   auto& worldService = GameWorldService::GetInstance();
   if (worldService.TryFindAllOffsets()) {
     logger->Debug("GameWorld (Environment) offsets resolved.");
+  }
+
+  // 4b. Resolve Sound (FMOD) offsets
+  auto& soundService = SoundService::GetInstance();
+  if (soundService.TryFindAllOffsets()) {
+    logger->Debug("Sound (FMOD) offsets resolved.");
   }
 
   // 5. Calculate framework build hash

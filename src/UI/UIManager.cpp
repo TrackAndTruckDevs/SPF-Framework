@@ -4,6 +4,7 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
@@ -50,6 +51,7 @@
 #include "SPF/UI/PluginsWindow.hpp"    // Added for PluginsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Added for SettingsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Required for dynamic_cast
+#include "SPF/UI/SoundWindow.hpp"         // Added for SoundWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
@@ -1312,6 +1314,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Climate Window
   auto climateWindow = std::make_shared<ClimateWindow>("framework", "climate_window", Data::GameData::ClimateService::GetInstance());
   RegisterWindow(climateWindow);
+
+  // Sound Window
+  auto soundWindow = std::make_shared<SoundWindow>("framework", "sound_window", Data::GameData::SoundService::GetInstance());
+  RegisterWindow(soundWindow);
 
   // Notifications (Global) — must be created before the status check block below,
   // because Updated fires ShowNotificationEx which needs m_notificationWindow.
