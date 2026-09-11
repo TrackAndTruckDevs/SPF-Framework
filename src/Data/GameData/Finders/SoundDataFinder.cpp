@@ -25,6 +25,13 @@ const char* SOUNDBANK_LOAD_STR = "[sound] cannot open fmod guids file %s";
  */
 const char* ADDEVENTENTRY_STR = "[fmod] invalid guid in bank %s:%s";
 
+/**
+ * @brief Unique string anchor inside SoundSystem_Init to locate the Studio::System pointer.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(SoundSystem_Init[1402304b0]) ---/
+ * 140230648  48 8D 0D 39 4D EA 01          LEA RCX,[0x1420d5388] = "[sound] Failed to create 'fmod studio system'."
+ */
+const char* SOUNDSYSTEM_INIT_STR = "[sound] Failed to create 'fmod studio system'.";
+
 }  // namespace
 
 bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
@@ -182,8 +189,29 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
     }
   }
 
+  // ── Phase 7: Studio::System Offset inside SoundManager (+0x1c8) ──
+  /*
+   * /--- Ghidra:(amtrucks_1_60.exe) Fun:(SoundSystem_Init[1402304b0]) ---/
+   * 140230654  48 8B 8B C8 01 00 00          MOV RCX,qword ptr [RBX + 0x1c8]
+   */
+  {
+    auto phase = log.MakePhase("Studio::System Offset");
+
+    uintptr_t strAddr = PatternFinder::FindFunctionByString(SOUNDSYSTEM_INIT_STR, false);
+    if (phase.Step(strAddr, "SoundSystem_Init string anchor", "REF")) {
+      uintptr_t addrMov = PatternFinder::Find(strAddr, 32, "[MOV r64, [r64+off32]]");
+      if (phase.Step(addrMov, "Studio::System pointer MOV", "RT")) {
+        int32_t studioSystemOffset = PatternFinder::ReadInt32(addrMov + 3);
+        if (phase.StepOffset(studioSystemOffset, "Studio::System Offset", "OFF")) {
+          owner.SetStudioSystemOffset(studioSystemOffset);
+        }
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
-  m_isReady = owner.GetBankListLockOffset() != 0 && owner.GetBankListHeadOffset() != 0 && owner.GetBankEventListHeadOffset() != 0 && owner.GetBankPathStringOffset() != 0 && owner.GetEventListTerminatorOffset() != 0 && owner.GetEventPathOffset() != 0 && owner.GetEventGuidOffset() != 0;
+  m_isReady = owner.GetBankListLockOffset() != 0 && owner.GetBankListHeadOffset() != 0 && owner.GetBankEventListHeadOffset() != 0 && owner.GetBankPathStringOffset() != 0 && owner.GetEventListTerminatorOffset() != 0 &&
+              owner.GetEventPathOffset() != 0 && owner.GetEventGuidOffset() != 0 && owner.GetStudioSystemOffset() != 0;
 
   return log.Finish(m_isReady);
 }

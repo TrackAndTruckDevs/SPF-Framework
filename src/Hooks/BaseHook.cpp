@@ -20,7 +20,7 @@ BaseHook::BaseHook(std::string name, std::string displayName, std::string signat
       m_isEnabled(isEnabled) {}
 
 void BaseHook::SetEnabled(bool enabled) {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_ownerName);
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("BaseHook");
   if (m_isEnabled == enabled) {
     return;  // No change needed
   }
@@ -50,7 +50,7 @@ void BaseHook::SetEnabled(bool enabled) {
 }
 
 bool BaseHook::Install() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_ownerName);
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("BaseHook");
   if (IsInstalled()) {
     logger->Info("Hook '{}' already installed. Re-enabling if necessary...", m_displayName);
     SetEnabled(m_isEnabled);  // Ensure enabled state is applied
@@ -97,7 +97,7 @@ bool BaseHook::Install() {
 }
 
 void BaseHook::Uninstall() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_ownerName);
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("BaseHook");
   if (!IsInstalled()) {
     return;  // Not installed, nothing to do
   }
@@ -115,7 +115,7 @@ void BaseHook::Uninstall() {
 }
 
 void BaseHook::Remove() {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_ownerName);
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("BaseHook");
   if (!IsInstalled()) {
     return;  // Not installed, nothing to do
   }
