@@ -5,17 +5,12 @@
 #include "SPF/Modules/HandleManager.hpp"  // Required for GetInstance()->m_handleManager
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/SPF_API/SPF_Localization_API.h"
+#include "SPF/Utils/Windows.hpp"
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
 
 namespace SPF::Modules::API {
 

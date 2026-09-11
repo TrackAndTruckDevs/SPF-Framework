@@ -24,15 +24,10 @@
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
+#include "SPF/Utils/Windows.hpp"
 
 #include <cstdint>
 #include <cstring>  // For C-style string manipulation functions like strncpy_s, strcpy_s, strcmp, strstr.
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
 
 // --- Custom Fonts ---
 #include "font/DRKrapkaSquare.h"
@@ -65,11 +60,11 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
   // stability, ensuring compatibility even if the plugin and framework are built with different
   // compilers or settings.
 
-    // --- 2.1. Plugin Information ---
-    // This section provides the basic identity of your plugin.
-    // NOTE: PLUGIN_NAME, PLUGIN_VERSION, and PLUGIN_AUTHOR are defined via CMakeLists.txt
-    // (target_compile_definitions). To change them, edit the project() VERSION and the
-    // set(PLUGIN_NAME ...) / set(RC_COMPANY ...) lines in your CMakeLists.txt file.
+  // --- 2.1. Plugin Information ---
+  // This section provides the basic identity of your plugin.
+  // NOTE: PLUGIN_NAME, PLUGIN_VERSION, and PLUGIN_AUTHOR are defined via CMakeLists.txt
+  // (target_compile_definitions). To change them, edit the project() VERSION and the
+  // set(PLUGIN_NAME ...) / set(RC_COMPANY ...) lines in your CMakeLists.txt file.
   {
     // `name`: (Optional) A unique name for the plugin (e.g., "MyPlugin").
     // If not specified, the framework will use the name of your DLL file, but specifying it
@@ -2562,8 +2557,7 @@ void InstallGameStringFormattingHook() {
   if (!g_ctx.coreAPI || !g_ctx.coreAPI->hooks) return;
 
   // This is a byte signature of the target function in memory.
-  const char* signature =
-    "[MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [PUSH r64] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [MOV r32, imm32] [CALL rel32] [SUB r64, r64] [MOV r64, r64] [MOV r64, r64]";
+  const char* signature = "[MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [PUSH r64] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [PUSH R8-R15] [MOV r32, imm32] [CALL rel32] [SUB r64, r64] [MOV r64, r64] [MOV r64, r64]";
 
   g_ctx.coreAPI->hooks->Hook_Register(PLUGIN_NAME,
                                       "GameStringFormattingHook",                               // Renamed hook ID for consistency

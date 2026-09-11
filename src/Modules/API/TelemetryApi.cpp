@@ -15,6 +15,7 @@
 #include "SPF/Telemetry/SCS/Navigation.hpp"
 #include "SPF/Telemetry/SCS/Trailer.hpp"
 #include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -22,12 +23,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
 
 namespace SPF::Modules::API {
 

@@ -28,18 +28,13 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <sec_api/stdio_s.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdio_s.h>
-#endif
 
 // Use the nlohmann::ordered_json library
 using json = nlohmann::ordered_json;
