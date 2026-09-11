@@ -170,6 +170,7 @@ class SoundService : public IWorldScopedService {
   int GetNumListeners();
   bool SetNumListeners(int numListeners);
   bool GetListenerAttributes(int index, float& posX, float& posY, float& posZ, float& velX, float& velY, float& velZ, float& fwdX, float& fwdY, float& fwdZ, float& upX, float& upY, float& upZ);
+  bool SetListenerAttributes(int index, float posX, float posY, float posZ, float velX, float velY, float velZ, float fwdX, float fwdY, float fwdZ, float upX, float upY, float upZ);
 
   void* LoadBankFile(const char* path, uint32_t flags);
   void* LoadBankMemory(const void* data, uint32_t size, uint32_t flags);
@@ -267,6 +268,7 @@ class SoundService : public IWorldScopedService {
     void* System_GetNumListeners = nullptr;
     void* System_SetNumListeners = nullptr;
     void* System_GetListenerAttributes = nullptr;
+    void* System_SetListenerAttributes = nullptr;
     void* System_LoadBankFile = nullptr;
     void* System_LoadBankMemory = nullptr;
     void* System_GetBankCount = nullptr;

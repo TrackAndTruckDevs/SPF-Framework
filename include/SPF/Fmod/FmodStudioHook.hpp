@@ -14,6 +14,12 @@ struct Override3DData {
   bool hasOriginal = false;
 };
 
+struct OverrideListenerData {
+  FMOD_3D_ATTRIBUTES original{};
+  FMOD_3D_ATTRIBUTES replacement{};
+  bool hasOriginal = false;
+};
+
 class FmodStudioHook : public Hooks::IHook {
  public:
   static FmodStudioHook& GetInstance();
@@ -38,6 +44,10 @@ class FmodStudioHook : public Hooks::IHook {
   void Reset3DToOriginal(const std::string& eventPath);
   void RemoveParameterOverride(const std::string& eventPath, const std::string& paramName);
   void Remove3DOverride(const std::string& eventPath);
+
+  void OverrideListenerAttributes(int index, const FMOD_3D_ATTRIBUTES& attrs);
+  void RemoveListenerOverride(int index);
+  void ResetListenerToOriginal(int index);
   void RemoveAllOverrides();
   bool HasOverrides() const;
 
@@ -57,6 +67,7 @@ class FmodStudioHook : public Hooks::IHook {
   uintptr_t m_hookedAddr1 = 0;
   uintptr_t m_hookedAddr2 = 0;
   uintptr_t m_hookedAddr3 = 0;
+  uintptr_t m_hookedAddr4 = 0;
 };
 
 }  // namespace SPF::Fmod

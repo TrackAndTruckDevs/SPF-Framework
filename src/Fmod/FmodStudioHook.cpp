@@ -47,6 +47,7 @@ struct Override3DKeyHash {
 using SetParameterByName_t = FMOD_RESULT (*)(FMOD::Studio::EventInstance*, const char*, float);
 using SetParameterByID_t = FMOD_RESULT (*)(FMOD::Studio::EventInstance*, FMOD_STUDIO_PARAMETER_ID, float);
 using Set3DAttributes_t = FMOD_RESULT (*)(FMOD::Studio::EventInstance*, const FMOD_3D_ATTRIBUTES*);
+using SetListenerAttributes_t = FMOD_RESULT (*)(FMOD::Studio::System*, int, const FMOD_3D_ATTRIBUTES*, const FMOD_VECTOR*);
 using GetEventDescription_t = FMOD_RESULT (*)(FMOD::Studio::EventInstance*, FMOD::Studio::EventDescription**);
 using GetEventPath_t = FMOD_RESULT (*)(FMOD::Studio::EventDescription*, char*, int, int*);
 using GetEventID_t = FMOD_RESULT (*)(FMOD::Studio::EventDescription*, FMOD_GUID*);
@@ -56,6 +57,7 @@ using LookupPath_t = FMOD_RESULT (*)(FMOD::Studio::System*, const FMOD_GUID*, ch
 std::mutex s_mutex;
 std::unordered_map<OverrideKey, float, OverrideKeyHash> s_parameterOverrides;
 std::unordered_map<Override3DKey, Override3DData, Override3DKeyHash> s_3dOverrides;
+std::unordered_map<int, OverrideListenerData> s_listenerOverrides;
 std::unordered_map<std::string, std::vector<void*>> s_pathToInstances;
 std::unordered_map<void*, std::string> s_eventPathCache;
 std::unordered_map<void*, std::string> s_descPathCache;
@@ -64,6 +66,8 @@ inline uint64_t ParamIdKey(FMOD_STUDIO_PARAMETER_ID id) { return (static_cast<ui
 SetParameterByName_t s_trampolineSetParameterByName = nullptr;
 SetParameterByID_t s_trampolineSetParameterByID = nullptr;
 Set3DAttributes_t s_trampolineSet3DAttributes = nullptr;
+SetListenerAttributes_t s_trampolineSetListenerAttributes = nullptr;
+FMOD::Studio::System* s_studioSystem = nullptr;
 GetEventDescription_t s_fnGetDescription = nullptr;
 GetEventPath_t s_fnGetPath = nullptr;
 GetEventID_t s_fnGetEventID = nullptr;
@@ -218,6 +222,23 @@ FMOD_RESULT WINAPI Detour_Set3DAttributes(FMOD::Studio::EventInstance* inst, con
   return s_trampolineSet3DAttributes(inst, attrs);
 }
 
+FMOD_RESULT WINAPI Detour_SetListenerAttributes(FMOD::Studio::System* sys, int index, const FMOD_3D_ATTRIBUTES* attrs, const FMOD_VECTOR* dopplerScale) {
+  if (sys) s_studioSystem = sys;
+  auto& hook = FmodStudioHook::GetInstance();
+  if (hook.HasOverrides() && sys && attrs) {
+    std::lock_guard lock(s_mutex);
+    auto it = s_listenerOverrides.find(index);
+    if (it != s_listenerOverrides.end()) {
+      if (!it->second.hasOriginal) {
+        it->second.original = *attrs;
+        it->second.hasOriginal = true;
+      }
+      return s_trampolineSetListenerAttributes(sys, index, &it->second.replacement, dopplerScale);
+    }
+  }
+  return s_trampolineSetListenerAttributes(sys, index, attrs, dopplerScale);
+}
+
 }  // namespace
 
 FmodStudioHook& FmodStudioHook::GetInstance() {
@@ -244,6 +265,7 @@ bool FmodStudioHook::Install() {
   void* addrSetParamByName = fmodApi.Find("EventInstance::setParameterByName");
   void* addrSetParamByID = fmodApi.Find("EventInstance::setParameterByID");
   void* addrSet3D = fmodApi.Find("EventInstance::set3DAttributes");
+  void* addrSetListenerAttrs = fmodApi.Find("System::setListenerAttributes");
   s_fnGetDescription = reinterpret_cast<GetEventDescription_t>(fmodApi.Find("EventInstance::getDescription"));
   s_fnGetPath = reinterpret_cast<GetEventPath_t>(fmodApi.Find("EventDescription::getPath"));
   s_fnGetEventID = reinterpret_cast<GetEventID_t>(fmodApi.Find("EventDescription::getID"));
@@ -260,26 +282,30 @@ bool FmodStudioHook::Install() {
   MH_STATUS s1 = MH_CreateHook(addrSetParamByName, reinterpret_cast<void*>(&Detour_SetParameterByName), reinterpret_cast<void**>(&s_trampolineSetParameterByName));
   MH_STATUS s2 = MH_CreateHook(addrSetParamByID, reinterpret_cast<void*>(&Detour_SetParameterByID), reinterpret_cast<void**>(&s_trampolineSetParameterByID));
   MH_STATUS s3 = MH_CreateHook(addrSet3D, reinterpret_cast<void*>(&Detour_Set3DAttributes), reinterpret_cast<void**>(&s_trampolineSet3DAttributes));
+  MH_STATUS s4 = addrSetListenerAttrs ? MH_CreateHook(addrSetListenerAttrs, reinterpret_cast<void*>(&Detour_SetListenerAttributes), reinterpret_cast<void**>(&s_trampolineSetListenerAttributes)) : MH_ERROR_FUNCTION_NOT_FOUND;
 
   if (s1 != MH_OK || s2 != MH_OK || s3 != MH_OK) {
     logger->Error("MH_CreateHook failed for '{}': {} {} {}", m_displayName, MH_StatusToString(s1), MH_StatusToString(s2), MH_StatusToString(s3));
     if (s1 == MH_OK) MH_RemoveHook(addrSetParamByName);
     if (s2 == MH_OK) MH_RemoveHook(addrSetParamByID);
+    if (s4 == MH_OK) MH_RemoveHook(addrSetListenerAttrs);
     return false;
   }
 
   m_hookedAddr1 = reinterpret_cast<uintptr_t>(addrSetParamByName);
   m_hookedAddr2 = reinterpret_cast<uintptr_t>(addrSetParamByID);
   m_hookedAddr3 = reinterpret_cast<uintptr_t>(addrSet3D);
+  if (s4 == MH_OK) m_hookedAddr4 = reinterpret_cast<uintptr_t>(addrSetListenerAttrs);
 
   MH_EnableHook(addrSetParamByName);
   MH_EnableHook(addrSetParamByID);
   MH_EnableHook(addrSet3D);
+  if (s4 == MH_OK) MH_EnableHook(addrSetListenerAttrs);
 
   m_installed = true;
   m_isEnabled = true;
 
-  logger->Info("'{}' installed and enabled: setParameterByName={:#x}, setParameterByID={:#x}, set3DAttributes={:#x}", m_displayName, m_hookedAddr1, m_hookedAddr2, m_hookedAddr3);
+  logger->Info("'{}' installed and enabled: setParameterByName={:#x}, setParameterByID={:#x}, set3DAttributes={:#x}, setListenerAttributes={:#x}", m_displayName, m_hookedAddr1, m_hookedAddr2, m_hookedAddr3, m_hookedAddr4);
   return true;
 }
 
@@ -290,6 +316,7 @@ void FmodStudioHook::Uninstall() {
   if (m_hookedAddr1) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
   if (m_hookedAddr2) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
   if (m_hookedAddr3) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
+  if (m_hookedAddr4) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
 
   m_isEnabled = false;
 
@@ -298,6 +325,7 @@ void FmodStudioHook::Uninstall() {
   s_paramIdToName.clear();
   s_parameterOverrides.clear();
   s_3dOverrides.clear();
+  s_listenerOverrides.clear();
   s_descPathCache.clear();
 
   logger->Info("'{}' disabled.", m_displayName);
@@ -310,13 +338,17 @@ void FmodStudioHook::Remove() {
   if (m_hookedAddr1) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
   if (m_hookedAddr2) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
   if (m_hookedAddr3) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
+  if (m_hookedAddr4) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
 
   m_hookedAddr1 = 0;
   m_hookedAddr2 = 0;
   m_hookedAddr3 = 0;
+  m_hookedAddr4 = 0;
   s_trampolineSetParameterByName = nullptr;
   s_trampolineSetParameterByID = nullptr;
   s_trampolineSet3DAttributes = nullptr;
+  s_trampolineSetListenerAttributes = nullptr;
+  s_studioSystem = nullptr;
   m_installed = false;
   m_isEnabled = false;
 
@@ -340,11 +372,13 @@ void FmodStudioHook::SetEnabled(bool enabled) {
     if (m_hookedAddr1) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
     if (m_hookedAddr2) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
     if (m_hookedAddr3) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
+    if (m_hookedAddr4) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
     logger->Info("'{}' enabled.", m_displayName);
   } else {
     if (m_hookedAddr1) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
     if (m_hookedAddr2) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
     if (m_hookedAddr3) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
+    if (m_hookedAddr4) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
     logger->Info("'{}' disabled.", m_displayName);
   }
   m_isEnabled = enabled;
@@ -408,10 +442,43 @@ void FmodStudioHook::Reset3DToOriginal(const std::string& eventPath) {
   }
 }
 
+void FmodStudioHook::OverrideListenerAttributes(int index, const FMOD_3D_ATTRIBUTES& attrs) {
+  std::lock_guard lock(s_mutex);
+  auto& data = s_listenerOverrides[index];
+  if (!data.hasOriginal) {
+    data.original = attrs;
+    data.hasOriginal = true;
+  }
+  data.replacement = attrs;
+}
+
+void FmodStudioHook::RemoveListenerOverride(int index) {
+  std::lock_guard lock(s_mutex);
+  s_listenerOverrides.erase(index);
+}
+
+void FmodStudioHook::ResetListenerToOriginal(int index) {
+  FMOD_3D_ATTRIBUTES original{};
+  bool found = false;
+  {
+    std::lock_guard lock(s_mutex);
+    auto it = s_listenerOverrides.find(index);
+    if (it != s_listenerOverrides.end() && it->second.hasOriginal) {
+      original = it->second.original;
+      found = true;
+    }
+    s_listenerOverrides.erase(index);
+  }
+  if (found && s_trampolineSetListenerAttributes && s_studioSystem) {
+    s_trampolineSetListenerAttributes(s_studioSystem, index, &original, nullptr);
+  }
+}
+
 void FmodStudioHook::RemoveAllOverrides() {
   std::lock_guard lock(s_mutex);
   s_parameterOverrides.clear();
   s_3dOverrides.clear();
+  s_listenerOverrides.clear();
   s_pathToInstances.clear();
   s_eventPathCache.clear();
 }
@@ -429,7 +496,7 @@ void FmodStudioHook::ClearDescPathCache() {
 
 bool FmodStudioHook::HasOverrides() const {
   std::lock_guard lock(s_mutex);
-  return !s_parameterOverrides.empty() || !s_3dOverrides.empty();
+  return !s_parameterOverrides.empty() || !s_3dOverrides.empty() || !s_listenerOverrides.empty();
 }
 
 }  // namespace SPF::Fmod

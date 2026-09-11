@@ -112,6 +112,8 @@ void SoundWindow::RefreshLocalization() {
   m_locAttached = loc.Get("sound_window.attached");
   m_locDetach = loc.Get("sound_window.detach");
   m_locResetToGame = loc.Get("sound_window.reset_to_game");
+  m_locManualOverride = loc.Get("sound_window.manual_override");
+  m_locApplyListener = loc.Get("sound_window.apply_listener");
   m_locCreateNewInstance = loc.Get("sound_window.create_new_instance");
   m_locLoadingState = loc.Get("sound_window.loading_state");
   m_locSampleLoadingState = loc.Get("sound_window.sample_loading_state");
@@ -1056,81 +1058,87 @@ void SoundWindow::RenderTabListener() {
   ImGui::Text("%s: %d", m_locNumListeners.c_str(), numListeners);
 
   for (int i = 0; i < numListeners; ++i) {
-    float px = 0, py = 0, pz = 0;
-    float vx = 0, vy = 0, vz = 0;
-    float fx = 0, fy = 0, fz = 0;
-    float ux = 0, uy = 0, uz = 0;
-    m_soundService.GetListenerAttributes(i, px, py, pz, vx, vy, vz, fx, fy, fz, ux, uy, uz);
-
     char label[64];
     snprintf(label, sizeof(label), m_locListenerLabel.c_str(), i);
     if (ImGui::TreeNode(label)) {
-      ImGui::Text("%s:", m_locPosition.c_str());
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gp_x", &px, 0.0f);
-      ImGui::SameLine(120);
-      ImGui::Text("X");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gp_y", &py, 0.0f);
-      ImGui::SameLine(240);
-      ImGui::Text("Y");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gp_z", &pz, 0.0f);
-      ImGui::SameLine(360);
-      ImGui::Text("Z");
-      ImGui::Spacing();
+      char cbLabel[64];
+      snprintf(cbLabel, sizeof(cbLabel), "%s##lr%d", m_locManualOverride.c_str(), i);
+      bool manual = m_hasListenerCache;
+      if (ImGui::Checkbox(cbLabel, &manual)) {
+        if (manual && !m_hasListenerCache) {
+          float px = 0, py = 0, pz = 0;
+          float vx = 0, vy = 0, vz = 0;
+          float fx = 0, fy = 0, fz = 0;
+          float ux = 0, uy = 0, uz = 0;
+          if (m_soundService.GetListenerAttributes(i, px, py, pz, vx, vy, vz, fx, fy, fz, ux, uy, uz)) {
+            m_cachedListenerPos[0] = px; m_cachedListenerPos[1] = py; m_cachedListenerPos[2] = pz;
+            m_cachedListenerVel[0] = vx; m_cachedListenerVel[1] = vy; m_cachedListenerVel[2] = vz;
+            m_cachedListenerFwd[0] = fx; m_cachedListenerFwd[1] = fy; m_cachedListenerFwd[2] = fz;
+            m_cachedListenerUp[0] = ux; m_cachedListenerUp[1] = uy; m_cachedListenerUp[2] = uz;
+          }
+          m_hasListenerCache = true;
+        } else if (!manual && m_hasListenerCache) {
+          auto& hook = Fmod::FmodStudioHook::GetInstance();
+          hook.ResetListenerToOriginal(i);
+          m_hasListenerCache = false;
+        }
+      }
 
-      ImGui::Text("%s:", m_locVelocity.c_str());
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gv_x", &vx, 0.0f);
-      ImGui::SameLine(120);
-      ImGui::Text("X");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gv_y", &vy, 0.0f);
-      ImGui::SameLine(240);
-      ImGui::Text("Y");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gv_z", &vz, 0.0f);
-      ImGui::SameLine(360);
-      ImGui::Text("Z");
-      ImGui::Spacing();
+      if (m_hasListenerCache) {
+        const float colW = 100.0f;
+        if (ImGui::BeginTable("##listenertable", 4, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX)) {
+          ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+          ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
+          ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
+          ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
+          ImGui::TableHeadersRow();
 
-      ImGui::Text("%s:", m_locForward.c_str());
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gf_x", &fx, 0.0f);
-      ImGui::SameLine(120);
-      ImGui::Text("X");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gf_y", &fy, 0.0f);
-      ImGui::SameLine(240);
-      ImGui::Text("Y");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gf_z", &fz, 0.0f);
-      ImGui::SameLine(360);
-      ImGui::Text("Z");
-      ImGui::Spacing();
+          auto dragRow = [&](int row, const char* lbl, float* v) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("%s", lbl);
+            for (int c = 0; c < 3; ++c) {
+              ImGui::TableSetColumnIndex(c + 1);
+              ImGui::SetNextItemWidth(colW);
+              char id[32];
+              snprintf(id, sizeof(id), "##lr_%d_%d", row, c);
+              ImGui::DragFloat(id, &v[c], 0.1f, 0.0f, 0.0f, "%.2f");
+            }
+          };
 
-      ImGui::Text("%s:", m_locUp.c_str());
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gu_x", &ux, 0.0f);
-      ImGui::SameLine(120);
-      ImGui::Text("X");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gu_y", &uy, 0.0f);
-      ImGui::SameLine(240);
-      ImGui::Text("Y");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(100);
-      ImGui::DragFloat("##gu_z", &uz, 0.0f);
-      ImGui::SameLine(360);
-      ImGui::Text("Z");
+          dragRow(0, m_locPosition.c_str(), m_cachedListenerPos);
+          dragRow(1, m_locVelocity.c_str(), m_cachedListenerVel);
+          dragRow(2, m_locForward.c_str(), m_cachedListenerFwd);
+          dragRow(3, m_locUp.c_str(), m_cachedListenerUp);
+
+          ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.55f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.65f, 0.35f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.45f, 0.25f, 1.0f));
+        if (ImGui::Button(m_locApplyListener.c_str())) {
+          auto& hook = Fmod::FmodStudioHook::GetInstance();
+          FMOD_3D_ATTRIBUTES attrs = {};
+          attrs.position = {m_cachedListenerPos[0], m_cachedListenerPos[1], m_cachedListenerPos[2]};
+          attrs.velocity = {m_cachedListenerVel[0], m_cachedListenerVel[1], m_cachedListenerVel[2]};
+          attrs.forward = {m_cachedListenerFwd[0], m_cachedListenerFwd[1], m_cachedListenerFwd[2]};
+          attrs.up = {m_cachedListenerUp[0], m_cachedListenerUp[1], m_cachedListenerUp[2]};
+          hook.OverrideListenerAttributes(i, attrs);
+        }
+        ImGui::PopStyleColor(3);
+      } else {
+        float px = 0, py = 0, pz = 0;
+        float vx = 0, vy = 0, vz = 0;
+        float fx = 0, fy = 0, fz = 0;
+        float ux = 0, uy = 0, uz = 0;
+        m_soundService.GetListenerAttributes(i, px, py, pz, vx, vy, vz, fx, fy, fz, ux, uy, uz);
+        ImGui::Text("%s: %.2f, %.2f, %.2f", m_locPosition.c_str(), px, py, pz);
+        ImGui::Text("%s: %.2f, %.2f, %.2f", m_locVelocity.c_str(), vx, vy, vz);
+        ImGui::Text("%s: %.2f, %.2f, %.2f", m_locForward.c_str(), fx, fy, fz);
+        ImGui::Text("%s: %.2f, %.2f, %.2f", m_locUp.c_str(), ux, uy, uz);
+      }
       ImGui::TreePop();
     }
   }

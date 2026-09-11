@@ -1369,6 +1369,8 @@
         "attached": "Приєднано",
         "detach": "Відключити",
         "reset_to_game": "Скинути",
+        "manual_override": "Ручне керування",
+        "apply_listener": "Застосувати слухача",
         "create_new_instance": "Створити та запустити новий інстанс"
     },
     "info_window": {

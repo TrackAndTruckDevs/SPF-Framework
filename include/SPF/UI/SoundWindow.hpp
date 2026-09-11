@@ -103,6 +103,8 @@ class SoundWindow : public BaseWindow {
   std::string m_locAttached;
   std::string m_locDetach;
   std::string m_locResetToGame;
+  std::string m_locManualOverride;
+  std::string m_locApplyListener;
   std::string m_locCreateNewInstance;
   std::string m_locLoadingState;
   std::string m_locSampleLoadingState;
@@ -146,6 +148,11 @@ class SoundWindow : public BaseWindow {
   float m_cached3DFwd[3] = {};
   float m_cached3DUp[3] = {};
   bool m_has3DCache = false;
+  float m_cachedListenerPos[3] = {};
+  float m_cachedListenerVel[3] = {};
+  float m_cachedListenerFwd[3] = {};
+  float m_cachedListenerUp[3] = {};
+  bool m_hasListenerCache = false;
   bool m_ownsInstance = false;
 
   void RefreshSoundList();

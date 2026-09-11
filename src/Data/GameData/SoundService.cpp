@@ -80,6 +80,7 @@ bool SoundService::ResolveFmodFunctions() {
   m_fmodFn.System_GetNumListeners = fmodApi.Find("System::getNumListeners");
   m_fmodFn.System_SetNumListeners = fmodApi.Find("System::setNumListeners");
   m_fmodFn.System_GetListenerAttributes = fmodApi.Find("System::getListenerAttributes");
+  m_fmodFn.System_SetListenerAttributes = fmodApi.Find("System::setListenerAttributes");
   m_fmodFn.System_LoadBankFile = fmodApi.Find("System::loadBankFile");
   m_fmodFn.System_LoadBankMemory = fmodApi.Find("System::loadBankMemory");
 
@@ -866,6 +867,20 @@ bool SoundService::GetListenerAttributes(int index, float& posX, float& posY, fl
   upY = attrs.up.y;
   upZ = attrs.up.z;
   return true;
+}
+
+bool SoundService::SetListenerAttributes(int index, float posX, float posY, float posZ, float velX, float velY, float velZ, float fwdX, float fwdY, float fwdZ, float upX, float upY, float upZ) {
+  if (!ResolveFmodFunctions()) return false;
+  auto* studioSys = static_cast<FMOD::Studio::System*>(GetStudioSystemRaw());
+  if (!studioSys || !m_fmodFn.System_SetListenerAttributes) return false;
+
+  FMOD_3D_ATTRIBUTES attrs = {};
+  attrs.position = {posX, posY, posZ};
+  attrs.velocity = {velX, velY, velZ};
+  attrs.forward = {fwdX, fwdY, fwdZ};
+  attrs.up = {upX, upY, upZ};
+  auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, int, const FMOD_3D_ATTRIBUTES*, const FMOD_VECTOR*)>(m_fmodFn.System_SetListenerAttributes);
+  return fn(studioSys, index, &attrs, nullptr) == FMOD_OK;
 }
 
 // --- Bank Management ---
