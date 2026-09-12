@@ -209,6 +209,14 @@ Core::InitializationReport UIManager::Initialize(const std::map<std::string, nlo
   logger->Info("Initializing UIManager...");
   InitializeImGui();
 
+  // Constructed here rather than in Init(): Init() runs before
+  // LocalizationManager::Initialize(), so a KeyCapturePopup built there would
+  // permanently cache raw/untranslated strings (RefreshLocalization only
+  // re-fires later on an actual language change, which may never happen in
+  // a session). By this point localization data is already loaded.
+  m_keyCapturePopup = std::make_unique<KeyCapturePopup>(*m_eventManager, *m_configService);
+  m_bindingDetailsPopup = std::make_unique<BindingDetailsPopup>(*m_eventManager, *m_configService);
+
   // NOTE: The loop that created plugin windows has been removed.
   // That logic will be moved to the OnPluginLoaded event handler.
 
@@ -761,6 +769,11 @@ void UIManager::RenderAll() {
     RenderWindow(window, mainDockspaceId, isShellVisible);
   }
 
+  // Draws the shared keybind rebind popup on top of everything above, whether it was
+  // opened from the native Settings window or from a plugin's own window via the API.
+  if (m_keyCapturePopup) m_keyCapturePopup->Render();
+  if (m_bindingDetailsPopup) m_bindingDetailsPopup->Render();
+
   // --- Pass 2: Update focused tab state using robust method ---
   if (isShellVisible) {
     for (IWindow* window : windowsToRender) {
@@ -1167,27 +1180,15 @@ bool UIManager::OnSettingChanged(const std::string& systemName, const std::strin
 }
 
 void UIManager::NotifyInputCaptured(const Input::InputCaptured& e) {
-  for (const auto& window : m_windows) {
-    if (auto* settingsWindow = dynamic_cast<SettingsWindow*>(window.get())) {
-      settingsWindow->OnInputCaptured(e);
-    }
-  }
+  if (m_keyCapturePopup) m_keyCapturePopup->OnInputCaptured(e);
 }
 
 void UIManager::NotifyInputCaptureCancelled(const Input::InputCaptureCancelled& e) {
-  for (const auto& window : m_windows) {
-    if (auto* settingsWindow = dynamic_cast<SettingsWindow*>(window.get())) {
-      settingsWindow->OnInputCaptureCancelled(e);
-    }
-  }
+  if (m_keyCapturePopup) m_keyCapturePopup->OnInputCaptureCancelled(e);
 }
 
 void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e) {
-  for (const auto& window : m_windows) {
-    if (auto* settingsWindow = dynamic_cast<SettingsWindow*>(window.get())) {
-      settingsWindow->OnInputCaptureConflict(e);
-    }
-  }
+  if (m_keyCapturePopup) m_keyCapturePopup->OnInputCaptureConflict(e);
 }
 
 void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {

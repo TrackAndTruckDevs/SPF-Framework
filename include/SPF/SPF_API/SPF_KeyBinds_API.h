@@ -537,6 +537,79 @@ typedef struct SPF_KeyBinds_API {
    */
   void (*Kbind_Register_Ex)(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_Callback_Ex callback, void* user_data);
 
+  /**
+   * @brief Opens the framework's native "press a key" rebind popup for a specific action.
+   *
+   * @details This lets a plugin offer key/gamepad (re)assignment from its own custom
+   *          DearImGui menus with full parity with the built-in Settings window: the same
+   *          modal, the same conflict detection/resolution UI, and the same commit path.
+   *          Because it is the exact same popup and pipeline the native Settings window
+   *          uses, the result is always written through the shared config, so the config
+   *          file, the runtime keybind state, and the native Settings window (if open)
+   *          all stay in sync no matter which UI triggered the rebind.
+   *
+   *          The popup is drawn as a top-level ImGui modal by the framework itself on the
+   *          next frame; you do not need to (and should not) render anything for it
+   *          yourself. It is safe to call this from inside your own window's rendering code.
+   *
+   * @param h The context handle obtained from `Kbind_GetContext`.
+   * @param actionName The logical name of the action (e.g., "UI.toggle").
+   *                   ### Smart Naming:
+   *                   The API automatically prepends your Plugin ID if it's missing.
+   * @param bindingIndex The zero-based index of an existing binding (see
+   *                      `Kbind_GetBindingCount`) to reassign, or `-1` to add a new binding
+   *                      to the action instead (equivalent to the "+" button in the native
+   *                      Settings UI).
+   */
+  void (*Kbind_OpenRebindPopup)(SPF_KeyBinds_Handle* h, const char* actionName, int bindingIndex);
+
+  /**
+   * @brief Gets the same display string the native Settings UI shows for a binding:
+   *        its device icon (keyboard/gamepad/mouse glyph) followed by its name.
+   *
+   * @details Use this instead of `Kbind_GetBindingName` whenever you want your plugin's
+   *          own UI to show bindings with full visual parity to the native Settings window,
+   *          without having to know about FontAwesome glyphs or re-implement the
+   *          type-to-icon mapping yourself. For a chord (multiple physical inputs), this
+   *          returns one icon per constituent device, joined with " + ", exactly like the
+   *          native UI. The returned string is plain UTF-8 text and renders correctly in
+   *          any SPF UI text/button call, since the icon font is already part of the shared
+   *          font atlas used by all SPF (and plugin) UI.
+   *
+   * @param h The context handle.
+   * @param actionName The full name of the action.
+   * @param index The zero-based index of the binding.
+   * @param out_buffer Buffer to store the resulting string.
+   * @param buffer_size Size of the output buffer in bytes.
+   * @return The number of characters written.
+   */
+  int (*Kbind_GetBindingDisplayName)(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size);
+
+  /**
+   * @brief Opens the framework's native "binding details" (gear icon) popup for a
+   *        specific binding, from your own custom DearImGui menu.
+   *
+   * @details Gives full parity with the native Settings window's advanced binding
+   *          options: for digital bindings, press behavior (Hold/Toggle), consume
+   *          policy, and long-press threshold (ms); for analog axis bindings, mode
+   *          (analog/digital), deadzone, saturation, sensitivity, curve, smoothing,
+   *          range, invert, side, and the live value graph. As with
+   *          `Kbind_OpenRebindPopup`, this is the exact same popup and pipeline the
+   *          native Settings window uses, so results are always written through the
+   *          shared config and stay in sync everywhere.
+   *
+   *          The popup is drawn as a top-level ImGui modal by the framework itself on
+   *          the next frame; you do not need to (and should not) render anything for it
+   *          yourself. It is safe to call this from inside your own window's rendering code.
+   *
+   * @param h The context handle obtained from `Kbind_GetContext`.
+   * @param actionName The logical name of the action (e.g., "UI.toggle").
+   *                   ### Smart Naming:
+   *                   The API automatically prepends your Plugin ID if it's missing.
+   * @param index The zero-based index of the binding to edit (see `Kbind_GetBindingCount`).
+   */
+  void (*Kbind_OpenBindingDetailsPopup)(SPF_KeyBinds_Handle* h, const char* actionName, int index);
+
 } SPF_KeyBinds_API;
 
 #ifdef __cplusplus

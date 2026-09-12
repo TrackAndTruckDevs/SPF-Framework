@@ -13,7 +13,9 @@
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/System/ApiService.hpp"
+#include "SPF/UI/BindingDetailsPopup.hpp"
 #include "SPF/UI/IWindow.hpp"
+#include "SPF/UI/KeyCapturePopup.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "imgui.h"
@@ -98,6 +100,19 @@ class UIManager : public Config::IConfigurable {
   void NotifyInputCaptured(const Input::InputCaptured& e);
   void NotifyInputCaptureCancelled(const Input::InputCaptureCancelled& e);
   void NotifyInputCaptureConflict(const Input::InputCaptureConflict& e);
+
+  /**
+   * @brief The single shared keybind-rebind popup instance. Used by the native Settings
+   *        window and by SPF_KeyBinds_API's Kbind_OpenRebindPopup so both paths stay in sync.
+   */
+  KeyCapturePopup& GetKeyCapturePopup() { return *m_keyCapturePopup; }
+
+  /**
+   * @brief The single shared binding-details (gear icon) popup instance. Used by the
+   *        native Settings window and by SPF_KeyBinds_API's Kbind_OpenBindingDetailsPopup
+   *        so both paths stay in sync.
+   */
+  BindingDetailsPopup& GetBindingDetailsPopup() { return *m_bindingDetailsPopup; }
 
   //  API related notifications
   void NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
@@ -214,6 +229,8 @@ class UIManager : public Config::IConfigurable {
   ImGuiID m_lastLoggedConflictId = 0;  // Last ImGui duplicate-ID conflict reported to the log.
 
   std::shared_ptr<NotificationWindow> m_notificationWindow;
+  std::unique_ptr<KeyCapturePopup> m_keyCapturePopup;
+  std::unique_ptr<BindingDetailsPopup> m_bindingDetailsPopup;
 
   float m_uiScaleFactor = 1.0f;
 

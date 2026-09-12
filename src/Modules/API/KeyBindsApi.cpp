@@ -7,9 +7,13 @@
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/HandleManager.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
+#include "SPF/Modules/InputDisplay.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/SPF_API/SPF_KeyBinds_API.h"
+#include "SPF/UI/UIManager.hpp"
+
+#include "nlohmann/json.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -252,6 +256,23 @@ int KeyBindsApi::Kbind_GetBindingName(SPF_KeyBinds_Handle* h, const char* action
   return len;
 }
 
+int KeyBindsApi::Kbind_GetBindingDisplayName(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size) {
+  if (!h || !actionName || !out_buffer || buffer_size <= 0) return 0;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+  auto& pm = PluginManager::GetInstance();
+  auto* kbm = pm.GetKeyBindsManager();
+  if (!kbm) return 0;
+
+  auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(index));
+  if (!binding || !binding->Input) return 0;
+
+  std::string name = Modules::GetDisplayNameWithIcon(*binding->Input);
+  int len = static_cast<int>(name.copy(out_buffer, buffer_size - 1));
+  out_buffer[len] = '\0';
+  return len;
+}
+
 void KeyBindsApi::Kbind_RegisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName, const char* titleKey, const char* descKey, SPF_Keybind_Callback_Ex callback, void* user_data) {
   if (!h || !actionName) return;
   auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
@@ -300,6 +321,39 @@ int KeyBindsApi::Kbind_GetActionNameByIndex(SPF_KeyBinds_Handle* h, int index, c
   return 0;
 }
 
+void KeyBindsApi::Kbind_OpenRebindPopup(SPF_KeyBinds_Handle* h, const char* actionName, int bindingIndex) {
+  if (!h || !actionName) return;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+
+  nlohmann::ordered_json originalBinding = nlohmann::ordered_json::object();
+  if (bindingIndex >= 0) {
+    auto& pm = PluginManager::GetInstance();
+    if (auto* kbm = pm.GetKeyBindsManager()) {
+      if (const auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(bindingIndex))) {
+        originalBinding = binding->originalBindingJson;
+      }
+    }
+  }
+
+  UI::UIManager::GetInstance().GetKeyCapturePopup().Open(fullActionName, originalBinding);
+}
+
+void KeyBindsApi::Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index) {
+  if (!h || !actionName || index < 0) return;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+
+  auto& pm = PluginManager::GetInstance();
+  auto* kbm = pm.GetKeyBindsManager();
+  if (!kbm) return;
+
+  const auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(index));
+  if (!binding) return;
+
+  UI::UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, binding->originalBindingJson);
+}
+
 void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   if (!api) return;
 
@@ -317,12 +371,15 @@ void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   api->Kbind_GetBindingSide = &KeyBindsApi::Kbind_GetBindingSide;
   api->Kbind_GetBindingAccumulatorMode = &KeyBindsApi::Kbind_GetBindingAccumulatorMode;
   api->Kbind_GetBindingName = &KeyBindsApi::Kbind_GetBindingName;
+  api->Kbind_GetBindingDisplayName = &KeyBindsApi::Kbind_GetBindingDisplayName;
 
   api->Kbind_RegisterActionMetadata = &KeyBindsApi::Kbind_RegisterActionMetadata;
   api->Kbind_UnregisterActionMetadata = &KeyBindsApi::Kbind_UnregisterActionMetadata;
   api->Kbind_GetActionCount = &KeyBindsApi::Kbind_GetActionCount;
   api->Kbind_GetActionNameByIndex = &KeyBindsApi::Kbind_GetActionNameByIndex;
   api->Kbind_Register_Ex = &KeyBindsApi::Kbind_Register_Ex;
+  api->Kbind_OpenRebindPopup = &KeyBindsApi::Kbind_OpenRebindPopup;
+  api->Kbind_OpenBindingDetailsPopup = &KeyBindsApi::Kbind_OpenBindingDetailsPopup;
 }
 
 }  // namespace Modules::API
