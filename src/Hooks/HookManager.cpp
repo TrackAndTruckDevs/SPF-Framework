@@ -12,6 +12,7 @@
 #include "SPF/Hooks/XInputHook.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
 
+#include <MinHook.h>
 #include <algorithm>  // For std::find
 #include <string>
 #include <vector>
@@ -210,6 +211,8 @@ void HookManager::UninstallAllHooks() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
   logger->Info("Disabling all hooks for reload...");
 
+  // Single bulk disable — one FlushInstructionCache instead of many (~200ms saved)
+  MH_DisableHook(MH_ALL_HOOKS);
   // Uninstall feature hooks first, in reverse order of registration
   for (auto it = m_featureHooks.rbegin(); it != m_featureHooks.rend(); ++it) {
     (*it)->Uninstall();

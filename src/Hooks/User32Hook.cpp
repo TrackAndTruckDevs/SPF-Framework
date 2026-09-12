@@ -260,21 +260,9 @@ void User32Hook::Uninstall() {
 void User32Hook::Remove() {
   if (g_hooksCreated) {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("User32Hook");
-
-    // Disable and remove hooks individually
-    MH_DisableHook(reinterpret_cast<LPVOID>(&SetCursorPos));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetCursorPos));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&SetCursorPos));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetCursorPos));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyState));
-
+    MH_DisableHook(MH_ALL_HOOKS);
+    MH_RemoveHook(MH_ALL_HOOKS);
     logger->Info("User32 hooks removed.");
-
     g_hooksCreated = false;
     oSetCursorPos = nullptr;
     oGetCursorPos = nullptr;
