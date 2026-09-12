@@ -1386,4 +1386,49 @@ void SoundService::DumpAllEventsToLog() {
   logger->Info("");
   logger->Info("===== FMOD Sound Dump END: {} banks, {} entries ({} events resolved, {} events unresolved, {} buses/params skipped) =====", bankIndex, eventIndex, resolvedCount, unresolvedCount, skippedCount);
 }
+
+bool SoundService::FindEventGuidByPath(const char* eventPath, uint8_t outGuid[16]) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  if (!m_isInitialized || !eventPath) return false;
+
+  uintptr_t soundSystem = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+  if (!soundSystem) return false;
+
+  uintptr_t lockAddr = soundSystem + m_bankListLockOffset;
+  AcquireSRWLockExclusive(reinterpret_cast<PSRWLOCK>(lockAddr));
+
+  uintptr_t bankListHead = *reinterpret_cast<uintptr_t*>(soundSystem + m_bankListHeadOffset);
+  uintptr_t bankSentinel = soundSystem + m_bankListSentinelOffset;
+
+  bool found = false;
+  uintptr_t bankNode = bankListHead;
+  while (bankNode != bankSentinel) {
+    uintptr_t eventNode = *reinterpret_cast<uintptr_t*>(bankNode + m_bankEventListHeadOffset);
+    uintptr_t eventSentinel = bankNode + m_bankEventListHeadOffset + m_eventListTerminatorOffset;
+
+    while (eventNode != eventSentinel) {
+      const char* path = *reinterpret_cast<const char**>(eventNode + m_eventPathOffset);
+      if (path && strcmp(path, eventPath) == 0) {
+        std::memcpy(outGuid, reinterpret_cast<void*>(eventNode + m_eventGuidOffset), 16);
+        found = true;
+        break;
+      }
+      eventNode = *reinterpret_cast<uintptr_t*>(eventNode);
+    }
+    if (found) break;
+    bankNode = *reinterpret_cast<uintptr_t*>(bankNode);
+  }
+
+  ReleaseSRWLockExclusive(reinterpret_cast<PSRWLOCK>(lockAddr));
+
+  if (found) {
+    char guidHex[33];
+    for (int i = 0; i < 16; ++i) snprintf(guidHex + i * 2, 3, "%02x", outGuid[i]);
+    guidHex[32] = '\0';
+    logger->Info("FindEventGuidByPath: found '{}' guid={}", eventPath, guidHex);
+  } else {
+    logger->Warn("FindEventGuidByPath: event '{}' not found in any loaded bank", eventPath);
+  }
+  return found;
+}
 }  // namespace SPF::Data::GameData

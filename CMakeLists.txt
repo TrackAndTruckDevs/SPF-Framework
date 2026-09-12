@@ -366,6 +366,7 @@ add_library(SPF SHARED
     "src/UI/UIStyle.cpp"
     "src/UI/UITypographyHelper.cpp"
     "src/UI/UIElements.cpp"
+    "src/UI/UISounds.cpp"
     "src/System/VirtualKeyMapping.cpp"
     "src/System/GamepadButtonMapping.cpp"
     "src/System/MouseButtonMapping.cpp"

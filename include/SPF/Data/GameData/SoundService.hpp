@@ -207,6 +207,7 @@ class SoundService : public IWorldScopedService {
   bool GetEventUserPropertyCount(void* desc, int& outCount);
   bool GetEventUserPropertyByIndex(void* desc, int index, char* outName, int nameSize, int& outType);
   void DumpAllEventsToLog();
+  bool FindEventGuidByPath(const char* eventPath, uint8_t outGuid[16]);
 
   const char* GetName() const override { return "SoundService"; }
   void ResetForWorldReload() override { Shutdown(); }

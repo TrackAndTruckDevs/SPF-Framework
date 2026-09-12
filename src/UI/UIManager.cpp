@@ -54,6 +54,7 @@
 #include "SPF/UI/SoundWindow.hpp"         // Added for SoundWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UISounds.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
 #include "SPF/Utils/Signal.hpp"
 
@@ -795,6 +796,9 @@ void UIManager::RenderAll() {
     m_lastLoggedConflictId = 0;
   }
 #endif
+
+  // --- UI Click Sound (after all widgets rendered) ---
+  UISounds::OnMouseClicked();
 }
 
 void UIManager::InitializeImGui() {
