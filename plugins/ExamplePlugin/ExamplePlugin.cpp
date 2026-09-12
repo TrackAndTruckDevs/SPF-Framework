@@ -1996,7 +1996,9 @@ void RenderInputTestTab(SPF_UI_API* ui, void* user_data) {
     for (int i = 0; i < bindingCount; ++i) {
       char line_buf[256];
       char name_buf[128];
-      keybinds->Kbind_GetBindingName(g_ctx.keybindsHandle, actionName, i, name_buf, sizeof(name_buf));
+      // Kbind_GetBindingDisplayName includes the same device icon (keyboard/gamepad/mouse
+      // glyph) the native Settings UI shows, so this tree node label matches it visually.
+      keybinds->Kbind_GetBindingDisplayName(g_ctx.keybindsHandle, actionName, i, name_buf, sizeof(name_buf));
 
       format->Fmt_Format(line_buf, sizeof(line_buf), "[Binding %d] Name: %s", i + 1, name_buf);
       if (ui->UI_TreeNode(line_buf)) {
