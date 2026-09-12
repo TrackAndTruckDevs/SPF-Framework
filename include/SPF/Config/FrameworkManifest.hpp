@@ -57,6 +57,7 @@ inline const ManifestData& GetFrameworkManifestData() {
                 "version": ""
               },
               "notification_duration": 3.0,
+              "notification_sound": true,
               "show_update_notifications": true
             }
         )json"),
@@ -172,7 +173,11 @@ inline const ManifestData& GetFrameworkManifestData() {
           "settings_window.setting_names.settings.notification_duration.description",
           false,
           "slider",
-          nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")}},
+           nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")},
+         {"notification_sound",
+           "settings_window.setting_names.settings.notification_sound.title",
+           "settings_window.setting_names.settings.notification_sound.description",
+           false}},
       .keybindsMetadata = {{"framework.ui.main_window", "toggle", "keybind_actions.ui.main_window.toggle.title", "keybind_actions.ui.main_window.toggle.description"},
                            {"framework.ui", "close_focused", "keybind_actions.ui.close_focused.title", "keybind_actions.ui.close_focused.description"},
                            {"framework.input", "toggle_mouse_overridden", "keybind_actions.input.toggle_mouse_overridden.title", "keybind_actions.input.toggle_mouse_overridden.description"}},

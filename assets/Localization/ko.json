@@ -241,6 +241,10 @@
                     "title": "알림 지속 시간",
                     "description": "임시 팝업 알림이 화면에 머무는 시간(초)을 설정합니다."
                 },
+                "notification_sound": {
+                    "title": "알림 소리 재생",
+                    "description": "새 알림이 나타날 때 소리를 재생합니다."
+                },
                 "show_update_notifications": {
                     "title": "업데이트 알림 표시",
                     "description": "프레임워크나 플러그인의 업데이트가 있을 때 알림을 표시합니다."

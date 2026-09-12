@@ -241,6 +241,10 @@
                     "title": "Meldingsduur",
                     "description": "Stelt in hoe lang (in seconden) de tijdelijke pop-upmeldingen op het scherm blijven staan."
                 },
+                "notification_sound": {
+                    "title": "Meldingsgeluid afspelen",
+                    "description": "Speelt een geluid af wanneer een nieuwe melding verschijnt."
+                },
                 "show_update_notifications": {
                     "title": "Meldingen over updates",
                     "description": "Je ontvangt meldingen wanneer er updates beschikbaar zijn voor het framework of de plug-ins."

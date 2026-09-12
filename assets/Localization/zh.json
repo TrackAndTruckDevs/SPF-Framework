@@ -241,6 +241,10 @@
                     "title": "通知持续时间",
                     "description": "设置临时弹出通知在屏幕上停留的时间（以秒为单位）。"
                 },
+                "notification_sound": {
+                    "title": "播放通知声音",
+                    "description": "当新通知出现时播放声音。"
+                },
                 "show_update_notifications": {
                     "title": "更新通知",
                     "description": "当框架或插件有可用更新时，您将收到通知。"

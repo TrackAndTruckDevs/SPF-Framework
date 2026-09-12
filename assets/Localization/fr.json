@@ -241,6 +241,10 @@
                     "title": "Durée des notifications",
                     "description": "Définit la durée (en secondes) pendant laquelle les notifications contextuelles temporaires restent à l'écran."
                 },
+                "notification_sound": {
+                    "title": "Jouer le son de notification",
+                    "description": "Joue un son lorsqu'une nouvelle notification apparaît."
+                },
                 "show_update_notifications": {
                     "title": "Notifier des mises à jour",
                     "description": "Vous recevrez des notifications lorsque des mises à jour seront disponibles pour le framework ou les plugins."

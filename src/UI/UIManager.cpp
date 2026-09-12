@@ -296,18 +296,19 @@ std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() 
 void UIManager::ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode) {
   if (m_notificationWindow) {
     float duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
-    m_notificationWindow->Show(message, type, duration, mode);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    m_notificationWindow->Show(message, type, duration, mode, playSound);
   }
 }
 
 SPF_Notification_Handle UIManager::ShowNotificationEx(const SPF_Notification_Params* params) {
   if (m_notificationWindow && params) {
     SPF_Notification_Params p = *params;
-    // Resolve 'Auto' duration from settings if it's negative
     if (p.duration < 0.0f) {
       p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
     }
-    return m_notificationWindow->ShowEx(p);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    return m_notificationWindow->ShowEx(p, playSound);
   }
   return nullptr;
 }

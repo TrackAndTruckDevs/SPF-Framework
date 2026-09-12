@@ -241,6 +241,10 @@
                     "title": "Notification Duration",
                     "description": "Sets how long (in seconds) the temporary pop-up notifications stay on screen."
                 },
+                "notification_sound": {
+                    "title": "Play notification sound",
+                    "description": "Play a sound when a new notification appears."
+                },
                 "show_update_notifications": {
                     "title": "Notify about updates",
                     "description": "When a framework or plugin update is available, you will see a notification."

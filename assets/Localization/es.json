@@ -241,6 +241,10 @@
                     "title": "Duración de las notificaciones",
                     "description": "Establece cuánto tiempo (en segundos) permanecen en pantalla las notificaciones emergentes temporales."
                 },
+                "notification_sound": {
+                    "title": "Reproducir sonido de notificación",
+                    "description": "Reproduce un sonido cuando aparece una nueva notificación."
+                },
                 "show_update_notifications": {
                     "title": "Notificar sobre actualizaciones",
                     "description": "Recibirá notificaciones cuando haya actualizaciones disponibles para el framework o los plugins."

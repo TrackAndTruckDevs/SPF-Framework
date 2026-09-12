@@ -241,6 +241,10 @@
                     "title": "Benachrichtigungsdauer",
                     "description": "Legt fest, wie lange (in Sekunden) die temporären Pop-up-Benachrichtigungen auf dem Bildschirm bleiben."
                 },
+                "notification_sound": {
+                    "title": "Benachrichtigungston abspielen",
+                    "description": "Spielt einen Ton ab, wenn eine neue Benachrichtigung eingeht."
+                },
                 "show_update_notifications": {
                     "title": "Benachrichtigungen über Updates",
                     "description": "Sie erhalten Benachrichtigungen, wenn Updates für das Framework oder die Plugins verfügbar sind."
