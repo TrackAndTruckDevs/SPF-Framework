@@ -248,6 +248,23 @@ const char* GOTO_CITY_NOT_FOUND_STRING = "City '%s' not found!";
  */
 const char* KDOP_STRING_BUF_SIG = "[MOV r64, [r64+off8]] [MOV [r64+off8], r64] [MOV [r64+off8], r64] ";
 
+/**
+ * @brief Reads the 32-bit displacement of a mod=10 ModRM-addressed instruction,
+ * accounting for the optional SIB byte inserted when R/M=100 (base=rsp/r12).
+ *
+ * Fixed-offset reads (PatternFinder::ReadInt32(addr + N)) silently shift onto
+ * the SIB byte and yield a garbage displacement whenever the compiler happens
+ * to pick such a base register (observed for Pause Status / Global Warp in the
+ * game's v1.61 rebuild, base register r12).
+ *
+ * @param modrmAddr Address of the ModRM byte itself.
+ */
+int32_t ReadModRMDisp32(uintptr_t modrmAddr) {
+  uint8_t modrm = *reinterpret_cast<uint8_t*>(modrmAddr);
+  bool hasSib = (modrm & 0x07) == 0x04;
+  return PatternFinder::ReadInt32(modrmAddr + 1 + (hasSib ? 1 : 0));
+}
+
 }  // namespace
 
 bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
@@ -483,15 +500,15 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
   // ── Phase 11: Pause Status Offset ──
   /*
-   * 4.1 [OFFSET: Pause Status] (Updated for v1.60)
+   * 4.1 [OFFSET: Pause Status] (Updated for v1.60; SIB-aware since v1.61)
    */
   {
     auto phase = log.MakePhase("Pause Status Offset");
 
     addr = PatternFinder::Find(pfnCoreEngineLoop, 1500, PAUSE_SIG);
     if (phase.Step(addr, "Pause Status signature", "RT")) {
-      // Offset is at byte 3 of the first instruction (CMP)
-      int32_t pauseOff = PatternFinder::ReadInt32(addr + 3);
+      // ModRM is byte 2 of the CMP instruction (41 38 <ModRM> ...).
+      int32_t pauseOff = ReadModRMDisp32(addr + 2);
       if (phase.StepOffset(pauseOff, "Pause Status Offset", "OFF")) {
         owner.SetPauseStatusOffset(pauseOff);
       }
@@ -500,7 +517,7 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
   // ── Phase 12: Global Warp Offset ──
   /*
-   * 4.2 [OFFSET: Global Warp] (Verified for v1.59 & v1.60)
+   * 4.2 [OFFSET: Global Warp] (Verified for v1.59 & v1.60; SIB-aware since v1.61)
    * This multiplier controls the overall speed of the game engine (console "warp").
    */
   {
@@ -508,7 +525,8 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
 
     uintptr_t addrWarp = PatternFinder::Find(addr, 32, WARP_CHAIN);
     if (phase.Step(addrWarp, "Global Warp signature", "RT")) {
-      int32_t warpOff = PatternFinder::ReadInt32(addrWarp + 5);
+      // ModRM is byte 4 of the MOVSS instruction (F3 41 0F 10 <ModRM> ...).
+      int32_t warpOff = ReadModRMDisp32(addrWarp + 4);
       if (phase.StepOffset(warpOff, "Global Warp Offset", "OFF")) {
         owner.SetGlobalWarpOffset(warpOff);
       }
