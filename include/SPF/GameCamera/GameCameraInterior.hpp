@@ -173,9 +173,6 @@ class GameCameraInterior : public IGameCamera {
   const CameraData& GetDefaults() const { return m_defaultCameraData; }
 
  private:
-  // Writes fov into the camera object and recomputes horiz/vert FOV, without touching override state.
-  void ApplyFov(float fov);
-
   // Pointer to the raw game camera object.
   void* m_pCameraObject = nullptr;
   // Local copy of the camera's data, updated each frame.

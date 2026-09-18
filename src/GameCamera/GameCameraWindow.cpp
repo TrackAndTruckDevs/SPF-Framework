@@ -38,6 +38,11 @@ void GameCameraWindow::Update(float dt) {
   if (!m_pCameraObject) return;
 }
 
+void GameCameraWindow::LateUpdate() {
+  if (!m_pCameraObject || !m_fovOverrideActive) return;
+  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
+}
+
 void GameCameraWindow::StoreDefaultState() {
   if (m_defaultsSaved || !m_pCameraObject) return;
 
@@ -372,26 +377,9 @@ void GameCameraWindow::SetAutoCenterMoveDirection(int32_t val) {
 
 void GameCameraWindow::SetFov(float fov) {
   if (!m_pCameraObject) return;
-  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  auto& hooks = Hooks::CameraHooks::GetInstance();
-  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
-  auto fov_off = gameData.GetFovBaseOffset();
-  auto pfnUpdateCameraProjection = hooks.GetUpdateCameraProjectionFunc();
-  uintptr_t pCameraParamsObject = gameData.GetCameraParamsObjectPtr();
-  auto x1_off = gameData.GetViewportX1Offset();
-  auto x2_off = gameData.GetViewportX2Offset();
-  auto y1_off = gameData.GetViewportY1Offset();
-  auto y2_off = gameData.GetViewportY2Offset();
-
-  if (fov_off && pfnUpdateCameraProjection && pCameraParamsObject && x1_off && x2_off && y1_off && y2_off) {
-    *reinterpret_cast<float*>(pCam + fov_off) = fov;
-    float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_off) - *reinterpret_cast<float*>(pCameraParamsObject + x1_off);
-    float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_off) - *reinterpret_cast<float*>(pCameraParamsObject + y1_off);
-    pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
-  } else {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraWindow");
-    logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
-  }
+  m_fovOverrideActive = true;
+  m_fovOverrideValue = fov;
+  ApplyCoreCameraFov(m_pCameraObject, fov);
 }
 
 void GameCameraWindow::SetShakeAnimStep(float val) {
