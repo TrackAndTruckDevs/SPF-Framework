@@ -41,6 +41,24 @@ const char* HORIZ_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
  */
 const char* VERT_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
 
+/*
+ * ANCHOR #4: FOV Zoom Reference Base (native dynamic speed-FOV baseline)
+ *
+ * Inside the game's per-frame speed-based FOV system (not UpdateCameraProjection — a
+ * separate function that recomputes BaseFovOffset from this field whenever the truck's
+ * speed or the zoom toggle changes). Found via a memory write breakpoint on BaseFovOffset
+ * followed by Ghidra decompilation of the writer.
+ *
+ * /--- Ghidra:(eurotrucks2_1.61.1.0s.exe) ---/
+ * 1405e865e  F3 41 0F10 AE 5C1E0000        MOVSS XMM5,[R14 + 0x1e5c]
+ * 1405e8667  F3 44 0F10 80 08040000        MOVSS XMM8,[RAX + 0x408]
+ *
+ * The first instruction is an exact-byte anchor (unrelated "current zoom state" field on a
+ * different object, r14); the second is the target read, with its displacement wildcarded
+ * so it can be re-extracted if it moves in a future game version.
+ */
+const char* FOV_ZOOM_BASE_SIG = "F3 41 0F 10 AE 5C 1E 00 00 F3 44 0F 10 80 ? ? ? ?";
+
 }  // namespace
 
 bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
@@ -92,6 +110,21 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int8_t vertFovOffset = PatternFinder::ReadInt8(addr + 4);
       if (phase.StepOffset(vertFovOffset, "VertFovOffset", "OFF")) {
         owner.SetFovVertFinalOffset(vertFovOffset);
+      }
+    }
+  }
+
+  // ── Phase 4: FOV Zoom Reference Base ──
+  // Optional: only the interior camera's manual FOV override relies on this to survive the
+  // game's native speed-based FOV recompute. A miss here doesn't block FovDataFinder overall.
+  {
+    auto phase = log.MakePhase("FOV Zoom Reference Base");
+
+    uintptr_t zoomAddr = PatternFinder::Find(FOV_ZOOM_BASE_SIG);
+    if (phase.StepOptional(zoomAddr, "FOV Anchor #4 (Zoom Reference Base)", "RT")) {
+      int32_t zoomBaseOffset = PatternFinder::ReadInt32(zoomAddr + 14);
+      if (phase.StepOffsetOptional(zoomBaseOffset, "FovZoomBaseOffset", "OFF")) {
+        owner.SetFovZoomBaseOffset(zoomBaseOffset);
       }
     }
   }

@@ -52,6 +52,18 @@ void GameCameraInterior::Update(float dt) {
   // It can be used for other per-frame logic if needed in the future.
 }
 
+void GameCameraInterior::LateUpdate() {
+  if (!m_pCameraObject || !m_fovOverrideActive) return;
+
+  // Only pin the reference FOV here — don't also force fov_base_offset or call
+  // UpdateCameraProjection. The native speed-FOV system already does both itself each
+  // frame; fighting it there caused visible flicker while driving.
+  auto zoomBaseOffset = Data::GameData::GameDataCameraService::GetInstance().GetFovZoomBaseOffset();
+  if (zoomBaseOffset) {
+    *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + zoomBaseOffset) = m_fovOverrideValue;
+  }
+}
+
 void GameCameraInterior::SetSeatPosition(float x, float y, float z) {
   if (!m_pCameraObject) return;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
@@ -90,6 +102,13 @@ void GameCameraInterior::SetHeadRotation(float yaw, float pitch) {
 
 void GameCameraInterior::SetFov(float fov) {
   if (!m_pCameraObject) return;
+  m_fovOverrideActive = true;
+  m_fovOverrideValue = fov;
+  ApplyFov(fov);
+}
+
+void GameCameraInterior::ApplyFov(float fov) {
+  if (!m_pCameraObject) return;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   auto& hooks = Hooks::CameraHooks::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
@@ -105,10 +124,17 @@ void GameCameraInterior::SetFov(float fov) {
 
   // Check if everything is available
   if (fov_base_offset && pfnUpdateCameraProjection && pCameraParamsObject && x1_offset && x2_offset && y1_offset && y2_offset) {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
-
     // 1. Set the base FOV value
     *reinterpret_cast<float*>(pCam + fov_base_offset) = fov;
+
+    // 1b. Also set the "un-zoomed" reference FOV the game's own dynamic speed-FOV system
+    // reads from. Without this, that system keeps recomputing fov_base_offset from the
+    // vehicle's own configured value and silently reverting ours the next time speed or
+    // zoom state changes. Optional: not required for the initial write to take effect.
+    auto zoomBaseOffset = gameData.GetFovZoomBaseOffset();
+    if (zoomBaseOffset) {
+      *reinterpret_cast<float*>(pCam + zoomBaseOffset) = fov;
+    }
 
     // 2. Calculate viewport parameters
     float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + x1_offset);
@@ -116,12 +142,6 @@ void GameCameraInterior::SetFov(float fov) {
 
     // 3. Call the game's function to make the FOV change take effect
     pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
-
-    // Log final results
-    // float horiz_final = *reinterpret_cast<float*>(pCam + gameData.GetFovHorizFinalOffset());
-    // float vert_final = *reinterpret_cast<float*>(pCam + gameData.GetFovVertFinalOffset());
-
-    // logger->Trace("SetFov [Result]: H={:.4f}, V={:.4f}", horiz_final, vert_final);
   } else {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
     logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");

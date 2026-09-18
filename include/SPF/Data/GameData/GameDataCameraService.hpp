@@ -143,6 +143,10 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t GetFovBaseOffset() const { return m_fov_base_offset; }
   intptr_t GetFovHorizFinalOffset() const { return m_fov_horiz_final_offset; }
   intptr_t GetFovVertFinalOffset() const { return m_fov_vert_final_offset; }
+  // The "un-zoomed" reference FOV the game's own dynamic speed-FOV system reads from, as
+  // opposed to GetFovBaseOffset() (the live/computed value it writes to every time speed
+  // or zoom state changes).
+  intptr_t GetFovZoomBaseOffset() const { return m_fov_zoom_base_offset; }
   intptr_t GetInteriorMouseLRDefaultOffset() const { return m_interior_mouse_lr_default; }
   intptr_t GetInteriorMouseUDDefaultOffset() const { return m_interior_mouse_ud_default; }
   intptr_t GetInteriorAzimuthOverridesOffset() const { return m_interior_azimuth_overrides_offset; }
@@ -328,6 +332,7 @@ class GameDataCameraService : public IWorldScopedService {
   void SetFovBaseOffset(intptr_t val) { m_fov_base_offset = val; }
   void SetFovHorizFinalOffset(intptr_t val) { m_fov_horiz_final_offset = val; }
   void SetFovVertFinalOffset(intptr_t val) { m_fov_vert_final_offset = val; }
+  void SetFovZoomBaseOffset(intptr_t val) { m_fov_zoom_base_offset = val; }
   void SetInteriorMouseLRDefaultOffset(intptr_t val) { m_interior_mouse_lr_default = val; }
   void SetInteriorMouseUDDefaultOffset(intptr_t val) { m_interior_mouse_ud_default = val; }
   void SetInteriorAzimuthOverridesOffset(intptr_t val) { m_interior_azimuth_overrides_offset = val; }
@@ -532,6 +537,7 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_fov_base_offset = 0;
   intptr_t m_fov_horiz_final_offset = 0;
   intptr_t m_fov_vert_final_offset = 0;
+  intptr_t m_fov_zoom_base_offset = 0;
 
   // --- Interior Camera ---
   intptr_t m_interior_seat_x_offset = 0;

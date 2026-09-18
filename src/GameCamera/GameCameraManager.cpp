@@ -355,6 +355,12 @@ void GameCameraManager::Update(float dt) {
   }
 }
 
+void GameCameraManager::LateUpdate() {
+  if (m_activeCamera) {
+    m_activeCamera->LateUpdate();
+  }
+}
+
 void GameCameraManager::RegisterCameras() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
   logger->Info("Registering camera implementations...");

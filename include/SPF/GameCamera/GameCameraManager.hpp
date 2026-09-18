@@ -55,6 +55,12 @@ class GameCameraManager : public Hooks::IHook {
   void Update(float dt);
 
   /**
+   * @brief Forwards to the active camera's LateUpdate(). Called once per rendered frame,
+   * after the game's own camera computations, so overrides can win instead of racing them.
+   */
+  void LateUpdate();
+
+  /**
    * @brief Retrieves a verified pointer to a specific camera object.
    * Performs a 'Lazy Verification': compares the result from the game function
    * against the raw array address and caches the result.

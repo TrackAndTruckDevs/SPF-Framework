@@ -40,6 +40,14 @@ class IGameCamera {
   virtual void Update(float dt) = 0;
 
   /**
+   * @brief Called once per rendered frame, right before the UI is drawn — i.e. after the
+   * game has finished its own per-frame camera computations. Implementations use this to
+   * re-assert values the game keeps overwriting after Update() runs (e.g. FOV vs. native zoom).
+   * Default is a no-op; only cameras that need this override it.
+   */
+  virtual void LateUpdate() {}
+
+  /**
    * @brief Returns the specific type of this camera.
    * @return The GameCameraType enum value.
    */

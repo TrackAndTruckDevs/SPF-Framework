@@ -72,6 +72,7 @@ class GameCameraInterior : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
+  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::InteriorCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;
@@ -172,6 +173,9 @@ class GameCameraInterior : public IGameCamera {
   const CameraData& GetDefaults() const { return m_defaultCameraData; }
 
  private:
+  // Writes fov into the camera object and recomputes horiz/vert FOV, without touching override state.
+  void ApplyFov(float fov);
+
   // Pointer to the raw game camera object.
   void* m_pCameraObject = nullptr;
   // Local copy of the camera's data, updated each frame.
@@ -179,6 +183,12 @@ class GameCameraInterior : public IGameCamera {
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
   bool m_defaultsSaved = false;
+
+  // Since game 1.61, the game's own per-frame zoom logic keeps overwriting the base FOV,
+  // so a one-shot SetFov() gets silently reverted on the next frame. Re-applying it every
+  // frame from Update() makes our value win instead of chasing the native write site.
+  bool m_fovOverrideActive = false;
+  float m_fovOverrideValue = 0.0f;
 };
 }  // namespace GameCamera
 SPF_NS_END
