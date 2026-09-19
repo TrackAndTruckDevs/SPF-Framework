@@ -1,11 +1,9 @@
 #include "SPF/UI/SettingsWindow.hpp"
 
-#include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
-#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -29,7 +27,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <cmath>  // For roundf
 #include <cstddef>
 #include <cstdint>
 #include <map>

@@ -1,18 +1,17 @@
 #include "SPF/Modules/InputDisplay.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Modules/ChordInput.hpp"
+#include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/SPF_API/SPF_Icons.h"
 
 #include "fmt/format.h"
 
 #include <cstddef>
+#include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 const char* GetIconForInputType(InputType type) {
   switch (type) {
@@ -88,5 +87,4 @@ std::string GetTranslatedActionName(Config::IConfigService& configService, const
   return fullActionName;
 }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

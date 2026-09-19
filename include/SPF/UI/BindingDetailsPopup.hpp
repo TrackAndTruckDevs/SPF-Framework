@@ -1,15 +1,14 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json_fwd.hpp"
 
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
+namespace SPF {
 
 namespace Events {
 class EventManager;
@@ -107,4 +106,4 @@ class BindingDetailsPopup {
 };
 
 }  // namespace UI
-SPF_NS_END
+}  // namespace SPF

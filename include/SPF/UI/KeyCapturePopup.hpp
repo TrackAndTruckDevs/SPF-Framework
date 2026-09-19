@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 
 #include "nlohmann/json_fwd.hpp"
@@ -11,7 +9,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
+namespace SPF {
 
 namespace Events {
 class EventManager;
@@ -114,4 +112,4 @@ class KeyCapturePopup {
 };
 
 }  // namespace UI
-SPF_NS_END
+}  // namespace SPF

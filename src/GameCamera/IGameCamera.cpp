@@ -1,15 +1,12 @@
 #include "SPF/GameCamera/IGameCamera.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 
 void IGameCamera::ApplyCoreCameraFov(void* pCameraObject, float fov) {
   if (!pCameraObject) return;
@@ -54,5 +51,4 @@ void IGameCamera::ReassertCoreCameraFovReference(void* pCameraObject, float fov)
   }
 }
 
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera
