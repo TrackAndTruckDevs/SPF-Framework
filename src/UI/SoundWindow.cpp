@@ -139,6 +139,8 @@ void SoundWindow::RefreshSoundList() {
     Fmod::FmodStudioHook::GetInstance().RemoveAllOverrides();
   }
   m_banks = m_soundService.GetSoundBankGroups();
+  auto pluginBanks = m_soundService.GetPluginBankGroups();
+  m_banks.insert(m_banks.end(), pluginBanks.begin(), pluginBanks.end());
   m_bankLoadInfos = m_soundService.GetLoadedBanksInfo();
   m_enriched = false;
   m_parametersEnriched = false;

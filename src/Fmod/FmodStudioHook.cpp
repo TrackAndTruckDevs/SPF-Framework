@@ -279,33 +279,34 @@ bool FmodStudioHook::Install() {
     return false;
   }
 
-  MH_STATUS s1 = MH_CreateHook(addrSetParamByName, reinterpret_cast<void*>(&Detour_SetParameterByName), reinterpret_cast<void**>(&s_trampolineSetParameterByName));
-  MH_STATUS s2 = MH_CreateHook(addrSetParamByID, reinterpret_cast<void*>(&Detour_SetParameterByID), reinterpret_cast<void**>(&s_trampolineSetParameterByID));
-  MH_STATUS s3 = MH_CreateHook(addrSet3D, reinterpret_cast<void*>(&Detour_Set3DAttributes), reinterpret_cast<void**>(&s_trampolineSet3DAttributes));
-  MH_STATUS s4 = addrSetListenerAttrs ? MH_CreateHook(addrSetListenerAttrs, reinterpret_cast<void*>(&Detour_SetListenerAttributes), reinterpret_cast<void**>(&s_trampolineSetListenerAttributes)) : MH_ERROR_FUNCTION_NOT_FOUND;
+  MH_STATUS createHookParamByName = MH_CreateHook(addrSetParamByName, reinterpret_cast<void*>(&Detour_SetParameterByName), reinterpret_cast<void**>(&s_trampolineSetParameterByName));
+  MH_STATUS createHookParamByID = MH_CreateHook(addrSetParamByID, reinterpret_cast<void*>(&Detour_SetParameterByID), reinterpret_cast<void**>(&s_trampolineSetParameterByID));
+  MH_STATUS createHookSet3D = MH_CreateHook(addrSet3D, reinterpret_cast<void*>(&Detour_Set3DAttributes), reinterpret_cast<void**>(&s_trampolineSet3DAttributes));
+  MH_STATUS createHookListener = addrSetListenerAttrs ? MH_CreateHook(addrSetListenerAttrs, reinterpret_cast<void*>(&Detour_SetListenerAttributes), reinterpret_cast<void**>(&s_trampolineSetListenerAttributes)) : MH_ERROR_FUNCTION_NOT_FOUND;
 
-  if (s1 != MH_OK || s2 != MH_OK || s3 != MH_OK) {
-    logger->Error("MH_CreateHook failed for '{}': {} {} {}", m_displayName, MH_StatusToString(s1), MH_StatusToString(s2), MH_StatusToString(s3));
-    if (s1 == MH_OK) MH_RemoveHook(addrSetParamByName);
-    if (s2 == MH_OK) MH_RemoveHook(addrSetParamByID);
-    if (s4 == MH_OK) MH_RemoveHook(addrSetListenerAttrs);
+  if (createHookParamByName != MH_OK || createHookParamByID != MH_OK || createHookSet3D != MH_OK) {
+    logger->Error("MH_CreateHook failed for '{}': {} {} {} {}", m_displayName, MH_StatusToString(createHookParamByName), MH_StatusToString(createHookParamByID), MH_StatusToString(createHookSet3D), MH_StatusToString(createHookListener));
+    if (createHookParamByName == MH_OK) MH_RemoveHook(addrSetParamByName);
+    if (createHookParamByID == MH_OK) MH_RemoveHook(addrSetParamByID);
+    if (createHookSet3D == MH_OK) MH_RemoveHook(addrSet3D);
+    if (createHookListener == MH_OK) MH_RemoveHook(addrSetListenerAttrs);
     return false;
   }
 
-  m_hookedAddr1 = reinterpret_cast<uintptr_t>(addrSetParamByName);
-  m_hookedAddr2 = reinterpret_cast<uintptr_t>(addrSetParamByID);
-  m_hookedAddr3 = reinterpret_cast<uintptr_t>(addrSet3D);
-  if (s4 == MH_OK) m_hookedAddr4 = reinterpret_cast<uintptr_t>(addrSetListenerAttrs);
+  m_hookedAddrSetParamByName = reinterpret_cast<uintptr_t>(addrSetParamByName);
+  m_hookedAddrSetParamByID = reinterpret_cast<uintptr_t>(addrSetParamByID);
+  m_hookedAddrSet3DAttributes = reinterpret_cast<uintptr_t>(addrSet3D);
+  if (createHookListener == MH_OK) m_hookedAddrSetListenerAttributes = reinterpret_cast<uintptr_t>(addrSetListenerAttrs);
 
   MH_EnableHook(addrSetParamByName);
   MH_EnableHook(addrSetParamByID);
   MH_EnableHook(addrSet3D);
-  if (s4 == MH_OK) MH_EnableHook(addrSetListenerAttrs);
+  if (createHookListener == MH_OK) MH_EnableHook(addrSetListenerAttrs);
 
   m_installed = true;
   m_isEnabled = true;
 
-  logger->Info("'{}' installed and enabled: setParameterByName={:#x}, setParameterByID={:#x}, set3DAttributes={:#x}, setListenerAttributes={:#x}", m_displayName, m_hookedAddr1, m_hookedAddr2, m_hookedAddr3, m_hookedAddr4);
+  logger->Info("'{}' installed and enabled: setParameterByName={:#x}, setParameterByID={:#x}, set3DAttributes={:#x}, setListenerAttributes={:#x}", m_displayName, m_hookedAddrSetParamByName, m_hookedAddrSetParamByID, m_hookedAddrSet3DAttributes, m_hookedAddrSetListenerAttributes);
   return true;
 }
 
@@ -313,10 +314,10 @@ void FmodStudioHook::Uninstall() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("FmodStudioHook");
   if (!m_installed) return;
 
-  if (m_hookedAddr1) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
-  if (m_hookedAddr2) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
-  if (m_hookedAddr3) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
-  if (m_hookedAddr4) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
+  if (m_hookedAddrSetParamByName) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByName));
+  if (m_hookedAddrSetParamByID) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByID));
+  if (m_hookedAddrSet3DAttributes) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSet3DAttributes));
+  if (m_hookedAddrSetListenerAttributes) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetListenerAttributes));
 
   m_isEnabled = false;
 
@@ -335,15 +336,15 @@ void FmodStudioHook::Remove() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("FmodStudioHook");
   if (!m_installed) return;
 
-  if (m_hookedAddr1) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
-  if (m_hookedAddr2) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
-  if (m_hookedAddr3) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
-  if (m_hookedAddr4) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
+  if (m_hookedAddrSetParamByName) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByName));
+  if (m_hookedAddrSetParamByID) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByID));
+  if (m_hookedAddrSet3DAttributes) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddrSet3DAttributes));
+  if (m_hookedAddrSetListenerAttributes) MH_RemoveHook(reinterpret_cast<LPVOID>(m_hookedAddrSetListenerAttributes));
 
-  m_hookedAddr1 = 0;
-  m_hookedAddr2 = 0;
-  m_hookedAddr3 = 0;
-  m_hookedAddr4 = 0;
+  m_hookedAddrSetParamByName = 0;
+  m_hookedAddrSetParamByID = 0;
+  m_hookedAddrSet3DAttributes = 0;
+  m_hookedAddrSetListenerAttributes = 0;
   s_trampolineSetParameterByName = nullptr;
   s_trampolineSetParameterByID = nullptr;
   s_trampolineSet3DAttributes = nullptr;
@@ -369,16 +370,16 @@ void FmodStudioHook::SetEnabled(bool enabled) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("FmodStudioHook");
 
   if (enabled) {
-    if (m_hookedAddr1) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
-    if (m_hookedAddr2) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
-    if (m_hookedAddr3) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
-    if (m_hookedAddr4) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
+    if (m_hookedAddrSetParamByName) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByName));
+    if (m_hookedAddrSetParamByID) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByID));
+    if (m_hookedAddrSet3DAttributes) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddrSet3DAttributes));
+    if (m_hookedAddrSetListenerAttributes) MH_EnableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetListenerAttributes));
     logger->Info("'{}' enabled.", m_displayName);
   } else {
-    if (m_hookedAddr1) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr1));
-    if (m_hookedAddr2) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr2));
-    if (m_hookedAddr3) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr3));
-    if (m_hookedAddr4) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddr4));
+    if (m_hookedAddrSetParamByName) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByName));
+    if (m_hookedAddrSetParamByID) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetParamByID));
+    if (m_hookedAddrSet3DAttributes) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSet3DAttributes));
+    if (m_hookedAddrSetListenerAttributes) MH_DisableHook(reinterpret_cast<LPVOID>(m_hookedAddrSetListenerAttributes));
     logger->Info("'{}' disabled.", m_displayName);
   }
   m_isEnabled = enabled;

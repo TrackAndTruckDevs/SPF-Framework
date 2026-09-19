@@ -23,6 +23,7 @@
 #include "SPF/SPF_API/SPF_TelemetryData.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
+#include "SPF/SPF_API/SPF_Sound_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Windows.hpp"
 
@@ -356,6 +357,7 @@ void OnActivated(const SPF_Core_API* core_api) {
     g_ctx.climateAPI = g_ctx.coreAPI->climate;
     g_ctx.environmentAPI = g_ctx.coreAPI->environment;
     g_ctx.uiAPI = g_ctx.coreAPI->ui;
+    g_ctx.soundAPI = g_ctx.coreAPI->sound;
     g_ctx.jsonWriterAPI = g_ctx.coreAPI->json_writer;
     g_ctx.jsonIOAPI = g_ctx.coreAPI->json_io;
   }
@@ -515,6 +517,150 @@ void OnUpdate() {
       int32_t currentMode = g_ctx.climateAPI->CL_GetWeatherMode();
       g_ctx.climateAPI->CL_SetWeatherMode(currentMode == 0 ? 1 : 0, true);
     }
+  }
+
+  // === Sound: Horn Replacement with Bicycle Bell ===
+  //
+  // This section demonstrates the complete Sound API workflow:
+  //   1. Load a custom bank with SND_LoadBankFile() and a GUIDs dictionary
+  //   2. Discover events in the bank via bank enumeration (GetBankEventCount, GetBankEventGuid)
+  //   3. Find events in the global cache via GUID lookup (FindEventIndexByGuid)
+  //   4. Create and control event instances (CreateEventInstance, StartEvent, StopEvent)
+  //   5. Monitor game-created live instances (GetEventLiveInstanceCount, GetEventLiveInstance)
+  //   6. Read parameters from live instances (GetEventParameter)
+  //   7. Manipulate game audio in real-time (SetEventVolume to silence the original horn)
+  //
+  // APPROACH: We read the game's 'play' parameter (0.0=released, 1.0=pressed) directly
+  // from each horn event instance every frame. This gives precise hold-to-play behavior.
+  //
+  // PERFORMANCE: This entire block only executes when the checkbox is enabled AND the
+  // sound system is ready. When disabled, zero sound API calls are made per frame.
+  //
+  if (g_ctx.replaceHornEnabled && g_ctx.soundAPI && g_ctx.soundAPI->SND_IsReady()) {
+    auto snd = g_ctx.soundAPI;
+
+    // --- Step 1: Lazy-resolve the bell event index ---
+    // After SND_LoadBankFile, the event is NOT immediately in the global cache.
+    // FMOD needs at least one System::Update() tick to process the bank data.
+    // On the first frame after loading, the event may not exist yet.
+    // We retry each frame until SND_FindEventIndexByGuid succeeds.
+    //
+    // Resolution flow:
+    //   SND_GetBankEventCount(bank)        -> how many events in the bank
+    //   SND_GetBankEventGuid(bank, 0, ..)  -> GUID of event at index 0
+    //   SND_FindEventIndexByGuid(guid)     -> find event in global cache by GUID
+    //
+    // We also cache ALL game horn events (path prefix "event:/horn/") for monitoring.
+    if (g_ctx.bellEventIndex < 0 && g_ctx.bellBank) {
+      int bankEventCount = snd->SND_GetBankEventCount(g_ctx.bellBank);
+      if (bankEventCount > 0) {
+        uint8_t eventGuid[16];
+        if (snd->SND_GetBankEventGuid(g_ctx.bellBank, 0, eventGuid)) {
+          g_ctx.bellEventIndex = snd->SND_FindEventIndexByGuid(eventGuid);
+        }
+      }
+
+      if (g_ctx.bellEventIndex >= 0) {
+        // Bell event found. Create a reusable instance.
+        // SND_CreateEventInstance creates an independent playable copy of the event.
+        // The same instance can be started/stopped multiple times.
+        // NOTE: instances from plugin-owned banks must be released with
+        // SND_ReleaseEvent() when no longer needed (we keep it for plugin lifetime).
+        g_ctx.bellInstance = snd->SND_CreateEventInstance(g_ctx.bellEventIndex);
+
+        // Cache all game horn events for monitoring.
+        // We scan the entire "event:/horn/" path prefix to find all truck horn events
+        // (each truck brand has its own horn variant). We monitor all of them to
+        // ensure the bell replacement works regardless of which truck the player drives.
+        int eventCount = snd->SND_GetEventCount();
+        g_ctx.hornEventCount = 0;
+        for (int i = 0; i < eventCount && g_ctx.hornEventCount < 32; i++) {
+          char path[256];
+          snd->SND_GetEventPath(i, path, sizeof(path));
+          if (strncmp(path, "event:/horn/", 12) == 0) {
+            g_ctx.hornEventIndices[g_ctx.hornEventCount++] = i;
+          }
+        }
+
+        char logBuf[128];
+        g_ctx.coreAPI->formatting->Fmt_Format(logBuf, sizeof(logBuf),
+          "Bell event resolved, horn events cached: %d", g_ctx.hornEventCount);
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, logBuf);
+      }
+    }
+
+    // Safety: recreate instance if it was lost (e.g. after a world reload)
+    if (!g_ctx.bellInstance && g_ctx.bellEventIndex >= 0) {
+      g_ctx.bellInstance = snd->SND_CreateEventInstance(g_ctx.bellEventIndex);
+    }
+
+    // --- Step 2: Per-frame horn detection via 'play' parameter ---
+    //
+    // HOW THE GAME HORN WORKS:
+    //   - The game creates a live EventInstance for the horn event when the button is pressed.
+    //   - The instance has a local parameter "play" (0.0=released, 1.0=pressed).
+    //   - The game keeps the instance alive while held, releases on button release.
+    //
+    // WHY NOT USE LIVE INSTANCE COUNT OR PLAYBACK STATE ALONE?
+    //   - Live instance count may include idle pre-allocated instances.
+    //   - Playback state doesn't distinguish "pressed" from "idle" because the game
+    //     may keep instances in various states. Default parameter values on idle instances
+    //     can cause false positives (e.g. play=1.0 default on a STOPPED instance).
+    //   - Reading the 'play' parameter directly gives us the exact game state.
+    //
+    // FILTERING:
+    //   - We check playback state == PLAYING (0) before reading the parameter.
+    //   - This prevents false positives from idle instances with default parameter values.
+    //
+    // ACTION:
+    //   - When play > 0.0 (button pressed): silence the game horn via SetEventVolume(0).
+    //     We do NOT call SND_StopEvent() on game instances — the game owns them and
+    //     stopping a game instance can cause undefined behavior.
+    bool anyHornActive = false;
+    for (int h = 0; h < g_ctx.hornEventCount; h++) {
+      int idx = g_ctx.hornEventIndices[h];
+      int liveCount = snd->SND_GetEventLiveInstanceCount(idx);
+      for (int j = 0; j < liveCount; j++) {
+        void* inst = snd->SND_GetEventLiveInstance(idx, j);
+        if (!inst) continue;
+        // Only read parameters from instances that are actually playing
+        int state = snd->SND_GetEventPlaybackState(inst);
+        if (state != 0) continue;  // 0 = FMOD_STUDIO_PLAYBACK_PLAYING
+        float playValue = 0.0f;
+        if (snd->SND_GetEventParameter(inst, "play", &playValue) && playValue > 0.0f) {
+          anyHornActive = true;
+          snd->SND_SetEventVolume(inst, 0.0f);  // Silence the game horn
+        }
+      }
+    }
+
+    // --- Step 3: Bell state machine ---
+    //
+    // Transitions:
+    //   IDLE  -> PLAYING:  anyHornActive becomes true  (player pressed horn)
+    //   PLAYING -> IDLE:   anyHornActive becomes false (player released horn)
+    //
+    // The bell is a LOOPED event, so SND_StartEvent makes it play continuously
+    // until SND_StopEvent is called. This matches the hold-to-play horn behavior.
+    //
+    // bellReplacementActive prevents calling StartEvent every frame (which would
+    // restart the event from the beginning each time).
+    if (anyHornActive && !g_ctx.bellReplacementActive && g_ctx.bellInstance) {
+      snd->SND_StartEvent(g_ctx.bellInstance);
+      g_ctx.bellReplacementActive = true;
+    } else if (!anyHornActive && g_ctx.bellReplacementActive && g_ctx.bellInstance) {
+      snd->SND_StopEvent(g_ctx.bellInstance, true);  // true = allow fadeout
+      g_ctx.bellReplacementActive = false;
+    }
+  }
+
+  // --- Cleanup when horn replacement is disabled ---
+  // When the user unchecks the "Replace horn" checkbox, stop the bell and
+  // clear cached horn event indices so they're re-scanned if re-enabled.
+  if (!g_ctx.replaceHornEnabled && g_ctx.bellReplacementActive && g_ctx.bellInstance) {
+    g_ctx.soundAPI->SND_StopEvent(g_ctx.bellInstance, true);
+    g_ctx.bellReplacementActive = false;
+    g_ctx.hornEventCount = 0;
   }
 
   auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
@@ -863,6 +1009,136 @@ void RenderCustomJsonTab(SPF_UI_API* ui, void* user_data) {
 }
 
 // =================================================================================================
+// Sound Tab
+// =================================================================================================
+
+void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
+  if (!g_ctx.soundAPI) {
+    ui->UI_Text("Sound API is not available.");
+    return;
+  }
+
+  auto snd = g_ctx.soundAPI;
+
+  if (!snd->SND_IsReady()) {
+    ui->UI_Text("Sound system is not ready. Load into the game world first.");
+    return;
+  }
+
+  char buffer[256];
+
+  // --- Sound System Info ---
+  ui->UI_Text("Sound System Status");
+  ui->UI_Separator();
+
+  int eventCount = snd->SND_GetEventCount();
+  int busCount = snd->SND_GetBusCount();
+  int bankCount = snd->SND_GetBankCount();
+  g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Events: %d | Buses: %d | Banks: %d", eventCount, busCount, bankCount);
+  ui->UI_Text(buffer);
+
+  // Show bus info
+  if (ui->UI_TreeNode("Bus List")) {
+    for (int i = 0; i < busCount && i < 100; i++) {
+      char busPath[256];
+      snd->SND_GetBusPath(i, busPath, sizeof(busPath));
+      float vol = snd->SND_GetBusVolume(i);
+      bool muted = snd->SND_GetBusMute(i);
+      g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "[%d] %s (vol: %.2f%s)", i, busPath, vol, muted ? ", MUTED" : "");
+      ui->UI_Text(buffer);
+    }
+    ui->UI_TreePop();
+  }
+
+  ui->UI_Separator();
+
+  // --- Horn Replacement UI ---
+  // When the user checks "Replace horn", the bank is loaded here (single entry point).
+  // The actual horn detection and bell playback runs in OnUpdate() every frame.
+  ui->UI_Text("Horn Replacement");
+  ui->UI_Separator();
+
+  if (!g_ctx.replaceHornEnabled) {
+    if (ui->UI_Checkbox("Replace horn with bicycle bell", &g_ctx.replaceHornEnabled)) {
+      if (g_ctx.replaceHornEnabled) {
+        // Load the bank
+        char dataDir[512];
+        g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataDir, sizeof(dataDir));
+        char bankPath[1024];
+        g_ctx.coreAPI->formatting->Fmt_Format(bankPath, sizeof(bankPath), "%s\\bicycle_bell.bank", dataDir);
+
+        g_ctx.bellBank = snd->SND_LoadBankFile(bankPath, nullptr);
+        if (g_ctx.bellBank) {
+          g_ctx.bellEventIndex = -1;
+          g_ctx.bellInstance = nullptr;
+          g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Horn replacement enabled, bank loaded. Bell event will resolve on next tick.");
+        } else {
+          g_ctx.replaceHornEnabled = false;
+          g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN, "Failed to load bicycle_bell.bank.");
+        }
+      }
+    }
+  } else {
+    ui->UI_TextColored(0.4f, 1.0f, 0.4f, 1.0f, "Horn replacement ACTIVE");
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Bell event: %d | Horn events cached: %d", g_ctx.bellEventIndex, g_ctx.hornEventCount);
+    ui->UI_Text(buffer);
+
+    if (g_ctx.bellTestPlaying) {
+      if (ui->UI_Button("Stop Bell", 0, 0)) {
+        if (g_ctx.bellInstance) {
+          snd->SND_StopEvent(g_ctx.bellInstance, true);
+        }
+        g_ctx.bellTestPlaying = false;
+      }
+    } else {
+      if (ui->UI_Button("Test Bell", 0, 0)) {
+        if (g_ctx.bellInstance) {
+          snd->SND_StartEvent(g_ctx.bellInstance);
+          g_ctx.bellTestPlaying = true;
+        }
+      }
+    }
+
+    if (ui->UI_Checkbox("Replace horn with bicycle bell", &g_ctx.replaceHornEnabled)) {
+      if (!g_ctx.replaceHornEnabled) {
+        // Cleanup
+        if (g_ctx.bellInstance) {
+          snd->SND_StopEvent(g_ctx.bellInstance, true);
+          snd->SND_ReleaseEvent(g_ctx.bellInstance);
+          g_ctx.bellInstance = nullptr;
+        }
+        if (g_ctx.bellBank) {
+          snd->SND_UnloadBank(g_ctx.bellBank);
+          g_ctx.bellBank = nullptr;
+        }
+        g_ctx.bellEventIndex = -1;
+        g_ctx.hornEventCount = 0;
+        g_ctx.bellTestPlaying = false;
+        g_ctx.bellReplacementActive = false;
+        g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Horn replacement disabled.");
+      }
+    }
+  }
+
+  ui->UI_Separator();
+
+  // --- Event Browser ---
+  if (ui->UI_TreeNode("Event Browser")) {
+    int maxShow = eventCount < 200 ? eventCount : 200;
+    for (int i = 0; i < maxShow; i++) {
+      char path[256];
+      snd->SND_GetEventPath(i, path, sizeof(path));
+      int liveCount = snd->SND_GetEventLiveInstanceCount(i);
+      if (liveCount > 0) {
+        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "[%d] %s (live: %d)", i, path, liveCount);
+        ui->UI_TextColored(1.0f, 0.8f, 0.2f, 1.0f, buffer);
+      }
+    }
+    ui->UI_TreePop();
+  }
+}
+
+// =================================================================================================
 // 4. Framework Callbacks
 // =================================================================================================
 // These functions are callbacks that the plugin registers to be notified of specific events
@@ -926,9 +1202,9 @@ void OnGameLogMessage(const char* log_line, void* user_data) {
   if (!g_ctx.coreAPI || !g_ctx.coreAPI->logger || !log_line) return;
 
   // Example: Log a message to our own plugin log if we see a specific message in the game log.
-  if (strstr(log_line, "Loaded")) {
+  if (strstr(log_line, "running")) {
     char buffer[4096];
-    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Game Log contains 'Loaded': %s", log_line);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Game Log contains 'running': %s", log_line);
     g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, buffer);
   }
 }
@@ -1340,6 +1616,10 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
     }
     if (ui->UI_BeginTabItem("Custom JSON", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
       RenderCustomJsonTab(ui, user_data);
+      ui->UI_EndTabItem();
+    }
+    if (ui->UI_BeginTabItem("Sound", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
+      RenderSoundTab(ui, user_data);
       ui->UI_EndTabItem();
     }
     ui->UI_EndTabBar();

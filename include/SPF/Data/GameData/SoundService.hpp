@@ -3,9 +3,12 @@
 #include "SPF/Data/GameData/Finders/ISoundDataFinder.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
 
+#include <array>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace SPF::Data::GameData {
@@ -122,12 +125,18 @@ class SoundService : public IWorldScopedService {
   SoundService(const SoundService&) = delete;
   void operator=(const SoundService&) = delete;
 
+ private:
+  SoundService();
+  ~SoundService() = default;
+
+ public:
   void Initialize();
   void Shutdown();
   bool IsReady();
   bool TryFindAllOffsets();
 
   std::vector<SoundBankGroup> GetSoundBankGroups();
+  std::vector<SoundBankGroup> GetPluginBankGroups();
   void EnrichEventsWithFmodData(std::vector<SoundBankGroup>& groups);
   void EnrichEventParameters(std::vector<SoundBankGroup>& groups);
   std::vector<SoundBusEntry> GetBuses();
@@ -172,8 +181,8 @@ class SoundService : public IWorldScopedService {
   bool GetListenerAttributes(int index, float& posX, float& posY, float& posZ, float& velX, float& velY, float& velZ, float& fwdX, float& fwdY, float& fwdZ, float& upX, float& upY, float& upZ);
   bool SetListenerAttributes(int index, float posX, float posY, float posZ, float velX, float velY, float velZ, float fwdX, float fwdY, float fwdZ, float upX, float upY, float upZ);
 
-  void* LoadBankFile(const char* path, uint32_t flags);
-  void* LoadBankMemory(const void* data, uint32_t size, uint32_t flags);
+  void* LoadBankFile(const char* bankPath, const char* guidsPath);
+  void* LoadBankMemory(const void* data, uint32_t size, const char* guidsPath);
   bool UnloadBank(void* bank);
   int GetBankLoadingState(void* bank);
   int GetBankSampleLoadingState(void* bank);
@@ -183,12 +192,44 @@ class SoundService : public IWorldScopedService {
   int GetBankEventList(void* bank, void** outEvents, int maxCount);
   std::vector<SoundBankLoadInfo> GetLoadedBanksInfo();
 
+  // Flat event cache for plugin API
+  struct EventCacheEntry {
+    std::string bankPath;
+    std::string eventPath;
+    uint8_t guid[16]{};
+    void* eventDesc = nullptr;
+    bool is3D = false;
+    bool isOneshot = false;
+    bool isStream = false;
+    bool isSnapshot = false;
+    uint32_t durationMs = 0;
+    float minDistance = 0.0f;
+    float maxDistance = 0.0f;
+  };
+  bool BuildEventCache();
+  const std::vector<EventCacheEntry>& GetEventCache() const { return m_eventCache; }
+  void InvalidateEventCache() { m_eventCache.clear(); }
+
+  struct BusCacheEntry {
+    std::string busPath;
+    void* busPtr = nullptr;
+  };
+  bool BuildBusCache();
+  const std::vector<BusCacheEntry>& GetBusCache() const { return m_busCache; }
+  void InvalidateBusCache() { m_busCache.clear(); }
+
+  struct VCACacheEntry {
+    std::string vcaPath;
+  };
+  bool BuildVCACache();
+  const std::vector<VCACacheEntry>& GetVCACache() const { return m_vcaCache; }
+  void InvalidateVCACache() { m_vcaCache.clear(); }
+
   void* GetVCAByPath(const char* path);
   bool SetVCAVolume(void* vca, float volume);
   bool GetVCAVolume(void* vca, float& outVolume, float& outFinalVolume);
   int GetVCAPath(void* vca, char* outBuffer, int bufferSize);
   std::vector<SoundVCAEntry> GetVCAs();
-
   bool IsEvent3D(void* desc);
   bool IsEventSnapshot(void* desc);
   bool IsEventDopplerEnabled(void* desc);
@@ -203,15 +244,22 @@ class SoundService : public IWorldScopedService {
   int GetEventPathFromDesc(void* desc, char* outBuffer, int bufferSize);
   int GetEventInstanceCount(void* desc);
   std::vector<void*> GetEventInstanceList(void* desc);
+  void* GetEventInstance(void* desc, int index);
   int GetEventParameterDescriptionCount(void* desc);
+  bool GetEventParameterByIndex(void* desc, int index, char* outName, int nameSize, float& outMin, float& outMax, float& outDefault);
   bool GetEventUserPropertyCount(void* desc, int& outCount);
   bool GetEventUserPropertyByIndex(void* desc, int index, char* outName, int nameSize, int& outType);
   void DumpAllEventsToLog();
   bool FindEventGuidByPath(const char* eventPath, uint8_t outGuid[16]);
 
+  void LoadGuidsFile(const char* guidsPath);
+  int GetBankEventGuid(void* bank, int index, uint8_t outGuid[16]);
+  int GetBankEventPath(void* bank, int index, char* outBuffer, int bufferSize);
+
   const char* GetName() const override { return "SoundService"; }
   void ResetForWorldReload() override { Shutdown(); }
   bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
+  std::vector<void*> m_eventInstanceList;
 
   uint32_t GetBankListLockOffset() const { return m_bankListLockOffset; }
   uint32_t GetBankListHeadOffset() const { return m_bankListHeadOffset; }
@@ -233,10 +281,6 @@ class SoundService : public IWorldScopedService {
   void SetEventGuidOffset(uint32_t off) { m_eventGuidOffset = off; }
   void SetStudioSystemOffset(uint32_t off) { m_studioSystemOffset = off; }
 
- private:
-  SoundService();
-  ~SoundService() = default;
-
   void RegisterFinders();
   bool ResolveFmodFunctions();
   void* GetStudioSystemRaw();
@@ -253,6 +297,24 @@ class SoundService : public IWorldScopedService {
   uint32_t m_eventListTerminatorOffset = 0;
   uint32_t m_eventPathOffset = 0;
   uint32_t m_eventGuidOffset = 0;
+  std::vector<EventCacheEntry> m_eventCache;
+  std::vector<void*> m_pluginBanks;
+
+  struct GuidHash {
+    size_t operator()(const std::array<uint8_t, 16>& g) const {
+      size_t h = 0;
+      for (int i = 0; i < 16; ++i) h = h * 31 + g[i];
+      return h;
+    }
+  };
+  struct GuidEqual {
+    bool operator()(const std::array<uint8_t, 16>& a, const std::array<uint8_t, 16>& b) const {
+      return std::memcmp(a.data(), b.data(), 16) == 0;
+    }
+  };
+  std::unordered_map<std::array<uint8_t, 16>, std::string, GuidHash, GuidEqual> m_guidToPath;
+  std::vector<BusCacheEntry> m_busCache;
+  std::vector<VCACacheEntry> m_vcaCache;
   uint32_t m_studioSystemOffset = 0;
 
   struct FmodFn {
@@ -272,9 +334,11 @@ class SoundService : public IWorldScopedService {
     void* System_SetListenerAttributes = nullptr;
     void* System_LoadBankFile = nullptr;
     void* System_LoadBankMemory = nullptr;
+    void* System_Update = nullptr;
     void* System_GetBankCount = nullptr;
     void* System_GetBankList = nullptr;
-
+    void* System_GetVCACount = nullptr;
+    void* System_GetVCAList = nullptr;
     void* EventDescription_CreateInstance = nullptr;
     void* EventDescription_GetLength = nullptr;
     void* EventDescription_Is3D = nullptr;

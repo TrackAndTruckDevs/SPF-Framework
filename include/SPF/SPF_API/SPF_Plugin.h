@@ -96,6 +96,7 @@ typedef struct SPF_Vehicle_API SPF_Vehicle_API;
 typedef struct SPF_Environment_API SPF_Environment_API;
 typedef struct SPF_GameWorld_API SPF_GameWorld_API;
 typedef struct SPF_Climate_API SPF_Climate_API;
+typedef struct SPF_Sound_API SPF_Sound_API;
 
 // --- Handle Types (Opaque pointers used as context identifiers) ---
 typedef struct SPF_Config_Handle SPF_Config_Handle;
@@ -436,12 +437,17 @@ struct SPF_Core_API {
    * @brief Game World API. For controlling world time, clock, and simulation state.
    */
   SPF_GameWorld_API* gameworld;
-
   /**
    * @brief Climate API. For reading and controlling the game's climate, weather,
    *        sun profiles, and all visual environment attributes.
    */
   SPF_Climate_API* climate;
+
+  /**
+   * @brief Sound API. For controlling the game's FMOD-based audio system:
+   *        buses, VCAs, events, parameters, listeners, banks, and FMOD hook overrides.
+   */
+  SPF_Sound_API* sound;
 };
 
 // =================================================================================================

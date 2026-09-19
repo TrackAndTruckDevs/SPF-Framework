@@ -64,10 +64,10 @@ class FmodStudioHook : public Hooks::IHook {
   bool m_isEnabled = true;
   bool m_installed = false;
 
-  uintptr_t m_hookedAddr1 = 0;
-  uintptr_t m_hookedAddr2 = 0;
-  uintptr_t m_hookedAddr3 = 0;
-  uintptr_t m_hookedAddr4 = 0;
+  uintptr_t m_hookedAddrSetParamByName = 0;
+  uintptr_t m_hookedAddrSetParamByID = 0;
+  uintptr_t m_hookedAddrSet3DAttributes = 0;
+  uintptr_t m_hookedAddrSetListenerAttributes = 0;
 };
 
 }  // namespace SPF::Fmod

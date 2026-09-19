@@ -21,6 +21,7 @@
 #include "SPF/SPF_API/SPF_Telemetry_API.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
+#include "SPF/SPF_API/SPF_Sound_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Signal.hpp"
 
@@ -172,6 +173,7 @@ class PluginManager {
   SPF_Environment_API m_environmentAPI{};
   SPF_GameWorld_API m_gameworldAPI{};
   SPF_Climate_API m_climateAPI{};
+  SPF_Sound_API m_soundAPI{};
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;

@@ -6,9 +6,12 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Fmod/FmodApi.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <synchapi.h>
@@ -33,7 +36,6 @@ void SoundService::Initialize() {
   RegisterFinders();
 
   m_isInitialized = false;
-  logger->Info("SoundService initialization finished. Waiting for critical offsets.");
 }
 
 void SoundService::Shutdown() {
@@ -51,6 +53,9 @@ void SoundService::Shutdown() {
   m_eventListTerminatorOffset = 0;
   m_eventPathOffset = 0;
   m_eventGuidOffset = 0;
+  m_eventCache.clear();
+  m_pluginBanks.clear();
+  m_guidToPath.clear();
 
   for (const auto& finder : m_dataFinders) {
     finder->Reset();
@@ -83,6 +88,7 @@ bool SoundService::ResolveFmodFunctions() {
   m_fmodFn.System_SetListenerAttributes = fmodApi.Find("System::setListenerAttributes");
   m_fmodFn.System_LoadBankFile = fmodApi.Find("System::loadBankFile");
   m_fmodFn.System_LoadBankMemory = fmodApi.Find("System::loadBankMemory");
+  m_fmodFn.System_Update = fmodApi.Find("System::update");
 
   m_fmodFn.EventDescription_CreateInstance = fmodApi.Find("EventDescription::createInstance");
   m_fmodFn.EventDescription_GetLength = fmodApi.Find("EventDescription::getLength");
@@ -155,6 +161,8 @@ bool SoundService::ResolveFmodFunctions() {
   m_fmodFn.Bus_IsBypassed = fmodApi.Find("Bus::isBypassed");
   m_fmodFn.System_GetBankCount = fmodApi.Find("System::getBankCount");
   m_fmodFn.System_GetBankList = fmodApi.Find("System::getBankList");
+  m_fmodFn.System_GetVCACount = fmodApi.Find("System::getVCACount");
+  m_fmodFn.System_GetVCAList = fmodApi.Find("System::getVCAList");
   m_fmodFn.Bank_GetPath = fmodApi.Find("Bank::getPath");
   m_fmodFunctionsResolved = true;
   return true;
@@ -251,9 +259,80 @@ std::vector<SoundBankGroup> SoundService::GetSoundBankGroups() {
 
   int totalEvents = 0;
   for (const auto& g : result) totalEvents += static_cast<int>(g.events.size());
-  logger->Info("GetSoundBankGroups: {} banks found, {} events total.", result.size(), totalEvents);
   return result;
 }
+
+std::vector<SoundBankGroup> SoundService::GetPluginBankGroups() {
+  std::vector<SoundBankGroup> result;
+  if (!m_isInitialized || !m_fmodFunctionsResolved) return result;
+  if (m_pluginBanks.empty()) return result;
+
+  auto fnGetEventCount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, int*)>(m_fmodFn.Bank_GetEventCount);
+  auto fnGetEventList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::EventDescription**, int, int*)>(m_fmodFn.Bank_GetEventList);
+  auto fnGetPath = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, char*, int, int*)>(m_fmodFn.EventDescription_GetPath);
+  auto fnGetID = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, FMOD_GUID*)>(m_fmodFn.EventDescription_GetID);
+  auto fnGetLength = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, uint32_t*)>(m_fmodFn.EventDescription_GetLength);
+  auto fnIs3DFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, bool*)>(m_fmodFn.EventDescription_Is3D);
+  auto fnIsOneshot = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, bool*)>(m_fmodFn.EventDescription_IsOneshot);
+  auto fnIsStream = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, bool*)>(m_fmodFn.EventDescription_IsStream);
+  auto fnIsSnapshot = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, bool*)>(m_fmodFn.EventDescription_IsSnapshot);
+  auto fnGetMinMax = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, float*, float*)>(m_fmodFn.EventDescription_GetMinMaxDistance);
+
+  if (!fnGetEventCount || !fnGetEventList || !fnGetID) return result;
+
+  for (auto* rawBank : m_pluginBanks) {
+    auto* bank = static_cast<FMOD::Studio::Bank*>(rawBank);
+    int count = 0;
+    if (fnGetEventCount(bank, &count) != FMOD_OK || count <= 0) continue;
+
+    std::vector<FMOD::Studio::EventDescription*> descs(count);
+    int fetched = 0;
+    if (fnGetEventList(bank, descs.data(), count, &fetched) != FMOD_OK) continue;
+
+    SoundBankGroup group;
+    group.bankPath = "[plugin bank]";
+
+    for (int i = 0; i < fetched; ++i) {
+      SoundEvent ev;
+      ev.eventDesc = descs[i];
+
+      if (fnGetID(descs[i], reinterpret_cast<FMOD_GUID*>(ev.guid)) == FMOD_OK) {
+        std::array<uint8_t, 16> guidArr{};
+        std::memcpy(guidArr.data(), ev.guid, 16);
+        auto it = m_guidToPath.find(guidArr);
+        if (it != m_guidToPath.end()) {
+          ev.eventPath = it->second;
+        }
+      }
+
+      char pathBuf[512] = {};
+      int retrieved = 0;
+      if (fnGetPath && fnGetPath(descs[i], pathBuf, sizeof(pathBuf), &retrieved) == FMOD_OK && retrieved > 0) {
+        ev.eventPath = pathBuf;
+      }
+
+      bool bVal = false;
+      if (fnIs3DFn && fnIs3DFn(descs[i], &bVal) == FMOD_OK) { ev.is3D = bVal; ev.hasIs3D = true; }
+      if (fnIsOneshot && fnIsOneshot(descs[i], &bVal) == FMOD_OK) { ev.isOneshot = bVal; ev.hasIsOneshot = true; }
+      if (fnIsStream && fnIsStream(descs[i], &bVal) == FMOD_OK) { ev.isStream = bVal; ev.hasIsStream = true; }
+      if (fnIsSnapshot && fnIsSnapshot(descs[i], &bVal) == FMOD_OK) { ev.isSnapshot = bVal; ev.hasIsSnapshot = true; }
+
+      uint32_t len = 0;
+      if (fnGetLength && fnGetLength(descs[i], &len) == FMOD_OK) { ev.durationMs = len; ev.hasDuration = true; }
+
+      float minD = 0.0f, maxD = 0.0f;
+      if (fnGetMinMax && fnGetMinMax(descs[i], &minD, &maxD) == FMOD_OK) { ev.minDistance = minD; ev.maxDistance = maxD; }
+
+      group.events.push_back(std::move(ev));
+    }
+
+    if (!group.events.empty()) {
+      result.push_back(std::move(group));
+    }
+  }
+  return result;
+}
+
 void SoundService::EnrichEventsWithFmodData(std::vector<SoundBankGroup>& groups) {
   if (!ResolveFmodFunctions()) return;
   auto* studioSys = static_cast<FMOD::Studio::System*>(GetStudioSystemRaw());
@@ -489,7 +568,6 @@ std::vector<SoundBusEntry> SoundService::GetBuses() {
     }
   }
 
-  logger->Info("GetBuses: {} unique buses found.", result.size());
   return result;
 }
 
@@ -504,20 +582,19 @@ std::vector<SoundGlobalParameter> SoundService::GetGlobalParameters() {
   auto fnGetCount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, int*)>(m_fmodFn.System_GetParameterDescriptionCount);
   auto fnGetList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, FMOD_STUDIO_PARAMETER_DESCRIPTION*, int, int*)>(m_fmodFn.System_GetParameterDescriptionList);
   if (!fnGetCount || !fnGetList) {
-    logger->Info("GetGlobalParameters: FMOD API not available.");
+    logger->Warn("GetGlobalParameters: FMOD API not available.");
     return result;
   }
 
   int count = 0;
   if (fnGetCount(studioSys, &count) != FMOD_OK || count <= 0) {
-    logger->Info("GetGlobalParameters: no global parameters found.");
     return result;
   }
 
   std::vector<FMOD_STUDIO_PARAMETER_DESCRIPTION> descs(count);
   int returned = 0;
   if (fnGetList(studioSys, descs.data(), count, &returned) != FMOD_OK) {
-    logger->Info("GetGlobalParameters: failed to get parameter list.");
+    logger->Warn("GetGlobalParameters: failed to get parameter list.");
     return result;
   }
 
@@ -885,18 +962,43 @@ bool SoundService::SetListenerAttributes(int index, float posX, float posY, floa
 
 // --- Bank Management ---
 
-void* SoundService::LoadBankFile(const char* path, uint32_t flags) {
-  if (!ResolveFmodFunctions() || !path) return nullptr;
+void* SoundService::LoadBankFile(const char* bankPath, const char* guidsPath) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  if (!ResolveFmodFunctions() || !bankPath) {
+    logger->Warn("LoadBankFile: failed — ResolveFmodFunctions={} path={}", ResolveFmodFunctions(), bankPath ? bankPath : "null");
+    return nullptr;
+  }
   auto* studioSys = static_cast<FMOD::Studio::System*>(GetStudioSystemRaw());
-  if (!studioSys || !m_fmodFn.System_LoadBankFile) return nullptr;
+  if (!studioSys || !m_fmodFn.System_LoadBankFile) {
+    logger->Warn("LoadBankFile: failed — studioSys={} hasLoadBankFn={}", static_cast<void*>(studioSys), m_fmodFn.System_LoadBankFile != nullptr);
+    return nullptr;
+  }
 
   auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, const char*, uint32_t, FMOD::Studio::Bank**)>(m_fmodFn.System_LoadBankFile);
   FMOD::Studio::Bank* bank = nullptr;
-  if (fn(studioSys, path, flags, &bank) != FMOD_OK) return nullptr;
+  auto rc = fn(studioSys, bankPath, 2, &bank);
+  if (rc != FMOD_OK) {
+    logger->Warn("LoadBankFile: System_LoadBankFile failed rc={} path={}", static_cast<int>(rc), bankPath);
+    return nullptr;
+  }
+  m_pluginBanks.push_back(bank);
+  m_eventCache.clear();
+
+  if (guidsPath && guidsPath[0]) {
+    LoadGuidsFile(guidsPath);
+  } else {
+    std::string autoPath = std::string(bankPath) + ".guids";
+    LoadGuidsFile(autoPath.c_str());
+  }
+
+  if (m_fmodFn.System_Update) {
+    auto fnUpdate = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*)>(m_fmodFn.System_Update);
+    auto updateRc = fnUpdate(studioSys);
+  }
   return bank;
 }
 
-void* SoundService::LoadBankMemory(const void* data, uint32_t size, uint32_t flags) {
+void* SoundService::LoadBankMemory(const void* data, uint32_t size, const char* guidsPath) {
   if (!ResolveFmodFunctions() || !data) return nullptr;
   auto* studioSys = static_cast<FMOD::Studio::System*>(GetStudioSystemRaw());
   if (!studioSys || !m_fmodFn.System_LoadBankMemory) return nullptr;
@@ -904,13 +1006,29 @@ void* SoundService::LoadBankMemory(const void* data, uint32_t size, uint32_t fla
   auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, const char*, int, void*, uint32_t, uint32_t, FMOD::Studio::Bank**)>(m_fmodFn.System_LoadBankMemory);
   FMOD::Studio::Bank* bank = nullptr;
   if (fn(studioSys, reinterpret_cast<const char*>(data), 0, const_cast<void*>(data), 0, size, &bank) != FMOD_OK) return nullptr;
+  m_pluginBanks.push_back(bank);
+  m_eventCache.clear();
+
+  if (guidsPath && guidsPath[0]) {
+    LoadGuidsFile(guidsPath);
+  }
+
+  if (m_fmodFn.System_Update) {
+    auto fnUpdate = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*)>(m_fmodFn.System_Update);
+    fnUpdate(studioSys);
+  }
   return bank;
 }
 
 bool SoundService::UnloadBank(void* bank) {
   if (!bank || !m_fmodFn.Bank_Unload) return false;
   auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*)>(m_fmodFn.Bank_Unload);
-  return fn(static_cast<FMOD::Studio::Bank*>(bank)) == FMOD_OK;
+  auto result = fn(static_cast<FMOD::Studio::Bank*>(bank));
+  if (result == FMOD_OK) {
+    m_pluginBanks.erase(std::remove(m_pluginBanks.begin(), m_pluginBanks.end(), bank), m_pluginBanks.end());
+    m_eventCache.clear();
+  }
+  return result == FMOD_OK;
 }
 
 int SoundService::GetBankLoadingState(void* bank) {
@@ -955,6 +1073,108 @@ int SoundService::GetBankEventList(void* bank, void** outEvents, int maxCount) {
   int count = 0;
   fn(static_cast<FMOD::Studio::Bank*>(bank), reinterpret_cast<FMOD::Studio::EventDescription**>(outEvents), maxCount, &count);
   return count;
+}
+
+int SoundService::GetBankEventGuid(void* bank, int index, uint8_t outGuid[16]) {
+  if (!bank || !outGuid || !m_fmodFn.Bank_GetEventList || !m_fmodFn.EventDescription_GetID) return 0;
+  auto getCountFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, int*)>(m_fmodFn.Bank_GetEventCount);
+  int count = 0;
+  getCountFn(static_cast<FMOD::Studio::Bank*>(bank), &count);
+  if (index < 0 || index >= count) return 0;
+  auto getListFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::EventDescription**, int, int*)>(m_fmodFn.Bank_GetEventList);
+  std::vector<FMOD::Studio::EventDescription*> descs(count);
+  int got = 0;
+  getListFn(static_cast<FMOD::Studio::Bank*>(bank), descs.data(), count, &got);
+  if (index >= got || !descs[index]) return 0;
+  auto idFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, FMOD_GUID*)>(m_fmodFn.EventDescription_GetID);
+  FMOD_GUID guid{};
+  if (idFn(descs[index], &guid) != FMOD_OK) return 0;
+  std::memcpy(outGuid, &guid, 16);
+  return 1;
+}
+
+int SoundService::GetBankEventPath(void* bank, int index, char* outBuffer, int bufferSize) {
+  if (!bank || !outBuffer || bufferSize <= 0) return 0;
+  if (!m_fmodFn.Bank_GetEventList || !m_fmodFn.EventDescription_GetPath) return 0;
+  auto getCountFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, int*)>(m_fmodFn.Bank_GetEventCount);
+  int count = 0;
+  getCountFn(static_cast<FMOD::Studio::Bank*>(bank), &count);
+  if (index < 0 || index >= count) return 0;
+  auto getListFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::EventDescription**, int, int*)>(m_fmodFn.Bank_GetEventList);
+  std::vector<FMOD::Studio::EventDescription*> descs(count);
+  int got = 0;
+  getListFn(static_cast<FMOD::Studio::Bank*>(bank), descs.data(), count, &got);
+  if (index >= got || !descs[index]) return 0;
+  auto pathFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, char*, int, int*)>(m_fmodFn.EventDescription_GetPath);
+  char dllBuf[256]{};
+  int dllLen = sizeof(dllBuf);
+  auto rc = pathFn(descs[index], dllBuf, dllLen, nullptr);
+  if (rc != FMOD_OK || dllBuf[0] == '\0') {
+    std::array<uint8_t, 16> guid{};
+    if (GetBankEventGuid(bank, index, guid.data())) {
+      auto it = m_guidToPath.find(guid);
+      if (it != m_guidToPath.end()) {
+        auto len = std::min(static_cast<int>(it->second.size()), bufferSize - 1);
+        std::memcpy(outBuffer, it->second.data(), len);
+        outBuffer[len] = '\0';
+        return len;
+      }
+    }
+    return 0;
+  }
+  auto len = static_cast<int>(std::strlen(dllBuf));
+  auto copyLen = std::min(len, bufferSize - 1);
+  std::memcpy(outBuffer, dllBuf, copyLen);
+  outBuffer[copyLen] = '\0';
+  return copyLen;
+}
+
+void SoundService::LoadGuidsFile(const char* guidsPath) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  if (!guidsPath || !guidsPath[0]) return;
+
+  std::ifstream file(guidsPath);
+  if (!file.is_open()) {
+    logger->Warn("LoadGuidsFile: cannot open {}", guidsPath);
+    return;
+  }
+
+  int loaded = 0;
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.size() < 3 || line[0] != '{') continue;
+    auto closingBrace = line.find('}');
+    if (closingBrace == std::string::npos) continue;
+    std::string uuidStr = line.substr(1, closingBrace - 1);
+    if (uuidStr.size() != 36) continue;
+
+    auto parseHex = [](const std::string& s, int pos, int len) -> uint16_t {
+      return static_cast<uint16_t>(std::stoul(s.substr(pos, len), nullptr, 16));
+    };
+
+    std::array<uint8_t, 16> guid{};
+    uint32_t d1 = std::stoul(uuidStr.substr(0, 8), nullptr, 16);
+    uint16_t d2 = parseHex(uuidStr, 9, 4);
+    uint16_t d3 = parseHex(uuidStr, 14, 4);
+    guid[0]  = static_cast<uint8_t>(d1 & 0xFF);
+    guid[1]  = static_cast<uint8_t>((d1 >> 8) & 0xFF);
+    guid[2]  = static_cast<uint8_t>((d1 >> 16) & 0xFF);
+    guid[3]  = static_cast<uint8_t>((d1 >> 24) & 0xFF);
+    guid[4]  = static_cast<uint8_t>(d2 & 0xFF);
+    guid[5]  = static_cast<uint8_t>((d2 >> 8) & 0xFF);
+    guid[6]  = static_cast<uint8_t>(d3 & 0xFF);
+    guid[7]  = static_cast<uint8_t>((d3 >> 8) & 0xFF);
+    static const int d4Pos[] = {19, 21, 24, 26, 28, 30, 32, 34};
+    for (int i = 0; i < 8; ++i) {
+      guid[8 + i] = static_cast<uint8_t>(std::stoul(uuidStr.substr(d4Pos[i], 2), nullptr, 16));
+    }
+
+    auto pathStart = line.find(' ', closingBrace + 1);
+    if (pathStart == std::string::npos) continue;
+    ++pathStart;
+    m_guidToPath[guid] = line.substr(pathStart);
+    ++loaded;
+  }
 }
 
 std::vector<SoundBankLoadInfo> SoundService::GetLoadedBanksInfo() {
@@ -1057,41 +1277,26 @@ std::vector<SoundVCAEntry> SoundService::GetVCAs() {
   auto* studioSys = static_cast<FMOD::Studio::System*>(GetStudioSystemRaw());
   if (!studioSys) return result;
 
-  auto fnGetBankCount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, int*)>(m_fmodFn.System_GetBankCount);
-  auto fnGetBankList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, FMOD::Studio::Bank**, int, int*)>(m_fmodFn.System_GetBankList);
-  auto fnGetVCACount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, int*)>(m_fmodFn.Bank_GetVCACount);
-  auto fnGetVCAList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::VCA**, int, int*)>(m_fmodFn.Bank_GetVCAList);
+  auto fnGetVCACount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, int*)>(m_fmodFn.System_GetVCACount);
+  auto fnGetVCAList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*, FMOD::Studio::VCA**, int, int*)>(m_fmodFn.System_GetVCAList);
   auto fnGetPath = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::VCA*, char*, int, int*)>(m_fmodFn.VCA_GetPath);
-  if (!fnGetBankCount || !fnGetBankList || !fnGetVCACount || !fnGetVCAList || !fnGetPath) return result;
+  if (!fnGetVCACount || !fnGetVCAList || !fnGetPath) return result;
 
-  int bankCount = 0;
-  if (fnGetBankCount(studioSys, &bankCount) != FMOD_OK || bankCount <= 0) return result;
+  int count = 0;
+  if (fnGetVCACount(studioSys, &count) != FMOD_OK || count <= 0) return result;
 
-  std::vector<FMOD::Studio::Bank*> banks(bankCount);
+  std::vector<FMOD::Studio::VCA*> vcas(count);
   int returned = 0;
-  if (fnGetBankList(studioSys, banks.data(), bankCount, &returned) != FMOD_OK) return result;
+  if (fnGetVCAList(studioSys, vcas.data(), count, &returned) != FMOD_OK) return result;
 
-  std::unordered_set<std::string> seen;
   for (int i = 0; i < returned; ++i) {
-    if (!banks[i]) continue;
-    int count = 0;
-    if (fnGetVCACount(banks[i], &count) != FMOD_OK || count <= 0) continue;
-
-    std::vector<FMOD::Studio::VCA*> vcas(count);
-    int vcaReturned = 0;
-    if (fnGetVCAList(banks[i], vcas.data(), count, &vcaReturned) != FMOD_OK) continue;
-
-    for (int j = 0; j < vcaReturned; ++j) {
-      if (!vcas[j]) continue;
-      char path[256] = {};
-      int retrieved = 0;
-      if (fnGetPath(vcas[j], path, sizeof(path), &retrieved) == FMOD_OK && retrieved > 0) {
-        if (seen.insert(path).second) {
-          SoundVCAEntry vca;
-          vca.vcaPath = path;
-          result.push_back(std::move(vca));
-        }
-      }
+    if (!vcas[i]) continue;
+    char path[256] = {};
+    int retrieved = 0;
+    if (fnGetPath(vcas[i], path, sizeof(path), &retrieved) == FMOD_OK && retrieved > 0) {
+      SoundVCAEntry vca;
+      vca.vcaPath = path;
+      result.push_back(std::move(vca));
     }
   }
 
@@ -1210,12 +1415,46 @@ std::vector<void*> SoundService::GetEventInstanceList(void* desc) {
   return result;
 }
 
+void* SoundService::GetEventInstance(void* desc, int index) {
+  if (!desc || index < 0 || !m_fmodFn.EventDescription_GetInstanceList) return nullptr;
+  auto fnCount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, int*)>(m_fmodFn.EventDescription_GetInstanceCount);
+  auto fnList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, FMOD::Studio::EventInstance**, int, int*)>(m_fmodFn.EventDescription_GetInstanceList);
+  int count = 0;
+  fnCount(static_cast<FMOD::Studio::EventDescription*>(desc), &count);
+  if (index >= count) return nullptr;
+  std::vector<FMOD::Studio::EventInstance*> instances(count);
+  int retrieved = 0;
+  fnList(static_cast<FMOD::Studio::EventDescription*>(desc), instances.data(), count, &retrieved);
+  if (index >= retrieved) return nullptr;
+  return instances[index];
+}
+
 int SoundService::GetEventParameterDescriptionCount(void* desc) {
   if (!desc || !m_fmodFn.EventDescription_GetParameterDescriptionCount) return 0;
   auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, int*)>(m_fmodFn.EventDescription_GetParameterDescriptionCount);
   int count = 0;
   fn(static_cast<FMOD::Studio::EventDescription*>(desc), &count);
   return count;
+}
+
+bool SoundService::GetEventParameterByIndex(void* desc, int index, char* outName, int nameSize, float& outMin, float& outMax, float& outDefault) {
+  if (!desc || !m_fmodFn.EventDescription_GetParameterDescriptionByIndex) return false;
+  auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, int, FMOD_STUDIO_PARAMETER_DESCRIPTION*)>(m_fmodFn.EventDescription_GetParameterDescriptionByIndex);
+  FMOD_STUDIO_PARAMETER_DESCRIPTION pd = {};
+  FMOD_RESULT res = fn(static_cast<FMOD::Studio::EventDescription*>(desc), index, &pd);
+  if (res != FMOD_OK) return false;
+  if (outName && nameSize > 0) {
+    if (pd.name) {
+      strncpy(outName, pd.name, nameSize - 1);
+      outName[nameSize - 1] = '\0';
+    } else {
+      outName[0] = '\0';
+    }
+  }
+  outMin = pd.minimum;
+  outMax = pd.maximum;
+  outDefault = pd.defaultvalue;
+  return true;
 }
 
 bool SoundService::GetEventUserPropertyCount(void* desc, int& outCount) {
@@ -1425,10 +1664,109 @@ bool SoundService::FindEventGuidByPath(const char* eventPath, uint8_t outGuid[16
     char guidHex[33];
     for (int i = 0; i < 16; ++i) snprintf(guidHex + i * 2, 3, "%02x", outGuid[i]);
     guidHex[32] = '\0';
-    logger->Info("FindEventGuidByPath: found '{}' guid={}", eventPath, guidHex);
   } else {
     logger->Warn("FindEventGuidByPath: event '{}' not found in any loaded bank", eventPath);
   }
   return found;
+}
+
+bool SoundService::BuildEventCache() {
+  if (!m_eventCache.empty()) return true;
+  if (!m_isInitialized) return false;
+
+  auto groups = GetSoundBankGroups();
+  EnrichEventsWithFmodData(groups);
+
+  m_eventCache.clear();
+  for (const auto& group : groups) {
+    for (const auto& ev : group.events) {
+      EventCacheEntry entry;
+      entry.bankPath = ev.bankPath;
+      entry.eventPath = ev.eventPath;
+      std::memcpy(entry.guid, ev.guid, 16);
+      entry.eventDesc = ev.eventDesc;
+      entry.is3D = ev.is3D;
+      entry.isOneshot = ev.isOneshot;
+      entry.isStream = ev.isStream;
+      entry.isSnapshot = ev.isSnapshot;
+      entry.durationMs = ev.durationMs;
+      entry.minDistance = ev.minDistance;
+      entry.maxDistance = ev.maxDistance;
+      m_eventCache.push_back(std::move(entry));
+    }
+  }
+
+  if (!m_pluginBanks.empty() && m_fmodFn.Bank_GetEventCount && m_fmodFn.Bank_GetEventList && m_fmodFn.EventDescription_GetID) {
+    auto fnGetEventCount = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, int*)>(m_fmodFn.Bank_GetEventCount);
+    auto fnGetEventList = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::EventDescription**, int, int*)>(m_fmodFn.Bank_GetEventList);
+    auto fnGetID = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, FMOD_GUID*)>(m_fmodFn.EventDescription_GetID);
+
+    for (auto* bank : m_pluginBanks) {
+      int count = 0;
+      auto rc = fnGetEventCount(static_cast<FMOD::Studio::Bank*>(bank), &count);
+      if (rc != FMOD_OK || count <= 0) continue;
+
+      std::vector<FMOD::Studio::EventDescription*> descs(count);
+      int fetched = 0;
+      rc = fnGetEventList(static_cast<FMOD::Studio::Bank*>(bank), descs.data(), count, &fetched);
+      if (rc != FMOD_OK) continue;
+
+      for (int i = 0; i < fetched; i++) {
+        FMOD_GUID guid{};
+        if (fnGetID(descs[i], &guid) != FMOD_OK) continue;
+
+        std::array<uint8_t, 16> guidArr{};
+        std::memcpy(guidArr.data(), &guid, 16);
+        std::string resolvedPath;
+        auto it = m_guidToPath.find(guidArr);
+        if (it != m_guidToPath.end()) resolvedPath = it->second;
+
+        EventCacheEntry entry;
+        entry.eventPath = resolvedPath;
+        entry.eventDesc = descs[i];
+        std::memcpy(entry.guid, &guid, 16);
+        entry.is3D = IsEvent3D(descs[i]);
+        entry.isOneshot = IsEventOneshot(descs[i]);
+        entry.isStream = IsEventStream(descs[i]);
+        entry.isSnapshot = IsEventSnapshot(descs[i]);
+        GetEventLength(descs[i], entry.durationMs);
+        GetEventMinMaxDistance(descs[i], entry.minDistance, entry.maxDistance);
+        m_eventCache.push_back(std::move(entry));
+      }
+    }
+  }
+
+  return true;
+}
+
+bool SoundService::BuildBusCache() {
+  if (!m_busCache.empty()) return true;
+  if (!m_isInitialized) return false;
+
+  auto buses = GetBuses();
+  m_busCache.clear();
+  m_busCache.reserve(buses.size());
+  for (const auto& bus : buses) {
+    BusCacheEntry entry;
+    entry.busPath = bus.busPath;
+    entry.busPtr = nullptr;
+    m_busCache.push_back(std::move(entry));
+  }
+  return true;
+}
+
+bool SoundService::BuildVCACache() {
+  if (!m_vcaCache.empty()) return true;
+  if (!m_isInitialized) return false;
+
+  auto vcas = GetVCAs();
+  m_vcaCache.clear();
+  m_vcaCache.reserve(vcas.size());
+  for (const auto& vca : vcas) {
+    VCACacheEntry entry;
+    entry.vcaPath = vca.vcaPath;
+    m_vcaCache.push_back(std::move(entry));
+  }
+  return true;
 }
 }  // namespace SPF::Data::GameData

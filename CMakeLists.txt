@@ -310,6 +310,7 @@ add_library(SPF SHARED
     "src/Modules/API/VehicleApi.cpp"
     "src/Modules/API/ClimateApi.cpp"
     "src/Modules/API/GameWorldApi.cpp"
+    "src/Modules/API/SoundApi.cpp"
     "src/Modules/API/UIApi.cpp"
     "src/Modules/API/LocalizationApi.cpp"
     "src/Modules/API/EnvironmentApi.cpp"
