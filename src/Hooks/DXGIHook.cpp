@@ -27,7 +27,6 @@
 #include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Utils/Windows.hpp"
 
-#include <_mingw.h>
 #include <cstddef>
 #include <d3d11.h>
 #include <d3d12.h>

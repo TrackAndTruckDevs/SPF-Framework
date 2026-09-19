@@ -372,6 +372,8 @@ void XInputHook::Uninstall() {
     auto status = MH_DisableHook(pXInputGetStateTarget);
     if (status == MH_OK) {
       logger->Info("XInput hook disabled successfully.");
+    } else if (status == MH_ERROR_DISABLED) {
+      logger->Info("XInput hook already disabled.");
     } else {
       logger->Warn("Failed to disable XInput hook, status: {}", MH_StatusToString(status));
     }

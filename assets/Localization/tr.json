@@ -241,6 +241,10 @@
                     "title": "Bildirim Süresi",
                     "description": "Geçici açılır bildirimlerin ekranda ne kadar süreyle (saniye cinsinden) kalacağını ayarlar."
                 },
+                "notification_sound": {
+                    "title": "Bildirim sesini çal",
+                    "description": "Yeni bir bildirim geldiğinde ses çalar."
+                },
                 "show_update_notifications": {
                     "title": "Güncelleme Bildirimleri",
                     "description": "Framework veya eklentiler için yeni güncellemeler yayınlandığında bildirim alırsınız."

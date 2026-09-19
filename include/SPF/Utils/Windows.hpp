@@ -9,7 +9,9 @@
 #pragma once
 
 #ifndef _MSC_VER
-#include <bits/os_defines.h>
+#include <bits/os_defines.h>  // IWYU pragma: export
+#include <_mingw.h>  // IWYU pragma: export
+#include <sec_api/string_s.h>  // IWYU pragma: export
 #endif
 
 #ifndef NOMINMAX

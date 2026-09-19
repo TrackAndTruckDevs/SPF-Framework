@@ -6,16 +6,10 @@
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <cstdint>
-#include <cstdio>  // For sscanf
 #include <cstdlib>
 #include <cstring>
-#include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
 #include <sec_api/stdio_s.h>
-#endif
+#include <vector>
 
 namespace SPF::Telemetry {
 

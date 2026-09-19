@@ -241,6 +241,10 @@
                     "title": "Czas trwania powiadomień",
                     "description": "Określa, jak długo (w sekundach) tymczasowe powiadomienia pozostają na ekranie."
                 },
+                "notification_sound": {
+                    "title": "Odtwarzaj dźwięk powiadomień",
+                    "description": "Odtwarza dźwięk po pojawieniu się nowego powiadomienia."
+                },
                 "show_update_notifications": {
                     "title": "Powiadamiaj o aktualizacjach",
                     "description": "Gdy dostępna będzie aktualizacja frameworka lub wtyczek, zobaczysz powiadomienie."

@@ -1,19 +1,16 @@
 #include "SPF/Utils/SystemUtils.hpp"
 
+#include "SPF/Utils/Windows.hpp"
+
 #include <corecrt.h>
 #include <cstddef>
 #include <libloaderapi.h>
 #include <minwindef.h>
+#include <sec_api/stdlib_s.h>
 #include <string>
 #include <winnls.h>
 #include <winnt.h>
 #include <winternl.h>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdlib_s.h>
-#endif
 
 // Define RtlGetVersion prototype if not available via headers
 typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);

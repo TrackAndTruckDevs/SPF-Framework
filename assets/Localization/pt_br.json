@@ -241,6 +241,10 @@
                     "title": "Duração da Notificação",
                     "description": "Define por quanto tempo (em segundos) as notificações pop-up temporárias permanecem na tela."
                 },
+                "notification_sound": {
+                    "title": "Reproduzir som de notificação",
+                    "description": "Reproduz um som quando uma nova notificação aparece."
+                },
                 "show_update_notifications": {
                     "title": "Notificar sobre atualizações",
                     "description": "Você receberá notificações quando houver atualizações disponíveis para o framework ou plugins."

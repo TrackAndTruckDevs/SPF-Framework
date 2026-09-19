@@ -241,6 +241,10 @@
                     "title": "Doba trvání oznámení",
                     "description": "Nastavuje, jak dlouho (v sekundách) zůstanou dočasná vyskakovací oznámení na obrazovce."
                 },
+                "notification_sound": {
+                    "title": "Přehrávat zvuk oznámení",
+                    "description": "Přehraje zvuk při zobrazení nového oznámení."
+                },
                 "show_update_notifications": {
                     "title": "Upozorňovat na aktualizace",
                     "description": "Jakmile bude k dispozici aktualizace frameworku nebo pluginu, zobrazí se oznámení.."

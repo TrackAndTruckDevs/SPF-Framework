@@ -36,6 +36,7 @@
 #include <SPF/SPF_API/SPF_UI_API.h>         // For creating and managing user interface windows and widgets.
 #include <SPF/SPF_API/SPF_Vehicle_API.h>    // For inspecting vehicles and traffic.
 #include <SPF/SPF_API/SPF_VirtInput_API.h>  // For creating virtual input devices (like a virtual gamepad) to simulate input.
+#include <SPF/SPF_API/SPF_Sound_API.h>       // For interacting with the FMOD sound system.
 
 
 // =================================================================================================
@@ -117,6 +118,7 @@ struct PluginContext {
   SPF_Vehicle_API* vehicleAPI = nullptr;
   SPF_GameWorld_API* gameworldAPI = nullptr;
   const SPF_Climate_API* climateAPI = nullptr;
+  SPF_Sound_API* soundAPI = nullptr;
 
   /**
    * @brief Pointer to the JSON Writer API.
@@ -311,6 +313,16 @@ struct PluginContext {
   // --- Dynamic Font Management Demo ---
   SPF_Font_Handle pluginFont = nullptr;
   SPF_Font_Handle memoryFont = nullptr;
+
+  // --- Sound: Horn Replacement ---
+  bool replaceHornEnabled = false;
+  void* bellBank = nullptr;
+  int bellEventIndex = -1;
+  void* bellInstance = nullptr;
+  int hornEventIndices[32] = {};
+  int hornEventCount = 0;
+  bool bellTestPlaying = false;
+  bool bellReplacementActive = false;
 };
 
 /**
@@ -514,6 +526,7 @@ void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data);
  * @brief Renders the content of the "Custom JSON" tab to demonstrate the new JSON and Config API features.
  */
 void RenderCustomJsonTab(SPF_UI_API* ui, void* user_data);
+void RenderSoundTab(SPF_UI_API* ui, void* user_data);
 
 // --- Helper Functions ---
 // These are internal functions that encapsulate specific logic for better organization.

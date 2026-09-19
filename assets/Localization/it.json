@@ -241,6 +241,10 @@
                     "title": "Durata delle notifiche",
                     "description": "Imposta per quanto tempo (in secondi) le notifiche pop-up temporanee rimangono sullo schermo."
                 },
+                "notification_sound": {
+                    "title": "Riproduci suono di notifica",
+                    "description": "Riproduce un suono quando appare una nuova notifica."
+                },
                 "show_update_notifications": {
                     "title": "Notifiche di aggiornamento",
                     "description": "Riceverai delle notifiche quando saranno disponibili aggiornamenti per il framework o per i plugin."

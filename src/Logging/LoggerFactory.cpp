@@ -73,11 +73,6 @@ void LoggerFactory::Shutdown() {
   m_loggers.clear();
   m_globalSinks.clear();
 
-  // Emit signals before resetting
-  OnUISinkChanged.Call(nullptr);
-  OnErrorReportSinkChanged.Call(nullptr);
-  OnFrameworkFileSinkChanged.Call(nullptr);
-
   m_uiSink.reset();
   m_errorReportSink.reset();
   m_frameworkFileSink.reset();

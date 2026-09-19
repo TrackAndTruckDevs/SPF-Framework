@@ -6,12 +6,12 @@
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/UIManager.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
 
-#include <_mingw.h>
 #include <corecrt.h>
 #include <cstddef>
 #include <cstdint>

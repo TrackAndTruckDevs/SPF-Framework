@@ -751,6 +751,8 @@ void DInput8Hook::Uninstall() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("DInput8Hook");
     if (auto status = MH_DisableHook(MH_ALL_HOOKS); status == MH_OK) {
       logger->Info("DInput8 hooks disabled successfully.");
+    } else if (status == MH_ERROR_DISABLED) {
+      logger->Info("DInput8 hooks already disabled.");
     } else {
       logger->Warn("Failed to disable one or more DInput8 hooks, status: {}", MH_StatusToString(status));
     }

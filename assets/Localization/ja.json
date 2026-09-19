@@ -241,6 +241,10 @@
                     "title": "通知の表示時間",
                     "description": "一時的なポップアップ通知が画面に表示される時間（秒単位）を設定します。"
                 },
+                "notification_sound": {
+                    "title": "通知音を再生",
+                    "description": "新しい通知が表示された時に音を再生します。"
+                },
                 "show_update_notifications": {
                     "title": "アップデートの通知",
                     "description": "フレームワークやプラグインのアップデートが利用可能な場合、通知が表示されます."

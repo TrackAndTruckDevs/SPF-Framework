@@ -4,6 +4,7 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
@@ -50,8 +51,10 @@
 #include "SPF/UI/PluginsWindow.hpp"    // Added for PluginsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Added for SettingsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Required for dynamic_cast
+#include "SPF/UI/SoundWindow.hpp"         // Added for SoundWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UISounds.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
 #include "SPF/Utils/Signal.hpp"
 
@@ -301,18 +304,19 @@ std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() 
 void UIManager::ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode) {
   if (m_notificationWindow) {
     float duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
-    m_notificationWindow->Show(message, type, duration, mode);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    m_notificationWindow->Show(message, type, duration, mode, playSound);
   }
 }
 
 SPF_Notification_Handle UIManager::ShowNotificationEx(const SPF_Notification_Params* params) {
   if (m_notificationWindow && params) {
     SPF_Notification_Params p = *params;
-    // Resolve 'Auto' duration from settings if it's negative
     if (p.duration < 0.0f) {
       p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
     }
-    return m_notificationWindow->ShowEx(p);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    return m_notificationWindow->ShowEx(p, playSound);
   }
   return nullptr;
 }
@@ -806,6 +810,9 @@ void UIManager::RenderAll() {
     m_lastLoggedConflictId = 0;
   }
 #endif
+
+  // --- UI Click Sound (after all widgets rendered) ---
+  UISounds::OnMouseClicked();
 }
 
 void UIManager::InitializeImGui() {
@@ -1313,6 +1320,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Climate Window
   auto climateWindow = std::make_shared<ClimateWindow>("framework", "climate_window", Data::GameData::ClimateService::GetInstance());
   RegisterWindow(climateWindow);
+
+  // Sound Window
+  auto soundWindow = std::make_shared<SoundWindow>("framework", "sound_window", Data::GameData::SoundService::GetInstance());
+  RegisterWindow(soundWindow);
 
   // Notifications (Global) — must be created before the status check block below,
   // because Updated fires ShowNotificationEx which needs m_notificationWindow.

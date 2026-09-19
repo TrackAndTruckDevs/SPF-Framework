@@ -8,7 +8,10 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Fmod/FmodStudioHook.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -487,6 +490,9 @@ void Core::InitServices() {
   hookManager.RegisterFeatureHook(&GameLogHook::GetInstance());
   hookManager.RegisterFeatureHook(&GameConsole::GetInstance());
   hookManager.RegisterFeatureHook(&GameTools::ScsNameResolver::GetInstance());
+  hookManager.RegisterFeatureHook(&Fmod::FmodApi::GetInstance());
+  hookManager.RegisterFeatureHook(&Fmod::FmodStudioHook::GetInstance());
+  m_configService->ReconcileHookStates(hookManager.GetFeatureHooks(), nullptr);
   InitFeatureHooks();
   m_logger->Info("--- Core Services Initialized ---");
 }
@@ -611,6 +617,7 @@ void Core::InitHooks() {
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
   ClimateService::GetInstance().Initialize();
+  SoundService::GetInstance().Initialize();
   ManagerCoreService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
@@ -759,7 +766,7 @@ void Core::PerformDeferredInitialization() {
   }
 
   // 3. Resolve Core Manager addresses (GameplayManager, ...)
-  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
+  auto& managerService = ManagerCoreService::GetInstance();
   if (managerService.TryFindAllOffsets()) {
     logger->Debug("Manager Core addresses resolved.");
   }
@@ -768,6 +775,12 @@ void Core::PerformDeferredInitialization() {
   auto& worldService = GameWorldService::GetInstance();
   if (worldService.TryFindAllOffsets()) {
     logger->Debug("GameWorld (Environment) offsets resolved.");
+  }
+
+  // 4b. Resolve Sound (FMOD) offsets
+  auto& soundService = SoundService::GetInstance();
+  if (soundService.TryFindAllOffsets()) {
+    logger->Debug("Sound (FMOD) offsets resolved.");
   }
 
   // 5. Calculate framework build hash
@@ -902,6 +915,18 @@ void Core::FinalizeWorldInitialization() {
     } else {
       m_logger->Warn("{} is not ready yet (waiting for dependencies or game data).", service->GetName());
     }
+  }
+
+  // Re-install FMOD hooks if they were torn down by world reload.
+  auto& fmodApi = Fmod::FmodApi::GetInstance();
+  if (!fmodApi.IsInstalled()) {
+    m_logger->Info("Re-installing FMOD API hook...");
+    Hooks::HookManager::GetInstance().InstallFeatureHook(&fmodApi);
+  }
+  auto& fmodStudioHook = Fmod::FmodStudioHook::GetInstance();
+  if (!fmodStudioHook.IsInstalled()) {
+    m_logger->Info("Re-installing FMOD Studio hook...");
+    Hooks::HookManager::GetInstance().InstallFeatureHook(&fmodStudioHook);
   }
 
   // Install the camera manager last: all finders are ready at this point.

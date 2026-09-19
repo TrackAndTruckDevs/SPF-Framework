@@ -6,6 +6,7 @@
 #include "SPF/Modules/HandleManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/SPF_API/SPF_Config_API.h"
+#include "SPF/Utils/Windows.hpp"
 
 #include "nlohmann/json_fwd.hpp"
 
@@ -15,12 +16,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
 
 namespace SPF::Modules::API {
 

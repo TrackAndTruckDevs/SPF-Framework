@@ -28,18 +28,13 @@
 #include <mutex>
 #include <optional>
 #include <queue>
+#include <sec_api/stdio_s.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdio_s.h>
-#endif
 
 // Use the nlohmann::ordered_json library
 using json = nlohmann::ordered_json;
@@ -75,6 +70,7 @@ void ApiService::WorkerLoop() {
       task = std::move(m_tasks.front());
       m_tasks.pop();
     }
+    if (m_shutdown) break;
     task();
   }
 }
@@ -111,6 +107,8 @@ ServiceStatus ApiService::GetLastStatus() const {
 }
 
 bool ApiService::EnsureConnectivity(const std::string& baseUrl) {
+  if (m_shutdown) return false;
+
   auto now = std::chrono::steady_clock::now();
 
   std::unique_lock<std::mutex> lock(m_stateMutex);
@@ -253,6 +251,7 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
   std::future<ApiResult<UpdateInfo>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, major, minor, patch, revision, channel, lang]() {
+    if (m_shutdown) { promise->set_value(ApiResult<UpdateInfo>{}); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<UpdateInfo> apiResult;
 
@@ -337,7 +336,8 @@ std::future<FileDownloadResult> ApiService::DownloadFileAsync(const std::string&
   auto promise = std::make_shared<std::promise<FileDownloadResult>>();
   std::future<FileDownloadResult> future = promise->get_future();
 
-  PostTask([promise, url, destination]() {
+  PostTask([this, promise, url, destination]() {
+    if (m_shutdown) { promise->set_value({}); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     FileDownloadResult result;
 
@@ -384,6 +384,7 @@ std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const s
   std::future<ApiResult<ChangelogData>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, major, minor, patch, lang]() {
+    if (m_shutdown) { promise->set_value(ApiResult<ChangelogData>{}); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<ChangelogData> apiResult;
 
@@ -457,6 +458,7 @@ std::future<ApiResult<std::vector<Patron>>> ApiService::FetchPatronsAsync(const 
   std::future<ApiResult<std::vector<Patron>>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl]() {
+    if (m_shutdown) { promise->set_value(ApiResult<std::vector<Patron>>{}); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<std::vector<Patron>> apiResult;
 
@@ -526,6 +528,7 @@ std::future<void> ApiService::TrackUsageAsync(const std::string& baseUrl, std::s
   std::future<void> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, uuid, sessionId, buildHash, version, game, gameVersion, plugins, logs]() {
+    if (m_shutdown) { promise->set_value(); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
 
     if (!EnsureConnectivity(baseUrl)) {
@@ -541,7 +544,7 @@ std::future<void> ApiService::TrackUsageAsync(const std::string& baseUrl, std::s
 
       json requestBody = {{"user_uuid", uuid}, {"build_hash", buildHash}, {"session_id", sessionId}, {"version", version}, {"game", game}, {"game_version", gameVersion}, {"plugins", plugins}, {"logs", logsArray}};
 
-      cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_TRACK_USAGE_PATH}, cpr::Header{{"Content-Type", "application/json"}, {"X-API-Key", API_CLIENT_SECRET}}, cpr::Body{requestBody.dump()}, cpr::Timeout{10000}, cpr::ConnectTimeout{5000});
+      cpr::Response r = cpr::Post(cpr::Url{baseUrl + API_TRACK_USAGE_PATH}, cpr::Header{{"Content-Type", "application/json"}, {"X-API-Key", API_CLIENT_SECRET}}, cpr::Body{requestBody.dump()}, cpr::Timeout{2000}, cpr::ConnectTimeout{1000});
 
       if (r.error.code == cpr::ErrorCode::OK && r.status_code == 200) {
         if (logs.empty()) {
@@ -566,7 +569,8 @@ std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAs
   auto promise = std::make_shared<std::promise<ApiResult<GithubReleaseInfo>>>();
   std::future<ApiResult<GithubReleaseInfo>> future = promise->get_future();
 
-  PostTask([promise, owner, repo]() {
+  PostTask([this, promise, owner, repo]() {
+    if (m_shutdown) { promise->set_value(ApiResult<GithubReleaseInfo>{}); return; }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<GithubReleaseInfo> apiResult;
 

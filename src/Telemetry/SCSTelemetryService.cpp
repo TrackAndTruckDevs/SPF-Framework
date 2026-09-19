@@ -26,14 +26,9 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <sec_api/stdio_s.h>
 #include <string>
 #include <vector>
-
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdio_s.h>
-#endif
 
 namespace SPF::Telemetry {
 using namespace Modules;

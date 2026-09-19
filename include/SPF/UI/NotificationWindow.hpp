@@ -28,12 +28,12 @@ class NotificationWindow : public BaseWindow {
   /**
    * @brief Triggers a new notification.
    */
-  void Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode);
+  void Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode, bool playSound = true);
 
   /**
    * @brief Extended version of Show with full parameter control.
    */
-  SPF_Notification_Handle ShowEx(const SPF_Notification_Params& params);
+  SPF_Notification_Handle ShowEx(const SPF_Notification_Params& params, bool playSound = true);
 
   /**
    * @brief Programmatically closes a notification.
