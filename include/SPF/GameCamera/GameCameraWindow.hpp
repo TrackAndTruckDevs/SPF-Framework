@@ -39,6 +39,7 @@ class GameCameraWindow : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
+  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::WindowCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;
@@ -84,5 +85,9 @@ class GameCameraWindow : public IGameCamera {
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
   bool m_defaultsSaved = false;
+
+  // See GameCameraInterior for why the FOV override needs re-asserting every frame.
+  bool m_fovOverrideActive = false;
+  float m_fovOverrideValue = 0.0f;
 };
 }  // namespace SPF::GameCamera

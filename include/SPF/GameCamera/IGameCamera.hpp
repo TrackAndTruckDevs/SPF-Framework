@@ -36,6 +36,14 @@ class IGameCamera {
   virtual void Update(float dt) = 0;
 
   /**
+   * @brief Called once per rendered frame, right before the UI is drawn — i.e. after the
+   * game has finished its own per-frame camera computations. Implementations use this to
+   * re-assert values the game keeps overwriting after Update() runs (e.g. FOV vs. native zoom).
+   * Default is a no-op; only cameras that need this override it.
+   */
+  virtual void LateUpdate() {}
+
+  /**
    * @brief Returns the specific type of this camera.
    * @return The GameCameraType enum value.
    */
@@ -61,5 +69,24 @@ class IGameCamera {
  protected:
   // Flag to ensure the default state is only captured once.
   bool m_defaultsSaved = false;
+
+  /**
+   * @brief Shared FOV-apply logic for `core_camera`-based cameras (all but the debug/photo
+   * cameras): writes fov into both the live FOV field (GameDataCameraService::
+   * GetFovBaseOffset) and the "un-zoomed reference" field the game's native speed-FOV
+   * system reads from (GetFovZoomBaseOffset), then calls UpdateCameraProjection so the
+   * final horiz/vert FOV recompute immediately. Writing only the live field isn't enough —
+   * the native system overwrites it again the next time speed or zoom state changes.
+   */
+  static void ApplyCoreCameraFov(void* pCameraObject, float fov);
+
+  /**
+   * @brief Re-asserts just the reference FOV field (GetFovZoomBaseOffset). Call from
+   * LateUpdate() while a FOV override is active, so the native per-frame speed-FOV
+   * recompute converges to it instead of the vehicle's configured value. Deliberately does
+   * NOT touch the live FOV field or call UpdateCameraProjection — doing both every frame
+   * fights the native recompute instead of just fixing its source, causing visible flicker.
+   */
+  static void ReassertCoreCameraFovReference(void* pCameraObject, float fov);
 };
 }  // namespace SPF::GameCamera

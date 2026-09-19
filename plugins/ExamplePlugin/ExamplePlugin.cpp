@@ -1980,14 +1980,32 @@ void RenderInputTestTab(SPF_UI_API* ui, void* user_data) {
   int bindingCount = keybinds->Kbind_GetBindingCount(g_ctx.keybindsHandle, actionName);
   if (bindingCount == 0) {
     ui->UI_TextColored(1.0f, 0.5f, 0.5f, 1.0f, "No bindings assigned to this action.");
+    // Kbind_OpenRebindPopup(..., -1) opens the exact same "press a key" modal the native
+    // Settings window uses, so this custom tab can offer key assignment with full parity
+    // (and sync) with the framework's own UI.
+    if (ui->UI_Button("Assign a key...", 0, 0)) {
+      keybinds->Kbind_OpenRebindPopup(g_ctx.keybindsHandle, actionName, -1);
+    }
   } else {
     for (int i = 0; i < bindingCount; ++i) {
       char line_buf[256];
       char name_buf[128];
-      keybinds->Kbind_GetBindingName(g_ctx.keybindsHandle, actionName, i, name_buf, sizeof(name_buf));
+      // Kbind_GetBindingDisplayName includes the same device icon (keyboard/gamepad/mouse
+      // glyph) the native Settings UI shows, so this tree node label matches it visually.
+      keybinds->Kbind_GetBindingDisplayName(g_ctx.keybindsHandle, actionName, i, name_buf, sizeof(name_buf));
 
       format->Fmt_Format(line_buf, sizeof(line_buf), "[Binding %d] Name: %s", i + 1, name_buf);
       if (ui->UI_TreeNode(line_buf)) {
+        if (ui->UI_Button("Rebind...", 0, 0)) {
+          keybinds->Kbind_OpenRebindPopup(g_ctx.keybindsHandle, actionName, i);
+        }
+        ui->UI_SameLine(0, 8);
+        // Kbind_OpenBindingDetailsPopup opens the same "gear icon" popup the native
+        // Settings window uses for behavior/press-threshold/axis tuning.
+        if (ui->UI_Button("Details...", 0, 0)) {
+          keybinds->Kbind_OpenBindingDetailsPopup(g_ctx.keybindsHandle, actionName, i);
+        }
+
         // 1. Type
         SPF_BindingType type = keybinds->Kbind_GetBindingType(g_ctx.keybindsHandle, actionName, i);
         const char* typeStr = (type == SPF_BINDING_KEYBOARD)        ? "Keyboard"

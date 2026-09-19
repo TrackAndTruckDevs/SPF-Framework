@@ -827,6 +827,12 @@ void Core::Update() {
   if (m_communicationManager) {
     m_communicationManager->Update();
   }
+
+  // Runs right before the UI is drawn, i.e. after the game's own per-frame camera
+  // computations for this frame — lets camera overrides win instead of racing them.
+  if (GameCameraManager::GetInstance().IsInstalled()) {
+    GameCameraManager::GetInstance().LateUpdate();
+  }
 }
 
 void Core::ImGuiRender() {

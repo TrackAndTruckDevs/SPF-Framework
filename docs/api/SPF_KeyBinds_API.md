@@ -124,6 +124,22 @@ Advanced callback type that receives context information.
 *   **user_data:** The custom pointer that was passed during registration.
 
 ---
+**`void Kbind_OpenRebindPopup(SPF_KeyBinds_Handle* h, const char* actionName, int bindingIndex)`**
+Opens the framework's native "press a key" rebind popup for a specific action, from your own custom DearImGui menu.
+*   **h:** The context handle obtained from `Kbind_GetContext`.
+*   **actionName:** The logical name of the action (e.g., `"UI.toggle"`). **Smart Naming** is applied.
+*   **bindingIndex:** The zero-based index of an existing binding (see `Kbind_GetBindingCount`) to reassign, or `-1` to add a new binding to the action (equivalent to the "+" button in the native Settings UI).
+*   **Note:** This is the exact same popup, conflict-resolution flow, and config write path used by the framework's own Settings window. Because everything goes through the shared config, the result is automatically reflected in the config file, the running keybind state, and the native Settings window if it's open — you don't need to do anything extra to keep them in sync. The popup renders itself as a top-level overlay on the next frame; you don't render anything for it yourself, and it's safe to call from inside your own window's rendering code.
+
+---
+**`void Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
+Opens the framework's native "binding details" (gear icon) popup for a specific binding, from your own custom DearImGui menu.
+*   **h:** The context handle obtained from `Kbind_GetContext`.
+*   **actionName:** The logical name of the action (e.g., `"UI.toggle"`). **Smart Naming** is applied.
+*   **index:** The zero-based index of the binding to edit (see `Kbind_GetBindingCount`).
+*   **Note:** Gives full parity with the native Settings window's advanced options: for digital bindings, press behavior (Hold/Toggle), consume policy, and long-press threshold (ms); for analog axis bindings, mode (analog/digital), deadzone, saturation, sensitivity, curve, smoothing, range, invert, side, and the live value graph. As with `Kbind_OpenRebindPopup`, it's the exact same popup and pipeline the native Settings window uses, so results stay in sync everywhere automatically. Safe to call from inside your own window's rendering code.
+
+---
 **`void Kbind_Register_Ex(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_Callback_Ex callback, void* user_data)`**
 Registers an extended callback function with a context pointer and action ID support.
 *   **h:** The context handle.
@@ -186,6 +202,13 @@ Gets the accumulator mode for an axis.
 ---
 **`int Kbind_GetBindingName(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size)`**
 Gets the human-readable display name of the input (e.g., "Space", "Cross").
+
+---
+**`int Kbind_GetBindingDisplayName(SPF_KeyBinds_Handle* h, const char* actionName, int index, char* out_buffer, int buffer_size)`**
+Gets the same display string the native Settings UI shows for a binding: its device icon (keyboard/gamepad/mouse glyph) followed by its name (e.g., the keyboard glyph + "Space").
+*   Use this instead of `Kbind_GetBindingName` whenever you want full visual parity with the native Settings window, without having to know about FontAwesome glyphs or implement the device-to-icon mapping yourself.
+*   For a chord (multiple physical inputs), returns one icon per constituent device, joined with `" + "`, exactly like the native UI.
+*   The returned string is plain UTF-8 and renders correctly in any SPF UI text/button call, since the icon font is already part of the shared font atlas.
 
 ---
 **`void Kbind_SetBlockState(SPF_KeyBinds_Handle* h, const char* actionName, bool block)`**
@@ -316,3 +339,36 @@ void OnActivated(const SPF_Core_API* api) {
     }
 }
 ```
+
+## Rebinding Keys From Your Own Custom Menu
+
+Everything shown so far lets you *read* bindings. If your plugin draws its own DearImGui window instead of relying on the framework's Settings UI, you can still let users assign keys, with full parity (and full sync) with the native experience, via `Kbind_OpenRebindPopup`.
+
+```cpp
+void MyPlugin_OnDrawMyCustomWindow(const SPF_Core_API* api) {
+    SPF_KeyBinds_Handle* h = api->keybinds->Kbind_GetContext("MyPlugin");
+    const char* action = "General.Jump";
+
+    int count = api->keybinds->Kbind_GetBindingCount(h, action);
+    if (count == 0) {
+        if (ImGui::Button("Unassigned")) {
+            // -1 means "add a new binding" for this action.
+            api->keybinds->Kbind_OpenRebindPopup(h, action, -1);
+        }
+    } else {
+        for (int i = 0; i < count; i++) {
+            char name[64];
+            api->keybinds->Kbind_GetBindingName(h, action, i, name, sizeof(name));
+
+            ImGui::PushID(i);
+            if (ImGui::Button(name)) {
+                // Reassigns the binding at this index.
+                api->keybinds->Kbind_OpenRebindPopup(h, action, i);
+            }
+            ImGui::PopID();
+        }
+    }
+}
+```
+
+Clicking the button opens the exact same "press a key" modal (including conflict detection) as the framework's own Settings window, and writes the result through the same config pipeline. No extra synchronization work is required on your part.

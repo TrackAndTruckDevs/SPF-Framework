@@ -48,6 +48,11 @@ void GameCameraInterior::Update(float dt) {
   // It can be used for other per-frame logic if needed in the future.
 }
 
+void GameCameraInterior::LateUpdate() {
+  if (!m_pCameraObject || !m_fovOverrideActive) return;
+  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
+}
+
 void GameCameraInterior::SetSeatPosition(float x, float y, float z) {
   if (!m_pCameraObject) return;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
@@ -86,42 +91,9 @@ void GameCameraInterior::SetHeadRotation(float yaw, float pitch) {
 
 void GameCameraInterior::SetFov(float fov) {
   if (!m_pCameraObject) return;
-  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  auto& hooks = Hooks::CameraHooks::GetInstance();
-  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
-
-  // Get all required data first
-  auto fov_base_offset = gameData.GetFovBaseOffset();
-  auto pfnUpdateCameraProjection = hooks.GetUpdateCameraProjectionFunc();
-  uintptr_t pCameraParamsObject = gameData.GetCameraParamsObjectPtr();
-  auto x1_offset = gameData.GetViewportX1Offset();
-  auto x2_offset = gameData.GetViewportX2Offset();
-  auto y1_offset = gameData.GetViewportY1Offset();
-  auto y2_offset = gameData.GetViewportY2Offset();
-
-  // Check if everything is available
-  if (fov_base_offset && pfnUpdateCameraProjection && pCameraParamsObject && x1_offset && x2_offset && y1_offset && y2_offset) {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
-
-    // 1. Set the base FOV value
-    *reinterpret_cast<float*>(pCam + fov_base_offset) = fov;
-
-    // 2. Calculate viewport parameters
-    float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + x1_offset);
-    float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + y1_offset);
-
-    // 3. Call the game's function to make the FOV change take effect
-    pfnUpdateCameraProjection(m_pCameraObject, param_width, param_height);
-
-    // Log final results
-    // float horiz_final = *reinterpret_cast<float*>(pCam + gameData.GetFovHorizFinalOffset());
-    // float vert_final = *reinterpret_cast<float*>(pCam + gameData.GetFovVertFinalOffset());
-
-    // logger->Trace("SetFov [Result]: H={:.4f}, V={:.4f}", horiz_final, vert_final);
-  } else {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
-    logger->Warn("Cannot set FOV: one or more required pointers or offsets are missing.");
-  }
+  m_fovOverrideActive = true;
+  m_fovOverrideValue = fov;
+  ApplyCoreCameraFov(m_pCameraObject, fov);
 }
 
 void GameCameraInterior::SetRotationLimits(float left, float right, float up, float down) {
