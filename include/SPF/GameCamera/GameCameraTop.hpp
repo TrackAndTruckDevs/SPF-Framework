@@ -46,7 +46,6 @@ class GameCameraTop : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
-  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::TopCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;

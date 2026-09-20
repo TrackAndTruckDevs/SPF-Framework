@@ -34,11 +34,6 @@ void GameCameraWheel::Update(float dt) {
   if (!m_pCameraObject) return;
 }
 
-void GameCameraWheel::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
-
 void GameCameraWheel::SetOffset(float x, float y, float z) {
   if (!m_pCameraObject) return;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();

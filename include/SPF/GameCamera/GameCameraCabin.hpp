@@ -25,7 +25,6 @@ class GameCameraCabin : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
-  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::CabinCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;

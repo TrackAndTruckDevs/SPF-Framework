@@ -1251,6 +1251,99 @@ typedef bool (*SPF_Camera_GetInteriorZoomSpeed_t)(float* out_val);
  */
 typedef void (*SPF_Camera_SetInteriorZoomSpeed_t)(float val);
 
+// --- New Interior Advanced Settings ---
+
+/**
+ * @brief Gets the real (effective) FOV of the interior camera.
+ * @details The real FOV is composed of the default FOV + FOV setting + the speed FOV change factor
+ *          (GetInteriorSpeedFovChangeFactor) and the truck's real speed.
+ * @param[out] out_val Pointer to store the FOV value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorFovReal_t)(float* out_val);
+
+/**
+ * @brief Gets the zoom on/off state of the interior camera.
+ * @param[out] out_val Pointer to store the zoom state.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorZoomOnOff_t)(bool* out_val);
+
+/**
+ * @brief Gets the live zoom position of the interior camera.
+ * @details By default the value is 1. When zooming it decreases down to the InteriorZoomFovFactor value.
+ * @param[out] out_val Pointer to store the zoom position.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorZoomLive_t)(float* out_val);
+
+/**
+ * @brief Sets the live zoom position of the interior camera.
+ * @param val The new zoom position.
+ */
+typedef void (*SPF_Camera_SetInteriorZoomLive_t)(float val);
+
+/**
+ * @brief Gets the speed FOV change factor of the interior camera.
+ * @details By default the value is 1.2. Setting it to 1 (via SetInteriorSpeedFovChangeFactor) disables
+ *          dynamic FOV. A value below 1 decreases the FOV while driving; a value above 1 increases it
+ *          while driving.
+ * @param[out] out_val Pointer to store the factor value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorSpeedFovChangeFactor_t)(float* out_val);
+
+/**
+ * @brief Sets the speed FOV change factor of the interior camera.
+ * @param val The new factor value.
+ */
+typedef void (*SPF_Camera_SetInteriorSpeedFovChangeFactor_t)(float val);
+
+/**
+ * @brief Gets the maximum FOV of the interior camera.
+ * @param[out] out_val Pointer to store the max FOV value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorMaxFov_t)(float* out_val);
+
+/**
+ * @brief Sets the maximum FOV of the interior camera.
+ * @param val The new max FOV value.
+ */
+typedef void (*SPF_Camera_SetInteriorMaxFov_t)(float val);
+
+/**
+ * @brief Gets the FOV setting of the interior camera.
+ * @details This value the game uses to calculate the current FOV. It takes the default FOV and adds this
+ *          value to it. Important: this value is saved in the game's save files, and it is also what changes
+ *          when you change the FOV through the game's settings.
+ * @param[out] out_val Pointer to store the FOV setting value.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorFovSetting_t)(float* out_val);
+
+/**
+ * @brief Sets the FOV setting of the interior camera.
+ * @param val The new FOV setting value.
+ */
+typedef void (*SPF_Camera_SetInteriorFovSetting_t)(float val);
+
+/**
+ * @brief Gets the dynamic FOV enabled state of the interior camera.
+ * @param[out] out_val Pointer to store the enabled state.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorDynamicFovEnabled_t)(bool* out_val);
+
+/**
+ * @brief Sets the dynamic FOV enabled state of the interior camera.
+ * @details This is a wrapper that sets InteriorSpeedFovChangeFactor to one while caching the current value;
+ *          when enabled the current value is restored. Use this if you change the FOV programmatically while
+ *          the vehicle is moving and the game tries to overwrite your FOV.
+ * @param val The new enabled state.
+ */
+typedef void (*SPF_Camera_SetInteriorDynamicFovEnabled_t)(bool val);
+
 // --- Azimuth Overrides ---
 
 /**
@@ -2250,6 +2343,28 @@ typedef struct SPF_Camera_API {
   /** @brief Gets/Sets specific points in the TV camera shake animation. */
   SPF_Camera_GetTVShakeAnim_t Cam_GetTVShakeAnim;
   SPF_Camera_SetTVShakeAnim_t Cam_SetTVShakeAnim;
+
+
+  // --- New Interior Advanced Settings ---
+  /** @brief Gets the real (effective) FOV of the interior camera. */
+  SPF_Camera_GetInteriorFovReal_t Cam_GetInteriorFovReal;
+  /** @brief Gets/Sets the zoom on/off state of the interior camera. */
+  SPF_Camera_GetInteriorZoomOnOff_t Cam_GetInteriorZoomOnOff;
+  /** @brief Gets/Sets the live zoom position of the interior camera. */
+  SPF_Camera_GetInteriorZoomLive_t Cam_GetInteriorZoomLive;
+  SPF_Camera_SetInteriorZoomLive_t Cam_SetInteriorZoomLive;
+  /** @brief Gets/Sets the speed FOV change factor of the interior camera. */
+  SPF_Camera_GetInteriorSpeedFovChangeFactor_t Cam_GetInteriorSpeedFovChangeFactor;
+  SPF_Camera_SetInteriorSpeedFovChangeFactor_t Cam_SetInteriorSpeedFovChangeFactor;
+  /** @brief Gets/Sets the maximum FOV of the interior camera. */
+  SPF_Camera_GetInteriorMaxFov_t Cam_GetInteriorMaxFov;
+  SPF_Camera_SetInteriorMaxFov_t Cam_SetInteriorMaxFov;
+  /** @brief Gets/Sets the FOV setting of the interior camera. */
+  SPF_Camera_GetInteriorFovSetting_t Cam_GetInteriorFovSetting;
+  SPF_Camera_SetInteriorFovSetting_t Cam_SetInteriorFovSetting;
+  /** @brief Gets/Sets the dynamic FOV enabled state of the interior camera. */
+  SPF_Camera_GetInteriorDynamicFovEnabled_t Cam_GetInteriorDynamicFovEnabled;
+  SPF_Camera_SetInteriorDynamicFovEnabled_t Cam_SetInteriorDynamicFovEnabled;  
 
 } SPF_Camera_API;
 

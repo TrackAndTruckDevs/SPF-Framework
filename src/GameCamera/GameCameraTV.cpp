@@ -34,11 +34,6 @@ void GameCameraTV::Update(float dt) {
   if (!m_pCameraObject) return;
 }
 
-void GameCameraTV::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
-
 void GameCameraTV::SetMaxDistance(float distance) {
   if (!m_pCameraObject) return;
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();

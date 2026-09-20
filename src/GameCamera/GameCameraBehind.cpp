@@ -41,11 +41,6 @@ void GameCameraBehind::Update(float dt) {
   // It can be used for other per-frame logic if needed in the future.
 }
 
-void GameCameraBehind::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
-
 void GameCameraBehind::StoreDefaultState() {
   if (m_defaultsSaved || !m_pCameraObject) return;
 
@@ -263,6 +258,8 @@ void GameCameraBehind::SetFov(float fov) {
   if (!m_pCameraObject) return;
   m_fovOverrideActive = true;
   m_fovOverrideValue = fov;
+  if (!m_pCameraObject || !m_fovOverrideActive) return;
+  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
   ApplyCoreCameraFov(m_pCameraObject, fov);
 }
 

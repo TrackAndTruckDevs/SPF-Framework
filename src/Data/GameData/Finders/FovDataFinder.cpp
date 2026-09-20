@@ -54,7 +54,7 @@ const char* VERT_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
  * different object, r14); the second is the target read, with its displacement wildcarded
  * so it can be re-extracted if it moves in a future game version.
  */
-const char* FOV_ZOOM_BASE_SIG = "F3 41 0F 10 AE 5C 1E 00 00 F3 44 0F 10 80 ? ? ? ?";
+const char* FOV_ZOOM_BASE_SIG = "F3 41 0F 10 AE ? ? ? ? F3 44 0F 10 80";
 
 }  // namespace
 
@@ -122,6 +122,59 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       int32_t zoomBaseOffset = PatternFinder::ReadInt32(zoomAddr + 14);
       if (phase.StepOffsetOptional(zoomBaseOffset, "FovZoomBaseOffset", "OFF")) {
         owner.SetFovZoomBaseOffset(zoomBaseOffset);
+      }
+
+      // ── Phase 4b: FOV Zoom Live (current zoom position, written while zooming) ──
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1405e9640[1405e9640]) ---/
+       * 1405e9a2e  F3 41 0F 10 AE 5C 1E 00 00    MOVSS XMM5,dword ptr [R14 + 0x1e5c]
+       */
+      int32_t zoomLiveOffset = PatternFinder::ReadInt32(zoomAddr + 5);
+      if (phase.StepOffsetOptional(zoomLiveOffset, "FovZoomLiveOffset", "OFF")) {
+        owner.SetZoomLiveOffset(zoomLiveOffset);
+      }
+
+      // ── Phase 4c: FOV Zoom On/Off (zoom toggle byte) ──
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1405e9640[1405e9640]) ---/
+       * 1405e9908  41 88 9E 59 1E 00 00          MOV byte ptr [R14 + 0x1e59],BL
+       * 1405e990f  0F B6 C3                      MOVZX EAX,BL
+       */
+      uintptr_t zoomStatusAddr = PatternFinder::FindBackward(zoomAddr, 312, "41 [MOV [r64+off32], r8] [MOVZX r32, r8]");
+      if (phase.StepOptional(zoomStatusAddr, "FOV Zoom On/Off Anchor", "RT")) {
+        int32_t zoomOnOffOffset = PatternFinder::ReadInt32(zoomStatusAddr + 3);
+        if (phase.StepOffsetOptional(zoomOnOffOffset, "FovZoomOnOffOffset", "OFF")) {
+          owner.SetZoomOnOffOffset(zoomOnOffOffset);
+        }
+      }
+
+      // ── Phase 5: FOV Setting (game adds this to the default FOV to get the current FOV) ──
+      // /--- Ghidra:(eurotrucks2_1.61.1.0s.exe) ---/
+      // 1405e982a  48 8B 88 F8 01 00 00  MOV RCX,qword ptr [RAX + 0x1f8]
+      // 1405e9831  F3 44 0F 10 91 FC 01  MOVSS XMM10,dword ptr [RCX + 0x1fc]
+      //     00 00
+      // Search backwards from the zoom reference base anchor for [MOV r64, [r64+off32]] followed
+      // by an F3 (MOVSS) instruction. Extract the pointer offset (0x1f8) at match+3 and the value
+      // offset (0x1fc) at match+11.
+      uintptr_t speedAddr = PatternFinder::FindBackward(zoomAddr, 600, "[MOV r64, [r64+off32]] F3");
+      if (phase.StepOptional(speedAddr, "FOV Setting Anchor (ptr+val)", "RT")) {
+        int32_t settingPtrOffset = PatternFinder::ReadInt32(speedAddr + 3);
+        int32_t settingValOffset = PatternFinder::ReadInt32(speedAddr + 12);
+        if (phase.StepOffsetOptional(settingPtrOffset, "FovSettingPtrOffset", "OFF")) {
+          owner.SetFovSettingPtrOffset(settingPtrOffset);
+        }
+        if (phase.StepOffsetOptional(settingValOffset, "FovSettingValOffset", "OFF")) {
+          owner.SetFovSettingValOffset(settingValOffset);
+        }
+
+        // ── Phase 6: FOV Setting owner pointer (game reads the setting object through this) ──
+        // /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1405e9640[1405e9640]) ---/
+        // 1405e9811  49 8B 46 18  MOV RAX,qword ptr [R14 + 0x18]
+        uintptr_t ownerAddr = PatternFinder::FindBackward(speedAddr, 64, "[MOV r64, [r64+off8]]");
+        if (phase.StepOptional(ownerAddr, "FOV Setting Owner Anchor", "RT")) {
+          int8_t settingOwnerOffset = PatternFinder::ReadInt8(ownerAddr + 3);
+          if (phase.StepOffsetOptional(settingOwnerOffset, "FovSettingOwnerOffset", "OFF")) {
+            owner.SetFovSettingOwnerOffset(settingOwnerOffset);
+          }
+        }
       }
     }
   }

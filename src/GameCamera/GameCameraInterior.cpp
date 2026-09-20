@@ -1,8 +1,10 @@
 #include "SPF/GameCamera/GameCameraInterior.hpp"
 
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
+#include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include <cstddef>
@@ -48,10 +50,6 @@ void GameCameraInterior::Update(float dt) {
   // It can be used for other per-frame logic if needed in the future.
 }
 
-void GameCameraInterior::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
 
 void GameCameraInterior::SetSeatPosition(float x, float y, float z) {
   if (!m_pCameraObject) return;
@@ -93,6 +91,20 @@ void GameCameraInterior::SetFov(float fov) {
   if (!m_pCameraObject) return;
   m_fovOverrideActive = true;
   m_fovOverrideValue = fov;
+
+  // Set the camera FOV by adjusting the FOV setting (the additive offset
+  // stored in camera settings) so the game composes the final FOV itself.
+  // Interior camera only.
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto zoomBaseOffset = gameData.GetFovZoomBaseOffset();
+  if (!zoomBaseOffset) return;
+
+  // Store the additive delta (target minus base) so the game rebuilds
+  // the live FOV as base + setting.
+  float base = *reinterpret_cast<float*>(pCam + zoomBaseOffset);
+  SetFovSetting(fov - base);
+
   ApplyCoreCameraFov(m_pCameraObject, fov);
 }
 
@@ -170,6 +182,8 @@ void GameCameraInterior::StoreDefaultState() {
 
   if (GetZoomFovFactor(&val)) m_defaultCameraData.zoom_fov_factor = val;
   if (GetZoomSpeed(&val)) m_defaultCameraData.zoom_speed = val;
+  if (GetSpeedFovChangeFactor(&val)) m_defaultCameraData.speed_fov_change_factor = val;
+  if (GetMaxFov(&val)) m_defaultCameraData.max_fov = val;
 
   // --- Store Array Defaults ---
   m_defaultCameraData.azimuth_overrides_defaults.clear();
@@ -230,6 +244,8 @@ void GameCameraInterior::ResetToDefaults() {
   SetHandShakeSpeed(m_defaultCameraData.hand_shake_speed);
   SetZoomFovFactor(m_defaultCameraData.zoom_fov_factor);
   SetZoomSpeed(m_defaultCameraData.zoom_speed);
+  SetSpeedFovChangeFactor(m_defaultCameraData.speed_fov_change_factor);
+  SetMaxFov(m_defaultCameraData.max_fov);
 
   // --- Restore Array Defaults ---
   size_t current_azimuth_count = GetAzimuthOverridesCount();
@@ -310,13 +326,31 @@ bool GameCameraInterior::GetFov(float* out_fov) const {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
 
-  auto fov_base_offset = gameData.GetFovBaseOffset();
+  auto fov_base_offset = gameData.GetFovZoomBaseOffset();
+  if (!fov_base_offset) return false;
 
-  if (fov_base_offset) {
-    *out_fov = *reinterpret_cast<float*>(pCam + fov_base_offset);
-    return true;
-  }
-  return false;
+  float setting = 0.0f;
+  if (!GetFovSetting(&setting)) return false;
+
+  // The resulting FOV is composed as: default/base FOV plus the
+  // additive FOV setting from camera settings.
+  *out_fov = *reinterpret_cast<float*>(pCam + fov_base_offset) + setting;
+  return true;
+}
+
+bool GameCameraInterior::GetFovReal(float* out_fov) const {
+  if (!out_fov) return false;
+  if (!m_pCameraObject) return false;
+
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+
+  auto fov_offset = gameData.GetFovBaseOffset();
+  if (!fov_offset) return false;
+
+  // Read the live FOV (+0x20) directly, as written by the game each frame.
+  *out_fov = *reinterpret_cast<float*>(pCam + fov_offset);
+  return true;
 }
 
 bool GameCameraInterior::GetRotationLimits(float* out_left, float* out_right, float* out_up, float* out_down) const {
@@ -620,6 +654,166 @@ void GameCameraInterior::SetZoomSpeed(float val) {
   uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
   auto offset = gameData.GetZoomSpeedOffset();
   if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetZoomOnOff(bool* out_val) const {
+  if (!out_val) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto& manager = Data::GameData::ManagerCoreService::GetInstance();
+  auto ctxOffset = gameData.GetFreecamContextOffset();
+  auto offset = gameData.GetZoomOnOffOffset();
+  if (!ctxOffset || !offset) return false;
+  uintptr_t slot = manager.GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return false;
+  uintptr_t gm = *reinterpret_cast<uintptr_t*>(slot);
+  if (!gm) return false;
+  uintptr_t pCam = *reinterpret_cast<uintptr_t*>(gm + ctxOffset);
+  if (!pCam) return false;
+  *out_val = *reinterpret_cast<uint8_t*>(pCam + offset) != 0;
+  return true;
+}
+
+void GameCameraInterior::SetZoomOnOff(bool val) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto& manager = Data::GameData::ManagerCoreService::GetInstance();
+  auto ctxOffset = gameData.GetFreecamContextOffset();
+  auto offset = gameData.GetZoomOnOffOffset();
+  if (!ctxOffset || !offset) return;
+  uintptr_t slot = manager.GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return;
+  uintptr_t gm = *reinterpret_cast<uintptr_t*>(slot);
+  if (!gm) return;
+  uintptr_t pCam = *reinterpret_cast<uintptr_t*>(gm + ctxOffset);
+  if (!pCam) return;
+  *reinterpret_cast<uint8_t*>(pCam + offset) = val ? 1 : 0;
+}
+
+bool GameCameraInterior::GetZoomLive(float* out_val) const {
+  if (!out_val) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto& manager = Data::GameData::ManagerCoreService::GetInstance();
+  auto ctxOffset = gameData.GetFreecamContextOffset();
+  auto offset = gameData.GetZoomLiveOffset();
+  if (!ctxOffset || !offset) return false;
+  uintptr_t slot = manager.GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return false;
+  uintptr_t gm = *reinterpret_cast<uintptr_t*>(slot);
+  if (!gm) return false;
+  uintptr_t pCam = *reinterpret_cast<uintptr_t*>(gm + ctxOffset);
+  if (!pCam) return false;
+  *out_val = *reinterpret_cast<float*>(pCam + offset);
+  return true;
+}
+
+void GameCameraInterior::SetZoomLive(float val) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto& manager = Data::GameData::ManagerCoreService::GetInstance();
+  auto ctxOffset = gameData.GetFreecamContextOffset();
+  auto offset = gameData.GetZoomLiveOffset();
+  if (!ctxOffset || !offset) return;
+  uintptr_t slot = manager.GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return;
+  uintptr_t gm = *reinterpret_cast<uintptr_t*>(slot);
+  if (!gm) return;
+  uintptr_t pCam = *reinterpret_cast<uintptr_t*>(gm + ctxOffset);
+  if (!pCam) return;
+  *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetSpeedFovChangeFactor(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorSpeedFovChangeFactorOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetSpeedFovChangeFactor(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorSpeedFovChangeFactorOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetMaxFov(float* out_val) const {
+  if (!out_val || !m_pCameraObject) return false;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorMaxFovOffset();
+  if (offset) {
+    *out_val = *reinterpret_cast<float*>(pCam + offset);
+    return true;
+  }
+  return false;
+}
+
+void GameCameraInterior::SetMaxFov(float val) {
+  if (!m_pCameraObject) return;
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  uintptr_t pCam = reinterpret_cast<uintptr_t>(m_pCameraObject);
+  auto offset = gameData.GetInteriorMaxFovOffset();
+  if (offset) *reinterpret_cast<float*>(pCam + offset) = val;
+}
+
+bool GameCameraInterior::GetFovSetting(float* out_val) const {
+  if (!out_val) return false;
+  float* addr = GetFovSettingAddr();
+  if (!addr) return false;
+  *out_val = *addr;
+  return true;
+}
+
+void GameCameraInterior::SetFovSetting(float val) {
+  float* addr = GetFovSettingAddr();
+  if (addr) *addr = val;
+}
+
+bool GameCameraInterior::GetDynamicFovEnabled(bool* out_val) const {
+  if (!out_val) return false;
+  *out_val = m_dynamicFovActive;
+  return true;
+}
+
+void GameCameraInterior::SetDynamicFovEnabled(bool enabled) {
+  if (enabled == m_dynamicFovActive) return;
+
+  if (enabled) {
+    // Re-enable: restore the cached speed FOV change factor.
+    SetSpeedFovChangeFactor(m_cachedSpeedFovChangeFactor);
+    m_dynamicFovActive = true;
+  } else {
+    // Disable: cache the current factor and force it to 1.0 (no dynamic FOV).
+    float factor = 0.0f;
+    if (GetSpeedFovChangeFactor(&factor)) m_cachedSpeedFovChangeFactor = factor;
+    SetSpeedFovChangeFactor(1.0f);
+    m_dynamicFovActive = false;
+  }
+}
+
+float* GameCameraInterior::GetFovSettingAddr() const {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  auto& manager = Data::GameData::ManagerCoreService::GetInstance();
+  auto ctxOffset = gameData.GetFreecamContextOffset();
+  auto ownerOffset = gameData.GetFovSettingOwnerOffset();
+  auto ptrOffset = gameData.GetFovSettingPtrOffset();
+  auto valOffset = gameData.GetFovSettingValOffset();
+  if (!ctxOffset || !ownerOffset || !ptrOffset || !valOffset) return nullptr;
+  uintptr_t slot = manager.GetGameplayManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(slot)) return nullptr;
+  uintptr_t gm = *reinterpret_cast<uintptr_t*>(slot);
+  if (!gm) return nullptr;
+  uintptr_t ctx = *reinterpret_cast<uintptr_t*>(gm + ctxOffset);
+  if (!ctx) return nullptr;
+  uintptr_t owner = *reinterpret_cast<uintptr_t*>(ctx + ownerOffset);
+  if (!owner) return nullptr;
+  uintptr_t ptr = *reinterpret_cast<uintptr_t*>(owner + ptrOffset);
+  if (!ptr) return nullptr;
+  return reinterpret_cast<float*>(ptr + valOffset);
 }
 
 // --- Public API for Azimuth Overrides ---

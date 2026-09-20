@@ -8,16 +8,16 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
-#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
-#include "SPF/Fmod/FmodApi.hpp"
-#include "SPF/Fmod/FmodStudioHook.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Events/UIEvents.hpp"
+#include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Fmod/FmodStudioHook.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
@@ -839,12 +839,6 @@ void Core::Update() {
   //  Update CommunicationManager to process async results
   if (m_communicationManager) {
     m_communicationManager->Update();
-  }
-
-  // Runs right before the UI is drawn, i.e. after the game's own per-frame camera
-  // computations for this frame — lets camera overrides win instead of racing them.
-  if (GameCameraManager::GetInstance().IsInstalled()) {
-    GameCameraManager::GetInstance().LateUpdate();
   }
 }
 

@@ -191,6 +191,8 @@ void GameDataCameraService::Shutdown() {
   m_interior_azimuth_overrides_offset = 0;
   m_zoom_fov_factor_offset = 0;
   m_zoom_speed_offset = 0;
+  m_interior_speed_fov_change_factor_offset = 0;
+  m_interior_max_fov_offset = 0;
   m_azimuth_range_outside_offset = 0;
   m_azimuth_range_start_azimuth_offset = 0;
   m_azimuth_range_end_azimuth_offset = 0;

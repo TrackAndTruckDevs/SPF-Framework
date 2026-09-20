@@ -41,6 +41,8 @@ class GameCameraInterior : public IGameCamera {
     float hand_shake_speed = 0.0f;
     float zoom_fov_factor = 0.0f;
     float zoom_speed = 0.0f;
+    float speed_fov_change_factor = 0.0f;
+    float max_fov = 0.0f;
 
     struct AzimuthRangeData {
       float start_azimuth, end_azimuth;
@@ -68,7 +70,6 @@ class GameCameraInterior : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
-  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::InteriorCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;
@@ -77,6 +78,7 @@ class GameCameraInterior : public IGameCamera {
   bool GetSeatPosition(float* out_x, float* out_y, float* out_z) const;
   bool GetHeadRotation(float* out_yaw, float* out_pitch) const;
   bool GetFov(float* out_fov) const;
+  bool GetFovReal(float* out_fov) const;
   bool GetFinalFov(float* out_horiz, float* out_vert) const;
   bool GetRotationLimits(float* out_left, float* out_right, float* out_up, float* out_down) const;
   bool GetRotationDefaults(float* out_lr, float* out_ud) const;
@@ -116,6 +118,22 @@ class GameCameraInterior : public IGameCamera {
   void SetZoomFovFactor(float val);
   bool GetZoomSpeed(float* out_val) const;
   void SetZoomSpeed(float val);
+  bool GetZoomOnOff(bool* out_val) const;
+  void SetZoomOnOff(bool val);
+  bool GetZoomLive(float* out_val) const;
+  void SetZoomLive(float val);
+  bool GetSpeedFovChangeFactor(float* out_val) const;
+  void SetSpeedFovChangeFactor(float val);
+  bool GetMaxFov(float* out_val) const;
+  void SetMaxFov(float val);
+  bool GetFovSetting(float* out_val) const;
+  void SetFovSetting(float val);
+
+  // Dynamic FOV on/off: when disabled the speed FOV change factor is forced
+  // to 1.0 (no speed-based FOV change) and the previous value is cached;
+  // when re-enabled the cached value is restored.
+  bool GetDynamicFovEnabled(bool* out_val) const;
+  void SetDynamicFovEnabled(bool enabled);
 
   // --- Shake Individual API ---
   size_t GetAzimuthOverridesCount() const;
@@ -169,6 +187,10 @@ class GameCameraInterior : public IGameCamera {
   const CameraData& GetDefaults() const { return m_defaultCameraData; }
 
  private:
+  // Resolves the chain to the live FovSetting float (value at +0x1FC).
+  // Returns nullptr when any link in the chain is unavailable.
+  float* GetFovSettingAddr() const;
+
   // Pointer to the raw game camera object.
   void* m_pCameraObject = nullptr;
   // Local copy of the camera's data, updated each frame.
@@ -182,5 +204,9 @@ class GameCameraInterior : public IGameCamera {
   // frame from Update() makes our value win instead of chasing the native write site.
   bool m_fovOverrideActive = false;
   float m_fovOverrideValue = 0.0f;
+
+  // Cached speed FOV change factor while dynamic FOV is disabled.
+  bool m_dynamicFovActive = true;
+  float m_cachedSpeedFovChangeFactor = 0.0f;
 };
 }  // namespace SPF::GameCamera

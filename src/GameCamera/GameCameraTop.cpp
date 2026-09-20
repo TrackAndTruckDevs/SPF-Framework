@@ -37,11 +37,6 @@ void GameCameraTop::Update(float dt) {
   if (!m_pCameraObject) return;
 }
 
-void GameCameraTop::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
-
 void GameCameraTop::StoreDefaultState() {
   if (m_defaultsSaved || !m_pCameraObject) return;
 

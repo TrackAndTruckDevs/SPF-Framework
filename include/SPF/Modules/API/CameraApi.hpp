@@ -208,6 +208,20 @@ class CameraApi {
   static bool T_Camera_GetInteriorZoomSpeed(float* out_val);
   static void T_Camera_SetInteriorZoomSpeed(float val);
 
+  // --- New Interior Advanced Settings ---
+  static bool T_Camera_GetInteriorFovReal(float* out_val);
+  static bool T_Camera_GetInteriorZoomOnOff(bool* out_val);
+  static bool T_Camera_GetInteriorZoomLive(float* out_val);
+  static void T_Camera_SetInteriorZoomLive(float val);
+  static bool T_Camera_GetInteriorSpeedFovChangeFactor(float* out_val);
+  static void T_Camera_SetInteriorSpeedFovChangeFactor(float val);
+  static bool T_Camera_GetInteriorMaxFov(float* out_val);
+  static void T_Camera_SetInteriorMaxFov(float val);
+  static bool T_Camera_GetInteriorFovSetting(float* out_val);
+  static void T_Camera_SetInteriorFovSetting(float val);
+  static bool T_Camera_GetInteriorDynamicFovEnabled(bool* out_val);
+  static void T_Camera_SetInteriorDynamicFovEnabled(bool val);
+
   // --- Azimuth Overrides Trampolines ---
   static size_t T_Camera_GetInteriorAzimuthOverridesCount();
   static void* T_Camera_GetInteriorAzimuthOverrideAddress(size_t index);

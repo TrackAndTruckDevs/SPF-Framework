@@ -60,6 +60,9 @@ class CameraWindow : public BaseWindow {
 
   // Interior Camera
   std::string m_locFovZoom;
+  std::string m_locFovReal;
+  std::string m_locFovSetting;
+  std::string m_locDynamicFov;
   std::string m_locBaseFov;
   std::string m_locBaseFovNotFound;
   std::string m_locFinalHFov;
@@ -106,6 +109,10 @@ class CameraWindow : public BaseWindow {
   std::string m_locHandShakeSpeed;
   std::string m_locZoomFovFactor;
   std::string m_locZoomSpeedInterior;
+  std::string m_locZoomOnOff;
+  std::string m_locZoomLive;
+  std::string m_locSpeedFovChangeFactor;
+  std::string m_locMaxFov;
   std::string m_locAzimuthOverrides;
   std::string m_locRangeStartAzimuth;
   std::string m_locRangeEndAzimuth;

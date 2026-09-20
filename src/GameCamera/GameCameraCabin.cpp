@@ -35,11 +35,6 @@ void GameCameraCabin::Update(float dt) {
   if (!m_pCameraObject) return;
 }
 
-void GameCameraCabin::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
-}
-
 void GameCameraCabin::SetFov(float fov) {
   if (!m_pCameraObject) return;
   m_fovOverrideActive = true;

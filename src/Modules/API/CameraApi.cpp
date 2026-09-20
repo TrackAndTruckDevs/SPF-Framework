@@ -1066,6 +1066,99 @@ void CameraApi::T_Camera_SetInteriorZoomSpeed(float val) {
   }
 }
 
+// --- New Interior Advanced Settings ---
+
+bool CameraApi::T_Camera_GetInteriorFovReal(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetFovReal(out_val);
+  }
+  return false;
+}
+
+bool CameraApi::T_Camera_GetInteriorZoomOnOff(bool* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetZoomOnOff(out_val);
+  }
+  return false;
+}
+
+bool CameraApi::T_Camera_GetInteriorZoomLive(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetZoomLive(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorZoomLive(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetZoomLive(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorSpeedFovChangeFactor(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetSpeedFovChangeFactor(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorSpeedFovChangeFactor(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetSpeedFovChangeFactor(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorMaxFov(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetMaxFov(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorMaxFov(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetMaxFov(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorFovSetting(float* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetFovSetting(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorFovSetting(float val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetFovSetting(val);
+  }
+}
+
+bool CameraApi::T_Camera_GetInteriorDynamicFovEnabled(bool* out_val) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interior->GetDynamicFovEnabled(out_val);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorDynamicFovEnabled(bool enabled) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interior = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interior->SetDynamicFovEnabled(enabled);
+  }
+}
+
 // --- Azimuth Overrides Trampolines ---
 
 size_t CameraApi::T_Camera_GetInteriorAzimuthOverridesCount() {
@@ -2236,6 +2329,20 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_SetInteriorZoomFovFactor = &T_Camera_SetInteriorZoomFovFactor;
   camera_api->Cam_GetInteriorZoomSpeed = &T_Camera_GetInteriorZoomSpeed;
   camera_api->Cam_SetInteriorZoomSpeed = &T_Camera_SetInteriorZoomSpeed;
+
+  // New Interior Advanced Settings
+  camera_api->Cam_GetInteriorFovReal = &T_Camera_GetInteriorFovReal;
+  camera_api->Cam_GetInteriorZoomOnOff = &T_Camera_GetInteriorZoomOnOff;
+  camera_api->Cam_GetInteriorZoomLive = &T_Camera_GetInteriorZoomLive;
+  camera_api->Cam_SetInteriorZoomLive = &T_Camera_SetInteriorZoomLive;
+  camera_api->Cam_GetInteriorSpeedFovChangeFactor = &T_Camera_GetInteriorSpeedFovChangeFactor;
+  camera_api->Cam_SetInteriorSpeedFovChangeFactor = &T_Camera_SetInteriorSpeedFovChangeFactor;
+  camera_api->Cam_GetInteriorMaxFov = &T_Camera_GetInteriorMaxFov;
+  camera_api->Cam_SetInteriorMaxFov = &T_Camera_SetInteriorMaxFov;
+  camera_api->Cam_GetInteriorFovSetting = &T_Camera_GetInteriorFovSetting;
+  camera_api->Cam_SetInteriorFovSetting = &T_Camera_SetInteriorFovSetting;
+  camera_api->Cam_GetInteriorDynamicFovEnabled = &T_Camera_GetInteriorDynamicFovEnabled;
+  camera_api->Cam_SetInteriorDynamicFovEnabled = &T_Camera_SetInteriorDynamicFovEnabled;
 
   // Azimuth Overrides
   camera_api->Cam_GetInteriorAzimuthOverridesCount = &T_Camera_GetInteriorAzimuthOverridesCount;
