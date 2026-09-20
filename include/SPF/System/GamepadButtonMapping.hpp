@@ -1,16 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/System/GamepadButton.hpp"
 
 #include <string>
 #include <unordered_map>
 
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 // Enum to identify the type of controller for providing correct button glyphs/names.
 enum class DeviceType {
   Unknown,
@@ -59,6 +54,4 @@ class GamepadButtonMapping {
   std::unordered_map<GamepadButton, std::string> m_xboxNames;
   std::unordered_map<GamepadButton, std::string> m_playstationNames;
 };
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

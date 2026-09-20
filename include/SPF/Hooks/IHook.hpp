@@ -1,17 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Config {
-class IConfigService;
-}  // namespace Config
-
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @class IHook
  * @brief An interface for a manageable, configurable feature hook.
@@ -36,5 +27,4 @@ class IHook {
   virtual void Uninstall() = 0;
   virtual void Remove() = 0;
 };
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

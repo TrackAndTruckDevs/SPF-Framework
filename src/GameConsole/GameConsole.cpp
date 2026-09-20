@@ -1,7 +1,5 @@
 #include "SPF/GameConsole/GameConsole.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
@@ -9,8 +7,6 @@
 #include <cstdint>
 #include <psapi.h>
 #include <string>
-
-SPF_NS_BEGIN
 
 GameConsole& GameConsole::GetInstance() {
   static GameConsole instance;
@@ -22,7 +18,7 @@ bool GameConsole::Install() {
     return true;  // Already installed
   }
 
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+  auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger(m_name);
 
   /**
    * SEARCH STRATEGY (Verified for Game Version 1.60):
@@ -44,9 +40,9 @@ bool GameConsole::Install() {
    * 1401dc890 40 53          PUSH RBX
    * 1401dc892 48 81 ec ...   SUB RSP, 0xc40
    */
-  uintptr_t address = Utils::PatternFinder::FindFunctionByString(m_stringSignature.c_str(),
-                                                                 true,                // Auto-backtrack to PUSH RBX / SUB RSP
-                                                                 m_signature.c_str()  // Context: CALL + XOR AL, AL
+  uintptr_t address = SPF::Utils::PatternFinder::FindFunctionByString(m_stringSignature.c_str(),
+                                                                      true,                // Auto-backtrack to PUSH RBX / SUB RSP
+                                                                      m_signature.c_str()  // Context: CALL + XOR AL, AL
   );
 
   if (address) {
@@ -62,7 +58,7 @@ bool GameConsole::Install() {
 
 void GameConsole::Uninstall() {
   if (m_hookedAddress != 0) {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+    auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger(m_name);
     logger->Info("Service disabled, clearing function pointer.");
     m_ExecuteGameCommand = nullptr;
     m_hookedAddress = 0;
@@ -79,8 +75,7 @@ void GameConsole::Execute(const std::string& command) {
     const char* pCommand = command.c_str();
     m_ExecuteGameCommand(&pCommand, 0xffffffff);
   } else {
-    auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+    auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger(m_name);
     logger->Warn("Attempted to execute command while service is not active: {}", command);
   }
 }
-SPF_NS_END

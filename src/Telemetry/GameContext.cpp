@@ -1,14 +1,11 @@
 #include "SPF/Telemetry/GameContext.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Game.hpp"
 
 #include <cstdint>
 #include <cstring>  // For strcmp
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 GameContext::GameContext(const char* gameId, uint32_t gameVersion) : m_version(gameVersion) {
   if (strcmp(gameId, "eut2") == 0) {
     m_game = Game::ETS2;
@@ -30,5 +27,4 @@ bool GameContext::IsAdblueSupported() const {
 
 Game GameContext::GetGame() const { return m_game; }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

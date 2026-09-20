@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 class ISessionDataFinder;  // Forward declaration
 
@@ -61,5 +57,4 @@ class GameObjectSessionService {
   std::vector<std::unique_ptr<ISessionDataFinder>> m_dataFinders;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

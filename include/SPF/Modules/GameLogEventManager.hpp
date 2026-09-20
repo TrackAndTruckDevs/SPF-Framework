@@ -1,12 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <mutex>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 class GameLogEventManager {
  public:
@@ -53,5 +50,4 @@ class GameLogEventManager {
   mutable std::mutex m_mutex;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

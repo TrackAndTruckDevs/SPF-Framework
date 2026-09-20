@@ -1,8 +1,8 @@
 #include "SPF/Hooks/OpenGLHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include <GL/gl.h>
@@ -14,8 +14,7 @@
 
 #pragma comment(lib, "opengl32.lib")
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 using namespace SPF::Logging;
 
 namespace {
@@ -152,6 +151,7 @@ BOOL WINAPI new_wglSwapBuffers(HDC hDC) {
     SetPropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProcOpenGL);
     logger->Info("Original OpenGL WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProcOpenGL));
 
+    DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::OpenGL);
     OpenGLHook::OnInit.Call(hDC);
   }
 
@@ -174,5 +174,4 @@ LRESULT CALLBACK WndProcOpenGL(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 }
 
 }  // namespace
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/BehindCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/BumperCameraDataFinder.hpp"
 #include "SPF/Data/GameData/Finders/CabinCameraDataFinder.hpp"
@@ -26,8 +24,7 @@
 #include <cstring>
 #include <memory>
 
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 GameDataCameraService::GameDataCameraService() { WorldServiceRegistry::Get().Register(this); }
 
@@ -194,6 +191,8 @@ void GameDataCameraService::Shutdown() {
   m_interior_azimuth_overrides_offset = 0;
   m_zoom_fov_factor_offset = 0;
   m_zoom_speed_offset = 0;
+  m_interior_speed_fov_change_factor_offset = 0;
+  m_interior_max_fov_offset = 0;
   m_azimuth_range_outside_offset = 0;
   m_azimuth_range_start_azimuth_offset = 0;
   m_azimuth_range_end_azimuth_offset = 0;
@@ -353,5 +352,4 @@ void GameDataCameraService::Reset() {
     finder->Reset();
   }
 }
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

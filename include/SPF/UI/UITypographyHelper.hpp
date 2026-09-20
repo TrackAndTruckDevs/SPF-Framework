@@ -1,17 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "imgui.h"
 
 #include <cstdarg>
 #include <optional>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 enum class TextAlign { Left, Center, Right };
 
@@ -181,5 +176,4 @@ class Typography {
  private:
 };
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

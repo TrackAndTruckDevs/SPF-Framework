@@ -1,7 +1,5 @@
 #include "SPF/UI/PluginsWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -26,9 +24,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 
 PluginsWindow::PluginsWindow(const std::string& componentName, const std::string& windowId, Config::IConfigService& configService, Events::EventManager& eventManager)
@@ -388,6 +384,4 @@ void PluginsWindow::RenderContent() {
     ImGui::EndTable();
   }
 }
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

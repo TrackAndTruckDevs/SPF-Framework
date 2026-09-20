@@ -1,12 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Modules/IBindableInput.hpp"
 
 #include <string>
 
-SPF_NS_BEGIN
+namespace SPF {
 namespace Config {
 struct IConfigService;
 }
@@ -38,4 +36,4 @@ std::string GetDisplayNameWithIcon(const IBindableInput& input);
 std::string GetTranslatedActionName(Config::IConfigService& configService, const std::string& fullActionName);
 
 }  // namespace Modules
-SPF_NS_END
+}  // namespace SPF

@@ -1,7 +1,5 @@
 #include "SPF/Core/Core.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
@@ -11,12 +9,15 @@
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
-#include "SPF/Events/Proxies/WndProcEventProxy.hpp"
+#include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/Events/UIEvents.hpp"
+#include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Fmod/FmodStudioHook.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
@@ -34,11 +35,11 @@
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
+#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
-#include "SPF/System/SelfUpdater.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 #include "SPF/UI/ImGuiInputConsumer.hpp"
@@ -76,8 +77,7 @@ using namespace SPF::Input;
 using namespace SPF::GameCamera;
 using namespace SPF::Data::GameData;
 
-SPF_NS_BEGIN
-namespace Core {
+namespace SPF::Core {
 Core::Core(HMODULE module)
     : m_module(module),
       m_lifecycleState(LifecycleState::Stopped),
@@ -106,11 +106,9 @@ Core::Core(HMODULE module)
       ,
       m_onRequestUpdateCheckSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>>(m_eventManager->System.OnRequestUpdateCheck)),
       m_onRequestPatronsFetchSink(std::make_unique<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>>(m_eventManager->System.OnRequestPatronsFetch)),
-      m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
-      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
-      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)),
-      m_onPatchUpdateDetectedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>>(m_eventManager->System.OnPatchUpdateDetected)),
-      m_onPatchApplyCompletedSink(std::make_unique<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>>(m_eventManager->System.OnPatchApplyCompleted)) {}
+      m_onUpdateCheckCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnUpdateCheckCompleted&)>>(m_eventManager->System.OnUpdateCheckCompleted)),
+      m_onPatronsFetchCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnPatronsFetchCompleted&)>>(m_eventManager->System.OnPatronsFetchCompleted)),
+      m_onUsageTrackingCompletedSink(std::make_unique<Utils::Sink<void(const Events::OnUsageTrackingCompleted&)>>(m_eventManager->System.OnUsageTrackingCompleted)) {}
 
 Core::~Core() { FullShutdown(); }
 
@@ -140,9 +138,6 @@ void Core::Preload() {
 
   // Initialize EnvironmentManager early so framework information is available during UI initialization.
   EnvironmentManager::GetInstance().Initialize(m_module);
-
-  // Remove leftovers from a previous patch session (.old backup, temp files).
-  System::SelfUpdater::StartupCleanup();
 
   // Initialize services that do not depend on the game SDK.
   InitServices();
@@ -495,6 +490,9 @@ void Core::InitServices() {
   hookManager.RegisterFeatureHook(&GameLogHook::GetInstance());
   hookManager.RegisterFeatureHook(&GameConsole::GetInstance());
   hookManager.RegisterFeatureHook(&GameTools::ScsNameResolver::GetInstance());
+  hookManager.RegisterFeatureHook(&Fmod::FmodApi::GetInstance());
+  hookManager.RegisterFeatureHook(&Fmod::FmodStudioHook::GetInstance());
+  m_configService->ReconcileHookStates(hookManager.GetFeatureHooks(), nullptr);
   InitFeatureHooks();
   m_logger->Info("--- Core Services Initialized ---");
 }
@@ -506,7 +504,6 @@ void Core::InitManagersAndPlugins() {
   // Phase 1: Create session-based managers.
   m_logger->Info("-> [Init] Creating session manager instances (KeyBinds, UI)...");
   m_apiService = std::make_unique<System::ApiService>();
-  m_selfUpdater = std::make_unique<System::SelfUpdater>(*m_apiService);
   m_communicationManager = std::make_unique<Modules::CommunicationManager>(*m_eventManager, *m_apiService, *m_configService);
   m_keyBindsManager = std::make_unique<KeyBindsManager>(*m_inputManager, *m_eventManager);
   m_configurableServices.push_back(m_keyBindsManager.get());
@@ -609,35 +606,34 @@ void Core::InitUI() {
 void Core::InitHooks() {
   m_logger->Info("--- Initializing Low-Level Systems (Renderer and Hooks) ---");
 
-  // 1. Create the renderer. Its constructor will perform API detection.
-  m_logger->Info("-> [Init] Creating Renderer and detecting API...");
+  // 1. Create the renderer. API detection is deferred to first Present call via DXGIHook.
+  m_logger->Info("-> [Init] Creating Renderer...");
   m_renderer = std::make_unique<Renderer>(*this, *m_eventManager, UIManager::GetInstance());
   UIManager::GetInstance().SetRenderer(m_renderer.get());
-  auto detectedAPI = m_renderer->GetDetectedAPI();
 
   // 2. Initialize standalone services that don't depend on hooks.
-  m_logger->Info("-> [Init] Initializing standalone services...");
+  m_logger->Info("-> [Init] Installing standalone services...");
   GameDataCameraService::GetInstance().Initialize();
   GameObjectVehicleService::GetInstance().Initialize();
   GameWorldService::GetInstance().Initialize();
   ClimateService::GetInstance().Initialize();
+  SoundService::GetInstance().Initialize();
   ManagerCoreService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
-  // 4. Initialize core systems that may be used by hooks.
+  // 3. Initialize core systems that may be used by hooks.
   m_logger->Info("-> [Init] Initializing EventManager and InputManager...");
   m_eventManager->Init(*m_renderer);
   m_inputManager->Initialize();
 
-  // 5. Install hooks based on detected API.
+  // 4. Install hooks. DXGIHook uses runtime probe (GetDevice at first Present)
+  //    to detect D3D11 vs D3D12 — no static API detection needed.
   auto& hookManager = HookManager::GetInstance();
 
-  m_logger->Info("-> [Init] Installing graphics hooks for detected API...");
-  if (!hookManager.InstallGraphicsHooks(detectedAPI)) {
-    // If this fails, a critical error is already logged by the manager.
-    // We can't proceed with rendering.
-    m_logger->Error("Graphics hook installation failed. UI will not be available.");
+  m_logger->Info("-> [Init] Installing DXGI hook...");
+  if (!hookManager.InstallGraphicsHooks(Rendering::RenderAPI::Unknown)) {
+    m_logger->Error("DXGI hook installation failed. UI will not be available.");
   }
 
   m_logger->Info("-> [Init] Installing other system and feature hooks...");
@@ -645,9 +641,9 @@ void Core::InitHooks() {
     m_logger->Warn("Failed to install one or more system/feature hooks.");
   }
 
-  // 6. Finalize renderer initialization. This will create the specific implementation
-  // and connect to the now-installed graphics hook signals.
-  m_logger->Info("-> [Init] Initializing Renderer backend...");
+  // 5. Connect renderer to DXGIHook::OnAPIDetected. The renderer impl will be
+  //    created when DXGIHook fires OnAPIDetected on the first real Present call.
+  m_logger->Info("-> [Init] Connecting renderer to deferred API detection...");
   if (m_renderer) {
     m_renderer->Init();
   }
@@ -679,7 +675,6 @@ void Core::ShutdownUI() {
 void Core::ShutdownManagers() {
   m_logger->Info("--> Shutting down managers...");
   m_keyBindsManager.reset();
-  m_selfUpdater.reset();  // Drop any in-flight patch future before ApiService dies
   if (m_communicationManager) {
     // Cancel in-flight API requests and disconnect sinks before destruction.
     m_communicationManager->Shutdown();
@@ -720,8 +715,6 @@ void Core::ShutdownServices() {
   m_onUpdateCheckCompletedSink.reset();
   m_onPatronsFetchCompletedSink.reset();
   m_onUsageTrackingCompletedSink.reset();
-  m_onPatchUpdateDetectedSink.reset();
-  m_onPatchApplyCompletedSink.reset();
 
   // Config service is last, saving all pending changes to disk.
   m_logger->Info("    -> Saving configuration and shutting down ConfigService...");
@@ -773,7 +766,7 @@ void Core::PerformDeferredInitialization() {
   }
 
   // 3. Resolve Core Manager addresses (GameplayManager, ...)
-  auto& managerService = Data::GameData::ManagerCoreService::GetInstance();
+  auto& managerService = ManagerCoreService::GetInstance();
   if (managerService.TryFindAllOffsets()) {
     logger->Debug("Manager Core addresses resolved.");
   }
@@ -782,6 +775,12 @@ void Core::PerformDeferredInitialization() {
   auto& worldService = GameWorldService::GetInstance();
   if (worldService.TryFindAllOffsets()) {
     logger->Debug("GameWorld (Environment) offsets resolved.");
+  }
+
+  // 4b. Resolve Sound (FMOD) offsets
+  auto& soundService = SoundService::GetInstance();
+  if (soundService.TryFindAllOffsets()) {
+    logger->Debug("Sound (FMOD) offsets resolved.");
   }
 
   // 5. Calculate framework build hash
@@ -841,14 +840,6 @@ void Core::Update() {
   if (m_communicationManager) {
     m_communicationManager->Update();
   }
-
-  // Runs right before the UI is drawn, i.e. after the game's own per-frame camera
-  // computations for this frame — lets camera overrides win instead of racing them.
-  if (GameCameraManager::GetInstance().IsInstalled()) {
-    GameCameraManager::GetInstance().LateUpdate();
-  }
-
-  ProcessSelfUpdaterResult();
 }
 
 void Core::ImGuiRender() {
@@ -883,7 +874,6 @@ void Core::BindEventHandlers() {
   m_onUpdateCheckCompletedSink->Connect<&Core::OnUpdateCheckCompleted>(this);
   m_onPatronsFetchCompletedSink->Connect<&Core::OnPatronsFetchCompleted>(this);
   m_onUsageTrackingCompletedSink->Connect<&Core::OnUsageTrackingCompleted>(this);
-  m_onPatchUpdateDetectedSink->Connect<&Core::OnPatchUpdateDetected>(this);
   m_handlersBound = true;
 }
 
@@ -893,26 +883,11 @@ void Core::OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e) { m_com
 
 void Core::OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e) { m_communicationManager->RequestPatronsFetch(e.force); }
 
-void Core::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) { UIManager::GetInstance().NotifyUpdateCheckCompleted(e); }
+void Core::OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) { UIManager::GetInstance().NotifyUpdateCheckCompleted(e); }
 
-void Core::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
+void Core::OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) { UIManager::GetInstance().NotifyPatronsFetchCompleted(e); }
 
-void Core::OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
-
-void Core::OnPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e) {
-  if (m_selfUpdater) {
-    m_selfUpdater->ApplyPatchAsync(e.info);
-  }
-}
-
-void Core::ProcessSelfUpdaterResult() {
-  if (!m_selfUpdater) return;
-
-  auto result = m_selfUpdater->PollResult();
-  if (result) {
-    m_eventManager->System.OnPatchApplyCompleted.Call({result->success, result->version, result->errorMessage});
-  }
-}
+void Core::OnUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e) {}
 
 void Core::FinalizeWorldInitialization() {
   m_logger->Info("Finalizing world initialization...");
@@ -934,6 +909,18 @@ void Core::FinalizeWorldInitialization() {
     } else {
       m_logger->Warn("{} is not ready yet (waiting for dependencies or game data).", service->GetName());
     }
+  }
+
+  // Re-install FMOD hooks if they were torn down by world reload.
+  auto& fmodApi = Fmod::FmodApi::GetInstance();
+  if (!fmodApi.IsInstalled()) {
+    m_logger->Info("Re-installing FMOD API hook...");
+    Hooks::HookManager::GetInstance().InstallFeatureHook(&fmodApi);
+  }
+  auto& fmodStudioHook = Fmod::FmodStudioHook::GetInstance();
+  if (!fmodStudioHook.IsInstalled()) {
+    m_logger->Info("Re-installing FMOD Studio hook...");
+    Hooks::HookManager::GetInstance().InstallFeatureHook(&fmodStudioHook);
   }
 
   // Install the camera manager last: all finders are ready at this point.
@@ -1288,5 +1275,4 @@ void Core::ScheduleTask(std::chrono::milliseconds delay, std::function<void()> a
   m_deferredTasks.push_back({triggerTime, std::move(action)});
 }
 
-}  // namespace Core
-SPF_NS_END
+}  // namespace SPF::Core

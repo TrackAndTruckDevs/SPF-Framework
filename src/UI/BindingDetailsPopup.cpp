@@ -1,10 +1,9 @@
 #include "SPF/UI/BindingDetailsPopup.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -19,14 +18,16 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include "imgui.h"
+#include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <string>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 
 BindingDetailsPopup::BindingDetailsPopup(Events::EventManager& eventManager, Config::IConfigService& configService)
@@ -752,5 +753,4 @@ void BindingDetailsPopup::Render() {
   ImGui::EndPopup();
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

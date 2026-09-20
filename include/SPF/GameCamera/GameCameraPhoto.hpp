@@ -1,13 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraPhoto
  * @brief Represents the photo mode camera (ID 13, 'photo_camera').
@@ -59,5 +55,4 @@ class GameCameraPhoto : public IGameCamera {
   CameraData m_cameraData;
   CameraData m_defaultCameraData;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

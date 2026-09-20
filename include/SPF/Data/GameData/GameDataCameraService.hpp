@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 #include "SPF/Data/GameData/IWorldScopedService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
@@ -12,9 +10,7 @@
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 /**
  * @class GameDataCameraService
  * @brief Central repository for camera memory offsets and verified object pointers.
@@ -44,9 +40,7 @@ class GameDataCameraService : public IWorldScopedService {
   const char* GetName() const override { return "GameDataCameraService"; }
   void ResetForWorldReload() override { Reset(); }
   bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
-  bool IsReady() const {
-    return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady();
-  }
+  bool IsReady() const { return m_isInitialized && ManagerCoreService::GetInstance().IsCameraManagerReady(); }
   bool IsFinderReady(const char* name) const;
   bool AreAllFindersReady() const;
   bool TryFindAllOffsets();
@@ -147,11 +141,18 @@ class GameDataCameraService : public IWorldScopedService {
   // opposed to GetFovBaseOffset() (the live/computed value it writes to every time speed
   // or zoom state changes).
   intptr_t GetFovZoomBaseOffset() const { return m_fov_zoom_base_offset; }
+  intptr_t GetFovSettingPtrOffset() const { return m_fov_setting_ptr_offset; }
+  intptr_t GetFovSettingValOffset() const { return m_fov_setting_val_offset; }
+  intptr_t GetFovSettingOwnerOffset() const { return m_fov_setting_owner_offset; }
   intptr_t GetInteriorMouseLRDefaultOffset() const { return m_interior_mouse_lr_default; }
   intptr_t GetInteriorMouseUDDefaultOffset() const { return m_interior_mouse_ud_default; }
   intptr_t GetInteriorAzimuthOverridesOffset() const { return m_interior_azimuth_overrides_offset; }
   intptr_t GetZoomFovFactorOffset() const { return m_zoom_fov_factor_offset; }
   intptr_t GetZoomSpeedOffset() const { return m_zoom_speed_offset; }
+  intptr_t GetZoomOnOffOffset() const { return m_zoom_on_off_offset; }
+  intptr_t GetZoomLiveOffset() const { return m_zoom_live_offset; }
+  intptr_t GetInteriorSpeedFovChangeFactorOffset() const { return m_interior_speed_fov_change_factor_offset; }
+  intptr_t GetInteriorMaxFovOffset() const { return m_interior_max_fov_offset; }
 
   // --- Azimuth Range Struct ---
   intptr_t GetAzimuthRangeOutsideOffset() const { return m_azimuth_range_outside_offset; }
@@ -175,7 +176,7 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t GetViewportY1Offset() const { return m_viewport_y1_offset; }
   intptr_t GetViewportY2Offset() const { return m_viewport_y2_offset; }
 
-  // --- Behind Camera ---
+    // --- Behind Camera ---
   intptr_t GetBehindLivePitchOffset() const { return m_behind_live_pitch_offset; }
   intptr_t GetBehindLiveYawOffset() const { return m_behind_live_yaw_offset; }
   intptr_t GetBehindLiveZoomOffset() const { return m_behind_live_zoom_offset; }
@@ -333,11 +334,18 @@ class GameDataCameraService : public IWorldScopedService {
   void SetFovHorizFinalOffset(intptr_t val) { m_fov_horiz_final_offset = val; }
   void SetFovVertFinalOffset(intptr_t val) { m_fov_vert_final_offset = val; }
   void SetFovZoomBaseOffset(intptr_t val) { m_fov_zoom_base_offset = val; }
+  void SetFovSettingPtrOffset(intptr_t val) { m_fov_setting_ptr_offset = val; }
+  void SetFovSettingValOffset(intptr_t val) { m_fov_setting_val_offset = val; }
+  void SetFovSettingOwnerOffset(intptr_t val) { m_fov_setting_owner_offset = val; }
   void SetInteriorMouseLRDefaultOffset(intptr_t val) { m_interior_mouse_lr_default = val; }
   void SetInteriorMouseUDDefaultOffset(intptr_t val) { m_interior_mouse_ud_default = val; }
   void SetInteriorAzimuthOverridesOffset(intptr_t val) { m_interior_azimuth_overrides_offset = val; }
   void SetZoomFovFactorOffset(intptr_t val) { m_zoom_fov_factor_offset = val; }
   void SetZoomSpeedOffset(intptr_t val) { m_zoom_speed_offset = val; }
+  void SetZoomOnOffOffset(intptr_t val) { m_zoom_on_off_offset = val; }
+  void SetZoomLiveOffset(intptr_t val) { m_zoom_live_offset = val; }
+  void SetInteriorSpeedFovChangeFactorOffset(intptr_t val) { m_interior_speed_fov_change_factor_offset = val; }
+  void SetInteriorMaxFovOffset(intptr_t val) { m_interior_max_fov_offset = val; }
   void SetAzimuthRangeOutsideOffset(intptr_t val) { m_azimuth_range_outside_offset = val; }
   void SetAzimuthRangeStartAzimuthOffset(intptr_t val) { m_azimuth_range_start_azimuth_offset = val; }
   void SetAzimuthRangeEndAzimuthOffset(intptr_t val) { m_azimuth_range_end_azimuth_offset = val; }
@@ -538,6 +546,9 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_fov_horiz_final_offset = 0;
   intptr_t m_fov_vert_final_offset = 0;
   intptr_t m_fov_zoom_base_offset = 0;
+  intptr_t m_fov_setting_ptr_offset = 0;
+  intptr_t m_fov_setting_val_offset = 0;
+  intptr_t m_fov_setting_owner_offset = 0;
 
   // --- Interior Camera ---
   intptr_t m_interior_seat_x_offset = 0;
@@ -555,6 +566,10 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_interior_azimuth_overrides_offset = 0;
   intptr_t m_zoom_fov_factor_offset = 0;
   intptr_t m_zoom_speed_offset = 0;
+  intptr_t m_zoom_on_off_offset = 0;
+  intptr_t m_zoom_live_offset = 0;
+  intptr_t m_interior_speed_fov_change_factor_offset = 0;
+  intptr_t m_interior_max_fov_offset = 0;
 
   // --- Azimuth Range Struct ---
   intptr_t m_azimuth_range_outside_offset = 0;
@@ -578,7 +593,7 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_viewport_y1_offset = 0;
   intptr_t m_viewport_y2_offset = 0;
 
-  // --- Behind Camera ---
+    // --- Behind Camera ---
   intptr_t m_behind_live_pitch_offset = 0;
   intptr_t m_behind_live_yaw_offset = 0;
   intptr_t m_behind_live_zoom_offset = 0;
@@ -711,5 +726,4 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_animationTimerOffset = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

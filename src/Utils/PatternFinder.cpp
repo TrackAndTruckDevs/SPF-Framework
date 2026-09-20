@@ -1,7 +1,5 @@
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternTemplates.hpp"
 #include "SPF/Utils/SEHGuard.hpp"
@@ -25,8 +23,7 @@
 #include <vector>
 #include <winnt.h>
 
-SPF_NS_BEGIN
-namespace Utils {
+namespace SPF::Utils {
 
 // ===========================================================================
 // PRIVATE HELPERS
@@ -93,12 +90,12 @@ static std::vector<uintptr_t> FindAllRawInternal(const char* moduleName, const u
 /**
  * @brief Resolves a pointer chain with depth protection.
  */
-static bool PointerLeadsToString(uintptr_t addr, const char* substring, int maxDepth = 3) {
+static bool PointerLeadsToString(uintptr_t addr, const char* expectedClassName, int maxDepth = 3) {
   if (addr < 0x10000 || maxDepth <= 0) return false;
   try {
     const char* str = reinterpret_cast<const char*>(addr);
-    if (str[0] >= 0x20 && str[0] <= 0x7E && strstr(str, substring)) return true;
-    return PointerLeadsToString(*reinterpret_cast<uintptr_t*>(addr), substring, maxDepth - 1);
+    if (str[0] >= 0x20 && str[0] <= 0x7E && std::strcmp(str, expectedClassName) == 0) return true;
+    return PointerLeadsToString(*reinterpret_cast<uintptr_t*>(addr), expectedClassName, maxDepth - 1);
   } catch (...) {
     return false;
   }
@@ -1221,5 +1218,4 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
   });
 }
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

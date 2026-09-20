@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/Finders/GameWorldDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -12,8 +10,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -54,12 +51,12 @@ const char* UPDATE_SIM_TIME_CALL_SIG = "[CALL rel32] [MOV r64, [r64+off32]]";
  * 14048a5d2  41 89 81 78 3E 00 00          MOV dword ptr [R9 + 0x3e78],EAX
  */
 
- /** /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140512c30[140512c30]) ---/
-* 140512d83  F3 41 0F 11 81 7C 3E 00 00    MOVSS dword ptr [R9 + 0x3e7c],XMM0
-* 140512d8c  41 89 81 78 3E 00 00          MOV dword ptr [R9 + 0x3e78],EAX
-* 140512d93  E8 58 16 FC FF                CALL 0x1404d43f0
-*/
-//const char* TIME_OFF_SIG = "F3 41 0F 11 ? ? ? ? ? 41 [MOV [r64+off32], r32]";
+/** /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140512c30[140512c30]) ---/
+ * 140512d83  F3 41 0F 11 81 7C 3E 00 00    MOVSS dword ptr [R9 + 0x3e7c],XMM0
+ * 140512d8c  41 89 81 78 3E 00 00          MOV dword ptr [R9 + 0x3e78],EAX
+ * 140512d93  E8 58 16 FC FF                CALL 0x1404d43f0
+ */
+// const char* TIME_OFF_SIG = "F3 41 0F 11 ? ? ? ? ? 41 [MOV [r64+off32], r32]";
 const char* TIME_OFF_SIG = "F3 41 0F 11 81 ? ? ? ? 41 [MOV [r64+off32], r32] [CALL rel32]";
 
 /**
@@ -789,5 +786,4 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

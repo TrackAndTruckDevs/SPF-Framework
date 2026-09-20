@@ -1,15 +1,11 @@
 #include "SPF/Hooks/PluginHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/BaseHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 PluginHook::PluginHook(const std::string& pluginName, const std::string& hookName, const std::string& displayName, void* pDetour, void** ppOriginal, const std::string& signature, bool isEnabled)
     : BaseHook(hookName, displayName, signature, pluginName, isEnabled), m_pDetour(pDetour), m_ppOriginal(ppOriginal) {
   // m_ownerName is now initialized in BaseHook constructor
@@ -27,5 +23,4 @@ void* PluginHook::GetDetourFunc() { return m_pDetour; }
 
 void** PluginHook::GetOriginalFuncPtr() { return m_ppOriginal; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

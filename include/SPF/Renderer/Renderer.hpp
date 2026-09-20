@@ -1,32 +1,28 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
+#include "SPF/Utils/Signal.hpp"
 
 #include <chrono>
 #include <cstddef>
 #include <memory>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations of types from other modules
-namespace Core {
+namespace SPF::Core {
 class Core;
-}
-namespace Events {
+}  // namespace SPF::Core
+
+namespace SPF::Events {
 class EventManager;
-}
-namespace Logging {
-class Logger;
-}
-namespace UI {
+}  // namespace SPF::Events
+
+namespace SPF::UI {
 class UIManager;
-}
+}  // namespace SPF::UI
+
 // Forward declarations of types from this module (Rendering)
-namespace Rendering {
+namespace SPF::Rendering {
 class RendererBase;
 class D3D11RendererImpl;
 class D3D12RendererImpl;
@@ -100,20 +96,16 @@ class Renderer {
   void OnRendererRenderImGui();
 
  private:
-  /**
-   * @brief Performs a lightweight check to determine the most likely graphics API used by the game.
-   * @return The detected RenderAPI.
-   */
-  RenderAPI DetectRenderAPI();
+  void OnAPIDetected(Rendering::RenderAPI api);
 
   Core::Core& m_core;
   UI::UIManager& m_uiManager;
   std::unique_ptr<RendererBase> m_impl;
   std::shared_ptr<Logging::Logger> m_logger;
-  RenderAPI m_detectedAPI;
+  RenderAPI m_detectedAPI = RenderAPI::Unknown;
   std::chrono::steady_clock::time_point m_lastFrameTime;
+
+  Utils::Sink<void(Rendering::RenderAPI)> m_onAPIDetectedSink;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

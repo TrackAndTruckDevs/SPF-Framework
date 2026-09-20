@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/MouseButtonMapping.hpp"
@@ -14,8 +12,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 /**
  * @class MouseInput
@@ -58,5 +55,4 @@ class MouseInput : public IBindableInput {
   // similar to KeyboardInput. It is part of the binding configuration, not the input itself.
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Utils/Signal.hpp"
@@ -17,9 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Localization {
+namespace SPF::Localization {
 /**
  * @class LocalizationManager
  * @brief A service for retrieving localized strings on demand.
@@ -85,5 +81,4 @@ class LocalizationManager : public Config::IConfigurable {
   std::map<std::string, std::map<std::string, std::string>> m_translations;
   std::map<std::string, std::unordered_set<std::string>> m_reportedMissingKeys;
 };
-}  // namespace Localization
-SPF_NS_END
+}  // namespace SPF::Localization

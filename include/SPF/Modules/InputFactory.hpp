@@ -1,5 +1,4 @@
 #pragma once
-#include "SPF/Namespace.hpp"
 
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/ChordInput.hpp"
@@ -19,8 +18,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 class InputFactory {
  public:
   static std::unique_ptr<IBindableInput> CreateFromJson(const nlohmann::ordered_json& configJson) {
@@ -113,5 +111,4 @@ class InputFactory {
     return nullptr;
   }
 };
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

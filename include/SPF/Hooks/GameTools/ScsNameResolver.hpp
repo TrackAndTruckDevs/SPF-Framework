@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/IHook.hpp"
 
 #include <cstdint>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Hooks::GameTools {
+namespace SPF::Hooks::GameTools {
 /**
  * @class ScsNameResolver
  * @brief A manageable hook service for resolving SCS internal names (unit IDs, tokens).
@@ -37,9 +33,7 @@ class ScsNameResolver : public IHook {
   const std::string& GetOwnerName() const override { return m_ownerName; }
   bool IsEnabled() const override { return m_isEnabled; }
   void SetEnabled(bool enabled) override { m_isEnabled = enabled; }
-  bool IsInstalled() const override {
-    return m_resolveAddr != 0 && m_decodeAddr != 0 && m_unitIdToTokenFn != 0;
-  }
+  bool IsInstalled() const override { return m_resolveAddr != 0 && m_decodeAddr != 0 && m_unitIdToTokenFn != 0; }
   const std::string& GetSignature() const override { return m_signature; }
 
   bool Install() override;
@@ -78,11 +72,11 @@ class ScsNameResolver : public IHook {
     static void* g_vtable[3];
     static size_t EnsureCapacity(ScsStringWriter* self, size_t required);
 
-    void** vtable;          // +0x00
-    char*  buffer;          // +0x08
-    int32_t length;         // +0x10
-    int32_t capacity;       // +0x14
-    char m_data[256];       // +0x18
+    void** vtable;     // +0x00
+    char* buffer;      // +0x08
+    int32_t length;    // +0x10
+    int32_t capacity;  // +0x14
+    char m_data[256];  // +0x18
   };
 
   // --- Hook Configuration ---
@@ -97,5 +91,4 @@ class ScsNameResolver : public IHook {
   uintptr_t m_decodeAddr = 0;
   uintptr_t m_unitIdToTokenFn = 0;
 };
-}  // namespace Hooks::GameTools
-SPF_NS_END
+}  // namespace SPF::Hooks::GameTools

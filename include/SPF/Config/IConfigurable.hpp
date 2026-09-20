@@ -1,16 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 /**
  * @brief Interface for components that can have their settings
  *        reconfigured at runtime.
@@ -32,6 +27,4 @@ struct IConfigurable {
    */
   virtual bool OnSettingChanged(const std::string& systemName, const std::string& componentName, const std::string& keyPath, const nlohmann::ordered_json& newValue) = 0;
 };
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

@@ -1,7 +1,5 @@
 #include "SPF/Hooks/XInputHook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -307,9 +305,7 @@ static DWORD InternalProcessXInputState(DWORD dwUserIndex, XINPUT_STATE* pState,
   return result;
 }
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 bool XInputHook::Install() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("XInputHook");
 
@@ -376,6 +372,8 @@ void XInputHook::Uninstall() {
     auto status = MH_DisableHook(pXInputGetStateTarget);
     if (status == MH_OK) {
       logger->Info("XInput hook disabled successfully.");
+    } else if (status == MH_ERROR_DISABLED) {
+      logger->Info("XInput hook already disabled.");
     } else {
       logger->Warn("Failed to disable XInput hook, status: {}", MH_StatusToString(status));
     }
@@ -399,6 +397,4 @@ void XInputHook::Remove() {
   oXInputGetState = nullptr;
   oXInputGetStateEx = nullptr;
 }
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

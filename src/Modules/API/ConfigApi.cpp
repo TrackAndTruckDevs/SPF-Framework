@@ -1,13 +1,12 @@
 #include "SPF/Modules/API/ConfigApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Handles/ConfigHandle.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/HandleManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
 #include "SPF/SPF_API/SPF_Config_API.h"
+#include "SPF/Utils/Windows.hpp"
 
 #include "nlohmann/json_fwd.hpp"
 
@@ -18,14 +17,7 @@
 #include <string>
 #include <utility>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace Logging;
 
@@ -323,5 +315,4 @@ void ConfigApi::FillConfigApi(SPF_Config_API* api) {
   api->Cfg_SetAutoSave = &ConfigApi::Cfg_SetAutoSave;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

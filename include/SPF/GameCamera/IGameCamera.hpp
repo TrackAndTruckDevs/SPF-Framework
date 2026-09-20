@@ -1,12 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class IGameCamera
  * @brief An interface for a specific game camera implementation.
@@ -38,14 +34,6 @@ class IGameCamera {
    * @param dt Delta time since the last frame.
    */
   virtual void Update(float dt) = 0;
-
-  /**
-   * @brief Called once per rendered frame, right before the UI is drawn — i.e. after the
-   * game has finished its own per-frame camera computations. Implementations use this to
-   * re-assert values the game keeps overwriting after Update() runs (e.g. FOV vs. native zoom).
-   * Default is a no-op; only cameras that need this override it.
-   */
-  virtual void LateUpdate() {}
 
   /**
    * @brief Returns the specific type of this camera.
@@ -85,13 +73,8 @@ class IGameCamera {
   static void ApplyCoreCameraFov(void* pCameraObject, float fov);
 
   /**
-   * @brief Re-asserts just the reference FOV field (GetFovZoomBaseOffset). Call from
-   * LateUpdate() while a FOV override is active, so the native per-frame speed-FOV
-   * recompute converges to it instead of the vehicle's configured value. Deliberately does
-   * NOT touch the live FOV field or call UpdateCameraProjection — doing both every frame
-   * fights the native recompute instead of just fixing its source, causing visible flicker.
+   * @brief Re-asserts just the reference FOV field (GetFovZoomBaseOffset).
    */
   static void ReassertCoreCameraFovReference(void* pCameraObject, float fov);
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

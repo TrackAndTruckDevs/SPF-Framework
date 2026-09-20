@@ -1,15 +1,12 @@
 #include "SPF/Modules/API/ClimateApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/SPF_API/SPF_Climate_API.h"
 
 #include <cstdint>
 #include <cstring>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace SPF::Data::GameData;
 
@@ -17,159 +14,128 @@ using namespace SPF::Data::GameData;
 // Implementation Macros — generate ClimateApi:: scoped methods for variant attributes
 // ================================================================================================
 
-#define IMPL_CL_FLOAT(name)                                                                                                 \
-  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) {                                              \
-    return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad});                                   \
-  }                                                                                                                         \
-  float ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile) {                                                        \
-    return ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                          \
-  }                                                                                                                         \
-  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, float value) {                                            \
-    ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, value);                                          \
-  }                                                                                                                         \
-  float ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx) {                                 \
-    return ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                            \
-  }                                                                                                                         \
-  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, float value) {                     \
-    ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, value);                            \
-  }                                                                                                                         \
-  float ClimateApi::T_Climate_GetBlended##name() {                                                                               \
-    return ClimateService::GetInstance().GetBlended##name();                                                                 \
-  }                                                                                                                         \
-  void ClimateApi::T_Climate_SetBlended##name(float val, float min, float max) {                                                 \
-    ClimateService::GetInstance().SetBlended##name(val, min, max);                                                           \
-  }
+#define IMPL_CL_FLOAT(name)                                                                                                                                                                                  \
+  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad}); }                                 \
+  float ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name({profile.index, profile.isBad}); }                                                  \
+  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, float value) { ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, value); }                                      \
+  float ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx) { return ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx); }             \
+  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, float value) { ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, value); } \
+  float ClimateApi::T_Climate_GetBlended##name() { return ClimateService::GetInstance().GetBlended##name(); }                                                                                                \
+  void ClimateApi::T_Climate_SetBlended##name(float val, float min, float max) { ClimateService::GetInstance().SetBlended##name(val, min, max); }
 
-#define ASSIGN_CL_FLOAT(api, name) \
-  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count; \
-  (api)->Get##name = &ClimateApi::T_Climate_Get##name; \
-  (api)->Set##name = &ClimateApi::T_Climate_Set##name; \
+#define ASSIGN_CL_FLOAT(api, name)                                       \
+  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count;     \
+  (api)->Get##name = &ClimateApi::T_Climate_Get##name;                   \
+  (api)->Set##name = &ClimateApi::T_Climate_Set##name;                   \
   (api)->Get##name##ByIndex = &ClimateApi::T_Climate_Get##name##ByIndex; \
   (api)->Set##name##ByIndex = &ClimateApi::T_Climate_Set##name##ByIndex; \
-  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name; \
+  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name;     \
   (api)->SetBlended##name = &ClimateApi::T_Climate_SetBlended##name
 
-#define IMPL_CL_INT32(name)                                                                                                \
-  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) {                                             \
-    return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad});                                  \
-  }                                                                                                                        \
-  int32_t ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile) {                                                     \
-    return ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                         \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, int32_t value) {                                         \
-    ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, value);                                         \
-  }                                                                                                                        \
-  int32_t ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx) {                              \
-    return ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                            \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, int32_t value) {                  \
-    ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, value);                            \
-  }
+#define IMPL_CL_INT32(name)                                                                                                                                                                        \
+  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad}); }                       \
+  int32_t ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name({profile.index, profile.isBad}); }                                      \
+  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, int32_t value) { ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, value); }                          \
+  int32_t ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx) { return ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx); } \
+  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, int32_t value) { ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, value); }
 
-#define ASSIGN_CL_INT32(api, name) \
-  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count; \
-  (api)->Get##name = &ClimateApi::T_Climate_Get##name; \
-  (api)->Set##name = &ClimateApi::T_Climate_Set##name; \
+#define ASSIGN_CL_INT32(api, name)                                       \
+  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count;     \
+  (api)->Get##name = &ClimateApi::T_Climate_Get##name;                   \
+  (api)->Set##name = &ClimateApi::T_Climate_Set##name;                   \
   (api)->Get##name##ByIndex = &ClimateApi::T_Climate_Get##name##ByIndex; \
   (api)->Set##name##ByIndex = &ClimateApi::T_Climate_Set##name##ByIndex
 
-#define IMPL_CL_VECTOR3(name)                                                                                              \
-  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) {                                             \
-    return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad});                                  \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3* out) {                              \
-    auto v = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                       \
-    out->x = v.x; out->y = v.y; out->z = v.z;                                                                              \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3 v) {                                 \
-    ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, {v.x, v.y, v.z});                               \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3* out) {       \
-    auto v = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                         \
-    out->x = v.x; out->y = v.y; out->z = v.z;                                                                              \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3 v) {          \
-    ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, {v.x, v.y, v.z});                 \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_GetBlended##name(SPF_Climate_Vector3* out) {                                                       \
-    auto v = ClimateService::GetInstance().GetBlended##name();                                                               \
-    out->x = v.x; out->y = v.y; out->z = v.z;                                                                              \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_SetBlended##name(SPF_Climate_Vector3 v, float maxComp) {                                           \
-    ClimateService::GetInstance().SetBlended##name({v.x, v.y, v.z}, maxComp);                                               \
-  }
+#define IMPL_CL_VECTOR3(name)                                                                                                                                                                                                    \
+  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad}); }                                                     \
+  void ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3* out) {                                                                                                                               \
+    auto v = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                                                                                                                            \
+    out->x = v.x;                                                                                                                                                                                                                \
+    out->y = v.y;                                                                                                                                                                                                                \
+    out->z = v.z;                                                                                                                                                                                                                \
+  }                                                                                                                                                                                                                              \
+  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector3 v) { ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, {v.x, v.y, v.z}); }                                      \
+  void ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3* out) {                                                                                                        \
+    auto v = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                                                                                                                              \
+    out->x = v.x;                                                                                                                                                                                                                \
+    out->y = v.y;                                                                                                                                                                                                                \
+    out->z = v.z;                                                                                                                                                                                                                \
+  }                                                                                                                                                                                                                              \
+  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector3 v) { ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, {v.x, v.y, v.z}); } \
+  void ClimateApi::T_Climate_GetBlended##name(SPF_Climate_Vector3* out) {                                                                                                                                                        \
+    auto v = ClimateService::GetInstance().GetBlended##name();                                                                                                                                                                   \
+    out->x = v.x;                                                                                                                                                                                                                \
+    out->y = v.y;                                                                                                                                                                                                                \
+    out->z = v.z;                                                                                                                                                                                                                \
+  }                                                                                                                                                                                                                              \
+  void ClimateApi::T_Climate_SetBlended##name(SPF_Climate_Vector3 v, float maxComp) { ClimateService::GetInstance().SetBlended##name({v.x, v.y, v.z}, maxComp); }
 
-#define ASSIGN_CL_VECTOR3(api, name) \
-  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count; \
-  (api)->Get##name = &ClimateApi::T_Climate_Get##name; \
-  (api)->Set##name = &ClimateApi::T_Climate_Set##name; \
+#define ASSIGN_CL_VECTOR3(api, name)                                     \
+  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count;     \
+  (api)->Get##name = &ClimateApi::T_Climate_Get##name;                   \
+  (api)->Set##name = &ClimateApi::T_Climate_Set##name;                   \
   (api)->Get##name##ByIndex = &ClimateApi::T_Climate_Get##name##ByIndex; \
   (api)->Set##name##ByIndex = &ClimateApi::T_Climate_Set##name##ByIndex; \
-  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name; \
+  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name;     \
   (api)->SetBlended##name = &ClimateApi::T_Climate_SetBlended##name
 
-#define IMPL_CL_VECTOR2(name)                                                                                              \
-  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) {                                             \
-    return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad});                                  \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2* out) {                              \
-    auto v = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                       \
-    out->x = v.x; out->y = v.y;                                                                                             \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2 v) {                                 \
-    ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, {v.x, v.y});                                    \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2* out) {       \
-    auto v = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                         \
-    out->x = v.x; out->y = v.y;                                                                                             \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2 v) {          \
-    ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, {v.x, v.y});                      \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_GetBlended##name(SPF_Climate_Vector2* out) {                                                       \
-    auto v = ClimateService::GetInstance().GetBlended##name();                                                               \
-    out->x = v.x; out->y = v.y;                                                                                             \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_SetBlended##name(SPF_Climate_Vector2 v, float maxComp) {                                           \
-    ClimateService::GetInstance().SetBlended##name({v.x, v.y}, maxComp);                                                     \
-  }
+#define IMPL_CL_VECTOR2(name)                                                                                                                                                                                               \
+  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad}); }                                                \
+  void ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2* out) {                                                                                                                          \
+    auto v = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                                                                                                                       \
+    out->x = v.x;                                                                                                                                                                                                           \
+    out->y = v.y;                                                                                                                                                                                                           \
+  }                                                                                                                                                                                                                         \
+  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, SPF_Climate_Vector2 v) { ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, {v.x, v.y}); }                                      \
+  void ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2* out) {                                                                                                   \
+    auto v = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                                                                                                                         \
+    out->x = v.x;                                                                                                                                                                                                           \
+    out->y = v.y;                                                                                                                                                                                                           \
+  }                                                                                                                                                                                                                         \
+  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, SPF_Climate_Vector2 v) { ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, {v.x, v.y}); } \
+  void ClimateApi::T_Climate_GetBlended##name(SPF_Climate_Vector2* out) {                                                                                                                                                   \
+    auto v = ClimateService::GetInstance().GetBlended##name();                                                                                                                                                              \
+    out->x = v.x;                                                                                                                                                                                                           \
+    out->y = v.y;                                                                                                                                                                                                           \
+  }                                                                                                                                                                                                                         \
+  void ClimateApi::T_Climate_SetBlended##name(SPF_Climate_Vector2 v, float maxComp) { ClimateService::GetInstance().SetBlended##name({v.x, v.y}, maxComp); }
 
-#define ASSIGN_CL_VECTOR2(api, name) \
-  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count; \
-  (api)->Get##name = &ClimateApi::T_Climate_Get##name; \
-  (api)->Set##name = &ClimateApi::T_Climate_Set##name; \
+#define ASSIGN_CL_VECTOR2(api, name)                                     \
+  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count;     \
+  (api)->Get##name = &ClimateApi::T_Climate_Get##name;                   \
+  (api)->Set##name = &ClimateApi::T_Climate_Set##name;                   \
   (api)->Get##name##ByIndex = &ClimateApi::T_Climate_Get##name##ByIndex; \
   (api)->Set##name##ByIndex = &ClimateApi::T_Climate_Set##name##ByIndex; \
-  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name; \
+  (api)->GetBlended##name = &ClimateApi::T_Climate_GetBlended##name;     \
   (api)->SetBlended##name = &ClimateApi::T_Climate_SetBlended##name
 
-#define IMPL_CL_TEXTURE(name)                                                                                              \
-  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) {                                             \
-    return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad});                                  \
-  }                                                                                                                        \
-  int ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, char* buf, int sz) {                                      \
-    auto s = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                       \
-    int len = static_cast<int>(s.length());                                                                                 \
-    if (buf && sz > 0) { std::strncpy(buf, s.c_str(), static_cast<size_t>(sz - 1)); buf[sz - 1] = '\0'; }                  \
-    return len;                                                                                                             \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, const char* val) {                                       \
-    ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, val ? std::string(val) : "");                    \
-  }                                                                                                                        \
-  int ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, char* buf, int sz) {               \
-    auto s = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                         \
-    int len = static_cast<int>(s.length());                                                                                 \
-    if (buf && sz > 0) { std::strncpy(buf, s.c_str(), static_cast<size_t>(sz - 1)); buf[sz - 1] = '\0'; }                  \
-    return len;                                                                                                             \
-  }                                                                                                                        \
-  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, const char* val) {                \
-    ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, val ? std::string(val) : "");     \
-  }
+#define IMPL_CL_TEXTURE(name)                                                                                                                                                                     \
+  uint64_t ClimateApi::T_Climate_Get##name##Count(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().Get##name##Count({profile.index, profile.isBad}); }                      \
+  int ClimateApi::T_Climate_Get##name(SPF_Climate_ProfileRef profile, char* buf, int sz) {                                                                                                        \
+    auto s = ClimateService::GetInstance().Get##name({profile.index, profile.isBad});                                                                                                             \
+    int len = static_cast<int>(s.length());                                                                                                                                                       \
+    if (buf && sz > 0) {                                                                                                                                                                          \
+      std::strncpy(buf, s.c_str(), static_cast<size_t>(sz - 1));                                                                                                                                  \
+      buf[sz - 1] = '\0';                                                                                                                                                                         \
+    }                                                                                                                                                                                             \
+    return len;                                                                                                                                                                                   \
+  }                                                                                                                                                                                               \
+  void ClimateApi::T_Climate_Set##name(SPF_Climate_ProfileRef profile, const char* val) { ClimateService::GetInstance().Set##name({profile.index, profile.isBad}, val ? std::string(val) : ""); } \
+  int ClimateApi::T_Climate_Get##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, char* buf, int sz) {                                                                                 \
+    auto s = ClimateService::GetInstance().Get##name##ByIndex({profile.index, profile.isBad}, idx);                                                                                               \
+    int len = static_cast<int>(s.length());                                                                                                                                                       \
+    if (buf && sz > 0) {                                                                                                                                                                          \
+      std::strncpy(buf, s.c_str(), static_cast<size_t>(sz - 1));                                                                                                                                  \
+      buf[sz - 1] = '\0';                                                                                                                                                                         \
+    }                                                                                                                                                                                             \
+    return len;                                                                                                                                                                                   \
+  }                                                                                                                                                                                               \
+  void ClimateApi::T_Climate_Set##name##ByIndex(SPF_Climate_ProfileRef profile, uint64_t idx, const char* val) { ClimateService::GetInstance().Set##name##ByIndex({profile.index, profile.isBad}, idx, val ? std::string(val) : ""); }
 
-#define ASSIGN_CL_TEXTURE(api, name) \
-  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count; \
-  (api)->Get##name = &ClimateApi::T_Climate_Get##name; \
-  (api)->Set##name = &ClimateApi::T_Climate_Set##name; \
+#define ASSIGN_CL_TEXTURE(api, name)                                     \
+  (api)->Get##name##Count = &ClimateApi::T_Climate_Get##name##Count;     \
+  (api)->Get##name = &ClimateApi::T_Climate_Get##name;                   \
+  (api)->Set##name = &ClimateApi::T_Climate_Set##name;                   \
   (api)->Get##name##ByIndex = &ClimateApi::T_Climate_Get##name##ByIndex; \
   (api)->Set##name##ByIndex = &ClimateApi::T_Climate_Set##name##ByIndex
 
@@ -415,9 +381,7 @@ int ClimateApi::T_Climate_GetCurrentClimateName(char* outBuffer, int bufferSize)
   return len;
 }
 
-int ClimateApi::T_Climate_GetAvailableClimateCount() {
-  return static_cast<int>(ClimateService::GetInstance().GetAvailableClimates().size());
-}
+int ClimateApi::T_Climate_GetAvailableClimateCount() { return static_cast<int>(ClimateService::GetInstance().GetAvailableClimates().size()); }
 
 bool ClimateApi::T_Climate_GetAvailableClimateByIndex(int index, char* outNameBuffer, int nameBufferSize, uint64_t* outToken) {
   auto climates = ClimateService::GetInstance().GetAvailableClimates();
@@ -431,9 +395,7 @@ bool ClimateApi::T_Climate_GetAvailableClimateByIndex(int index, char* outNameBu
   return true;
 }
 
-void ClimateApi::T_Climate_SetClimate(uint64_t climateToken, bool instant) {
-  ClimateService::GetInstance().SetClimate(climateToken, instant);
-}
+void ClimateApi::T_Climate_SetClimate(uint64_t climateToken, bool instant) { ClimateService::GetInstance().SetClimate(climateToken, instant); }
 
 // ================================================================================================
 // Section 3: Sun Profile
@@ -503,29 +465,17 @@ SPF_Climate_ProfileRef ClimateApi::T_Climate_NextProfile() {
   return {p.index, p.isBad};
 }
 
-float ClimateApi::T_Climate_GetLowElevation(SPF_Climate_ProfileRef profile) {
-  return ClimateService::GetInstance().GetLowElevation({profile.index, profile.isBad});
-}
+float ClimateApi::T_Climate_GetLowElevation(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().GetLowElevation({profile.index, profile.isBad}); }
 
-void ClimateApi::T_Climate_SetLowElevation(SPF_Climate_ProfileRef profile, float elevationDegrees) {
-  ClimateService::GetInstance().SetLowElevation({profile.index, profile.isBad}, elevationDegrees);
-}
+void ClimateApi::T_Climate_SetLowElevation(SPF_Climate_ProfileRef profile, float elevationDegrees) { ClimateService::GetInstance().SetLowElevation({profile.index, profile.isBad}, elevationDegrees); }
 
-float ClimateApi::T_Climate_GetHighElevation(SPF_Climate_ProfileRef profile) {
-  return ClimateService::GetInstance().GetHighElevation({profile.index, profile.isBad});
-}
+float ClimateApi::T_Climate_GetHighElevation(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().GetHighElevation({profile.index, profile.isBad}); }
 
-void ClimateApi::T_Climate_SetHighElevation(SPF_Climate_ProfileRef profile, float elevationDegrees) {
-  ClimateService::GetInstance().SetHighElevation({profile.index, profile.isBad}, elevationDegrees);
-}
+void ClimateApi::T_Climate_SetHighElevation(SPF_Climate_ProfileRef profile, float elevationDegrees) { ClimateService::GetInstance().SetHighElevation({profile.index, profile.isBad}, elevationDegrees); }
 
-int32_t ClimateApi::T_Climate_GetSunDirection(SPF_Climate_ProfileRef profile) {
-  return ClimateService::GetInstance().GetSunDirection({profile.index, profile.isBad});
-}
+int32_t ClimateApi::T_Climate_GetSunDirection(SPF_Climate_ProfileRef profile) { return ClimateService::GetInstance().GetSunDirection({profile.index, profile.isBad}); }
 
-void ClimateApi::T_Climate_SetSunDirection(SPF_Climate_ProfileRef profile, int32_t direction) {
-  ClimateService::GetInstance().SetSunDirection({profile.index, profile.isBad}, direction);
-}
+void ClimateApi::T_Climate_SetSunDirection(SPF_Climate_ProfileRef profile, int32_t direction) { ClimateService::GetInstance().SetSunDirection({profile.index, profile.isBad}, direction); }
 
 // ================================================================================================
 // Section 8: Variation Index
@@ -536,5 +486,4 @@ void ClimateApi::T_Climate_SetActiveVariationIndex(uint64_t variationIndex) { Cl
 uint64_t ClimateApi::T_Climate_GetNextVariationIndex() { return ClimateService::GetInstance().GetNextVariationIndex(); }
 void ClimateApi::T_Climate_SetNextVariationIndex(uint64_t variationIndex) { ClimateService::GetInstance().SetNextVariationIndex(variationIndex); }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,11 +1,9 @@
 #include "SPF/UI/SettingsWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
+#include "SPF/Events/ConfigEvents.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/UIEvents.hpp"
-#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -20,6 +18,7 @@
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "fmt/core.h"
 #include "fmt/format.h"
@@ -28,7 +27,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <cmath>  // For roundf
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -39,15 +37,7 @@
 #include <utility>
 #include <vector>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
-
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 using namespace SPF::Logging;
 using namespace SPF::System;
@@ -999,6 +989,4 @@ void SettingsWindow::RenderContent() {
   }
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

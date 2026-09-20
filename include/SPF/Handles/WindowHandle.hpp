@@ -1,17 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
+#include "SPF/UI/IWindow.hpp"
 
-
-SPF_NS_BEGIN
-
-namespace UI {
-class IWindow;
-}  // namespace UI
-
-namespace Handles {
+namespace SPF::Handles {
 /**
  * @brief A handle for the UI API, representing a single window.
  *
@@ -23,5 +15,4 @@ struct WindowHandle : IHandle {
 
   WindowHandle(UI::IWindow* window) : window(window) {}
 };
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

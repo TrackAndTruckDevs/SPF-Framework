@@ -1,22 +1,19 @@
 #include "SPF/Hooks/CameraHooks.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 /** /--- Ghidra:(amtrucks_1_60.exe) Fun:(InitializeCamera[1405c09e0]) ---/
-* 1405c09f2  48 8B 1D AF 42 F9 02          MOV RBX,qword ptr [0x143554ca8]
-* 1405c09f9  8B FA                         MOV EDI,EDX
-* 1405c09fb  48 8B F1                      MOV RSI,RCX
-* 1405c09fe  83 7B 10 0E                   CMP dword ptr [RBX + 0x10],0xe
-* 1405c0a02  89 53 14                      MOV dword ptr [RBX + 0x14],EDX
-* 1405c0a05  75 08                         JNZ 0x1405c0a0f
+ * 1405c09f2  48 8B 1D AF 42 F9 02          MOV RBX,qword ptr [0x143554ca8]
+ * 1405c09f9  8B FA                         MOV EDI,EDX
+ * 1405c09fb  48 8B F1                      MOV RSI,RCX
+ * 1405c09fe  83 7B 10 0E                   CMP dword ptr [RBX + 0x10],0xe
+ * 1405c0a02  89 53 14                      MOV dword ptr [RBX + 0x14],EDX
+ * 1405c0a05  75 08                         JNZ 0x1405c0a0f
  */
 CameraHooks::CameraHooks() : m_signature("[MOV r64, [rip+off32]] [MOV r32, r32] [MOV r64, r64] ? ? ? ? [MOV [r64+off8], r32] [JNE rel8]") {}
 
@@ -162,5 +159,4 @@ void CameraHooks::Remove() {
   // For this class, Remove is the same as Uninstall as it's non-destructive.
   Uninstall();
 }
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

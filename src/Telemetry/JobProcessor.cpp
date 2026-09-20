@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/JobProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
@@ -9,9 +7,7 @@
 
 #include <cstring>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 
 JobProcessor::JobProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context) {}
 
@@ -70,5 +66,4 @@ void JobProcessor::HandleChannelUpdate(const scs_string_t name, const scs_u32_t 
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

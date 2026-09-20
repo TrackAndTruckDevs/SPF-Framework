@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Game.hpp"
 
 #include "scssdk_value.h"
@@ -11,11 +9,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
-namespace SCS {
-// --- Game State & Time ---
+namespace SPF::Telemetry::SCS {
 
 struct Timestamps {
   uint64_t simulation = 0;
@@ -73,6 +67,4 @@ struct WheelData {
   uint32_t substance = 0;
 };
 
-}  // namespace SCS
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry::SCS

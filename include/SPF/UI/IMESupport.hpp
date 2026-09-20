@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <minwindef.h>
 #include <windef.h>
 
@@ -9,9 +7,7 @@ struct ImGuiContext;
 struct ImGuiViewport;
 struct ImGuiPlatformImeData;
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 /**
  * @brief Installs a custom IME (Input Method Editor) data handler for ImGui.
  *
@@ -76,6 +72,4 @@ class IMESupport {
  private:
   static void SetImeDataFn(ImGuiContext* /*unused*/, ImGuiViewport* viewport, ImGuiPlatformImeData* data);
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

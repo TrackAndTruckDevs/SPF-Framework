@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/SCSTelemetryService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/TelemetryEvents.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -23,6 +21,7 @@
 #include "SPF/Telemetry/TrailerProcessor.hpp"
 #include "SPF/Telemetry/TruckProcessor.hpp"
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -31,14 +30,7 @@
 #include <string>
 #include <vector>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdio_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 using namespace Modules;
 
 SCSTelemetryService::SCSTelemetryService(Logging::Logger& logger, GameContext& context, Events::EventManager& eventManager) : m_logger(logger), m_context(context), m_eventManager(eventManager) {
@@ -513,5 +505,4 @@ Utils::Signal<void(const SCS::GearboxConstants&)>& SCSTelemetryService::GetGearb
 
 Utils::Signal<void()>& SCSTelemetryService::GetTimerRestartSignal() { return m_eventManager.System.Telemetry.OnTimerRestart; }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

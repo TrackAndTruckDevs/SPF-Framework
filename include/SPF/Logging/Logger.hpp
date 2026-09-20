@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "fmt/base.h"
 #include "fmt/format.h"
 
@@ -20,9 +18,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Logging {
+namespace SPF::Logging {
 
 /**
  * @brief Defines the logging verbosity levels.
@@ -341,6 +337,4 @@ void Logger::CriticalThrottled(std::chrono::nanoseconds duration, fmt::string_vi
   LogThrottledImpl(LogLevel::Critical, duration, std::source_location::current(), format_str, std::forward<Args>(args)...);
 }
 
-}  // namespace Logging
-
-SPF_NS_END
+}  // namespace SPF::Logging

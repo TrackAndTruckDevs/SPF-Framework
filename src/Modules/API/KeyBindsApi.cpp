@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/KeyBindsApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Handles/KeyBindsHandle.hpp"
 #include "SPF/Input/InputEvents.hpp"
@@ -20,8 +18,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 namespace {
 /**
@@ -382,5 +379,4 @@ void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   api->Kbind_OpenBindingDetailsPopup = &KeyBindsApi::Kbind_OpenBindingDetailsPopup;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

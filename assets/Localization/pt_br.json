@@ -24,9 +24,6 @@
         "version_label": "Sua versão ",
         "update_checking": "Verificando atualizações...",
         "update_available_notification": "### {}\n Nova atualização disponível **{}**\n Para saber mais, acesse o site",
-        "patch_downloading": "Baixando o patch **v{}**...",
-        "patch_updated_restart": "### SPF Framework atualizado para **{}**\n Reinicie o jogo para aplicar a atualização.",
-        "patch_applied": "SPF Framework atualizado para **v{}**",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "Sobre Nós / Contatos",
@@ -244,14 +241,14 @@
                     "title": "Duração da Notificação",
                     "description": "Define por quanto tempo (em segundos) as notificações pop-up temporárias permanecem na tela."
                 },
+                "notification_sound": {
+                    "title": "Reproduzir som de notificação",
+                    "description": "Reproduz um som quando uma nova notificação aparece."
+                },
                 "show_update_notifications": {
                     "title": "Notificar sobre atualizações",
                     "description": "Você receberá notificações quando houver atualizações disponíveis para o framework ou plugins."
                 },
-                    "auto_patch": {
-                        "title": "Atualizações automáticas de patch",
-                        "description": "Baixa e aplica automaticamente correções entre lançamentos principais."
-                    },
                 "scale": {
                     "title": "Escala da interface",
                     "description": "Ajusta o tamanho das fontes e janelas da interface do usuário."
@@ -723,6 +720,13 @@
             "hand_shake_speed": "Frequência de vibração da câmera",
             "zoom_fov_factor": "Multiplicador de FOV do zoom",
             "zoom_speed_interior": "Velocidade do zoom",
+            "fov_real": "FOV Real",
+            "fov_setting": "Configuração de FOV",
+            "dynamic_fov": "FOV Dinâmico",
+            "zoom_on_off": "Zoom Ligar/Desligar",
+            "zoom_live": "Posição do Zoom",
+            "speed_fov_change_factor": "Fator de Velocidade de Mudança de FOV",
+            "max_fov": "FOV Máx.",
             "azimuth_overrides": "Zonas dinâmicas (Azimuth Overrides)",
             "range_start_azimuth": "Início do azimute da zona",
             "range_end_azimuth": "Fim do azimute da zona",

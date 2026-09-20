@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/IHook.hpp"
 
 #include <cstdint>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @class CameraHooks
  * @brief A manageable hook service for essential game camera functions.
@@ -40,9 +36,7 @@ class CameraHooks : public IHook {
   const std::string& GetOwnerName() const override { return m_ownerName; }
   bool IsEnabled() const override { return m_isEnabled; }
   void SetEnabled(bool enabled) override { m_isEnabled = enabled; }
-  bool IsInstalled() const override {
-    return m_initializeCameraFunc != nullptr && m_getCameraObjectFunc != nullptr && m_updateCameraProjectionFunc != nullptr && m_debugCameraHandleInputFunc != 0;
-  }
+  bool IsInstalled() const override { return m_initializeCameraFunc != nullptr && m_getCameraObjectFunc != nullptr && m_updateCameraProjectionFunc != nullptr && m_debugCameraHandleInputFunc != 0; }
   const std::string& GetSignature() const override { return m_signature; }
 
   bool Install() override;
@@ -76,5 +70,4 @@ class CameraHooks : public IHook {
   // ActivateCameraByIDFunc m_activateCameraByIDFunc = nullptr; //for Photo Camera
   uintptr_t m_debugCameraHandleInputFunc = 0;
 };
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

@@ -1,7 +1,5 @@
 #include "SPF/Modules/ChordInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 
@@ -17,8 +15,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 ChordInput::ChordInput() = default;
 ChordInput::~ChordInput() = default;
@@ -118,5 +115,4 @@ bool ChordInput::IsValid() const { return !m_inputs.empty(); }
 
 float ChordInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraBumper.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -9,9 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraBumper::GameCameraBumper() {}
 
 void GameCameraBumper::OnActivate() {
@@ -36,11 +32,6 @@ void GameCameraBumper::OnDeactivate() {
 
 void GameCameraBumper::Update(float dt) {
   if (!m_pCameraObject) return;
-}
-
-void GameCameraBumper::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
 }
 
 void GameCameraBumper::SetOffset(float x, float y, float z) {
@@ -245,5 +236,4 @@ void GameCameraBumper::SetShakeAnim(size_t index, float x, float y, float z) {
   pVec[1] = y;
   pVec[2] = z;
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

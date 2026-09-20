@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
 #include <minwindef.h>
 #include <windef.h>
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 
 /**
  * @class OpenGLHook
@@ -40,6 +36,4 @@ class OpenGLHook {
   OpenGLHook() = default;
 };
 
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

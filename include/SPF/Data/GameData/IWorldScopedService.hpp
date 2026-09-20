@@ -1,9 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 /**
  * @class IWorldScopedService
@@ -39,5 +36,4 @@ class IWorldScopedService {
   virtual bool TryFinalizeWorldInit() = 0;
 };
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

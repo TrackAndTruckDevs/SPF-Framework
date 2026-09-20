@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/TelemetryApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/TelemetryHandle.hpp"
 #include "SPF/Modules/HandleManager.hpp"
 #include "SPF/Modules/ITelemetryService.hpp"
@@ -17,6 +15,7 @@
 #include "SPF/Telemetry/SCS/Navigation.hpp"
 #include "SPF/Telemetry/SCS/Trailer.hpp"
 #include "SPF/Telemetry/SCS/Truck.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -25,14 +24,7 @@
 #include <utility>
 #include <vector>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace Telemetry::SCS;
 
@@ -1223,5 +1215,4 @@ SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForWorldReload(SPF_Tele
   return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,16 +1,12 @@
 #include "SPF/Data/GameData/Finders/ManagerCoreDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -63,6 +59,20 @@ const char* TIME_MANAGER_STR = "Economy not present.";
  * 1403e4cd5  48 83 3D D3 8E B0 02 00       CMP qword ptr [0x142eedbb0],0x0
  */
 const char* TIME_MANAGER_CMP_SIG = "48 83 3D ? ? ? ? 00";
+
+/**
+ * @brief Unique string anchor to locate the function that references SoundManager.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140430e50[140430e50]) ---/
+ * 140430ea3  48 8D 0D 9E 89 CE 01          LEA RCX,[0x142119848] = "[sound] Failed to initialize internal sound system."
+ */
+const char* SOUND_MANAGER_STR = "[sound] Failed to initialize internal sound system.";
+
+/**
+ * @brief Pattern to find the LEA that loads the SoundManager pointer.
+ * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140430e50[140430e50]) ---/
+ * 140430e93  48 8D 0D 8E 75 AC 02          LEA RCX,[0x142ef8428]
+ */
+const char* SOUND_MANAGER_LEA_SIG = "[LEA r64, [rip+off32]]";
 
 }  // namespace
 
@@ -128,11 +138,29 @@ bool ManagerCoreDataFinder::TryFindOffsets(ManagerCoreService& owner) {
     }
   }
 
+  // --- Phase 4: SoundManager ---
+  {
+    auto phase = log.MakePhase("SoundManager");
+
+    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140430e50[140430e50]) ---/
+    // 140430ea3  48 8D 0D 9E 89 CE 01          LEA RCX,[0x142119848] = "[sound] Failed to initialize internal sound system."
+    uintptr_t stringXref = PatternFinder::FindFunctionByString(SOUND_MANAGER_STR, false);
+    if (phase.Step(stringXref, "Sound manager string XREF", "REF")) {
+      // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140430e50[140430e50]) ---/
+      // 140430e93  48 8D 0D 8E 75 AC 02          LEA RCX,[0x142ef8428]
+      uintptr_t addrLea = PatternFinder::FindBackward(stringXref - 1, 32, SOUND_MANAGER_LEA_SIG);
+      if (phase.Step(addrLea, "SoundManager LEA", "RT")) {
+        uintptr_t soundManager = PatternFinder::GetRipAddress(addrLea, 3, 7);
+        phase.Step(soundManager, "SoundManager", "DATA");
+        if (PatternFinder::IsValidAddress(soundManager)) owner.SetSoundManagerAddr(soundManager);
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
-  m_isReady = PatternFinder::IsValidAddress(owner.GetGameplayManagerAddr()) && PatternFinder::IsValidAddress(owner.GetCameraManagerAddr()) && owner.GetTimeMgrPtrAddr() != 0;
+  m_isReady = PatternFinder::IsValidAddress(owner.GetGameplayManagerAddr()) && PatternFinder::IsValidAddress(owner.GetCameraManagerAddr()) && owner.GetTimeMgrPtrAddr() != 0 && PatternFinder::IsValidAddress(owner.GetSoundManagerAddr());
 
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

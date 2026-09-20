@@ -1,7 +1,5 @@
 #include "SPF/Hooks/User32Hook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -16,7 +14,6 @@
 #include <windef.h>
 #include <windows.h>
 #include <winnt.h>
-
 
 // --- State Management ---
 // Flag to track if hooks have been created, to support reload.
@@ -86,9 +83,7 @@ static bool ProcessSingleKey(int vkCode, bool isDownWinAPI, bool isDownPhysical)
   // ImGui's backend, which derives io.KeyMods/io.KeyCtrl from GetKeyState().
   // Without this, copy/paste shortcuts (Ctrl+C/V) never fire while a text field
   // is focused, because the capture guard blocks the modifier reads.
-  if (key == SPF::System::Keyboard::LControl || key == SPF::System::Keyboard::RControl ||
-      key == SPF::System::Keyboard::LShift   || key == SPF::System::Keyboard::RShift ||
-      key == SPF::System::Keyboard::LAlt     || key == SPF::System::Keyboard::RAlt) {
+  if (key == SPF::System::Keyboard::LControl || key == SPF::System::Keyboard::RControl || key == SPF::System::Keyboard::LShift || key == SPF::System::Keyboard::RShift || key == SPF::System::Keyboard::LAlt || key == SPF::System::Keyboard::RAlt) {
     return false;
   }
 
@@ -96,12 +91,8 @@ static bool ProcessSingleKey(int vkCode, bool isDownWinAPI, bool isDownPhysical)
   // are hardware-managed by the OS and must keep working even while ImGui
   // captures the keyboard, so a focused text field never swallows them.
   using K = SPF::System::Keyboard;
-  if (key == K::VolumeMute   || key == K::VolumeDown || key == K::VolumeUp ||
-      key == K::MediaNextTrack || key == K::MediaPrevTrack || key == K::MediaStop ||
-      key == K::MediaPlayPause || key == K::BrowserBack || key == K::BrowserForward ||
-      key == K::BrowserRefresh || key == K::BrowserStop || key == K::BrowserSearch ||
-      key == K::BrowserFavorites || key == K::BrowserHome || key == K::LaunchMail ||
-      key == K::LaunchMediaSelect || key == K::LaunchApp1 || key == K::LaunchApp2) {
+  if (key == K::VolumeMute || key == K::VolumeDown || key == K::VolumeUp || key == K::MediaNextTrack || key == K::MediaPrevTrack || key == K::MediaStop || key == K::MediaPlayPause || key == K::BrowserBack || key == K::BrowserForward ||
+      key == K::BrowserRefresh || key == K::BrowserStop || key == K::BrowserSearch || key == K::BrowserFavorites || key == K::BrowserHome || key == K::LaunchMail || key == K::LaunchMediaSelect || key == K::LaunchApp1 || key == K::LaunchApp2) {
     return false;
   }
 
@@ -173,9 +164,7 @@ SHORT WINAPI hkGetKeyState(int nVirtKey) {
   return result;
 }
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 
 void User32Hook::SendVirtualKeyRelease(uint32_t hardwareCode) {
   uint8_t type = (hardwareCode >> 24) & 0xFF;
@@ -271,21 +260,9 @@ void User32Hook::Uninstall() {
 void User32Hook::Remove() {
   if (g_hooksCreated) {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("User32Hook");
-
-    // Disable and remove hooks individually
-    MH_DisableHook(reinterpret_cast<LPVOID>(&SetCursorPos));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetCursorPos));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
-    MH_DisableHook(reinterpret_cast<LPVOID>(&GetKeyState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&SetCursorPos));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetCursorPos));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyboardState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetAsyncKeyState));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(&GetKeyState));
-
+    MH_DisableHook(MH_ALL_HOOKS);
+    MH_RemoveHook(MH_ALL_HOOKS);
     logger->Info("User32 hooks removed.");
-
     g_hooksCreated = false;
     oSetCursorPos = nullptr;
     oGetCursorPos = nullptr;
@@ -294,6 +271,4 @@ void User32Hook::Remove() {
     oGetKeyState = nullptr;
   }
 }
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

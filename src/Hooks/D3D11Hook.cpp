@@ -18,8 +18,6 @@
 
 #include "SPF/Hooks/D3D11Hook.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/Windows.hpp"
 
@@ -36,9 +34,7 @@
 #include <winnt.h>
 #include <wrl/client.h>  // For ComPtr
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 using namespace SPF::Logging;
 using Microsoft::WRL::ComPtr;
 
@@ -276,7 +272,7 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
         D3D11Hook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);
       } else {
         GetLogger()->Info("First-time initialization. Hooking WndProc and firing OnInit...");
-        
+
         WNDPROC old_wnd_proc = (WNDPROC)GetPropW(D3D11Hook::MainWindow, L"SPF_WndProcHook");
         if (old_wnd_proc != nullptr) {
           WNDPROC prev_original = (WNDPROC)GetPropW(D3D11Hook::MainWindow, L"SPF_OriginalWndProc");
@@ -289,7 +285,7 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
         g_originalWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(D3D11Hook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcD3D)));
         SetPropW(D3D11Hook::MainWindow, L"SPF_WndProcHook", (HANDLE)WndProcD3D);
         SetPropW(D3D11Hook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProc);
-        
+
         GetLogger()->Info("Original WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProc));
 
         D3D11Hook::OnInit.Call(pSwapChain, device.Get());
@@ -331,5 +327,4 @@ LRESULT CALLBACK WndProcD3D(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 }  // namespace
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

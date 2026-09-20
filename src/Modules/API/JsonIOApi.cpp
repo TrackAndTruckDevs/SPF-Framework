@@ -1,25 +1,17 @@
 #include "SPF/Modules/API/JsonIOApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_JsonIO_API.h"
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
+#include "SPF/Utils/Windows.hpp"
 
-#include "nlohmann/json.hpp"  // IWYU pragma: keep
+#include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
 
 #include <cstring>
 #include <fstream>
 #include <string>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 SPF_JsonValue_Handle* JsonIOApi::Json_ParseString(const char* jsonString) {
   if (!jsonString) return nullptr;
@@ -92,5 +84,4 @@ void JsonIOApi::FillJsonIOApi(SPF_JsonIO_API* api) {
   api->Json_IsValid = &JsonIOApi::Json_IsValid;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

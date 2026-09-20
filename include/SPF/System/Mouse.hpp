@@ -1,10 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 enum class Mouse {
   Left,
   Right,
@@ -15,5 +11,3 @@ enum class Mouse {
   ButtonCount
 };
 }
-
-SPF_NS_END

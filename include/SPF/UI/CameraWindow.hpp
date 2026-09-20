@@ -1,21 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-// Forward-declare the service it depends on
-namespace GameCamera {
-class GameCameraManager;
-}
-
-namespace UI {
+namespace SPF::UI {
 /**
  * @class CameraWindow
  * @brief A UI window for testing and demonstrating the GameCamera service.
@@ -27,8 +18,6 @@ class CameraWindow : public BaseWindow {
   CameraWindow(const std::string& owner, const std::string& name, GameCamera::GameCameraManager& gameCameraService);
 
  protected:
-
-
   void RenderContent() override;
   void RefreshLocalization() override;
 
@@ -71,6 +60,9 @@ class CameraWindow : public BaseWindow {
 
   // Interior Camera
   std::string m_locFovZoom;
+  std::string m_locFovReal;
+  std::string m_locFovSetting;
+  std::string m_locDynamicFov;
   std::string m_locBaseFov;
   std::string m_locBaseFovNotFound;
   std::string m_locFinalHFov;
@@ -117,6 +109,10 @@ class CameraWindow : public BaseWindow {
   std::string m_locHandShakeSpeed;
   std::string m_locZoomFovFactor;
   std::string m_locZoomSpeedInterior;
+  std::string m_locZoomOnOff;
+  std::string m_locZoomLive;
+  std::string m_locSpeedFovChangeFactor;
+  std::string m_locMaxFov;
   std::string m_locAzimuthOverrides;
   std::string m_locRangeStartAzimuth;
   std::string m_locRangeEndAzimuth;
@@ -432,5 +428,4 @@ class CameraWindow : public BaseWindow {
   std::string m_locStatusUserControlled;
   std::string m_locCaptureSelectedVehicle;
 };
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

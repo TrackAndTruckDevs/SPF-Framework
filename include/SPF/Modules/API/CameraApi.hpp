@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Camera_API.h"
 
 #include <cstddef>
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class CameraApi {
  public:
   static void FillCameraAPI(SPF_Camera_API* camera_api);
@@ -212,6 +208,20 @@ class CameraApi {
   static bool T_Camera_GetInteriorZoomSpeed(float* out_val);
   static void T_Camera_SetInteriorZoomSpeed(float val);
 
+  // --- New Interior Advanced Settings ---
+  static bool T_Camera_GetInteriorFovReal(float* out_val);
+  static bool T_Camera_GetInteriorZoomOnOff(bool* out_val);
+  static bool T_Camera_GetInteriorZoomLive(float* out_val);
+  static void T_Camera_SetInteriorZoomLive(float val);
+  static bool T_Camera_GetInteriorSpeedFovChangeFactor(float* out_val);
+  static void T_Camera_SetInteriorSpeedFovChangeFactor(float val);
+  static bool T_Camera_GetInteriorMaxFov(float* out_val);
+  static void T_Camera_SetInteriorMaxFov(float val);
+  static bool T_Camera_GetInteriorFovSetting(float* out_val);
+  static void T_Camera_SetInteriorFovSetting(float val);
+  static bool T_Camera_GetInteriorDynamicFovEnabled(bool* out_val);
+  static void T_Camera_SetInteriorDynamicFovEnabled(bool val);
+
   // --- Azimuth Overrides Trampolines ---
   static size_t T_Camera_GetInteriorAzimuthOverridesCount();
   static void* T_Camera_GetInteriorAzimuthOverrideAddress(size_t index);
@@ -344,5 +354,4 @@ class CameraApi {
   static bool T_Camera_GetTVShakeAnim(size_t index, float* out_x, float* out_y, float* out_z);
   static void T_Camera_SetTVShakeAnim(size_t index, float x, float y, float z);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

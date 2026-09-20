@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"  // Added for the new method
 
@@ -10,9 +8,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @class HookManager
  * @brief A singleton service to manage the lifecycle of all hooks.
@@ -118,5 +114,4 @@ class HookManager {
   // Tracks hooks that failed to install, to avoid retrying on every reconcile.
   std::set<std::string> m_failedFeatureHooks;
 };
-}  // namespace Hooks
-SPF_NS_END
+}  // namespace SPF::Hooks

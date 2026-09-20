@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Utils/Signal.hpp"
 
 #include <minwindef.h>
 #include <xinput.h>
 
-SPF_NS_BEGIN
-
-namespace Hooks {
+namespace SPF::Hooks {
 /**
  * @class XInputHook
  * @brief Manages the hooking of XInputGetState to intercept gamepad input.
@@ -35,6 +31,4 @@ struct XInputHook {
    */
   static void Remove();
 };
-}  // namespace Hooks
-
-SPF_NS_END
+}  // namespace SPF::Hooks

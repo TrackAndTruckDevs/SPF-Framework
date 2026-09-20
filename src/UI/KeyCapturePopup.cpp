@@ -1,9 +1,8 @@
 #include "SPF/UI/KeyCapturePopup.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/EventManager.hpp"
+#include "SPF/Input/InputEvents.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
@@ -17,8 +16,15 @@
 #include "fmt/core.h"
 #include "imgui.h"
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
-SPF_NS_BEGIN
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+
+namespace SPF {
 
 namespace UI {
 using namespace SPF::Localization;
@@ -376,4 +382,4 @@ void KeyCapturePopup::Render() {
 }
 
 }  // namespace UI
-SPF_NS_END
+}  // namespace SPF

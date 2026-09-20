@@ -1,15 +1,12 @@
 #include "SPF/Data/GameData/Finders/FileSystemDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -57,7 +54,7 @@ const char* MOUNT_NODE_STRUCT_SIG = "[MOV [r64+off8], r64] [LEA r64, [r64+off8]]
  * 14015611b  48 89 01                      MOV qword ptr [RCX],RAX
  */
 const char* MOUNT_STR_BUFF_SIG = "[MOV [r64+off8], r64] {[LEA r64, [rip+off32]] | [MOV [r64+off8], r64]} [MOV [r64], r64]";
-//const char* MOUNT_STR_BUFF_SIG = "48 89 41";
+// const char* MOUNT_STR_BUFF_SIG = "48 89 41";
 
 /**
  * @brief Signature for Mount List Head anchor.
@@ -239,5 +236,4 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

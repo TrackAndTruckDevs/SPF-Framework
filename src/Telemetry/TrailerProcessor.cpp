@@ -1,26 +1,17 @@
 #include "SPF/Telemetry/TrailerProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <cstdint>
-#include <cstdio>  // For sscanf
 #include <cstdlib>
 #include <cstring>
 #include <vector>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdio_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 
 TrailerProcessor::TrailerProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context) {
   // Pre-allocate for the max number of trailers to avoid reallocations.
@@ -153,5 +144,4 @@ void TrailerProcessor::HandleChannelUpdate(const scs_string_t name, const scs_u3
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

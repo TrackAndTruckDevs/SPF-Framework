@@ -1,7 +1,5 @@
 #include "SPF/UI/BaseWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Localization/LocalizationManager.hpp"  // Include the new icons header
 #include "SPF/UI/UIElements.hpp"                     // For Button
 
@@ -12,17 +10,11 @@
 #include <string>
 #include <utility>
 
-
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Localization;
 
 BaseWindow::BaseWindow(std::string componentName, std::string windowId)
-  : m_componentName(std::move(componentName)),
-    m_windowId(std::move(windowId)),
-    m_defaultTitle(m_windowId),
-    m_titleLocalizationKey(m_windowId + ".title"),
-    m_langSink(LocalizationManager::GetInstance().OnFrameworkLanguageChanged) {
+    : m_componentName(std::move(componentName)), m_windowId(std::move(windowId)), m_defaultTitle(m_windowId), m_titleLocalizationKey(m_windowId + ".title"), m_langSink(LocalizationManager::GetInstance().OnFrameworkLanguageChanged) {
   m_langSink.Connect<&BaseWindow::OnFrameworkLanguageChanged>(this);
   RefreshLocalization();
 }
@@ -90,9 +82,7 @@ void BaseWindow::RefreshLocalization() {
   }
 }
 
-void BaseWindow::OnFrameworkLanguageChanged(const std::string& /*componentName*/) {
-  RefreshLocalization();
-}
+void BaseWindow::OnFrameworkLanguageChanged(const std::string& /*componentName*/) { RefreshLocalization(); }
 
 bool BaseWindow::IsConfiguredAsDockable() const { return m_isConfiguredAsDockable; }
 
@@ -306,5 +296,4 @@ void BaseWindow::SyncStateWithImGui() {
   }
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

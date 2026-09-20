@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/Finders/FreeCameraDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Utils/FinderLog.hpp"
@@ -9,8 +7,7 @@
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -215,12 +212,11 @@ bool FreeCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = owner.GetFlySpeedPtr() != nullptr && owner.GetFreecamContextOffset() != 0 && owner.GetFreecamPosXOffset() != 0 && owner.GetFreecamPosYOffset() != 0 && owner.GetFreecamPosZOffset() != 0 &&
-              owner.GetFreecamMysteryFloatOffset() != 0 && owner.GetFreecamQuatXOffset() != 0 && owner.GetFreecamQuatYOffset() != 0 && owner.GetFreecamQuatZOffset() != 0 && owner.GetFreecamQuatWOffset() != 0 &&
-              owner.GetFreecamMouseXOffset() != 0 && owner.GetFreecamMouseYOffset() != 0 && owner.GetFreecamRollOffset() != 0;
+  m_isReady = owner.GetFlySpeedPtr() != nullptr && owner.GetFreecamContextOffset() != 0 && owner.GetFreecamPosXOffset() != 0 && owner.GetFreecamPosYOffset() != 0 && owner.GetFreecamPosZOffset() != 0 && owner.GetFreecamMysteryFloatOffset() != 0 &&
+              owner.GetFreecamQuatXOffset() != 0 && owner.GetFreecamQuatYOffset() != 0 && owner.GetFreecamQuatZOffset() != 0 && owner.GetFreecamQuatWOffset() != 0 && owner.GetFreecamMouseXOffset() != 0 && owner.GetFreecamMouseYOffset() != 0 &&
+              owner.GetFreecamRollOffset() != 0;
 
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

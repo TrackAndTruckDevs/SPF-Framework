@@ -1,14 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Hooks_API.h"
 
 #include <cstddef>
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class HooksApi {
  public:
   /**
@@ -20,8 +17,7 @@ class HooksApi {
   static void FillHooksApi(SPF_Hooks_API* api, SPF_Hook_Register_t pRegister);
 
  private:
-  static SPF_Hook_Handle* Hook_Register(const char* pluginName, const char* hookName, const char* displayName, void* pDetour, void** ppOriginal, const char* signature,
-                                        bool isEnabled);
+  static SPF_Hook_Handle* Hook_Register(const char* pluginName, const char* hookName, const char* displayName, void* pDetour, void** ppOriginal, const char* signature, bool isEnabled);
   static uintptr_t Hook_FindPattern(const char* signature);
   static uintptr_t Hook_FindPatternFrom(const char* signature, uintptr_t startAddress, size_t searchLength);
   static bool Hook_IsEnabled(SPF_Hook_Handle* h);
@@ -57,5 +53,4 @@ class HooksApi {
   static void Memory_ReadVector3(uintptr_t address, float* outX, float* outY, float* outZ);
   static void Memory_WriteVector3(uintptr_t address, float x, float y, float z);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

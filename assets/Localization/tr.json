@@ -24,9 +24,6 @@
         "version_label": "Sizin sürümünüz ",
         "update_checking": "Güncellemeler kontrol ediliyor...",
         "update_available_notification": "### {}\n Yeni Güncelleme Mevcut **{}**\n Daha fazla bilgi için lütfen web sitesini ziyaret edin",
-        "patch_downloading": "**v{}** yaması indiriliyor...",
-        "patch_updated_restart": "### SPF Framework **{}** sürümüne güncellendi\n Güncellemeyi uygulamak için oyunu yeniden başlatın.",
-        "patch_applied": "SPF Framework **v{}** sürümüne güncellendi",
         "menu": {
             "manual": "Kılavuz / SSS",
             "about": "Hakkımızda / İletişim",
@@ -244,14 +241,14 @@
                     "title": "Bildirim Süresi",
                     "description": "Geçici açılır bildirimlerin ekranda ne kadar süreyle (saniye cinsinden) kalacağını ayarlar."
                 },
+                "notification_sound": {
+                    "title": "Bildirim sesini çal",
+                    "description": "Yeni bir bildirim geldiğinde ses çalar."
+                },
                 "show_update_notifications": {
                     "title": "Güncelleme Bildirimleri",
                     "description": "Framework veya eklentiler için yeni güncellemeler yayınlandığında bildirim alırsınız."
                 },
-                    "auto_patch": {
-                        "title": "Otomatik yama güncellemeleri",
-                        "description": "Ana sürümler arasındaki düzeltmeleri otomatik indirip uygular."
-                    },
                 "scale": {
                     "title": "Arayüz Ölçeği",
                     "description": "UI yazı tiplerinin ve pencerelerinin boyutunu ayarlar."
@@ -723,6 +720,13 @@
             "hand_shake_speed": "Kamera Titreşim Frekansı",
             "zoom_fov_factor": "Zoom FOV Çarpanı",
             "zoom_speed_interior": "Zoom Hızı",
+            "fov_real": "Gerçek FOV",
+            "fov_setting": "FOV Ayarı",
+            "dynamic_fov": "Dinamik FOV",
+            "zoom_on_off": "Zoom Aç/Kapat",
+            "zoom_live": "Zoom Konumu",
+            "speed_fov_change_factor": "FOV Değişim Hız Faktörü",
+            "max_fov": "Maks. FOV",
             "azimuth_overrides": "Dinamik Bölgeler (Azimuth Overrides)",
             "range_start_azimuth": "Bölge Azimutu Başlangıcı",
             "range_end_azimuth": "Bölge Azimutu Bitişi",

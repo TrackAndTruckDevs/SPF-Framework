@@ -1,7 +1,5 @@
 #include "SPF/Modules/HandleManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
@@ -11,8 +9,7 @@
 #include <string>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 // --- PIMPL Implementation ---
 class HandleManager::HandleManagerImpl {
  public:
@@ -48,5 +45,4 @@ HandleManager::~HandleManager() = default;
 Handles::IHandle* HandleManager::RegisterHandle(const std::string& pluginName, std::unique_ptr<Handles::IHandle> handle) { return m_pimpl->RegisterHandle(pluginName, std::move(handle)); }
 
 void HandleManager::ReleaseHandlesFor(const std::string& pluginName) { m_pimpl->ReleaseHandlesFor(pluginName); }
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

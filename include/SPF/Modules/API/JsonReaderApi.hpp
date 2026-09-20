@@ -1,13 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class JsonReaderApi {
  public:
   static void FillJsonReaderApi(SPF_JsonReader_API* api);
@@ -28,5 +25,4 @@ class JsonReaderApi {
   static int Json_GetMemberName(const SPF_JsonValue_Handle* h, int index, char* out_buffer, int buffer_size);
   static SPF_JsonValue_Handle* Json_GetMemberValueByIndex(const SPF_JsonValue_Handle* h, int index);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

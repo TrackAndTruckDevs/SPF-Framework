@@ -1,20 +1,17 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/System/ApiService.hpp"
 
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Events::System {
+namespace SPF::Events {
 
 /**
  * @brief Fired by the CommunicationManager when an update check completes (success or failure).
  */
 struct OnUpdateCheckCompleted {
-  const SPF::System::ApiResult<SPF::System::UpdateInfo>& result;
+  const System::ApiResult<SPF::System::UpdateInfo>& result;
 };
 
 /**
@@ -26,7 +23,7 @@ struct OnRequestTrackUsage {};
  * @brief Fired after the patrons list has been fetched from the API.
  */
 struct OnPatronsFetchCompleted {
-  const SPF::System::ApiResult<std::vector<SPF::System::Patron>>& result;
+  const System::ApiResult<std::vector<SPF::System::Patron>>& result;
 };
 
 /**
@@ -47,21 +44,4 @@ struct OnPluginUpdateAvailable {
   std::string downloadUrl;
 };
 
-/**
- * @brief Fired by the CommunicationManager when a hotfix patch (same base version, higher revision) is available.
- */
-struct OnPatchUpdateDetected {
-  const SPF::System::UpdateInfo& info;
-};
-
-/**
- * @brief Fired by the Core after a patch download/apply attempt has finished.
- */
-struct OnPatchApplyCompleted {
-  bool success;
-  std::string version;
-  std::string errorMessage;
-};
-
-}  // namespace Events::System
-SPF_NS_END
+}  // namespace SPF::Events

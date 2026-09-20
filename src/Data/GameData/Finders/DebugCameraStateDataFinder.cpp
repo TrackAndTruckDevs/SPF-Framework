@@ -1,15 +1,12 @@
 #include "SPF/Data/GameData/Finders/DebugCameraStateDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 using namespace Utils;
 
 namespace {
@@ -263,9 +260,10 @@ bool DebugCameraStateDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = all_found && owner.GetStateContextOffset() != 0 && owner.GetAddCameraStateFunc() != nullptr && owner.GetOpenFileForCameraStateFunc() != nullptr && owner.GetFormatAndWriteCameraStateFunc() != nullptr && owner.GetCycleSavedStateFunc() != nullptr && owner.GetStateArrayOffset() != 0 && owner.GetStateCountOffset() != 0 && owner.GetStateCurrentIndexOffset() != 0 && owner.GetApplyStateFunc() != nullptr && owner.GetLoadStatesFromFileFunc() != nullptr;
+  m_isReady = all_found && owner.GetStateContextOffset() != 0 && owner.GetAddCameraStateFunc() != nullptr && owner.GetOpenFileForCameraStateFunc() != nullptr && owner.GetFormatAndWriteCameraStateFunc() != nullptr &&
+              owner.GetCycleSavedStateFunc() != nullptr && owner.GetStateArrayOffset() != 0 && owner.GetStateCountOffset() != 0 && owner.GetStateCurrentIndexOffset() != 0 && owner.GetApplyStateFunc() != nullptr &&
+              owner.GetLoadStatesFromFileFunc() != nullptr;
 
   return log.Finish(m_isReady);
 }
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

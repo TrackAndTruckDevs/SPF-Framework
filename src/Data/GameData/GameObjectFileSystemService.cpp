@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/FileSystemDataFinder.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Data/GameData/IFileSystemDataFinder.hpp"
@@ -10,9 +8,7 @@
 #include <memory>
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 GameObjectFileSystemService& GameObjectFileSystemService::GetInstance() {
   static GameObjectFileSystemService instance;
@@ -75,5 +71,4 @@ bool GameObjectFileSystemService::IsFinderReady(const char* finderName) const {
   return false;
 }
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

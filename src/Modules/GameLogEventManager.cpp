@@ -1,12 +1,9 @@
 #include "SPF/Modules/GameLogEventManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include <algorithm>
 #include <mutex>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 GameLogEventManager& GameLogEventManager::GetInstance() {
   static GameLogEventManager instance;
@@ -34,5 +31,4 @@ void GameLogEventManager::UnregisterCallback(GameLogCallback callback, void* use
   m_callbacks.erase(std::remove_if(m_callbacks.begin(), m_callbacks.end(), [callback, user_data](const CallbackInfo& info) { return info.callback == callback && info.user_data == user_data; }), m_callbacks.end());
 }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

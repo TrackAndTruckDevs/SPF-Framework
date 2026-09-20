@@ -1,10 +1,9 @@
 #include "SPF/UI/NotificationWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/Icons.hpp"
+#include "SPF/UI/UISounds.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 
@@ -18,16 +17,14 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 NotificationWindow::NotificationWindow(const std::string& componentName, const std::string& windowId) : BaseWindow(componentName, windowId) {
   m_isVisible = true;  // Always visible manager
   m_isInteractive = false;
 }
 
-void NotificationWindow::Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode) {
+void NotificationWindow::Show(const std::string& message, int type, float duration, SPF_Notification_DisplayMode mode, bool playSound) {
   SPF_Notification_Params params = {};
   params.type = (SPF_NotificationType)type;
   params.message = message.c_str();
@@ -40,10 +37,10 @@ void NotificationWindow::Show(const std::string& message, int type, float durati
   params.a = 0.0f;
   params.custom_icon = nullptr;
 
-  ShowEx(params);
+  ShowEx(params, playSound);
 }
 
-SPF_Notification_Handle NotificationWindow::ShowEx(const SPF_Notification_Params& params) {
+SPF_Notification_Handle NotificationWindow::ShowEx(const SPF_Notification_Params& params, bool playSound) {
   std::string processedMessage = params.message ? params.message : "";
   size_t pos = 0;
   while ((pos = processedMessage.find("\\n", pos)) != std::string::npos) {
@@ -90,6 +87,11 @@ SPF_Notification_Handle NotificationWindow::ShowEx(const SPF_Notification_Params
   if (params.custom_icon) notif.customIcon = params.custom_icon;
 
   m_notifications.push_back(notif);
+
+  if (playSound && notif.mode != SPF_NOTIF_MODE_STICKY) {
+    UISounds::PlayMessageSound();
+  }
+
   return reinterpret_cast<SPF_Notification_Handle>(notif.handle);
 }
 
@@ -370,6 +372,4 @@ void NotificationWindow::GetTypeStyle(const NotificationData& notif, const char*
   }
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/LoggerApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/LoggerHandle.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -17,8 +15,7 @@
 #include <memory>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace SPF::Logging;
 using namespace SPF::Handles;
@@ -76,5 +73,4 @@ void LoggerApi::FillLoggerApi(SPF_Logger_API* api) {
   api->LogThrottled = &LoggerApi::LogThrottled;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

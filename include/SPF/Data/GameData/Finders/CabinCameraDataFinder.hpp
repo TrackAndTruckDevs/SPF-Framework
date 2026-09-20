@@ -1,17 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/ICameraDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 class CabinCameraDataFinder : public ICameraDataFinder {
  public:
   bool TryFindOffsets(GameDataCameraService& owner) override;
   const char* GetName() const override { return "CabinCameraDataFinder"; }
 };
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

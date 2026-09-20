@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <cstdint>
@@ -10,8 +8,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 ConfigAttributeReader::ConfigAttributeReader(const scs_named_value_t* attributes) : m_attributes(attributes) {}
 
 const scs_named_value_t* ConfigAttributeReader::FindAttribute(const char* name, uint32_t index) const {
@@ -129,5 +126,4 @@ std::vector<scs_value_fvector_t> ConfigAttributeReader::GetFVectorArray(const ch
   return result;
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

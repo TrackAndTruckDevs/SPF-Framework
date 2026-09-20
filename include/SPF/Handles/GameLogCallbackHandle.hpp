@@ -1,12 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
 #include "SPF/Modules/GameLogEventManager.hpp"  // For GameLogCallback and UnregisterCallback
 
-SPF_NS_BEGIN
-namespace Handles {
+namespace SPF::Handles {
 
 /**
  * @brief RAII handle for a registered GameLog callback.
@@ -34,5 +31,4 @@ struct GameLogCallbackHandle : public IHandle {
   ~GameLogCallbackHandle() override;
 };
 
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

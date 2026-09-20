@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
 #include <cstddef>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 class GameCameraTV : public IGameCamera {
  public:
   struct CameraData {
@@ -36,7 +32,6 @@ class GameCameraTV : public IGameCamera {
   void OnActivate() override;
   void OnDeactivate() override;
   void Update(float dt) override;
-  void LateUpdate() override;
   GameCameraType GetType() const override { return GameCameraType::TVCamera; }
   void StoreDefaultState() override;
   void ResetToDefaults() override;
@@ -81,5 +76,4 @@ class GameCameraTV : public IGameCamera {
   bool m_fovOverrideActive = false;
   float m_fovOverrideValue = 0.0f;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

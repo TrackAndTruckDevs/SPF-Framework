@@ -1,7 +1,5 @@
 #include "SPF/GameCamera/GameCameraBehind.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -9,9 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 GameCameraBehind::GameCameraBehind() {
   // Constructor
 }
@@ -43,11 +39,6 @@ void GameCameraBehind::Update(float dt) {
   // The new design reads data directly in the Get... methods,
   // so this per-frame update is no longer necessary for populating local data.
   // It can be used for other per-frame logic if needed in the future.
-}
-
-void GameCameraBehind::LateUpdate() {
-  if (!m_pCameraObject || !m_fovOverrideActive) return;
-  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
 }
 
 void GameCameraBehind::StoreDefaultState() {
@@ -267,6 +258,8 @@ void GameCameraBehind::SetFov(float fov) {
   if (!m_pCameraObject) return;
   m_fovOverrideActive = true;
   m_fovOverrideValue = fov;
+  if (!m_pCameraObject || !m_fovOverrideActive) return;
+  ReassertCoreCameraFovReference(m_pCameraObject, m_fovOverrideValue);
   ApplyCoreCameraFov(m_pCameraObject, fov);
 }
 
@@ -604,5 +597,4 @@ void GameCameraBehind::GetShakeAnim(size_t index, float& x, float& y, float& z) 
   y = pVec[1];
   z = pVec[2];
 }
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

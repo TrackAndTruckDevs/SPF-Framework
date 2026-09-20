@@ -1,7 +1,5 @@
 #include "SPF/Data/GameData/Finders/CoreCameraDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Utils/FinderLog.hpp"
@@ -12,8 +10,7 @@
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 /*
  * ARCHITECTURE NOTE: CAMERA ACCESS METHODS
@@ -95,9 +92,9 @@ const char* ACTIVE_CAMERA_ID_SIG = "83 [78-7F] ?? ?? [MOV [r64+off8], r32]";
  */
 const char* WORLD_COORDINATES_SIG =
   "F3 0F 5C [00-FF] ? ? ? ? "  // SUBSS (X)
-  "[MULSS xmm, xmm] "              // MULSS
+  "[MULSS xmm, xmm] "          // MULSS
   "F3 0F 5C [00-FF] ? ? ? ? "  // SUBSS (Y)
-  "F3 0F 5C [00-FF]";              // SUBSS (Z)
+  "F3 0F 5C [00-FF]";          // SUBSS (Z)
 }  // namespace
 
 bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
@@ -240,5 +237,4 @@ bool CoreCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

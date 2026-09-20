@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
 
 #include <string>
 #include <utility>
 
-
-SPF_NS_BEGIN
-namespace Handles {
+namespace SPF::Handles {
 /**
  * @brief A handle for the Config API.
  *
@@ -21,5 +17,4 @@ struct ConfigHandle : IHandle {
 
   ConfigHandle(std::string pluginName) : pluginName(std::move(pluginName)) {}
 };
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

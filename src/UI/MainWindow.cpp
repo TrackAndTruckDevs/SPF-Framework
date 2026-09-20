@@ -1,7 +1,5 @@
 #include "SPF/UI/MainWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/SystemEvents.hpp"
@@ -10,6 +8,7 @@
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/Modules/PerformanceMonitor.hpp"
 #include "SPF/Modules/PluginManager.hpp"
@@ -42,8 +41,7 @@ namespace {
 // Patrons will be fetched from API
 }  // end anonymous namespace
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Input;
 using namespace SPF::Localization;
 using namespace SPF::Modules;
@@ -517,7 +515,7 @@ ImGuiID MainWindow::GetMainDockspaceID() const { return m_dockspaceId; }
 
 ImGuiWindowFlags MainWindow::GetExtraWindowFlags() const { return ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse; }
 
-void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+void MainWindow::OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) {
   if (e.result.success && e.result.data.has_value()) {
     auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
     logger->Debug("Update check succeeded.");
@@ -546,7 +544,7 @@ void MainWindow::OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompl
   }
 }
 
-void MainWindow::OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
+void MainWindow::OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) {
   if (e.result.success && e.result.data.has_value()) {
     auto logger = LoggerFactory::GetInstance().GetLogger("MainWindow");
     logger->Debug("Patrons fetch completed successfully.");
@@ -1054,5 +1052,4 @@ void MainWindow::RenderShutdownPopup() {
   }
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

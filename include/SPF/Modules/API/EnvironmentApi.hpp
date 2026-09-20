@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Environment_API.h"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 class EnvironmentApi {
  public:
@@ -63,5 +59,4 @@ class EnvironmentApi {
   static bool Env_CreatePath(SPF_Environment_Handle* h, const char* path);
 };
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

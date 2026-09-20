@@ -5,20 +5,12 @@
 
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Data::GameData {
-class ClimateService;
-}
-
-namespace UI {
+namespace SPF::UI {
 
 /**
  * @class ClimateWindow
@@ -170,5 +162,4 @@ class ClimateWindow : public BaseWindow {
   std::string m_locThunderstormProbability;
 };
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

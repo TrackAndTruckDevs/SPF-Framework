@@ -1,10 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Events/SystemEvents.hpp"  //  For update and patrons completion events
 #include "SPF/Hooks/HookManager.hpp"
+#include "SPF/Input/InputManager.hpp"
 #include "SPF/Modules/CommunicationManager.hpp"  //  For CommunicationManager
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/System/ApiService.hpp"             //  For ApiResult, UpdateInfo, Patron
 #include "SPF/UI/BaseWindow.hpp"
 
@@ -14,29 +16,10 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Events {
-class EventManager;
-}
-namespace Modules {
-class KeyBindsManager;
-class CommunicationManager;
-class ITelemetryService;
-}  // namespace Modules
-namespace Config {
-struct IConfigService;
-}
-namespace Input {
-class InputManager;
-}
-
-namespace UI {
+namespace SPF::UI {
 class MainWindow : public BaseWindow {
  public:
-  MainWindow(Events::EventManager& eventManager, Input::InputManager& inputManager, Modules::KeyBindsManager& keyBindsManager, Config::IConfigService& configService,
-             Modules::ITelemetryService& telemetryService);
+  MainWindow(Events::EventManager& eventManager, Input::InputManager& inputManager, Modules::KeyBindsManager& keyBindsManager, Config::IConfigService& configService, Modules::ITelemetryService& telemetryService);
 
   ImGuiID GetMainDockspaceID() const;
 
@@ -46,8 +29,8 @@ class MainWindow : public BaseWindow {
   ImGuiWindowFlags GetExtraWindowFlags() const override;
 
   //  Override base window event handlers
-  void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) override;
-  void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) override;
+  void OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) override;
+  void OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) override;
 
  private:
   void ToggleVisibility();
@@ -209,6 +192,4 @@ class MainWindow : public BaseWindow {
   std::string m_locDeveloperMode;
   std::string m_locUserMode;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

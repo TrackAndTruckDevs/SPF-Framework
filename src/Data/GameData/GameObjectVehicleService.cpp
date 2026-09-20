@@ -1,19 +1,15 @@
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/Finders/ObjectVehicleManagerFinder.hpp"
 #include "SPF/Data/GameData/IObjectDataFinder.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
+namespace SPF::Data::GameData {
 
 GameObjectVehicleService& GameObjectVehicleService::GetInstance() {
   static GameObjectVehicleService instance;
@@ -228,5 +224,4 @@ uintptr_t GameObjectVehicleService::GetPlayerVehiclePtr() const {
   return pVehicle;
 }
 
-}  // namespace Data::GameData
-SPF_NS_END
+}  // namespace SPF::Data::GameData

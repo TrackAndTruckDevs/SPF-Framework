@@ -1,13 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 enum class Keyboard {
   Unknown = -1,
   A = 0,
@@ -166,6 +161,4 @@ enum class Keyboard {
 // Functions to convert between string and enum
 std::string ToString(Keyboard key);
 Keyboard FromString(const std::string& str);
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

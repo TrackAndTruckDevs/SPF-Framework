@@ -1,16 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "imgui.h"
 
 #include <md4c.h>
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 /**
  * @brief Custom Markdown renderer using MD4C directly.
@@ -87,6 +83,4 @@ class MarkdownRenderer {
   bool m_skipNextNewline = false;
 };
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

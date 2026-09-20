@@ -1,7 +1,5 @@
 #include "SPF/Telemetry/TruckProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
@@ -11,9 +9,7 @@
 #include <cstring>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 TruckProcessor::TruckProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context) {}
 
 void TruckProcessor::Initialize(const scs_telemetry_init_params_v100_t* const scs_params) { m_logger.Info("TruckProcessor initialized."); }
@@ -254,5 +250,4 @@ void TruckProcessor::HandleChannelUpdate(const scs_string_t name, const scs_u32_
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

@@ -1,13 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 /**
  * @class ITexture
@@ -27,6 +22,4 @@ class ITexture {
   virtual uint32_t GetHeight() const = 0;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

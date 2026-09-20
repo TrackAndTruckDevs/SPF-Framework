@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 
 /**
  * @class InfoWindow
@@ -18,7 +14,6 @@ class InfoWindow : public BaseWindow {
  public:
   InfoWindow(const std::string& componentName, const std::string& windowId);
   virtual ~InfoWindow() = default;
-
 
  protected:
   void RenderContent() override;
@@ -84,5 +79,4 @@ class InfoWindow : public BaseWindow {
   std::string m_locStatusDllNotLoaded;
 };
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

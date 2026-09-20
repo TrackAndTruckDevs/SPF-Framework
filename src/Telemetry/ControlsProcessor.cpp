@@ -1,16 +1,12 @@
 #include "SPF/Telemetry/ControlsProcessor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <cstring>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 
 ControlsProcessor::ControlsProcessor(Logging::Logger& logger, GameContext& context) : m_logger(logger), m_context(context) {}
 
@@ -43,5 +39,4 @@ void ControlsProcessor::HandleChannelUpdate(const scs_string_t name, const scs_u
   }
 }
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

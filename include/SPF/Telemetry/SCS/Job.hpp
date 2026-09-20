@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 #include <string>
 
+namespace SPF::Telemetry::SCS {
 
-SPF_NS_BEGIN
-namespace Telemetry {
-namespace SCS {
 struct JobConstants {
   uint64_t income = 0;
   uint32_t delivery_time = 0;
@@ -36,6 +32,4 @@ struct JobData {
   float cargo_damage = 0.0f;
   float remaining_delivery_minutes = 0.0f;
 };
-}  // namespace SCS
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry::SCS

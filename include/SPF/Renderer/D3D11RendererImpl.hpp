@@ -1,9 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/RendererBase.hpp"
+#include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include <cstddef>
@@ -13,20 +13,11 @@
 #include <windef.h>
 #include <wrl/client.h>
 
-SPF_NS_BEGIN
-
 // Use a template alias for ComPtr for consistency with the D3D12 implementation.
 template <typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-namespace Logging {
-class Logger;
-}
-namespace UI {
-class UIManager;
-}
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 class Renderer;
 
@@ -71,6 +62,4 @@ class D3D11RendererImpl : public RendererBase {
   Utils::Sink<void(IDXGISwapChain*, UINT, UINT)> m_onResizeSink;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

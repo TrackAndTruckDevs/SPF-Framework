@@ -1,9 +1,8 @@
 #include "SPF/Modules/API/JsonReaderApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
+#include "SPF/Utils/Windows.hpp"
 
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
@@ -14,14 +13,7 @@
 #include <iterator>
 #include <string>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/string_s.h>
-#endif
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 using namespace Logging;
 
@@ -247,5 +239,4 @@ void JsonReaderApi::FillJsonReaderApi(SPF_JsonReader_API* api) {
   api->Json_GetMemberValueByIndex = &JsonReaderApi::Json_GetMemberValueByIndex;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,16 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "Delegate.hpp"
 
 #include <algorithm>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 template <typename>
 class Signal;
@@ -116,6 +111,4 @@ class Sink<Return(Args...)> final {
 template <typename Return, typename... Args>
 Sink(Signal<Return(Args...)>&) -> Sink<Return(Args...)>;
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

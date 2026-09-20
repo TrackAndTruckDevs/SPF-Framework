@@ -1,7 +1,5 @@
 #include "SPF/UI/CameraWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/GameCamera/DebugCameraMode.hpp"
@@ -37,14 +35,12 @@
 #include <string>
 #include <vector>
 
-
 using namespace SPF::GameCamera;
 using namespace SPF::Utils;
 using namespace SPF::Data::GameData;
 using namespace SPF::Localization;
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 namespace {
 const char* DebugCameraModeToString(GameCamera::DebugCameraMode mode) {
   switch (mode) {
@@ -139,6 +135,9 @@ void CameraWindow::RefreshLocalization() {
   m_locTabFreeCamera = loc.Get("camera_window.tabs.free_camera");
   m_locTabDebug = loc.Get("camera_window.tabs.debug");
   m_locFovZoom = loc.Get("camera_window.interior_camera.fov_zoom");
+  m_locFovReal = loc.Get("camera_window.interior_camera.fov_real");
+  m_locFovSetting = loc.Get("camera_window.interior_camera.fov_setting");
+  m_locDynamicFov = loc.Get("camera_window.interior_camera.dynamic_fov");
   m_locBaseFov = loc.Get("camera_window.interior_camera.base_fov");
   m_locBaseFovNotFound = loc.Get("camera_window.interior_camera.base_fov_not_found");
   m_locFinalHFov = loc.Get("camera_window.interior_camera.final_h_fov");
@@ -172,6 +171,10 @@ void CameraWindow::RefreshLocalization() {
   m_locHandShakeSpeed = loc.Get("camera_window.interior_camera.hand_shake_speed");
   m_locZoomFovFactor = loc.Get("camera_window.interior_camera.zoom_fov_factor");
   m_locZoomSpeedInterior = loc.Get("camera_window.interior_camera.zoom_speed_interior");
+  m_locZoomOnOff = loc.Get("camera_window.interior_camera.zoom_on_off");
+  m_locZoomLive = loc.Get("camera_window.interior_camera.zoom_live");
+  m_locSpeedFovChangeFactor = loc.Get("camera_window.interior_camera.speed_fov_change_factor");
+  m_locMaxFov = loc.Get("camera_window.interior_camera.max_fov");
   m_locAzimuthOverrides = loc.Get("camera_window.interior_camera.azimuth_overrides");
   m_locRangeStartAzimuth = loc.Get("camera_window.interior_camera.range_start_azimuth");
   m_locRangeEndAzimuth = loc.Get("camera_window.interior_camera.range_end_azimuth");
@@ -466,7 +469,6 @@ void CameraWindow::RefreshLocalization() {
 }
 
 void CameraWindow::RenderContent() {
-
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
 
   // --- Standardized UI Helpers ---
@@ -837,8 +839,22 @@ void CameraWindow::RenderContent() {
         auto& defaults = interiorCam->GetDefaults();
 
         drawHeader(m_locFovZoom);
+        {
+          float real_fov = 0.0f, setting = 0.0f, speed = 0.0f, base_fov = 0.0f;
+          if (interiorCam->GetFovReal(&real_fov) && interiorCam->GetFovSetting(&setting) && interiorCam->GetSpeedFovChangeFactor(&speed) && interiorCam->GetFov(&base_fov)) {
+            Typography::Text(TextStyle::Regular().Align(TextAlign::Center), "%s %.1f = %s: %.1f  %s: %.1f  %s: %.3f",
+                             m_locFovReal.c_str(), real_fov,
+                             m_locBaseFov.c_str(), base_fov - setting,
+                             m_locFovSetting.c_str(), setting,
+                             m_locSpeedFovChangeFactor.c_str(), speed);
+          } else {
+            Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", m_locFovReal.c_str(), m_locDataNotFound.c_str());
+          }
+        }
         drawFloat(m_locBaseFov, [&](float* fov) { return interiorCam->GetFov(fov); }, [&](float fov) { interiorCam->SetFov(fov); }, 20.0f, 120.0f, "%.1f", defaults.fov_base);
         drawReadOnly(m_locFinalHFov, "H=%.1f, V=%.1f", [&](float* h_fov, float* v_fov) { return interiorCam->GetFinalFov(h_fov, v_fov); });
+        drawFloat(m_locSpeedFovChangeFactor, [&](float* val) { return interiorCam->GetSpeedFovChangeFactor(val); }, [&](float val) { interiorCam->SetSpeedFovChangeFactor(val); }, 0.0f, 3.0f, "%.3f", defaults.speed_fov_change_factor);
+        drawBool(m_locDynamicFov, [&](bool* v) { return interiorCam->GetDynamicFovEnabled(v); }, [&](bool v) { interiorCam->SetDynamicFovEnabled(v); });
 
         drawHeader(m_locSeatPosition);
         drawVector3(
@@ -915,12 +931,14 @@ void CameraWindow::RenderContent() {
         drawHeader(m_locAdvancedCoreSettings);
         drawFloat(m_locNearPlane, [&](float* near_plane) { return interiorCam->GetNearPlane(near_plane); }, [&](float near_plane) { interiorCam->SetNearPlane(near_plane); }, 0.01f, 10.0f, "%.3f", defaults.near_plane);
         drawFloat(m_locFarPlane, [&](float* far_plane) { return interiorCam->GetFarPlane(far_plane); }, [&](float far_plane) { interiorCam->SetFarPlane(far_plane); }, 100.0f, 10000.0f, "%.0f", defaults.far_plane);
-        drawFloat(
-          m_locMouseSensitivity, [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
+        drawFloat(m_locMouseSensitivity, [&](float* sensitivity) { return interiorCam->GetMouseSensitivity(sensitivity); }, [&](float sensitivity) { interiorCam->SetMouseSensitivity(sensitivity); }, 0.0f, 10.0f, "%.3f", defaults.mouse_sensitivity);
 
         drawHeader(m_locInteriorLogicSettings);
         drawFloat(m_locZoomFovFactor, [&](float* zoom_factor) { return interiorCam->GetZoomFovFactor(zoom_factor); }, [&](float zoom_factor) { interiorCam->SetZoomFovFactor(zoom_factor); }, 0.0f, 1.0f, "%.3f", defaults.zoom_fov_factor);
         drawFloat(m_locZoomSpeedInterior, [&](float* zoom_speed) { return interiorCam->GetZoomSpeed(zoom_speed); }, [&](float zoom_speed) { interiorCam->SetZoomSpeed(zoom_speed); }, 0.0f, 10.0f, "%.3f", defaults.zoom_speed);
+        drawBool(m_locZoomOnOff, [&](bool* zoom_on_off) { return interiorCam->GetZoomOnOff(zoom_on_off); }, [&](bool zoom_on_off) { interiorCam->SetZoomOnOff(zoom_on_off); });
+        drawFloat(m_locZoomLive, [&](float* zoom_live) { return interiorCam->GetZoomLive(zoom_live); }, [&](float zoom_live) { interiorCam->SetZoomLive(zoom_live); }, 0.0f, 1.0f, "%.3f", 1.0f);
+        drawFloat(m_locMaxFov, [&](float* val) { return interiorCam->GetMaxFov(val); }, [&](float val) { interiorCam->SetMaxFov(val); }, 10.0f, 180.0f, "%.1f", defaults.max_fov);
 
         drawHeader(m_locAzimuthOverrides);
         size_t azimuth_count = interiorCam->GetAzimuthOverridesCount();
@@ -1547,7 +1565,7 @@ void CameraWindow::RenderContent() {
           10.0f,
           "%.3f",
           defaults.validation_speed_negative);
-        drawFloat(m_locBehindSpeedFovFactor, [&](float* v) { return behindCam->GetSpeedFovChangeFactor(v); }, [&](float v) { behindCam->SetSpeedFovChangeFactor(v); }, 0.0f, 1.0f, "%.4f", defaults.speed_fov_change_factor);
+        drawFloat(m_locBehindSpeedFovFactor, [&](float* v) { return behindCam->GetSpeedFovChangeFactor(v); }, [&](float v) { behindCam->SetSpeedFovChangeFactor(v); }, 0.0f, 100.0f, "%.4f", defaults.speed_fov_change_factor);
 
         drawHeader(m_locBehindShakeSettings);
         drawFloat(m_locBehindShakeAnimStep, [&](float* v) { return behindCam->GetShakeAnimStep(v); }, [&](float v) { behindCam->SetShakeAnimStep(v); }, 0.0f, 1.0f, "%.4f", defaults.shake_anim_step);
@@ -3104,5 +3122,4 @@ void CameraWindow::RenderContent() {
 
   m_needsTabSwitch = false;
 }
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

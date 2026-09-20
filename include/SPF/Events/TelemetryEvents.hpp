@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/SCS/Common.hpp"      // For GameState, Timestamps, CommonData
 #include "SPF/Telemetry/SCS/Controls.hpp"    // For Controls
 #include "SPF/Telemetry/SCS/Events.hpp"      // For SpecialEvents, GameplayEvents
@@ -14,8 +12,7 @@
 
 #include <vector>  // For std::vector
 
-SPF_NS_BEGIN
-namespace Events::Telemetry {
+namespace SPF::Events::Telemetry {
 
 // =================================================================================================
 // Telemetry Event Signals
@@ -118,5 +115,4 @@ struct TelemetryEventSignals {
   Utils::Signal<void()> OnTimerRestart;
 };
 
-}  // namespace Events::Telemetry
-SPF_NS_END
+}  // namespace SPF::Events::Telemetry

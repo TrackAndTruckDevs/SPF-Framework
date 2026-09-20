@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/SCS/Common.hpp"
 #include "SPF/Telemetry/SCS/Controls.hpp"
 #include "SPF/Telemetry/SCS/Events.hpp"
@@ -15,10 +13,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Modules {
+namespace SPF::Modules {
 /**
  * @class ITelemetryService
  * @brief An abstract interface for providing read-only access to telemetry data.
@@ -70,5 +65,4 @@ class ITelemetryService {
   virtual float GetDeltaTime() const = 0;
 };
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

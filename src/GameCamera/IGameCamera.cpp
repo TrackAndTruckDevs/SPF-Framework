@@ -1,15 +1,12 @@
 #include "SPF/GameCamera/IGameCamera.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 
 void IGameCamera::ApplyCoreCameraFov(void* pCameraObject, float fov) {
   if (!pCameraObject) return;
@@ -33,13 +30,6 @@ void IGameCamera::ApplyCoreCameraFov(void* pCameraObject, float fov) {
   // 1. Live FOV field, consumed by UpdateCameraProjection below.
   *reinterpret_cast<float*>(pCam + fov_base_offset) = fov;
 
-  // 1b. Reference field the game's native speed-FOV system reads from. Optional: not
-  // required for this call's own visual effect to take place.
-  auto zoomBaseOffset = gameData.GetFovZoomBaseOffset();
-  if (zoomBaseOffset) {
-    *reinterpret_cast<float*>(pCam + zoomBaseOffset) = fov;
-  }
-
   // 2. Recompute horiz/vert final FOV from the live field.
   float param_width = *reinterpret_cast<float*>(pCameraParamsObject + x2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + x1_offset);
   float param_height = *reinterpret_cast<float*>(pCameraParamsObject + y2_offset) - *reinterpret_cast<float*>(pCameraParamsObject + y1_offset);
@@ -54,5 +44,4 @@ void IGameCamera::ReassertCoreCameraFovReference(void* pCameraObject, float fov)
   }
 }
 
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

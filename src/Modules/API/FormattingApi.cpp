@@ -1,14 +1,11 @@
 #include "SPF/Modules/API/FormattingApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Formatting_API.h"
 
 #include <cstdarg>
 #include <cstdio>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 int FormattingApi::Fmt_Format(char* buffer, size_t buffer_size, const char* format, ...) {
   if (!buffer || buffer_size <= 0 || !format) return -1;
@@ -27,5 +24,4 @@ void FormattingApi::FillFormattingApi(SPF_Formatting_API* api) {
   api->Fmt_Format = &FormattingApi::Fmt_Format;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

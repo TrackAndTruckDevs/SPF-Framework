@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "scssdk.h"
 #include "scssdk_input_device.h"
 #include "scssdk_input_event.h"
@@ -10,9 +8,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Input::SCS {
+namespace SPF::Input::SCS {
 /**
  * @class VirtualDevice
  * @brief Represents a virtual input device to be registered with the game.
@@ -53,5 +49,4 @@ class VirtualDevice {
   std::queue<scs_input_event_t> m_eventQueue;
 };
 
-}  // namespace Input::SCS
-SPF_NS_END
+}  // namespace SPF::Input::SCS

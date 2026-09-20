@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 #include <string>
 #include <vector>
 
+namespace SPF::Telemetry::SCS {
 
-SPF_NS_BEGIN
-namespace Telemetry {
-namespace SCS {
 struct GearboxConstants {
   std::string shifter_type;
 
@@ -18,6 +14,4 @@ struct GearboxConstants {
   std::vector<uint32_t> slot_handle_position;
   std::vector<uint32_t> slot_selectors;
 };
-}  // namespace SCS
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry::SCS

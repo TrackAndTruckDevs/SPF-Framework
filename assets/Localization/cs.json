@@ -24,9 +24,6 @@
         "version_label": "Vaše verze ",
         "update_checking": "Kontrola aktualizací...",
         "update_available_notification": "### {}\n Nová aktualizace k dispozici **{}**\n Pro více informací navštivte webové stránky",
-        "patch_downloading": "Stahování opravy **v{}**...",
-        "patch_updated_restart": "### SPF Framework aktualizován na **{}**\n Restartujte hru pro použití aktualizace.",
-        "patch_applied": "SPF Framework aktualizován na **v{}**",
         "menu": {
             "manual": "Manuál / FAQ",
             "about": "O nás / Kontakty",
@@ -244,14 +241,14 @@
                     "title": "Doba trvání oznámení",
                     "description": "Nastavuje, jak dlouho (v sekundách) zůstanou dočasná vyskakovací oznámení na obrazovce."
                 },
+                "notification_sound": {
+                    "title": "Přehrávat zvuk oznámení",
+                    "description": "Přehraje zvuk při zobrazení nového oznámení."
+                },
                 "show_update_notifications": {
                     "title": "Upozorňovat na aktualizace",
                     "description": "Jakmile bude k dispozici aktualizace frameworku nebo pluginu, zobrazí se oznámení.."
                 },
-                    "auto_patch": {
-                        "title": "Automatické opravné aktualizace",
-                        "description": "Automaticky stahuje a instaluje opravy mezi velkými vydáními."
-                    },
                 "scale": {
                     "title": "Měřítko rozhraní",
                     "description": "Upravuje velikost písem a oken rozhraní."
@@ -723,6 +720,13 @@
             "hand_shake_speed": "Frekvence vibrace kamery",
             "zoom_fov_factor": "Multiplikátor FOV přiblížení",
             "zoom_speed_interior": "Rychlost přiblížení",
+            "fov_real": "Skutečné FOV",
+            "fov_setting": "Nastavení FOV",
+            "dynamic_fov": "Dynamické FOV",
+            "zoom_on_off": "Zapnutí/Vypnutí zoomu",
+            "zoom_live": "Poloha zoomu",
+            "speed_fov_change_factor": "Faktor rychlosti změny FOV",
+            "max_fov": "Max. FOV",
             "azimuth_overrides": "Dynamické zóny (Azimutové přepsání)",
             "range_start_azimuth": "Začátek azimutu zóny",
             "range_end_azimuth": "Konec azimutu zóny",

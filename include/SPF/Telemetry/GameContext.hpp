@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Telemetry/Game.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class GameContext
  * @brief Isolates all logic dependent on the current game (ATS/ETS2) and its configuration.
@@ -45,5 +41,4 @@ class GameContext {
   uint32_t m_version;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

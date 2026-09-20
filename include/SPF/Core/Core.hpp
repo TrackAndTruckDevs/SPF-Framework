@@ -1,9 +1,26 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
+#include "SPF/Events/ConfigEvents.hpp"
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Events/SystemEvents.hpp"
+#include "SPF/Events/UIEvents.hpp"
+#include "SPF/Input/InputEvents.hpp"
+#include "SPF/Input/InputManager.hpp"
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
+#include "SPF/Modules/HandleManager.hpp"
+#include "SPF/Modules/IInputService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Renderer/Renderer.hpp"
+#include "SPF/System/ApiService.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
+#include "SPF/Telemetry/SCSTelemetryService.hpp"
+#include "SPF/UI/ImGuiInputConsumer.hpp"
+#include "SPF/Utils/Signal.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -20,85 +37,7 @@
 struct scs_telemetry_init_params_t;
 struct scs_input_init_params_t;
 
-SPF_NS_BEGIN
-
-// Forward declarations for managers and components
-namespace Events {
-class EventManager;
-struct OnPluginWillBeLoaded;
-struct OnPluginDidLoad;
-struct OnPluginWillBeUnloaded;
-namespace UI {
-struct FocusComponentInSettingsWindow;
-struct RequestPluginStateChange;
-struct RequestSettingChange;
-struct OnSettingWasChanged;
-struct RequestInputCapture;
-struct RequestInputCaptureCancel;
-struct RequestBindingUpdate;
-struct RequestDeleteBinding;
-struct RequestBindingPropertyUpdate;
-struct RequestExecuteCommand;
-struct RequestUpdateCheck;
-struct RequestPatronsFetch;
-}  // namespace UI
-namespace Config {
-struct OnKeybindsModified;  // Added for live keybind updates
-}
-namespace System {
-struct OnUpdateCheckCompleted;
-struct OnPatronsFetchCompleted;
-struct OnUsageTrackingCompleted;
-struct OnPluginUpdateAvailable;
-struct OnPatchUpdateDetected;
-struct OnPatchApplyCompleted;
-}  // namespace System
-}  // namespace Events
-namespace Utils {
-template <typename>
-class Sink;
-}
-namespace Rendering {
-class Renderer;
-}
-namespace Logging {
-class Logger;
-}
-namespace UI {
-class LoggerWindowSink;
-class ImGuiInputConsumer;
-class UIManager;
-}  // namespace UI
-namespace Modules {
-class KeyBindsManager;
-class PluginManager;
-class HandleManager;
-class IInputService;
-class CommunicationManager;
-}  // namespace Modules
-namespace Input {
-class InputManager;
-struct InputCaptured;
-struct InputCaptureCancelled;
-struct InputCaptureConflict;
-}  // namespace Input
-
-namespace Config {
-struct IConfigService;
-}
-
-namespace System {
-class ApiService;
-class SelfUpdater;
-struct PatchApplyResult;
-}  // namespace System
-
-namespace Telemetry {
-class GameContext;
-class SCSTelemetryService;
-}  // namespace Telemetry
-
-namespace Core {
+namespace SPF::Core {
 
 enum class LifecycleState { Stopped, Preloading, Preloaded, Initializing, Initialized, ShuttingDown };
 
@@ -220,11 +159,9 @@ class Core {
   //  Update and Patrons event handlers
   void OnRequestUpdateCheck(const Events::UI::RequestUpdateCheck& e);
   void OnRequestPatronsFetch(const Events::UI::RequestPatronsFetch& e);
-  void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e);
-  void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e);
-  void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e);
-  void OnPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e);
-  void ProcessSelfUpdaterResult();
+  void OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e);
+  void OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e);
+  void OnUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e);
   void ProcessHookDependenciesForPlugin(const std::string& pluginName, bool isEnabled);
 
   // --- Init/Shutdown Helpers ---
@@ -272,13 +209,12 @@ class Core {
   // --- Core Managers ---
   // Order of declaration matters for destruction!
   std::unique_ptr<Events::EventManager> m_eventManager;
-  std::unique_ptr<SPF::Config::IConfigService> m_configService;
+  std::unique_ptr<Config::IConfigService> m_configService;
   std::unique_ptr<Input::InputManager> m_inputManager;
   std::unique_ptr<Modules::KeyBindsManager> m_keyBindsManager;
   std::unique_ptr<Modules::HandleManager> m_handleManager;
   std::unique_ptr<System::ApiService> m_apiService;
   std::unique_ptr<Modules::CommunicationManager> m_communicationManager;
-  std::unique_ptr<System::SelfUpdater> m_selfUpdater;
   std::vector<Config::IConfigurable*> m_configurableServices;
 
   std::unique_ptr<Telemetry::GameContext> m_gameContext;
@@ -306,11 +242,9 @@ class Core {
   //  Sinks for Update and Patrons
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestUpdateCheck&)>> m_onRequestUpdateCheckSink;
   std::unique_ptr<Utils::Sink<void(const Events::UI::RequestPatronsFetch&)>> m_onRequestPatronsFetchSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnUpdateCheckCompleted&)>> m_onUpdateCheckCompletedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatronsFetchCompleted&)>> m_onPatronsFetchCompletedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnUsageTrackingCompleted&)>> m_onUsageTrackingCompletedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>> m_onPatchUpdateDetectedSink;
-  std::unique_ptr<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>> m_onPatchApplyCompletedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::OnUpdateCheckCompleted&)>> m_onUpdateCheckCompletedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::OnPatronsFetchCompleted&)>> m_onPatronsFetchCompletedSink;
+  std::unique_ptr<Utils::Sink<void(const Events::OnUsageTrackingCompleted&)>> m_onUsageTrackingCompletedSink;
 
   // --- UI Components ---
   std::unique_ptr<UI::ImGuiInputConsumer> m_imguiInputConsumer;
@@ -320,5 +254,4 @@ class Core {
   std::thread m_deferredInitThread;
 };
 
-}  // namespace Core
-SPF_NS_END
+}  // namespace SPF::Core

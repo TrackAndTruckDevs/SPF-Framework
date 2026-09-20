@@ -1,7 +1,5 @@
 #include "SPF/Modules/CommunicationManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -9,6 +7,7 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Logging/Sinks/ErrorReportSink.hpp"
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/Utils/Signal.hpp"
@@ -26,8 +25,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 namespace {
 constexpr auto RETRY_INTERVAL = std::chrono::minutes(5);
@@ -35,7 +33,7 @@ constexpr auto TRACKING_INTERVAL = std::chrono::minutes(5);  // Send logs every 
 }  // namespace
 
 CommunicationManager::CommunicationManager(Events::EventManager& eventManager, System::ApiService& apiService, Config::IConfigService& configService) : m_eventManager(eventManager), m_apiService(apiService), m_configService(configService) {
-  m_onRequestTrackUsageSink = std::make_unique<Utils::Sink<void(const Events::System::OnRequestTrackUsage&)>>(m_eventManager.System.OnRequestTrackUsage);
+  m_onRequestTrackUsageSink = std::make_unique<Utils::Sink<void(const Events::OnRequestTrackUsage&)>>(m_eventManager.System.OnRequestTrackUsage);
   m_onErrorReportSinkChangedSink = std::make_unique<Utils::Sink<void(std::shared_ptr<Logging::Sinks::ErrorReportSink>)>>(Logging::LoggerFactory::GetInstance().OnErrorReportSinkChanged);
 
   // Generate a simple unique session ID for this run
@@ -102,7 +100,6 @@ void CommunicationManager::Update() {
 
       if (result.data) {
         OnUpdateInfoReceived.Call(*result.data);
-        TryStartPatchUpdate(*result.data);
       }
     } else {
       if (result.errorMessage.value_or("") == "api.error.forbidden") {
@@ -209,7 +206,7 @@ void CommunicationManager::Update() {
             if (currentVer && latestVer && *latestVer > *currentVer) {
               logger->Info("Update detected for plugin {}: {} -> {}", pluginId, currentVer->ToString(), latestVer->ToString());
 
-              Events::System::OnPluginUpdateAvailable e;
+              Events::OnPluginUpdateAvailable e;
               e.pluginId = pluginId;
               e.pluginName = info.name.value_or(pluginId);
               e.currentVersion = info.version.value_or("0.0.0");
@@ -288,30 +285,6 @@ void CommunicationManager::RequestUpdateCheck(bool forceRefresh) {
 
   m_updateState.status = ResourceStatus::Loading;
   m_updateFuture = m_apiService.FetchUpdateInfoAsync(*it->second.websiteUrl, versionOpt->major, versionOpt->minor, versionOpt->patch, versionOpt->revision, channel, currentLang);
-}
-
-void CommunicationManager::TryStartPatchUpdate(const System::UpdateInfo& info) {
-  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("CommunicationManager");
-
-  const auto& allComponents = m_configService.GetAllComponentInfo();
-  auto it = allComponents.find("framework");
-  if (it == allComponents.end() || !it->second.version) return;
-
-  auto currentVer = System::Version::FromString(*it->second.version);
-  if (!currentVer) return;
-
-  const auto& latest = info.latestVersion.ver;
-  const bool isPatch = latest.major == currentVer->major && latest.minor == currentVer->minor && latest.patch == currentVer->patch && latest.revision > currentVer->revision;
-  if (!isPatch) return;
-
-  const bool autoPatch = m_configService.GetValue("framework", "settings.framework.auto_patch", true).get<bool>();
-  if (!autoPatch) {
-    logger->Info("Patch v{} detected but automatic patch updates are disabled.", info.latestVersion.full);
-    return;
-  }
-
-  logger->Info("Hotfix patch available: {} -> {}. Starting automatic update...", currentVer->ToString(), info.latestVersion.full);
-  m_eventManager.System.OnPatchUpdateDetected.Call({info});
 }
 
 void CommunicationManager::RequestPluginUpdateChecks() {
@@ -475,9 +448,8 @@ void CommunicationManager::RequestTrackUsage() {
   m_hasInitialTrackingSent = true;
 }
 
-void CommunicationManager::OnRequestTrackUsage(const Events::System::OnRequestTrackUsage& e) { RequestTrackUsage(); }
+void CommunicationManager::OnRequestTrackUsage(const Events::OnRequestTrackUsage& e) { RequestTrackUsage(); }
 
 void CommunicationManager::OnErrorReportSinkChanged(std::shared_ptr<Logging::Sinks::ErrorReportSink> newSink) { m_errorSink = newSink; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

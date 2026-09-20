@@ -1,15 +1,12 @@
 #include "SPF/Modules/API/VehicleApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameObjectVehicleService.hpp"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
 #include "SPF/Utils/Windows.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 using namespace SPF::Data::GameData;
 
 void VehicleApi::FillVehicleApi(SPF_Vehicle_API* vehicle_api) {
@@ -165,5 +162,4 @@ float VehicleApi::T_Vehicle_GetAcceleration(SPF_VehicleHandle h) {
   return fn ? fn(subObj) : 0.0f;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,15 +1,12 @@
 #include "SPF/Data/GameData/Finders/DebugCameraAnimationDataFinder.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 namespace {
 /*
@@ -101,5 +98,4 @@ bool DebugCameraAnimationDataFinder::TryFindOffsets(GameDataCameraService& owner
   return log.Finish(m_isReady);
 }
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

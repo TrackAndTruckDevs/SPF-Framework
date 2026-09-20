@@ -8,210 +8,305 @@
     "",
     "  Usage:",
     "    1. cp CMakeUserPresets.json.example CMakeUserPresets.json",
-    "    2. Fill in your paths in `base-user-env` below",
+    "    2. Fill in your paths below",
     "    3. cmake --preset <your-preset> && cmake --build --preset <your-preset>",
     "",
-    "  Available presets (inherit from base-user-env):",
-    "    user-win-release | user-win-debug | user-win-relwithdebinfo | user-win-minsizerel",
-    "    user-ninja-release | user-ninja-debug | user-ninja-relwithdebinfo | user-ninja-minsizerel",
-    "    user-mingw-release | user-mingw-debug | user-mingw-relwithdebinfo | user-mingw-minsizerel",
-    "    user-mingw-make-release | user-mingw-make-debug | user-mingw-make-relwithdebinfo | user-mingw-make-minsizerel",
+    "  Available presets:",
+    "    Windows (VS 2022)  : user-win-release | user-win-debug | user-win-relwithdebinfo | user-win-minsizerel",
+    "    Windows (Ninja)    : user-ninja-release | user-ninja-debug | user-ninja-relwithdebinfo | user-ninja-minsizerel",
+    "    Linux (MinGW/Ninja): user-mingw-release | user-mingw-debug | user-mingw-relwithdebinfo | user-mingw-minsizerel",
+    "    Linux (MinGW/Make) : user-mingw-make-release | user-mingw-make-debug | user-mingw-make-relwithdebinfo | user-mingw-make-minsizerel",
+    "",    
+    "  All paths below are OPTIONAL — fill them in or change them to match your setup.",
     "",
-    "  ATS_PLUGINS_DIR and ETS2_PLUGINS_DIR example",
-    " 'F:/SteamLibrary/steamapps/common/American Truck Simulator/bin/win_x64/plugins' ",
-    " 'F:/SteamLibrary/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins' ",
+    "  Example paths: SPF_BUILD_DIR — where to store build artifacts:",
+    "    Windows : '$env{USERPROFILE}/.spf-builds/${sourceDirName}/${presetName}'",
+    "    Linux   : '$env{HOME}/.spf-builds/${sourceDirName}/${presetName}'",
+    "    Default : 'build/${presetName}' builds inside the project as build/${presetName}/",
     "",
-    "  SPF_SIGN_CERT example",
-    " '$env{HOME}/.config/spf-certs/spf-cacert.pfx' ",
+    "  Example paths: ATS_PLUGINS_DIR / ETS2_PLUGINS_DIR — game plugin folders (optional):",
+    "    Windows ATS: F:/SteamLibrary/steamapps/common/American Truck Simulator/bin/win_x64/plugins",
+    "    Linux   ATS: /mnt/f/SteamLibrary/steamapps/common/American Truck Simulator/bin/win_x64/plugins",
+    "    Windows ETS2: F:/SteamLibrary/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins",
+    "    Linux   ETS2: /mnt/f/SteamLibrary/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins",
+    "    Default : ''  — *.dll stay in the build directory, nothing is copied to the game",
     "",
-    "============================================================================"
+    "  Example paths: INSTALLER_STAGE_DIR — distribution staging folder (optional):",
+    "    Set it to auto-stage compiled DLL + assets into a distribution folder.",
+    "    Windows : 'E:/MyProjects/Release/${sourceDirName}/'",
+    "    Linux   : '/mnt/e/MyProjects/Release/${sourceDirName}/'",
+    "    Default : ''  — no staging, nothing is copied",
+    "",
+    "  Example paths: SPF_SIGN_CERT — code signing certificate (optional):",
+    "    Linux   : `/mnt/projects/spf-certs/spf-cacert.pfx`",
+    "    Windows : 'Z:/spf-certs/spf-cacert.pfx'",
+    "    Default : ''  — do not sign with a certificate"
   ],
 
   "configurePresets": [
     {
-      "$comment": "=== Hidden base: user environment (edit paths here) ===",
+      "$comment": "=== Hidden base: shared env (harmless cross-OS) ===",
       "name": "base-user-env",
       "hidden": true,
       "environment": {
+        "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres"
+      }
+    },
+    {
+      "$comment": "=== Hidden base: binaryDir from $env{SPF_BUILD_DIR} (first in inherits => wins) ===",
+      "name": "base-user-build",
+      "hidden": true,
+      "binaryDir": "$env{SPF_BUILD_DIR}"
+    },
+    {
+      "$comment": "=== Hidden base: build dir + deploy paths + signing certificate — Windows ===",
+      "name": "base-user-paths-win",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "environment": {
+        "SPF_BUILD_DIR": "build/${presetName}",
         "ATS_PLUGINS_DIR": "",
         "ETS2_PLUGINS_DIR": "",
-        "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres"
+        "INSTALLER_STAGE_DIR": "",
+        "SPF_SIGN_CERT": ""
+      }
+    },
+    {
+      "$comment": "=== Hidden base: build dir + deploy paths + signing certificate — Linux ===",
+      "name": "base-user-paths-linux",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "environment": {
+        "SPF_BUILD_DIR": "build/${presetName}",
+        "ATS_PLUGINS_DIR": "",
+        "ETS2_PLUGINS_DIR": "",
+        "INSTALLER_STAGE_DIR": "",
+        "SPF_SIGN_CERT": ""
       }
     },
 
     {
-      "$comment": "=== Windows: MSVC (VS 2022) ===",
       "name": "user-win-release",
-      "inherits": ["base-user-env", "vs-release"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "vs-release"],
       "displayName": "\u2714 USER: VS 2022 \u00b7 Release",
       "description": "VS 2022 Release with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-win-debug",
-      "inherits": ["base-user-env", "vs-debug"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "vs-debug"],
       "displayName": "  \u00B7 USER: VS 2022 \u00b7 Debug",
       "description": "VS 2022 Debug with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-win-relwithdebinfo",
-      "inherits": ["base-user-env", "vs-relwithdebinfo"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "vs-relwithdebinfo"],
       "displayName": "  \u00B7 USER: VS 2022 \u00b7 RelWithDebInfo",
       "description": "VS 2022 RelWithDebInfo with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-win-minsizerel",
-      "inherits": ["base-user-env", "vs-minsizerel"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "vs-minsizerel"],
       "displayName": "  \u00B7 USER: VS 2022 \u00b7 MinSizeRel",
       "description": "VS 2022 MinSizeRel with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
 
     {
-      "$comment": "=== Windows: Ninja (MSVC) ===",
       "name": "user-ninja-release",
-      "inherits": ["base-user-env", "ninja-release"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "ninja-release"],
       "displayName": "\u2714 USER: Ninja (MSVC) \u00b7 Release",
       "description": "Ninja + MSVC Release with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-ninja-debug",
-      "inherits": ["base-user-env", "ninja-debug"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "ninja-debug"],
       "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 Debug",
       "description": "Ninja + MSVC Debug with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-ninja-relwithdebinfo",
-      "inherits": ["base-user-env", "ninja-relwithdebinfo"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "ninja-relwithdebinfo"],
       "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 RelWithDebInfo",
       "description": "Ninja + MSVC RelWithDebInfo with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-ninja-minsizerel",
-      "inherits": ["base-user-env", "ninja-minsizerel"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-win", "ninja-minsizerel"],
       "displayName": "  \u00B7 USER: Ninja (MSVC) \u00b7 MinSizeRel",
       "description": "Ninja + MSVC MinSizeRel with game deploy path",
       "cacheVariables": {
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
 
     {
-      "$comment": "=== Linux: MinGW cross-compile (Ninja) ===",
       "name": "user-mingw-release",
-      "inherits": ["base-user-env", "mingw-release"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-release"],
       "displayName": "\u2714 USER: MinGW (Ninja) \u00b7 Release",
       "description": "MinGW + Ninja Release with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-debug",
-      "inherits": ["base-user-env", "mingw-debug"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-debug"],
       "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 Debug",
       "description": "MinGW + Ninja Debug with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-relwithdebinfo",
-      "inherits": ["base-user-env", "mingw-relwithdebinfo"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-relwithdebinfo"],
       "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 RelWithDebInfo",
       "description": "MinGW + Ninja RelWithDebInfo with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-minsizerel",
-      "inherits": ["base-user-env", "mingw-minsizerel"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-minsizerel"],
       "displayName": "  \u00B7 USER: MinGW (Ninja) \u00b7 MinSizeRel",
       "description": "MinGW + Ninja MinSizeRel with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
 
     {
-      "$comment": "=== Linux: MinGW cross-compile (Unix Makefiles) ===",
       "name": "user-mingw-make-release",
-      "inherits": ["base-user-env", "mingw-make-release"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-make-release"],
       "displayName": "\u2714 USER: MinGW (Make) \u00b7 Release",
       "description": "MinGW + Unix Makefiles Release with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-make-debug",
-      "inherits": ["base-user-env", "mingw-make-debug"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-make-debug"],
       "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 Debug",
       "description": "MinGW + Unix Makefiles Debug with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-make-relwithdebinfo",
-      "inherits": ["base-user-env", "mingw-make-relwithdebinfo"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-make-relwithdebinfo"],
       "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 RelWithDebInfo",
       "description": "MinGW + Unix Makefiles RelWithDebInfo with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
       }
     },
     {
       "name": "user-mingw-make-minsizerel",
-      "inherits": ["base-user-env", "mingw-make-minsizerel"],
+      "inherits": ["base-user-env", "base-user-build", "base-user-paths-linux", "mingw-make-minsizerel"],
       "displayName": "  \u00B7 USER: MinGW (Make) \u00b7 MinSizeRel",
       "description": "MinGW + Unix Makefiles MinSizeRel with game deploy path and RC compiler",
       "cacheVariables": {
         "CMAKE_RC_COMPILER": "$env{CMAKE_RC_COMPILER}",
         "ATS_PLUGINS_DIR": "$env{ATS_PLUGINS_DIR}",
-        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}"
+        "ETS2_PLUGINS_DIR": "$env{ETS2_PLUGINS_DIR}",
+        "SPF_SIGN_CERT": "$env{SPF_SIGN_CERT}",
+        "INSTALLER_STAGE_DIR": "$env{INSTALLER_STAGE_DIR}"
+      }
+    },
+    {
+      "$comment": "=== clangd: configure-only for compile_commands.json on server ===",
+      "name": "user-clangd",
+      "hidden": false,
+      "inherits": "base-mingw-ninja",
+      "binaryDir": "/var/lib/clangd-builds/${sourceDirName}",
+      "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release"
+      },
+      "environment": {
+          "PATH": "/opt/mingw64/bin:/usr/local/bin:/usr/bin:/bin"
       }
     }
   ],

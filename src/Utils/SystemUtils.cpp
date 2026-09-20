@@ -1,6 +1,6 @@
 #include "SPF/Utils/SystemUtils.hpp"
 
-#include "SPF/Namespace.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <corecrt.h>
 #include <cstddef>
@@ -11,18 +11,10 @@
 #include <winnt.h>
 #include <winternl.h>
 
-// IWYU insists on a direct provider for _s functions.
-// MinGW: pull in MSVC-compat decl; MSVC gets them from <cstdio> natively.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <sec_api/stdlib_s.h>
-#endif
-
 // Define RtlGetVersion prototype if not available via headers
 typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 std::string SystemUtils::GetSystemLocaleName() {
   wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
@@ -63,6 +55,4 @@ std::string SystemUtils::GetSystemArchitecture() {
   return "x64";
 }
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

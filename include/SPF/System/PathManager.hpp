@@ -1,14 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <cstdint>
 #include <filesystem>
 #include <minwindef.h>
 #include <string>
 
-SPF_NS_BEGIN
-namespace System {
+namespace SPF::System {
 class PathManager {
  public:
   // This class cannot be instantiated
@@ -157,5 +154,4 @@ class PathManager {
   static std::string m_cachedProfileName;
   static std::filesystem::path m_cachedProfilePath;
 };
-}  // namespace System
-SPF_NS_END
+}  // namespace SPF::System

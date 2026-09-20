@@ -1,14 +1,11 @@
 #include "SPF/Modules/API/GameWorldApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/SPF_API/SPF_GameWorld_API.h"
 
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 using namespace SPF::Data::GameData;
 
 void GameWorldApi::FillGameWorldApi(SPF_GameWorld_API* gameworld_api) {
@@ -128,5 +125,4 @@ bool GameWorldApi::T_GW_SetCityKeyCity(uint32_t index, bool val) { return GameWo
 uint32_t GameWorldApi::T_GW_GetCityTimeZone(uint32_t index) { return GameWorldService::GetInstance().GetCityTimeZone(index); }
 bool GameWorldApi::T_GW_SetCityTimeZone(uint32_t index, uint32_t val) { return GameWorldService::GetInstance().SetCityTimeZone(index, val); }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

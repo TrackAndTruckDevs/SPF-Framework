@@ -1,7 +1,5 @@
 #include "SPF/Logging/LoggerFactory.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/Sinks/ErrorReportSink.hpp"
@@ -19,8 +17,7 @@
 #include <mutex>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Logging {
+namespace SPF::Logging {
 
 using namespace SPF::Core;
 using namespace SPF::System;
@@ -75,11 +72,6 @@ void LoggerFactory::Shutdown() {
 
   m_loggers.clear();
   m_globalSinks.clear();
-
-  // Emit signals before resetting
-  OnUISinkChanged.Call(nullptr);
-  OnErrorReportSinkChanged.Call(nullptr);
-  OnFrameworkFileSinkChanged.Call(nullptr);
 
   m_uiSink.reset();
   m_errorReportSink.reset();
@@ -421,5 +413,4 @@ LoggerFactory::~LoggerFactory() {
   }
 }
 
-}  // namespace Logging
-SPF_NS_END
+}  // namespace SPF::Logging

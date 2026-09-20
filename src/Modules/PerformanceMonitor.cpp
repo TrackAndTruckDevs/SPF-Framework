@@ -1,15 +1,11 @@
 #include "SPF/Modules/PerformanceMonitor.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include <algorithm>
 #include <cstddef>
 #include <limits>   // For std::numeric_limits
 #include <numeric>  // For std::accumulate
 
-
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 PerformanceMonitor& PerformanceMonitor::GetInstance() {
   static PerformanceMonitor instance;
@@ -127,5 +123,4 @@ float PerformanceMonitor::GetGlobalMaxFPS() const { return m_globalMaxFPS; }
 
 float PerformanceMonitor::GetDeltaTime() const { return m_deltaTime; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

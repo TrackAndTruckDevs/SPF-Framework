@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/SPF_API/SPF_UI_API.h"
 
@@ -10,8 +8,7 @@
 
 #include <string>
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 class IWindow {
  public:
   virtual ~IWindow() = default;
@@ -48,9 +45,8 @@ class IWindow {
   virtual nlohmann::ordered_json GetCurrentSettings() const = 0;
 
   // --- Framework Events ---
-  virtual void OnUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {}
-  virtual void OnPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {}
-  virtual void OnUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
+  virtual void OnUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) {}
+  virtual void OnPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) {}
+  virtual void OnUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e) {}
 };
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

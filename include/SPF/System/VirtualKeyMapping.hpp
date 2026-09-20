@@ -1,16 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/System/Keyboard.hpp"
 
 #include <minwindef.h>
 #include <string>
 #include <unordered_map>
 
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 class VirtualKeyMapping {
  public:
   // Returns the single instance of the class
@@ -50,6 +46,4 @@ class VirtualKeyMapping {
   std::unordered_map<Keyboard, std::string> m_keyToString;
   std::unordered_map<Keyboard, std::string> m_keyToDisplayName;
 };
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

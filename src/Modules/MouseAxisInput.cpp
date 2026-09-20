@@ -1,7 +1,5 @@
 #include "SPF/Modules/MouseAxisInput.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 
@@ -15,8 +13,7 @@
 #include <set>
 #include <string>
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 
 MouseAxisInput::MouseAxisInput(const nlohmann::ordered_json& config) {
   if (config.contains("key")) {
@@ -192,5 +189,4 @@ std::string MouseAxisInput::GetDisplayName() const {
 
 bool MouseAxisInput::IsValid() const { return m_axisIndex >= 0 && m_axisIndex <= 2; }
 
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

@@ -1,16 +1,12 @@
 #include "SPF/System/VirtualKeyMapping.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/System/Keyboard.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include <minwindef.h>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 VirtualKeyMapping& VirtualKeyMapping::GetInstance() {
   static VirtualKeyMapping instance;
   return instance;
@@ -621,6 +617,4 @@ Keyboard VirtualKeyMapping::FromWinAPI(WPARAM wParam, bool isExtended) const {
       return System::Keyboard::Unknown;
   }
 }
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

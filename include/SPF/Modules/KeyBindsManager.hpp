@@ -1,5 +1,4 @@
 #pragma once
-#include "SPF/Namespace.hpp"
 
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/EnumMappings.hpp"
@@ -28,20 +27,16 @@
 #include <utility>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Input {
+namespace SPF::Input {
 class InputManager;
 struct KeyboardEvent;
 struct GamepadEvent;
 struct MouseButtonEvent;
 }  // namespace Input
-namespace Events {
+namespace SPF::Events {
 class EventManager;
 }
-
-namespace Modules {
+namespace SPF::Modules {
 using ActionCallback = std::function<void()>;
 using ActionCallbackEx = std::function<void(const std::string&, void*)>;
 
@@ -148,8 +143,7 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
    * @param actionToExclude The full name of the action to exclude from the search (usually the one being edited).
    * @return An optional pair containing the name and binding JSON of the conflicting action, if found.
    */
-  std::optional<std::pair<std::string, nlohmann::ordered_json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType,
-                                                                                       const std::string& actionToExclude) const;
+  std::optional<std::pair<std::string, nlohmann::ordered_json>> FindConflictForBinding(const IBindableInput& input, Input::PressType pressType, const std::string& actionToExclude) const;
 
   const Binding* GetBindingForInput(System::Keyboard key, Input::PressType pressType) const;
   const Binding* GetBindingForInput(System::GamepadButton button, Input::PressType pressType) const;
@@ -227,5 +221,4 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   Utils::Sink<void(const Events::OnPluginDidLoad&)> m_onPluginDidLoadSink;
   Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)> m_onPluginWillBeUnloadedSink;
 };
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

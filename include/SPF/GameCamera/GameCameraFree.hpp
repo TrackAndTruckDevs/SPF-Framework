@@ -1,13 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/GameCameraType.hpp"
 #include "SPF/GameCamera/IGameCamera.hpp"
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 /**
  * @class GameCameraFree
  * @brief Represents the developer free camera (ID 0).
@@ -64,5 +60,4 @@ class GameCameraFree : public IGameCamera {
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

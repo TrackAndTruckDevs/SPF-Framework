@@ -1,10 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Logging/Logger.hpp"
+#include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/Utils/Signal.hpp"
 
@@ -14,14 +13,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
-class LoggerWindowSink;
-}
-
-namespace UI {
+namespace SPF::UI {
 /**
  * @class LoggerWindow
  * @brief An ImGui window responsible for displaying logs collected by a LoggerWindowSink.
@@ -65,6 +57,4 @@ class LoggerWindow : public BaseWindow, public Config::IConfigurable {
   std::string m_selectedComponent = "All";
   std::vector<std::string> m_componentList;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

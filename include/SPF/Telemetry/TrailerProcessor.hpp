@@ -1,24 +1,13 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Logging/Logger.hpp"
+#include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/SCS/Trailer.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
 
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Telemetry {
-class GameContext;
-}
-
-namespace Telemetry {
+namespace SPF::Telemetry {
 /**
  * @class TrailerProcessor
  * @brief Processes and owns all trailer-related telemetry data.
@@ -42,5 +31,4 @@ class TrailerProcessor {
   std::vector<SCS::Trailer> m_trailers;
 };
 
-}  // namespace Telemetry
-SPF_NS_END
+}  // namespace SPF::Telemetry

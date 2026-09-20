@@ -1,20 +1,15 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
 
 #include <memory>
 #include <utility>
 
-
-SPF_NS_BEGIN
-
-namespace Logging {
+namespace SPF::Logging {
 class Logger;
-}  // namespace Logging
+}  // namespace SPF::Logging
 
-namespace Handles {
+namespace SPF::Handles {
 /**
  * @brief A handle for the Logger API.
  *
@@ -27,5 +22,3 @@ struct LoggerHandle : IHandle {
   explicit LoggerHandle(std::shared_ptr<Logging::Logger> logger) : logger(std::move(logger)) {}
 };
 }  // namespace Handles
-
-SPF_NS_END

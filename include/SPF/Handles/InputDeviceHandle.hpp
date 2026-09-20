@@ -1,20 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Handles/IHandle.hpp"
+#include "SPF/Input/SCS/VirtualDevice.hpp"
 
 #include <string>
 #include <utility>
 
-
-SPF_NS_BEGIN
-
-namespace Input::SCS {
-class VirtualDevice;
-}  // namespace Input::SCS
-
-namespace Handles {
+namespace SPF::Handles {
 class InputDeviceHandle : public IHandle {
  public:
   Input::SCS::VirtualDevice* const device;
@@ -22,5 +14,4 @@ class InputDeviceHandle : public IHandle {
 
   InputDeviceHandle(Input::SCS::VirtualDevice* device, std::string ownerName) : device(device), ownerName(std::move(ownerName)) {}
 };
-}  // namespace Handles
-SPF_NS_END
+}  // namespace SPF::Handles

@@ -1,10 +1,8 @@
 #pragma once
-#include "SPF/Namespace.hpp"
 
 #include "imgui.h"
 
-SPF_NS_BEGIN
-namespace UI {
+namespace SPF::UI {
 namespace Colors {
 constexpr ImVec4 GOLD = ImVec4(1.00f, 0.75f, 0.00f, 1.00f);
 constexpr ImVec4 RED = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
@@ -35,5 +33,4 @@ class Style {
  public:
   static void ApplyGameStyle(float scaleFactor = 1.0f);
 };
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

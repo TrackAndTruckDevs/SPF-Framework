@@ -1,10 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigurable.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Logging/Logger.hpp"
+#include "SPF/Logging/Sinks/ErrorReportSink.hpp"
+#include "SPF/Logging/Sinks/LoggerWindowSink.hpp"
 #include "SPF/Utils/Signal.hpp"
 
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
@@ -17,14 +17,7 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Logging::Sinks {
-class LoggerWindowSink;
-class ErrorReportSink;
-}  // namespace Logging::Sinks
-
-namespace Logging {
+namespace SPF::Logging {
 
 class LoggerFactory : public Config::IConfigurable {
  public:
@@ -78,6 +71,4 @@ class LoggerFactory : public Config::IConfigurable {
   std::shared_ptr<ILogSink> m_frameworkFileSink;
 };
 
-}  // namespace Logging
-
-SPF_NS_END
+}  // namespace SPF::Logging

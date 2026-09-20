@@ -24,9 +24,6 @@
         "version_label": "あなたのバージョン ",
         "update_checking": "アップデートを確認中...",
         "update_available_notification": "### {}\n 新しいアップデートが利用可能です：**{}**\n 詳細については、ウェブサイトをご覧ください",
-        "patch_downloading": "パッチ **v{}** をダウンロード中...",
-        "patch_updated_restart": "### SPF Framework を **{}** に更新しました\n 更新を適用するにはゲームを再起動してください。",
-        "patch_applied": "SPF Framework を **v{}** に更新しました",
         "menu": {
             "manual": "マニュアル / FAQ",
             "about": "私たちについて / 連絡先",
@@ -244,14 +241,14 @@
                     "title": "通知の表示時間",
                     "description": "一時的なポップアップ通知が画面に表示される時間（秒単位）を設定します。"
                 },
+                "notification_sound": {
+                    "title": "通知音を再生",
+                    "description": "新しい通知が表示された時に音を再生します。"
+                },
                 "show_update_notifications": {
                     "title": "アップデートの通知",
                     "description": "フレームワークやプラグインのアップデートが利用可能な場合、通知が表示されます."
                 },
-                    "auto_patch": {
-                        "title": "自動パッチ更新",
-                        "description": "メジャーリリース間の修正パッチを自動的にダウンロードして適用します。"
-                    },
                 "scale": {
                     "title": "インターフェースのスケール",
                     "description": "UIのフォントとウィンドウのサイズを調整します。"
@@ -723,6 +720,13 @@
             "hand_shake_speed": "カメラ振動の周波数",
             "zoom_fov_factor": "ズームFOV倍率",
             "zoom_speed_interior": "ズーム速度",
+            "fov_real": "実際のFOV",
+            "fov_setting": "FOV設定",
+            "dynamic_fov": "ダイナミックFOV",
+            "zoom_on_off": "ズームオン/オフ",
+            "zoom_live": "ズーム位置",
+            "speed_fov_change_factor": "FOV変化速度係数",
+            "max_fov": "最大FOV",
             "azimuth_overrides": "ダイナミックゾーン (Azimuth Overrides)",
             "range_start_azimuth": "ゾーン方位角の開始",
             "range_end_azimuth": "ゾーン方位角の終了",

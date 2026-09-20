@@ -1,13 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 class SystemUtils {
  public:
@@ -33,6 +28,4 @@ class SystemUtils {
   static std::string GetSystemArchitecture();
 };
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

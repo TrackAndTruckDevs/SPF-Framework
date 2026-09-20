@@ -213,6 +213,44 @@ Gets or sets the limits and speed for the "living hands" (hand shake) procedural
 **`Cam_GetInteriorZoomSpeed(float* out_val)` / `Cam_SetInteriorZoomSpeed(float val)`**
 Gets or sets the FOV multiplier and the transition speed used when zooming the interior camera.
 
+---
+**`Cam_GetInteriorFovReal(float* out_val)`**
+Gets the real (effective) FOV of the interior camera.
+
+The real FOV is composed of the default FOV + FOV setting + the speed FOV change factor (`Cam_GetInteriorSpeedFovChangeFactor`) and the truck's real speed.
+
+---
+**`Cam_GetInteriorZoomOnOff(bool* out_val)` / `Cam_SetInteriorZoomOnOff(bool val)`**
+Gets or sets the zoom on/off state of the interior camera.
+
+---
+**`Cam_GetInteriorZoomLive(float* out_val)` / `Cam_SetInteriorZoomLive(float val)`**
+Gets or sets the live zoom position of the interior camera.
+
+By default the value is `1`. When zooming it decreases down to the `InteriorZoomFovFactor` value.
+
+---
+**`Cam_GetInteriorSpeedFovChangeFactor(float* out_val)` / `Cam_SetInteriorSpeedFovChangeFactor(float val)`**
+Gets or sets the speed FOV change factor of the interior camera.
+
+By default the value is `1.2`. Setting it to `1` disables dynamic FOV. A value below `1` decreases the FOV while driving; a value above `1` increases it while driving.
+
+---
+**`Cam_GetInteriorMaxFov(float* out_val)` / `Cam_SetInteriorMaxFov(float val)`**
+Gets or sets the maximum FOV of the interior camera.
+
+---
+**`Cam_GetInteriorFovSetting(float* out_val)` / `Cam_SetInteriorFovSetting(float val)`**
+Gets or sets the FOV setting of the interior camera.
+
+This value the game uses to calculate the current FOV. It takes the default FOV and adds this value to it. Important: this value is saved in the game's save files, and it is also what changes when you change the FOV through the game's settings.
+
+---
+**`Cam_GetInteriorDynamicFovEnabled(bool* out_val)` / `Cam_SetInteriorDynamicFovEnabled(bool val)`**
+Gets or sets the dynamic FOV enabled state of the interior camera.
+
+This is a wrapper that sets `InteriorSpeedFovChangeFactor` to one while caching the current value; when enabled the current value is restored. Use this if you change the FOV programmatically while the vehicle is moving and the game tries to overwrite your FOV.
+
 <br>
 
 #### Azimuth Overrides (Interior)

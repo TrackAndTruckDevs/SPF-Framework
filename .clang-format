@@ -17,18 +17,14 @@ AlignTrailingComments: true
 SortIncludes: CaseInsensitive
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^"SPF/Namespace\.hpp"$'
-    Priority: 1
-  - Regex: '^<SPF/Namespace\.hpp>$'
-    Priority: 1
   - Regex: '^"(SPF|spf)/'
-    Priority: 2
+    Priority: 1
   - Regex: '^<(SPF|spf)/'
-    Priority: 2
+    Priority: 1
   - Regex: '^"'
-    Priority: 3
+    Priority: 2
   - Regex: '^<'
-    Priority: 4
+    Priority: 3
 BinPackArguments: false
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false

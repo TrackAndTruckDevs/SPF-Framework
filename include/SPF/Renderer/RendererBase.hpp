@@ -1,16 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Renderer/ITexture.hpp"
 
 #include <cstddef>
 #include <memory>
 
-
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 
 class Renderer;
 
@@ -62,6 +57,4 @@ class RendererBase {
   Renderer& m_renderer;
 };
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

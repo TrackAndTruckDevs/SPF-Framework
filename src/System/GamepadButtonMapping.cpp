@@ -1,15 +1,10 @@
 #include "SPF/System/GamepadButtonMapping.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/System/GamepadButton.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace System {
+namespace SPF::System {
 GamepadButtonMapping& GamepadButtonMapping::GetInstance() {
   static GamepadButtonMapping instance;
   return instance;
@@ -240,6 +235,4 @@ void GamepadButtonMapping::InitializeMapping() {
   m_playstationNames[GamepadButton::POV3Left] = "POV 3 Left";
   m_playstationNames[GamepadButton::POV3Right] = "POV 3 Right";
 }
-}  // namespace System
-
-SPF_NS_END
+}  // namespace SPF::System

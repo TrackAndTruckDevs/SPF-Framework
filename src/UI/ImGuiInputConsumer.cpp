@@ -1,15 +1,11 @@
 #include "SPF/UI/ImGuiInputConsumer.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/System/Keyboard.hpp"
 
 #include "imgui.h"
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 // Helper function to convert our enum to ImGuiKey,
 // ported from ImGuiEventProxy.cpp
 ImGuiKey TranslateOurKeyToImGuiKey(System::Keyboard key) {
@@ -292,6 +288,4 @@ bool ImGuiInputConsumer::OnMouseWheel(const Input::MouseWheelEvent& event) {
 bool ImGuiInputConsumer::IsCapturingKeyboard() { return ImGui::GetIO().WantCaptureKeyboard; }
 
 bool ImGuiInputConsumer::IsCapturingMouse() { return ImGui::GetIO().WantCaptureMouse; }
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

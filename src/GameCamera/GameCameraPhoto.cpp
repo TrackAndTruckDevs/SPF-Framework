@@ -1,16 +1,12 @@
 #include "SPF/GameCamera/GameCameraPhoto.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 
 GameCameraPhoto::GameCameraPhoto() {}
 
@@ -63,5 +59,4 @@ bool GameCameraPhoto::GetFov(float* out_fov) const { return false; }
 
 void GameCameraPhoto::SetFov(float fov) {}
 
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

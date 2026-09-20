@@ -1,10 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
-SPF_NS_BEGIN
-
-namespace Events {
+namespace SPF::Events {
 class EventManager;  // Forward declaration
 
 class EventProxyBase {
@@ -15,6 +11,4 @@ class EventProxyBase {
   EventProxyBase(EventManager& eventManager) : m_eventManager(eventManager) {}
   virtual ~EventProxyBase() = default;
 };
-}  // namespace Events
-
-SPF_NS_END
+}  // namespace SPF::Events

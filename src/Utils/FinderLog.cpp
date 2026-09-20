@@ -1,7 +1,5 @@
 #include "SPF/Utils/FinderLog.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -19,8 +17,7 @@
 #include <string_view>
 #include <utility>
 
-SPF_NS_BEGIN
-namespace Utils {
+namespace SPF::Utils {
 
 // =========================================================================
 // FinderLog
@@ -218,5 +215,4 @@ bool FinderLog::Phase::StepOffsetOptional(int32_t offset, std::string_view desc,
   return valid;
 }
 
-}  // namespace Utils
-SPF_NS_END
+}  // namespace SPF::Utils

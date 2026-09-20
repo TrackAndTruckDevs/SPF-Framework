@@ -1,8 +1,6 @@
 #include "SPF/Renderer/D3D12RendererImpl.hpp"
 
-#include "SPF/Namespace.hpp"
-
-#include "SPF/Hooks/D3D12Hook.hpp"
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
@@ -30,8 +28,7 @@
 #include <winnt.h>
 #include <winscard.h>
 
-SPF_NS_BEGIN
-namespace Rendering {
+namespace SPF::Rendering {
 
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
@@ -58,10 +55,10 @@ class D3D12Texture : public ITexture {
 D3D12RendererImpl::D3D12RendererImpl(Renderer& renderer, UI::UIManager& uiManager)
     : RendererBase(renderer),
       m_uiManager(uiManager),
-      m_onInitSink(D3D12Hook::OnInit),
-      m_onPresentSink(D3D12Hook::OnPresent),
-      m_onBeforeResizeSink(D3D12Hook::OnBeforeResize),
-      m_onAfterResizeSink(D3D12Hook::OnAfterResize),
+      m_onInitSink(DXGIHook::OnD3D12Init),
+      m_onPresentSink(DXGIHook::OnPresent),
+      m_onBeforeResizeSink(DXGIHook::OnBeforeResize),
+      m_onAfterResizeSink(DXGIHook::OnResize),
       m_renderTargetsCreated(false) {
   m_logger = LoggerFactory::GetInstance().GetLogger("D3D12Impl");
   m_logger->Info("D3D12 Renderer Implementation created.");
@@ -70,7 +67,7 @@ D3D12RendererImpl::D3D12RendererImpl(Renderer& renderer, UI::UIManager& uiManage
 D3D12RendererImpl::~D3D12RendererImpl() { Shutdown(); }
 
 void D3D12RendererImpl::Init() {
-  m_logger->Info("Initializing ImGui for D3D12 and connecting to D3D12Hook signals...");
+  m_logger->Info("Initializing ImGui for D3D12 and connecting to DXGIHook signals...");
   m_onInitSink.Connect<&D3D12RendererImpl::OnD3D12Init>(this);
   m_onPresentSink.Connect<&D3D12RendererImpl::OnD3D12Present>(this);
   m_onBeforeResizeSink.Connect<&D3D12RendererImpl::OnD3D12BeforeResize>(this);
@@ -256,7 +253,7 @@ void D3D12RendererImpl::RefreshFontAtlas() {
   }
 }
 
-void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue) {
+void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue) {
   if (m_isImGuiInitialized) {
     return;
   }
@@ -353,7 +350,7 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain3* swapChain, ID3D12Device* de
   }
 }
 
-void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
+void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain* swapChain) {
   if (!m_isImGuiInitialized || !m_pd3dCommandQueue) {
     return;
   }
@@ -385,7 +382,13 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
 
   // Record ImGui rendering commands into our command list.
   HRESULT hr;
-  UINT backBufferIdx = swapChain->GetCurrentBackBufferIndex();
+  ComPtr<IDXGISwapChain3> swapChain3;
+  hr = swapChain->QueryInterface(IID_PPV_ARGS(swapChain3.GetAddressOf()));
+  if (FAILED(hr) || !swapChain3) {
+    m_logger->Error("OnD3D12Present: QueryInterface for IDXGISwapChain3 failed.");
+    return;
+  }
+  UINT backBufferIdx = swapChain3->GetCurrentBackBufferIndex();
 
   hr = m_commandAllocator->Reset();
   if (FAILED(hr)) {
@@ -446,7 +449,7 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain3* swapChain) {
   }
 }
 
-void D3D12RendererImpl::OnD3D12BeforeResize(IDXGISwapChain3* swapChain, UINT width, UINT height) {
+void D3D12RendererImpl::OnD3D12BeforeResize(IDXGISwapChain* swapChain, UINT width, UINT height) {
   if (m_isImGuiInitialized) {
     m_logger->Info("D3D12 OnBeforeResize received. Invalidating render targets before recreation.");
     // We must wait for the GPU to be idle and then release our references to the
@@ -457,7 +460,7 @@ void D3D12RendererImpl::OnD3D12BeforeResize(IDXGISwapChain3* swapChain, UINT wid
   }
 }
 
-void D3D12RendererImpl::OnD3D12AfterResize(IDXGISwapChain3* swapChain, UINT width, UINT height) {
+void D3D12RendererImpl::OnD3D12AfterResize(IDXGISwapChain* swapChain, UINT width, UINT height) {
   if (m_isImGuiInitialized) {
     m_logger->Info("D3D12 OnAfterResize received. Re-creating render targets.");
     // The game has resized the swap chain. We can now re-create our render target views
@@ -467,7 +470,7 @@ void D3D12RendererImpl::OnD3D12AfterResize(IDXGISwapChain3* swapChain, UINT widt
   }
 }
 
-void D3D12RendererImpl::CreateRenderTarget(IDXGISwapChain3* swapChain) {
+void D3D12RendererImpl::CreateRenderTarget(IDXGISwapChain* swapChain) {
   m_logger->Debug("Creating render target views for the D3D12 swap chain back buffers...");
   HRESULT hr;
 
@@ -540,5 +543,4 @@ void D3D12RendererImpl::WaitForLastSubmittedFrame() {
   WaitForSingleObject(m_fenceEvent, INFINITE);
 }
 
-}  // namespace Rendering
-SPF_NS_END
+}  // namespace SPF::Rendering

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_Telemetry_API.h"
 #include "SPF/SPF_API/SPF_TelemetryData.h"
 #include "SPF/Telemetry/SCS/Common.hpp"      // For GameState, Timestamps, CommonData
@@ -19,14 +17,7 @@
 #include <functional>  // For std::function
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward declaration of EventManager needed for SubscriptionHandler constructor
-namespace Events {
-class EventManager;
-}
-namespace Modules::API {
+namespace SPF::Modules::API {
 class TelemetryApi {
  public:
   // Base class for all telemetry subscription handlers. Used for type erasure in TelemetryHandle.
@@ -73,8 +64,7 @@ class TelemetryApi {
   struct WorldReloadSubscriptionHandler : public BaseSubscriptionHandler {
     using InvokerFunction = std::function<void(void* user_data_ptr)>;
 
-    WorldReloadSubscriptionHandler(Utils::Signal<void()>& signal, InvokerFunction invoker_func, void* user_data_ptr)
-        : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal) {
+    WorldReloadSubscriptionHandler(Utils::Signal<void()>& signal, InvokerFunction invoker_func, void* user_data_ptr) : m_invoker_func(invoker_func), m_user_data_ptr(user_data_ptr), m_sink(signal) {
       m_sink.template Connect<&WorldReloadSubscriptionHandler::OnEvent>(this);
     }
 
@@ -101,8 +91,7 @@ class TelemetryApi {
   static void InvokeNavigationDataCallback(const SPF::Telemetry::SCS::NavigationData& cpp_data, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
   static void InvokeControlsCallback(const SPF::Telemetry::SCS::Controls& cpp_data, SPF_Telemetry_Controls_Callback callback, void* user_data);
   static void InvokeSpecialEventsCallback(const SPF::Telemetry::SCS::SpecialEvents& cpp_data, SPF_Telemetry_SpecialEvents_Callback callback, void* user_data);
-  static void InvokeGameplayEventsCallback(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data, SPF_Telemetry_GameplayEvents_Callback callback,
-                                           void* user_data);
+  static void InvokeGameplayEventsCallback(const char* event_id, const SPF::Telemetry::SCS::GameplayEvents& cpp_data, SPF_Telemetry_GameplayEvents_Callback callback, void* user_data);
   static void InvokeGearboxConstantsCallback(const SPF::Telemetry::SCS::GearboxConstants& cpp_data, SPF_Telemetry_GearboxConstants_Callback callback, void* user_data);
 
   // --- Event Subscription (New RAII-based C-API Proxies) ---
@@ -139,5 +128,4 @@ class TelemetryApi {
   static void Tel_GetGearboxConstants(SPF_Telemetry_Handle* h, SPF_GearboxConstants* out_data, size_t struct_size);
   static int Tel_GetLastGameplayEventId(SPF_Telemetry_Handle* h, char* out_buffer, int buffer_size);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Input/SCS/VirtualDevice.hpp"
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Modules/IInputService.hpp"
 
 #include "scssdk.h"
@@ -13,21 +14,7 @@
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Logging {
-class Logger;
-}
-namespace Events {
-class EventManager;
-}
-namespace Input::SCS {
-class VirtualDevice;
-}
-
-namespace Input::SCS {
+namespace SPF::Input::SCS {
 /**
  * @class SCSInputService
  * @brief Manages virtual input devices and communicates with the SCS Input SDK.
@@ -69,5 +56,4 @@ class SCSInputService final : public Modules::IInputService {
   std::vector<std::unique_ptr<VirtualDevice>> m_devices;
 };
 
-}  // namespace Input::SCS
-SPF_NS_END
+}  // namespace SPF::Input::SCS

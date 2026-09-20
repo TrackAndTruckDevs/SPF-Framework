@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <optional>
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 /**
  * @brief A structure to hold all relevant information about a component (framework or plugin) for display and management.
  *
@@ -46,6 +42,4 @@ struct ComponentInfo {
   bool hasInfo = false;                              ///< @brief True if basic info (name, author, version) is available.
   std::optional<std::string> incompatibilityReason;  ///< @brief If set, contains the required framework version if the plugin is incompatible.
 };
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

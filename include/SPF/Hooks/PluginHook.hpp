@@ -1,14 +1,10 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Hooks/BaseHook.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 /**
  * @class PluginHook
  * @brief An internal proxy class that represents a plugin-owned hook.
@@ -18,8 +14,7 @@ namespace Modules {
  */
 class PluginHook : public Hooks::BaseHook {
  public:
-  PluginHook(const std::string& pluginName, const std::string& hookName, const std::string& displayName, void* pDetour, void** ppOriginal, const std::string& signature,
-             bool isEnabled);
+  PluginHook(const std::string& pluginName, const std::string& hookName, const std::string& displayName, void* pDetour, void** ppOriginal, const std::string& signature, bool isEnabled);
   ~PluginHook();
 
  private:
@@ -31,5 +26,4 @@ class PluginHook : public Hooks::BaseHook {
   void* m_pDetour;
   void** m_ppOriginal;
 };
-}  // namespace Modules
-SPF_NS_END
+}  // namespace SPF::Modules

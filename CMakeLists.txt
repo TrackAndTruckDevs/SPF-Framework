@@ -6,6 +6,7 @@ project(SPF VERSION 1.2.2 LANGUAGES CXX)
 if(NOT PROJECT_VERSION_TWEAK)
     set(PROJECT_VERSION_TWEAK 0)
 endif()
+set(PROJECT_DISPLAY_NAME "SPF Framework")
 add_compile_definitions(_AMD64_ NOMINMAX)
 
 # --- C++ Standard & IWYU ---
@@ -49,6 +50,16 @@ endif()
 if(MINGW)
     set(MINGW_STATIC_FLAGS "-static-libgcc;-static-libstdc++")
     set(MINGW_WINPTHREAD_FLAGS "-Wl,-Bstatic;-lwinpthread;-Wl,-Bdynamic")
+
+    # MinSizeRel uses -Os, which suppresses inlining of libstdc++'s
+    # always_inline std::string move-constructors, forcing external
+    # references to std::__cxx11::basic_string(&&) that the static
+    # libstdc++.a does not provide -> linker 'undefined reference'.
+    # Use -O2 instead (still small/fast) so those symbols inline away.
+    if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        string(REPLACE "-Os" "-O2" CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}")
+        string(REPLACE "-Os" "-O2" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
+    endif()
 endif()
 # --- End of MinGW Cross-Compilation Flags ---
 
@@ -205,9 +216,15 @@ set(SPF_FONT_HEADERS
     "include/SPF/UI/Fonts/RobotoMonoRegular.h"
 )
 
-# --- Windows Resource File ---
+# # Windows version resource (.rc file)
+# See https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource
 set(SPF_PLATFORM_SOURCES)
 if(WIN32 OR MINGW)
+    set(RC_COMPANY "Track'n'Truck Devs")
+    set(RC_DESCRIPTION "${PROJECT_DISPLAY_NAME} - Core Library")
+    set(RC_INTERNAL_NAME "spf-framework.dll")
+    set(RC_FILENAME "spf-framework.dll")
+    set(RC_PRODUCT "${PROJECT_DISPLAY_NAME}")
     configure_file(version.rc.in version.rc @ONLY)
     list(APPEND SPF_PLATFORM_SOURCES
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc
@@ -228,7 +245,9 @@ add_library(SPF SHARED
     "src/Data/GameData/GameWorldService.cpp"
     "src/Data/GameData/ClimateService.cpp"
     "src/Data/GameData/ManagerCoreService.cpp"
+    "src/Data/GameData/SoundService.cpp"
     "src/Data/GameData/Finders/CoreCameraDataFinder.cpp"
+    "src/Data/GameData/Finders/SoundDataFinder.cpp"
     "src/Data/GameData/Finders/FreeCameraDataFinder.cpp"
     "src/Data/GameData/Finders/InteriorCameraDataFinder.cpp"
     "src/Data/GameData/Finders/FovDataFinder.cpp"
@@ -267,6 +286,7 @@ add_library(SPF SHARED
     "src/Hooks/User32Hook.cpp"
     "src/Hooks/D3D11Hook.cpp"
     "src/Hooks/D3D12Hook.cpp"
+    "src/Hooks/DXGIHook.cpp"
     "src/Hooks/OpenGLHook.cpp"
     "src/Hooks/DInput8Hook.cpp"
     "src/Hooks/XInputHook.cpp"
@@ -301,6 +321,7 @@ add_library(SPF SHARED
     "src/Modules/API/VehicleApi.cpp"
     "src/Modules/API/ClimateApi.cpp"
     "src/Modules/API/GameWorldApi.cpp"
+    "src/Modules/API/SoundApi.cpp"
     "src/Modules/API/UIApi.cpp"
     "src/Modules/API/LocalizationApi.cpp"
     "src/Modules/API/EnvironmentApi.cpp"
@@ -348,6 +369,7 @@ add_library(SPF SHARED
     "src/UI/CameraWindow.cpp"
     "src/UI/InfoWindow.cpp"
     "src/UI/GameWorldWindow.cpp"
+    "src/UI/SoundWindow.cpp"
     "src/UI/ClimateWindow.cpp"
     "src/UI/MainWindow.cpp"
     "src/UI/NotificationWindow.cpp"
@@ -359,6 +381,7 @@ add_library(SPF SHARED
     "src/UI/UIStyle.cpp"
     "src/UI/UITypographyHelper.cpp"
     "src/UI/UIElements.cpp"
+    "src/UI/UISounds.cpp"
     "src/System/VirtualKeyMapping.cpp"
     "src/System/GamepadButtonMapping.cpp"
     "src/System/MouseButtonMapping.cpp"
@@ -366,7 +389,8 @@ add_library(SPF SHARED
     "src/System/PathManager.cpp"
     "src/System/EnvironmentManager.cpp"
     "src/System/ApiService.cpp"
-    "src/System/SelfUpdater.cpp"
+    "src/Fmod/FmodApi.cpp"
+    "src/Fmod/FmodStudioHook.cpp"
     "src/Utils/PatternFinder.cpp"
     "src/Utils/FinderLog.cpp"
     "src/Utils/HashUtils.cpp"
@@ -446,6 +470,14 @@ target_link_libraries(SPF PRIVATE
     nlohmann_json::nlohmann_json
     cpr::cpr
     ${WINDOWS_SYSTEM_LIBS}
+)
+
+# Expose project() values as C++ preprocessor macros
+# so framework version stays in sync automatically.
+target_compile_definitions(SPF PRIVATE
+    PROJECT_NAME="${PROJECT_DISPLAY_NAME}"
+    PROJECT_VERSION="${PROJECT_VERSION}"
+    PROJECT_AUTHOR="${RC_COMPANY}"
 )
 
 # --- PLUGINS INCLUSION ---

@@ -1,17 +1,12 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ManifestData.hpp"
 
 #include "nlohmann/json_fwd.hpp"
 
 #include <optional>
 
-
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 
 /**
  * @brief Provides the default manifest for the framework as a C++ structure.
@@ -27,9 +22,9 @@ inline const ManifestData& GetFrameworkManifestData() {
       // .info
       .info =
         {
-          .name = "SPF Framework",
-          .version = "1.2.2",
-          .author = "Track'n'Truck Devs",
+          .name = PROJECT_NAME,
+          .version = PROJECT_VERSION,
+          .author = PROJECT_AUTHOR,
           .descriptionKey = "description.detailed",  // key in the translation file
           .descriptionLiteral = "",                  // if there is no translation, you can write a description here
           .email = "mailto:spf.framework@gmail.com",
@@ -59,10 +54,10 @@ inline const ManifestData& GetFrameworkManifestData() {
               "framework": {
                 "connect": true,
                 "developer_mode": false,
-                "auto_patch": true,
                 "version": ""
               },
               "notification_duration": 3.0,
+              "notification_sound": true,
               "show_update_notifications": true
             }
         )json"),
@@ -148,108 +143,22 @@ inline const ManifestData& GetFrameworkManifestData() {
                             .allowUndocking = false,
                             .autoScroll = false,
                           }},
-                         {"logger_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 3,
-                           .allowUndocking = true,
-                           .autoScroll = true}},
+                         {"logger_window", {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 3, .allowUndocking = true, .autoScroll = true}},
                          {"telemetry_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 4,
-                           .allowUndocking = true,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 4, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"hooks_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 5,
-                           .allowUndocking = false,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 5, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"game_console_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 6,
-                           .allowUndocking = true,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 6, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"camera_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 7,
-                           .allowUndocking = false,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 7, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"gameworld_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 8,
-                           .allowUndocking = false,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 8, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"climate_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 9,
-                           .allowUndocking = false,
-                           .autoScroll = false,
-                           .isDeveloperOnly = true}},
-                         {"info_window",
-                          {.isVisible = true,
-                           .isInteractive = false,
-                           .posX = 0,
-                           .posY = 0,
-                           .sizeW = 0,
-                           .sizeH = 0,
-                           .isCollapsed = false,
-                           .isDocked = true,
-                           .dockPriority = 10,
-                           .allowUndocking = false,
-                           .autoScroll = false}}}},
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 9, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
+                         {"sound_window",
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 10, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
+                         {"info_window", {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 11, .allowUndocking = false, .autoScroll = false}}}},
 
       // --- Metadata for framework's own settings ---
       .customSettingsMetadata =
@@ -257,39 +166,28 @@ inline const ManifestData& GetFrameworkManifestData() {
          {"hook_states", "settings_window.setting_names.settings.hook_states.title", "settings_window.setting_names.settings.hook_states.description", true},
          {"framework", std::nullopt, std::nullopt, true},
          {"framework.developer_mode", std::nullopt, std::nullopt, true},
-         {"framework.auto_patch",
-          "settings_window.setting_names.settings.auto_patch.title",
-          "settings_window.setting_names.settings.auto_patch.description",
-          true},
-         {"show_update_notifications",
-          "settings_window.setting_names.settings.show_update_notifications.title",
-          "settings_window.setting_names.settings.show_update_notifications.description",
-          false},
-         {"scale",
-          "settings_window.setting_names.settings.scale.title",
-          "settings_window.setting_names.settings.scale.description",
-          false,
-          "slider",
-          nlohmann::ordered_json::parse(R"json({ "min": 0.75, "max": 1.25, "format": "%.2f" })json")},
+         {"show_update_notifications", "settings_window.setting_names.settings.show_update_notifications.title", "settings_window.setting_names.settings.show_update_notifications.description", false},
+         {"scale", "settings_window.setting_names.settings.scale.title", "settings_window.setting_names.settings.scale.description", false, "slider", nlohmann::ordered_json::parse(R"json({ "min": 0.75, "max": 1.25, "format": "%.2f" })json")},
          {"notification_duration",
           "settings_window.setting_names.settings.notification_duration.title",
           "settings_window.setting_names.settings.notification_duration.description",
           false,
           "slider",
-          nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")}},
-      .keybindsMetadata =
-        {{"framework.ui.main_window", "toggle", "keybind_actions.ui.main_window.toggle.title", "keybind_actions.ui.main_window.toggle.description"},
-         {"framework.ui", "close_focused", "keybind_actions.ui.close_focused.title", "keybind_actions.ui.close_focused.description"},
-         {"framework.input", "toggle_mouse_overridden", "keybind_actions.input.toggle_mouse_overridden.title", "keybind_actions.input.toggle_mouse_overridden.description"}},
+           nlohmann::ordered_json::parse(R"json({ "min": 1.0, "max": 10.0, "format": "%.1f s" })json")},
+         {"notification_sound",
+           "settings_window.setting_names.settings.notification_sound.title",
+           "settings_window.setting_names.settings.notification_sound.description",
+           false}},
+      .keybindsMetadata = {{"framework.ui.main_window", "toggle", "keybind_actions.ui.main_window.toggle.title", "keybind_actions.ui.main_window.toggle.description"},
+                           {"framework.ui", "close_focused", "keybind_actions.ui.close_focused.title", "keybind_actions.ui.close_focused.description"},
+                           {"framework.input", "toggle_mouse_overridden", "keybind_actions.input.toggle_mouse_overridden.title", "keybind_actions.input.toggle_mouse_overridden.description"}},
       .loggingMetadata = {{"level", "settings_window.setting_names.logging.level.title", "settings_window.setting_names.logging.level.description"},
                           {"sinks", "settings_window.setting_names.logging.sinks.title", ""},
                           {"sinks.file", "settings_window.setting_names.logging.sinks.file.title", "settings_window.setting_names.logging.sinks.file.description"},
                           {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"},
                           {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"}},
       .localizationMetadata = {{"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"},
-                               {"sync_plugin_languages",
-                                "settings_window.setting_names.localization.sync_plugin_languages.title",
-                                "settings_window.setting_names.localization.sync_plugin_languages.description"}},
+                               {"sync_plugin_languages", "settings_window.setting_names.localization.sync_plugin_languages.title", "settings_window.setting_names.localization.sync_plugin_languages.description"}},
       .uiMetadata = {
         // Metadata for the 'windows' group itself
         {"windows", "settings_window.setting_names.ui.windows.title", ""},
@@ -305,6 +203,7 @@ inline const ManifestData& GetFrameworkManifestData() {
         {"camera_window", "settings_window.setting_names.ui.windows.camera_window.title", ""},
         {"gameworld_window", "settings_window.setting_names.ui.windows.gameworld_window.title", ""},
         {"climate_window", "settings_window.setting_names.ui.windows.climate_window.title", ""},
+        {"sound_window", "settings_window.setting_names.ui.windows.sound_window.title", ""},
         {"info_window", "settings_window.setting_names.ui.windows.info_window.title", ""},
 
         // Generic metadata for window properties
@@ -327,6 +226,4 @@ inline const ManifestData& GetFrameworkManifestData() {
   return manifest;
 }
 
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

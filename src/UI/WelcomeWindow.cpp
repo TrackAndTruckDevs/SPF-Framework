@@ -1,7 +1,5 @@
 #include "SPF/UI/WelcomeWindow.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
@@ -18,9 +16,7 @@
 
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 // ============================================================================
 // UI LAYOUT CONSTANTS - Adjust these to tune the look
@@ -260,6 +256,4 @@ nlohmann::ordered_json WelcomeWindow::GetCurrentSettings() const {
   return nlohmann::ordered_json::object();
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

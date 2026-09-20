@@ -1,13 +1,12 @@
 #include "SPF/Renderer/D3D11RendererImpl.hpp"
 
-#include "SPF/Namespace.hpp"
-
-#include "SPF/Hooks/D3D11Hook.hpp"
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/UI/IMESupport.hpp"
 #include "SPF/UI/UIManager.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -24,9 +23,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-SPF_NS_BEGIN
-
-namespace Rendering {
+namespace SPF::Rendering {
 using namespace SPF::Logging;
 using namespace SPF::Hooks;
 using namespace SPF::UI;
@@ -50,7 +47,7 @@ class D3D11Texture : public ITexture {
 }  // namespace
 
 D3D11RendererImpl::D3D11RendererImpl(Renderer& renderer, UI::UIManager& uiManager)
-    : RendererBase(renderer), m_uiManager(uiManager), m_onInitSink(D3D11Hook::OnInit), m_onPresentSink(D3D11Hook::OnPresent), m_onBeforeResizeSink(D3D11Hook::OnBeforeResize), m_onResizeSink(D3D11Hook::OnResize) {
+    : RendererBase(renderer), m_uiManager(uiManager), m_onInitSink(DXGIHook::OnD3D11Init), m_onPresentSink(DXGIHook::OnPresent), m_onBeforeResizeSink(DXGIHook::OnBeforeResize), m_onResizeSink(DXGIHook::OnResize) {
   m_logger = Logging::LoggerFactory::GetInstance().GetLogger("D3D11Impl");
   m_logger->Info("D3D11 Renderer Implementation created.");
 }
@@ -58,7 +55,7 @@ D3D11RendererImpl::D3D11RendererImpl(Renderer& renderer, UI::UIManager& uiManage
 D3D11RendererImpl::~D3D11RendererImpl() { Shutdown(); }
 
 void D3D11RendererImpl::Init() {
-  m_logger->Info("Connecting to D3D11Hook signals...");
+  m_logger->Info("Connecting to DXGIHook signals...");
   m_onInitSink.Connect<&D3D11RendererImpl::OnInit>(this);
   m_onPresentSink.Connect<&D3D11RendererImpl::OnPresent>(this);
   m_onBeforeResizeSink.Connect<&D3D11RendererImpl::OnBeforeResize>(this);
@@ -148,7 +145,7 @@ void D3D11RendererImpl::OnInit(IDXGISwapChain* swapChain, ID3D11Device* device) 
   m_swapChain = swapChain;
   m_device = device;
   m_device->GetImmediateContext(m_context.GetAddressOf());
-  m_hWnd = D3D11Hook::MainWindow;
+  m_hWnd = DXGIHook::MainWindow;
 
   CreateRenderTarget();
 
@@ -227,6 +224,4 @@ void D3D11RendererImpl::CleanupRenderTarget() {
   }
 }
 
-}  // namespace Rendering
-
-SPF_NS_END
+}  // namespace SPF::Rendering

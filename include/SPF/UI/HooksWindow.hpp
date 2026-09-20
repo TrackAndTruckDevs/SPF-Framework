@@ -1,27 +1,13 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Events/EventManager.hpp"
+#include "SPF/Hooks/HookManager.hpp"
 #include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/UIManager.hpp"
 
 #include <string>
 
-
-SPF_NS_BEGIN
-
-// Forward declarations
-namespace Events {
-class EventManager;
-}
-namespace Hooks {
-class HookManager;
-}
-
-namespace UI {
-class UIManager;
-}  // namespace UI
-
-namespace UI {
+namespace SPF::UI {
 /**
  * @class HooksWindow
  * @brief An ImGui window for managing and configuring feature hooks.
@@ -34,7 +20,6 @@ class HooksWindow : public BaseWindow {
   void RenderContent() override;
   void RefreshLocalization() override;
 
-
  private:
   UIManager& m_uiManager;
   Events::EventManager& m_eventManager;
@@ -43,6 +28,4 @@ class HooksWindow : public BaseWindow {
   std::string m_cachedNoHooksText;
   std::string m_cachedEnabledCheckbox;
 };
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI

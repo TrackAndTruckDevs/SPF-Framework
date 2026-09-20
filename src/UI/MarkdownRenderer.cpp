@@ -1,7 +1,5 @@
 #include "SPF/UI/MarkdownRenderer.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UIElements.hpp"
 #include "SPF/UI/UIManager.hpp"
@@ -19,9 +17,7 @@
 #include <shellapi.h>
 #include <string>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 
 MarkdownRenderer::MarkdownRenderer() {}
 
@@ -580,5 +576,4 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
   ImGui::PopFont();
 }
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

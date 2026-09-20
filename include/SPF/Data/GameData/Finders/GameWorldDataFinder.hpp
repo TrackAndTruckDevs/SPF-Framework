@@ -1,22 +1,8 @@
-/**
- * @file GameWorldDataFinder.hpp
- * @brief Dynamic pattern searcher for World and Environment-related data.
- *
- * @details This finder is responsible for locating the global environment state
- *          and the critical UpdateEnvironmentState function. It avoids hardcoded
- *          offsets by scanning the game's executable for specific instruction
- *          patterns found during Ghidra analysis.
- */
-
 #pragma once
-
-#include "SPF/Namespace.hpp"
 
 #include "SPF/Data/GameData/IGameWorldDataFinder.hpp"
 
-
-SPF_NS_BEGIN
-namespace Data::GameData::Finders {
+namespace SPF::Data::GameData::Finders {
 
 /**
  * @class WorldDataFinder
@@ -37,5 +23,4 @@ class WorldDataFinder : public IGameWorldDataFinder {
   const char* GetName() const override { return "WorldDataFinder"; }
 };
 
-}  // namespace Data::GameData::Finders
-SPF_NS_END
+}  // namespace SPF::Data::GameData::Finders

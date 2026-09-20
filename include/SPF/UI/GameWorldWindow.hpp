@@ -5,21 +5,14 @@
 
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Data/GameData/GameWorldService.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-
-SPF_NS_BEGIN
-namespace Data::GameData {
-class GameWorldService;
-}
-
-namespace UI {
+namespace SPF::UI {
 
 /**
  * @class GameWorldWindow
@@ -29,7 +22,6 @@ class GameWorldWindow : public BaseWindow {
  public:
   GameWorldWindow(const std::string& componentName, const std::string& windowId, Data::GameData::GameWorldService& worldService);
   virtual ~GameWorldWindow() = default;
-
 
  protected:
   void RenderContent() override;
@@ -144,5 +136,4 @@ class GameWorldWindow : public BaseWindow {
   void LoadCityEditState();
 };
 
-}  // namespace UI
-SPF_NS_END
+}  // namespace SPF::UI

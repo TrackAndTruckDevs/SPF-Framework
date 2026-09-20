@@ -1,7 +1,6 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
+#include "SPF/Config/IConfigService.hpp"
 #include "SPF/Hooks/IHook.hpp"
 #include "SPF/SPF_API/SPF_Camera_API.h"
 #include "SPF/SPF_API/SPF_Climate_API.h"
@@ -22,6 +21,7 @@
 #include "SPF/SPF_API/SPF_Telemetry_API.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
+#include "SPF/SPF_API/SPF_Sound_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Signal.hpp"
 
@@ -33,24 +33,21 @@
 #include <string>
 #include <vector>
 
-SPF_NS_BEGIN
-
 // Forward declarations
-namespace Events {
+namespace SPF::Events {
 class EventManager;
 }
-namespace Modules {
+namespace SPF::Modules {
 class HandleManager;
 class KeyBindsManager;
 class ITelemetryService;
 class IInputService;
 }  // namespace Modules
 
-namespace UI {
+namespace SPF::UI {
 class UIManager;
 }
-
-namespace Modules {
+namespace SPF::Modules {
 
 class PluginManager {
  public:
@@ -71,7 +68,7 @@ class PluginManager {
 
   ~PluginManager();
 
-  void Init(Events::EventManager& eventManager, HandleManager& handleManager, SPF::Config::IConfigService& configService, KeyBindsManager& keyBindsManager, SPF::UI::UIManager& uiManager, ITelemetryService& telemetryService,
+  void Init(Events::EventManager& eventManager, HandleManager& handleManager, SPF::Config::IConfigService& configService, KeyBindsManager& keyBindsManager, UI::UIManager& uiManager, ITelemetryService& telemetryService,
             IInputService& inputService);
 
   void DiscoverPlugins();
@@ -90,9 +87,9 @@ class PluginManager {
   void NotifyAllPluginsOfLanguageChange(const std::string& langCode);
 
   SPF_UI_API* GetUIApi() { return &m_uiAPI; }
-  SPF::UI::UIManager* GetUIManager() { return m_uiManager; }
+  UI::UIManager* GetUIManager() { return m_uiManager; }
   HandleManager* GetHandleManager() { return m_handleManager; }
-  SPF::Config::IConfigService* GetConfigService() { return m_configService; }
+  Config::IConfigService* GetConfigService() { return m_configService; }
   KeyBindsManager* GetKeyBindsManager() { return m_keyBindsManager; }
   ITelemetryService* GetTelemetryService() { return m_telemetryService; }
   IInputService* GetInputService() { return m_inputService; }
@@ -140,7 +137,7 @@ class PluginManager {
   HandleManager* m_handleManager = nullptr;
   SPF::Config::IConfigService* m_configService = nullptr;
   KeyBindsManager* m_keyBindsManager = nullptr;
-  SPF::UI::UIManager* m_uiManager = nullptr;
+  UI::UIManager* m_uiManager = nullptr;
   ITelemetryService* m_telemetryService = nullptr;
   IInputService* m_inputService = nullptr;
   bool m_isLateInitDone = false;
@@ -176,11 +173,10 @@ class PluginManager {
   SPF_Environment_API m_environmentAPI{};
   SPF_GameWorld_API m_gameworldAPI{};
   SPF_Climate_API m_climateAPI{};
+  SPF_Sound_API m_soundAPI{};
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;
   static std::atomic<bool> s_alive;
 };
-}  // namespace Modules
-
-SPF_NS_END
+}  // namespace SPF::Modules

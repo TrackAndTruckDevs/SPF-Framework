@@ -1,7 +1,5 @@
 #include "SPF/Modules/PluginManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ManifestData.hpp"
 #include "SPF/Events/EventManager.hpp"
@@ -26,6 +24,7 @@
 #include "SPF/Modules/API/LocalizationApi.hpp"
 #include "SPF/Modules/API/LoggerApi.hpp"
 #include "SPF/Modules/API/ManifestApi.hpp"
+#include "SPF/Modules/API/SoundApi.hpp"
 #include "SPF/Modules/API/TelemetryApi.hpp"
 #include "SPF/Modules/API/UIApi.hpp"
 #include "SPF/Modules/API/VehicleApi.hpp"
@@ -47,8 +46,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cctype>
-#include <cstring>
 #include <errhandlingapi.h>
 #include <exception>
 #include <filesystem>
@@ -63,10 +60,8 @@
 
 using SPF_GetPlugin_t = bool (*)(SPF_Plugin_Exports*);
 
-SPF_NS_BEGIN
-namespace Modules {
+namespace SPF::Modules {
 using namespace SPF::Localization;
-using namespace SPF::Handles;
 using namespace SPF::System;
 using namespace SPF::Config;
 using namespace SPF::UI;
@@ -584,6 +579,7 @@ void PluginManager::FillAPIs() {
   API::VehicleApi::FillVehicleApi(&m_vehicleAPI);
   API::GameWorldApi::FillGameWorldApi(&m_gameworldAPI);
   API::ClimateApi::FillClimateApi(&m_climateAPI);
+  API::SoundApi::FillSoundApi(&m_soundAPI);
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
@@ -620,6 +616,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.json_reader = &m_jsonReaderAPI;
   m_coreAPI.vehicle = &m_vehicleAPI;
   m_coreAPI.gameworld = &m_gameworldAPI;
+  m_coreAPI.sound = &m_soundAPI;
   m_coreAPI.climate = &m_climateAPI;
   m_coreAPI.environment = &m_environmentAPI;
   m_coreAPI.json_writer = &m_jsonWriterAPI;
@@ -766,5 +763,5 @@ bool PluginManager::SafeCallOnLanguageChanged(LoadedPlugin& plugin, const char* 
   }
   return true;
 }
-}  // namespace Modules
-SPF_NS_END  // namespace Modules
+}  // namespace SPF::Modules
+   // namespace Modules

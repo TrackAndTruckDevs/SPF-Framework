@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/GameCamera/DebugCameraMode.hpp"
 #include "SPF/GameCamera/DebugHudPosition.hpp"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace GameCamera {
+namespace SPF::GameCamera {
 // struct TextureResource {
 //   int dx11Id;
 //   std::string name;
@@ -67,5 +63,4 @@ class GameCameraDebug {
   mutable DebugCameraMode m_currentMode = DebugCameraMode::SIMPLE;
   // int m_selectedTextureId = 4;
 };
-}  // namespace GameCamera
-SPF_NS_END
+}  // namespace SPF::GameCamera

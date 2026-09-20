@@ -1,14 +1,9 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include <filesystem>
 #include <string>
 
-
-SPF_NS_BEGIN
-
-namespace Utils {
+namespace SPF::Utils {
 
 /**
  * @brief Utility class for cryptographic hashing operations.
@@ -23,6 +18,4 @@ class HashUtils {
   static std::string CalculateFileMD5(const std::filesystem::path& path);
 };
 
-}  // namespace Utils
-
-SPF_NS_END
+}  // namespace SPF::Utils

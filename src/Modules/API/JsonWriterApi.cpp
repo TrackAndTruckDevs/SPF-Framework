@@ -1,7 +1,5 @@
 #include "SPF/Modules/API/JsonWriterApi.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
 #include "SPF/SPF_API/SPF_JsonWriter_API.h"
 
@@ -11,8 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 
 SPF_JsonValue_Handle* JsonWriterApi::Json_CreateObject() { return reinterpret_cast<SPF_JsonValue_Handle*>(new nlohmann::ordered_json(nlohmann::ordered_json::value_t::object)); }
 
@@ -193,5 +190,4 @@ void JsonWriterApi::FillJsonWriterApi(SPF_JsonWriter_API* api) {
   api->Json_Clear = &JsonWriterApi::Json_Clear;
 }
 
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

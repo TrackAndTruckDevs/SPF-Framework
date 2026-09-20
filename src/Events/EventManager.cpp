@@ -1,16 +1,11 @@
 #include "SPF/Events/EventManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Events/Proxies/WndProcEventProxy.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 
 #include <memory>
 
-
-SPF_NS_BEGIN
-
-namespace Events {
+namespace SPF::Events {
 // --- EventDispatcher Implementation ---
 EventDispatcher::EventDispatcher(EventManager& manager)
     : OnWindowResize(manager.System.OnWindowResize),
@@ -35,6 +30,4 @@ void EventManager::Init(Rendering::Renderer& renderer) {
 }
 
 EventDispatcher EventManager::CreateEventDispatcher() { return EventDispatcher(*this); }
-}  // namespace Events
-
-SPF_NS_END
+}  // namespace SPF::Events

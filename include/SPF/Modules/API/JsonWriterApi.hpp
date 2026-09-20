@@ -1,15 +1,11 @@
 #pragma once
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/SPF_API/SPF_JsonReader_API.h"
 #include "SPF/SPF_API/SPF_JsonWriter_API.h"
 
 #include <cstdint>
 
-
-SPF_NS_BEGIN
-namespace Modules::API {
+namespace SPF::Modules::API {
 class JsonWriterApi {
  public:
   static void FillJsonWriterApi(SPF_JsonWriter_API* api);
@@ -38,5 +34,4 @@ class JsonWriterApi {
   static void Json_RemoveArrayItem(SPF_JsonValue_Handle* h, int index);
   static void Json_Clear(SPF_JsonValue_Handle* h);
 };
-}  // namespace Modules::API
-SPF_NS_END
+}  // namespace SPF::Modules::API

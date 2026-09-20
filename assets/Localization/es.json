@@ -24,9 +24,6 @@
         "version_label": "Tu versión ",
         "update_checking": "Buscando actualizaciones...",
         "update_available_notification": "### {}\n Nueva actualización disponible **{}**\n Para saber más, visite el sitio web",
-        "patch_downloading": "Descargando el parche **v{}**...",
-        "patch_updated_restart": "### SPF Framework actualizado a **{}**\n Reinicia el juego para aplicar la actualización.",
-        "patch_applied": "SPF Framework actualizado a **v{}**",
         "menu": {
             "manual": "Manual / FAQ",
             "about": "Sobre nosotros / Contactos",
@@ -244,14 +241,14 @@
                     "title": "Duración de las notificaciones",
                     "description": "Establece cuánto tiempo (en segundos) permanecen en pantalla las notificaciones emergentes temporales."
                 },
+                "notification_sound": {
+                    "title": "Reproducir sonido de notificación",
+                    "description": "Reproduce un sonido cuando aparece una nueva notificación."
+                },
                 "show_update_notifications": {
                     "title": "Notificar sobre actualizaciones",
                     "description": "Recibirá notificaciones cuando haya actualizaciones disponibles para el framework o los plugins."
                 },
-                    "auto_patch": {
-                        "title": "Actualizaciones de parches automáticas",
-                        "description": "Descarga y aplica automáticamente correcciones entre versiones principales."
-                    },
                 "scale": {
                     "title": "Escala de la interfaz",
                     "description": "Ajusta el tamaño de las fuentes y ventanas de la interfaz de usuario."
@@ -723,6 +720,13 @@
             "hand_shake_speed": "Frecuencia de vibración de la cámara",
             "zoom_fov_factor": "Multiplicador de FOV del zoom",
             "zoom_speed_interior": "Velocidad del zoom",
+            "fov_real": "FOV real",
+            "fov_setting": "Configuración de FOV",
+            "dynamic_fov": "FOV dinámico",
+            "zoom_on_off": "Zoom On/Off",
+            "zoom_live": "Posición del zoom",
+            "speed_fov_change_factor": "Factor de velocidad de cambio de FOV",
+            "max_fov": "FOV máx.",
             "azimuth_overrides": "Zonas dinámicas (Azimuth Overrides)",
             "range_start_azimuth": "Inicio del azimut de zona",
             "range_end_azimuth": "Fin del azimut de zona",

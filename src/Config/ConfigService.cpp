@@ -1,7 +1,5 @@
 #include "SPF/Config/ConfigService.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/ComponentInfo.hpp"
 #include "SPF/Config/FrameworkManifest.hpp"
 #include "SPF/Config/ManifestData.hpp"
@@ -41,9 +39,7 @@
 #include <winnt.h>
 #include <winreg.h>
 
-SPF_NS_BEGIN
-
-namespace Config {
+namespace SPF::Config {
 using namespace SPF::Logging;
 using namespace SPF::System;
 using namespace SPF::Core;
@@ -677,9 +673,6 @@ void ConfigService::Finalize(InitializationReport* report) {
             if (*currentVerOpt < *storedVerOpt) {
               m_installationStatus = InstallationStatus::Downgraded;
               report->InfoMessages.push_back(fmt::format("Downgrade detected: Stored version {} is newer than current {}.", storedVersion, currentVersion));
-            } else if (storedVerOpt->major == currentVerOpt->major && storedVerOpt->minor == currentVerOpt->minor && storedVerOpt->patch == currentVerOpt->patch) {
-              m_installationStatus = InstallationStatus::PatchUpdated;
-              report->InfoMessages.push_back(fmt::format("Hotfix patch detected: Stored version {} updated to {}.", storedVersion, currentVersion));
             } else {
               m_installationStatus = InstallationStatus::Updated;
               report->InfoMessages.push_back(fmt::format("Update detected: Stored version {} is older than current {}.", storedVersion, currentVersion));
@@ -2415,6 +2408,4 @@ void ConfigService::SetAutoSave(const std::string& contextId, bool enabled) {
   }
 }
 
-}  // namespace Config
-
-SPF_NS_END
+}  // namespace SPF::Config

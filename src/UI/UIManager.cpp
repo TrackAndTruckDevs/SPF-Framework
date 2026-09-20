@@ -1,11 +1,10 @@
 #include "SPF/UI/UIManager.hpp"
 
-#include "SPF/Namespace.hpp"
-
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
 #include "SPF/Events/SystemEvents.hpp"
@@ -16,6 +15,10 @@
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Modules/CommunicationManager.hpp"
+#include "SPF/Modules/ITelemetryService.hpp"
+#include "SPF/Modules/KeyBindsManager.hpp"
+#include "SPF/Modules/PluginManager.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/SPF_API/SPF_Icons.h"
 #include "SPF/SPF_API/SPF_UI_API.h"
@@ -48,8 +51,10 @@
 #include "SPF/UI/PluginsWindow.hpp"    // Added for PluginsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Added for SettingsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Required for dynamic_cast
+#include "SPF/UI/SoundWindow.hpp"         // Added for SoundWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
 #include "SPF/UI/UIStyle.hpp"
+#include "SPF/UI/UISounds.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
 #include "SPF/Utils/Signal.hpp"
 
@@ -71,9 +76,7 @@
 #include <utility>
 #include <vector>
 
-SPF_NS_BEGIN
-
-namespace UI {
+namespace SPF::UI {
 using namespace SPF::Logging;
 using namespace SPF::Input;
 
@@ -91,12 +94,10 @@ UIManager::UIManager()
       m_keyBindsManager(nullptr),
       m_pluginManager(nullptr),
       m_communicationManager(nullptr),
-      m_onPluginDidLoadSink(nullptr),          // will be initialized in Init()
-      m_onPluginWillBeUnloadedSink(nullptr),   // will be initialized in Init()
-      m_onReleaseNotesReceivedSink(nullptr),   // will be initialized in Init()
-      m_onPluginUpdateAvailableSink(nullptr),  // will be initialized in Init()
-      m_onPatchUpdateDetectedSink(nullptr),    // will be initialized in Init()
-      m_onPatchApplyCompletedSink(nullptr)     // will be initialized in Init()
+      m_onPluginDidLoadSink(nullptr),         // will be initialized in Init()
+      m_onPluginWillBeUnloadedSink(nullptr),  // will be initialized in Init()
+      m_onReleaseNotesReceivedSink(nullptr),  // will be initialized in Init()
+      m_onPluginUpdateAvailableSink(nullptr)  // will be initialized in Init()
 {
   // No dependencies are passed here, they will be passed via Init()
 }
@@ -116,16 +117,12 @@ void UIManager::Init(Events::EventManager& eventManager, Input::InputManager& in
   m_onPluginDidLoadSink = std::make_unique<Utils::Sink<void(const Events::OnPluginDidLoad&)>>(m_eventManager->System.OnPluginDidLoad);
   m_onPluginWillBeUnloadedSink = std::make_unique<Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)>>(m_eventManager->System.OnPluginWillBeUnloaded);
   m_onReleaseNotesReceivedSink = std::make_unique<Utils::Sink<void(const System::ChangelogData&)>>(m_communicationManager->OnReleaseNotesReceived);
-  m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::System::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
-  m_onPatchUpdateDetectedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchUpdateDetected&)>>(m_eventManager->System.OnPatchUpdateDetected);
-  m_onPatchApplyCompletedSink = std::make_unique<Utils::Sink<void(const Events::System::OnPatchApplyCompleted&)>>(m_eventManager->System.OnPatchApplyCompleted);
+  m_onPluginUpdateAvailableSink = std::make_unique<Utils::Sink<void(const Events::OnPluginUpdateAvailable&)>>(m_communicationManager->OnPluginUpdateAvailable);
 
   m_onPluginDidLoadSink->Connect<&UIManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink->Connect<&UIManager::OnPluginUnloaded>(this);
   m_onReleaseNotesReceivedSink->Connect<&UIManager::OnReleaseNotesReceived>(this);
   m_onPluginUpdateAvailableSink->Connect<&UIManager::NotifyPluginUpdateAvailable>(this);
-  m_onPatchUpdateDetectedSink->Connect<&UIManager::NotifyPatchUpdateDetected>(this);
-  m_onPatchApplyCompletedSink->Connect<&UIManager::NotifyPatchApplyCompleted>(this);
 }
 
 void UIManager::CloseFocusedWindow() {
@@ -307,18 +304,19 @@ std::map<std::string, nlohmann::ordered_json> UIManager::GetAllWindowSettings() 
 void UIManager::ShowNotification(const std::string& message, int type, SPF_Notification_DisplayMode mode) {
   if (m_notificationWindow) {
     float duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
-    m_notificationWindow->Show(message, type, duration, mode);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    m_notificationWindow->Show(message, type, duration, mode, playSound);
   }
 }
 
 SPF_Notification_Handle UIManager::ShowNotificationEx(const SPF_Notification_Params* params) {
   if (m_notificationWindow && params) {
     SPF_Notification_Params p = *params;
-    // Resolve 'Auto' duration from settings if it's negative
     if (p.duration < 0.0f) {
       p.duration = m_configService->GetValue("framework", "settings.notification_duration", 3.0f).get<float>();
     }
-    return m_notificationWindow->ShowEx(p);
+    bool playSound = m_configService->GetValue("framework", "settings.notification_sound", true).get<bool>();
+    return m_notificationWindow->ShowEx(p, playSound);
   }
   return nullptr;
 }
@@ -329,7 +327,7 @@ void UIManager::HideNotification(SPF_Notification_Handle handle) {
   }
 }
 
-const Events::System::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
+const Events::OnPluginUpdateAvailable* UIManager::GetPluginUpdate(const std::string& pluginId) const {
   auto it = m_pluginUpdates.find(pluginId);
   if (it != m_pluginUpdates.end()) {
     return &it->second;
@@ -812,6 +810,9 @@ void UIManager::RenderAll() {
     m_lastLoggedConflictId = 0;
   }
 #endif
+
+  // --- UI Click Sound (after all widgets rendered) ---
+  UISounds::OnMouseClicked();
 }
 
 void UIManager::InitializeImGui() {
@@ -1191,7 +1192,7 @@ void UIManager::NotifyInputCaptureConflict(const Input::InputCaptureConflict& e)
   if (m_keyCapturePopup) m_keyCapturePopup->OnInputCaptureConflict(e);
 }
 
-void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCompleted& e) {
+void UIManager::NotifyUpdateCheckCompleted(const Events::OnUpdateCheckCompleted& e) {
   auto& loc = Localization::LocalizationManager::GetInstance();
   auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
   if (e.result.success && e.result.data.has_value()) {
@@ -1199,31 +1200,21 @@ void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCo
     logger->Debug("Update check completed. Available: {}", data.updateAvailable);
 
     if (data.updateAvailable) {
-      // Patches (same base, higher revision) are handled by OnPatchUpdateDetected.
-      // Skip the major "update available" toast for patch-type updates.
-      const auto& latest = data.latestVersion.ver;
-      const auto currentVer = System::Version::FromString(
-          m_configService->GetValue("framework", "settings.framework.version", "0.0.0").get<std::string>());
-      if (currentVer && latest.major == currentVer->major && latest.minor == currentVer->minor &&
-          latest.patch == currentVer->patch && latest.revision > currentVer->revision) {
-        logger->Debug("Update is a patch (v{}). Skipping 'update available' toast — handled by auto-patch.", data.latestVersion.full);
-      } else {
-        bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
-        logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
+      const bool showNotifications = m_configService->GetValue("framework", "settings.show_update_notifications", true).get<bool>();
+      logger->Debug("Update notifications enabled (Framework): {}", showNotifications);
 
-        if (showNotifications) {
-          logger->Info("Showing update notification...");
-          std::string versionStr = "v." + e.result.data->latestVersion.full;
-          std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
-          SPF_Notification_Params params{};
-          params.message = updateMsg.c_str();
-          params.type = SPF_NOTIFICATION_INFO;
-          params.mode = SPF_NOTIF_MODE_TOP;
-          params.duration = 5.0f;
-          UIManager::GetInstance().ShowNotificationEx(&params);
-        } else {
-          logger->Debug("Update notifications are disabled in settings.");
-        }
+      if (showNotifications) {
+        logger->Info("Showing update notification...");
+        std::string versionStr = "v." + e.result.data->latestVersion.full;
+        std::string updateMsg = loc.GetFormatted("framework", "main_window.update_available_notification", "SPF Framework", versionStr);
+        SPF_Notification_Params params{};
+        params.message = updateMsg.c_str();
+        params.type = SPF_NOTIFICATION_INFO;
+        params.mode = SPF_NOTIF_MODE_TOP;
+        params.duration = 5.0f;
+        UIManager::GetInstance().ShowNotificationEx(&params);
+      } else {
+        logger->Debug("Update notifications are disabled in settings.");
       }
     }
   } else if (!e.result.success) {
@@ -1235,15 +1226,15 @@ void UIManager::NotifyUpdateCheckCompleted(const Events::System::OnUpdateCheckCo
   }
 }
 
-void UIManager::NotifyPatronsFetchCompleted(const Events::System::OnPatronsFetchCompleted& e) {
+void UIManager::NotifyPatronsFetchCompleted(const Events::OnPatronsFetchCompleted& e) {
   for (const auto& window : m_windows) {
     window->OnPatronsFetchCompleted(e);
   }
 }
 
-void UIManager::NotifyUsageTrackingCompleted(const Events::System::OnUsageTrackingCompleted& e) {}
+void UIManager::NotifyUsageTrackingCompleted(const Events::OnUsageTrackingCompleted& e) {}
 
-void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdateAvailable& e) {
+void UIManager::NotifyPluginUpdateAvailable(const Events::OnPluginUpdateAvailable& e) {
   m_pluginUpdates[e.pluginId] = e;
 
   auto& loc = Localization::LocalizationManager::GetInstance();
@@ -1265,41 +1256,6 @@ void UIManager::NotifyPluginUpdateAvailable(const Events::System::OnPluginUpdate
   } else {
     logger->Debug("Update notifications are disabled in settings.");
   }
-}
-
-void UIManager::NotifyPatchUpdateDetected(const Events::System::OnPatchUpdateDetected& e) {
-  auto& loc = Localization::LocalizationManager::GetInstance();
-  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-  const std::string version = e.info.latestVersion.full;
-
-  logger->Info("Hotfix patch v{} detected, downloading automatically...", version);
-  std::string msg = loc.GetFormatted("framework", "main_window.patch_downloading", version);
-  SPF_Notification_Params params{};
-  params.message = msg.c_str();
-  params.type = SPF_NOTIFICATION_INFO;
-  params.mode = SPF_NOTIF_MODE_TOP;
-  params.duration = 5.0f;
-  UIManager::GetInstance().ShowNotificationEx(&params);
-}
-
-void UIManager::NotifyPatchApplyCompleted(const Events::System::OnPatchApplyCompleted& e) {
-  auto& loc = Localization::LocalizationManager::GetInstance();
-  auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
-
-  if (!e.success) {
-    // Patch failures are logged only, they must never block the user.
-    logger->Warn("Automatic patch update to v{} failed: {}", e.version, e.errorMessage);
-    return;
-  }
-
-  logger->Info("Patch v{} applied. Restart required.", e.version);
-  std::string msg = loc.GetFormatted("framework", "main_window.patch_updated_restart", e.version);
-  SPF_Notification_Params params{};
-  params.message = msg.c_str();
-  params.type = SPF_NOTIFICATION_SUCCESS;
-  params.mode = SPF_NOTIF_MODE_TOP;
-  params.duration = 8.0f;
-  UIManager::GetInstance().ShowNotificationEx(&params);
 }
 
 void UIManager::CreateAndRegisterFrameworkWindows() {
@@ -1365,8 +1321,12 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   auto climateWindow = std::make_shared<ClimateWindow>("framework", "climate_window", Data::GameData::ClimateService::GetInstance());
   RegisterWindow(climateWindow);
 
+  // Sound Window
+  auto soundWindow = std::make_shared<SoundWindow>("framework", "sound_window", Data::GameData::SoundService::GetInstance());
+  RegisterWindow(soundWindow);
+
   // Notifications (Global) — must be created before the status check block below,
-  // because PatchUpdated fires ShowNotificationEx which needs m_notificationWindow.
+  // because Updated fires ShowNotificationEx which needs m_notificationWindow.
   m_notificationWindow = std::make_shared<NotificationWindow>("framework", "notification_popup");
   RegisterWindow(m_notificationWindow);
 
@@ -1376,16 +1336,6 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
     auto welcomeWindow = std::make_shared<WelcomeWindow>("framework", "welcome_window");
     welcomeWindow->SetVisibility(true);
     RegisterWindow(welcomeWindow);
-  } else if (fwInfo.installStatus == System::InstallationStatus::PatchUpdated) {
-    // Hotfix patches carry no release notes - just a brief confirmation.
-    auto& loc = Localization::LocalizationManager::GetInstance();
-    std::string msg = loc.GetFormatted("framework", "main_window.patch_applied", fwInfo.version);
-    SPF_Notification_Params params{};
-    params.message = msg.c_str();
-    params.type = SPF_NOTIFICATION_SUCCESS;
-    params.mode = SPF_NOTIF_MODE_TOP;
-    params.duration = 5.0f;
-    UIManager::GetInstance().ShowNotificationEx(&params);
   } else if (fwInfo.installStatus == System::InstallationStatus::Updated) {
     // If updated, we request release notes from the server.
     // When they arrive, OnReleaseNotesReceived will show the window.
@@ -1403,6 +1353,4 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   }
 }
 
-}  // namespace UI
-
-SPF_NS_END
+}  // namespace SPF::UI
