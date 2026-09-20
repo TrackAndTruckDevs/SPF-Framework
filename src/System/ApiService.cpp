@@ -1,6 +1,7 @@
 #include "SPF/System/ApiService.hpp"
 
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "cpr/api.h"
 #include "cpr/body.h"
@@ -28,7 +29,6 @@
 #include <mutex>
 #include <optional>
 #include <queue>
-#include <sec_api/stdio_s.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -251,7 +251,10 @@ std::future<ApiResult<UpdateInfo>> ApiService::FetchUpdateInfoAsync(const std::s
   std::future<ApiResult<UpdateInfo>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, major, minor, patch, revision, channel, lang]() {
-    if (m_shutdown) { promise->set_value(ApiResult<UpdateInfo>{}); return; }
+    if (m_shutdown) {
+      promise->set_value(ApiResult<UpdateInfo>{});
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<UpdateInfo> apiResult;
 
@@ -337,7 +340,10 @@ std::future<FileDownloadResult> ApiService::DownloadFileAsync(const std::string&
   std::future<FileDownloadResult> future = promise->get_future();
 
   PostTask([this, promise, url, destination]() {
-    if (m_shutdown) { promise->set_value({}); return; }
+    if (m_shutdown) {
+      promise->set_value({});
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     FileDownloadResult result;
 
@@ -384,7 +390,10 @@ std::future<ApiResult<ChangelogData>> ApiService::FetchReleaseNotesAsync(const s
   std::future<ApiResult<ChangelogData>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, major, minor, patch, lang]() {
-    if (m_shutdown) { promise->set_value(ApiResult<ChangelogData>{}); return; }
+    if (m_shutdown) {
+      promise->set_value(ApiResult<ChangelogData>{});
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<ChangelogData> apiResult;
 
@@ -458,7 +467,10 @@ std::future<ApiResult<std::vector<Patron>>> ApiService::FetchPatronsAsync(const 
   std::future<ApiResult<std::vector<Patron>>> future = promise->get_future();
 
   PostTask([this, promise, baseUrl]() {
-    if (m_shutdown) { promise->set_value(ApiResult<std::vector<Patron>>{}); return; }
+    if (m_shutdown) {
+      promise->set_value(ApiResult<std::vector<Patron>>{});
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<std::vector<Patron>> apiResult;
 
@@ -528,7 +540,10 @@ std::future<void> ApiService::TrackUsageAsync(const std::string& baseUrl, std::s
   std::future<void> future = promise->get_future();
 
   PostTask([this, promise, baseUrl, uuid, sessionId, buildHash, version, game, gameVersion, plugins, logs]() {
-    if (m_shutdown) { promise->set_value(); return; }
+    if (m_shutdown) {
+      promise->set_value();
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
 
     if (!EnsureConnectivity(baseUrl)) {
@@ -570,7 +585,10 @@ std::future<ApiResult<GithubReleaseInfo>> ApiService::FetchGithubLatestReleaseAs
   std::future<ApiResult<GithubReleaseInfo>> future = promise->get_future();
 
   PostTask([this, promise, owner, repo]() {
-    if (m_shutdown) { promise->set_value(ApiResult<GithubReleaseInfo>{}); return; }
+    if (m_shutdown) {
+      promise->set_value(ApiResult<GithubReleaseInfo>{});
+      return;
+    }
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("ApiService");
     ApiResult<GithubReleaseInfo> apiResult;
 

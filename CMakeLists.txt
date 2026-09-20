@@ -50,6 +50,16 @@ endif()
 if(MINGW)
     set(MINGW_STATIC_FLAGS "-static-libgcc;-static-libstdc++")
     set(MINGW_WINPTHREAD_FLAGS "-Wl,-Bstatic;-lwinpthread;-Wl,-Bdynamic")
+
+    # MinSizeRel uses -Os, which suppresses inlining of libstdc++'s
+    # always_inline std::string move-constructors, forcing external
+    # references to std::__cxx11::basic_string(&&) that the static
+    # libstdc++.a does not provide -> linker 'undefined reference'.
+    # Use -O2 instead (still small/fast) so those symbols inline away.
+    if(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        string(REPLACE "-Os" "-O2" CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}")
+        string(REPLACE "-Os" "-O2" CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL}")
+    endif()
 endif()
 # --- End of MinGW Cross-Compilation Flags ---
 

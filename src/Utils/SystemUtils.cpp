@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <libloaderapi.h>
 #include <minwindef.h>
-#include <sec_api/stdlib_s.h>
 #include <string>
 #include <winnls.h>
 #include <winnt.h>

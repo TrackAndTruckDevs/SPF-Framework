@@ -4,11 +4,11 @@
 #include "SPF/Telemetry/ConfigAttributeReader.hpp"
 #include "SPF/Telemetry/GameContext.hpp"
 #include "SPF/Telemetry/Sdk.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <sec_api/stdio_s.h>
 #include <vector>
 
 namespace SPF::Telemetry {

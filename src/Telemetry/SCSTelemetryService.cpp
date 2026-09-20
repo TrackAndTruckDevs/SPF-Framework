@@ -21,12 +21,12 @@
 #include "SPF/Telemetry/TrailerProcessor.hpp"
 #include "SPF/Telemetry/TruckProcessor.hpp"
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <memory>
-#include <sec_api/stdio_s.h>
 #include <string>
 #include <vector>
 
