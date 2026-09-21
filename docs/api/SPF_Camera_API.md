@@ -162,6 +162,12 @@ Gets or sets the current head rotation of the driver.
 *   `pitch`: Vertical rotation (looking up/down).
 
 ---
+**`Cam_GetInteriorRoll(float* degrees)` / `Cam_SetInteriorRoll(float degrees)`**
+Gets or sets the head roll (camera tilt) of the driver, in degrees. `0` is level, which is the game's vanilla behavior (the game has no roll of its own).
+*   The value is kept while another camera is active and re-applied when the interior camera is activated again.
+*   Setting `0` gives control back to the game.
+
+---
 **`Cam_GetInteriorFov(float* fov)` / `Cam_SetInteriorFov(float fov)`**
 Gets or sets the base Field of View (FOV) for the interior camera.
 

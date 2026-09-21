@@ -87,6 +87,21 @@ void CameraApi::T_Camera_SetInteriorHeadRot(float yaw, float pitch) {
   }
 }
 
+bool CameraApi::T_Camera_GetInteriorRoll(float* degrees) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interiorCam = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    return interiorCam->GetRoll(degrees);
+  }
+  return false;
+}
+
+void CameraApi::T_Camera_SetInteriorRoll(float degrees) {
+  auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
+  if (auto* interiorCam = dynamic_cast<GameCameraInterior*>(pCamera)) {
+    interiorCam->SetRoll(degrees);
+  }
+}
+
 bool CameraApi::T_Camera_GetInteriorFov(float* fov) {
   auto* pCamera = GameCameraManager::GetInstance().GetCamera(GameCamera::GameCameraType::InteriorCamera);
   if (auto* interiorCam = dynamic_cast<GameCameraInterior*>(pCamera)) {
@@ -2144,6 +2159,8 @@ void CameraApi::FillCameraAPI(SPF_Camera_API* camera_api) {
   camera_api->Cam_SetInteriorSeatPos = &T_Camera_SetInteriorSeatPos;
   camera_api->Cam_GetInteriorHeadRot = &T_Camera_GetInteriorHeadRot;
   camera_api->Cam_SetInteriorHeadRot = &T_Camera_SetInteriorHeadRot;
+  camera_api->Cam_GetInteriorRoll = &T_Camera_GetInteriorRoll;
+  camera_api->Cam_SetInteriorRoll = &T_Camera_SetInteriorRoll;
   camera_api->Cam_GetInteriorFov = &T_Camera_GetInteriorFov;
   camera_api->Cam_GetInteriorFinalFov = &T_Camera_GetInteriorFinalFov;
   camera_api->Cam_SetInteriorFov = &T_Camera_SetInteriorFov;

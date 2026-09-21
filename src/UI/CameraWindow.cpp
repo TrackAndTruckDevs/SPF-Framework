@@ -150,6 +150,7 @@ void CameraWindow::RefreshLocalization() {
   m_locHeadRotation = loc.Get("camera_window.interior_camera.head_rotation");
   m_locYawLr = loc.Get("camera_window.interior_camera.yaw_lr");
   m_locPitchUd = loc.Get("camera_window.interior_camera.pitch_ud");
+  m_locRoll = loc.Get("camera_window.interior_camera.roll");
   m_locMouseRotationLimits = loc.Get("camera_window.interior_camera.mouse_rotation_limits");
   m_locLeftLimit = loc.Get("camera_window.interior_camera.left_limit");
   m_locRightLimit = loc.Get("camera_window.interior_camera.right_limit");
@@ -879,6 +880,8 @@ void CameraWindow::RenderContent() {
           180.0f,
           true,
           ImVec2(defaults.yaw, defaults.pitch));
+
+        drawFloat(m_locRoll, [&](float* deg) { return interiorCam->GetRoll(deg); }, [&](float deg) { interiorCam->SetRoll(deg); }, -45.0f, 45.0f, "%.1f", 0.0f);
 
         drawHeader(m_locMouseRotationLimits);
         drawVector2(

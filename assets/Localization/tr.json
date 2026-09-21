@@ -700,6 +700,7 @@
             "head_rotation": "Baş Dönüşü",
             "yaw_lr": "Yalpalanma (S/S)",
             "pitch_ud": "Yükseklik (Y/A)",
+            "roll": "Yatış (°)",
             "mouse_rotation_limits": "Fare Dönüş Limitleri",
             "left_limit": "Sol Limit",
             "right_limit": "Sağ Limit",

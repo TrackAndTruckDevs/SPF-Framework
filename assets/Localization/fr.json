@@ -700,6 +700,7 @@
             "head_rotation": "Rotation de la tête",
             "yaw_lr": "Lacet (G/D)",
             "pitch_ud": "Tangage (H/B)",
+            "roll": "Roulis (°)",
             "mouse_rotation_limits": "Limites de rotation de la souris",
             "left_limit": "Limite gauche",
             "right_limit": "Limite droite",

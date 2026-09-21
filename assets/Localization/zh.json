@@ -700,6 +700,7 @@
             "head_rotation": "头部旋转",
             "yaw_lr": "偏航 (左/右)",
             "pitch_ud": "俯仰 (上/下)",
+            "roll": "翻滚 (°)",
             "mouse_rotation_limits": "鼠标旋转限制",
             "left_limit": "左限制",
             "right_limit": "右限制",

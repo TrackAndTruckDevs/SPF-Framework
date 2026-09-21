@@ -700,6 +700,7 @@
             "head_rotation": "Rotazione Testa",
             "yaw_lr": "Imbardata (S/D)",
             "pitch_ud": "Beccheggio (A/B)",
+            "roll": "Rollio (°)",
             "mouse_rotation_limits": "Limiti Rotazione Mouse",
             "left_limit": "Limite Sinistra",
             "right_limit": "Limite Destra",

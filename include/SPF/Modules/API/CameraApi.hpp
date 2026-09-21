@@ -22,6 +22,8 @@ class CameraApi {
   static void T_Camera_SetInteriorSeatPos(float x, float y, float z);
   static bool T_Camera_GetInteriorHeadRot(float* yaw, float* pitch);
   static void T_Camera_SetInteriorHeadRot(float yaw, float pitch);
+  static bool T_Camera_GetInteriorRoll(float* degrees);
+  static void T_Camera_SetInteriorRoll(float degrees);
   static bool T_Camera_GetInteriorFov(float* fov);
   static bool T_Camera_GetInteriorFinalFov(float* out_horiz, float* out_vert);
   static void T_Camera_SetInteriorFov(float fov);

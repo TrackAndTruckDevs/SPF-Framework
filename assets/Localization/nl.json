@@ -700,6 +700,7 @@
             "head_rotation": "Hoofdrotatie",
             "yaw_lr": "Gieren (L/R)",
             "pitch_ud": "Stampen (O/N)",
+            "roll": "Rollen (°)",
             "mouse_rotation_limits": "Muis Rotatielimieten",
             "left_limit": "Linkerlimiet",
             "right_limit": "Rechterlimiet",

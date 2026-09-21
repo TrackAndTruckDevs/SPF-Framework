@@ -700,6 +700,7 @@
             "head_rotation": "머리 회전",
             "yaw_lr": "요 (좌/우)",
             "pitch_ud": "피치 (상/하)",
+            "roll": "롤 (°)",
             "mouse_rotation_limits": "마우스 회전 제한",
             "left_limit": "왼쪽 제한",
             "right_limit": "오른쪽 제한",
