@@ -700,6 +700,7 @@
             "head_rotation": "Head Rotation",
             "yaw_lr": "Yaw (L/R)",
             "pitch_ud": "Pitch (U/D)",
+            "roll": "Roll (deg)",
             "mouse_rotation_limits": "Mouse Rotation Limits",
             "left_limit": "Left Limit",
             "right_limit": "Right Limit",

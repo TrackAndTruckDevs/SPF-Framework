@@ -700,6 +700,7 @@
             "head_rotation": "Kopfdrehung",
             "yaw_lr": "Gieren (L/R)",
             "pitch_ud": "Nicken (O/U)",
+            "roll": "Rollen (°)",
             "mouse_rotation_limits": "Mausrotationsgrenzen",
             "left_limit": "Grenze links",
             "right_limit": "Grenze rechts",

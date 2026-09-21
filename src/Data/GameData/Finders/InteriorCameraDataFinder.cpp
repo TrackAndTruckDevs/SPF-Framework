@@ -194,6 +194,23 @@ bool InteriorCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
           if (okYaw && okPitch) {
             owner.SetInteriorYawOffset(liveYaw);
             owner.SetInteriorPitchOffset(livePitch);
+
+            // Roll (yaw, pitch, roll are a contiguous float3) is rewritten every frame by the
+            // same function. Optional: without these sites the roll override can't stick.
+            const int32_t roll = livePitch + 4;
+            const std::string rollLE = fmt::format("{:02X} {:02X} {:02X} {:02X}", roll & 0xFF, (roll >> 8) & 0xFF, (roll >> 16) & 0xFF, (roll >> 24) & 0xFF);
+
+            // mov dword ptr [reg+roll], 0 -- earlier in the function than the yaw store.
+            uintptr_t zeroStore = PatternFinder::FindBackward(addrLiveYaw, 0x300, fmt::format("C7 [80-87] {} 00 00 00 00", rollLE).c_str());
+            if (phase.StepOptional(zeroStore, "Roll zero store", "RT")) {
+              owner.SetInteriorRollZeroStoreAddr(zeroStore);
+            }
+
+            // movss dword ptr [reg+roll], xmm -- right after the pitch store.
+            uintptr_t ctrlStore = PatternFinder::Find(movss2Addr + 8, 0x100, fmt::format("F3 0F 11 [80-BF] {}", rollLE).c_str());
+            if (phase.StepOptional(ctrlStore, "Roll controller store", "RT")) {
+              owner.SetInteriorRollControllerStoreAddr(ctrlStore);
+            }
           }
         }
       }

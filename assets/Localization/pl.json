@@ -700,6 +700,7 @@
             "head_rotation": "Obrót głowy",
             "yaw_lr": "Odchylenie (L/P)",
             "pitch_ud": "Pochylenie (G/D)",
+            "roll": "Przechył (°)",
             "mouse_rotation_limits": "Limity obrotu myszą",
             "left_limit": "Limit w lewo",
             "right_limit": "Limit w prawo",

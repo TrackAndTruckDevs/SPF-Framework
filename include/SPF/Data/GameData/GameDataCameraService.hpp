@@ -129,6 +129,13 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t GetInteriorSeatZOffset() const { return m_interior_seat_z_offset; }
   intptr_t GetInteriorYawOffset() const { return m_interior_yaw_offset; }
   intptr_t GetInteriorPitchOffset() const { return m_interior_pitch_offset; }
+  // (yaw, pitch, roll) are a contiguous float3 in the interior camera; roll sits right after pitch.
+  intptr_t GetInteriorRollOffset() const { return m_interior_pitch_offset ? m_interior_pitch_offset + 4 : 0; }
+  // Code addresses where the game overwrites that roll every frame (0 in vanilla): a
+  // `mov dword [reg+roll], 0` (10 bytes) and a `movss [reg+roll], xmm` (8 bytes).
+  // 0 when not found; roll override then can't stick.
+  uintptr_t GetInteriorRollZeroStoreAddr() const { return m_interior_roll_zero_store_addr; }
+  uintptr_t GetInteriorRollControllerStoreAddr() const { return m_interior_roll_controller_store_addr; }
   intptr_t GetInteriorLimitLeftOffset() const { return m_interior_limit_left_offset; }
   intptr_t GetInteriorLimitRightOffset() const { return m_interior_limit_right_offset; }
   intptr_t GetInteriorLimitUpOffset() const { return m_interior_limit_up_offset; }
@@ -325,6 +332,8 @@ class GameDataCameraService : public IWorldScopedService {
   void SetInteriorSeatZOffset(intptr_t val) { m_interior_seat_z_offset = val; }
   void SetInteriorYawOffset(intptr_t val) { m_interior_yaw_offset = val; }
   void SetInteriorPitchOffset(intptr_t val) { m_interior_pitch_offset = val; }
+  void SetInteriorRollZeroStoreAddr(uintptr_t val) { m_interior_roll_zero_store_addr = val; }
+  void SetInteriorRollControllerStoreAddr(uintptr_t val) { m_interior_roll_controller_store_addr = val; }
   void SetInteriorLimitLeftOffset(intptr_t val) { m_interior_limit_left_offset = val; }
   void SetInteriorLimitRightOffset(intptr_t val) { m_interior_limit_right_offset = val; }
   void SetInteriorLimitUpOffset(intptr_t val) { m_interior_limit_up_offset = val; }
@@ -556,6 +565,8 @@ class GameDataCameraService : public IWorldScopedService {
   intptr_t m_interior_seat_z_offset = 0;
   intptr_t m_interior_yaw_offset = 0;
   intptr_t m_interior_pitch_offset = 0;
+  uintptr_t m_interior_roll_zero_store_addr = 0;
+  uintptr_t m_interior_roll_controller_store_addr = 0;
   intptr_t m_interior_limit_left_offset = 0;
   intptr_t m_interior_limit_right_offset = 0;
   intptr_t m_interior_limit_up_offset = 0;

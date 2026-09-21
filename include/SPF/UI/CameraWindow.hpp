@@ -75,6 +75,7 @@ class CameraWindow : public BaseWindow {
   std::string m_locHeadRotation;
   std::string m_locYawLr;
   std::string m_locPitchUd;
+  std::string m_locRoll;
   std::string m_locMouseRotationLimits;
   std::string m_locLeftLimit;
   std::string m_locRightLimit;

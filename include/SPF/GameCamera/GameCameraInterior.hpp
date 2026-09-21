@@ -113,6 +113,15 @@ class GameCameraInterior : public IGameCamera {
   bool GetHandShakeSpeed(float* out_val) const;
   void SetHandShakeSpeed(float val);
 
+  // --- Roll ---
+  // Head roll (camera tilt) in degrees; the vanilla game has none. The game keeps
+  // (yaw, pitch, roll) as a contiguous float3 and rewrites the roll every frame, so while a
+  // non-zero roll is requested the instructions doing that are disabled (see
+  // SetRollPatchesApplied). The requested value survives camera switches: it can be set
+  // while the camera is inactive and is applied on activation. SetRoll(0) restores the game.
+  bool GetRoll(float* out_deg) const;
+  void SetRoll(float degrees);
+
   // --- Interior Logic Individual API ---
   bool GetZoomFovFactor(float* out_val) const;
   void SetZoomFovFactor(float val);
@@ -204,6 +213,21 @@ class GameCameraInterior : public IGameCamera {
   // frame from Update() makes our value win instead of chasing the native write site.
   bool m_fovOverrideActive = false;
   float m_fovOverrideValue = 0.0f;
+
+  // Roll override (radians), re-applied every frame while active.
+  bool m_rollActive = false;
+  float m_rollRadians = 0.0f;
+
+  // While the roll override is active, the two game instructions that rewrite the roll
+  // every frame are NOPed; the original bytes are restored when it stops.
+  struct CodePatch {
+    uintptr_t addr = 0;
+    size_t length = 0;
+    unsigned char original[16] = {};
+    bool applied = false;
+  };
+  CodePatch m_rollPatches[2];
+  void SetRollPatchesApplied(bool apply);
 
   // Cached speed FOV change factor while dynamic FOV is disabled.
   bool m_dynamicFovActive = true;

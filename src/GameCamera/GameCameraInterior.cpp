@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 namespace SPF::GameCamera {
 GameCameraInterior::GameCameraInterior() {
@@ -30,6 +31,7 @@ void GameCameraInterior::OnActivate() {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
     if (m_pCameraObject) {
       logger->Debug("DIAGNOSTIC: Interior Camera Object Address: 0x{:X}", reinterpret_cast<uintptr_t>(m_pCameraObject));
+      if (m_rollActive) SetRoll(m_rollRadians * (180.0f / 3.14159265f));
     }
   }
 }
@@ -38,6 +40,9 @@ void GameCameraInterior::OnDeactivate() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
   logger->Info("Deactivating Interior Camera.");
   m_pCameraObject = nullptr;  // Clear the pointer when not active
+  // Restore the game's code while inactive, but keep the requested roll so it comes back
+  // when the interior camera is re-activated.
+  SetRollPatchesApplied(false);
 }
 
 void GameCameraInterior::Update(float dt) {
@@ -48,8 +53,72 @@ void GameCameraInterior::Update(float dt) {
   // The new design reads data directly in the Get... methods,
   // so this per-frame update is no longer necessary for populating local data.
   // It can be used for other per-frame logic if needed in the future.
+
+  // Keeps the roll pinned even if the game's own writers could not be patched.
+  if (m_rollActive) {
+    auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
+    if (rollOffset) {
+      *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = m_rollRadians;
+    }
+  }
 }
 
+bool GameCameraInterior::GetRoll(float* out_deg) const {
+  if (!out_deg) return false;
+  if (m_rollActive) {
+    *out_deg = m_rollRadians * (180.0f / 3.14159265f);
+    return true;
+  }
+  if (!m_pCameraObject) return false;
+  auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
+  if (!rollOffset) return false;
+  *out_deg = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) * (180.0f / 3.14159265f);
+  return true;
+}
+
+void GameCameraInterior::SetRoll(float degrees) {
+  // Remembered even while the camera is inactive; OnActivate() re-applies it.
+  m_rollRadians = degrees * (3.14159265f / 180.0f);
+  m_rollActive = degrees != 0.0f;
+  if (!m_pCameraObject) return;
+
+  auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
+  if (!rollOffset) {
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
+    logger->Warn("Cannot set roll: yaw/pitch offsets are missing.");
+    return;
+  }
+
+  SetRollPatchesApplied(m_rollActive);
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = m_rollRadians;
+}
+
+void GameCameraInterior::SetRollPatchesApplied(bool apply) {
+  auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
+  if (apply) {
+    m_rollPatches[0].addr = gameData.GetInteriorRollZeroStoreAddr();
+    m_rollPatches[0].length = 10;  // mov dword [reg+disp32], imm32
+    m_rollPatches[1].addr = gameData.GetInteriorRollControllerStoreAddr();
+    m_rollPatches[1].length = 8;  // movss [reg+disp32], xmm
+  }
+
+  for (auto& patch : m_rollPatches) {
+    if (!patch.addr || patch.applied == apply) continue;
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(reinterpret_cast<void*>(patch.addr), patch.length, PAGE_EXECUTE_READWRITE, &oldProtect)) continue;
+    auto* code = reinterpret_cast<unsigned char*>(patch.addr);
+    if (apply) {
+      memcpy(patch.original, code, patch.length);
+      memset(code, 0x90, patch.length);
+    } else {
+      memcpy(code, patch.original, patch.length);
+    }
+    VirtualProtect(reinterpret_cast<void*>(patch.addr), patch.length, oldProtect, &oldProtect);
+    FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patch.addr), patch.length);
+    patch.applied = apply;
+  }
+}
 
 void GameCameraInterior::SetSeatPosition(float x, float y, float z) {
   if (!m_pCameraObject) return;
@@ -229,6 +298,7 @@ void GameCameraInterior::ResetToDefaults() {
 
   SetSeatPosition(m_defaultCameraData.seat_pos_x, m_defaultCameraData.seat_pos_y, m_defaultCameraData.seat_pos_z);
   SetHeadRotation(m_defaultCameraData.yaw, m_defaultCameraData.pitch);
+  SetRoll(0.0f);
   SetFov(m_defaultCameraData.fov_base);
   SetRotationLimits(m_defaultCameraData.limit_left, m_defaultCameraData.limit_right, m_defaultCameraData.limit_up, m_defaultCameraData.limit_down);
   SetRotationDefaults(m_defaultCameraData.mouse_lr_default, m_defaultCameraData.mouse_ud_default);

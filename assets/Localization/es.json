@@ -700,6 +700,7 @@
             "head_rotation": "Rotación de la cabeza",
             "yaw_lr": "Guiñada (I/D)",
             "pitch_ud": "Cabeceo (Ar/Ab)",
+            "roll": "Alabeo (°)",
             "mouse_rotation_limits": "Límites de rotación del ratón",
             "left_limit": "Límite izquierdo",
             "right_limit": "Límite derecho",

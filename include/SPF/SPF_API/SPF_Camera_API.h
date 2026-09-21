@@ -148,6 +148,21 @@ typedef bool (*SPF_Camera_GetInteriorHeadRot_t)(float* yaw, float* pitch);
 typedef void (*SPF_Camera_SetInteriorHeadRot_t)(float yaw, float pitch);
 
 /**
+ * @brief Gets the head roll (camera tilt) of the interior camera.
+ * @param[out] degrees Pointer to a float to store the roll in degrees (0 = level).
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorRoll_t)(float* degrees);
+
+/**
+ * @brief Sets the head roll (camera tilt) of the interior camera.
+ * @param degrees Roll in degrees (0 = level, positive/negative tilt to either side).
+ * @details The value is kept while another camera is active and re-applied when the
+ * interior camera is activated again. Setting 0 restores the game's behavior.
+ */
+typedef void (*SPF_Camera_SetInteriorRoll_t)(float degrees);
+
+/**
  * @brief Gets the base Field of View (FOV) for the interior camera.
  * @param[out] fov Pointer to a float to store the FOV value.
  * @return True on success, false otherwise.
@@ -2364,7 +2379,13 @@ typedef struct SPF_Camera_API {
   SPF_Camera_SetInteriorFovSetting_t Cam_SetInteriorFovSetting;
   /** @brief Gets/Sets the dynamic FOV enabled state of the interior camera. */
   SPF_Camera_GetInteriorDynamicFovEnabled_t Cam_GetInteriorDynamicFovEnabled;
-  SPF_Camera_SetInteriorDynamicFovEnabled_t Cam_SetInteriorDynamicFovEnabled;  
+  SPF_Camera_SetInteriorDynamicFovEnabled_t Cam_SetInteriorDynamicFovEnabled;
+
+  // --- Interior Roll (appended to keep the struct layout ABI-compatible) ---
+  /** @brief Gets the interior camera's roll in degrees. See `SPF_Camera_GetInteriorRoll_t`. */
+  SPF_Camera_GetInteriorRoll_t Cam_GetInteriorRoll;
+  /** @brief Sets the interior camera's roll in degrees. See `SPF_Camera_SetInteriorRoll_t`. */
+  SPF_Camera_SetInteriorRoll_t Cam_SetInteriorRoll;
 
 } SPF_Camera_API;
 

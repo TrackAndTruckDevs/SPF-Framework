@@ -700,6 +700,7 @@
             "head_rotation": "頭の回転",
             "yaw_lr": "ヨー (左右)",
             "pitch_ud": "ピッチ (上下)",
+            "roll": "ロール (°)",
             "mouse_rotation_limits": "マウス回転制限",
             "left_limit": "左制限",
             "right_limit": "右制限",

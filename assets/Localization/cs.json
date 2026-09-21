@@ -700,6 +700,7 @@
             "head_rotation": "Rotace hlavy",
             "yaw_lr": "Otáčení (L/P)",
             "pitch_ud": "Náklon (H/D)",
+            "roll": "Klopení (°)",
             "mouse_rotation_limits": "Limity rotace myší",
             "left_limit": "Levý limit",
             "right_limit": "Pravý limit",
