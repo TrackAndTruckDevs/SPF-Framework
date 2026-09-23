@@ -1,185 +1,100 @@
 /**
  * @file ExamplePlugin.hpp
- * @brief Internal header for the ExamplePlugin.
- * @details This header defines the core structure and function prototypes for the plugin.
- * It is organized to provide a clear overview of the plugin's architecture for new developers,
- * with detailed comments explaining the purpose of each component.
+ * @brief Slim orchestrator header: PluginContext + lifecycle + UI entry points.
+ *
+ * @details Per-API examples (render + callbacks + update + docs) live in Example*API.*.
+ * This header only owns:
+ *   - PluginContext / g_ctx  (shared state bag)
+ *   - Lifecycle exports      (OnLoad, OnActivated, OnUpdate, OnUnload, OnGameWorldReady)
+ *   - UI entry               (OnRegisterUI, RenderMainWindow)
+ *   - BuildManifest
+ *
+ * Framework callbacks that belong to a module (OnSettingChanged, OnLanguageChanged,
+ * OnGameLogMessage, OnToggleMainWindow, OnCameraKeybind, telemetry On*Update) are
+ * declared in their Example*API headers — include those where you need the pointer.
  */
 #pragma once
 
 // =================================================================================================
-// 1. SPF API Includes
+// SPF API Includes (shared by all Example*API translation units via this header)
 // =================================================================================================
-// These headers provide the definitions for the framework APIs that the plugin interacts with.
-// Including them is necessary to use any framework functionality. Each header corresponds to a
-// specific framework subsystem.
-#include <SPF/SPF_API/SPF_Camera_API.h>        // For interacting with and controlling the various in-game cameras.
-#include <SPF/SPF_API/SPF_Climate_API.h>       // For reading and controlling the game's climate and weather systems.
-#include <SPF/SPF_API/SPF_Config_API.h>        // For reading from and writing to the plugin's dedicated settings file.
-#include <SPF/SPF_API/SPF_Environment_API.h>   // For retrieving information about the game, framework, and system environment.
-#include <SPF/SPF_API/SPF_Formatting_API.h>    // For safe, cross-DLL string formatting to prevent crashes.
-#include <SPF/SPF_API/SPF_GameConsole_API.h>   // For executing commands in the in-game developer console.
-#include <SPF/SPF_API/SPF_GameLog_API.h>       // For subscribing to the game's internal log output.
-#include <SPF/SPF_API/SPF_GameWorld_API.h>     // For game world simulation control.
-#include <SPF/SPF_API/SPF_Hooks_API.h>         // For intercepting and modifying native game functions.
-#include <SPF/SPF_API/SPF_Icons.h>             // For Font Awesome 7 icon macros.
-#include <SPF/SPF_API/SPF_JsonIO_API.h>        // For loading and saving JSON files.
-#include <SPF/SPF_API/SPF_JsonReader_API.h>    // For safely reading JSON data provided by the framework in callbacks.
-#include <SPF/SPF_API/SPF_JsonWriter_API.h>    // For creating and modifying JSON structures in memory.
-#include <SPF/SPF_API/SPF_KeyBinds_API.h>      // For registering custom actions and binding them to keyboard/gamepad inputs.
-#include <SPF/SPF_API/SPF_Localization_API.h>  // For handling multi-language strings from translation files.
-#include <SPF/SPF_API/SPF_Logger_API.h>        // For logging messages to the framework's central logger.
-#include <SPF/SPF_API/SPF_Manifest_API.h>      // For defining the plugin's metadata (name, version, required hooks, etc.) via BuildManifest.
-#include <SPF/SPF_API/SPF_Plugin.h>            // Defines the core plugin export structures (SPF_Plugin_Exports, SPF_Core_API) and lifecycle functions. This is mandatory.
-#include <SPF/SPF_API/SPF_Telemetry_API.h>     // For reading live game data (speed, RPM, job info, etc.).
+#include <SPF/SPF_API/SPF_Camera_API.h>
+#include <SPF/SPF_API/SPF_Climate_API.h>
+#include <SPF/SPF_API/SPF_Config_API.h>
+#include <SPF/SPF_API/SPF_Environment_API.h>
+#include <SPF/SPF_API/SPF_Formatting_API.h>
+#include <SPF/SPF_API/SPF_GameConsole_API.h>
+#include <SPF/SPF_API/SPF_GameLog_API.h>
+#include <SPF/SPF_API/SPF_GameWorld_API.h>
+#include <SPF/SPF_API/SPF_Hooks_API.h>
+#include <SPF/SPF_API/SPF_Icons.h>
+#include <SPF/SPF_API/SPF_JsonIO_API.h>
+#include <SPF/SPF_API/SPF_JsonReader_API.h>
+#include <SPF/SPF_API/SPF_JsonWriter_API.h>
+#include <SPF/SPF_API/SPF_KeyBinds_API.h>
+#include <SPF/SPF_API/SPF_Localization_API.h>
+#include <SPF/SPF_API/SPF_Logger_API.h>
+#include <SPF/SPF_API/SPF_Manifest_API.h>
+#include <SPF/SPF_API/SPF_Plugin.h>
+#include <SPF/SPF_API/SPF_Telemetry_API.h>
 #include <SPF/SPF_API/SPF_TelemetryData.h>
-#include <SPF/SPF_API/SPF_UI_API.h>         // For creating and managing user interface windows and widgets.
-#include <SPF/SPF_API/SPF_Vehicle_API.h>    // For inspecting vehicles and traffic.
-#include <SPF/SPF_API/SPF_VirtInput_API.h>  // For creating virtual input devices (like a virtual gamepad) to simulate input.
-#include <SPF/SPF_API/SPF_Sound_API.h>       // For interacting with the FMOD sound system.
+#include <SPF/SPF_API/SPF_UI_API.h>
+#include <SPF/SPF_API/SPF_Vehicle_API.h>
+#include <SPF/SPF_API/SPF_VirtInput_API.h>
+#include <SPF/SPF_API/SPF_Sound_API.h>
 
+#include <cstdint>
+#include <vector>
 
-// =================================================================================================
-// 2. Standard Library Includes
-// =================================================================================================
-#include <cstdint>  // For fixed-width integer types like int32_t, which are useful for consistent data sizes.
-#include <vector>   // For std::vector, used in the event data cache.
-
-// It's a strong best practice to wrap all your plugin's code in a unique namespace.
-// This prevents naming conflicts with the framework or other plugins that might be loaded.
 namespace ExamplePlugin {
 
 // =================================================================================================
-// 3. Core Plugin Architecture
+// Types
 // =================================================================================================
-// This section defines the fundamental building blocks of the plugin's architecture. A good
-// architecture is key to writing a maintainable and understandable plugin.
-
-// --- Type-definitions ---
 
 /**
- * @brief Defines the function signature for a game's internal string formatting function.
- * @details This type alias is crucial for the Hooks API. When you hook a function, you must
- * provide a "detour" function with the exact same signature as the original, and a "trampoline"
- * function pointer of the same type to call the original function. This `using` statement
- * creates a clear, readable type that can be used for both the detour and the trampoline,
- * ensuring type safety and preventing hard-to-debug crashes.
- *
- * @param pOutput A pointer to an opaque output string buffer structure used by the game.
- * @param ppInput A pointer-to-a-pointer to a `const char*`, which holds a game-specific string
- *                (e.g., "@@quit_game@@") to be processed.
- * @return A pointer to the resulting formatted string object, also an opaque structure.
+ * @brief Signature of the game's internal string formatting function (Hooks detour + trampoline).
+ * @details Hook detours must match the original exactly; this alias is shared by
+ * ExampleHooksAPI (detour body + trampoline storage on g_ctx).
  */
-
 using GameStringFormatting_t = void* (*)(void* pOutput, const char** ppInput);
 
-// --- Plugin Context ---
+// =================================================================================================
+// PluginContext — single global state bag (Context Object pattern)
+// =================================================================================================
 
 /**
- * @brief Encapsulates all global state for the plugin in a single object.
- *
- * @details This struct follows the "Context Object" design pattern. Because the framework
- * communicates with the plugin via C-style callbacks, you cannot use member functions
- * of a class directly. Instead of using many scattered global variables (which is bad practice),
- * all plugin-wide state (API pointers, cached handles, settings, runtime flags, etc.) is
- * consolidated into this single `PluginContext` object. A single global instance of this
- * struct (`g_ctx`) is then used throughout the plugin.
- *
- * This approach is the cornerstone of this example's architecture and offers several advantages:
- * - **Organization:** Keeps related data together, making the code easier to understand and navigate.
- * - **Reduces Global Namespace Pollution:** Only one global variable (`g_ctx`) is introduced for the
- *   entire plugin's state, minimizing the risk of naming collisions.
- * - **Maintainability:** Simplifies adding, removing, or finding state variables. All state is defined here.
+ * @brief All plugin-wide state: API pointers, handles, UI flags, module-owned fields.
+ * @details C-style framework callbacks cannot be member functions; consolidating state here
+ * keeps one global (g_ctx) instead of scattered variables. Each Example*API documents which
+ * fields it reads/writes. Module-local presentational state may live as file-scope statics
+ * in the owning .cpp instead.
  */
 struct PluginContext {
-  // --- Primary API Pointers ---
-  // These are the main gateways to the framework's functionality. They are received during the
-  // plugin's lifecycle and stored here for universal access across all plugin files.
+  // --- Primary API pointers (lifecycle-provided) ---
+  const SPF_Load_API* loadAPI = nullptr;    ///< OnLoad
+  const SPF_Core_API* coreAPI = nullptr;    ///< OnActivated
 
-  /**
-   * @brief Pointer to the Load API, received in the `OnLoad` lifecycle function.
-   * @details This API is available at the earliest stage of plugin loading. It provides access
-   * to essential services that do not depend on the game being fully initialized, such as
-   * the logger, config system, and localization. This pointer is valid until `OnUnload` completes.
-   */
-  const SPF_Load_API* loadAPI = nullptr;
-
-  /**
-   * @brief Pointer to the Core API, received in the `OnActivated` lifecycle function.
-   * @details This API provides access to all framework services, including those that depend on the
-   * game being fully loaded (e.g., telemetry, camera, hooks). This pointer is valid from the
-   * moment `OnActivated` is called until `OnUnload` completes.
-   */
-  const SPF_Core_API* coreAPI = nullptr;
-
-  /**
-   * @brief Pointer to the Vehicle API, received in the `OnActivated` lifecycle function.
-   */
+  // --- Cached service pointers (filled from core/load in lifecycle) ---
   SPF_Vehicle_API* vehicleAPI = nullptr;
   SPF_GameWorld_API* gameworldAPI = nullptr;
   const SPF_Climate_API* climateAPI = nullptr;
   SPF_Sound_API* soundAPI = nullptr;
-
-  /**
-   * @brief Pointer to the JSON Writer API.
-   */
   SPF_JsonWriter_API* jsonWriterAPI = nullptr;
-
-  /**
-   * @brief Pointer to the JSON IO API.
-   */
   SPF_JsonIO_API* jsonIOAPI = nullptr;
-
-  /**
-   * @brief Pointer to the Environment API, for retrieving game and system info.
-   */
   SPF_Environment_API* environmentAPI = nullptr;
-
-  /**
-   * @brief Handle to our Environment API context.
-   */
   SPF_Environment_Handle* environmentHandle = nullptr;
-
-  /**
-   * @brief Handle to a custom configuration context (demonstrates Cfg_CreateCustomContext).
-   */
   SPF_Config_Handle* customConfigHandle = nullptr;
   bool isCustomConfigAutoSave = true;
 
-  // --- Cached Handles & Pointers ---
-  // Pointers and handles that are frequently used can be cached here for convenience and performance.
-  // This avoids having to repeatedly call getter functions.
-
-  /**
-   * @brief Cached pointer to the UI API, received in `OnRegisterUI`.
-   * @details Caching this avoids needing to pass it through `user_data` pointers in every
-   * render callback, simplifying the render function signatures.
-   */
+  // --- UI (OnRegisterUI) ---
   SPF_UI_API* uiAPI = nullptr;
-
-  /**
-   * @brief Cached handle to the plugin's main window.
-   * @details This handle is retrieved from the UI API in `OnRegisterUI` and is used to
-   * programmatically control the window's visibility.
-   */
   SPF_Window_Handle* mainWindowHandle = nullptr;
 
-  /**
-   * @brief Handle to our created virtual input device.
-   * @details This handle is created in `InitializeVirtualDevice` and used in `RenderVirtInputTab`
-   * to simulate input events like button presses and axis movements. It must be stored as
-   * part of the plugin's state to be accessible in the update/render loops.
-   */
+  // --- Virtual input (ExampleVirtInputAPI) ---
   SPF_VirtualDevice_Handle* virtualDevice = nullptr;
 
-  // --- Telemetry State ---
-
-  /**
-   * @brief A cache to hold the most recent data received from event-driven callbacks.
-   * @details This allows the UI to display the last known value without needing to
-   *          poll the API every frame. The callbacks update this data, and the UI
-   *          just reads from it.
-   */
+  // --- Telemetry (ExampleTelemetryAPI): callbacks write here; tabs only read ---
   struct EventDataCache {
     SPF_GameState gameState;
     SPF_Timestamps timestamps;
@@ -198,20 +113,7 @@ struct PluginContext {
     char lastGameplayEventId[256] = "N/A";
   } eventDataCache;
 
-  /**
-   * @brief Handle to our Telemetry API context.
-   * @details This handle is created in `OnActivated` and acts as the parent for all
-   *          telemetry subscriptions. When this handle is destroyed on plugin unload,
-   *          all its child subscription handles are automatically destroyed and unregistered.
-   */
   SPF_Telemetry_Handle* telemetryHandle = nullptr;
-
-  /**
-   * @brief Handles for our telemetry event subscriptions.
-   * @details These handles are returned by the `RegisterFor...` functions. Storing them
-   *          is good practice to make the subscriptions explicit, though not strictly
-   *          required as their lifetime is automatically managed by `telemetryHandle`.
-   */
   SPF_Telemetry_Callback_Handle* gameStateCallback = nullptr;
   SPF_Telemetry_Callback_Handle* timestampsCallback = nullptr;
   SPF_Telemetry_Callback_Handle* commonDataCallback = nullptr;
@@ -227,94 +129,31 @@ struct PluginContext {
   SPF_Telemetry_Callback_Handle* gameplayEventsCallback = nullptr;
   SPF_Telemetry_Callback_Handle* gearboxConstantsCallback = nullptr;
 
-  // --- Plugin State ---
-  // Variables that represent the internal, mutable state of the plugin at runtime.
+  // --- Plugin / module state ---
+  int32_t someNumber = 0;                         ///< ExampleConfigAPI
+  char consoleCommand[256] = "g_traffic 1";       ///< ExampleConsoleAPI
+  bool isHonkIntercepted = false;                 ///< ExampleKeybindsAPI (block Demo.honk)
+  bool isModificationActive = false;              ///< ExampleHooksAPI (detour gate)
+  bool weatherAutoToggle = false;                 ///< ExampleClimateAPI
 
-  /**
-   * @brief A cached value for the 'some_number' setting from the plugin's config file.
-   * @details This value is loaded from `settings.json` in `OnLoad` and can be modified at
-   * runtime via the UI. It's cached here to avoid reading from the config API every frame.
-   */
-  int32_t someNumber = 0;
+  GameStringFormatting_t o_GameStringFormatting = nullptr;  ///< ExampleHooksAPI trampoline
+  SPF_GameLog_Callback_Handle* gameLogCallbackHandle = nullptr;  ///< ExampleGameLogAPI
+  SPF_KeyBinds_Handle* keybindsHandle = nullptr;             ///< ExampleKeybindsAPI / Camera
 
-  /**
-   * @brief A buffer to hold the command to be sent to the game console via the UI.
-   * @details A fixed-size C-style array is used here because the ImGui `InputText` function
-   * (which the UI API wraps) is a C-style API that operates on `char*` buffers.
-   */
-  char consoleCommand[256] = "g_traffic 1";
+  SPF_VehicleHandle selectedVehicle = nullptr;     ///< ExampleVehicleAPI
+  std::vector<SPF_VehicleHandle> vehicleHandles;   ///< ExampleVehicleAPI
 
-  /**
-   * @brief A flag to control programmatic blocking of the 'Honk' action.
-   */
-  bool isHonkIntercepted = false;
-
-  /**
-   * @brief A flag to control whether the game string formatting hook should modify the quit button color.
-   * @details This is a simple boolean toggled by a checkbox in the UI. It is read by the
-   * `Detour_GameStringFormatting` hook function to decide whether to apply its modification.
-   */
-  bool isModificationActive = false;
-
-  /**
-   * @brief Flag to control automatic weather toggling.
-   * @details When true, the weather mode will flip between nice and bad
-   *          on every update tick, demonstrating real-time climate control.
-   */
-  bool weatherAutoToggle = false;
-
-  // --- Hooking State ---
-
-  /**
-   * @brief Trampoline pointer to the original game string formatting function.
-   * @details When we hook a function using `coreAPI->hooks->Register`, the framework finds the
-   * original function and stores a pointer to a "trampoline" here. The trampoline is a small
-   * piece of code that allows us to call the original, un-hooked function. Our detour function
-   * *must* call this trampoline to ensure the original game logic is executed, otherwise the
-   * game will likely crash or misbehave.
-   */
-  GameStringFormatting_t o_GameStringFormatting = nullptr;
-
-  /**
-   * @brief Handle for the registered GameLog callback.
-   * @details This handle is returned by `g_ctx.coreAPI->gamelog->GLog_RegisterCallback` and
-   * must be stored to keep the callback active. Its destruction (managed by the framework)
-   * will automatically unregister the callback.
-   */
-  SPF_GameLog_Callback_Handle* gameLogCallbackHandle = nullptr;
-
-  /**
-   * @brief Handle to our Keybinds API context.
-   */
-  SPF_KeyBinds_Handle* keybindsHandle = nullptr;
-
-  /**
-   * @brief Currently selected vehicle in the UI.
-   */
-  SPF_VehicleHandle selectedVehicle = nullptr;
-
-  /**
-   * @brief List of discovered vehicle handles to show in the dropdown.
-   */
-  std::vector<SPF_VehicleHandle> vehicleHandles;
-
-  // --- Manual Texture Management Demo ---
-  /**
-   * @brief Handle to a texture created manually from memory.
-   */
+  // --- Styling assets (ExampleStylingAPI) ---
   void* pluginTexture = nullptr;
   int textureWidth = 0;
   int textureHeight = 0;
-
   void* pluginFileTexture = nullptr;
   int fileTextureWidth = 0;
   int fileTextureHeight = 0;
-
-  // --- Dynamic Font Management Demo ---
   SPF_Font_Handle pluginFont = nullptr;
   SPF_Font_Handle memoryFont = nullptr;
 
-  // --- Sound: Horn Replacement ---
+  // --- Sound horn→bell replacement (ExampleSoundAPI) ---
   bool replaceHornEnabled = false;
   void* bellBank = nullptr;
   int bellEventIndex = -1;
@@ -326,238 +165,47 @@ struct PluginContext {
 };
 
 /**
- * @brief The single global instance of the plugin's context.
- * @details This is defined once in `ExamplePlugin.cpp` and declared `extern` here, making it
- * accessible throughout all of the plugin's source files. It serves as the bridge between the
- * C-style, callback-driven nature of the framework and a more organized, object-oriented
- * approach to state management.
+ * @brief Global plugin context instance (defined in ExamplePlugin.cpp).
  */
 extern PluginContext g_ctx;
 
 // =================================================================================================
-// 4. Function Prototypes
+// Lifecycle + UI + Manifest (implemented in ExamplePlugin.cpp)
 // =================================================================================================
-// Prototypes are organized by functionality to make the header file readable and serve as a
-// table of contents for the plugin's features. This helps new developers quickly understand
-// what the plugin does.
-
-// --- Manifest ---
 
 /**
- * @brief Constructs the plugin's manifest using the provided Builder API.
- * @details This function is called by the framework *before* the plugin is loaded to learn
- * about its identity, default settings, and requirements.
- * @param h An opaque handle to the manifest builder object.
- * @param api A table of functions provided by the framework to populate the manifest.
+ * @brief Builds plugin metadata (identity, policy, default settings, keybind defaults).
+ * @param h Opaque manifest builder handle.
+ * @param api Framework-provided builder function table (ABI-stable).
  */
 void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_API* api);
 
-// --- Plugin Lifecycle ---
-// These are the primary entry points called by the framework in a specific, guaranteed order.
-// A plugin's core logic is built around these functions.
-
-/**
- * @brief Called first when the plugin DLL is loaded into memory.
- * @details This is the earliest point for initialization. Use it for setup that does not
- * depend on the game being fully active. Only the `load_api` services (logger, config,
- * localization, formatting) are available here.
- * @param load_api A pointer to the Load API.
- */
+/** @brief Earliest entry: cache loadAPI, read settings, create early handles (VirtInput, Environment). */
 void OnLoad(const SPF_Load_API* load_api);
 
-/**
- * @brief Called when the plugin is activated by the framework.
- * @details This function is called after `OnLoad` and after the framework has processed the
- * plugin's manifest. At this point, the game is running and all framework services are
- * available via the `core_api`. This is the main initialization function where you should
- * register callbacks for keybinds, hooks, telemetry, etc.
- * @param core_api A pointer to the Core API, which contains pointers to all other APIs.
- */
+/** @brief Full activation: cache coreAPI, call each module's *_OnActivated (register callbacks/hooks/keybinds). */
 void OnActivated(const SPF_Core_API* core_api);
 
-/**
- * @brief (Optional) Called once after the game world has been loaded.
- * @details This function is the ideal place to initialize logic that depends on
- *          in-game objects being available (e.g., camera hooks, reading vehicle data).
- */
+/** @brief One-shot after the game world is loaded (safe point for world-dependent setup). */
 void OnGameWorldReady();
 
-/**
- * @brief Called every frame while the plugin is active.
- * @details This function is tied to the rendering loop. Avoid doing heavy or blocking work
- * here as it can impact game performance. It's suitable for polling data or updating animations.
- * For frequent logging, use the throttled logger API.
- */
+/** @brief Per-frame tick: delegates to module *_OnUpdate (Climate, Sound, Telemetry). Keep cheap. */
 void OnUpdate();
 
-/**
- * @brief Called last, just before the plugin is unloaded from memory.
- * @details Use this function to perform all necessary cleanup, such as freeing allocated
- * memory, saving any pending data, and nulling out pointers to prevent use-after-free errors.
- */
+/** @brief Last chance cleanup: module *_OnUnload/Shutdown, then null cached pointers. */
 void OnUnload();
 
-// --- Framework Callbacks ---
-// These are functions that the plugin implements and registers with the framework. The framework
-// then calls them in response to specific events.
-
 /**
- * @brief Called when a setting is changed externally (e.g., via the main settings UI).
- * @details This callback now provides the plugin's configuration handle, allowing
- *          the use of the familiar `SPF_Config_API` to retrieve the new value.
- * @param config_handle The configuration context handle for the plugin.
- * @param keyPath The dot-separated path of the setting that changed (e.g., "settings.some_number").
- */
-void OnSettingChanged(SPF_Config_Handle* config_handle, const char* keyPath);
-
-/**
- * @brief Called when the framework's global interface language is changed.
- * @details This allows the plugin to automatically synchronize its language with the framework.
- * @param langCode The new language code (e.g., "en", "uk").
- */
-void OnLanguageChanged(const char* langCode);
-
-/**
- * @brief Called for each new line added to the in-game log.
- * @details This callback is registered with the Game Log API. It's useful for monitoring game
- * events that are only reported in the log, like hiring a driver or discovering a city.
- * @param log_line The content of the log line.
- * @param user_data A pointer to user-defined data passed during registration (not used here).
- */
-void OnGameLogMessage(const char* log_line, void* user_data);
-
-// --- Telemetry Event Callbacks ---
-void OnGameStateUpdate(const SPF_GameState* data, void* user_data);
-void OnTimestampsUpdate(const SPF_Timestamps* data, void* user_data);
-void OnCommonDataUpdate(const SPF_CommonData* data, void* user_data);
-void OnTruckConstantsUpdate(const SPF_TruckConstants* data, void* user_data);
-void OnTrailerConstantsUpdate(const SPF_TrailerConstants* data, void* user_data);
-void OnTruckDataUpdate(const SPF_TruckData* data, void* user_data);
-void OnTrailersUpdate(const SPF_Trailer* data, uint32_t count, void* user_data);
-void OnJobConstantsUpdate(const SPF_JobConstants* data, void* user_data);
-void OnJobDataUpdate(const SPF_JobData* data, void* user_data);
-void OnNavigationDataUpdate(const SPF_NavigationData* data, void* user_data);
-void OnControlsUpdate(const SPF_Controls* data, void* user_data);
-void OnSpecialEventsUpdate(const SPF_SpecialEvents* data, void* user_data);
-void OnGameplayEvent(const char* event_id, const SPF_GameplayEvents* data, void* user_data);
-void OnGearboxConstantsUpdate(const SPF_GearboxConstants* data, void* user_data);
-
-/**
- * @brief Callback executed when the 'ExamplePlugin.MainWindow.toggle' keybind is triggered by the user.
- */
-void OnToggleMainWindow();
-
-/**
- * @brief Callback executed when the 'ExamplePlugin.Camera.cycle' keybind is triggered.
- */
-void OnCameraKeybind();
-
-// --- UI Implementation ---
-
-/**
- * @brief Called once to allow the plugin to register its UI rendering callbacks.
- * @details The framework calls this when the UI system is ready. In this function, you link
- * the window names from your manifest to the C++ functions that will draw their content.
- * @param ui_api A pointer to the UI API.
+ * @brief Registers the MainWindow draw callback and caches the window handle.
+ * @param ui_api UI API provided when the UI subsystem is ready.
  */
 void OnRegisterUI(SPF_UI_API* ui_api);
 
 /**
- * @brief Renders the content of the plugin's main window and its tabs.
- * @details This function is registered as a callback and is called by the UI system every
- * frame that the window is visible. It uses the UI API to draw widgets.
- * @param ui A pointer to the UI API, used to draw widgets.
- * @param user_data A pointer to user-defined data passed during registration (not used here).
+ * @brief Main window draw: tab bar only — each tab delegates to its Example*API render function.
+ * @param ui UI API for widget calls.
+ * @param user_data Passed through from registration (unused; state lives on g_ctx).
  */
 void RenderMainWindow(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Styling API" tab, demonstrating the new text styling features.
- */
-void RenderStylingTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Environment" tab, demonstrating the Environment API.
- */
-void RenderEnvironmentTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Camera" tab within the main window.
- */
-void RenderCameraTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Climate" tab, displaying weather API values.
- */
-void RenderClimateTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Traffic Inspector" tab.
- */
-void RenderVehicleTab(SPF_UI_API* ui, void* user_data);
-void RenderGameWorldTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Telemetry" tab.
- */
-void RenderTelemetryTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Events" tab, displaying data from callbacks.
- */
-void RenderEventsTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Virtual Input" tab.
- */
-void RenderVirtInputTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Input Test" tab for analog axis testing.
- */
-void RenderInputTestTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Dynamic Keybinds" tab to test runtime action registration.
- */
-void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data);
-
-/**
- * @brief Renders the content of the "Custom JSON" tab to demonstrate the new JSON and Config API features.
- */
-void RenderCustomJsonTab(SPF_UI_API* ui, void* user_data);
-void RenderSoundTab(SPF_UI_API* ui, void* user_data);
-
-// --- Helper Functions ---
-// These are internal functions that encapsulate specific logic for better organization.
-
-/**
- * @brief Creates and registers the plugin's virtual input device.
- * @details This demonstrates the workflow for the Virtual Input API: create, add inputs, then register.
- */
-void InitializeVirtualDevice(SPF_VirtInput_API* input_api, SPF_Logger_API* logger_api);
-
-/**
- * @brief Parses the `a_complex_object` setting to demonstrate `Cfg_GetJsonValueHandle` and `JsonReaderApi`.
- */
-void ParseComplexObject();
-
-/**
- * @brief Finds the target function in memory and installs the game string formatting hook.
- * @details This demonstrates the workflow for the Hooks API.
- */
-void InstallGameStringFormattingHook();
-
-// --- Hook Implementation ---
-
-/**
- * @brief Our detour function that will be called instead of the original game string formatting function.
- * @details This function intercepts the call, checks if our modification is active, potentially
- * modifies the input, and then **must** call the original function via the trampoline.
- * @param pOutput The same output buffer pointer as the original function.
- * @param ppInput The same input string pointer as the original function.
- * @return The return value from the original function, called via the trampoline.
- */
-void* Detour_GameStringFormatting(void* pOutput, const char** ppInput);
 
 }  // namespace ExamplePlugin

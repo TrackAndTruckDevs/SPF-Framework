@@ -20,6 +20,23 @@ set(RC_COMPANY "Track'n'Truck Devs")
 # Create the plugin as a shared library (DLL)
 add_library(${PLUGIN_NAME} SHARED
     "ExamplePlugin.cpp"
+    "ExampleCameraAPI.cpp"
+    "ExampleClimateAPI.cpp"
+    "ExampleConfigAPI.cpp"
+    "ExampleConsoleAPI.cpp"
+    "ExampleEnvironmentAPI.cpp"
+    "ExampleGameLogAPI.cpp"
+    "ExampleGameWorldAPI.cpp"
+    "ExampleGeneralAPI.cpp"
+    "ExampleHooksAPI.cpp"
+    "ExampleJsonAPI.cpp"
+    "ExampleKeybindsAPI.cpp"
+    "ExampleLocalizationAPI.cpp"
+    "ExampleSoundAPI.cpp"
+    "ExampleStylingAPI.cpp"
+    "ExampleTelemetryAPI.cpp"
+    "ExampleVehicleAPI.cpp"
+    "ExampleVirtInputAPI.cpp"
 )
 
 # Expose CMake project() values as C++ preprocessor macros
