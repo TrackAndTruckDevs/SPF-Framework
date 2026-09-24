@@ -50,11 +50,19 @@ const char* VERT_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
  * 1405e865e  F3 41 0F10 AE 5C1E0000        MOVSS XMM5,[R14 + 0x1e5c]
  * 1405e8667  F3 44 0F10 80 08040000        MOVSS XMM8,[RAX + 0x408]
  *
- * The first instruction is an exact-byte anchor (unrelated "current zoom state" field on a
- * different object, r14); the second is the target read, with its displacement wildcarded
- * so it can be re-extracted if it moves in a future game version.
+ * /--- Ghidra:(eurotrucks2_1.61.1.1s.exe) ---/
+ * 1405e87cd  F3 0F10 BF 5C1E0000           MOVSS XMM7,[RDI + 0x1e5c]
+ * 1405e87d5  48 8D94 24 A8000000           LEA RDX,[RSP + 0xa8]
+ * 1405e87dd  F3 0F10 2D ????????           MOVSS XMM5,[RIP + ...]
+ * 1405e87e5  F3 44 0F10 80 08040000        MOVSS XMM8,[RAX + 0x408]
+ *
+ * The first instruction reads the "current zoom state" field (a different object, r14 then
+ * rdi); the last one is the target read. Both displacements are wildcarded so they can be
+ * re-extracted if they move. Each compiler layout seen so far is one alternation branch.
  */
-const char* FOV_ZOOM_BASE_SIG = "F3 41 0F 10 AE ? ? ? ? F3 44 0F 10 80";
+const char* FOV_ZOOM_BASE_SIG =
+    "{F3 41 0F 10 AE ? ? ? ?|F3 0F 10 BF ? ? ? ? 48 8D 94 24 ? ? ? ? F3 0F 10 2D ? ? ? ?} F3 44 0F 10 80";
+const char* FOV_ZOOM_BASE_READ_SIG = "F3 44 0F 10 80";
 
 }  // namespace
 
@@ -119,7 +127,9 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
 
     uintptr_t zoomAddr = PatternFinder::Find(FOV_ZOOM_BASE_SIG);
     if (phase.StepOptional(zoomAddr, "FOV Anchor #4 (Zoom Reference Base)", "RT")) {
-      int32_t zoomBaseOffset = PatternFinder::ReadInt32(zoomAddr + 14);
+      // The target read sits right after the zoom-state read (adjacent or a few instructions later).
+      uintptr_t zoomBaseReadAddr = PatternFinder::Find(zoomAddr, 32, FOV_ZOOM_BASE_READ_SIG);
+      int32_t zoomBaseOffset = zoomBaseReadAddr ? PatternFinder::ReadInt32(zoomBaseReadAddr + 5) : 0;
       if (phase.StepOffsetOptional(zoomBaseOffset, "FovZoomBaseOffset", "OFF")) {
         owner.SetFovZoomBaseOffset(zoomBaseOffset);
       }
@@ -127,8 +137,12 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       // ── Phase 4b: FOV Zoom Live (current zoom position, written while zooming) ──
       /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1405e9640[1405e9640]) ---/
        * 1405e9a2e  F3 41 0F 10 AE 5C 1E 00 00    MOVSS XMM5,dword ptr [R14 + 0x1e5c]
+       * /--- Ghidra:(eurotrucks2_1.61.1.1s.exe) ---/
+       * 1405e87cd  F3 0F 10 BF 5C 1E 00 00       MOVSS XMM7,dword ptr [RDI + 0x1e5c]
        */
-      int32_t zoomLiveOffset = PatternFinder::ReadInt32(zoomAddr + 5);
+      // Displacement follows the ModRM byte, which shifts by one when a REX prefix is present.
+      size_t zoomLiveDispPos = static_cast<uint8_t>(PatternFinder::ReadInt8(zoomAddr + 1)) == 0x0F ? 4 : 5;
+      int32_t zoomLiveOffset = PatternFinder::ReadInt32(zoomAddr + zoomLiveDispPos);
       if (phase.StepOffsetOptional(zoomLiveOffset, "FovZoomLiveOffset", "OFF")) {
         owner.SetZoomLiveOffset(zoomLiveOffset);
       }
@@ -137,10 +151,19 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1405e9640[1405e9640]) ---/
        * 1405e9908  41 88 9E 59 1E 00 00          MOV byte ptr [R14 + 0x1e59],BL
        * 1405e990f  0F B6 C3                      MOVZX EAX,BL
+       * /--- Ghidra:(eurotrucks2_1.61.1.1s.exe) ---/
+       * The write moved to a separate function; the zoom function now only tests the byte:
+       * 1405e86b5  80 BF 59 1E 00 00 00          CMP byte ptr [RDI + 0x1e59],0x0
        */
       uintptr_t zoomStatusAddr = PatternFinder::FindBackward(zoomAddr, 312, "41 [MOV [r64+off32], r8] [MOVZX r32, r8]");
+      size_t zoomStatusDispPos = 3;
+      if (!zoomStatusAddr) {
+        // Nearest CMP byte ptr [r64+off32], 0 before the anchor (non-SIB ModRM only).
+        zoomStatusAddr = PatternFinder::FindBackward(zoomAddr, 320, "80 [B8-BB|BD-BF] ? ? ? ? 00");
+        zoomStatusDispPos = 2;
+      }
       if (phase.StepOptional(zoomStatusAddr, "FOV Zoom On/Off Anchor", "RT")) {
-        int32_t zoomOnOffOffset = PatternFinder::ReadInt32(zoomStatusAddr + 3);
+        int32_t zoomOnOffOffset = PatternFinder::ReadInt32(zoomStatusAddr + zoomStatusDispPos);
         if (phase.StepOffsetOptional(zoomOnOffOffset, "FovZoomOnOffOffset", "OFF")) {
           owner.SetZoomOnOffOffset(zoomOnOffOffset);
         }
