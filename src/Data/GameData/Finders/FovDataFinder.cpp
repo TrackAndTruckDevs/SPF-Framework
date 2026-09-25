@@ -5,6 +5,7 @@
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace SPF::Data::GameData::Finders {
@@ -60,8 +61,7 @@ const char* VERT_FOV_SIG = "[MOVSS [r64+off8], xmm] [JMP rel8]";
  * rdi); the last one is the target read. Both displacements are wildcarded so they can be
  * re-extracted if they move. Each compiler layout seen so far is one alternation branch.
  */
-const char* FOV_ZOOM_BASE_SIG =
-    "{F3 41 0F 10 AE ? ? ? ?|F3 0F 10 BF ? ? ? ? 48 8D 94 24 ? ? ? ? F3 0F 10 2D ? ? ? ?} F3 44 0F 10 80";
+const char* FOV_ZOOM_BASE_SIG = "{F3 41 0F 10 AE ? ? ? ?|F3 0F 10 BF ? ? ? ? 48 8D 94 24 ? ? ? ? F3 0F 10 2D ? ? ? ?} F3 44 0F 10 80";
 const char* FOV_ZOOM_BASE_READ_SIG = "F3 44 0F 10 80";
 
 }  // namespace
@@ -177,13 +177,14 @@ bool FovDataFinder::TryFindOffsets(GameDataCameraService& owner) {
       // Search backwards from the zoom reference base anchor for [MOV r64, [r64+off32]] followed
       // by an F3 (MOVSS) instruction. Extract the pointer offset (0x1f8) at match+3 and the value
       // offset (0x1fc) at match+11.
-      uintptr_t speedAddr = PatternFinder::FindBackward(zoomAddr, 600, "[MOV r64, [r64+off32]] F3");
+      uintptr_t speedAddr = PatternFinder::FindBackward(zoomAddr, 600, "[MOV r64, [r64+off32]] {[SUBSS xmm, xmm]}? F3");
       if (phase.StepOptional(speedAddr, "FOV Setting Anchor (ptr+val)", "RT")) {
         int32_t settingPtrOffset = PatternFinder::ReadInt32(speedAddr + 3);
-        int32_t settingValOffset = PatternFinder::ReadInt32(speedAddr + 12);
         if (phase.StepOffsetOptional(settingPtrOffset, "FovSettingPtrOffset", "OFF")) {
           owner.SetFovSettingPtrOffset(settingPtrOffset);
         }
+        uintptr_t settingValAddr =  PatternFinder::Find(speedAddr, 64, "F3 44 0F 10");
+        int32_t settingValOffset = PatternFinder::ReadInt32(settingValAddr + 5);
         if (phase.StepOffsetOptional(settingValOffset, "FovSettingValOffset", "OFF")) {
           owner.SetFovSettingValOffset(settingValOffset);
         }

@@ -25,6 +25,7 @@
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/UI/BaseWindow.hpp"
+#include "SPF/UI/BindingDetailsPopup.hpp"
 #include "SPF/UI/CameraWindow.hpp"   // Added for CameraWindow creation
 #include "SPF/UI/ClimateWindow.hpp"  // Added for ClimateWindow creation
 #include "SPF/UI/Fonts/FontAwesome7.h"
@@ -42,7 +43,8 @@
 #include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
 #include "SPF/UI/HooksWindow.hpp"        // Added for HooksWindow creation
 #include "SPF/UI/IMESupport.hpp"
-#include "SPF/UI/InfoWindow.hpp"          // Added for InfoWindow creation
+#include "SPF/UI/InfoWindow.hpp"  // Added for InfoWindow creation
+#include "SPF/UI/KeyCapturePopup.hpp"
 #include "SPF/UI/LoggerWindow.hpp"        // Added for LoggerWindow creation
 #include "SPF/UI/MainWindow.hpp"          // Added for MainWindow creation
 #include "SPF/UI/MainWindow.hpp"          // Required for dynamic_cast and GetMainDockspaceID
@@ -51,10 +53,10 @@
 #include "SPF/UI/PluginsWindow.hpp"    // Added for PluginsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Added for SettingsWindow creation
 #include "SPF/UI/SettingsWindow.hpp"   // Required for dynamic_cast
-#include "SPF/UI/SoundWindow.hpp"         // Added for SoundWindow creation
+#include "SPF/UI/SoundWindow.hpp"      // Added for SoundWindow creation
 #include "SPF/UI/TelemetryWindow.hpp"  // Added for TelemetryWindow creation
-#include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UISounds.hpp"
+#include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
 #include "SPF/Utils/Signal.hpp"
 

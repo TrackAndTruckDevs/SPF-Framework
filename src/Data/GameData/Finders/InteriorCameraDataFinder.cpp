@@ -226,7 +226,7 @@ bool InteriorCameraDataFinder::TryFindOffsets(GameDataCameraService& owner) {
               owner.GetAzimuthRangeEndLeftRightDefaultOffset() != 0 && owner.GetAzimuthRangeStartHeadOffsetOffset() != 0 && owner.GetAzimuthRangeEndHeadOffsetOffset() != 0 && owner.GetZoomFovFactorOffset() != 0 && owner.GetZoomSpeedOffset() != 0 &&
               owner.GetCameraFovOffset() != 0 && owner.GetNearPlaneOffset() != 0 && owner.GetFarPlaneOffset() != 0 && owner.GetMouseSensitivityOffset() != 0 && owner.GetShakeAnimStepOffset() != 0 && owner.GetShakeAnimScaleMinOffset() != 0 &&
               owner.GetShakeAnimScaleMaxOffset() != 0 && owner.GetHandShakeLimitOffset() != 0 && owner.GetHandShakeSpeedOffset() != 0 && owner.GetShakeAnimOffset() != 0 &&
-              owner.GetInteriorSpeedFovChangeFactorOffset() != 0 && owner.GetInteriorMaxFovOffset() != 0;
+              owner.GetInteriorSpeedFovChangeFactorOffset() != 0;
 
   return log.Finish(m_isReady);
 }
