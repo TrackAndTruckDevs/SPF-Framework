@@ -92,6 +92,130 @@ void RenderCameraTab(SPF_UI_API* ui, void* user_data) {
   } else {
     ui->UI_Text("Could not get camera world coordinates.");
   }
+  ui->UI_Separator();
+
+  // --- Issue #12 full test ---
+  ui->UI_Text("Issue #12 test");
+
+  // 1) Finder readiness — both name variants.
+  bool all_found = g_ctx.coreAPI->camera->Cam_AreAllOffsetsFound();
+  bool ready_short = g_ctx.coreAPI->camera->Cam_IsFinderReady("InteriorCamera");
+  bool ready_full = g_ctx.coreAPI->camera->Cam_IsFinderReady("InteriorCameraDataFinder");
+  char ready_buffer[256];
+  g_ctx.coreAPI->formatting->Fmt_Format(ready_buffer, sizeof(ready_buffer),
+                                        "AllOffsetsFound=%d IsFinderReady(InteriorCamera)=%d IsFinderReady(InteriorCameraDataFinder)=%d",
+                                        all_found ? 1 : 0, ready_short ? 1 : 0, ready_full ? 1 : 0);
+  ui->UI_Text(ready_buffer);
+  ui->UI_Separator();
+
+  // 2) Roll verification.
+  static float s_rollTest = 0.0f;
+  ui->UI_Text("Roll test:");
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("+10 deg", 0, 0)) {
+    s_rollTest = 10.0f;
+    g_ctx.coreAPI->camera->Cam_SetInteriorRoll(s_rollTest);
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("-10 deg", 0, 0)) {
+    s_rollTest = -10.0f;
+    g_ctx.coreAPI->camera->Cam_SetInteriorRoll(s_rollTest);
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Reset", 0, 0)) {
+    s_rollTest = 0.0f;
+    g_ctx.coreAPI->camera->Cam_SetInteriorRoll(0.0f);
+  }
+  float roll_readback = 0.0f;
+  bool roll_ok = g_ctx.coreAPI->camera->Cam_GetInteriorRoll(&roll_readback);
+  char roll_buffer[256];
+  g_ctx.coreAPI->formatting->Fmt_Format(roll_buffer, sizeof(roll_buffer), "Requested: %.1f deg | GetInteriorRoll: %s (%.2f deg)",
+                                        s_rollTest, roll_ok ? "OK" : "FAILED", roll_readback);
+  ui->UI_Text(roll_buffer);
+  ui->UI_Separator();
+
+  // 3) Head rotation — absolute overwrite.
+  ui->UI_Text("HeadRot absolute (radians):");
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Pitch -0.5", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw, -0.5f);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Pitch +0.5", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw, 0.5f);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Pitch 0", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw, 0.0f);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Yaw +0.5", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw + 0.5f, pitch);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Yaw 0", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(0.0f, pitch);
+    }
+  }
+  ui->UI_Separator();
+
+  // 4) Additive offset — the exact usage pattern from the issue:
+  //    basePitch + newPitchOffset, re-read every press.
+  ui->UI_Text("HeadRot additive:");
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Pitch +0.3", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw, pitch + 0.3f);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Pitch -0.3", 0, 0)) {
+    float yaw, pitch;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw, &pitch)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorHeadRot(yaw, pitch - 0.3f);
+    }
+  }
+  ui->UI_SameLine(0, 5);
+  if (ui->UI_Button("Roll +5 (additive)", 0, 0)) {
+    float roll = 0.0f;
+    if (g_ctx.coreAPI->camera->Cam_GetInteriorRoll(&roll)) {
+      g_ctx.coreAPI->camera->Cam_SetInteriorRoll(roll + 5.0f);
+      s_rollTest = roll + 5.0f;
+    }
+  }
+  ui->UI_Separator();
+
+  // 5) Readbacks — verify writes actually landed (or got overwritten by the game).
+  float yaw_now = 0.0f, pitch_now = 0.0f;
+  bool head_ok = g_ctx.coreAPI->camera->Cam_GetInteriorHeadRot(&yaw_now, &pitch_now);
+  char head_buffer[256];
+  g_ctx.coreAPI->formatting->Fmt_Format(head_buffer, sizeof(head_buffer),
+                                        "GetInteriorHeadRot: %s | yaw=%.3f pitch=%.3f rad",
+                                        head_ok ? "OK" : "FAILED", yaw_now, pitch_now);
+  ui->UI_Text(head_buffer);
+
+  float lim_l, lim_r, lim_u, lim_d;
+  bool lim_ok = g_ctx.coreAPI->camera->Cam_GetInteriorRotationLimits(&lim_l, &lim_r, &lim_u, &lim_d);
+  char lim_buffer[256];
+  g_ctx.coreAPI->formatting->Fmt_Format(lim_buffer, sizeof(lim_buffer),
+                                        "GetInteriorRotationLimits: %s | L=%.3f R=%.3f U=%.3f D=%.3f",
+                                        lim_ok ? "OK" : "FAILED", lim_l, lim_r, lim_u, lim_d);
+  ui->UI_Text(lim_buffer);
 }
 
 }  // namespace ExamplePlugin
