@@ -116,6 +116,73 @@ Ready to support the project? You can find our page here: **[patreon.com/TrackAn
 
 
 
+<h2 align="center">🧩 Plugins Built with SPF</h2>
+
+This section features community-developed plugins that are built on the SPF-Framework.
+
+* [MotionCab](https://github.com/aefly/motioncab.git) - ***Realistic dynamic head-motion camera effects for ATS & ETS2: inertial sway and body dynamics, suspension and road shake, steering camera, engine vibration, mirror check, and more — all independently tunable.***
+
+* [SPF_CabinWalk](https://github.com/TrackAndTruckDevs/SPF_CabinWalk.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that allows you to unchain the camera from the driver's seat and freely walk around your truck's cabin***
+
+* [SPF_FrontalBlindspotViewer](https://github.com/TrackAndTruckDevs/SPF_FrontalBlindspotViewer.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that provides a smooth, animated camera movement to let you easily see traffic lights when they are obstructed by your truck's A-pillar.***
+
+* [SPF_RedLightCameraPlugin](https://github.com/TrackAndTruckDevs/SPF_RedLightCameraPlugin.git) - ***His plugin automatically takes a screenshot from a unique, customized camera angle every time you get a ticket in ATS and ETS2 for running a red light.***
+
+* [PWE Overlay](https://github.com/Marcinekk/PWE-Overlay.git) - ***Advanced web-based overlay for ATS & ETS2 built on SPF-Framework and WebView2. Features real-time telemetry, custom bank economy hooks, and Logitech G27 LED support.***
+
+* [SPF_ConsoleCommandHotkeys](https://github.com/TrackAndTruckDevs/SPF_ConsoleCommandHotkeys.git) - ***A plugin for ATS & ETS2 to execute any console command via hotkeys and cycle sequences. Features an in-game manager UI.***
+
+* [SPF_ConvoyChatMessaging](https://github.com/TrackAndTruckDevs/SPF_ConvoyChatMessaging.git) - ***A reference plugin for ATS & ETS2 to intercept and programmatically send chat messages in Convoy mode. Demonstrates advanced signature scanning and function hooking.***
+
+* [SPF_MapOrigin](https://github.com/TrackAndTruckDevs/SPF_MapOrigin.git) - ***Identify map sector origins and detect seams between map mods in ATS/ETS2 using SPF-Framework.***
+---
+**Are you a developer who has created a plugin using SPF?** We would love to feature your work here. To have your plugin added to this list, please open an issue or a pull request on our GitHub repository and provide a link to your project.
+
+
+
+<h2 align="center">🎮 Usage (For Users)</h2>
+
+This section guides you on how to install and use the SPF-Framework and SPF-compatible plugins.
+
+### Installing the SPF-Framework
+
+To install the SPF-Framework, first obtain the latest framework release package (e.g., `SPF-Framework_v1.0.3.zip`) [Download SFP-Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases). Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory. For details, read the `readme.txt` which you will find in the downloaded archive.
+
+### Activating the Framework in Game
+
+Launch American Truck Simulator or Euro Truck Simulator 2. Once in-game, press the **Delete** key (this is the default hotkey) to open the SPF-Framework window.
+
+### Installing SPF-Compatible Plugins
+
+If you have an **SPF-compliant plugin** that you want to add to the framework, go to your game's plugins directory: `[Game Root]\bin\win_x64\plugins\spfPlugins\`. Within this plugins folder, create a new subfolder with the **name of your plugin** (e.g. `MyAwesomePlugin`). Then copy your **plugin's DLL** (e.g. `MyAwesomePlugin.dll`) and any other related files (e.g. `localization` folders) into this newly created subfolder.
+
+For example, a typical plugin installation structure within your game's directories might look like this:
+
+```
+[Game Root Directory]
+└───bin
+    └───win_x64
+        └───plugins
+            │   spf-framework.dll
+            │
+            ├───spfAssets
+            │   └───localization
+            │           en.json
+            │
+            └───spfPlugins
+                ├───ExamplePlugin
+                │   │   ExamplePlugin.dll
+                │   │
+                │   └───localization
+                │           en.json
+                │           uk.json
+                │
+                └───MyPlugin
+                        MyPlugin.dll
+```
+
+
+
 <h2 align="center">🚀 Quick Start for Developers</h2>
 
 There are three main ways to start developing a plugin with SPF. Choose the one that best fits your needs.
@@ -381,76 +448,11 @@ The toolchain file `cmake/toolchain-mingw.cmake` is used automatically. The `win
 
 
 
-<h2 align="center">🎮 Usage (For Users)</h2>
-
-This section guides you on how to install and use the SPF-Framework and SPF-compatible plugins.
-
-### Installing the SPF-Framework
-
-To install the SPF-Framework, first obtain the latest framework release package (e.g., `SPF-Framework_v1.0.3.zip`) [Download SFP-Framework](https://github.com/TrackAndTruckDevs/SPF-Framework/releases). Install the framework using the `spf-framework.exe` installer or by manually copying the contents of the `manualInstall` folder (`spf-framework.dll` and the `spfAssets` and `spfPlugins` folders) to your game's `.../bin/win_x64/plugins` directory. For details, read the `readme.txt` which you will find in the downloaded archive.
-
-### Activating the Framework in Game
-
-Launch American Truck Simulator or Euro Truck Simulator 2. Once in-game, press the **Delete** key (this is the default hotkey) to open the SPF-Framework window.
-
-### Installing SPF-Compatible Plugins
-
-If you have an **SPF-compliant plugin** that you want to add to the framework, go to your game's plugins directory: `[Game Root]\bin\win_x64\plugins\spfPlugins\`. Within this plugins folder, create a new subfolder with the **name of your plugin** (e.g. `MyAwesomePlugin`). Then copy your **plugin's DLL** (e.g. `MyAwesomePlugin.dll`) and any other related files (e.g. `localization` folders) into this newly created subfolder.
-
-For example, a typical plugin installation structure within your game's directories might look like this:
-
-```
-[Game Root Directory]
-└───bin
-    └───win_x64
-        └───plugins
-            │   spf-framework.dll
-            │
-            ├───spfAssets
-            │   └───localization
-            │           en.json
-            │
-            └───spfPlugins
-                ├───ExamplePlugin
-                │   │   ExamplePlugin.dll
-                │   │
-                │   └───localization
-                │           en.json
-                │           uk.json
-                │
-                └───MyPlugin
-                        MyPlugin.dll
-```
-
-
 <h2 align="center">🎓 Examples & Documentation</h2>
 
 To see a complete, working example of a plugin that uses many of the framework's features, check out the **ExamplePlugin** located in the `/plugins/ExamplePlugin` directory of this repository.
 
 For detailed documentation on each specific API (Camera, UI, Telemetry, etc.), please refer to the documents in the `/docs/api` directory.
-
-
-
-
-<h2 align="center">🧩 Plugins Built with SPF</h2>
-
-This section features community-developed plugins that are built on the SPF-Framework.
-
-* [SPF_CabinWalk](https://github.com/TrackAndTruckDevs/SPF_CabinWalk.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that allows you to unchain the camera from the driver's seat and freely walk around your truck's cabin***
-
-* [SPF_FrontalBlindspotViewer](https://github.com/TrackAndTruckDevs/SPF_FrontalBlindspotViewer.git) - ***A plugin for American Truck Simulator and Euro Truck Simulator 2 that provides a smooth, animated camera movement to let you easily see traffic lights when they are obstructed by your truck's A-pillar.***
-
-* [SPF_RedLightCameraPlugin](https://github.com/TrackAndTruckDevs/SPF_RedLightCameraPlugin.git) - ***His plugin automatically takes a screenshot from a unique, customized camera angle every time you get a ticket in ATS and ETS2 for running a red light.***
-
-* [PWE Overlay](https://github.com/Marcinekk/PWE-Overlay.git) - ***Advanced web-based overlay for ATS & ETS2 built on SPF-Framework and WebView2. Features real-time telemetry, custom bank economy hooks, and Logitech G27 LED support.***
-
-* [SPF_ConsoleCommandHotkeys](https://github.com/TrackAndTruckDevs/SPF_ConsoleCommandHotkeys.git) - ***A plugin for ATS & ETS2 to execute any console command via hotkeys and cycle sequences. Features an in-game manager UI.***
-
-* [SPF_ConvoyChatMessaging](https://github.com/TrackAndTruckDevs/SPF_ConvoyChatMessaging.git) - ***A reference plugin for ATS & ETS2 to intercept and programmatically send chat messages in Convoy mode. Demonstrates advanced signature scanning and function hooking.***
-
-* [SPF_MapOrigin](https://github.com/TrackAndTruckDevs/SPF_MapOrigin.git) - ***Identify map sector origins and detect seams between map mods in ATS/ETS2 using SPF-Framework.***
----
-**Are you a developer who has created a plugin using SPF?** We would love to feature your work here. To have your plugin added to this list, please open an issue or a pull request on our GitHub repository and provide a link to your project.
 
 
 
