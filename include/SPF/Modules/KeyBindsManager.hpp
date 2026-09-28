@@ -60,6 +60,9 @@ struct Action {
   ActionCallbackEx CallbackEx;
   void* UserData = nullptr;
   std::vector<Binding> Inputs;
+  // Kbind_SetBlockState's last request, kept here so bindings rebuilt from the
+  // config (e.g. after a rebind) inherit it.
+  bool programmaticallyBlocked = false;
 };
 
 class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurable {

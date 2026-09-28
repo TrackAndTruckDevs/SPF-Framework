@@ -281,6 +281,8 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
       newAction.Callback = actionIt->second.Callback;
       newAction.CallbackEx = actionIt->second.CallbackEx;
       newAction.UserData = actionIt->second.UserData;
+      // And the plugin's Kbind_SetBlockState request, which the config doesn't hold.
+      newAction.programmaticallyBlocked = actionIt->second.programmaticallyBlocked;
 
       // Populate the new action's input list from the configuration.
       for (const auto& inputConfig : *inputs) {
@@ -290,6 +292,7 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
         } else {
           auto props = ParseBindingProperties(inputConfig);
           newAction.Inputs.emplace_back(Binding{std::move(input), props.policy, props.pressType, props.Behavior, props.pressThreshold, inputConfig});
+          newAction.Inputs.back().programmaticallyBlocked = newAction.programmaticallyBlocked;
         }
       }
 
@@ -360,6 +363,7 @@ void KeyBindsManager::SetBlockState(const std::string& actionKey, bool blocked) 
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   auto it = m_actions.find(actionKey);
   if (it != m_actions.end()) {
+    it->second.programmaticallyBlocked = blocked;
     for (auto& binding : it->second.Inputs) {
       binding.programmaticallyBlocked = blocked;
     }
