@@ -7,8 +7,10 @@
 #include "SPF/System/GamepadButton.hpp"
 #include "SPF/System/GamepadButtonMapping.hpp"
 #include "SPF/System/MouseButtonMapping.hpp"
+#include "SPF/System/VirtualKeyMapping.hpp"
 #include "SPF/Utils/Windows.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <libloaderapi.h>
@@ -297,6 +299,145 @@ static void HandleMouseData(IDirectInputDevice8W* self, DIDEVICEOBJECTDATA* rgdo
   for (int b = 0; b <= 7; ++b) {
     if (inputManager.ConsumeMouseReleaseRequest(static_cast<SPF::System::MouseButton>(b))) {
       InjectVirtualEvent(rgdod, writeIdx, capacity, DIMOFS_BUTTON0 + b, 0, sequence);
+    }
+  }
+  *pdwInOut = writeIdx;
+}
+
+// DIK_* codes are scan codes, with 0x80 set on E0-prefixed keys. MapVirtualKey
+// resolves the plain ones through the active layout, so a key maps to the same
+// framework key as its WM_KEYDOWN. The rest are listed here: the numpad digits
+// (MapVirtualKey returns their NumLock-off navigation codes) and extended keys.
+static UINT DikToVirtualKey(DWORD dik, HKL layout) {
+  switch (dik) {
+    case DIK_NUMPAD0:
+      return VK_NUMPAD0;
+    case DIK_NUMPAD1:
+      return VK_NUMPAD1;
+    case DIK_NUMPAD2:
+      return VK_NUMPAD2;
+    case DIK_NUMPAD3:
+      return VK_NUMPAD3;
+    case DIK_NUMPAD4:
+      return VK_NUMPAD4;
+    case DIK_NUMPAD5:
+      return VK_NUMPAD5;
+    case DIK_NUMPAD6:
+      return VK_NUMPAD6;
+    case DIK_NUMPAD7:
+      return VK_NUMPAD7;
+    case DIK_NUMPAD8:
+      return VK_NUMPAD8;
+    case DIK_NUMPAD9:
+      return VK_NUMPAD9;
+    case DIK_DECIMAL:
+      return VK_DECIMAL;
+    case DIK_NUMLOCK:
+      return VK_NUMLOCK;
+    case DIK_NUMPADENTER:
+      return VK_RETURN;
+    case DIK_RCONTROL:
+      return VK_RCONTROL;
+    case DIK_DIVIDE:
+      return VK_DIVIDE;
+    case DIK_SYSRQ:
+      return VK_SNAPSHOT;
+    case DIK_RMENU:
+      return VK_RMENU;
+    case DIK_PAUSE:
+      return VK_PAUSE;
+    case DIK_HOME:
+      return VK_HOME;
+    case DIK_UP:
+      return VK_UP;
+    case DIK_PRIOR:
+      return VK_PRIOR;
+    case DIK_LEFT:
+      return VK_LEFT;
+    case DIK_RIGHT:
+      return VK_RIGHT;
+    case DIK_END:
+      return VK_END;
+    case DIK_DOWN:
+      return VK_DOWN;
+    case DIK_NEXT:
+      return VK_NEXT;
+    case DIK_INSERT:
+      return VK_INSERT;
+    case DIK_DELETE:
+      return VK_DELETE;
+    case DIK_LWIN:
+      return VK_LWIN;
+    case DIK_RWIN:
+      return VK_RWIN;
+    case DIK_APPS:
+      return VK_APPS;
+    default:
+      break;
+  }
+  // The remaining extended keys are media/browser/power keys, which always reach the game anyway.
+  if (dik >= 0x80) return 0;
+  return MapVirtualKeyExW(dik, MAPVK_VSC_TO_VK_EX, layout);
+}
+
+static SPF::System::Keyboard DikToKeyboard(DWORD dik) {
+  static HKL s_layout = nullptr;
+  static std::array<SPF::System::Keyboard, 256> s_keys;
+
+  // Rebuilt only when the player switches keyboard layout.
+  const HKL layout = GetKeyboardLayout(0);
+  if (layout != s_layout) {
+    s_layout = layout;
+    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
+    for (DWORD i = 0; i < s_keys.size(); ++i) {
+      s_keys[i] = keyMapper.FromWinAPI(DikToVirtualKey(i, layout));
+    }
+  }
+  return s_keys[dik & 0xFF];
+}
+
+// Key states last published from DirectInput, so a game reading both the
+// buffer and the state publishes each transition only once.
+static bool g_dinputKeyDown[256] = {};
+
+// Publishes a DirectInput key transition to the framework, and returns whether
+// the game must not see the key. Releases are never blocked: an unexpected one
+// is harmless, while a dropped one would leave the key stuck down in the game.
+static bool PublishDInputKey(DWORD dik, bool isDown) {
+  const auto key = DikToKeyboard(dik);
+  if (key == SPF::System::Keyboard::Unknown) return false;
+
+  auto& inputManager = SPF::Input::InputManager::GetInstance();
+  bool consumed = false;
+  if (g_dinputKeyDown[dik] != isDown) {
+    g_dinputKeyDown[dik] = isDown;
+    // Priority 1: the read the game actually acts on takes precedence over the
+    // User32 (2) and WndProc (3) reports of the same press, whichever comes first.
+    consumed = inputManager.PublishKeyboardEvent({key, isDown}, 1);
+  }
+  return isDown && inputManager.ShouldBlockKeyFromGame(key, consumed);
+}
+
+static void MaskKeyboardState(DWORD cbData, LPVOID lpvData) {
+  BYTE* keys = static_cast<BYTE*>(lpvData);
+  const DWORD count = (cbData < 256) ? cbData : 256;
+  for (DWORD dik = 0; dik < count; ++dik) {
+    if (PublishDInputKey(dik, (keys[dik] & 0x80) != 0)) keys[dik] = 0;
+  }
+}
+
+static void HandleKeyboardData(DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut) {
+  DWORD originalCount = *pdwInOut;
+  DWORD writeIdx = 0;
+
+  for (DWORD i = 0; i < originalCount; ++i) {
+    const auto& data = rgdod[i];
+    if (data.dwSequence > g_lastSeenSequence) g_lastSeenSequence = data.dwSequence;
+
+    bool block = data.dwOfs < 256 && PublishDInputKey(data.dwOfs, (data.dwData & 0x80) != 0);
+    if (!block) {
+      if (writeIdx != i) rgdod[writeIdx] = data;
+      writeIdx++;
     }
   }
   *pdwInOut = writeIdx;
@@ -606,6 +747,8 @@ static void ProcessDeviceState(IDirectInputDevice8W* self, DWORD cbData, LPVOID 
     const auto type = GET_DIDEVICE_TYPE(instance.dwDevType);
     if (type == DI8DEVTYPE_MOUSE)
       MaskMouseState(self, cbData, lpvData);
+    else if (type == DI8DEVTYPE_KEYBOARD)
+      MaskKeyboardState(cbData, lpvData);
     else if (type >= DI8DEVTYPE_JOYSTICK)
       MaskJoystickState(self, cbData, lpvData);
   }
@@ -621,6 +764,8 @@ static void ProcessDeviceData(IDirectInputDevice8W* self, DWORD cbObjectData, DI
     const auto type = GET_DIDEVICE_TYPE(instance.dwDevType);
     if (type == DI8DEVTYPE_MOUSE)
       HandleMouseData(self, rgdod, pdwInOut, capacity, sequence);
+    else if (type == DI8DEVTYPE_KEYBOARD)
+      HandleKeyboardData(rgdod, pdwInOut);
     else if (type >= DI8DEVTYPE_JOYSTICK)
       HandleJoystickData(self, instance, rgdod, pdwInOut, capacity, sequence);
 

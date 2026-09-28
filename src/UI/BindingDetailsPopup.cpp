@@ -413,10 +413,15 @@ void BindingDetailsPopup::Render() {
     }
 
     if (liveInput) {
-      auto const& activeAxes = inputMgr.GetCurrentlyActiveAxisValues();
       uint32_t hwCode = liveInput->GetHardwareCode();
       float rawInput = 0.0f;
-      if (activeAxes.count(hwCode)) rawInput = activeAxes.at(hwCode);
+      float finalOutVal = 0.0f;
+      {
+        std::lock_guard<std::recursive_mutex> lock(inputMgr.GetMutex());
+        auto const& activeAxes = inputMgr.GetCurrentlyActiveAxisValues();
+        if (activeAxes.count(hwCode)) rawInput = activeAxes.at(hwCode);
+        finalOutVal = liveInput->GetValue(inputMgr.GetCurrentlyPressedHardwareCodes(), activeAxes);
+      }
 
       // 1. Normalize physical input to [-1, 1] or [0, 1]
       float normRaw = 0.0f;
@@ -452,7 +457,6 @@ void BindingDetailsPopup::Render() {
 
       float dotX = uiSmoothedInput;
       float dotY = 0.0f;
-      float finalOutVal = liveInput->GetValue(inputMgr.GetCurrentlyPressedHardwareCodes(), activeAxes);
 
       if (accumulator && !isMouse) {
         dotX = physicalPos;

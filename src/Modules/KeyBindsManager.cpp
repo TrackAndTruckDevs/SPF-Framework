@@ -90,7 +90,7 @@ KeyBindsManager& KeyBindsManager::GetInstance() {
 }
 
 KeyBindsManager::KeyBindsManager(Input::InputManager& inputManager, Events::EventManager& eventManager)
-    : m_inputManager(inputManager), m_eventManager(eventManager), m_onPluginDidLoadSink(eventManager.System.OnPluginDidLoad), m_onPluginWillBeUnloadedSink(eventManager.System.OnPluginWillBeUnloaded) {
+    : m_inputManager(inputManager), m_eventManager(eventManager), m_actionsMutex(inputManager.GetMutex()), m_onPluginDidLoadSink(eventManager.System.OnPluginDidLoad), m_onPluginWillBeUnloadedSink(eventManager.System.OnPluginWillBeUnloaded) {
   s_instance = this;
   m_onPluginDidLoadSink.Connect<&KeyBindsManager::OnPluginLoaded>(this);
   m_onPluginWillBeUnloadedSink.Connect<&KeyBindsManager::OnPluginUnloaded>(this);
@@ -400,6 +400,7 @@ const Binding* KeyBindsManager::GetBindingForInput(int buttonIndex, Input::Press
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent& event, Input::PressType pressType) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   uint32_t code = 0x01000000 | static_cast<uint32_t>(event.key);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
@@ -438,6 +439,7 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent&
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& event, Input::PressType pressType) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   uint32_t code = 0x02000000 | static_cast<uint32_t>(event.button);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
@@ -474,6 +476,7 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& 
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEvent& event, Input::PressType pressType) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   uint32_t code = 0x03000000 | static_cast<uint32_t>(event.iButton);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
@@ -510,6 +513,7 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEve
 }
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::JoystickEvent& event, Input::PressType pressType) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   uint32_t code = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
@@ -702,16 +706,25 @@ float KeyBindsManager::GetActionValue(const std::string& actionName) const {
   }
 
   float maxVal = 0.0f;
-  const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
+  const std::set<uint32_t>* pressedCodes = &m_inputManager.GetCurrentlyPressedHardwareCodes();
   const auto& axisValues = m_inputManager.GetCurrentlyActiveAxisValues();
+
+  // While the UI captures the keyboard (e.g. typing in a text field), keyboard
+  // keys are the UI's: they don't trigger keybinds, so they don't count here either.
+  std::set<uint32_t> nonKeyboardCodes;
+  if (m_inputManager.IsKeyboardCaptured()) {
+    for (uint32_t code : *pressedCodes) {
+      if ((code >> 24) != 0x01) nonKeyboardCodes.insert(code);
+    }
+    pressedCodes = &nonKeyboardCodes;
+  }
 
   for (const auto& binding : it->second.Inputs) {
     if (!binding.Input) continue;
 
-    // We only consider bindings that are programmatically active (not blocked)
-    if (binding.programmaticallyBlocked) continue;
-
-    float val = binding.Input->GetValue(pressedCodes, axisValues);
+    // A binding blocked with Kbind_SetBlockState still counts: that call hides
+    // the input from the game, not from the plugin reading it.
+    float val = binding.Input->GetValue(*pressedCodes, axisValues);
     if (std::abs(val) > std::abs(maxVal)) {
       maxVal = val;
     }

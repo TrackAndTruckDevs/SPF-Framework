@@ -216,7 +216,9 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   Events::EventManager& m_eventManager;
   std::map<std::string, Action> m_actions;                                 // Key: "Owner.Name"
   std::map<std::string, std::map<std::string, Action>> m_inactiveActions;  // Key: Owner, Key: ActionName
-  mutable std::recursive_mutex m_actionsMutex;
+  // InputManager's lock: one lock for all input state, so no lock-order deadlock
+  // between the input hooks (which call in here) and this class (which reads input state).
+  std::recursive_mutex& m_actionsMutex;
 
   Utils::Sink<void(const Events::OnPluginDidLoad&)> m_onPluginDidLoadSink;
   Utils::Sink<void(const Events::OnPluginWillBeUnloaded&)> m_onPluginWillBeUnloadedSink;

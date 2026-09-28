@@ -77,7 +77,8 @@ InputManager::~InputManager() { s_instance = nullptr; }
 static std::mutex s_axisConfigMutex;
 
 void InputManager::SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionPolicy policy, bool emulationEnabled, bool isAccumulator, bool invert, const std::string& side, float threshold, float sensitivity, float rMin, float rMax) {
-  std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  std::lock_guard<std::mutex> axisLock(s_axisConfigMutex);
   auto& state = m_axisStates[hardwareCode];
   state.policy = policy;
   state.emulationEnabled = emulationEnabled;
@@ -97,7 +98,8 @@ void InputManager::SetAxisProperties(uint32_t hardwareCode, Config::ConsumptionP
 }
 
 void InputManager::ResetAxisProperties() {
-  std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  std::lock_guard<std::mutex> axisLock(s_axisConfigMutex);
   for (auto const& [code, state] : m_axisStates) {
     m_inputStates.erase(code);
     m_currentlyPressedHardwareCodes.erase(code);
@@ -119,14 +121,19 @@ void InputManager::Shutdown() {
 }
 
 void InputManager::RegisterConsumer(IInputConsumer* consumer) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (consumer) {
     m_consumers.push_back(consumer);
   }
 }
 
-void InputManager::UnregisterConsumer(IInputConsumer* consumer) { m_consumers.erase(std::remove(m_consumers.begin(), m_consumers.end(), consumer), m_consumers.end()); }
+void InputManager::UnregisterConsumer(IInputConsumer* consumer) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  m_consumers.erase(std::remove(m_consumers.begin(), m_consumers.end(), consumer), m_consumers.end());
+}
 
 void InputManager::PublishMouseMove(const MouseMoveEvent& event) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto it = m_consumers.rbegin(); it != m_consumers.rend(); ++it) {
     if ((*it)->OnMouseMove(event)) {
       // Event was consumed, stop propagation
@@ -136,6 +143,7 @@ void InputManager::PublishMouseMove(const MouseMoveEvent& event) {
 }
 
 bool InputManager::PublishMouseButton(const MouseButtonEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(event.iButton);
   auto& state = m_inputStates[hardwareCode];
@@ -171,6 +179,7 @@ bool InputManager::PublishMouseButton(const MouseButtonEvent& event, uint8_t pri
 }
 
 bool InputManager::PublishMouseWheel(const MouseWheelEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   // New logic: Mouse wheel is now treated as an axis
   bool blocked = PublishAxisMove(0x03, 2, event.delta, priority);
 
@@ -186,6 +195,7 @@ bool InputManager::PublishMouseWheel(const MouseWheelEvent& event, uint8_t prior
 }
 
 bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
 
   auto& state = m_axisStates[hardwareCode];
@@ -322,6 +332,7 @@ bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float valu
 }
 
 bool InputManager::IsAxisConsumed(uint8_t deviceType, int axisIndex) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
 
   auto it = m_axisStates.find(hardwareCode);
@@ -346,11 +357,13 @@ bool InputManager::IsAxisConsumed(uint8_t deviceType, int axisIndex) const {
 }
 
 bool InputManager::IsAxisAccumulator(uint32_t hardwareCode) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_axisStates.find(hardwareCode);
   return (it != m_axisStates.end()) ? it->second.isAccumulator : false;
 }
 
 bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(event.key);
   auto& state = m_inputStates[hardwareCode];
@@ -429,6 +442,7 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
 }
 
 bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   // Update currently pressed hardware codes for chords (only for digital buttons)
   if (!IsAxis(event.button)) {
     uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
@@ -492,6 +506,7 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priori
 }
 
 bool InputManager::PublishJoystickEvent(const JoystickEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   // Update currently pressed hardware codes for chords
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
 
@@ -540,6 +555,7 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event, uint8_t prio
 }
 
 void InputManager::ProcessButtonActions() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto now = std::chrono::steady_clock::now();
   float dt = std::chrono::duration<float>(now - m_lastFrameTimestamp).count();
   m_lastFrameTimestamp = now;
@@ -621,6 +637,7 @@ void InputManager::HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldB
 }
 
 void InputManager::ProcessKeyboardActions() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto now = std::chrono::steady_clock::now();
   auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
@@ -707,6 +724,7 @@ void InputManager::ProcessKeyboardActions() {
 }
 
 void InputManager::ProcessMouseActions() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (!m_inPostCaptureCooldown) {
     for (auto& pair : m_inputStates) {
       uint8_t type = (pair.first >> 24) & 0xFF;
@@ -724,6 +742,7 @@ void InputManager::ProcessMouseActions() {
 }
 
 void InputManager::ProcessJoystickActions() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (!m_inPostCaptureCooldown) {
     for (auto& pair : m_inputStates) {
       uint8_t type = (pair.first >> 24) & 0xFF;
@@ -741,6 +760,7 @@ void InputManager::ProcessJoystickActions() {
 }
 
 bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (event.button == System::GamepadButton::Unknown) return true;  // Ignore unknown gamepad buttons
 
   uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
@@ -824,12 +844,14 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority)
 }
 
 bool InputManager::IsGamepadButtonBlocked(System::GamepadButton button) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(button);
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::IsKeyboardCaptured() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto* consumer : m_consumers) {
     if (consumer->IsCapturingKeyboard()) return true;
   }
@@ -837,10 +859,39 @@ bool InputManager::IsKeyboardCaptured() const {
 }
 
 bool InputManager::IsMouseCaptured() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto* consumer : m_consumers) {
     if (consumer->IsCapturingMouse()) return true;
   }
   return false;
+}
+
+bool InputManager::ShouldBlockKeyFromGame(System::Keyboard key, bool consumedByKeybind) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  using K = System::Keyboard;
+
+  // Modifier keys must always stay unblocked so their real OS state reaches
+  // ImGui's backend, which derives io.KeyMods/io.KeyCtrl from GetKeyState().
+  // Without this, copy/paste shortcuts (Ctrl+C/V) never fire while a text field
+  // is focused, because the capture guard blocks the modifier reads.
+  if (key == K::LControl || key == K::RControl || key == K::LShift || key == K::RShift || key == K::LAlt || key == K::RAlt) {
+    return false;
+  }
+
+  // Multimedia and system keys (volume, media transport, browser, launcher)
+  // are hardware-managed by the OS and must keep working even while ImGui
+  // captures the keyboard, so a focused text field never swallows them.
+  if (key == K::VolumeMute || key == K::VolumeDown || key == K::VolumeUp || key == K::MediaNextTrack || key == K::MediaPrevTrack || key == K::MediaStop || key == K::MediaPlayPause || key == K::BrowserBack || key == K::BrowserForward ||
+      key == K::BrowserRefresh || key == K::BrowserStop || key == K::BrowserSearch || key == K::BrowserFavorites || key == K::BrowserHome || key == K::LaunchMail || key == K::LaunchMediaSelect || key == K::LaunchApp1 || key == K::LaunchApp2) {
+    return false;
+  }
+
+  // A key is blocked if a keybind consumed it or it's already in a blocked state.
+  if (consumedByKeybind || IsKeyBlocked(key)) return true;
+
+  // CRUCIAL: If any UI consumer (like ImGui) is capturing keyboard, we block ALL keys from the game.
+  // This handles polling reads even for keys that haven't changed state.
+  return IsKeyboardCaptured() && key != K::Escape;
 }
 
 bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float value, ButtonState& state) {
@@ -959,6 +1010,7 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
 }
 
 bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto button = static_cast<MouseButton>(event.iButton);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
 
@@ -1010,6 +1062,7 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t prior
 }
 
 bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto buttonIndex = event.buttonIndex;
 
@@ -1059,6 +1112,7 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority
 }
 
 void InputManager::ResetStateForCode(uint32_t code) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_inputStates.find(code);
   if (it != m_inputStates.end()) {
     it->second.longPressTriggered = false;
@@ -1066,6 +1120,7 @@ void InputManager::ResetStateForCode(uint32_t code) {
 }
 
 bool InputManager::ProcessAndDecide(const KeyboardEvent& event, uint8_t priority) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(event.key);
   auto& state = m_inputStates[hardwareCode];
   uint64_t now = GetTickCount64();
@@ -1087,6 +1142,7 @@ void InputManager::SetMouseButtonsControl(bool gameHasControl) { m_gameControlsM
 void InputManager::SetMouseWheelControl(bool gameHasControl) { m_gameControlsMouseWheel = gameHasControl; }
 
 void InputManager::SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, bool blockWheel) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
 #ifdef _MSC_VER
   void* caller = _ReturnAddress();
 #else
@@ -1107,6 +1163,7 @@ void InputManager::SetProgrammaticMouseBlock(bool blockAxes, bool blockButtons, 
 }
 
 bool InputManager::IsProgrammaticMouseAxesBlockRequested() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto const& [source, req] : m_programmaticMouseBlocks) {
     if (req.axes) return true;
   }
@@ -1114,6 +1171,7 @@ bool InputManager::IsProgrammaticMouseAxesBlockRequested() const {
 }
 
 bool InputManager::IsProgrammaticMouseButtonsBlockRequested() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto const& [source, req] : m_programmaticMouseBlocks) {
     if (req.buttons) return true;
   }
@@ -1121,6 +1179,7 @@ bool InputManager::IsProgrammaticMouseButtonsBlockRequested() const {
 }
 
 bool InputManager::IsProgrammaticMouseWheelBlockRequested() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (auto const& [source, req] : m_programmaticMouseBlocks) {
     if (req.wheel) return true;
   }
@@ -1128,6 +1187,7 @@ bool InputManager::IsProgrammaticMouseWheelBlockRequested() const {
 }
 
 void InputManager::StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   logger->Info("Starting key capture for action: {}", actionFullName);
   m_captureState = InputCaptureState::Capturing;
@@ -1143,6 +1203,7 @@ void InputManager::StartInputCapture(const std::string& actionFullName, const nl
 }
 
 void InputManager::CancelInputCapture() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (m_captureState == InputCaptureState::Idle) return;
 
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
@@ -1153,24 +1214,28 @@ void InputManager::CancelInputCapture() {
 }
 
 bool InputManager::IsKeyBlocked(System::Keyboard key) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = 0x01000000 | static_cast<uint32_t>(key);
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::IsMouseButtonBlocked(System::MouseButton button) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = 0x03000000 | static_cast<uint32_t>(button);
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::IsJoystickButtonBlocked(int buttonIndex) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
 bool InputManager::ConsumeMouseReleaseRequest(System::MouseButton button) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_pendingMouseReleases.find(button);
   if (it != m_pendingMouseReleases.end()) {
     m_pendingMouseReleases.erase(it);
@@ -1180,6 +1245,7 @@ bool InputManager::ConsumeMouseReleaseRequest(System::MouseButton button) {
 }
 
 bool InputManager::ConsumeJoystickReleaseRequest(int buttonIndex) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_pendingJoystickReleases.find(buttonIndex);
   if (it != m_pendingJoystickReleases.end()) {
     m_pendingJoystickReleases.erase(it);
@@ -1188,9 +1254,13 @@ bool InputManager::ConsumeJoystickReleaseRequest(int buttonIndex) {
   return false;
 }
 
-bool InputManager::HasPendingJoystickRelease(int buttonIndex) const { return m_pendingJoystickReleases.count(buttonIndex) > 0; }
+bool InputManager::HasPendingJoystickRelease(int buttonIndex) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  return m_pendingJoystickReleases.count(buttonIndex) > 0;
+}
 
 bool InputManager::ConsumeGamepadReleaseRequest(System::GamepadButton button) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_pendingGamepadReleases.find(button);
   if (it != m_pendingGamepadReleases.end()) {
     m_pendingGamepadReleases.erase(it);
@@ -1199,9 +1269,13 @@ bool InputManager::ConsumeGamepadReleaseRequest(System::GamepadButton button) {
   return false;
 }
 
-bool InputManager::HasPendingGamepadRelease(System::GamepadButton button) const { return m_pendingGamepadReleases.count(button) > 0; }
+bool InputManager::HasPendingGamepadRelease(System::GamepadButton button) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  return m_pendingGamepadReleases.count(button) > 0;
+}
 
 bool InputManager::IsPendingVirtualRelease(uint32_t hardwareCode) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_pendingVirtualReleases.find(hardwareCode);
   if (it != m_pendingVirtualReleases.end()) {
     m_pendingVirtualReleases.erase(it);  // Consume the event
@@ -1213,6 +1287,7 @@ bool InputManager::IsPendingVirtualRelease(uint32_t hardwareCode) {
 void InputManager::SetHoldState(uint32_t hardwareCode, PressType type) { m_heldInputs[hardwareCode] = type; }
 
 std::chrono::steady_clock::time_point InputManager::GetChordPressTimestamp(const std::vector<uint32_t>& codes) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto maxTs = (std::chrono::steady_clock::time_point::min)();
   for (uint32_t code : codes) {
     auto it = m_inputStates.find(code);
@@ -1315,7 +1390,7 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
 
               // For axes, we must also update the policy in m_axisStates
               if ((code >> 16) & 0x01) {
-                std::lock_guard<std::mutex> lock(s_axisConfigMutex);
+                std::lock_guard<std::mutex> axisLock(s_axisConfigMutex);
                 m_axisStates[code].policy = policy;
               }
             }
@@ -1329,6 +1404,7 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
 // --- Device Detection Implementations ---
 
 void InputManager::UpdateDeviceType(UINT_PTR deviceId, const std::wstring& productName, DWORD vid, DWORD pid) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   System::DeviceType detectedType = System::DeviceType::Joystick;
 
   // --- Primary detection via Vendor ID (VID) ---
@@ -1357,6 +1433,7 @@ void InputManager::UpdateDeviceType(UINT_PTR deviceId, const std::wstring& produ
 }
 
 System::DeviceType InputManager::GetDeviceType(UINT_PTR deviceId) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto it = m_dinputDeviceTypes.find(deviceId);
   if (it != m_dinputDeviceTypes.end()) {
     return it->second;
@@ -1365,6 +1442,7 @@ System::DeviceType InputManager::GetDeviceType(UINT_PTR deviceId) const {
 }
 
 void InputManager::RegisterXInputDevice(DWORD userIndex, BYTE subType) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (userIndex >= XUSER_MAX_COUNT) {
     return;
   }
@@ -1381,6 +1459,7 @@ void InputManager::RegisterXInputDevice(DWORD userIndex, BYTE subType) {
 }
 
 System::DeviceType InputManager::GetXInputDeviceType(DWORD userIndex) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (userIndex >= XUSER_MAX_COUNT) {
     return System::DeviceType::Joystick;  // Out of bounds, return default
   }
@@ -1388,6 +1467,7 @@ System::DeviceType InputManager::GetXInputDeviceType(DWORD userIndex) const {
 }
 
 void InputManager::SetXInputDeviceActive(bool isActive) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   if (m_isXInputDeviceActive != isActive) {
     m_isXInputDeviceActive = isActive;
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
@@ -1396,6 +1476,7 @@ void InputManager::SetXInputDeviceActive(bool isActive) {
 }
 
 System::DeviceType InputManager::GetDetectedGamepadType() const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
   for (const auto& pair : m_dinputDeviceTypes) {
     if (pair.second == System::DeviceType::PlayStation) {
       return System::DeviceType::PlayStation;

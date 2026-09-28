@@ -1,6 +1,7 @@
 #include "SPF/Renderer/D3D12RendererImpl.hpp"
 
 #include "SPF/Hooks/DXGIHook.hpp"
+#include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
@@ -373,9 +374,13 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain* swapChain) {
 
   // Start a new ImGui frame.
   ImGui_ImplDX12_NewFrame();
-  ImGui_ImplWin32_NewFrame();
-  UI::IMESupport::PreFrame();
-  ImGui::NewFrame();
+  {
+    // ImGui's input queue is filled from the input threads under this lock.
+    std::lock_guard<std::recursive_mutex> inputLock(Input::InputManager::GetInstance().GetMutex());
+    ImGui_ImplWin32_NewFrame();
+    UI::IMESupport::PreFrame();
+    ImGui::NewFrame();
+  }
 
   // Allow the UIManager to render all registered windows.
   m_renderer.OnRendererRenderImGui();

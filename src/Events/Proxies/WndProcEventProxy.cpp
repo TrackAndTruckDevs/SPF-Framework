@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <imm.h>
 #include <minwindef.h>
+#include <mutex>
 #include <windef.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -51,6 +52,9 @@ void WndProcEventProxy::SetBlockWndProc(bool block) {
 }
 
 void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  // Feeds both ImGui's input queue and the InputManager, from the window thread.
+  std::lock_guard<std::recursive_mutex> inputLock(SPF::Input::InputManager::GetInstance().GetMutex());
+
   if (uMsg == WM_IME_SETCONTEXT) {
     if (wParam == TRUE) {
       lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
