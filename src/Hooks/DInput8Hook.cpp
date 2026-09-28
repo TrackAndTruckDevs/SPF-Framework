@@ -380,20 +380,25 @@ static UINT DikToVirtualKey(DWORD dik, HKL layout) {
   return MapVirtualKeyExW(dik, MAPVK_VSC_TO_VK_EX, layout);
 }
 
-static SPF::System::Keyboard DikToKeyboard(DWORD dik) {
-  static HKL s_layout = nullptr;
-  static std::array<SPF::System::Keyboard, 256> s_keys;
+static std::array<SPF::System::Keyboard, 256> g_dikToKey;
 
+// Maps g_dikToKey through the layout the player types with, once per keyboard
+// read. Keyboard layouts are per thread, and a switch made in the game window
+// doesn't reach the thread polling DirectInput, so the layout is the foreground
+// window's: the game's, since a foreground DirectInput keyboard only reports
+// while the game has the focus.
+static void UpdateDikToKey() {
+  static HKL s_layout = nullptr;
+
+  const HWND foreground = GetForegroundWindow();
+  const HKL layout = foreground ? GetKeyboardLayout(GetWindowThreadProcessId(foreground, nullptr)) : GetKeyboardLayout(0);
   // Rebuilt only when the player switches keyboard layout.
-  const HKL layout = GetKeyboardLayout(0);
-  if (layout != s_layout) {
-    s_layout = layout;
-    auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
-    for (DWORD i = 0; i < s_keys.size(); ++i) {
-      s_keys[i] = keyMapper.FromWinAPI(DikToVirtualKey(i, layout));
-    }
+  if (layout == s_layout) return;
+  s_layout = layout;
+  auto& keyMapper = SPF::System::VirtualKeyMapping::GetInstance();
+  for (DWORD i = 0; i < g_dikToKey.size(); ++i) {
+    g_dikToKey[i] = keyMapper.FromWinAPI(DikToVirtualKey(i, layout));
   }
-  return s_keys[dik & 0xFF];
 }
 
 // Key states last published from DirectInput, so a game reading both the
@@ -404,7 +409,7 @@ static bool g_dinputKeyDown[256] = {};
 // the game must not see the key. Releases are never blocked: an unexpected one
 // is harmless, while a dropped one would leave the key stuck down in the game.
 static bool PublishDInputKey(DWORD dik, bool isDown) {
-  const auto key = DikToKeyboard(dik);
+  const auto key = g_dikToKey[dik & 0xFF];
   if (key == SPF::System::Keyboard::Unknown) return false;
 
   auto& inputManager = SPF::Input::InputManager::GetInstance();
@@ -419,6 +424,7 @@ static bool PublishDInputKey(DWORD dik, bool isDown) {
 }
 
 static void MaskKeyboardState(DWORD cbData, LPVOID lpvData) {
+  UpdateDikToKey();
   BYTE* keys = static_cast<BYTE*>(lpvData);
   const DWORD count = (cbData < 256) ? cbData : 256;
   for (DWORD dik = 0; dik < count; ++dik) {
@@ -427,6 +433,7 @@ static void MaskKeyboardState(DWORD cbData, LPVOID lpvData) {
 }
 
 static void HandleKeyboardData(DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut) {
+  UpdateDikToKey();
   DWORD originalCount = *pdwInOut;
   DWORD writeIdx = 0;
 
