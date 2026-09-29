@@ -62,11 +62,8 @@ bool GameCameraManager::Install() {
   // Set the initial active camera
   auto initialCameraType = GetCurrentCameraType();
   auto it = m_cameras.find(initialCameraType);
-  if (it != m_cameras.end()) {
-    m_activeCamera = it->second.get();
-    if (m_activeCamera) {
-      m_activeCamera->OnActivate();
-    }
+  if (it != m_cameras.end() && it->second) {
+    ActivateCamera(it->second.get());
   }
 
   m_isReady = true;
@@ -82,6 +79,8 @@ void GameCameraManager::Uninstall() {
     m_initializeCameraFunc = nullptr;
     m_activeCamera = nullptr;
     m_cameras.clear();
+    m_activeCameraObject = 0;
+    m_defaultsObjects.clear();
     m_debugCamera.reset();
     m_debugStateCamera.reset();
     m_debugAnimationController.reset();
@@ -104,11 +103,8 @@ void GameCameraManager::SwitchTo(GameCameraType cameraType) {
 
   // Find and activate the new C++ camera object
   auto it = m_cameras.find(cameraType);
-  if (it != m_cameras.end()) {
-    m_activeCamera = it->second.get();
-    if (m_activeCamera) {
-      m_activeCamera->OnActivate();
-    }
+  if (it != m_cameras.end() && it->second) {
+    ActivateCamera(it->second.get());
   } else {
     // If the camera is not in our map, it's a simple camera managed by the game itself.
     // We don't have a C++ object for it, so m_activeCamera will be nullptr.
@@ -276,6 +272,31 @@ GameCameraType GameCameraManager::GetCurrentCameraType() {
   return static_cast<GameCameraType>(*(uint32_t*)addressOfCameraId);
 }
 
+uintptr_t GameCameraManager::GetLiveCameraObject(GameCameraType cameraType) const {
+  if (static_cast<int>(cameraType) < 0) return 0;
+  auto getCamObjFunc = Hooks::CameraHooks::GetInstance().GetGetCameraObjectFunc();
+  uintptr_t managerAddr = GameDataCameraService::GetInstance().GetCameraManager();
+  if (!getCamObjFunc || !managerAddr) return 0;
+  return reinterpret_cast<uintptr_t>(getCamObjFunc((void*)managerAddr, static_cast<int>(cameraType)));
+}
+
+void GameCameraManager::ActivateCamera(IGameCamera* camera) {
+  m_activeCamera = camera;
+  m_activeCameraObject = GetLiveCameraObject(camera->GetType());
+  // Cameras that read their object from the verified cache (GetVerifiedCameraObject)
+  // must get this same one, or a stale cached object would never be told apart
+  // from the live one Update() compares with.
+  if (m_activeCameraObject != 0) {
+    GameDataCameraService::GetInstance().RegisterVerifiedCamera(camera->GetType(), m_activeCameraObject);
+  }
+  // Another object carries another truck's defaults (seat, FOV, limits): Update()
+  // stores them again.
+  if (m_defaultsObjects[camera->GetType()] != m_activeCameraObject) {
+    camera->ForgetDefaults();
+  }
+  camera->OnActivate();
+}
+
 uintptr_t GameCameraManager::GetVerifiedCameraObject(GameCameraType cameraType) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
 
@@ -324,14 +345,25 @@ void GameCameraManager::Update(float dt) {
     m_activeCamera = nullptr;
   }
 
+  // The game can replace the active camera's object without changing its type
+  // (switching trucks while in the interior view): the cached pointer would then
+  // point into freed memory, so writes through it would be lost or crash the
+  // game. Re-activate the camera on the new object.
+  if (m_activeCamera) {
+    uintptr_t liveObject = GetLiveCameraObject(currentTypeInGame);
+    if (liveObject != 0 && liveObject != m_activeCameraObject) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+      logger->Info("[CameraSystem] Camera {} object replaced by the game (0x{:X} -> 0x{:X}), re-activating.", static_cast<int>(currentTypeInGame), m_activeCameraObject, liveObject);
+      m_activeCamera->OnDeactivate();
+      ActivateCamera(m_activeCamera);
+    }
+  }
+
   // If no camera is active (either from the start or after re-sync), find the correct one.
   if (!m_activeCamera) {
     auto it = m_cameras.find(currentTypeInGame);
-    if (it != m_cameras.end()) {
-      m_activeCamera = it->second.get();
-      if (m_activeCamera) {
-        m_activeCamera->OnActivate();
-      }
+    if (it != m_cameras.end() && it->second) {
+      ActivateCamera(it->second.get());
     }
   }
 
@@ -340,6 +372,9 @@ void GameCameraManager::Update(float dt) {
   // This ensures that the initial state is captured on the very first frame the camera is active.
   if (m_activeCamera && !m_activeCamera->HasSavedDefaults()) {
     m_activeCamera->StoreDefaultState();
+    if (m_activeCamera->HasSavedDefaults()) {
+      m_defaultsObjects[m_activeCamera->GetType()] = m_activeCameraObject;
+    }
   }
 
   // Finally, if we have a valid, synced active camera, update it.

@@ -58,8 +58,17 @@ class IGameCamera {
    */
   bool HasSavedDefaults() const { return m_defaultsSaved; }
 
+  /**
+   * @brief Drops the saved default state, so the next StoreDefaultState() captures it again.
+   * @details For when the game replaces the camera's object (e.g. another truck), whose
+   *          defaults (seat position, FOV, limits) are no longer the stored ones.
+   */
+  void ForgetDefaults() { m_defaultsSaved = false; }
+
  protected:
-  // Flag to ensure the default state is only captured once.
+  // Flag to ensure the default state is only captured once (per camera object, see
+  // ForgetDefaults()). Derived cameras set this one: a member of their own with the same
+  // name would hide it from HasSavedDefaults().
   bool m_defaultsSaved = false;
 
   /**

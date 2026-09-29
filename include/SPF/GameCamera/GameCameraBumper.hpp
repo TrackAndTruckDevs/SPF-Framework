@@ -62,7 +62,6 @@ class GameCameraBumper : public IGameCamera {
   CameraData m_cameraData;
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
-  bool m_defaultsSaved = false;
 
   // See GameCameraInterior for why the FOV override needs re-asserting every frame.
   bool m_fovOverrideActive = false;

@@ -206,7 +206,6 @@ class GameCameraInterior : public IGameCamera {
   CameraData m_cameraData;
   // A snapshot of the camera's data at initialization, used for the "Reset" button.
   CameraData m_defaultCameraData;
-  bool m_defaultsSaved = false;
 
   // Since game 1.61, the game's own per-frame zoom logic keeps overwriting the base FOV,
   // so a one-shot SetFov() gets silently reverted on the next frame. Re-applying it every
