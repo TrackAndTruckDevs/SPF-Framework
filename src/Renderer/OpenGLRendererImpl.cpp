@@ -1,6 +1,7 @@
 #include "SPF/Renderer/OpenGLRendererImpl.hpp"
 
 #include "SPF/Hooks/OpenGLHook.hpp"
+#include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/ITexture.hpp"
 #include "SPF/Renderer/Renderer.hpp"
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <GL/gl.h>
 #include <memory>
+#include <mutex>
 #include <stb_image.h>
 #include <windef.h>
 #include <wingdi.h>
@@ -178,9 +180,13 @@ void OpenGLRendererImpl::OnPresent(HDC hdc) {
 
   // Start the ImGui frame
   ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplWin32_NewFrame();
-  UI::IMESupport::PreFrame();
-  ImGui::NewFrame();
+  {
+    // ImGui's input queue is filled from the input threads under this lock.
+    std::lock_guard<std::recursive_mutex> inputLock(Input::InputManager::GetInstance().GetMutex());
+    ImGui_ImplWin32_NewFrame();
+    UI::IMESupport::PreFrame();
+    ImGui::NewFrame();
+  }
 
   // Ask the UIManager to render all windows
   m_renderer.OnRendererRenderImGui();

@@ -1479,24 +1479,39 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohm
   }
   auto& bindingsArray = actionObject["bindings"];
 
-  // 4. Create a complete binding object by merging UI changes with manifest defaults
-  nlohmann::ordered_json mergedData = newBinding;
+  // 4. Create a complete binding object: manifest defaults, then the replaced
+  // binding's own settings (a rebind only changes the input), then UI changes.
+  const bool newIsAxis = newBinding.value("type", "").find("_axis") != std::string::npos;
+  nlohmann::ordered_json mergedData = nlohmann::ordered_json::object();
   const auto& ownerManifest = m_manifests.at(componentName);
   if (ownerManifest.keybinds.actions.count(groupName) && ownerManifest.keybinds.actions.at(groupName).count(actionName)) {
     const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName);
     if (!defaultBindings.empty()) {
       const auto& def = defaultBindings[0];
-      nlohmann::ordered_json manifestDefaults;
-      manifestDefaults["consume"] = def.consume.value_or("never");
-      if (newBinding.value("type", "").find("_axis") == std::string::npos) {
-        manifestDefaults["press_type"] = def.pressType.value_or("short");
-        manifestDefaults["behavior"] = def.behavior.value_or("toggle");
-        manifestDefaults["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+      mergedData["consume"] = def.consume.value_or("never");
+      if (!newIsAxis) {
+        mergedData["press_type"] = def.pressType.value_or("short");
+        mergedData["behavior"] = def.behavior.value_or("toggle");
+        mergedData["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
       }
-      manifestDefaults.merge_patch(newBinding);
-      mergedData = manifestDefaults;
     }
   }
+  if (originalBinding.is_object() && !originalBinding.empty()) {
+    nlohmann::ordered_json kept = nlohmann::ordered_json::object();
+    const bool wasAxis = originalBinding.value("type", "").find("_axis") != std::string::npos;
+    if (wasAxis == newIsAxis) {
+      // Everything but the input itself.
+      kept = originalBinding;
+      kept.erase("type");
+      kept.erase("key");
+      kept.erase("bindings");
+    } else if (originalBinding.contains("consume")) {
+      // Button <-> axis: only the consume policy applies to both.
+      kept["consume"] = originalBinding["consume"];
+    }
+    mergedData.merge_patch(kept);
+  }
+  mergedData.merge_patch(newBinding);
 
   // --- RECONSTRUCT WITH FIXED ORDER ---
   std::string type = mergedData.value("type", "");

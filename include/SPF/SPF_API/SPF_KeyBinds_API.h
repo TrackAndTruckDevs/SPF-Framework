@@ -265,6 +265,8 @@ typedef struct SPF_KeyBinds_API {
    * @details This function is only effective if the action's 'consume' policy is set to 'manual'
    *          in the framework settings. It allows the plugin to decide at runtime when a
    *          shared key (e.g., WASD) should be captured by the plugin or passed to the game.
+   *          The new state applies from the next press of the key, and `Kbind_GetActionValue`
+   *          keeps reporting the input while it is blocked from the game.
    *
    * @param h The context handle.
    * @param actionName The logical name of the action (e.g., "Movement.Forward").
@@ -287,6 +289,12 @@ typedef struct SPF_KeyBinds_API {
    *          the **immediate physical state** (1.0 = pressed, 0.0 = released).
    *          It **ignores** logical behaviors such as 'toggle', 'hold', or 'press_type' (short/long).
    *          If you need to react to these logical events, use `Kbind_Register` instead.
+   *
+   *          ### Blocking and UI Capture:
+   *          - An input blocked from the game with `Kbind_SetBlockState` is still reported here.
+   *          - While the framework UI captures the keyboard (a text field being edited, a modal
+   *            popup open, a widget held with the mouse), keyboard inputs read as released,
+   *            just as they don't trigger `Kbind_Register` callbacks.
    *
    *          ### Expected Value Ranges:
    *          - **Digital Buttons (Keyboard/Gamepad):** Returns either `0.0` (released) or `1.0` (pressed).

@@ -42,11 +42,26 @@ inline GuardState& GetState() {
   return state;
 }
 
+// A vectored handler sees every exception first-chance, before any catch
+// block, so C++ exceptions must be let through or even ones the code catches
+// itself would abort the guarded call.
+inline bool IsCppException(DWORD code) {
+  switch (code) {
+    case 0xE06D7363:  // MSVC
+    case 0x20474343:  // GCC: throw ("GCC ")
+    case 0x21474343:  // GCC: unwind
+    case 0x22474343:  // GCC: forced unwind
+      return true;
+    default:
+      return false;
+  }
+}
+
 inline LONG CALLBACK VectoredHandler(PEXCEPTION_POINTERS ep) {
   auto& state = GetState();
   if (state.active) {
-    // Let C++ exceptions (0xE06D7363) propagate to try/catch for proper stack unwinding
-    if (ep->ExceptionRecord->ExceptionCode == 0xE06D7363) {
+    // Let C++ exceptions propagate to try/catch for proper stack unwinding
+    if (IsCppException(ep->ExceptionRecord->ExceptionCode)) {
       return EXCEPTION_CONTINUE_SEARCH;
     }
     state.code = ep->ExceptionRecord->ExceptionCode;

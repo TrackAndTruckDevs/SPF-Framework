@@ -18,6 +18,8 @@ A "callback" is a C function within your plugin that the framework executes when
 **4. Dynamic Blocking**
 By default, actions can pass input to the game or consume it entirely based on settings. With "Manual" (Plugin Managed) policy, a plugin can decide at runtime whether a physical key press should be blocked from the game using the `Kbind_SetBlockState` function.
 
+Blocking works whatever API the game reads the input through (window messages, `GetKeyboardState`/`GetAsyncKeyState`, DirectInput). A few keys always reach the game: the modifiers (Ctrl, Shift, Alt) and the media/browser keys. While the framework UI captures the keyboard (e.g. typing in a text field), every other key is hidden from the game automatically, except Escape.
+
 ## Workflow
 
 The process is simple and involves two main steps:
@@ -154,6 +156,9 @@ Gets the current value of the input bound to the specified action. This function
 > **IMPORTANT FOR DIGITAL ACTIONS:**
 > For actions bound to buttons, this method returns the **immediate physical state** (1.0 = pressed, 0.0 = released). It **ignores** logical behaviors such as 'toggle', 'hold', or 'press_type'. If you need to react to these logical events, use `Kbind_Register` instead.
 
+> **BLOCKING AND UI CAPTURE:**
+> An input blocked from the game with `Kbind_SetBlockState` is still reported here. While the framework UI captures the keyboard (a text field being edited, a modal popup open, a widget held with the mouse), keyboard inputs read as released, just as they don't trigger `Kbind_Register` callbacks.
+
 *   **h:** The context handle obtained from `Kbind_GetContext`.
 *   **actionName:** The logical name of the action (e.g., `"Controls.Throttle"`). **Smart Naming** is applied.
 *   **Returns:** A `float` value representing the current processed state:
@@ -217,6 +222,7 @@ Programmatically controls whether an action's physical input is blocked from the
 *   **actionName:** The logical name of the action (e.g., `"Movement.Forward"`). **Smart Naming** is applied.
 *   **block:** If `true`, the framework will block the input from reaching the game. If `false`, the input will be passed through.
 *   **Note**: This function is only effective if the action's `consume` policy is set to **"manual"** (Plugin Managed) in the settings.
+*   **Note**: The new state applies from the next press of the key: a key already held keeps reaching the game until released. `Kbind_GetActionValue` keeps reporting the input while it is blocked from the game.
 
 ---
 **`void Kbind_RegisterActionMetadata(SPF_KeyBinds_Handle* h, const char* actionName, const char* titleKey, const char* descKey, SPF_Keybind_Callback_Ex callback, void* user_data)`**

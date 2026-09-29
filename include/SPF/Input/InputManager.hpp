@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <minwindef.h>
+#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
@@ -137,6 +138,16 @@ class InputManager {
   bool IsProgrammaticMouseButtonsBlockRequested() const;
   bool IsProgrammaticMouseWheelBlockRequested() const;
 
+  /**
+   * @brief The lock guarding all input state, shared with KeyBindsManager.
+   * @details Input arrives on several threads at once (the window thread through WndProc,
+   *          the game's DirectInput polling thread, the render thread through ImGui), so
+   *          every public method takes it. Callers of the reference getters below must hold
+   *          it for as long as they use the reference.
+   */
+  std::recursive_mutex& GetMutex() const { return m_mutex; }
+
+  // Caller must hold GetMutex().
   const std::set<uint32_t>& GetCurrentlyPressedHardwareCodes() const { return m_currentlyPressedHardwareCodes; }
   const std::map<uint32_t, float>& GetCurrentlyActiveAxisValues() const { return m_activeAxisValues; }
 
@@ -151,6 +162,14 @@ class InputManager {
 
   bool IsKeyboardCaptured() const;
   bool IsMouseCaptured() const;
+
+  /**
+   * @brief Decides whether a keyboard key must be hidden from the game, whatever API the game reads it through.
+   * @param key The key the game is reading.
+   * @param consumedByKeybind True if the key's current press was just consumed by a keybind.
+   * @return True if the game must see the key as released.
+   */
+  bool ShouldBlockKeyFromGame(System::Keyboard key, bool consumedByKeybind) const;
 
   // New: Check if an axis is consumed by the framework
   bool IsAxisConsumed(uint8_t deviceType, int axisIndex) const;
@@ -201,6 +220,8 @@ class InputManager {
   void OnXInputStateGet(DWORD deviceID, XINPUT_STATE* pState);
 
   inline static InputManager* s_instance = nullptr;
+
+  mutable std::recursive_mutex m_mutex;
 
   Events::EventManager& m_eventManager;
   std::vector<IInputConsumer*> m_consumers;
