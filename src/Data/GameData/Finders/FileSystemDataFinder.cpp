@@ -76,50 +76,6 @@ const char* MOUNT_LIST_HEAD_SIG = "{[MOV r64, [r64+off32]] | [MOV r64, [r64+off8
  */
 const char* PHYS_PATH_SIG = "[MOV r64, [r64+off8]] [LEA r64, [rip+off32]]";
 
-/**
- * @brief Reads the memory displacement of an addressing instruction and its length.
- *
- * The instruction is expected to start at a REX-prefixed form (byte0 = REX,
- * byte1 = opcode, byte2 = ModRM), which all templates in this file use.
- * Handles optional SIB byte (ModRM R/M = 100) and disp8/disp32.
- *
- * @param addr Address of the first byte (REX prefix).
- * @param outLength Optional: receives the instruction length up to the end of the displacement.
- * @return int32_t The signed displacement value, or 0 when no displacement exists.
- */
-int32_t ReadInstructionDisp(uintptr_t addr, int& outLength) {
-  uint8_t modrm = *reinterpret_cast<uint8_t*>(addr + 2);
-  bool hasSib = (modrm & 0x07) == 0x04;
-  uintptr_t dispAddr = addr + 3 + (hasSib ? 1 : 0);
-  int dispSize;
-  int32_t disp;
-  switch ((modrm >> 6) & 0x3) {
-    case 0:
-      if ((modrm & 0x07) == 0x05) {  // Mod=00, R/M=101 -> disp32
-        dispSize = 4;
-        disp = PatternFinder::ReadInt32(dispAddr);
-      } else {
-        dispSize = 0;
-        disp = 0;
-      }
-      break;
-    case 1:  // Mod=01 -> disp8
-      dispSize = 1;
-      disp = PatternFinder::ReadInt8(dispAddr);
-      break;
-    case 2:  // Mod=10 -> disp32
-      dispSize = 4;
-      disp = PatternFinder::ReadInt32(dispAddr);
-      break;
-    default:  // Mod=11 -> register, no displacement
-      dispSize = 0;
-      disp = 0;
-      break;
-  }
-  outLength = 3 + (hasSib ? 1 : 0) + dispSize;
-  return disp;
-}
-
 }  // namespace
 
 bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
@@ -156,7 +112,6 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
     auto phase = log.MakePhase("Mount Registration");
 
     /**
-     * SEARCH STRATEGY:
      * Locate UFS_RegisterMount using its unique error string.
      * Verified for v1.60 at 0x140155fc0.
      */
@@ -166,13 +121,13 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       uintptr_t addrNode = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_NODE_STRUCT_SIG);
       if (addrNode) {
         int nodeLen = 0;
-        int32_t deviceOff = ReadInstructionDisp(addrNode, nodeLen);
+        int32_t deviceOff = PatternFinder::ReadInstructionDisp(addrNode, nodeLen);
         // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
         // * 140156101  48 8D 48 18                   LEA RCX,[RAX + 0x18]
         uintptr_t addrLea = PatternFinder::Find(addrNode + nodeLen, 32, "[LEA r64, [r64+off8]]");
         if (addrLea) {
           int leaLen = 0;
-          int32_t vpathOff = ReadInstructionDisp(addrLea, leaLen);
+          int32_t vpathOff = PatternFinder::ReadInstructionDisp(addrLea, leaLen);
 
           bool devOk = phase.StepOffset(deviceOff, "Device offset", "NODE");
           bool vpOk = phase.StepOffset(vpathOff, "VirtualPath", "NODE");
@@ -191,7 +146,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       uintptr_t addrStr = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_STR_BUFF_SIG);
       if (addrStr) {
         int strLen = 0;
-        int32_t strBuffOff = ReadInstructionDisp(addrStr, strLen);
+        int32_t strBuffOff = PatternFinder::ReadInstructionDisp(addrStr, strLen);
         if (phase.StepOffset(strBuffOff, "StringBuffer", "STR")) {
           owner.SetStringBufferOffset(strBuffOff);
         }
@@ -203,9 +158,53 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       uintptr_t addrInc = PatternFinder::Find(pfnRegisterMount, 512, MOUNT_LIST_HEAD_SIG);
       if (addrInc) {
         int listLen = 0;
-        int32_t listHeadOff = ReadInstructionDisp(addrInc, listLen);
+        int32_t listHeadOff = PatternFinder::ReadInstructionDisp(addrInc, listLen);
         if (phase.StepOffset(listHeadOff, "Mount list head", "CNT")) {
           owner.SetMountListHeadOffset(listHeadOff);
+        }
+
+        // Node order offset — anchored at the list-head instruction, forward search.
+        // * /--- Ghidra:(amtrucks_1_61.exe) Fun:(UFS_RegisterMount[14015ad50]) ---/
+        // * 14015aebb  89 46 38                      MOV dword ptr [RSI + 0x38],EAX
+        // * 14015aebe  0F B6 44 24 54                MOVZX EAX,byte ptr [RSP + 0x54]
+        uintptr_t addrOrder = PatternFinder::Find(addrInc, 125, "[MOV [r64+off8], r32] [MOVZX r32, [r64+off8]]");
+        if (addrOrder) {
+          int orderLen = 0;
+          int32_t orderOff = PatternFinder::ReadInstructionDisp(addrOrder, orderLen);
+          if (phase.StepOffset(orderOff, "Node order", "NODE")) {
+            owner.SetNodeOrderOffset(orderOff);
+          }
+
+          // Node next offset — anchored at the node-order instruction, forward search.
+          // * /--- Ghidra:(amtrucks_1_61.exe) Fun:(UFS_RegisterMount[14015ad50]) ---/
+          // * 14015aed6  48 89 1E                      MOV qword ptr [RSI],RBX
+          // * 14015aed9  48 8B 43 08                   MOV RAX,qword ptr [RBX + 0x8]
+          uintptr_t addrNext = PatternFinder::Find(addrOrder, 64, "[MOV [r64], r64] [MOV r64, [r64+off8]]");
+          if (addrNext) {
+            int nextLen = 0;
+            int32_t nextOff = PatternFinder::ReadInstructionDisp(addrNext, nextLen);
+            owner.SetNodeNextOffset(nextOff);
+            // Offset is legitimately 0 (no displacement operand) — gate on match address, not value.
+            phase.Step(addrNext, "Node next", "NODE");
+
+            // Per-pool mount count offset — anchored at the node-next instruction, forward search.
+            // * /--- Ghidra:(amtrucks_1_61.exe) Fun:(UFS_RegisterMount[14015ad50]) ---/
+            // * 14015aee4  49 FF 85 80 00 00 00          INC qword ptr [R13 + 0x80]
+            uintptr_t addrPoolCount = PatternFinder::Find(addrNext, 32, "[INC qword ptr [r64+off32]]");
+            if (addrPoolCount) {
+              int poolCountLen = 0;
+              int32_t poolCountOff = PatternFinder::ReadInstructionDisp(addrPoolCount, poolCountLen);
+              if (phase.StepOffset(poolCountOff, "Pool mount count", "CNT")) {
+                owner.SetPoolCountOffset(poolCountOff);
+              }
+            } else {
+              phase.StepOffset(0, "Pool mount count", "CNT");
+            }
+          } else {
+            phase.Step(0, "Node next", "NODE");
+          }
+        } else {
+          phase.StepOffset(0, "Node order", "NODE");
         }
       } else {
         phase.StepOffset(0, "Mount list head", "CNT");
@@ -215,7 +214,7 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
       uintptr_t addrPhys = PatternFinder::Find(pfnRegisterMount, 1024, PHYS_PATH_SIG);
       if (addrPhys) {
         int physLen = 0;
-        int32_t physOff = ReadInstructionDisp(addrPhys, physLen);
+        int32_t physOff = PatternFinder::ReadInstructionDisp(addrPhys, physLen);
         if (phase.StepOffset(physOff, "Physical path", "PATH")) {
           owner.SetPhysicalDevicePathOffset(physOff);
         }
@@ -229,9 +228,71 @@ bool FileSystemDataFinder::TryFindOffsets(GameObjectFileSystemService& owner) {
   // REMOVED: Core profile offsets (GamePtr, ProfileHandle) are now centrally managed by SessionDataFinder.
   // FileSystemDataFinder now relies on GameObjectSessionService for these root addresses.
 
+  // ── Phase 3: VFS Mount API ──
+  {
+    auto phase = log.MakePhase("VFS Mount API");
+
+    // 3.1 UFS_MountDevice
+    /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(ufs_mount_home_dir[1400f3460]) ---/
+     * 1400f34ff  48 8D 0D 82 D7 0D 02          LEA RCX,[0x1421d0c88]
+     */
+    uintptr_t addrMountLea = PatternFinder::FindFunctionByString("[ufs] Home directory mount failed!", false);
+    if (phase.Step(addrMountLea, "ufs mount string LEA", "REF")) {
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(ufs_mount_home_dir[1400f3460]) ---/
+       * 1400f34f2  E8 39 F5 FF FF                CALL 0x1400f2a30
+       */
+      uintptr_t addrCall = PatternFinder::FindBackward(addrMountLea, 64, "[CALL rel32]");
+      if (phase.Step(addrCall, "ufs mount CALL", "RT")) {
+        uintptr_t pfnMountDevice = PatternFinder::GetRipAddress(addrCall, 1, 5);
+        if (phase.Step(pfnMountDevice, "UFS_MountDevice", "ADR")) {
+          owner.SetUfsMountDeviceAddr(pfnMountDevice);
+        }
+      }
+    }
+
+    // 3.2 UFS_UnmountDevice
+    /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(UFS_UnmountDevice[14015b220]) ---/
+     * 14015b220  48 89 5C 24 10                MOV qword ptr [RSP+0x10],RBX
+     */
+    uintptr_t pfnUnmountDevice = PatternFinder::FindFunctionByString("[ufs] Error unmounting device: device not found!", true);
+    if (phase.Step(pfnUnmountDevice, "UFS_UnmountDevice", "ADR")) {
+      owner.SetUfsUnmountDeviceAddr(pfnUnmountDevice);
+    }
+
+    // 3.3 Pool array & pool count globals
+    /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14070ef90[14070ef90]) ---/
+     * 14070f289  4C 8D 05 DC CB 6B FA          LEA R8,[0x141cabe6c]
+     */
+    uintptr_t addrCompany = PatternFinder::FindFunctionByString("/def/company/%s/%s", false);
+    if (phase.Step(addrCompany, "company string LEA", "REF")) {
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14070ef90[14070ef90]) ---/
+       * 14070f2ae  48 8B 05 73 CF 02 02          MOV RAX,qword ptr [0x14273c228]
+       */
+      uintptr_t addrMov = PatternFinder::Find(addrCompany, 64, "[MOV r64, [rip+off32]]");
+      if (phase.Step(addrMov, "pool array MOV", "RT")) {
+        uintptr_t poolArrayAddr = PatternFinder::GetRipAddress(addrMov, 3, 7);
+        if (phase.Step(poolArrayAddr, "pool array global", "ADR")) {
+          owner.SetPoolArrayAddr(poolArrayAddr);
+        }
+      }
+
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14070ef90[14070ef90]) ---/
+       * 14070f2a0  48 83 3D 88 CF 02 02 04       CMP qword ptr [0x14273c230],0x4
+       */
+      uintptr_t addrCmp = PatternFinder::Find(addrCompany, 32, "48 83 3D");
+      if (phase.Step(addrCmp, "pool count CMP", "RT")) {
+        uintptr_t poolCountAddr = PatternFinder::GetRipAddress(addrCmp, 3, 8);
+        if (phase.Step(poolCountAddr, "pool count global", "ADR")) {
+          owner.SetPoolCountAddr(poolCountAddr);
+        }
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
   m_isReady = (owner.GetDevicesArrayAddr() != 0 && owner.GetManagersCountAddr() != 0 && owner.GetMountListHeadOffset() != 0 && owner.GetNodeDeviceOffset() != 0 && owner.GetNodeVPathOffset() != 0 && owner.GetStringBufferOffset() != 0 &&
-               owner.GetPhysicalDevicePathOffset() != 0);
+                owner.GetPhysicalDevicePathOffset() != 0 && owner.GetUfsMountDeviceAddr() != 0 && owner.GetUfsUnmountDeviceAddr() != 0 && owner.GetPoolArrayAddr() != 0 && owner.GetPoolCountAddr() != 0 &&
+                owner.GetNodeOrderOffset() != 0 && owner.GetPoolCountOffset() != 0);
 
   return log.Finish(m_isReady);
 }

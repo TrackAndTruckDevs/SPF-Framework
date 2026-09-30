@@ -1,5 +1,6 @@
 #include "SPF/Modules/API/EnvironmentApi.hpp"
 
+#include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/SPF_API/SPF_Environment_API.h"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -155,6 +156,38 @@ bool EnvironmentApi::Env_CreatePath(SPF_Environment_Handle* h, const char* path)
   }
 }
 
+// Section 7: VFS Mounting
+bool EnvironmentApi::Env_VfsMount(SPF_Environment_Handle* h, const char* physical_path, int pool_index, int order, char* out_vpath, int buffer_size) {
+  if (!h || !physical_path) return false;
+  std::string vpath;
+  if (!Data::GameData::GameObjectFileSystemService::GetInstance().MountVfsFolder(h->pluginName, physical_path, pool_index, order, vpath)) return false;
+  SafeCopyString(vpath, out_vpath, buffer_size);
+  return true;
+}
+
+bool EnvironmentApi::Env_VfsUnmount(SPF_Environment_Handle* h) {
+  if (!h) return false;
+  Data::GameData::GameObjectFileSystemService::GetInstance().UnmountVfsFolders(h->pluginName);
+  return true;
+}
+
+// Section 8: VFS Mount Enumeration
+int EnvironmentApi::Env_VfsGetMountCount(SPF_Environment_Handle* h) {
+  if (!h) return 0;
+  return Data::GameData::GameObjectFileSystemService::GetInstance().GetVfsMountCount();
+}
+
+bool EnvironmentApi::Env_VfsGetMountAt(SPF_Environment_Handle* h, int index, SPF_VfsMountInfo* out_info) {
+  if (!h || !out_info || index < 0) return false;
+  Data::GameData::GameObjectFileSystemService::VfsMountInfo info;
+  if (!Data::GameData::GameObjectFileSystemService::GetInstance().GetVfsMountAt(index, info)) return false;
+  SafeCopyString(info.vpath, out_info->vpath, static_cast<int>(sizeof(out_info->vpath)));
+  SafeCopyString(info.physicalPath, out_info->physical_path, static_cast<int>(sizeof(out_info->physical_path)));
+  out_info->pool_index = info.poolIndex;
+  out_info->order = info.order;
+  return true;
+}
+
 void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
   if (!api) return;
 
@@ -198,6 +231,12 @@ void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
   api->Env_GetPluginDataDir = &EnvironmentApi::Env_GetPluginDataDir;
   api->Env_CreatePath = &EnvironmentApi::Env_CreatePath;
   api->Env_GetActiveProfileType = &EnvironmentApi::Env_GetActiveProfileType;
+
+  api->Env_VfsMount = &EnvironmentApi::Env_VfsMount;
+  api->Env_VfsUnmount = &EnvironmentApi::Env_VfsUnmount;
+
+  api->Env_VfsGetMountCount = &EnvironmentApi::Env_VfsGetMountCount;
+  api->Env_VfsGetMountAt = &EnvironmentApi::Env_VfsGetMountAt;
 }
 
 }  // namespace SPF::Modules::API

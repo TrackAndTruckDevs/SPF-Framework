@@ -1392,7 +1392,8 @@
             "game": "ゲーム",
             "paths": "パス",
             "system": "システム",
-            "status": "ステータス"
+            "status": "ステータス",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPFバージョン:",
@@ -1438,6 +1439,12 @@
             "inactive": "無効",
             "dll_loaded": "ロード済み",
             "dll_not_loaded": "未ロード"
+        },
+        "vfs": {
+            "total": "マウント合計:",
+            "col_vpath": "仮想パス",
+            "col_physical": "物理パス",
+            "col_order": "順序"
         }
     },
     "welcome_window": {

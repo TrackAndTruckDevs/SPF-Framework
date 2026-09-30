@@ -1392,7 +1392,8 @@
             "game": "游戏",
             "paths": "路径",
             "system": "系统",
-            "status": "状态"
+            "status": "状态",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPF 版本:",
@@ -1438,6 +1439,12 @@
             "inactive": "未启用",
             "dll_loaded": "已加载",
             "dll_not_loaded": "未加载"
+        },
+        "vfs": {
+            "total": "总挂载数:",
+            "col_vpath": "虚拟路径",
+            "col_physical": "物理路径",
+            "col_order": "顺序"
         }
     },
     "welcome_window": {

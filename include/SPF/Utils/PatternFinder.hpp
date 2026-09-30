@@ -304,6 +304,20 @@ class PatternFinder {
   static uintptr_t GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 
   /**
+   * @brief Reads the ModRM displacement of an addressing instruction and its length.
+   *
+   * The instruction may start with an optional REX prefix, covering both
+   * `48 89 48 10` (REX form) and bare `89 46 38` encodings:
+   * byte0 = REX when present, then opcode, then ModRM.
+   * Handles optional SIB byte (ModRM R/M = 100) and disp8/disp32.
+   *
+   * @param addr Address of the first instruction byte (REX prefix or opcode).
+   * @param outLength Receives the instruction length up to the end of the displacement (0 on failure).
+   * @return int32_t The signed displacement value, or 0 when no displacement exists.
+   */
+  static int32_t ReadInstructionDisp(uintptr_t addr, int& outLength);
+
+  /**
    * @brief Returns the base address of the main module image (cached after first call, logged once).
    * @return uintptr_t Absolute base address of the main EXE, or 0.
    */

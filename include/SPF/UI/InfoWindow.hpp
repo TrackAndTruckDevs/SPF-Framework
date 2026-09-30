@@ -25,6 +25,7 @@ class InfoWindow : public BaseWindow {
   void RenderPathsTab();
   void RenderSystemTab();
   void RenderStatusTab();
+  void RenderVfsTab();
 
   // --- Localization Keys ---
   std::string m_locFrameworkTab;
@@ -32,6 +33,7 @@ class InfoWindow : public BaseWindow {
   std::string m_locPathsTab;
   std::string m_locSystemTab;
   std::string m_locStatusTab;
+  std::string m_locVfsTab;
 
   // Framework Labels
   std::string m_locFrameworkVersion;
@@ -77,6 +79,12 @@ class InfoWindow : public BaseWindow {
   std::string m_locStatusInactive;
   std::string m_locStatusDllLoaded;
   std::string m_locStatusDllNotLoaded;
+
+  // VFS Labels
+  std::string m_locVfsTotal;
+  std::string m_locVfsColVpath;
+  std::string m_locVfsColPhysical;
+  std::string m_locVfsColOrder;
 };
 
 }  // namespace SPF::UI

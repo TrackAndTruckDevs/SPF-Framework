@@ -1392,7 +1392,8 @@
             "game": "Juego",
             "paths": "Rutas",
             "system": "Sistema",
-            "status": "Estado"
+            "status": "Estado",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Versión de SPF:",
@@ -1438,6 +1439,12 @@
             "inactive": "Inactivo",
             "dll_loaded": "Cargado",
             "dll_not_loaded": "No cargado"
+        },
+        "vfs": {
+            "total": "Montajes totales:",
+            "col_vpath": "Ruta virtual",
+            "col_physical": "Ruta física",
+            "col_order": "Orden"
         }
     },
     "welcome_window": {

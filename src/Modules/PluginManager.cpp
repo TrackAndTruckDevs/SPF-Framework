@@ -2,6 +2,7 @@
 
 #include "SPF/Config/IConfigService.hpp"
 #include "SPF/Config/ManifestData.hpp"
+#include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/HookManager.hpp"  // For registering hooks
 #include "SPF/Hooks/IHook.hpp"
@@ -366,6 +367,9 @@ void PluginManager::UnloadPlugin(const std::string& pluginName) {
   if (plugin->exports.OnUnload) {
     SafeCallOnUnload(*plugin);
   }
+
+  // Safety net: unmount any VFS folders the plugin left mounted.
+  Data::GameData::GameObjectFileSystemService::GetInstance().UnmountVfsFolders(plugin->name);
 
   // Clean up all hooks registered by this plugin
   auto& hookManager = Hooks::HookManager::GetInstance();

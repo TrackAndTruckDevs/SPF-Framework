@@ -1392,7 +1392,8 @@
             "game": "Игра",
             "paths": "Пути",
             "system": "Система",
-            "status": "Статус"
+            "status": "Статус",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Версия SPF:",
@@ -1438,6 +1439,12 @@
             "inactive": "Неактивен",
             "dll_loaded": "Загружено",
             "dll_not_loaded": "Не загружено"
+        },
+        "vfs": {
+            "total": "Всего монтиров:",
+            "col_vpath": "Виртуальный путь",
+            "col_physical": "Физический путь",
+            "col_order": "Порядок"
         }
     },
     "welcome_window": {

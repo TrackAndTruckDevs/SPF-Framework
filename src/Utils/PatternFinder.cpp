@@ -810,6 +810,47 @@ uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos,
   });
 }
 
+int32_t PatternFinder::ReadInstructionDisp(uintptr_t addr, int& outLength) {
+  return SafeScan<int32_t>("ReadInstructionDisp", 0, [&]() -> int32_t {
+    outLength = 0;
+    if (!addr) return 0;
+    uintptr_t base = addr;
+    if ((*reinterpret_cast<uint8_t*>(addr) & 0xF0) == 0x40) {
+      ++base;  // optional REX prefix
+    }
+    uint8_t modrm = *reinterpret_cast<uint8_t*>(base + 1);
+    bool hasSib = (modrm & 0x07) == 0x04;
+    uintptr_t dispAddr = base + 2 + (hasSib ? 1 : 0);
+    int dispSize;
+    int32_t disp;
+    switch ((modrm >> 6) & 0x3) {
+      case 0:
+        if ((modrm & 0x07) == 0x05) {  // Mod=00, R/M=101 -> disp32
+          dispSize = 4;
+          disp = ReadInt32(dispAddr);
+        } else {
+          dispSize = 0;
+          disp = 0;
+        }
+        break;
+      case 1:  // Mod=01 -> disp8
+        dispSize = 1;
+        disp = ReadInt8(dispAddr);
+        break;
+      case 2:  // Mod=10 -> disp32
+        dispSize = 4;
+        disp = ReadInt32(dispAddr);
+        break;
+      default:  // Mod=11 -> register, no displacement
+        dispSize = 0;
+        disp = 0;
+        break;
+    }
+    outLength = static_cast<int>(dispAddr - addr) + dispSize;
+    return disp;
+  });
+}
+
 uintptr_t PatternFinder::GetModuleBase() {
   static std::once_flag once;
   static uintptr_t cachedBase = 0;

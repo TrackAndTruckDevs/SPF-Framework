@@ -1392,7 +1392,8 @@
             "game": "Spel",
             "paths": "Paden",
             "system": "Systeem",
-            "status": "Status"
+            "status": "Status",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPF-versie:",
@@ -1438,6 +1439,12 @@
             "inactive": "Inaktiv",
             "dll_loaded": "Geladen",
             "dll_not_loaded": "Niet geladen"
+        },
+        "vfs": {
+            "total": "Totaal mounts:",
+            "col_vpath": "Virtueel pad",
+            "col_physical": "Fysiek pad",
+            "col_order": "Volgorde"
         }
     },
     "welcome_window": {

@@ -1,5 +1,6 @@
 #include "SPF/UI/InfoWindow.hpp"
 
+#include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -14,6 +15,7 @@
 #include <filesystem>
 #include <string>
 #include <stringapiset.h>
+#include <vector>
 #include <winnls.h>
 
 namespace SPF::UI {
@@ -68,6 +70,11 @@ void InfoWindow::RefreshLocalization() {
   m_locStatusInactive = loc.Get("info_window.status.inactive");
   m_locStatusDllLoaded = loc.Get("info_window.status.dll_loaded");
   m_locStatusDllNotLoaded = loc.Get("info_window.status.dll_not_loaded");
+  m_locVfsTab = loc.Get("info_window.tabs.vfs");
+  m_locVfsTotal = loc.Get("info_window.vfs.total");
+  m_locVfsColVpath = loc.Get("info_window.vfs.col_vpath");
+  m_locVfsColPhysical = loc.Get("info_window.vfs.col_physical");
+  m_locVfsColOrder = loc.Get("info_window.vfs.col_order");
 }
 
 void InfoWindow::RenderContent() {
@@ -90,6 +97,10 @@ void InfoWindow::RenderContent() {
     }
     if (ImGui::BeginTabItem((std::string(ICON_FA_CHART_LINE) + " " + m_locStatusTab).c_str())) {
       RenderStatusTab();
+      ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem((std::string(ICON_FA_LAYER_GROUP) + " " + m_locVfsTab).c_str())) {
+      RenderVfsTab();
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -236,6 +247,59 @@ void InfoWindow::RenderStatusTab() {
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locStatusSteamOverlay.c_str());
   ImGui::SameLine();
   Typography::Text(TextStyle::Regular().Color(status.isSteamOverlayActive ? Colors::GREEN : Colors::GRAY), "%s", status.isSteamOverlayActive ? m_locStatusDllLoaded.c_str() : m_locStatusDllNotLoaded.c_str());
+}
+
+void InfoWindow::RenderVfsTab() {
+  const auto& mounts = Data::GameData::GameObjectFileSystemService::GetInstance().GetVfsMountsSnapshot();
+  const int total = static_cast<int>(mounts.size());
+
+  static constexpr const char* kPoolNames[] = {"core", "user", "mod", "scs", "root"};
+  static constexpr int kPoolCount = 5;
+
+  ImGui::Spacing();
+  Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locVfsTotal.c_str());
+  ImGui::SameLine();
+  Typography::Text(TextStyle::Regular().Color(Colors::WHITE), "%d", total);
+
+  struct Row {
+    std::string vpath;
+    std::string physical;
+    int order = 0;
+  };
+  std::vector<Row> rowsByPool[kPoolCount];
+
+  for (const auto& mount : mounts) {
+    if (mount.poolIndex < 0 || mount.poolIndex >= kPoolCount) continue;
+    rowsByPool[mount.poolIndex].push_back({mount.vpath, mount.physicalPath, mount.order});
+  }
+
+  if (!ImGui::BeginTable("VfsMountsTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY)) {
+    return;
+  }
+  ImGui::TableSetupScrollFreeze(0, 1);
+  ImGui::TableSetupColumn(m_locVfsColVpath.c_str(), ImGuiTableColumnFlags_WidthStretch, 30.0f);
+  ImGui::TableSetupColumn(m_locVfsColPhysical.c_str(), ImGuiTableColumnFlags_WidthStretch, 55.0f);
+  ImGui::TableSetupColumn(m_locVfsColOrder.c_str(), ImGuiTableColumnFlags_WidthFixed, 60.0f);
+  ImGui::TableHeadersRow();
+
+  for (int p = 0; p < kPoolCount; ++p) {
+    if (rowsByPool[p].empty()) continue;
+
+    ImGui::TableNextRow();
+    if (ImGui::TableSetColumnIndex(0)) {
+      Typography::Text(TextStyle::Bold().Color(Colors::GOLD), "%s (%zu)", kPoolNames[p], rowsByPool[p].size());
+    }
+    for (const auto& row : rowsByPool[p]) {
+      ImGui::TableNextRow();
+      ImGui::TableSetColumnIndex(0);
+      ImGui::TextUnformatted(row.vpath.c_str());
+      ImGui::TableSetColumnIndex(1);
+      ImGui::TextUnformatted(row.physical.c_str());
+      ImGui::TableSetColumnIndex(2);
+      ImGui::TextDisabled("%d", row.order);
+    }
+  }
+  ImGui::EndTable();
 }
 
 }  // namespace SPF::UI

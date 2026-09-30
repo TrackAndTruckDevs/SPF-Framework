@@ -57,6 +57,12 @@ class EnvironmentApi {
   static int Env_GetPluginLogsDir(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
   static int Env_GetPluginDataDir(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
   static bool Env_CreatePath(SPF_Environment_Handle* h, const char* path);
+
+  // Section 7: VFS Mounting
+  static bool Env_VfsMount(SPF_Environment_Handle* h, const char* physical_path, int pool_index, int order, char* out_vpath, int buffer_size);
+  static bool Env_VfsUnmount(SPF_Environment_Handle* h);
+  static int Env_VfsGetMountCount(SPF_Environment_Handle* h);
+  static bool Env_VfsGetMountAt(SPF_Environment_Handle* h, int index, SPF_VfsMountInfo* out_info);
 };
 
 }  // namespace SPF::Modules::API

@@ -1403,7 +1403,8 @@
             "game": "Гра",
             "paths": "Шляхи",
             "system": "Система",
-            "status": "Статус"
+            "status": "Статус",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Версія SPF:",
@@ -1449,6 +1450,12 @@
             "inactive": "Неактивний",
             "dll_loaded": "Завантажено",
             "dll_not_loaded": "Не завантажено"
+        },
+        "vfs": {
+            "total": "Всього монтів:",
+            "col_vpath": "Віртуальний шлях",
+            "col_physical": "Фізичний шлях",
+            "col_order": "Порядок"
         }
     },
     "welcome_window": {

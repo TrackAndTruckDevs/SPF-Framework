@@ -220,3 +220,80 @@ A helper function to create a directory or a full tree of directories.
 *   **Parameters:**
     *   `path`: The full physical path you want to create (usually obtained from one of the functions above).
 *   **Returns:** `true` if the directory was successfully created or already exists; `false` on error.
+
+<br>
+
+### Section 7: Plugin VFS Mounting
+
+These functions mount a physical directory from the plugin into the game's virtual file system (UFS), so the game itself can read files from the plugin's folder. The game receives the returned virtual path (e.g. `/spf/MyPlugin`) and resolves it like any other in-game path.
+
+**Pool resolution.** Paths resolve across overlay pools in a fixed order (highest precedence first): `core` → `user` → `mod` → `scs`. The first pool that contains the file wins.
+
+| `pool_index` | Pool | Precedence | Contents |
+|---|---|---|---|
+| `-1` (default) | user | 2 | home directory, music, screenshots, temp |
+| `0` | core | 3 | effects, locale, core.scs |
+| `1` | user | 2 | same pool as the default |
+| `2` | mod | 1 | workshop / local mods |
+| `3` | scs | 0 | base.scs, def.scs, all dlc_* |
+
+**Mount recency does not win.** A newer mount does not override an older one: even if a mod folder is mounted after the base content, the base mount may still shadow it. Do not rely on "mounted later = wins" — pick the correct pool and keep the virtual path distinct (`/spf/<PluginName>`).
+
+All mounts are removed automatically when the plugin is disabled or unloaded, even if the plugin forgets to unmount.
+
+---
+**`bool Env_VfsMount(SPF_Environment_Handle* h, const char* physical_path, int pool_index, int order, char* out_vpath, int buffer_size)`**
+Mounts a physical directory into the game VFS under `/spf/<PluginName>`. The mount is idempotent: calling again with the same directory returns the same virtual path.
+*   **Parameters:**
+    *   `physical_path`: Physical directory to mount (e.g. from `Env_GetPluginDir`).
+    *   `pool_index`: Target pool — see the table above; `-1` selects the default pool (`user`).
+    *   `order`: Mount order inside the pool — **higher value = resolved earlier**. Only matters when two mounts in the same pool overlap in virtual path prefixes (e.g. `/spf/A` vs `/spf/A/sub`); unrelated prefixes never compete. The game uses `100000` (base), `159-190` (DLC), `1001+` (mods), `650` (home), `0` (steam). Pick a value below the game content of the target pool (e.g. `650` for user/mod pools) if the plugin content must lose to it. Any `int` is accepted; no game-side limits.
+    *   `out_vpath` / `buffer_size`: Buffer receiving the virtual path (e.g. `"/spf/MyPlugin"`).
+*   **Returns:** `true` if the directory is mounted (or already was).
+*   **Note:** Must be called from the game thread (`OnActivated` / `OnGameWorldReady`).
+
+---
+**`bool Env_VfsUnmount(SPF_Environment_Handle* h)`**
+Unmounts all VFS mounts created by this plugin.
+*   **Returns:** `true`.
+*   **Note:** The framework also unmounts everything automatically on plugin disable/unload.
+
+---
+
+### Section 8: VFS Mount Enumeration
+
+These functions read the game's live UFS mount tables — all pools, game and mod mounts included, not only this plugin's. Use them to verify that a mount registered correctly or to inspect the game's VFS layout.
+
+Reads are live and unguarded by locks: call from the game thread (`OnActivated` / `OnGameWorldReady`). Entries are snapshot values; a mount unmounted after enumeration may still appear in an already-copied struct.
+
+**`SPF_VfsMountInfo` fields:**
+*   `vpath[256]` — virtual path (e.g. `"/spf/MyPlugin"`, `"/home"`).
+*   `physical_path[512]` — physical disk path backing the mount.
+*   `pool_index` — `0` = core, `1` = user, `2` = mod, `3` = scs, `4` = root.
+*   `order` — mount order inside the pool (higher = resolved earlier in that pool).
+
+---
+**`int Env_VfsGetMountCount(SPF_Environment_Handle* h)`**
+Returns the total number of mounts across all VFS pools.
+*   **Returns:** mount count, or `0` when the finder is not ready.
+
+---
+**`bool Env_VfsGetMountAt(SPF_Environment_Handle* h, int index, SPF_VfsMountInfo* out_info)`**
+Reads the mount at a flat zero-based index (pools in index order) and fills **all four** `SPF_VfsMountInfo` fields: `vpath`, `physical_path`, `pool_index`, `order` (field descriptions above).
+*   **Parameters:**
+    *   `index`: `0 .. Env_VfsGetMountCount()-1`.
+    *   `out_info`: struct receiving the entry — only valid when the function returns `true`; on `false` its contents are untouched.
+*   **Returns:** `true` if the index was valid and `out_info` was filled.
+*   **What to expect:**
+    *   Entries cover **every** mount in the game (game, DLC, mods and your plugin's) — filter by `pool_index` or by comparing `vpath` with your own if you only care about a subset.
+    *   `pool_index` and `order` are always set on success; `vpath` / `physical_path` may be empty strings if the backing game memory could not be read.
+    *   Reads come from a snapshot cache invalidated only when the game's mount tables change, so a tight enumeration loop does not touch game memory per entry.
+*   **Example:**
+    ```c
+    int n = env->Env_VfsGetMountCount(h);
+    for (int i = 0; i < n; ++i) {
+      SPF_VfsMountInfo m;
+      if (!env->Env_VfsGetMountAt(h, i, &m)) break;
+      // m.vpath, m.physical_path, m.pool_index, m.order
+    }
+    ```

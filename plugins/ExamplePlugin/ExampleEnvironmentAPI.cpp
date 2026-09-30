@@ -101,6 +101,34 @@ void RenderEnvironmentTab(SPF_UI_API* ui, void* user_data) {
 
     ui->UI_TreePop();
   }
+
+  // --- Section 5: VFS Mounting ---
+  if (ui->UI_TreeNode(ICON_FA_PLUG " VFS Mounting")) {
+    static bool mounted = false;
+    static char vpath[256] = {};
+    char dataDir[512];
+
+    env->Env_GetPluginDataDir(h, dataDir, sizeof(dataDir));
+    ui->UI_LabelText("Data Dir (physical)", dataDir);
+
+    if (ui->UI_Button("Mount Data Dir", 0, 0)) {
+      // pool 2 = mod (workshop mods are 1001+, order 650 below them);
+      // game resolves /spf/ExamplePlugin/* to dataDir.
+      mounted = env->Env_VfsMount(h, dataDir, -1, 5000, vpath, sizeof(vpath));
+    }
+    if (ui->UI_Button("Unmount", 0, 0)) {
+      env->Env_VfsUnmount(h);
+      mounted = false;
+      vpath[0] = '\0';
+    }
+
+    ui->UI_LabelText("Mounted", mounted ? "Yes" : "No");
+    if (mounted) {
+      ui->UI_LabelText("VFS Path", vpath);
+    }
+
+    ui->UI_TreePop();
+  }
 }
 
 }  // namespace ExamplePlugin

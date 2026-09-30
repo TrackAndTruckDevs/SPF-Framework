@@ -1403,7 +1403,8 @@
             "game": "Game",
             "paths": "Paths",
             "system": "System",
-            "status": "Status"
+            "status": "Status",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPF Version:",
@@ -1449,6 +1450,12 @@
             "inactive": "Inactive",
             "dll_loaded": "Loaded",
             "dll_not_loaded": "Not Loaded"
+        },
+        "vfs": {
+            "total": "Total mounts:",
+            "col_vpath": "Virtual Path",
+            "col_physical": "Physical Path",
+            "col_order": "Order"
         }
     },
     "welcome_window": {

@@ -1392,7 +1392,8 @@
             "game": "게임",
             "paths": "경로",
             "system": "시스템",
-            "status": "상태"
+            "status": "상태",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPF 버전:",
@@ -1438,6 +1439,12 @@
             "inactive": "비활성",
             "dll_loaded": "로드됨",
             "dll_not_loaded": "로드되지 않음"
+        },
+        "vfs": {
+            "total": "총 마운트:",
+            "col_vpath": "가상 경로",
+            "col_physical": "물리 경로",
+            "col_order": "순서"
         }
     },
     "welcome_window": {

@@ -1392,7 +1392,8 @@
             "game": "Oyun",
             "paths": "Yollar",
             "system": "Sistem",
-            "status": "Durum"
+            "status": "Durum",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "SPF Sürümü:",
@@ -1438,6 +1439,12 @@
             "inactive": "Etkin Değil",
             "dll_loaded": "Yüklendi",
             "dll_not_loaded": "Yüklenmedi"
+        },
+        "vfs": {
+            "total": "Toplam bağlama:",
+            "col_vpath": "Sanal Yol",
+            "col_physical": "Fiziksel Yol",
+            "col_order": "Sıra"
         }
     },
     "welcome_window": {

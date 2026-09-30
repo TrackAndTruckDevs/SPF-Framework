@@ -1392,7 +1392,8 @@
             "game": "Hra",
             "paths": "Cesty",
             "system": "Systém",
-            "status": "Stav"
+            "status": "Stav",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Verze SPF:",
@@ -1438,6 +1439,12 @@
             "inactive": "Neaktivní",
             "dll_loaded": "Načteno",
             "dll_not_loaded": "Nenačteno"
+        },
+        "vfs": {
+            "total": "Celkem montáží:",
+            "col_vpath": "Virtuální cesta",
+            "col_physical": "Fyzická cesta",
+            "col_order": "Pořadí"
         }
     },
     "welcome_window": {

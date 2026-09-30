@@ -1392,7 +1392,8 @@
             "game": "Gra",
             "paths": "Ścieżki",
             "system": "System",
-            "status": "Status"
+            "status": "Status",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Wersja SPF:",
@@ -1438,6 +1439,12 @@
             "inactive": "Nieaktywny",
             "dll_loaded": "Załadowano",
             "dll_not_loaded": "Nie załadowano"
+        },
+        "vfs": {
+            "total": "Łączna liczba montowań:",
+            "col_vpath": "Ścieżka wirtualna",
+            "col_physical": "Ścieżka fizyczna",
+            "col_order": "Kolejność"
         }
     },
     "welcome_window": {

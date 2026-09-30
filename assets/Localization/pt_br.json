@@ -1392,7 +1392,8 @@
             "game": "Jogo",
             "paths": "Caminhos",
             "system": "Sistema",
-            "status": "Status"
+            "status": "Status",
+            "vfs": "VFS"
         },
         "framework": {
             "version": "Versão do SPF:",
@@ -1438,6 +1439,12 @@
             "inactive": "Inativo",
             "dll_loaded": "Carregado",
             "dll_not_loaded": "Não Carregado"
+        },
+        "vfs": {
+            "total": "Total de montagens:",
+            "col_vpath": "Caminho virtual",
+            "col_physical": "Caminho físico",
+            "col_order": "Ordem"
         }
     },
     "welcome_window": {
