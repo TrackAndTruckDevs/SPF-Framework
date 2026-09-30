@@ -114,8 +114,19 @@ class SoundWindow : public BaseWindow {
   std::string m_locPropInteger;
   std::string m_locPropFloat;
   std::string m_locPropString;
+  std::string m_locSoundRefTab;
+  std::string m_locSoundRefUiTable;
+  std::string m_locSoundRefLiveEvents;
+  std::string m_locSoundRefPath;
+  std::string m_locSoundRefSource;
+  std::string m_locSoundRefCategory;
+  std::string m_locSoundRefEnabled;
+  std::string m_locSoundRefRefresh;
+  std::string m_locSoundRefNoEntries;
+  std::string m_locSoundRefOrigin;
+  std::string m_locSoundRefEvent;
 
-  enum class Tab : int { Events = 0, Buses, VCAs, GlobalParams, Listener, COUNT };
+  enum class Tab : int { Events = 0, Buses, VCAs, GlobalParams, Listener, SoundRef, COUNT };
   Tab m_activeTab = Tab::Events;
 
   std::vector<Data::GameData::SoundBankGroup> m_banks;
@@ -129,6 +140,9 @@ class SoundWindow : public BaseWindow {
   std::vector<int> m_busSortOrder;
   std::vector<float> m_globalParamValues;
   std::vector<Data::GameData::SoundVCAInfo> m_vcaInfos;
+  std::vector<Data::GameData::SoundRefEntry> m_soundRefEntries;
+  std::vector<std::pair<std::string, std::string>> m_liveSoundEvents;
+  bool m_soundRefListsLoaded = false;
   int m_selectedBank = -1;
   int m_selectedEvent = -1;
   int m_selectedBus = -1;
@@ -163,6 +177,8 @@ class SoundWindow : public BaseWindow {
   void RenderTabVCAs();
   void RenderTabGlobalParams();
   void RenderTabListener();
+  void RenderTabSoundRef();
+  void RefreshSoundRefLists();
   void RenderInstanceControls(const std::string& eventPath, bool is3D);
   void RenderEventDetail(const Data::GameData::SoundEvent& ev);
 };

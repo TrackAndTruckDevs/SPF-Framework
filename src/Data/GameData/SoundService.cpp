@@ -1,26 +1,43 @@
 #include "SPF/Data/GameData/SoundService.hpp"
 
 #include "SPF/Data/GameData/Finders/SoundDataFinder.hpp"
+#include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
-#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Hooks/GameTools/PrismStringResolver.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
+
+#include "MinHook.h"
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <functional>
 #include <memory>
+#include <minwindef.h>
+#include <mutex>
+#include <processthreadsapi.h>
 #include <string>
 #include <synchapi.h>
+#include <system_error>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 #include <windows.h>
 
 namespace SPF::Data::GameData {
+
+namespace {
+thread_local bool tls_insidePluginUpdate = false;
+}
 
 SoundService::SoundService() { WorldServiceRegistry::Get().Register(this); }
 
@@ -41,6 +58,14 @@ void SoundService::Initialize() {
 void SoundService::Shutdown() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
 
+  RemoveSoundRefLoadConfigHook();
+  RemoveSystemUpdateHook();
+  {
+    std::lock_guard<std::mutex> lock(m_pendingRebindMutex);
+    m_pendingRebinds.clear();
+  }
+  m_gameThreadId.store(0);
+
   m_isInitialized = false;
   m_fmodFunctionsResolved = false;
   std::memset(&m_fmodFn, 0, sizeof(m_fmodFn));
@@ -53,9 +78,48 @@ void SoundService::Shutdown() {
   m_eventListTerminatorOffset = 0;
   m_eventPathOffset = 0;
   m_eventGuidOffset = 0;
+  m_soundEventListHeadOffset = 0;
+  m_soundEventStateOffset = 0;
+  m_soundEventBoundLockOffset = 0;
+  m_soundEventNodeOffset = 0;
+  m_soundEventPathOffset = 0;
+  m_soundEventSourceOffset = 0;
+  m_soundEventCreateLockAddr = 0;
+  m_soundEventActivateFn = 0;
+  m_soundRefLoadConfigFn = 0;
+  m_uiSoundRefTableAddr = 0;
+  m_voiceNavTableAddr = 0;
+  m_soundEventBoundState = 0;
+  m_uiSoundRefCount = 0;
+  m_uiSoundRefEntrySize = 0;
+  m_uiWrapperArrayBufferOffset = 0;
+  m_uiWrapperArrayCountOffset = 0;
+  m_uiWrapperEventOffset = 0;
+  m_voiceNavArrayBufferOffset = 0;
+  m_voiceNavArrayCountOffset = 0;
+  m_voiceNavMaxEntries = 0;
+  m_voiceNavEntrySize = 0;
+  m_voiceNavEntryStride = 0;
+  m_voiceNavEntryEventOffset = 0;
   m_eventCache.clear();
   m_pluginBanks.clear();
   m_guidToPath.clear();
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    m_soundRefOverrides.clear();
+    m_soundRefOriginals.clear();
+  }
+  m_soundRefRdataCatalog.clear();
+  m_soundRefVfsCatalog.clear();
+  m_soundRefRdataCatalogBuilt = false;
+  m_soundRefVfsCatalogBuilt = false;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+    m_soundRefSnapshot.clear();
+    m_soundRefSnapshotIndex.clear();
+    m_soundRefSnapshotValid.store(false, std::memory_order_relaxed);
+  }
+  m_soundRefSnapshotDirty.store(true, std::memory_order_relaxed);
 
   for (const auto& finder : m_dataFinders) {
     finder->Reset();
@@ -165,6 +229,7 @@ bool SoundService::ResolveFmodFunctions() {
   m_fmodFn.System_GetVCAList = fmodApi.Find("System::getVCAList");
   m_fmodFn.Bank_GetPath = fmodApi.Find("Bank::getPath");
   m_fmodFunctionsResolved = true;
+  if (m_fmodFn.System_Update) InstallSystemUpdateHook();
   return true;
 }
 
@@ -195,7 +260,9 @@ bool SoundService::TryFindAllOffsets() {
   }
 
   m_isInitialized = true;
+  InstallSoundRefLoadConfigHook();
   ResolveFmodFunctions();
+  InstallSystemUpdateHook();
   logger->Info("SoundService: All offsets found. Service is READY.");
   return true;
 }
@@ -312,16 +379,34 @@ std::vector<SoundBankGroup> SoundService::GetPluginBankGroups() {
       }
 
       bool bVal = false;
-      if (fnIs3DFn && fnIs3DFn(descs[i], &bVal) == FMOD_OK) { ev.is3D = bVal; ev.hasIs3D = true; }
-      if (fnIsOneshot && fnIsOneshot(descs[i], &bVal) == FMOD_OK) { ev.isOneshot = bVal; ev.hasIsOneshot = true; }
-      if (fnIsStream && fnIsStream(descs[i], &bVal) == FMOD_OK) { ev.isStream = bVal; ev.hasIsStream = true; }
-      if (fnIsSnapshot && fnIsSnapshot(descs[i], &bVal) == FMOD_OK) { ev.isSnapshot = bVal; ev.hasIsSnapshot = true; }
+      if (fnIs3DFn && fnIs3DFn(descs[i], &bVal) == FMOD_OK) {
+        ev.is3D = bVal;
+        ev.hasIs3D = true;
+      }
+      if (fnIsOneshot && fnIsOneshot(descs[i], &bVal) == FMOD_OK) {
+        ev.isOneshot = bVal;
+        ev.hasIsOneshot = true;
+      }
+      if (fnIsStream && fnIsStream(descs[i], &bVal) == FMOD_OK) {
+        ev.isStream = bVal;
+        ev.hasIsStream = true;
+      }
+      if (fnIsSnapshot && fnIsSnapshot(descs[i], &bVal) == FMOD_OK) {
+        ev.isSnapshot = bVal;
+        ev.hasIsSnapshot = true;
+      }
 
       uint32_t len = 0;
-      if (fnGetLength && fnGetLength(descs[i], &len) == FMOD_OK) { ev.durationMs = len; ev.hasDuration = true; }
+      if (fnGetLength && fnGetLength(descs[i], &len) == FMOD_OK) {
+        ev.durationMs = len;
+        ev.hasDuration = true;
+      }
 
       float minD = 0.0f, maxD = 0.0f;
-      if (fnGetMinMax && fnGetMinMax(descs[i], &minD, &maxD) == FMOD_OK) { ev.minDistance = minD; ev.maxDistance = maxD; }
+      if (fnGetMinMax && fnGetMinMax(descs[i], &minD, &maxD) == FMOD_OK) {
+        ev.minDistance = minD;
+        ev.maxDistance = maxD;
+      }
 
       group.events.push_back(std::move(ev));
     }
@@ -433,10 +518,14 @@ void SoundService::EnrichEventsWithFmodData(std::vector<SoundBankGroup>& groups)
               SoundUserProperty up;
               up.name = prop.name ? prop.name : "";
               up.type = prop.type;
-              if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_BOOLEAN) up.boolValue = prop.boolvalue != 0;
-              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_INTEGER) up.intValue = prop.intvalue;
-              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_FLOAT) up.floatValue = prop.floatvalue;
-              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_STRING) up.stringValue = prop.stringvalue ? prop.stringvalue : "";
+              if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_BOOLEAN)
+                up.boolValue = prop.boolvalue != 0;
+              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_INTEGER)
+                up.intValue = prop.intvalue;
+              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_FLOAT)
+                up.floatValue = prop.floatvalue;
+              else if (prop.type == FMOD_STUDIO_USER_PROPERTY_TYPE_STRING)
+                up.stringValue = prop.stringvalue ? prop.stringvalue : "";
               event.userProperties.push_back(std::move(up));
             }
           }
@@ -538,8 +627,7 @@ std::vector<SoundBusEntry> SoundService::GetBuses() {
             if (fnGetParent(buses[j], &parent) == FMOD_OK && parent) {
               char parentPath[256] = {};
               int parentRetrieved = 0;
-              if (fnGetPath(parent, parentPath, sizeof(parentPath), &parentRetrieved) == FMOD_OK && parentRetrieved > 0)
-                bus.parentPath = parentPath;
+              if (fnGetPath(parent, parentPath, sizeof(parentPath), &parentRetrieved) == FMOD_OK && parentRetrieved > 0) bus.parentPath = parentPath;
             }
           }
           if (fnGetVolume) {
@@ -993,7 +1081,9 @@ void* SoundService::LoadBankFile(const char* bankPath, const char* guidsPath) {
 
   if (m_fmodFn.System_Update) {
     auto fnUpdate = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*)>(m_fmodFn.System_Update);
+    tls_insidePluginUpdate = true;
     auto updateRc = fnUpdate(studioSys);
+    tls_insidePluginUpdate = false;
   }
   return bank;
 }
@@ -1015,7 +1105,9 @@ void* SoundService::LoadBankMemory(const void* data, uint32_t size, const char* 
 
   if (m_fmodFn.System_Update) {
     auto fnUpdate = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::System*)>(m_fmodFn.System_Update);
+    tls_insidePluginUpdate = true;
     fnUpdate(studioSys);
+    tls_insidePluginUpdate = false;
   }
   return bank;
 }
@@ -1148,22 +1240,20 @@ void SoundService::LoadGuidsFile(const char* guidsPath) {
     std::string uuidStr = line.substr(1, closingBrace - 1);
     if (uuidStr.size() != 36) continue;
 
-    auto parseHex = [](const std::string& s, int pos, int len) -> uint16_t {
-      return static_cast<uint16_t>(std::stoul(s.substr(pos, len), nullptr, 16));
-    };
+    auto parseHex = [](const std::string& s, int pos, int len) -> uint16_t { return static_cast<uint16_t>(std::stoul(s.substr(pos, len), nullptr, 16)); };
 
     std::array<uint8_t, 16> guid{};
     uint32_t d1 = std::stoul(uuidStr.substr(0, 8), nullptr, 16);
     uint16_t d2 = parseHex(uuidStr, 9, 4);
     uint16_t d3 = parseHex(uuidStr, 14, 4);
-    guid[0]  = static_cast<uint8_t>(d1 & 0xFF);
-    guid[1]  = static_cast<uint8_t>((d1 >> 8) & 0xFF);
-    guid[2]  = static_cast<uint8_t>((d1 >> 16) & 0xFF);
-    guid[3]  = static_cast<uint8_t>((d1 >> 24) & 0xFF);
-    guid[4]  = static_cast<uint8_t>(d2 & 0xFF);
-    guid[5]  = static_cast<uint8_t>((d2 >> 8) & 0xFF);
-    guid[6]  = static_cast<uint8_t>(d3 & 0xFF);
-    guid[7]  = static_cast<uint8_t>((d3 >> 8) & 0xFF);
+    guid[0] = static_cast<uint8_t>(d1 & 0xFF);
+    guid[1] = static_cast<uint8_t>((d1 >> 8) & 0xFF);
+    guid[2] = static_cast<uint8_t>((d1 >> 16) & 0xFF);
+    guid[3] = static_cast<uint8_t>((d1 >> 24) & 0xFF);
+    guid[4] = static_cast<uint8_t>(d2 & 0xFF);
+    guid[5] = static_cast<uint8_t>((d2 >> 8) & 0xFF);
+    guid[6] = static_cast<uint8_t>(d3 & 0xFF);
+    guid[7] = static_cast<uint8_t>((d3 >> 8) & 0xFF);
     static const int d4Pos[] = {19, 21, 24, 26, 28, 30, 32, 34};
     for (int i = 0; i < 8; ++i) {
       guid[8 + i] = static_cast<uint8_t>(std::stoul(uuidStr.substr(d4Pos[i], 2), nullptr, 16));
@@ -1208,8 +1298,7 @@ std::vector<SoundBankLoadInfo> SoundService::GetLoadedBanksInfo() {
     if (fnBankGetPath) {
       char path[256] = {};
       int retrieved = 0;
-      if (fnBankGetPath(banks[i], path, sizeof(path), &retrieved) == FMOD_OK)
-        info.bankPath = path;
+      if (fnBankGetPath(banks[i], path, sizeof(path), &retrieved) == FMOD_OK) info.bankPath = path;
     }
     if (fnBankGetLoadingState) {
       int state = 0;
@@ -1769,4 +1858,837 @@ bool SoundService::BuildVCACache() {
   }
   return true;
 }
+
+namespace {
+
+struct SrwLockGuard {
+  PSRWLOCK lock;
+  explicit SrwLockGuard(PSRWLOCK l) : lock(l) {
+    if (lock) AcquireSRWLockExclusive(lock);
+  }
+  ~SrwLockGuard() {
+    if (lock) ReleaseSRWLockExclusive(lock);
+  }
+  SrwLockGuard(const SrwLockGuard&) = delete;
+  SrwLockGuard& operator=(const SrwLockGuard&) = delete;
+};
+
+bool IsSoundEventValid(const void* event) { return event != nullptr && Utils::PatternFinder::IsValidAddress(reinterpret_cast<uintptr_t>(event)); }
+
+constexpr uint64_t kMaxArrayEntries = 64;
+constexpr size_t kMaxSoundEventWalk = 4096;
+// Hygienic upper bound for the SoundManager object size — not a binary-derived
+// offset. Only the list sentinel (+0x80) lives inside the manager; real events
+// are heap-allocated. Bounds: sentinel stays far below this even if the
+// manager grows in a future game patch.
+constexpr uintptr_t kSoundManagerSanityBound = 0x1000;
+
+}  // namespace
+
+void SoundService::ForEachSoundEvent(const std::function<void(void*)>& fn) {
+  if (!m_isInitialized || !fn) return;
+  if (m_soundEventListHeadOffset == 0 || m_soundEventNodeOffset == 0) return;
+
+  uintptr_t soundManager = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+  if (!Utils::PatternFinder::IsValidAddress(soundManager)) return;
+
+  SrwLockGuard createGuard(reinterpret_cast<PSRWLOCK>(m_soundEventCreateLockAddr));
+
+  std::unordered_set<void*> visited;
+  auto visit = [&](void* event) {
+    if (!IsSoundEventValid(event)) return;
+    if (!visited.insert(event).second) return;
+    fn(event);
+  };
+  // The list sentinel node lives inside the SoundManager object itself
+  // (Ghidra SoundEvent_CreateAndInsert: sentinel at SoundManager+0x80,
+  // head pointer at +0x88). Real sound_event_t objects are heap-allocated,
+  // never inside the manager — skip in-manager "events" instead of breaking.
+  auto inManager = [&](uintptr_t event) { return event >= soundManager && event < soundManager + kSoundManagerSanityBound; };
+
+  uintptr_t head = *reinterpret_cast<uintptr_t*>(soundManager + m_soundEventListHeadOffset);
+  if (Utils::PatternFinder::IsValidAddress(head)) {
+    // Link node lives at event+m_soundEventNodeOffset (event+8); head stores that address.
+    // node.next is at [node+0], node.prev at [node+8]. Walk both directions:
+    // forward may dead-end at the sentinel, backward covers the rest of the cycle.
+    auto walk = [&](uintptr_t start, bool forward) {
+      uintptr_t node = start;
+      size_t iterations = 0;
+      while (iterations++ < kMaxSoundEventWalk) {
+        uintptr_t event = node - m_soundEventNodeOffset;
+        if (!inManager(event)) visit(reinterpret_cast<void*>(event));
+        uintptr_t next = forward ? *reinterpret_cast<uintptr_t*>(node) : *reinterpret_cast<uintptr_t*>(node + 8);
+        if (next == 0 || next == start || !Utils::PatternFinder::IsValidAddress(next)) break;
+        node = next;
+      }
+    };
+    walk(head, true);
+    walk(head, false);
+  }
+
+  // UI sound_event wrappers (Ghidra FUN_140442180): array of wrapper*, each wrapper[1] = sound_event*.
+  if (m_uiWrapperArrayBufferOffset != 0 && m_uiWrapperArrayCountOffset != 0 && m_uiWrapperEventOffset != 0) {
+    uintptr_t uiBuffer = *reinterpret_cast<uintptr_t*>(soundManager + m_uiWrapperArrayBufferOffset);
+    uint64_t uiCount = *reinterpret_cast<uint64_t*>(soundManager + m_uiWrapperArrayCountOffset);
+    if (Utils::PatternFinder::IsValidAddress(uiBuffer) && uiCount > 0 && uiCount <= kMaxArrayEntries) {
+      for (uint64_t i = 0; i < uiCount; ++i) {
+        uintptr_t slot = uiBuffer + i * sizeof(uintptr_t);
+        if (!Utils::PatternFinder::IsValidAddress(slot)) break;
+        uintptr_t wrapper = *reinterpret_cast<uintptr_t*>(slot);
+        if (!Utils::PatternFinder::IsValidAddress(wrapper)) continue;
+        uintptr_t event = *reinterpret_cast<uintptr_t*>(wrapper + m_uiWrapperEventOffset);
+        visit(reinterpret_cast<void*>(event));
+      }
+    }
+  }
+
+  // Voice-nav runtime entries (Ghidra FUN_140442180): stride 0x28, embedded wrapper at +0x18,
+  // sound_event* at entry+0x20 (may be null until the prompt is first created).
+  if (m_voiceNavArrayBufferOffset != 0 && m_voiceNavArrayCountOffset != 0) {
+    uintptr_t vnBuffer = *reinterpret_cast<uintptr_t*>(soundManager + m_voiceNavArrayBufferOffset);
+    uint64_t vnCount = *reinterpret_cast<uint64_t*>(soundManager + m_voiceNavArrayCountOffset);
+    if (Utils::PatternFinder::IsValidAddress(vnBuffer) && vnCount > 0 && vnCount <= kMaxArrayEntries) {
+      for (uint64_t i = 0; i < vnCount; ++i) {
+        uintptr_t entry = vnBuffer + i * m_voiceNavEntryStride;
+        if (!Utils::PatternFinder::IsValidAddress(entry + m_voiceNavEntryEventOffset)) break;
+        uintptr_t event = *reinterpret_cast<uintptr_t*>(entry + m_voiceNavEntryEventOffset);
+        visit(reinterpret_cast<void*>(event));
+      }
+    }
+  }
+}
+
+std::string SoundService::GetSoundEventPath(void* event) {
+  if (!IsSoundEventValid(event) || m_soundEventPathOffset == 0) return {};
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  if (!prism.IsInstalled()) return {};
+  return Hooks::GameTools::PrismStringResolver::GetInstance().ReadString(reinterpret_cast<char*>(event) + m_soundEventPathOffset);
+}
+
+std::string SoundService::GetSoundEventSource(void* event) {
+  if (!IsSoundEventValid(event) || m_soundEventSourceOffset == 0) return {};
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  if (!prism.IsInstalled()) return {};
+  return Hooks::GameTools::PrismStringResolver::GetInstance().ReadString(reinterpret_cast<char*>(event) + m_soundEventSourceOffset);
+}
+
+bool SoundService::SetSoundEventPath(void* event, const std::string& newPath) {
+  if (!IsSoundEventValid(event) || m_soundEventPathOffset == 0) return false;
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  if (!prism.IsInstalled()) return false;
+
+  void* field = reinterpret_cast<char*>(event) + m_soundEventPathOffset;
+
+  // Ghidra SoundEvent_CreateAndInsert: state at [SoundManager+0x1c0], bound lock at
+  // [SoundManager+0x1d8] — both are SoundManager fields (RBP base), not sound_event_t fields.
+  PSRWLOCK perEventLock = nullptr;
+  if (m_soundEventStateOffset != 0 && m_soundEventBoundLockOffset != 0) {
+    uintptr_t soundManager = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+    if (Utils::PatternFinder::IsValidAddress(soundManager)) {
+      uint32_t state = *reinterpret_cast<uint32_t*>(soundManager + m_soundEventStateOffset);
+      if (state == m_soundEventBoundState) {
+        perEventLock = reinterpret_cast<PSRWLOCK>(soundManager + m_soundEventBoundLockOffset);
+      }
+    }
+  }
+
+  bool ok = false;
+  {
+    SrwLockGuard lockGuard(perEventLock);
+    ok = prism.Set(field, newPath.c_str());
+  }
+  // No manual activation here: activate() acquires SoundManager SRW locks and
+  // must only run on the game thread (AV from the UI thread). The game's own
+  // re-activation re-runs LoadConfig, whose detour re-applies overrides.
+  if (ok) InvalidateSoundRefSnapshot();
+  return ok;
+}
+
+bool SoundService::SetSoundEventSource(void* event, const std::string& newSource) {
+  if (!IsSoundEventValid(event) || m_soundEventSourceOffset == 0) return false;
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  if (!prism.IsInstalled()) return false;
+
+  void* field = reinterpret_cast<char*>(event) + m_soundEventSourceOffset;
+
+  // Ghidra SoundEvent_CreateAndInsert: state at [SoundManager+0x1c0], bound lock at
+  // [SoundManager+0x1d8] — both are SoundManager fields (RBP base), not sound_event_t fields.
+  PSRWLOCK perEventLock = nullptr;
+  if (m_soundEventStateOffset != 0 && m_soundEventBoundLockOffset != 0) {
+    uintptr_t soundManager = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+    if (Utils::PatternFinder::IsValidAddress(soundManager)) {
+      uint32_t state = *reinterpret_cast<uint32_t*>(soundManager + m_soundEventStateOffset);
+      if (state == m_soundEventBoundState) {
+        perEventLock = reinterpret_cast<PSRWLOCK>(soundManager + m_soundEventBoundLockOffset);
+      }
+    }
+  }
+
+  bool ok = false;
+  {
+    SrwLockGuard lockGuard(perEventLock);
+    ok = prism.Set(field, newSource.c_str());
+  }
+  // No manual activation here: activate() acquires SoundManager SRW locks and
+  // must only run on the game thread (AV from the UI thread). The game's own
+  // re-activation re-runs LoadConfig, whose detour re-applies overrides.
+  if (ok) InvalidateSoundRefSnapshot();
+  return ok;
+}
+
+std::vector<SoundRefEntry> SoundService::GetUiSoundRefEntries() {
+  std::vector<SoundRefEntry> entries;
+  if (!Utils::PatternFinder::IsValidAddress(m_uiSoundRefTableAddr)) return entries;
+
+  entries.reserve(m_uiSoundRefCount);
+  for (uint32_t i = 0; i < m_uiSoundRefCount; ++i) {
+    uintptr_t entryAddr = m_uiSoundRefTableAddr + i * m_uiSoundRefEntrySize;
+    if (!Utils::PatternFinder::IsValidAddress(entryAddr + m_uiSoundRefEntrySize)) break;
+
+    uintptr_t pathPtr = *reinterpret_cast<uintptr_t*>(entryAddr + 0x00);
+    SoundRefEntry entry;
+    entry.path = Utils::PatternFinder::ReadBoundedCString(pathPtr);
+    if (entry.path.empty()) continue;
+    entry.category = *reinterpret_cast<uint32_t*>(entryAddr + m_uiSoundRefCategoryOffset);
+    entry.enabled = *reinterpret_cast<uint8_t*>(entryAddr + m_uiSoundRefEnabledOffset) != 0;
+    entry.index = 0;  // UI table has no index field
+    entries.push_back(std::move(entry));
+  }
+  return entries;
+}
+
+std::vector<SoundRefEntry> SoundService::GetVoiceNavEntries() {
+  std::vector<SoundRefEntry> entries;
+  if (!Utils::PatternFinder::IsValidAddress(m_voiceNavTableAddr)) return entries;
+
+  entries.reserve(16);
+  for (uint32_t i = 0; i < m_voiceNavMaxEntries; ++i) {
+    uintptr_t entryAddr = m_voiceNavTableAddr + i * m_voiceNavEntrySize;
+    if (!Utils::PatternFinder::IsValidAddress(entryAddr + m_voiceNavEntrySize)) break;
+
+    // Ghidra: +0x00 category dword, +0x04 index dword, +0x08 enabled byte, +0x10 char* path
+    uintptr_t pathPtr = *reinterpret_cast<uintptr_t*>(entryAddr + m_voiceNavPathOffset);
+    SoundRefEntry entry;
+    entry.path = Utils::PatternFinder::ReadBoundedCString(pathPtr);
+    if (entry.path.empty()) continue;
+    entry.category = *reinterpret_cast<uint32_t*>(entryAddr + m_voiceNavCategoryOffset);
+    entry.enabled = *reinterpret_cast<uint8_t*>(entryAddr + m_voiceNavEnabledOffset) != 0;
+    entry.index = static_cast<uint8_t>(*reinterpret_cast<uint32_t*>(entryAddr + m_voiceNavIndexOffset) & 0xFF);
+    entries.push_back(std::move(entry));
+  }
+  return entries;
+}
+
+void SoundService::BuildSoundRefRdataCatalog() {
+  m_soundRefRdataCatalogBuilt = true;
+  m_soundRefRdataCatalog.clear();
+
+  Utils::PatternFinder::StringScanRules rules;
+  rules.suffix = ".soundref";
+  rules.requiredStart = "/";
+  rules.maxBackScan = 512;
+  rules.requireNullTerminated = true;
+
+  m_soundRefRdataCatalog = Utils::PatternFinder::FindAllStringsByRules(rules);
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef rdata catalog: {} paths", m_soundRefRdataCatalog.size());
+}
+
+void SoundService::BuildSoundRefVfsCatalog() {
+  m_soundRefVfsCatalog.clear();
+  m_soundRefVfsCatalogBuilt = true;
+
+  static constexpr char kExt[] = ".soundref";
+
+  auto& fsService = GameObjectFileSystemService::GetInstance();
+  if (!fsService.AreAllFindersReady()) {
+    m_soundRefVfsCatalogBuilt = false;
+    return;
+  }
+
+  namespace fs = std::filesystem;
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+
+  // Mount walk mirrors PathManager::ResolveUfsVirtualPath (src/System/PathManager.cpp):
+  //   array   = *GetDevicesArrayAddr()              -> uintptr_t[ *GetManagersCountAddr() ]
+  //   anchor  = manager + GetMountListHeadOffset()  -> sentinel
+  //   next    = *(uintptr_t*)node
+  //   vpath   = *(char**)(node + NodeVPathOffset + StringBufferOffset)
+  //   device  = *(node + NodeDeviceOffset); phys = *(char**)(device + PhysDevicePathOffset)
+  uintptr_t managersArrayPtr = *reinterpret_cast<uintptr_t*>(fsService.GetDevicesArrayAddr());
+  uint32_t managersCount = *reinterpret_cast<uint32_t*>(fsService.GetManagersCountAddr());
+  if (managersArrayPtr == 0 || managersCount == 0) return;
+  uintptr_t* pManagers = reinterpret_cast<uintptr_t*>(managersArrayPtr);
+
+  size_t mountCount = 0;
+  for (uint32_t m = 0; m < managersCount; ++m) {
+    uintptr_t ufsManager = pManagers[m];
+    if (IsBadReadPtr(reinterpret_cast<void*>(ufsManager), sizeof(uintptr_t))) continue;
+
+    uintptr_t anchorAddr = ufsManager + fsService.GetMountListHeadOffset();
+    if (IsBadReadPtr(reinterpret_cast<void*>(anchorAddr), sizeof(uintptr_t))) continue;
+    uintptr_t node = *reinterpret_cast<uintptr_t*>(anchorAddr);
+    if (node == 0 || node == anchorAddr) continue;
+
+    for (int i = 0; i < 512; ++i) {
+      if (node == anchorAddr || IsBadReadPtr(reinterpret_cast<void*>(node), sizeof(uintptr_t))) break;
+      ++mountCount;
+
+      const char* vpathStr = nullptr;
+      uintptr_t vpathSlot = node + fsService.GetNodeVPathOffset() + fsService.GetStringBufferOffset();
+      if (!IsBadReadPtr(reinterpret_cast<void*>(vpathSlot), sizeof(uintptr_t))) {
+        vpathStr = *reinterpret_cast<const char**>(vpathSlot);
+      }
+
+      const char* physStr = nullptr;
+      uintptr_t deviceAddr = 0;
+      uintptr_t deviceSlot = node + fsService.GetNodeDeviceOffset();
+      if (!IsBadReadPtr(reinterpret_cast<void*>(deviceSlot), sizeof(uintptr_t))) {
+        deviceAddr = *reinterpret_cast<uintptr_t*>(deviceSlot);
+      }
+      if (deviceAddr && !IsBadReadPtr(reinterpret_cast<void*>(deviceAddr), sizeof(uintptr_t))) {
+        uintptr_t physSlot = deviceAddr + fsService.GetPhysicalDevicePathOffset();
+        if (!IsBadReadPtr(reinterpret_cast<void*>(physSlot), sizeof(uintptr_t))) {
+          physStr = *reinterpret_cast<const char**>(physSlot);
+        }
+      }
+
+      if (physStr != nullptr && !IsBadReadPtr(const_cast<char*>(physStr), 1)) {
+        std::error_code ec;
+        fs::path phys(physStr);
+        if (fs::is_directory(phys, ec) && !ec) {
+          std::string vpath = (vpathStr != nullptr && !IsBadReadPtr(const_cast<char*>(vpathStr), 1)) ? vpathStr : "";
+          fs::recursive_directory_iterator it(phys, fs::directory_options::skip_permission_denied, ec);
+          size_t budget = 100000;
+          for (; it != fs::recursive_directory_iterator() && budget > 0; it.increment(ec)) {
+            if (ec) {
+              ec.clear();
+              continue;
+            }
+            --budget;
+            const auto& entry = *it;
+            if (!entry.is_regular_file(ec) || ec) {
+              ec.clear();
+              continue;
+            }
+            std::string ext = entry.path().extension().string();
+            if (ext.size() != 9) continue;
+            bool match = true;
+            for (size_t k = 0; k < 9; ++k) {
+              char a = ext[k];
+              if (a >= 'A' && a <= 'Z') a = static_cast<char>(a + 32);
+              if (a != kExt[k]) {
+                match = false;
+                break;
+              }
+            }
+            if (!match) continue;
+            std::string rel = fs::relative(entry.path(), phys, ec).generic_string();
+            if (ec || rel.empty()) {
+              ec.clear();
+              continue;
+            }
+            std::string gamePath = vpath;
+            if (gamePath.empty() || gamePath.back() != '/') gamePath += '/';
+            gamePath += rel;
+            m_soundRefVfsCatalog.push_back(std::move(gamePath));
+          }
+        }
+      }
+
+      node = *reinterpret_cast<uintptr_t*>(node);
+    }
+  }
+
+  std::sort(m_soundRefVfsCatalog.begin(), m_soundRefVfsCatalog.end());
+  m_soundRefVfsCatalog.erase(std::unique(m_soundRefVfsCatalog.begin(), m_soundRefVfsCatalog.end()), m_soundRefVfsCatalog.end());
+  logger->Info("SoundRef VFS catalog: {} paths ({} mount nodes scanned)", m_soundRefVfsCatalog.size(), mountCount);
+}
+
+std::vector<SoundRefEntry> SoundService::BuildSoundRefSnapshot() {
+  std::vector<SoundRefEntry> out;
+  if (!m_isInitialized) return out;
+
+  std::unordered_map<std::string, size_t> indexByPath;
+  auto upsert = [&](SoundRefEntry&& entry, uint8_t origin) {
+    if (entry.path.empty()) return;
+    auto [it, inserted] = indexByPath.emplace(entry.path, out.size());
+    if (inserted) {
+      out.push_back(std::move(entry));
+      out.back().origin |= origin;
+      return;
+    }
+    SoundRefEntry& dst = out[it->second];
+    dst.origin |= origin;
+    if (dst.category == 0 && entry.category != 0) dst.category = entry.category;
+    if (!dst.enabled && entry.enabled) dst.enabled = entry.enabled;
+    if (dst.index == 0 && entry.index != 0) dst.index = entry.index;
+    if (entry.hasEvent) {
+      dst.hasEvent = true;
+      if (!entry.source.empty()) dst.source = std::move(entry.source);
+    }
+  };
+
+  for (SoundRefEntry& entry : GetUiSoundRefEntries()) upsert(std::move(entry), SOUNDREF_ORIGIN_UI);
+  for (SoundRefEntry& entry : GetVoiceNavEntries()) upsert(std::move(entry), SOUNDREF_ORIGIN_VN);
+
+  ForEachSoundEvent([&](void* event) {
+    SoundRefEntry entry;
+    entry.path = GetSoundEventPath(event);
+    if (entry.path.empty()) return;
+    entry.hasEvent = true;
+    entry.source = GetSoundEventSource(event);
+    upsert(std::move(entry), SOUNDREF_ORIGIN_LIVE);
+  });
+
+  if (!m_soundRefVfsCatalogBuilt) BuildSoundRefVfsCatalog();
+  for (const std::string& path : m_soundRefVfsCatalog) {
+    SoundRefEntry entry;
+    entry.path = path;
+    upsert(std::move(entry), SOUNDREF_ORIGIN_VFS);
+  }
+
+  if (!m_soundRefRdataCatalogBuilt) BuildSoundRefRdataCatalog();
+  for (const std::string& path : m_soundRefRdataCatalog) {
+    SoundRefEntry entry;
+    entry.path = path;
+    upsert(std::move(entry), SOUNDREF_ORIGIN_RDATA);
+  }
+
+  return out;
+}
+
+std::vector<SoundRefEntry> SoundService::GetSoundRefEntries() {
+  // Full refresh semantics for the SoundWindow Refresh/Dump buttons.
+  InvalidateSoundRefSnapshot();
+  if (!EnsureSoundRefSnapshot()) return {};
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  return m_soundRefSnapshot;
+}
+
+bool SoundService::EnsureSoundRefSnapshot() {
+  if (!m_isInitialized) return false;
+  if (!m_soundRefSnapshotDirty.load(std::memory_order_acquire) && m_soundRefSnapshotValid.load(std::memory_order_acquire)) {
+    return true;
+  }
+
+  // Clear before walking the game state: any change from this point re-sets
+  // the dirty flag, so a concurrent invalidation is never lost (worst case:
+  // one redundant rebuild on the next read).
+  m_soundRefSnapshotDirty.store(false, std::memory_order_release);
+
+  std::vector<SoundRefEntry> fresh = BuildSoundRefSnapshot();
+  std::unordered_map<std::string, int> freshIndex;
+  freshIndex.reserve(fresh.size());
+  for (size_t i = 0; i < fresh.size(); ++i) freshIndex.emplace(fresh[i].path, static_cast<int>(i));
+
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  m_soundRefSnapshot = std::move(fresh);
+  m_soundRefSnapshotIndex = std::move(freshIndex);
+  m_soundRefSnapshotValid.store(true, std::memory_order_release);
+  return true;
+}
+
+int SoundService::GetSoundRefCount() {
+  if (!EnsureSoundRefSnapshot()) return 0;
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  return static_cast<int>(m_soundRefSnapshot.size());
+}
+
+bool SoundService::GetSoundRefEntryByIndex(int index, SoundRefEntry& out) {
+  if (!EnsureSoundRefSnapshot()) return false;
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  if (index < 0 || index >= static_cast<int>(m_soundRefSnapshot.size())) return false;
+  out = m_soundRefSnapshot[index];
+  return true;
+}
+
+int SoundService::FindSoundRefIndex(const char* soundrefPath) {
+  if (soundrefPath == nullptr || !EnsureSoundRefSnapshot()) return -1;
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  auto it = m_soundRefSnapshotIndex.find(soundrefPath);
+  if (it == m_soundRefSnapshotIndex.end()) return -1;
+  return it->second;
+}
+
+int SoundService::FindSoundRefIndexBySource(const char* source) {
+  if (source == nullptr || !EnsureSoundRefSnapshot()) return -1;
+  std::lock_guard<std::mutex> lock(m_soundRefSnapshotMutex);
+  for (int i = 0; i < static_cast<int>(m_soundRefSnapshot.size()); ++i) {
+    if (m_soundRefSnapshot[i].source == source) return i;
+  }
+  return -1;
+}
+
+void SoundService::InstallSoundRefLoadConfigHook() {
+  if (m_loadConfigHookInstalled) return;
+  if (m_soundRefLoadConfigFn == 0) return;
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  MH_STATUS initStatus = MH_Initialize();
+  if (initStatus != MH_OK && initStatus != MH_ERROR_ALREADY_INITIALIZED) {
+    logger->Warn("SoundRef_LoadConfig hook: MH_Initialize failed: {}", static_cast<int>(initStatus));
+    return;
+  }
+  MH_STATUS status = MH_CreateHook(reinterpret_cast<LPVOID>(m_soundRefLoadConfigFn), reinterpret_cast<LPVOID>(&SoundService::HookedSoundRefLoadConfig), reinterpret_cast<LPVOID*>(&m_loadConfigTrampoline));
+  if (status != MH_OK) {
+    logger->Error("MH_CreateHook(SoundRef_LoadConfig) failed: {}", static_cast<int>(status));
+    m_loadConfigTrampoline = nullptr;
+    return;
+  }
+  status = MH_EnableHook(reinterpret_cast<LPVOID>(m_soundRefLoadConfigFn));
+  if (status != MH_OK) {
+    logger->Error("MH_EnableHook(SoundRef_LoadConfig) failed: {}", static_cast<int>(status));
+    MH_RemoveHook(reinterpret_cast<LPVOID>(m_soundRefLoadConfigFn));
+    m_loadConfigTrampoline = nullptr;
+    return;
+  }
+  m_loadConfigHookInstalled = true;
+  logger->Info("SoundRef_LoadConfig detour installed (addr=0x{:X})", m_soundRefLoadConfigFn);
+}
+
+void SoundService::RemoveSoundRefLoadConfigHook() {
+  if (!m_loadConfigHookInstalled) return;
+  MH_DisableHook(reinterpret_cast<LPVOID>(m_soundRefLoadConfigFn));
+  MH_RemoveHook(reinterpret_cast<LPVOID>(m_soundRefLoadConfigFn));
+  m_loadConfigTrampoline = nullptr;
+  m_loadConfigHookInstalled = false;
+}
+
+void SoundService::QueueSoundRefRebinds(const std::vector<void*>& events) {
+  if (events.empty()) return;
+  {
+    std::lock_guard<std::mutex> lock(m_pendingRebindMutex);
+    for (void* event : events) {
+      if (std::find(m_pendingRebinds.begin(), m_pendingRebinds.end(), event) == m_pendingRebinds.end()) {
+        m_pendingRebinds.push_back(event);
+      }
+    }
+  }
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef rebind queued: {} event(s) pending", events.size());
+}
+
+void SoundService::ProcessPendingSoundRefRebinds() {
+  if (!m_isInitialized || m_soundEventActivateFn == 0 || m_soundEventPathOffset == 0) return;
+
+  std::vector<void*> pending;
+  {
+    std::lock_guard<std::mutex> lock(m_pendingRebindMutex);
+    if (m_pendingRebinds.empty()) return;
+  }
+
+  const uint32_t gameTid = m_gameThreadId.load();
+  if (gameTid == 0) {
+    static bool s_warnedNoTid = false;
+    if (!s_warnedNoTid) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+      logger->Warn("SoundRef rebind pending, but game-thread marker not captured yet - waiting");
+      s_warnedNoTid = true;
+    }
+    return;
+  }
+  if (gameTid != ::GetCurrentThreadId()) {
+    static bool s_warnedWrongTid = false;
+    if (!s_warnedWrongTid) {
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+      logger->Warn("SoundRef rebind deferred: update ran on tid={} (game tid={})", ::GetCurrentThreadId(), gameTid);
+      s_warnedWrongTid = true;
+    }
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(m_pendingRebindMutex);
+    pending.swap(m_pendingRebinds);
+  }
+  if (pending.empty()) return;
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  auto activate = reinterpret_cast<bool (*)(void*, void*)>(m_soundEventActivateFn);
+  uintptr_t soundManager = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+  if (!soundManager) {
+    logger->Warn("SoundRef rebind: SoundManager unavailable, {} event(s) dropped", pending.size());
+    return;
+  }
+
+  for (void* event : pending) {
+    if (!IsSoundEventValid(event)) {
+      logger->Info("SoundRef rebind: skip event={}, invalid", event);
+      continue;
+    }
+    std::string path = GetSoundEventPath(event);
+    std::string source = GetSoundEventSource(event);
+    bool ok = activate(event, reinterpret_cast<void*>(soundManager));
+    logger->Info("SoundRef rebind '{}' source='{}': activate={}", path, source, ok);
+  }
+}
+
+void SoundService::InstallSystemUpdateHook() {
+  if (m_systemUpdateHookInstalled) return;
+  uintptr_t updateFn = reinterpret_cast<uintptr_t>(m_fmodFn.System_Update);
+  if (updateFn == 0) {
+    updateFn = reinterpret_cast<uintptr_t>(Fmod::FmodApi::GetInstance().Find("System::update"));
+  }
+  if (updateFn == 0) return;
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  MH_STATUS initStatus = MH_Initialize();
+  if (initStatus != MH_OK && initStatus != MH_ERROR_ALREADY_INITIALIZED) {
+    logger->Warn("System::update hook: MH_Initialize failed: {}", static_cast<int>(initStatus));
+    return;
+  }
+  MH_STATUS status = MH_CreateHook(reinterpret_cast<LPVOID>(updateFn), reinterpret_cast<LPVOID>(&SoundService::HookedSystemUpdate), reinterpret_cast<LPVOID*>(&m_systemUpdateTrampoline));
+  if (status != MH_OK) {
+    logger->Error("MH_CreateHook(System::update) failed: {}", static_cast<int>(status));
+    m_systemUpdateTrampoline = nullptr;
+    return;
+  }
+  status = MH_EnableHook(reinterpret_cast<LPVOID>(updateFn));
+  if (status != MH_OK) {
+    logger->Error("MH_EnableHook(System::update) failed: {}", static_cast<int>(status));
+    MH_RemoveHook(reinterpret_cast<LPVOID>(updateFn));
+    m_systemUpdateTrampoline = nullptr;
+    return;
+  }
+  m_systemUpdateFnAddr = updateFn;
+  m_systemUpdateHookInstalled = true;
+  logger->Info("FMOD System::update detour installed (addr=0x{:X}) - SoundRef rebind tick active", updateFn);
+}
+
+void SoundService::RemoveSystemUpdateHook() {
+  if (!m_systemUpdateHookInstalled) return;
+  MH_DisableHook(reinterpret_cast<LPVOID>(m_systemUpdateFnAddr));
+  MH_RemoveHook(reinterpret_cast<LPVOID>(m_systemUpdateFnAddr));
+  m_systemUpdateTrampoline = nullptr;
+  m_systemUpdateFnAddr = 0;
+  m_systemUpdateHookInstalled = false;
+}
+
+void SoundService::HookedSystemUpdate(void* system) {
+  SoundService& self = GetInstance();
+  if (self.m_systemUpdateTrampoline != nullptr) {
+    reinterpret_cast<void (*)(void*)>(self.m_systemUpdateTrampoline)(system);
+  }
+  if (tls_insidePluginUpdate) return;
+  self.m_gameThreadId.store(::GetCurrentThreadId());
+  self.ProcessPendingSoundRefRebinds();
+}
+
+void SoundService::HookedSoundRefLoadConfig(void* event) {
+  SoundService& self = GetInstance();
+  if (self.m_loadConfigTrampoline != nullptr) {
+    reinterpret_cast<void (*)(void*)>(self.m_loadConfigTrampoline)(event);
+  }
+  self.m_gameThreadId.store(::GetCurrentThreadId());
+  // The original LoadConfig always rewrites event+source from the .soundref
+  // file — invalidate regardless of whether an override is registered below.
+  self.InvalidateSoundRefSnapshot();
+
+  if (!self.m_isInitialized || event == nullptr) return;
+  if (self.m_soundEventSourceOffset == 0) return;
+  if (!Hooks::GameTools::PrismStringResolver::GetInstance().IsInstalled()) return;
+
+  std::string path = self.GetSoundEventPath(event);
+  if (path.empty()) return;
+
+  std::string overrideSource;
+  std::string originalSource;
+  bool originalUnknown = false;
+  {
+    std::lock_guard<std::mutex> lock(self.m_soundRefMutex);
+    auto it = self.m_soundRefOverrides.find(path);
+    if (it == self.m_soundRefOverrides.end()) return;
+    overrideSource = it->second;
+    auto histIt = self.m_soundRefOriginals.find(path);
+    if (histIt == self.m_soundRefOriginals.end()) {
+      originalSource = self.GetSoundEventSource(event);
+      if (originalSource.empty() || originalSource == overrideSource) {
+        originalSource.clear();
+        originalUnknown = true;
+      } else {
+        self.m_soundRefOriginals.emplace(path, originalSource);
+      }
+    } else {
+      originalSource = histIt->second;
+    }
+  }
+  if (overrideSource.empty()) return;
+
+  void* field = reinterpret_cast<char*>(event) + self.m_soundEventSourceOffset;
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  uint32_t rawLen = prism.GetLength(field);
+  bool bufOk = prism.IsBufferReadable(field);
+  bool ok = prism.Set(field, overrideSource.c_str());
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef LoadConfig hook '{}' preRawLen={} preBufOk={} orig='{}' -> '{}' set={}", path, rawLen, bufOk, originalSource, overrideSource, ok);
+  if (originalUnknown) logger->Warn("SoundRef LoadConfig hook '{}': original source not recorded (current equals override)", path);
+}
+
+std::vector<void*> SoundService::FindSoundEventsByPath(const std::string& soundrefPath) {
+  std::vector<void*> matches;
+  if (!m_isInitialized || m_soundEventPathOffset == 0) return matches;
+  ForEachSoundEvent([&](void* event) {
+    if (GetSoundEventPath(event) == soundrefPath) matches.push_back(event);
+  });
+  return matches;
+}
+
+std::vector<void*> SoundService::ApplyOverrideToEvents(const std::string& soundrefPath, const std::string& source) {
+  std::vector<void*> matches;
+  if (!m_isInitialized) return matches;
+  if (m_soundEventPathOffset == 0 || m_soundEventSourceOffset == 0) return matches;
+  if (!Hooks::GameTools::PrismStringResolver::GetInstance().IsInstalled()) return matches;
+
+  matches = FindSoundEventsByPath(soundrefPath);
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  if (matches.empty()) {
+    logger->Info("SoundRef apply '{}': no live event, will apply on activation", soundrefPath);
+    return matches;
+  }
+
+  auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
+  for (void* event : matches) {
+    std::string original;
+    bool recordOriginal = false;
+    {
+      std::lock_guard<std::mutex> lock(m_soundRefMutex);
+      auto it = m_soundRefOriginals.find(soundrefPath);
+      if (it != m_soundRefOriginals.end()) {
+        original = it->second;
+      } else {
+        recordOriginal = true;
+      }
+    }
+    if (recordOriginal) {
+      original = GetSoundEventSource(event);
+      std::lock_guard<std::mutex> lock(m_soundRefMutex);
+      auto it = m_soundRefOriginals.find(soundrefPath);
+      if (it != m_soundRefOriginals.end()) {
+        original = it->second;
+      } else {
+        m_soundRefOriginals.emplace(soundrefPath, original);
+      }
+    }
+
+    void* field = reinterpret_cast<char*>(event) + m_soundEventSourceOffset;
+    const char* rawBuf = prism.GetBuffer(field);
+    uint32_t rawLen = prism.GetLength(field);
+    bool bufOk = rawBuf != nullptr && Utils::PatternFinder::IsValidAddress(reinterpret_cast<uintptr_t>(rawBuf));
+    bool ok = SetSoundEventSource(event, source);
+
+    logger->Info("SoundRef apply '{}' event={}: rawLen={} bufOk={} orig='{}' -> '{}' set={}", soundrefPath, event, rawLen, bufOk, original, source, ok);
+  }
+  return matches;
+}
+
+bool SoundService::RegisterSoundRefOverride(const std::string& soundrefPath, const std::string& source) {
+  if (soundrefPath.empty() || source.empty()) return false;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    m_soundRefOverrides.insert_or_assign(soundrefPath, source);
+  }
+
+  std::vector<void*> matches = ApplyOverrideToEvents(soundrefPath, source);
+  QueueSoundRefRebinds(matches);
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef override registered path='{}' source='{}': {} live event(s)", soundrefPath, source, matches.size());
+  return true;
+}
+
+bool SoundService::UnregisterSoundRefOverride(const std::string& soundrefPath) {
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    if (m_soundRefOverrides.erase(soundrefPath) == 0) return false;
+  }
+
+  std::string original;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    auto it = m_soundRefOriginals.find(soundrefPath);
+    if (it != m_soundRefOriginals.end()) {
+      original = it->second;
+      m_soundRefOriginals.erase(it);
+    }
+  }
+
+  size_t restored = 0;
+  std::vector<void*> rebinds;
+  if (!original.empty()) {
+    for (void* event : FindSoundEventsByPath(soundrefPath)) {
+      if (!IsSoundEventValid(event)) continue;
+      if (GetSoundEventSource(event) != original) SetSoundEventSource(event, original);
+      ++restored;
+      rebinds.push_back(event);
+    }
+  }
+  QueueSoundRefRebinds(rebinds);
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef override unregistered path='{}': restored {} event(s)", soundrefPath, restored);
+  if (original.empty()) logger->Warn("SoundRef unregister '{}': no recorded original source", soundrefPath);
+  return true;
+}
+
+std::unordered_map<std::string, std::string> SoundService::GetSoundRefOverrides() const {
+  std::lock_guard<std::mutex> lock(m_soundRefMutex);
+  return m_soundRefOverrides;
+}
+
+void SoundService::ApplySoundRefOverrides() {
+  if (!m_isInitialized) return;
+  if (m_soundEventPathOffset == 0 || m_soundEventSourceOffset == 0) return;
+  if (!Hooks::GameTools::PrismStringResolver::GetInstance().IsInstalled()) return;
+
+  std::unordered_map<std::string, std::string> overrides;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    if (m_soundRefOverrides.empty()) return;
+    overrides = m_soundRefOverrides;
+  }
+
+  std::vector<void*> all;
+  for (const auto& [soundrefPath, source] : overrides) {
+    std::vector<void*> matches = ApplyOverrideToEvents(soundrefPath, source);
+    all.insert(all.end(), matches.begin(), matches.end());
+  }
+  QueueSoundRefRebinds(all);
+}
+
+void SoundService::ClearSoundRefOverrides() {
+  std::unordered_map<std::string, std::string> originals;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    if (m_soundRefOriginals.empty() && m_soundRefOverrides.empty()) return;
+    originals = std::move(m_soundRefOriginals);
+    m_soundRefOriginals.clear();
+    m_soundRefOverrides.clear();
+  }
+
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  size_t restored = 0;
+  std::vector<void*> rebinds;
+  for (const auto& [soundrefPath, original] : originals) {
+    if (original.empty()) {
+      logger->Warn("SoundRef clear: no recorded original for '{}', skipped", soundrefPath);
+      continue;
+    }
+    for (void* event : FindSoundEventsByPath(soundrefPath)) {
+      if (!IsSoundEventValid(event)) continue;
+      if (GetSoundEventSource(event) != original) {
+        if (SetSoundEventSource(event, original)) ++restored;
+      } else {
+        ++restored;
+      }
+      rebinds.push_back(event);
+      logger->Info("SoundRef clear: restored path='{}' source='{}'", soundrefPath, original);
+    }
+  }
+  QueueSoundRefRebinds(rebinds);
+  logger->Info("SoundRef overrides cleared: {} event(s) restored across {} path(s)", restored, originals.size());
+}
+
 }  // namespace SPF::Data::GameData

@@ -2,20 +2,22 @@
 
 #include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Fmod/FmodStudioHook.hpp"
+#include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/UI/BaseWindow.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 
-#include "SPF/Fmod/FmodStudioHook.hpp"
-
 #include "imgui.h"
 
-#include <cfloat>
 #include <algorithm>
+#include <cfloat>
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace SPF::UI {
@@ -123,6 +125,17 @@ void SoundWindow::RefreshLocalization() {
   m_locPropInteger = loc.Get("sound_window.prop_integer");
   m_locPropFloat = loc.Get("sound_window.prop_float");
   m_locPropString = loc.Get("sound_window.prop_string");
+  m_locSoundRefTab = loc.Get("sound_window.soundref_tab");
+  m_locSoundRefUiTable = loc.Get("sound_window.soundref_ui_table");
+  m_locSoundRefLiveEvents = loc.Get("sound_window.soundref_live_events");
+  m_locSoundRefPath = loc.Get("sound_window.soundref_path");
+  m_locSoundRefSource = loc.Get("sound_window.soundref_source");
+  m_locSoundRefCategory = loc.Get("sound_window.soundref_category");
+  m_locSoundRefEnabled = loc.Get("sound_window.soundref_enabled");
+  m_locSoundRefRefresh = loc.Get("sound_window.soundref_refresh");
+  m_locSoundRefNoEntries = loc.Get("sound_window.soundref_no_entries");
+  m_locSoundRefOrigin = loc.Get("sound_window.soundref_origin");
+  m_locSoundRefEvent = loc.Get("sound_window.soundref_event");
 }
 
 void SoundWindow::RefreshSoundList() {
@@ -171,9 +184,7 @@ void SoundWindow::RefreshBusAndParamLists() {
 
   m_busSortOrder.resize(m_buses.size());
   for (size_t i = 0; i < m_buses.size(); ++i) m_busSortOrder[i] = (int)i;
-  std::sort(m_busSortOrder.begin(), m_busSortOrder.end(), [this](int a, int b) {
-    return m_buses[a].busPath < m_buses[b].busPath;
-  });
+  std::sort(m_busSortOrder.begin(), m_busSortOrder.end(), [this](int a, int b) { return m_buses[a].busPath < m_buses[b].busPath; });
 }
 
 void SoundWindow::RefreshVCAList() {
@@ -224,6 +235,9 @@ void SoundWindow::RenderContent() {
     m_selectedVCA = -1;
     m_paramComboItems.clear();
     m_vcaComboItems.clear();
+    m_soundRefEntries.clear();
+    m_liveSoundEvents.clear();
+    m_soundRefListsLoaded = false;
 
     Typography::Text(TextStyle::Regular().Color(Colors::RED), "%s", m_locNotReady.c_str());
     return;
@@ -290,6 +304,13 @@ void SoundWindow::RenderContent() {
     if (ImGui::BeginTabItem("Listener")) {
       m_activeTab = Tab::Listener;
       RenderTabListener();
+      ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem(m_locSoundRefTab.c_str())) {
+      const bool activated = (m_activeTab != Tab::SoundRef);
+      m_activeTab = Tab::SoundRef;
+      if (activated || !m_soundRefListsLoaded) RefreshSoundRefLists();
+      RenderTabSoundRef();
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -396,15 +417,22 @@ void SoundWindow::RenderEventDetail(const Data::GameData::SoundEvent& ev) {
         ImGui::Text("%s", up.name.c_str());
         ImGui::TableSetColumnIndex(1);
         const char* typeName = m_locPropString.c_str();
-        if (up.type == 0) typeName = m_locPropBoolean.c_str();
-        else if (up.type == 1) typeName = m_locPropInteger.c_str();
-        else if (up.type == 2) typeName = m_locPropFloat.c_str();
+        if (up.type == 0)
+          typeName = m_locPropBoolean.c_str();
+        else if (up.type == 1)
+          typeName = m_locPropInteger.c_str();
+        else if (up.type == 2)
+          typeName = m_locPropFloat.c_str();
         ImGui::Text("%s", typeName);
         ImGui::TableSetColumnIndex(2);
-        if (up.type == 0) ImGui::Text("%s", up.boolValue ? m_locYes.c_str() : m_locNo.c_str());
-        else if (up.type == 1) ImGui::Text("%d", up.intValue);
-        else if (up.type == 2) ImGui::Text("%.3f", up.floatValue);
-        else if (up.type == 3) ImGui::Text("%s", up.stringValue.c_str());
+        if (up.type == 0)
+          ImGui::Text("%s", up.boolValue ? m_locYes.c_str() : m_locNo.c_str());
+        else if (up.type == 1)
+          ImGui::Text("%d", up.intValue);
+        else if (up.type == 2)
+          ImGui::Text("%.3f", up.floatValue);
+        else if (up.type == 3)
+          ImGui::Text("%s", up.stringValue.c_str());
       }
       ImGui::EndTable();
     }
@@ -463,10 +491,18 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
       float fx = 0, fy = 0, fz = 0;
       float ux = 0, uy = 0, uz = 0;
       if (m_soundService.GetEvent3DAttributes(m_activeInstance, px, py, pz, vx, vy, vz, fx, fy, fz, ux, uy, uz)) {
-        m_cached3DPos[0] = px; m_cached3DPos[1] = py; m_cached3DPos[2] = pz;
-        m_cached3DVel[0] = vx; m_cached3DVel[1] = vy; m_cached3DVel[2] = vz;
-        m_cached3DFwd[0] = fx; m_cached3DFwd[1] = fy; m_cached3DFwd[2] = fz;
-        m_cached3DUp[0] = ux; m_cached3DUp[1] = uy; m_cached3DUp[2] = uz;
+        m_cached3DPos[0] = px;
+        m_cached3DPos[1] = py;
+        m_cached3DPos[2] = pz;
+        m_cached3DVel[0] = vx;
+        m_cached3DVel[1] = vy;
+        m_cached3DVel[2] = vz;
+        m_cached3DFwd[0] = fx;
+        m_cached3DFwd[1] = fy;
+        m_cached3DFwd[2] = fz;
+        m_cached3DUp[0] = ux;
+        m_cached3DUp[1] = uy;
+        m_cached3DUp[2] = uz;
         m_has3DCache = true;
       }
     }
@@ -530,11 +566,8 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
             ImGui::PopStyleColor(3);
           } else {
             if (ImGui::Button("Apply 3D")) {
-              m_soundService.SetEvent3DAttributes(m_activeInstance,
-                m_cached3DPos[0], m_cached3DPos[1], m_cached3DPos[2],
-                m_cached3DVel[0], m_cached3DVel[1], m_cached3DVel[2],
-                m_cached3DFwd[0], m_cached3DFwd[1], m_cached3DFwd[2],
-                m_cached3DUp[0], m_cached3DUp[1], m_cached3DUp[2]);
+              m_soundService.SetEvent3DAttributes(
+                m_activeInstance, m_cached3DPos[0], m_cached3DPos[1], m_cached3DPos[2], m_cached3DVel[0], m_cached3DVel[1], m_cached3DVel[2], m_cached3DFwd[0], m_cached3DFwd[1], m_cached3DFwd[2], m_cached3DUp[0], m_cached3DUp[1], m_cached3DUp[2]);
             }
           }
         } else {
@@ -617,7 +650,7 @@ void SoundWindow::RenderTabEvents() {
   int bankIdx = m_selectedBank + 1;
   if (ImGui::Combo(m_locBankComboLabel.c_str(), &bankIdx, m_bankComboItems.data(), (int)m_bankComboItems.size())) {
     m_selectedBank = bankIdx - 1;
-      if (m_activeInstance) {
+    if (m_activeInstance) {
       m_soundService.StopEvent(m_activeInstance, true);
       if (m_ownsInstance) m_soundService.ReleaseEventInstance(m_activeInstance);
       m_activeInstance = nullptr;
@@ -933,7 +966,9 @@ void SoundWindow::RenderTabBuses() {
 
       ImGui::TableSetColumnIndex(0);
       int depth = 0;
-      for (char c : bus.busPath) { if (c == '/') depth++; }
+      for (char c : bus.busPath) {
+        if (c == '/') depth++;
+      }
       if (depth > 0) ImGui::Indent(depth * 16.0f);
       ImGui::Text("%s", bus.busPath.c_str());
       if (depth > 0) ImGui::Unindent(depth * 16.0f);
@@ -1073,10 +1108,18 @@ void SoundWindow::RenderTabListener() {
           float fx = 0, fy = 0, fz = 0;
           float ux = 0, uy = 0, uz = 0;
           if (m_soundService.GetListenerAttributes(i, px, py, pz, vx, vy, vz, fx, fy, fz, ux, uy, uz)) {
-            m_cachedListenerPos[0] = px; m_cachedListenerPos[1] = py; m_cachedListenerPos[2] = pz;
-            m_cachedListenerVel[0] = vx; m_cachedListenerVel[1] = vy; m_cachedListenerVel[2] = vz;
-            m_cachedListenerFwd[0] = fx; m_cachedListenerFwd[1] = fy; m_cachedListenerFwd[2] = fz;
-            m_cachedListenerUp[0] = ux; m_cachedListenerUp[1] = uy; m_cachedListenerUp[2] = uz;
+            m_cachedListenerPos[0] = px;
+            m_cachedListenerPos[1] = py;
+            m_cachedListenerPos[2] = pz;
+            m_cachedListenerVel[0] = vx;
+            m_cachedListenerVel[1] = vy;
+            m_cachedListenerVel[2] = vz;
+            m_cachedListenerFwd[0] = fx;
+            m_cachedListenerFwd[1] = fy;
+            m_cachedListenerFwd[2] = fz;
+            m_cachedListenerUp[0] = ux;
+            m_cachedListenerUp[1] = uy;
+            m_cachedListenerUp[2] = uz;
           }
           m_hasListenerCache = true;
         } else if (!manual && m_hasListenerCache) {
@@ -1142,6 +1185,122 @@ void SoundWindow::RenderTabListener() {
         ImGui::Text("%s: %.2f, %.2f, %.2f", m_locUp.c_str(), ux, uy, uz);
       }
       ImGui::TreePop();
+    }
+  }
+}
+
+void SoundWindow::RefreshSoundRefLists() {
+  m_soundRefEntries = m_soundService.GetSoundRefEntries();
+  m_liveSoundEvents.clear();
+  m_soundService.ForEachSoundEvent([&](void* event) {
+    std::string path = m_soundService.GetSoundEventPath(event);
+    std::string source = m_soundService.GetSoundEventSource(event);
+    if (path.empty() && source.empty()) return;
+    m_liveSoundEvents.emplace_back(std::move(path), std::move(source));
+  });
+  m_soundRefListsLoaded = true;
+}
+
+void SoundWindow::RenderTabSoundRef() {
+  ImGui::Spacing();
+  Typography::Text(TextStyle::H3().Color(Colors::CYAN), "%s", m_locSoundRefTab.c_str());
+  ImGui::Spacing();
+
+  if (ImGui::Button(m_locSoundRefRefresh.c_str())) {
+    RefreshSoundRefLists();
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Dump to log")) {
+    RefreshSoundRefLists();
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundWindow");
+    logger->Info("===== SoundRef Tab Dump START =====");
+    logger->Info("SoundRef entries (catalog+tables+live): {}", m_soundRefEntries.size());
+    for (size_t i = 0; i < m_soundRefEntries.size(); ++i) {
+      const auto& e = m_soundRefEntries[i];
+      logger->Info("  SR[{}] path='{}' cat={} enabled={} idx={} event={} source='{}'", i, e.path, e.category,
+                   e.enabled, e.index, e.hasEvent, e.source);
+    }
+    logger->Info("Live sound events: {}", m_liveSoundEvents.size());
+    for (size_t i = 0; i < m_liveSoundEvents.size(); ++i) {
+      logger->Info("  LIVE[{}] path='{}' source='{}'", i, m_liveSoundEvents[i].first, m_liveSoundEvents[i].second);
+    }
+    const auto& overrides = m_soundService.GetSoundRefOverrides();
+    logger->Info("Overrides: {}", overrides.size());
+    for (const auto& [k, v] : overrides) {
+      logger->Info("  OVR path='{}' source='{}'", k, v);
+    }
+    logger->Info("===== SoundRef Tab Dump END =====");
+  }
+  ImGui::Spacing();
+
+  if (ImGui::CollapsingHeader(m_locSoundRefUiTable.c_str(), ImGuiTreeNodeFlags_CollapsingHeader)) {
+    if (m_soundRefEntries.empty()) {
+      Typography::Text(TextStyle::Regular().Color(Colors::LIGHT_GRAY), "%s", m_locSoundRefNoEntries.c_str());
+    } else if (ImGui::BeginTable("##ui_soundref", 6, ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY)) {
+      ImGui::TableSetupScrollFreeze(0, 1);
+      ImGui::TableSetupColumn(m_locSoundRefPath.c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn(m_locSoundRefOrigin.c_str(), ImGuiTableColumnFlags_WidthFixed, 90.0f);
+      ImGui::TableSetupColumn(m_locSoundRefCategory.c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);
+      ImGui::TableSetupColumn(m_locSoundRefEnabled.c_str(), ImGuiTableColumnFlags_WidthFixed, 70.0f);
+      ImGui::TableSetupColumn(m_locSoundRefSource.c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn(m_locSoundRefEvent.c_str(), ImGuiTableColumnFlags_WidthFixed, 55.0f);
+      ImGui::TableHeadersRow();
+
+      for (const auto& entry : m_soundRefEntries) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(entry.path.c_str());
+        ImGui::TableSetColumnIndex(1);
+        {
+          std::string origins;
+          auto addOrigin = [&origins](const char* tag) {
+            if (!origins.empty()) origins += '+';
+            origins += tag;
+          };
+          using namespace Data::GameData;
+          if (entry.origin & SOUNDREF_ORIGIN_UI) addOrigin("UI");
+          if (entry.origin & SOUNDREF_ORIGIN_RDATA) addOrigin("rdata");
+          if (entry.origin & SOUNDREF_ORIGIN_VFS) addOrigin("VFS");
+          if (entry.origin & SOUNDREF_ORIGIN_LIVE) addOrigin("live");
+          ImGui::TextUnformatted(origins.empty() ? "-" : origins.c_str());
+        }
+        const bool hasTable =
+            (entry.origin & (Data::GameData::SOUNDREF_ORIGIN_UI | Data::GameData::SOUNDREF_ORIGIN_VN)) != 0;
+        ImGui::TableSetColumnIndex(2);
+        if (hasTable)
+          ImGui::Text("%u", entry.category);
+        else
+          ImGui::TextUnformatted("-");
+        ImGui::TableSetColumnIndex(3);
+        if (hasTable)
+          ImGui::TextUnformatted(entry.enabled ? m_locYes.c_str() : m_locNo.c_str());
+        else
+          ImGui::TextUnformatted("-");
+        ImGui::TableSetColumnIndex(4);
+        ImGui::TextUnformatted(entry.source.c_str());
+        ImGui::TableSetColumnIndex(5);
+        ImGui::TextUnformatted(entry.hasEvent ? m_locYes.c_str() : m_locNo.c_str());
+      }
+      ImGui::EndTable();
+    }
+  }
+
+  if (ImGui::CollapsingHeader(m_locSoundRefLiveEvents.c_str())) {
+    if (m_liveSoundEvents.empty()) {
+      Typography::Text(TextStyle::Regular().Color(Colors::LIGHT_GRAY), "%s", m_locSoundRefNoEntries.c_str());
+    } else if (ImGui::BeginTable("##live_soundevents", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY)) {
+      ImGui::TableSetupScrollFreeze(0, 1);
+      ImGui::TableSetupColumn(m_locSoundRefPath.c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableSetupColumn(m_locSoundRefSource.c_str(), ImGuiTableColumnFlags_WidthStretch);
+      ImGui::TableHeadersRow();
+      for (const auto& item : m_liveSoundEvents) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(item.first.c_str());
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(item.second.c_str());
+      }
+      ImGui::EndTable();
     }
   }
 }

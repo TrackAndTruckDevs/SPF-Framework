@@ -1383,7 +1383,18 @@
         "reset_to_game": "Reset",
         "manual_override": "Manual override",
         "apply_listener": "Apply listener",
-        "create_new_instance": "Create and play new instance"
+        "create_new_instance": "Create and play new instance",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef catalog",
+        "soundref_live_events": "Live sound events",
+        "soundref_path": "Path",
+        "soundref_source": "Source",
+        "soundref_category": "Category",
+        "soundref_enabled": "Enabled",
+        "soundref_refresh": "Refresh SoundRef",
+        "soundref_no_entries": "No SoundRef entries found.",
+        "soundref_origin": "Origin",
+        "soundref_event": "Event"
     },
     "info_window": {
         "title": "Environment Information",

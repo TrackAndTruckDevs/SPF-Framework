@@ -49,14 +49,9 @@ int CopyRecordString(uintptr_t record, intptr_t attrOffset, intptr_t bufOffset, 
   uintptr_t bufPtr = *(uintptr_t*)(strObj + bufOffset);
   if (!Utils::PatternFinder::IsValidAddress(bufPtr)) return -1;
 
-  int len = 0;
-  while (len < bufferSize - 1) {
-    uintptr_t chAddr = bufPtr + len;
-    if (!Utils::PatternFinder::IsValidAddress(chAddr)) break;
-    char c = *(char*)chAddr;
-    if (c == '\0') break;
-    outBuffer[len++] = c;
-  }
+  std::string value = Utils::PatternFinder::ReadBoundedCString(bufPtr, static_cast<size_t>(bufferSize) - 1);
+  int len = static_cast<int>(value.size());
+  for (int i = 0; i < len; ++i) outBuffer[i] = value[i];
   outBuffer[len] = '\0';
   return len;
 }
@@ -508,21 +503,12 @@ bool GameWorldService::RefreshCityCache() {
     uintptr_t nameBuf = *(uintptr_t*)(nameObj + GetCityStringBufOffset());
     if (!Utils::PatternFinder::IsValidAddress(nameBuf)) continue;
 
-    char nameBuffer[128];
-    size_t nameLen = 0;
-    while (nameLen < sizeof(nameBuffer) - 1) {
-      uintptr_t chAddr = nameBuf + nameLen;
-      if (!Utils::PatternFinder::IsValidAddress(chAddr)) break;
-      char c = *(char*)chAddr;
-      if (c == '\0') break;
-      nameBuffer[nameLen++] = c;
-    }
-    nameBuffer[nameLen] = '\0';
-    if (nameLen == 0) continue;
+    std::string cityName = Utils::PatternFinder::ReadBoundedCString(nameBuf, 128);
+    if (cityName.empty()) continue;
 
     // Coordinates: GetPoint(item, 0) via vtable slot 0x70 -> int32[3] {X, Y, Z} in 1/256.
     CityEntry entry;
-    entry.name = nameBuffer;
+    entry.name = std::move(cityName);
     entry.item = item;
     entry.record = record;
     entry.uid = ReadRecordU32(record, m_cityUidOffset);

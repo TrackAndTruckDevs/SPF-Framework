@@ -2,6 +2,11 @@
 
 The SPF Sound API provides complete access to the game's FMOD Studio sound system. Plugins can enumerate sound banks, events, buses, and VCAs; control playback; adjust bus and global parameters; manage listeners; and override FMOD parameters at the hook level.
 
+The API has two layers:
+
+- **FMOD layer** — direct access to FMOD Studio (banks, events, buses, parameters, instances). Use it when you manage sound yourself: load your own bank, create and play its events.
+- **Game layer (SoundRef)** — operates through the game engine's `.soundref` binding system. Use it when you want to *replace* a sound while the game keeps managing playback: the game continues to trigger the event (horn, UI click, music), but it plays from your bank instead.
+
 ## Getting the API
 
 Request the Sound API from the framework during your plugin's initialization.
@@ -31,7 +36,7 @@ void OnActivated(const SPF_Core_API* core_api) {
 
 1. **World-Scoped Lifecycle**: The sound system initializes when the game world loads and shuts down when the world unloads. Always check `SND_IsReady()` before using any other function.
 2. **Opaque Handles**: Event instances and banks are represented as `void*` pointers. Do not cast or store them beyond their lifetime — release instances with `SND_ReleaseEvent()` and banks with `SND_UnloadBank()`.
-3. **Index-Based Enumeration**: Buses, VCAs, global parameters, and events are accessed by zero-based index. Use `SND_GetBusCount()`, `SND_GetEventCount()`, etc. to determine the range.
+3. **Index-Based Enumeration**: Buses, VCAs, global parameters, events, and SoundRef entries are accessed by zero-based index. Use `SND_GetBusCount()`, `SND_GetEventCount()`, `SND_GetSoundRefCount()`, etc. to determine the range.
 4. **String Copy Pattern**: Functions that return strings take an output buffer and size, returning the full string length (excluding null terminator). If the buffer is too small, the string is truncated but the full length is still returned.
 
 ## Usage Example
@@ -229,6 +234,7 @@ if (bank) {
 | Function | Return Type | Description |
 |---|---|---|
 | **`SND_LoadBankFile(path, guids_path)`** | `void*` | Loads a bank file from disk. Pass a `.bank.guids` dictionary path to enable path-based event lookup for plugin-loaded banks. Pass NULL for auto-discovery (looks for `{path}.guids` in same directory). Returns opaque bank pointer. |
+| **`SND_LoadBankMemory(data, size, guids_path)`** | `void*` | Loads a bank from a memory buffer (no file on disk). Pass a `.bank.guids` dictionary path or NULL for auto-discovery (`{guids_path}`). Returns opaque bank pointer. |
 | **`SND_GetBankLoadingState(bank)`** | `int` | Returns loading state: `0` = Unloaded, `1` = Loading, `2` = Loaded, `3` = Error, `-1` = invalid. |
 | **`SND_GetBankEventCount(bank)`** | `int` | Returns the number of events defined in a bank. |
 | **`SND_GetBankEventGuid(bank, index, out_guid)`** | `int` | Retrieves the 16-byte GUID of an event in a bank. Returns 1 on success, 0 on failure. |
@@ -267,3 +273,44 @@ Query event parameter definitions, user properties, and sample state.
 | **`SND_GetEventUserPropertyByIndex(event_index, prop_index, out_name, name_size, out_type)`** | `bool` | Returns user property info by index: name and type (0=bool, 1=int, 2=float, 3=string). |
 | **`SND_GetEventSoundSize(event_index)`** | `uint32_t` | Returns the compressed sound size of an event in bytes. |
 | **`SND_GetEventSampleLoadingState(event_index)`** | `int` | Returns sample loading state: `0` = Not loaded, `1` = Loading, `2` = Loaded, `-1` = invalid. |
+
+---
+
+### SoundRef (Game Sound Binding)
+
+The game binds each sound effect to a bank/event through a `.soundref` path (e.g. `/sound/ui/ui_click.soundref` → `/sound/ui/ui.bank#click`). The SoundRef API lets a plugin rebind that binding at runtime: the game keeps triggering the sound as usual, but it plays from the plugin's bank.
+
+**Catalog.** `SND_GetSoundRefCount()` covers all known soundref paths merged from several sources: binary string scan, VFS enumeration of mounted archives, the game's static UI/voice-nav tables, and live sound events. Use `SND_FindSoundRefIndex()` for lookup by path instead of scanning manually.
+
+**Overrides.** `SND_RegisterSoundRefOverride(path, source)` writes the new `bank#event` source into the game's sound event and rebinds it. The override survives the game's own `.soundref` reloads — when the game re-reads the file (e.g. on sound re-activation), the framework re-applies the override automatically. No periodic polling is needed. `SND_UnregisterSoundRefOverride()` restores the original source; `SND_ClearSoundRefOverrides()` restores all.
+
+**Example: replacing the UI click sound with a custom bank**
+```c
+// 1. Load your bank (FMOD layer)
+void* bank = s_soundAPI->SND_LoadBankFile("/my_plugin/uimy.bank", NULL);
+
+// 2. Rebind the game's soundref to your bank event (game layer)
+const char* soundref = "/sound/ui/ui_click.soundref";
+if (s_soundAPI->SND_IsSoundRefActive(soundref)) {
+    s_soundAPI->SND_RegisterSoundRefOverride(soundref, "/my_plugin/uimy.bank#click");
+}
+
+// 3. Later — restore the original sound
+s_soundAPI->SND_UnregisterSoundRefOverride(soundref);
+
+// 4. Unload your bank (after all overrides are removed)
+s_soundAPI->SND_UnloadBank(bank);
+```
+
+| Function | Return Type | Description |
+|---|---|---|
+| **`SND_GetSoundRefCount()`** | `int` | Returns the number of soundref entries in the catalog. |
+| **`SND_GetSoundRefPath(index, out_buffer, buffer_size)`** | `int` | Copies the `.soundref` path of a catalog entry into the buffer. Returns full length or `-1`. |
+| **`SND_GetSoundRefSource(index, out_buffer, buffer_size)`** | `int` | Copies the current `bank#event` source binding (e.g. `"/sound/ui/ui.bank#click"`). Empty if the entry has no live event. Returns full length or `-1`. |
+| **`SND_FindSoundRefIndex(soundref_path)`** | `int` | Searches for a catalog entry by exact `.soundref` path. Returns index or `-1` if not found. |
+| **`SND_FindSoundRefBySource(source)`** | `int` | Searches for a catalog entry by its current `bank#event` source. Returns index or `-1`. |
+| **`SND_IsSoundRefActive(soundref_path)`** | `bool` | Returns whether a live sound event exists for this soundref path (i.e. it can be overridden right now). |
+| **`SND_RegisterSoundRefOverride(soundref_path, source)`** | `bool` | Rebinds the soundref to a new `bank#event` source. Applies immediately and persists across the game's soundref reloads. Returns `false` on invalid input. |
+| **`SND_UnregisterSoundRefOverride(soundref_path)`** | `bool` | Removes one override and restores the original source. Returns `false` if no override exists. |
+| **`SND_ClearSoundRefOverrides()`** | `void` | Removes all overrides and restores every original source. |
+| **`SND_GetSoundRefOverride(soundref_path, out_buffer, buffer_size)`** | `int` | Copies the registered override source for a soundref path. Returns `0` if no override is registered, full length if one is, `-1` on error. |

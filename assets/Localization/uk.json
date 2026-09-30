@@ -1383,7 +1383,18 @@
         "reset_to_game": "Скинути",
         "manual_override": "Ручне керування",
         "apply_listener": "Застосувати слухача",
-        "create_new_instance": "Створити та запустити новий інстанс"
+        "create_new_instance": "Створити та запустити новий інстанс",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "Каталог SoundRef",
+        "soundref_live_events": "Живі sound event'и",
+        "soundref_path": "Шлях",
+        "soundref_source": "Джерело",
+        "soundref_category": "Категорія",
+        "soundref_enabled": "Увімкнено",
+        "soundref_refresh": "Оновити SoundRef",
+        "soundref_no_entries": "SoundRef записи не знайдено.",
+        "soundref_origin": "Походження",
+        "soundref_event": "Подія"
     },
     "info_window": {
         "title": "Інформація про оточення",

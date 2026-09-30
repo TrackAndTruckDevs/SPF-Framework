@@ -13,12 +13,15 @@
 #include <cstring>
 #include <libloaderapi.h>
 #include <memoryapi.h>
+#include <mutex>
 #include <minwindef.h>
 #include <psapi.h>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include <winnt.h>
@@ -807,6 +810,48 @@ uintptr_t PatternFinder::GetRipAddress(uintptr_t instructionAddr, int offsetPos,
   });
 }
 
+uintptr_t PatternFinder::GetModuleBase() {
+  static std::once_flag once;
+  static uintptr_t cachedBase = 0;
+  std::call_once(once, [&]() {
+    cachedBase = SafeScan<uintptr_t>("GetModuleBase", 0, [&]() -> uintptr_t {
+      HMODULE hModule = GetModuleHandleA(nullptr);
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+      if (!hModule) {
+        logger->Warn("GetModuleBase: GetModuleHandleA failed, returning 0");
+        return 0;
+      }
+      uintptr_t base = reinterpret_cast<uintptr_t>(hModule);
+      logger->Info("GetModuleBase: imageBase=0x{:X} name={}", base, GetModuleName());
+      return base;
+    });
+  });
+  return cachedBase;
+}
+
+std::string PatternFinder::GetModuleName() {
+  static std::once_flag once;
+  static std::string cachedName;
+  std::call_once(once, [&]() {
+    char path[MAX_PATH] = {};
+    DWORD len = GetModuleFileNameA(nullptr, path, MAX_PATH);
+    if (len == 0) return;
+
+    std::string_view sv(path, len);
+    auto pos = sv.find_last_of("/\\");
+    if (pos != std::string_view::npos) sv = sv.substr(pos + 1);
+
+    cachedName.reserve(sv.size());
+    for (char c : sv) {
+      if (c >= 'A' && c <= 'Z')
+        cachedName.push_back(static_cast<char>(c - 'A' + 'a'));
+      else
+        cachedName.push_back(c);
+    }
+  });
+  return cachedName;
+}
+
 bool PatternFinder::IsSaneOffset(int32_t offset) { return offset > 0 && offset < 0x6000; }
 
 bool PatternFinder::IsValidAddress(uintptr_t addr) {
@@ -816,6 +861,25 @@ bool PatternFinder::IsValidAddress(uintptr_t addr) {
   if (mbi.State != MEM_COMMIT) return false;
   if (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) return false;
   return true;
+}
+
+std::string PatternFinder::ReadBoundedCString(uintptr_t ptr, size_t maxLen) {
+  if (ptr == 0) return {};
+  std::string out;
+  out.reserve(64);
+  uintptr_t lastCheckedPage = UINTPTR_MAX;
+  for (size_t i = 0; i < maxLen; ++i) {
+    uintptr_t addr = ptr + i;
+    uintptr_t page = addr & ~static_cast<uintptr_t>(0xFFF);
+    if (page != lastCheckedPage) {
+      if (!IsValidAddress(page)) break;
+      lastCheckedPage = page;
+    }
+    char c = *reinterpret_cast<const char*>(addr);
+    if (c == '\0') return out;
+    out.push_back(c);
+  }
+  return out;
 }
 
 uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
@@ -839,6 +903,62 @@ uintptr_t PatternFinder::FindString(const char* str, const char* moduleName) {
 
     // Fallback to the first occurrence if no null-terminated match is found
     return results[0];
+  });
+}
+
+std::vector<std::string> PatternFinder::FindAllStringsByRules(const StringScanRules& rules, const char* moduleName) {
+  return SafeScan<std::vector<std::string>>("FindAllStringsByRules", {}, [&]() -> std::vector<std::string> {
+    std::vector<std::string> results;
+    if (!rules.suffix || rules.suffix[0] == '\0') return results;
+
+    const size_t suffixLen = std::strlen(rules.suffix);
+    const bool requireStart = rules.requiredStart && rules.requiredStart[0] != '\0';
+    const size_t allowedLen = rules.allowedChars ? std::strlen(rules.allowedChars) : 0;
+
+    auto sections = GetModuleSections(moduleName);
+    std::unordered_set<std::string> seen;
+
+    for (const auto& sec : sections) {
+      if (sec.base == 0 || sec.size <= suffixLen + 1) continue;
+      if (std::find(rules.excludedSections.begin(), rules.excludedSections.end(), sec.name) !=
+          rules.excludedSections.end())
+        continue;
+
+      const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
+      for (size_t i = 0; i + suffixLen <= sec.size; ++i) {
+        if (data[i] != static_cast<uint8_t>(rules.suffix[0])) continue;
+        if (std::memcmp(data + i, rules.suffix, suffixLen) != 0) continue;
+        if (i + suffixLen >= sec.size) continue;
+        if (rules.requireNullTerminated && data[i + suffixLen] != 0) continue;
+
+        size_t start = i;
+        for (size_t back = 0; back < rules.maxBackScan && start > 0; ++back) {
+          uint8_t c = data[start - 1];
+          if (c == 0 || c < 0x20 || c >= 0x7F) break;
+          --start;
+        }
+
+        size_t len = i + suffixLen - start;
+        if (requireStart && data[start] != static_cast<uint8_t>(rules.requiredStart[0])) continue;
+
+        bool valid = true;
+        if (rules.allowedChars) {
+          for (size_t k = 0; k < len; ++k) {
+            if (std::memchr(rules.allowedChars, data[start + k], allowedLen) == nullptr) {
+              valid = false;
+              break;
+            }
+          }
+        }
+        if (!valid) continue;
+
+        seen.emplace(reinterpret_cast<const char*>(data) + start, len);
+      }
+    }
+
+    results.assign(seen.begin(), seen.end());
+    std::sort(results.begin(), results.end());
+    return results;
   });
 }
 

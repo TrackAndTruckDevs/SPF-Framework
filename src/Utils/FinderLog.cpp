@@ -6,16 +6,14 @@
 
 #include "fmt/format.h"
 
-#include <cctype>
 #include <chrono>
 #include <cstdint>
-#include <fileapi.h>
-#include <libloaderapi.h>
 #include <memoryapi.h>
 #include <minwindef.h>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <winnt.h>
 
 namespace SPF::Utils {
 
@@ -29,25 +27,8 @@ FinderLog::FinderLog(std::string_view finderName) : m_name(finderName), m_logger
 }
 
 void FinderLog::InitModuleInfo() {
-  HMODULE hMod = GetModuleHandleA(nullptr);
-  if (!hMod) return;
-  m_moduleBase = reinterpret_cast<uintptr_t>(hMod);
-
-  char path[MAX_PATH];
-  DWORD len = GetModuleFileNameA(nullptr, path, MAX_PATH);
-  if (len == 0) return;
-
-  std::string_view sv(path, len);
-  auto pos = sv.find_last_of("/\\");
-  if (pos != std::string_view::npos) sv = sv.substr(pos + 1);
-
-  m_moduleName.reserve(sv.size());
-  for (char c : sv) {
-    if (c >= 'A' && c <= 'Z')
-      m_moduleName.push_back(static_cast<char>(c - 'A' + 'a'));
-    else
-      m_moduleName.push_back(c);
-  }
+  m_moduleBase = PatternFinder::GetModuleBase();
+  m_moduleName = PatternFinder::GetModuleName();
 }
 
 std::string FinderLog::Rel(uintptr_t addr) const {

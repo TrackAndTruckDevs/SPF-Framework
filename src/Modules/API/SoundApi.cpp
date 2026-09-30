@@ -94,6 +94,7 @@ void SoundApi::FillSoundApi(SPF_Sound_API* sound_api) {
   sound_api->SND_SetListenerAttributes = &T_SND_SetListenerAttributes;
 
   sound_api->SND_LoadBankFile = &T_SND_LoadBankFile;
+  sound_api->SND_LoadBankMemory = &T_SND_LoadBankMemory;
   sound_api->SND_GetBankLoadingState = &T_SND_GetBankLoadingState;
   sound_api->SND_GetBankEventCount = &T_SND_GetBankEventCount;
   sound_api->SND_GetBankEventGuid = &T_SND_GetBankEventGuid;
@@ -116,6 +117,18 @@ void SoundApi::FillSoundApi(SPF_Sound_API* sound_api) {
   sound_api->SND_GetEventUserPropertyByIndex = &T_SND_GetEventUserPropertyByIndex;
   sound_api->SND_GetEventSoundSize = &T_SND_GetEventSoundSize;
   sound_api->SND_GetEventSampleLoadingState = &T_SND_GetEventSampleLoadingState;
+
+  // SoundRef (game layer)
+  sound_api->SND_GetSoundRefCount = &T_SND_GetSoundRefCount;
+  sound_api->SND_GetSoundRefPath = &T_SND_GetSoundRefPath;
+  sound_api->SND_GetSoundRefSource = &T_SND_GetSoundRefSource;
+  sound_api->SND_FindSoundRefIndex = &T_SND_FindSoundRefIndex;
+  sound_api->SND_FindSoundRefBySource = &T_SND_FindSoundRefBySource;
+  sound_api->SND_IsSoundRefActive = &T_SND_IsSoundRefActive;
+  sound_api->SND_RegisterSoundRefOverride = &T_SND_RegisterSoundRefOverride;
+  sound_api->SND_UnregisterSoundRefOverride = &T_SND_UnregisterSoundRefOverride;
+  sound_api->SND_ClearSoundRefOverrides = &T_SND_ClearSoundRefOverrides;
+  sound_api->SND_GetSoundRefOverride = &T_SND_GetSoundRefOverride;
 }
 
 // --- Service Lifecycle ---
@@ -529,6 +542,10 @@ bool SoundApi::T_SND_SetListenerAttributes(int index, float pos_x, float pos_y, 
 
 void* SoundApi::T_SND_LoadBankFile(const char* bank_path, const char* guids_path) { return SoundService::GetInstance().LoadBankFile(bank_path, guids_path); }
 
+void* SoundApi::T_SND_LoadBankMemory(const void* data, uint32_t size, const char* guids_path) {
+  return SoundService::GetInstance().LoadBankMemory(data, size, guids_path);
+}
+
 int SoundApi::T_SND_GetBankLoadingState(void* bank) { return SoundService::GetInstance().GetBankLoadingState(bank); }
 
 int SoundApi::T_SND_GetBankEventCount(void* bank) { return SoundService::GetInstance().GetBankEventCount(bank); }
@@ -653,6 +670,81 @@ int SoundApi::T_SND_GetEventSampleLoadingState(int event_index) {
   int state = -1;
   svc.GetEventSampleLoadingState(cache[event_index].eventDesc, state);
   return state;
+}
+
+// --- SoundRef (game layer) ---
+
+int SoundApi::T_SND_GetSoundRefCount() {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return 0;
+  return svc.GetSoundRefCount();
+}
+
+int SoundApi::T_SND_GetSoundRefPath(int index, char* out_buffer, int buffer_size) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return -1;
+  SoundRefEntry entry;
+  if (!svc.GetSoundRefEntryByIndex(index, entry)) return -1;
+  return SafeCopyToBuffer(entry.path, out_buffer, buffer_size);
+}
+
+int SoundApi::T_SND_GetSoundRefSource(int index, char* out_buffer, int buffer_size) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return -1;
+  SoundRefEntry entry;
+  if (!svc.GetSoundRefEntryByIndex(index, entry)) return -1;
+  return SafeCopyToBuffer(entry.source, out_buffer, buffer_size);
+}
+
+int SoundApi::T_SND_FindSoundRefIndex(const char* soundref_path) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path) return -1;
+  return svc.FindSoundRefIndex(soundref_path);
+}
+
+int SoundApi::T_SND_FindSoundRefBySource(const char* source) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !source) return -1;
+  return svc.FindSoundRefIndexBySource(source);
+}
+
+bool SoundApi::T_SND_IsSoundRefActive(const char* soundref_path) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path) return false;
+  int index = svc.FindSoundRefIndex(soundref_path);
+  SoundRefEntry entry;
+  if (!svc.GetSoundRefEntryByIndex(index, entry)) return false;
+  return entry.hasEvent;
+}
+
+bool SoundApi::T_SND_RegisterSoundRefOverride(const char* soundref_path, const char* source) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path || !source) return false;
+  return svc.RegisterSoundRefOverride(soundref_path, source);
+}
+
+bool SoundApi::T_SND_UnregisterSoundRefOverride(const char* soundref_path) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path) return false;
+  return svc.UnregisterSoundRefOverride(soundref_path);
+}
+
+void SoundApi::T_SND_ClearSoundRefOverrides() {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return;
+  svc.ClearSoundRefOverrides();
+}
+
+int SoundApi::T_SND_GetSoundRefOverride(const char* soundref_path, char* out_buffer, int buffer_size) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path) return -1;
+  auto overrides = svc.GetSoundRefOverrides();
+  auto it = overrides.find(soundref_path);
+  if (it == overrides.end()) {
+    if (out_buffer && buffer_size > 0) out_buffer[0] = '\0';
+    return 0;
+  }
+  return SafeCopyToBuffer(it->second, out_buffer, buffer_size);
 }
 
 }  // namespace SPF::Modules::API

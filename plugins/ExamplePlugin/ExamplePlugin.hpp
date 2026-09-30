@@ -162,6 +162,7 @@ struct PluginContext {
   int hornEventCount = 0;
   bool bellTestPlaying = false;
   bool bellReplacementActive = false;
+  bool soundRefClickEnabled = false;             ///< ExampleSoundAPI (SoundRef click→error rebinding)
 };
 
 /**

@@ -304,6 +304,18 @@ class PatternFinder {
   static uintptr_t GetRipAddress(uintptr_t instructionAddr, int offsetPos, int instructionSize);
 
   /**
+   * @brief Returns the base address of the main module image (cached after first call, logged once).
+   * @return uintptr_t Absolute base address of the main EXE, or 0.
+   */
+  static uintptr_t GetModuleBase();
+
+  /**
+   * @brief Returns the main module filename only (e.g. "amtrucks.exe"), lowercased (cached after first call).
+   * @return std::string Filename without path, or empty on failure.
+   */
+  static std::string GetModuleName();
+
+  /**
    * @brief Checks if a class offset is within typical game object boundaries.
    * @param offset The value to validate.
    * @return true if sane, false if suspicious.
@@ -319,12 +331,45 @@ class PatternFinder {
   static bool IsValidAddress(uintptr_t addr);
 
   /**
+   * @brief Copies a NUL-terminated C-string from game memory into std::string.
+   * @details Validates readability page-granular (VirtualQuery granularity) and
+   *          stops at maxLen bytes, on an unreadable page, or at the terminator.
+   * @param ptr Address of the first byte.
+   * @param maxLen Maximum number of bytes to read.
+   * @return String content; empty on failure. Never longer than maxLen bytes.
+   */
+  static std::string ReadBoundedCString(uintptr_t ptr, size_t maxLen = 1024);
+
+  /**
    * @brief Finds the address of a null-terminated string in data sections.
    * @param str The string to find.
    * @param moduleName Module name.
    * @return uintptr_t Absolute address of the string, or 0.
    */
   static uintptr_t FindString(const char* str, const char* moduleName = nullptr);
+
+  /**
+   * @struct StringScanRules
+   * @brief Rules for collecting all null-terminated strings that match a suffix/charset predicate.
+   */
+  struct StringScanRules {
+    const char* suffix = nullptr;      ///< Required string terminator, e.g. ".soundref" (required)
+    const char* requiredStart = "/";   ///< Required first character (nullptr = no requirement)
+    const char* allowedChars =         ///< Charset validation over the whole candidate string
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/_-.%";
+    size_t maxBackScan = 512;          ///< Max bytes scanned backwards from the suffix to the string start
+    bool requireNullTerminated = true; ///< Suffix must be followed by '\0'
+    std::vector<std::string> excludedSections = {".text", ".pdata", ".xdata", ".rsrc", ".reloc"};
+  };
+
+  /**
+   * @brief Scans module sections for all null-terminated strings matching the given rules.
+   * Deduplicates and sorts the results.
+   * @param rules Scan rules (suffix is mandatory).
+   * @param moduleName Module name (nullptr for main EXE).
+   * @return std::vector<std::string> Sorted unique matching strings (empty if suffix is null).
+   */
+  static std::vector<std::string> FindAllStringsByRules(const StringScanRules& rules, const char* moduleName = nullptr);
 
   /**
    * @struct MemorySection

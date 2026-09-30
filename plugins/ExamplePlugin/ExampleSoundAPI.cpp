@@ -13,6 +13,12 @@
  *
  * WHY poll in OnUpdate: no push "horn started" callback — polling is the
  * supported pattern. Detection uses 'play' param, NOT live instance count.
+ *
+ * SOUNDREF REBINDING EXAMPLE (game layer):
+ *   Checkbox ON  → SND_RegisterSoundRefOverride(click soundref, error source)
+ *   Checkbox OFF → SND_UnregisterSoundRefOverride(click soundref) restores original
+ *   UI shows the live state of that soundref path (source / active / override)
+ *   via SND_FindSoundRefIndex + SND_GetSoundRefSource + SND_IsSoundRefActive.
  */
 #include "ExampleSoundAPI.hpp"
 
@@ -26,6 +32,17 @@
 #include <cstring>
 
 namespace ExamplePlugin {
+
+namespace {
+
+// The game binds its menu/UI click through this .soundref path. The game
+// triggers this binding itself on every click — we do not play anything.
+const char kUiClickSoundref[] = "/sound/ui/ui_click.soundref";
+// Replacement source: the "error" event inside the game's own UI bank.
+// Pair verified in-game: click soundref → /sound/ui/ui.bank#error.
+const char kUiClickErrorSource[] = "/sound/ui/ui.bank#error";
+
+}  // namespace
 
 void SoundAPI_OnUpdate() {
   // PERFORMANCE: entire block only runs while checkbox is on AND sound system ready.
@@ -130,6 +147,7 @@ void SoundAPI_OnUpdate() {
 void SoundAPI_Shutdown() {
   if (!g_ctx.soundAPI) {
     g_ctx.replaceHornEnabled = false;
+    g_ctx.soundRefClickEnabled = false;
     g_ctx.bellEventIndex = -1;
     g_ctx.bellInstance = nullptr;
     g_ctx.bellBank = nullptr;
@@ -140,6 +158,15 @@ void SoundAPI_Shutdown() {
   }
 
   auto snd = g_ctx.soundAPI;
+
+  // --- SoundRef override cleanup: restore the original click sound ---
+  // Overrides are world-scoped; unregister so the game keeps its binding
+  // after this plugin's teardown.
+  if (g_ctx.soundRefClickEnabled) {
+    snd->SND_UnregisterSoundRefOverride(kUiClickSoundref);
+    g_ctx.soundRefClickEnabled = false;
+  }
+
   if (g_ctx.bellInstance) {
     snd->SND_StopEvent(g_ctx.bellInstance, true);
     snd->SND_ReleaseEvent(g_ctx.bellInstance);
@@ -265,6 +292,80 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Horn replacement disabled.");
       }
     }
+  }
+
+  ui->UI_Separator();
+
+  // --- SoundRef Rebinding (game layer) ---
+  // Unlike the horn example above (FMOD layer: we create and play our own
+  // instance), this example rebinds a GAME-OWNED sound. The game keeps
+  // triggering its UI click itself — we only change which FMOD event that
+  // binding resolves to. No instance is created or played by the plugin.
+  ui->UI_Text("SoundRef Rebinding");
+  ui->UI_Separator();
+
+  if (ui->UI_Checkbox("Replace UI click with error sound", &g_ctx.soundRefClickEnabled)) {
+    if (g_ctx.soundRefClickEnabled) {
+      // Rebind: game's click soundref → error event in the game's own UI bank.
+      // Applied immediately; the framework re-applies it automatically whenever
+      // the game reloads the soundref, so no per-frame polling is needed.
+      if (snd->SND_RegisterSoundRefOverride(kUiClickSoundref, kUiClickErrorSource)) {
+        g_ctx.coreAPI->logger->Log(
+          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+          "SoundRef override registered: click -> error. Open the game menu and you will hear the error sound instead of the click.");
+      } else {
+        g_ctx.soundRefClickEnabled = false;
+        g_ctx.coreAPI->logger->Log(
+          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
+          "Failed to register SoundRef override (path not found in catalog).");
+      }
+    } else {
+      // Unregister restores the original source — game plays its click again.
+      if (snd->SND_UnregisterSoundRefOverride(kUiClickSoundref)) {
+        g_ctx.coreAPI->logger->Log(
+          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+          "SoundRef override removed, original click sound restored.");
+      }
+    }
+  }
+
+  // --- Live state of THIS soundref path, read back from the game ---
+  // SND_FindSoundRefIndex / SND_GetSoundRefSource / SND_IsSoundRefActive /
+  // SND_GetSoundRefOverride read the framework's snapshot cache (O(1)); the
+  // snapshot is rebuilt only on actual changes (game LoadConfig rebind or
+  // register/unregister) — safe to call every frame.
+  // SND_FindSoundRefIndex     → catalog index of the .soundref path
+  // SND_GetSoundRefSource     → current live bank#event binding (shows the
+  //                              override while registered)
+  // SND_IsSoundRefActive      → whether a live sound_event exists right now
+  // SND_GetSoundRefOverride   → override WE registered (empty = none)
+  char srSource[256] = {};
+  char srOverride[256] = {};
+  int srIdx = snd->SND_FindSoundRefIndex(kUiClickSoundref);
+  bool srFound = srIdx >= 0;
+  bool srActive = false;
+  if (srFound) {
+    snd->SND_GetSoundRefSource(srIdx, srSource, sizeof(srSource));
+    srActive = snd->SND_IsSoundRefActive(kUiClickSoundref);
+    snd->SND_GetSoundRefOverride(kUiClickSoundref, srOverride, sizeof(srOverride));
+  }
+
+  if (srFound) {
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "SoundRef: %s", kUiClickSoundref);
+    ui->UI_Text(buffer);
+
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Live source: %s%s",
+      srSource[0] ? srSource : "(no live event)", srActive ? "" : " (inactive)");
+    ui->UI_Text(buffer);
+
+    if (srOverride[0]) {
+      g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Override: %s", srOverride);
+      ui->UI_TextColored(1.0f, 0.8f, 0.2f, 1.0f, buffer);
+    } else {
+      ui->UI_TextColored(0.6f, 0.6f, 0.6f, 1.0f, "Override: none");
+    }
+  } else {
+    ui->UI_TextColored(1.0f, 0.4f, 0.4f, 1.0f, "SoundRef path not found in catalog.");
   }
 
   ui->UI_Separator();

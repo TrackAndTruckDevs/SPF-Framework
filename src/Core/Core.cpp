@@ -22,6 +22,7 @@
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Hooks/GameLogHook.hpp"
+#include "SPF/Hooks/GameTools/PrismStringResolver.hpp"
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Hooks/HookManager.hpp"
 #include "SPF/Input/InputEvents.hpp"
@@ -490,6 +491,7 @@ void Core::InitServices() {
   hookManager.RegisterFeatureHook(&GameLogHook::GetInstance());
   hookManager.RegisterFeatureHook(&GameConsole::GetInstance());
   hookManager.RegisterFeatureHook(&GameTools::ScsNameResolver::GetInstance());
+  hookManager.RegisterFeatureHook(&GameTools::PrismStringResolver::GetInstance());
   hookManager.RegisterFeatureHook(&Fmod::FmodApi::GetInstance());
   hookManager.RegisterFeatureHook(&Fmod::FmodStudioHook::GetInstance());
   m_configService->ReconcileHookStates(hookManager.GetFeatureHooks(), nullptr);

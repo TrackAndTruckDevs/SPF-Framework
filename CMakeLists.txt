@@ -294,6 +294,7 @@ add_library(SPF SHARED
     "src/Hooks/PluginHook.cpp"
     "src/Hooks/CameraHooks.cpp"
     "src/Hooks/GameTools/ScsNameResolver.cpp"
+    "src/Hooks/GameTools/PrismStringResolver.cpp"
     "src/GameCamera/GameCameraManager.cpp"
     "src/GameCamera/IGameCamera.cpp"
     "src/GameCamera/GameCameraInterior.cpp"

@@ -68,6 +68,18 @@ class SoundApi {
   static int T_SND_GetEventTimelinePosition(void* instance);
   static bool T_SND_SetEventLoop(void* instance, bool loop);
   static int T_SND_GetEventLoopCount(void* instance);
+
+  // --- SoundRef (game layer) ---
+  static int T_SND_GetSoundRefCount();
+  static int T_SND_GetSoundRefPath(int index, char* out_buffer, int buffer_size);
+  static int T_SND_GetSoundRefSource(int index, char* out_buffer, int buffer_size);
+  static int T_SND_FindSoundRefIndex(const char* soundref_path);
+  static int T_SND_FindSoundRefBySource(const char* source);
+  static bool T_SND_IsSoundRefActive(const char* soundref_path);
+  static bool T_SND_RegisterSoundRefOverride(const char* soundref_path, const char* source);
+  static bool T_SND_UnregisterSoundRefOverride(const char* soundref_path);
+  static void T_SND_ClearSoundRefOverrides();
+  static int T_SND_GetSoundRefOverride(const char* soundref_path, char* out_buffer, int buffer_size);
   static bool T_SND_SetEventCallback(void* instance, SPF_SND_EventCallbackFn callback, uint32_t callback_mask);
 
   static int T_SND_GetNumListeners();
@@ -76,6 +88,7 @@ class SoundApi {
   static bool T_SND_SetListenerAttributes(int index, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, float fwd_x, float fwd_y, float fwd_z, float up_x, float up_y, float up_z);
 
   static void* T_SND_LoadBankFile(const char* bank_path, const char* guids_path);
+  static void* T_SND_LoadBankMemory(const void* data, uint32_t size, const char* guids_path);
   static int T_SND_GetBankLoadingState(void* bank);
   static int T_SND_GetBankEventCount(void* bank);
   static int T_SND_GetBankEventGuid(void* bank, int index, uint8_t out_guid[16]);
