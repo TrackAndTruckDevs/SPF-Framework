@@ -56,6 +56,11 @@ class GameCameraManager : public Hooks::IHook {
    * against the raw array address and caches the result.
    */
   uintptr_t GetVerifiedCameraObject(GameCameraType cameraType);
+  // The game's current object for `cameraType`, straight from the game (no
+  // cache), or 0 if it can't be resolved right now.
+  uintptr_t GetLiveCameraObject(GameCameraType cameraType) const;
+  // (Re)activates `camera` and remembers the game object it now uses.
+  void ActivateCamera(IGameCamera* camera);
 
   IGameCamera* GetCamera(GameCameraType cameraType);
   GameCameraDebug* GetDebugCamera();
@@ -80,6 +85,15 @@ class GameCameraManager : public Hooks::IHook {
 
   std::map<GameCameraType, std::unique_ptr<IGameCamera>> m_cameras;
   IGameCamera* m_activeCamera = nullptr;
+  // The game object m_activeCamera was activated on. The game can replace
+  // it without the camera type changing (e.g. switching trucks while in the
+  // interior view), so Update() compares it with the live one every frame.
+  uintptr_t m_activeCameraObject = 0;
+  // The game object each camera's default state was stored from: a camera
+  // activated on another one (another truck) must store its defaults again,
+  // whichever way it got there (object replaced, or a switch through another
+  // camera type).
+  std::map<GameCameraType, uintptr_t> m_defaultsObjects;
   std::unique_ptr<GameCameraDebug> m_debugCamera;
   std::unique_ptr<GameCameraDebugState> m_debugStateCamera;
   std::unique_ptr<GameCameraDebugAnimation> m_debugAnimationController;
