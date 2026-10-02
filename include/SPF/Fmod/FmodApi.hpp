@@ -111,6 +111,19 @@ constexpr FMOD_MODE FMOD_LOOP_BIDI = 0x00000004;
 enum class FMOD_STUDIO_STOP_MODE : int32_t { ALLOWFADEOUT = 0, IMMEDIATE = 1 };
 enum class FMOD_STUDIO_PLAYBACK_STATE : int32_t { PLAYING = 0, SUSTAINING, STOPPED, STARTING, STOPPING };
 enum class FMOD_STUDIO_EVENT_PROPERTY : int32_t { PRIORITY = 0, CHANNELPRIORITY, SCHEDULE_DELAY, SCHEDULE_LOOKAHEAD, MINIMUM_DISTANCE, MAXIMUM_DISTANCE, COUNT };
+enum class FMOD_STUDIO_LOAD_MEMORY_MODE : int32_t { LOAD_MEMORY = 0, LOAD_MEMORY_POINT = 1 };
+
+// Callback fields are opaque pointers (fmod_studio_common.h layout): detours
+// pass the struct through to the trampoline without dereferencing it.
+struct FMOD_STUDIO_BANK_INFO {
+  int size;
+  void* userdata;
+  int userdatalength;
+  void* opencallback;
+  void* closecallback;
+  void* readcallback;
+  void* seekcallback;
+};
 
 namespace SPF::Fmod {
 

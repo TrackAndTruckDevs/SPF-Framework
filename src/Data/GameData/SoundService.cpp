@@ -5,6 +5,7 @@
 #include "SPF/Data/GameData/ManagerCoreService.hpp"
 #include "SPF/Data/GameData/WorldServiceRegistry.hpp"
 #include "SPF/Fmod/FmodApi.hpp"
+#include "SPF/Fmod/FmodStudioHook.hpp"
 #include "SPF/Hooks/GameTools/PrismStringResolver.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
@@ -86,6 +87,7 @@ void SoundService::Shutdown() {
   m_soundEventSourceOffset = 0;
   m_soundEventCreateLockAddr = 0;
   m_soundEventActivateFn = 0;
+  m_soundEventVtableAddr = 0;
   m_soundRefLoadConfigFn = 0;
   m_uiSoundRefTableAddr = 0;
   m_voiceNavTableAddr = 0;
@@ -103,7 +105,10 @@ void SoundService::Shutdown() {
   m_voiceNavEntryEventOffset = 0;
   m_eventCache.clear();
   m_pluginBanks.clear();
-  m_guidToPath.clear();
+  {
+    std::lock_guard<std::mutex> lock(m_guidToPathMutex);
+    m_guidToPath.clear();
+  }
   {
     std::lock_guard<std::mutex> lock(m_soundRefMutex);
     m_soundRefOverrides.clear();
@@ -260,6 +265,7 @@ bool SoundService::TryFindAllOffsets() {
   }
 
   m_isInitialized = true;
+  RegisterPathResolver();
   InstallSoundRefLoadConfigHook();
   ResolveFmodFunctions();
   InstallSystemUpdateHook();
@@ -329,6 +335,72 @@ std::vector<SoundBankGroup> SoundService::GetSoundBankGroups() {
   return result;
 }
 
+void SoundService::RegisterPathResolver() {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  Fmod::FmodStudioHook::GetInstance().SetPathResolverCallback(PathResolverCallback, this);
+  logger->Info("SoundService: Registered path resolver into FmodStudioHook.");
+}
+
+const char* SoundService::PathResolverCallback(void* userData, const uint8_t guid[16], void* instance) {
+  (void)instance;
+  auto* self = static_cast<SoundService*>(userData);
+  return self->ResolveEventPathByGuid(guid);
+}
+
+const char* SoundService::ResolveEventPathByGuid(const uint8_t guid[16]) {
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  if (!m_isInitialized) return nullptr;
+
+  uintptr_t soundSystem = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+  if (!soundSystem) return nullptr;
+
+  uintptr_t lockAddr = soundSystem + m_bankListLockOffset;
+  AcquireSRWLockExclusive(reinterpret_cast<PSRWLOCK>(lockAddr));
+
+  const char* found = nullptr;
+
+  uintptr_t bankNode = *reinterpret_cast<uintptr_t*>(soundSystem + m_bankListHeadOffset);
+  uintptr_t bankSentinel = soundSystem + m_bankListSentinelOffset;
+
+  while (bankNode != bankSentinel) {
+    uintptr_t eventNode = *reinterpret_cast<uintptr_t*>(bankNode + m_bankEventListHeadOffset);
+    uintptr_t eventSentinel = bankNode + m_bankEventListHeadOffset + m_eventListTerminatorOffset;
+
+    while (eventNode != eventSentinel) {
+      if (memcmp(reinterpret_cast<void*>(eventNode + m_eventGuidOffset), guid, 16) == 0) {
+        const char* eventPath = *reinterpret_cast<const char**>(eventNode + m_eventPathOffset);
+        if (eventPath && strncmp(eventPath, "event:/", 7) == 0) {
+          found = eventPath;
+        }
+        break;
+      }
+      eventNode = *reinterpret_cast<uintptr_t*>(eventNode);
+    }
+
+    if (found) break;
+    bankNode = *reinterpret_cast<uintptr_t*>(bankNode);
+  }
+
+  ReleaseSRWLockExclusive(reinterpret_cast<PSRWLOCK>(lockAddr));
+
+  // Fallback: plugin banks never appear in the game's per-bank lists, but
+  // LoadGuidsFile indexed their GUIDs from the sidecar .guids file. Copy under
+  // the lock — the caller dereferences the pointer after we return.
+  if (!found) {
+    std::array<uint8_t, 16> key{};
+    std::memcpy(key.data(), guid, 16);
+    std::lock_guard<std::mutex> lock(m_guidToPathMutex);
+    auto it = m_guidToPath.find(key);
+    if (it != m_guidToPath.end()) {
+      static thread_local std::string resolvedPath;
+      resolvedPath = it->second;
+      found = resolvedPath.c_str();
+    }
+  }
+
+  return found;
+}
+
 std::vector<SoundBankGroup> SoundService::GetPluginBankGroups() {
   std::vector<SoundBankGroup> result;
   if (!m_isInitialized || !m_fmodFunctionsResolved) return result;
@@ -373,9 +445,24 @@ std::vector<SoundBankGroup> SoundService::GetPluginBankGroups() {
       }
 
       char pathBuf[512] = {};
-      int retrieved = 0;
-      if (fnGetPath && fnGetPath(descs[i], pathBuf, sizeof(pathBuf), &retrieved) == FMOD_OK && retrieved > 0) {
-        ev.eventPath = pathBuf;
+      int pathRc = -2;  // -2 = EventDescription::getPath unresolved
+      if (fnGetPath) {
+        FMOD_RESULT rc = fnGetPath(descs[i], pathBuf, sizeof(pathBuf), nullptr);
+        pathRc = static_cast<int>(rc);
+        if (rc == FMOD_OK && pathBuf[0] != '\0') {
+          ev.eventPath = pathBuf;
+        }
+      }
+
+      if (ev.eventPath.empty()) {
+        static std::unordered_set<const void*> s_loggedEmptyPath;
+        if (s_loggedEmptyPath.insert(descs[i]).second) {
+          auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+          char guidHex[33] = {};
+          for (int g = 0; g < 16; ++g) snprintf(guidHex + g * 2, 3, "%02x", static_cast<unsigned char>(ev.guid[g]));
+          logger->Warn("GetPluginBankGroups: unresolved path for event desc={} guid={} getPathRc={} — add '{{guid}} event:/path' line to bank.guids",
+                       static_cast<const void*>(descs[i]), guidHex, pathRc);
+        }
       }
 
       bool bVal = false;
@@ -1262,7 +1349,10 @@ void SoundService::LoadGuidsFile(const char* guidsPath) {
     auto pathStart = line.find(' ', closingBrace + 1);
     if (pathStart == std::string::npos) continue;
     ++pathStart;
-    m_guidToPath[guid] = line.substr(pathStart);
+    {
+      std::lock_guard<std::mutex> lock(m_guidToPathMutex);
+      m_guidToPath[guid] = line.substr(pathStart);
+    }
     ++loaded;
   }
 }
@@ -1478,9 +1568,8 @@ bool SoundService::GetEventID(void* desc, uint8_t outGuid[16]) {
 int SoundService::GetEventPathFromDesc(void* desc, char* outBuffer, int bufferSize) {
   if (!desc || !m_fmodFn.EventDescription_GetPath || !outBuffer) return 0;
   auto fn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, char*, int, int*)>(m_fmodFn.EventDescription_GetPath);
-  int retrieved = 0;
-  fn(static_cast<FMOD::Studio::EventDescription*>(desc), outBuffer, bufferSize, &retrieved);
-  return retrieved;
+  if (fn(static_cast<FMOD::Studio::EventDescription*>(desc), outBuffer, bufferSize, nullptr) != FMOD_OK) return 0;
+  return static_cast<int>(std::strlen(outBuffer));
 }
 
 int SoundService::GetEventInstanceCount(void* desc) {
@@ -1809,6 +1898,14 @@ bool SoundService::BuildEventCache() {
         std::string resolvedPath;
         auto it = m_guidToPath.find(guidArr);
         if (it != m_guidToPath.end()) resolvedPath = it->second;
+
+        if (resolvedPath.empty() && m_fmodFn.EventDescription_GetPath) {
+          auto pathFn = reinterpret_cast<FMOD_RESULT (*)(FMOD::Studio::EventDescription*, char*, int, int*)>(m_fmodFn.EventDescription_GetPath);
+          char pathBuf[512] = {};
+          if (pathFn(descs[i], pathBuf, sizeof(pathBuf), nullptr) == FMOD_OK && pathBuf[0] != '\0') {
+            resolvedPath = pathBuf;
+          }
+        }
 
         EventCacheEntry entry;
         entry.eventPath = resolvedPath;
@@ -2370,6 +2467,146 @@ void SoundService::QueueSoundRefRebinds(const std::vector<void*>& events) {
   logger->Info("SoundRef rebind queued: {} event(s) pending", events.size());
 }
 
+// --- L2: game sound_event control (handles are game sound_event_t*, game thread only) ---
+
+namespace {
+constexpr uint32_t kEventStatePlaying = 1;
+constexpr uint32_t kEventStatePaused = 3;
+constexpr uint32_t kEventStateBound = 2;
+}  // namespace
+
+std::vector<void*> SoundService::GetGameEventSnapshot() {
+  std::vector<void*> out;
+  if (!m_isInitialized || m_soundEventPathOffset == 0) return out;
+  out.reserve(512);
+  ForEachSoundEvent([&out](void* event) { out.push_back(event); });
+  return out;
+}
+
+int SoundService::GetGameEventCount() { return static_cast<int>(GetGameEventSnapshot().size()); }
+
+void* SoundService::GetGameEventAt(int index) {
+  if (index < 0) return nullptr;
+  auto snapshot = GetGameEventSnapshot();
+  return index < static_cast<int>(snapshot.size()) ? snapshot[static_cast<size_t>(index)] : nullptr;
+}
+
+void* SoundService::FindGameEventByPath(const char* path) {
+  if (!path || !*path) return nullptr;
+  auto matches = FindSoundEventsByPath(path);
+  return matches.empty() ? nullptr : matches.front();
+}
+
+void* SoundService::FindGameEventBySource(const char* source) {
+  if (!source || !*source) return nullptr;
+  void* found = nullptr;
+  ForEachSoundEvent([&](void* event) {
+    if (!found && GetSoundEventSource(event) == source) found = event;
+  });
+  return found;
+}
+
+void* SoundService::FindGameEventByInstance(void* instance) {
+  if (!instance || m_soundEventInstanceOffset == 0) return nullptr;
+  void* found = nullptr;
+  ForEachSoundEvent([&](void* event) {
+    if (!found) {
+      auto instanceField = reinterpret_cast<void**>(static_cast<char*>(event) + m_soundEventInstanceOffset);
+      if (*instanceField == instance) found = event;
+    }
+  });
+  return found;
+}
+
+uint32_t SoundService::GetGameEventPlaybackState(void* event) {
+  if (!IsSoundEventValid(event) || m_soundEventPlaybackStateOffset == 0) return 0;
+  return *reinterpret_cast<const uint32_t*>(static_cast<const char*>(event) + m_soundEventPlaybackStateOffset);
+}
+
+bool SoundService::IsGameEventBound(void* event) {
+  if (!IsSoundEventValid(event) || m_soundEventBoundFieldOffset == 0) return false;
+  return *reinterpret_cast<const uint32_t*>(static_cast<const char*>(event) + m_soundEventBoundFieldOffset) == kEventStateBound;
+}
+
+SoundService::ActivateOutcome SoundService::RecreateGameEventInstance(void* event) {
+  ActivateOutcome out;
+  if (!IsSoundEventValid(event) || m_soundEventActivateFn == 0) return out;
+
+  out.lifecycleManaged = m_soundEventInstanceOffset != 0 && m_soundEventPlaybackStateOffset != 0;
+  if (out.lifecycleManaged) {
+    auto instanceField = reinterpret_cast<void**>(static_cast<char*>(event) + m_soundEventInstanceOffset);
+    void* oldInstance = *instanceField;
+    uint32_t state = *reinterpret_cast<const uint32_t*>(static_cast<const char*>(event) + m_soundEventPlaybackStateOffset);
+    out.wasActive = state == kEventStatePlaying || state == kEventStatePaused;
+    if (oldInstance) {
+      auto stopFn = reinterpret_cast<bool (*)(void*)>(GetSoundEventStopFn());
+      if (out.wasActive && stopFn) stopFn(event);  // state -> 0, keeps instance pointer
+      *instanceField = nullptr;
+      ReleaseEventInstance(oldInstance);
+      out.oldInstance = oldInstance;
+    }
+  }
+
+  uintptr_t soundManager = ManagerCoreService::GetInstance().GetSoundManagerAddr();
+  if (!soundManager) return out;
+  auto activate = reinterpret_cast<bool (*)(void*, void*)>(m_soundEventActivateFn);
+  out.ok = activate(event, reinterpret_cast<void*>(soundManager));
+  if (out.lifecycleManaged) {
+    out.instance = *reinterpret_cast<void**>(static_cast<char*>(event) + m_soundEventInstanceOffset);
+  }
+  return out;
+}
+
+bool SoundService::GameEventActivate(void* event) { return RecreateGameEventInstance(event).ok; }
+
+bool SoundService::GameEventStart(void* event) {
+  if (!IsSoundEventValid(event)) return false;
+  auto playback = reinterpret_cast<bool (*)(void*, int)>(GetSoundEventPlaybackControlFn());
+  return playback && playback(event, 0);
+}
+
+bool SoundService::GameEventStop(void* event) {
+  if (!IsSoundEventValid(event)) return false;
+  auto stopFn = reinterpret_cast<bool (*)(void*)>(GetSoundEventStopFn());
+  return stopFn && stopFn(event);
+}
+
+bool SoundService::GameEventSetPaused(void* event, bool paused) {
+  if (!IsSoundEventValid(event)) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, int)>(GetSoundEventSetPausedFn());
+  return fn && fn(event, paused ? 1 : 0);
+}
+
+bool SoundService::GameEventSetVolume(void* event, float volume) {
+  if (!IsSoundEventValid(event)) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, float)>(GetSoundEventSetVolumeFn());
+  return fn && fn(event, volume);
+}
+
+bool SoundService::GameEventSetPitch(void* event, float pitch) {
+  if (!IsSoundEventValid(event)) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, float)>(GetSoundEventSetPitchFn());
+  return fn && fn(event, pitch);
+}
+
+bool SoundService::GameEventSetProperty(void* event, int property_id, float value) {
+  if (!IsSoundEventValid(event)) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, int, float)>(GetSoundEventSetPropertyFn());
+  return fn && fn(event, property_id, value);
+}
+
+bool SoundService::GameEventSet3DAttributes(void* event, float pos_x, float pos_y, float pos_z) {
+  if (!IsSoundEventValid(event)) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, float, float, float)>(GetSoundEventSet3DAttributesFn());
+  return fn && fn(event, pos_x, pos_y, pos_z);
+}
+
+bool SoundService::GameEventSetParameterByID(void* event, const uint8_t id[16], float value) {
+  if (!IsSoundEventValid(event) || !id) return false;
+  auto fn = reinterpret_cast<bool (*)(void*, const uint8_t*, float)>(GetSoundEventSetParameterByIDFn());
+  return fn && fn(event, id, value);
+}
+
 void SoundService::ProcessPendingSoundRefRebinds() {
   if (!m_isInitialized || m_soundEventActivateFn == 0 || m_soundEventPathOffset == 0) return;
 
@@ -2420,8 +2657,22 @@ void SoundService::ProcessPendingSoundRefRebinds() {
     }
     std::string path = GetSoundEventPath(event);
     std::string source = GetSoundEventSource(event);
-    bool ok = activate(event, reinterpret_cast<void*>(soundManager));
-    logger->Info("SoundRef rebind '{}' source='{}': activate={}", path, source, ok);
+    ActivateOutcome r = RecreateGameEventInstance(event);
+    if (!r.lifecycleManaged) {
+      logger->Warn("SoundRef rebind '{}': instance/state offsets unavailable, cannot manage instance lifecycle", path);
+    }
+    if (!r.ok || !r.instance) {
+      logger->Info("SoundRef rebind '{}' source='{}': activate={} instance={} (no live instance yet)", path, source, r.ok, r.instance);
+      continue;
+    }
+    bool restarted = false;
+    if (r.wasActive) {
+      if (auto playback = reinterpret_cast<bool (*)(void*, int)>(GetSoundEventPlaybackControlFn())) {
+        restarted = playback(event, 0);
+      }
+    }
+    logger->Info("SoundRef rebind '{}' source='{}': oldInstance={} released={} wasPlaying={} restarted={} instance={}",
+                 path, source, r.oldInstance, r.oldInstance != nullptr, r.wasActive, restarted, r.instance);
   }
 }
 
@@ -2590,12 +2841,24 @@ bool SoundService::RegisterSoundRefOverride(const std::string& soundrefPath, con
     std::lock_guard<std::mutex> lock(m_soundRefMutex);
     m_soundRefOverrides.insert_or_assign(soundrefPath, source);
   }
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
+  logger->Info("SoundRef override registered (map only, no lifecycle) path='{}' source='{}'", soundrefPath, source);
+  return true;
+}
+
+bool SoundService::SoundRefReplace(const std::string& soundrefPath, const std::string& source) {
+  if (soundrefPath.empty() || source.empty()) return false;
+  {
+    std::lock_guard<std::mutex> lock(m_soundRefMutex);
+    m_soundRefOverrides.insert_or_assign(soundrefPath, source);
+  }
 
   std::vector<void*> matches = ApplyOverrideToEvents(soundrefPath, source);
   QueueSoundRefRebinds(matches);
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
-  logger->Info("SoundRef override registered path='{}' source='{}': {} live event(s)", soundrefPath, source, matches.size());
+  logger->Info("SoundRef auto-replace path='{}' source='{}': {} live event(s) queued (stop->activate->resume; bank loads via game VFS activate)",
+               soundrefPath, source, matches.size());
   return true;
 }
 

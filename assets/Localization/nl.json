@@ -1383,7 +1383,18 @@
         "reset_to_game": "Herstellen",
         "manual_override": "Handmatige overschrijving",
         "apply_listener": "Luisteraar toepassen",
-        "create_new_instance": "Nieuwe instantie aanmaken en afspelen"
+        "create_new_instance": "Nieuwe instantie aanmaken en afspelen",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef-catalogus",
+        "soundref_live_events": "Live geluidsgebeurtenissen",
+        "soundref_path": "Pad",
+        "soundref_source": "Bron",
+        "soundref_category": "Categorie",
+        "soundref_enabled": "Ingeschakeld",
+        "soundref_refresh": "SoundRef vernieuwen",
+        "soundref_no_entries": "Geen SoundRef-items gevonden.",
+        "soundref_origin": "Oorsprong",
+        "soundref_event": "Gebeurtenis"
     },
     "info_window": {
         "title": "Omgevingsinformatie",

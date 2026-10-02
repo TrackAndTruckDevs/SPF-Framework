@@ -841,8 +841,17 @@ void SoundWindow::RenderTabEvents() {
     ImGui::SameLine();
     ImGui::TextDisabled("(%s)", m_locCreateNewInstance.c_str());
   } else {
+    // Game-owned sound_event_t* for the attached instance, or nullptr for
+    // FMOD-only instances (window-created / foreign plugin). Resolved once per
+    // attach change - a full per-bank walk only on click, not per frame.
+    if (m_activeGameEventFor != m_activeInstance) {
+      m_activeGameEventFor = m_activeInstance;
+      m_activeGameEvent = m_soundService.FindGameEventByInstance(m_activeInstance);
+    }
+    void* gameEvent = m_activeGameEvent;
     if (m_autoLoop && m_playbackState == 2) {
-      m_soundService.StartEvent(m_activeInstance);
+      if (gameEvent) m_soundService.GameEventStart(gameEvent);
+      else m_soundService.StartEvent(m_activeInstance);
       m_playbackState = m_soundService.GetEventPlaybackState(m_activeInstance);
     }
 
@@ -851,15 +860,18 @@ void SoundWindow::RenderTabEvents() {
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.35f, 0.55f, 1.0f));
     if (m_playbackState == 2 || m_playbackState == -1) {
       if (ImGui::Button(m_locPlay.c_str())) {
-        m_soundService.StartEvent(m_activeInstance);
+        if (gameEvent) m_soundService.GameEventStart(gameEvent);
+        else m_soundService.StartEvent(m_activeInstance);
       }
     } else {
       if (ImGui::Button(m_locPause.c_str())) {
-        m_soundService.PauseEvent(m_activeInstance, true);
+        if (gameEvent) m_soundService.GameEventSetPaused(gameEvent, true);
+        else m_soundService.PauseEvent(m_activeInstance, true);
       }
       ImGui::SameLine();
       if (ImGui::Button(m_locResume.c_str())) {
-        m_soundService.PauseEvent(m_activeInstance, false);
+        if (gameEvent) m_soundService.GameEventSetPaused(gameEvent, false);
+        else m_soundService.PauseEvent(m_activeInstance, false);
       }
     }
     ImGui::SameLine();
@@ -867,9 +879,13 @@ void SoundWindow::RenderTabEvents() {
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.1f, 0.1f, 1.0f));
     if (ImGui::Button(m_locStop.c_str())) {
-      if (m_ownsInstance) {
+      if (gameEvent) {
+        m_soundService.GameEventStop(gameEvent);
+      } else if (m_ownsInstance) {
         m_soundService.StopEvent(m_activeInstance, true);
         m_soundService.ReleaseEventInstance(m_activeInstance);
+      } else {
+        m_soundService.StopEvent(m_activeInstance, true);
       }
       m_autoLoop = false;
       m_activeInstance = nullptr;

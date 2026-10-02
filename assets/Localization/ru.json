@@ -1383,7 +1383,18 @@
         "reset_to_game": "Сбросить",
         "manual_override": "Ручное управление",
         "apply_listener": "Применить слушателя",
-        "create_new_instance": "Создать и воспроизвести новый экземпляр"
+        "create_new_instance": "Создать и воспроизвести новый экземпляр",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "Каталог SoundRef",
+        "soundref_live_events": "Живые звуковые события",
+        "soundref_path": "Путь",
+        "soundref_source": "Источник",
+        "soundref_category": "Категория",
+        "soundref_enabled": "Включено",
+        "soundref_refresh": "Обновить SoundRef",
+        "soundref_no_entries": "Записи SoundRef не найдены.",
+        "soundref_origin": "Происхождение",
+        "soundref_event": "Событие"
     },
     "info_window": {
         "title": "Информация об окружении",

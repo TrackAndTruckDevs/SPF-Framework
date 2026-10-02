@@ -157,6 +157,9 @@ class SoundService : public IWorldScopedService {
   bool IsReady();
   bool TryFindAllOffsets();
 
+  void RegisterPathResolver();
+  static const char* PathResolverCallback(void* userData, const uint8_t guid[16], void* instance);
+
   std::vector<SoundBankGroup> GetSoundBankGroups();
   std::vector<SoundBankGroup> GetPluginBankGroups();
   void EnrichEventsWithFmodData(std::vector<SoundBankGroup>& groups);
@@ -284,10 +287,37 @@ class SoundService : public IWorldScopedService {
   std::vector<void*> m_eventInstanceList;
 
   void ForEachSoundEvent(const std::function<void(void*)>& fn);
+  std::vector<void*> GetGameEventSnapshot();
+  struct ActivateOutcome {
+    bool ok = false;             // activate() return value
+    bool wasActive = false;      // event was playing/paused before recreation
+    bool lifecycleManaged = false; // instance/state offsets available
+    void* oldInstance = nullptr; // released instance (for logging)
+    void* instance = nullptr;    // freshly activated instance
+  };
+  ActivateOutcome RecreateGameEventInstance(void* event);
   std::string GetSoundEventPath(void* event);
   std::string GetSoundEventSource(void* event);
 
- private:
+  // --- L2: game sound_event control (game thread only - vtable calls hit FMOD) ---
+  int GetGameEventCount();
+  void* GetGameEventAt(int index);
+  void* FindGameEventByPath(const char* path);
+  void* FindGameEventBySource(const char* source);
+  void* FindGameEventByInstance(void* instance);
+  uint32_t GetGameEventPlaybackState(void* event);
+  bool IsGameEventBound(void* event);
+  bool GameEventActivate(void* event);
+  bool GameEventStart(void* event);
+  bool GameEventStop(void* event);
+  bool GameEventSetPaused(void* event, bool paused);
+  bool GameEventSetVolume(void* event, float volume);
+  bool GameEventSetPitch(void* event, float pitch);
+  bool GameEventSetProperty(void* event, int property_id, float value);
+  bool GameEventSet3DAttributes(void* event, float pos_x, float pos_y, float pos_z);
+  bool GameEventSetParameterByID(void* event, const uint8_t id[16], float value);
+
+private:
   std::vector<SoundRefEntry> GetUiSoundRefEntries();
   std::vector<SoundRefEntry> GetVoiceNavEntries();
   bool SetSoundEventPath(void* event, const std::string& newPath);
@@ -298,6 +328,7 @@ class SoundService : public IWorldScopedService {
 
  public:
   bool RegisterSoundRefOverride(const std::string& soundrefPath, const std::string& source);
+  bool SoundRefReplace(const std::string& soundrefPath, const std::string& source);
   bool UnregisterSoundRefOverride(const std::string& soundrefPath);
   std::unordered_map<std::string, std::string> GetSoundRefOverrides() const;
   void ClearSoundRefOverrides();
@@ -322,6 +353,7 @@ class SoundService : public IWorldScopedService {
   void InstallSystemUpdateHook();
   void RemoveSystemUpdateHook();
   static void HookedSystemUpdate(void* system);
+  const char* ResolveEventPathByGuid(const uint8_t guid[16]);
 
   uint32_t GetBankListLockOffset() const { return m_bankListLockOffset; }
   uint32_t GetBankListHeadOffset() const { return m_bankListHeadOffset; }
@@ -337,8 +369,28 @@ class SoundService : public IWorldScopedService {
   uint32_t GetSoundEventNodeOffset() const { return m_soundEventNodeOffset; }
   uint32_t GetSoundEventPathOffset() const { return m_soundEventPathOffset; }
   uint32_t GetSoundEventSourceOffset() const { return m_soundEventSourceOffset; }
+  uint32_t GetSoundEventInstanceOffset() const { return m_soundEventInstanceOffset; }
+  uint32_t GetSoundEventPlaybackStateOffset() const { return m_soundEventPlaybackStateOffset; }
+  uint32_t GetSoundEventBoundFieldOffset() const { return m_soundEventBoundFieldOffset; }
   uintptr_t GetSoundEventCreateLockAddr() const { return m_soundEventCreateLockAddr; }
   uintptr_t GetSoundEventActivateFn() const { return m_soundEventActivateFn; }
+  // sound_event vtable: slot = byte offset / 8 (PTR_FUN via SoundEvent_Create LEA)
+  uintptr_t GetSoundEventVtableAddr() const { return m_soundEventVtableAddr; }
+  uintptr_t ReadSoundEventVtableSlot(uint32_t slot) const {
+    if (!m_soundEventVtableAddr) return 0;
+    return reinterpret_cast<const uintptr_t*>(m_soundEventVtableAddr)[slot];
+  }
+  uintptr_t GetSoundEventDestructFn() const { return ReadSoundEventVtableSlot(0); }
+  uintptr_t GetSoundEventPlaybackControlFn() const { return ReadSoundEventVtableSlot(3); }
+  uintptr_t GetSoundEventSetParameterByIDFn() const { return ReadSoundEventVtableSlot(4); }
+  uintptr_t GetSoundEventStopFn() const { return ReadSoundEventVtableSlot(5); }
+  uintptr_t GetSoundEventSetPausedFn() const { return ReadSoundEventVtableSlot(6); }
+  uintptr_t GetSoundEventSyncStoppedStateFn() const { return ReadSoundEventVtableSlot(8); }
+  uintptr_t GetSoundEventSetVolumeFn() const { return ReadSoundEventVtableSlot(10); }
+  uintptr_t GetSoundEventSetPitchFn() const { return ReadSoundEventVtableSlot(11); }
+  uintptr_t GetSoundEventSetPropertyFn() const { return ReadSoundEventVtableSlot(12); }
+  uintptr_t GetSoundEventSet3DAttributesFn() const { return ReadSoundEventVtableSlot(13); }
+  uintptr_t GetSoundEventGetMinMaxDistanceFn() const { return ReadSoundEventVtableSlot(14); }
   uintptr_t GetSoundRefLoadConfigFn() const { return m_soundRefLoadConfigFn; }
   uintptr_t GetUiSoundRefTableAddr() const { return m_uiSoundRefTableAddr; }
   uintptr_t GetVoiceNavTableAddr() const { return m_voiceNavTableAddr; }
@@ -376,8 +428,12 @@ class SoundService : public IWorldScopedService {
   void SetSoundEventNodeOffset(uint32_t off) { m_soundEventNodeOffset = off; }
   void SetSoundEventPathOffset(uint32_t off) { m_soundEventPathOffset = off; }
   void SetSoundEventSourceOffset(uint32_t off) { m_soundEventSourceOffset = off; }
+  void SetSoundEventInstanceOffset(uint32_t off) { m_soundEventInstanceOffset = off; }
+  void SetSoundEventPlaybackStateOffset(uint32_t off) { m_soundEventPlaybackStateOffset = off; }
+  void SetSoundEventBoundFieldOffset(uint32_t off) { m_soundEventBoundFieldOffset = off; }
   void SetSoundEventCreateLockAddr(uintptr_t addr) { m_soundEventCreateLockAddr = addr; }
   void SetSoundEventActivateFn(uintptr_t fn) { m_soundEventActivateFn = fn; }
+  void SetSoundEventVtableAddr(uintptr_t addr) { m_soundEventVtableAddr = addr; }
   void SetSoundRefLoadConfigFn(uintptr_t fn) { m_soundRefLoadConfigFn = fn; }
   void SetUiSoundRefTableAddr(uintptr_t addr) { m_uiSoundRefTableAddr = addr; }
   void SetVoiceNavTableAddr(uintptr_t addr) { m_voiceNavTableAddr = addr; }
@@ -425,6 +481,7 @@ class SoundService : public IWorldScopedService {
   uint32_t m_soundEventSourceOffset = 0;
   uintptr_t m_soundEventCreateLockAddr = 0;
   uintptr_t m_soundEventActivateFn = 0;
+  uintptr_t m_soundEventVtableAddr = 0;
   uintptr_t m_soundRefLoadConfigFn = 0;
   uintptr_t m_uiSoundRefTableAddr = 0;
   uintptr_t m_voiceNavTableAddr = 0;
@@ -446,6 +503,9 @@ class SoundService : public IWorldScopedService {
   uint32_t m_voiceNavIndexOffset = 0;
   uint32_t m_voiceNavCategoryOffset = 0;
   uint32_t m_soundEventBoundState = 0;
+  uint32_t m_soundEventInstanceOffset = 0;      // EventInstance* at sound_event_t+0xA0 (SoundEvent_Stop)
+  uint32_t m_soundEventPlaybackStateOffset = 0; // playback state dword at sound_event_t+0x30 (0/1/3/4)
+  uint32_t m_soundEventBoundFieldOffset = 0;    // bound-state dword at sound_event_t+0x2C (2 = bound)
   std::vector<EventCacheEntry> m_eventCache;
   std::vector<void*> m_pluginBanks;
 
@@ -462,6 +522,7 @@ class SoundService : public IWorldScopedService {
     }
   };
   std::unordered_map<std::array<uint8_t, 16>, std::string, GuidHash, GuidEqual> m_guidToPath;
+  std::mutex m_guidToPathMutex;
   std::vector<BusCacheEntry> m_busCache;
   std::vector<VCACacheEntry> m_vcaCache;
   uint32_t m_studioSystemOffset = 0;

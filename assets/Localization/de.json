@@ -1383,7 +1383,18 @@
         "reset_to_game": "Zurücksetzen",
         "manual_override": "Manuelle Überschreibung",
         "apply_listener": "Hörer anwenden",
-        "create_new_instance": "Neue Instanz erstellen und abspielen"
+        "create_new_instance": "Neue Instanz erstellen und abspielen",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef-Katalog",
+        "soundref_live_events": "Live-Soundereignisse",
+        "soundref_path": "Pfad",
+        "soundref_source": "Quelle",
+        "soundref_category": "Kategorie",
+        "soundref_enabled": "Aktiviert",
+        "soundref_refresh": "SoundRef aktualisieren",
+        "soundref_no_entries": "Keine SoundRef-Einträge gefunden.",
+        "soundref_origin": "Ursprung",
+        "soundref_event": "Ereignis"
     },
     "info_window": {
         "title": "Umgebungsinformationen",

@@ -1383,7 +1383,18 @@
         "reset_to_game": "Sıfırla",
         "manual_override": "Manuel değiştirme",
         "apply_listener": "Dinleyiciyi uygula",
-        "create_new_instance": "Yeni örnek oluştur ve oynat"
+        "create_new_instance": "Yeni örnek oluştur ve oynat",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef kataloğu",
+        "soundref_live_events": "Canlı ses olayları",
+        "soundref_path": "Yol",
+        "soundref_source": "Kaynak",
+        "soundref_category": "Kategori",
+        "soundref_enabled": "Etkin",
+        "soundref_refresh": "SoundRef Yenile",
+        "soundref_no_entries": "SoundRef girişi bulunamadı.",
+        "soundref_origin": "Köken",
+        "soundref_event": "Olay"
     },
     "info_window": {
         "title": "Ortam Bilgileri",

@@ -2,21 +2,29 @@
  * @file ExampleSoundAPI.cpp
  * @brief Implementation of the SPF Sound API example (bank + horn→bell replacement).
  *
- * @details REPLACEMENT FLOW (exact port of monolithic OnUpdate logic):
- *   Checkbox ON  → SND_LoadBankFile (plugin .bank under Env_GetPluginDataDir)
- *   OnUpdate     → resolve bellEventIndex via bank GUID (lazy), on resolve create
- *                  instance + cache horn indices (path prefix event:/horn/),
- *                  per-frame read live 'play' param → SetEventVolume(0) on game
- *                  horn, edge-trigger bell Start/Stop
- *   Checkbox OFF → stop bell only + clear hornEventCount in OnUpdate; UI
- *                  uncheck does full teardown (stop, release, unload)
+ * @details REPLACEMENT FLOW (interception-based, zero first-sample leak):
+ *   Checkbox ON  → SND_LoadBankFile (plugin .bank under Env_GetPluginDataDir),
+ *                  synchronous bell-event resolve + SND_CreateEventInstance,
+ *                  then SND_SuppressEventPlayback("event:/horn/") — the
+ *                  EventInstance::start detour blocks every game horn start
+ *                  before FMOD plays a single sample. Every failure rolls the
+ *                  checkbox back with an error log.
+ *   OnUpdate     → press edge = suppressed-start counter changed → start bell;
+ *                  release = suppressed instance gone or its 'play' param
+ *                  drops to 0. No frame fallbacks, no lazy retries.
+ *   Checkbox OFF → full teardown (unsuppress, stop, release, unload) in the
+ *                  checkbox handler itself.
  *
- * WHY poll in OnUpdate: no push "horn started" callback — polling is the
- * supported pattern. Detection uses 'play' param, NOT live instance count.
+ * WHY the counter: the game re-issues start while the key is held — each call
+ * is intercepted and counted, so a counter change = "held this frame", from
+ * the first sample, with the game horn never reaching the speakers.
  *
  * SOUNDREF REBINDING EXAMPLE (game layer):
- *   Checkbox ON  → SND_RegisterSoundRefOverride(click soundref, error source)
- *   Checkbox OFF → SND_UnregisterSoundRefOverride(click soundref) restores original
+ *   Click   ON → SND_RegisterSoundRefOverride (pure map; applies on next soundref activation)
+ *   Click   OFF → SND_UnregisterSoundRefOverride(click soundref) restores original
+ *   Music   ON → Env_VfsMount + SND_SoundRef_Replace (automatic: register + source
+ *                 rewrite + stop -> activate -> resume rebind; bank loads via game VFS)
+ *   Music   OFF → SND_UnregisterSoundRefOverride(music soundref) — same rebind back
  *   UI shows the live state of that soundref path (source / active / override)
  *   via SND_FindSoundRefIndex + SND_GetSoundRefSource + SND_IsSoundRefActive.
  */
@@ -42,103 +50,74 @@ const char kUiClickSoundref[] = "/sound/ui/ui_click.soundref";
 // Pair verified in-game: click soundref → /sound/ui/ui.bank#error.
 const char kUiClickErrorSource[] = "/sound/ui/ui.bank#error";
 
+// Suppression prefix: one rule covers every truck's horn variant.
+const char kHornEventPrefix[] = "event:/horn/";
+
+// The game's menu music binding (path from game binary rdata string scan).
+const char kMusicMainMenuSoundref[] = "/sound/music/music_main_menu.soundref";
+// Replacement source: plugin data dir is mounted at /spf/ExamplePlugin
+// (Env_VfsMount), so the game resolves the bank through that VFS path.
+const char kMusicMainMenuSource[] = "/spf/ExamplePlugin/disc1.bank#music/main_menu";
+
 }  // namespace
 
 void SoundAPI_OnUpdate() {
   // PERFORMANCE: entire block only runs while checkbox is on AND sound system ready.
-  // When disabled, zero sound API calls per frame (except the cheap disable-cleanup).
   if (!g_ctx.replaceHornEnabled || !g_ctx.soundAPI || !g_ctx.coreAPI || !g_ctx.soundAPI->SND_IsReady()) {
-    // --- Cleanup when horn replacement is disabled ---
-    // Stop the bell and clear cached horn event indices so they're re-scanned
-    // if re-enabled. Bank + instance stay (re-enable is cheap).
-    if (!g_ctx.replaceHornEnabled && g_ctx.bellReplacementActive && g_ctx.bellInstance) {
-      if (g_ctx.soundAPI) {
-        g_ctx.soundAPI->SND_StopEvent(g_ctx.bellInstance, true);
-      }
-      g_ctx.bellReplacementActive = false;
-      g_ctx.hornEventCount = 0;
-    }
     return;
   }
   auto snd = g_ctx.soundAPI;
 
-  // --- Step 1: Lazy-resolve the bell event index ---
-  // After SND_LoadBankFile the event is NOT immediately in the global cache —
-  // FMOD needs at least one System::Update() tick. Retry each frame until GUID lookup works.
-  // Resolution: GetBankEventCount → GetBankEventGuid(bank, 0) → FindEventIndexByGuid.
-  if (g_ctx.bellEventIndex < 0 && g_ctx.bellBank) {
-    int bankEventCount = snd->SND_GetBankEventCount(g_ctx.bellBank);
-    if (bankEventCount > 0) {
-      uint8_t eventGuid[16];
-      if (snd->SND_GetBankEventGuid(g_ctx.bellBank, 0, eventGuid)) {
-        g_ctx.bellEventIndex = snd->SND_FindEventIndexByGuid(eventGuid);
-      }
-    }
+  // --- Step 1: Press/release detection via the suppression counter ---
+  // While the horn key is held the game keeps (re)issuing EventInstance::start
+  // on event:/horn/* — every call is blocked by the framework detour and
+  // counted. A counter change = "button held this frame", from the first
+  // sample; the game horn never reaches the speakers.
+  const unsigned long long count = snd->SND_GetSuppressedStartCount(kHornEventPrefix);
+  const bool pressed = count != g_ctx.hornActivityCount;
+  if (pressed) {
+    g_ctx.hornActivityCount = count;
+  }
 
-    if (g_ctx.bellEventIndex >= 0) {
-      // Reusable instance from plugin bank; release with SND_ReleaseEvent on shutdown.
-      g_ctx.bellInstance = snd->SND_CreateEventInstance(g_ctx.bellEventIndex);
-
-      // Cache ALL game horn events (path prefix event:/horn/) — each truck brand
-      // has its own horn variant; monitor all of them.
-      int eventCount = snd->SND_GetEventCount();
-      g_ctx.hornEventCount = 0;
-      for (int i = 0; i < eventCount && g_ctx.hornEventCount < 32; i++) {
-        char path[256];
-        snd->SND_GetEventPath(i, path, sizeof(path));
-        if (strncmp(path, "event:/horn/", 12) == 0) {
-          g_ctx.hornEventIndices[g_ctx.hornEventCount++] = i;
+  // Release: the suppressed game instance still carries the live "play"
+  // parameter (setParameter passes through) — play dropping to 0 means the
+  // key is up. The instance being gone (released by the game) is equally a
+  // release: there is nothing left to track.
+  bool released = false;
+  if (g_ctx.bellReplacementActive) {
+    void* sup = snd->SND_GetLastSuppressedInstance(kHornEventPrefix);
+    if (!sup) {
+      released = true;
+    } else {
+      float playValue = 1.0f;
+      if (snd->SND_GetEventParameter(sup, "play", &playValue)) {
+        released = (playValue <= 0.0f);
+      } else {
+        released = true;
+        static bool s_loggedParamFail = false;
+        if (!s_loggedParamFail) {
+          s_loggedParamFail = true;
+          g_ctx.coreAPI->logger->Log(
+            g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
+            "Horn: 'play' parameter unreadable on suppressed instance — treating as released.");
         }
       }
-
-      char logBuf[128];
-      g_ctx.coreAPI->formatting->Fmt_Format(logBuf, sizeof(logBuf),
-        "Bell event resolved, horn events cached: %d", g_ctx.hornEventCount);
-      g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, logBuf);
     }
   }
 
-  // Safety: recreate instance if lost (e.g. after world reload).
-  if (!g_ctx.bellInstance && g_ctx.bellEventIndex >= 0) {
-    g_ctx.bellInstance = snd->SND_CreateEventInstance(g_ctx.bellEventIndex);
-  }
-
-  // --- Step 2: Per-frame horn detection via 'play' parameter ---
-  // HOW THE GAME HORN WORKS:
-  //   - Game creates a live EventInstance on button press, keeps it while held.
-  //   - Instance has local parameter "play" (0.0=released, 1.0=pressed).
-  // WHY NOT live instance count / playback state alone:
-  //   - Live count may include idle pre-allocated instances.
-  //   - Playback state doesn't distinguish pressed from idle; default params on
-  //     idle instances cause false positives (play=1.0 on STOPPED instance).
-  // FILTERING: only read parameter when state == PLAYING (0).
-  // ACTION: play > 0 → SetEventVolume(0) on the GAME instance. Never StopEvent
-  //   on game-owned instances (undefined behavior).
-  bool anyHornActive = false;
-  for (int h = 0; h < g_ctx.hornEventCount; h++) {
-    int idx = g_ctx.hornEventIndices[h];
-    int liveCount = snd->SND_GetEventLiveInstanceCount(idx);
-    for (int j = 0; j < liveCount; j++) {
-      void* inst = snd->SND_GetEventLiveInstance(idx, j);
-      if (!inst) continue;
-      int state = snd->SND_GetEventPlaybackState(inst);
-      if (state != 0) continue;  // 0 = FMOD_STUDIO_PLAYBACK_PLAYING
-      float playValue = 0.0f;
-      if (snd->SND_GetEventParameter(inst, "play", &playValue) && playValue > 0.0f) {
-        anyHornActive = true;
-        snd->SND_SetEventVolume(inst, 0.0f);  // Silence the game horn
-      }
+  // --- Step 2: Bell state machine ---
+  // IDLE→PLAYING: press edge; PLAYING→IDLE: release. bellReplacementActive
+  // prevents calling StartEvent every frame (would restart from the beginning).
+  if (pressed && !g_ctx.bellReplacementActive) {
+    if (g_ctx.bellInstance) {
+      snd->SND_StartEvent(g_ctx.bellInstance);
+      g_ctx.bellReplacementActive = true;
+    } else {
+      g_ctx.coreAPI->logger->Log(
+        g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
+        "Horn press detected but bell instance is null — check enable-time logs.");
     }
-  }
-
-  // --- Step 3: Bell state machine ---
-  // IDLE→PLAYING: anyHornActive true (button pressed); PLAYING→IDLE: released.
-  // Bell is LOOPED — Start plays until Stop. bellReplacementActive prevents
-  // calling StartEvent every frame (would restart from the beginning).
-  if (anyHornActive && !g_ctx.bellReplacementActive && g_ctx.bellInstance) {
-    snd->SND_StartEvent(g_ctx.bellInstance);
-    g_ctx.bellReplacementActive = true;
-  } else if (!anyHornActive && g_ctx.bellReplacementActive && g_ctx.bellInstance) {
+  } else if (released && g_ctx.bellReplacementActive && g_ctx.bellInstance) {
     snd->SND_StopEvent(g_ctx.bellInstance, true);  // true = allow fadeout
     g_ctx.bellReplacementActive = false;
   }
@@ -148,10 +127,12 @@ void SoundAPI_Shutdown() {
   if (!g_ctx.soundAPI) {
     g_ctx.replaceHornEnabled = false;
     g_ctx.soundRefClickEnabled = false;
+    g_ctx.musicReplaceEnabled = false;
+    g_ctx.musicBank = nullptr;
     g_ctx.bellEventIndex = -1;
     g_ctx.bellInstance = nullptr;
     g_ctx.bellBank = nullptr;
-    g_ctx.hornEventCount = 0;
+    g_ctx.hornActivityCount = 0;
     g_ctx.bellTestPlaying = false;
     g_ctx.bellReplacementActive = false;
     return;
@@ -167,6 +148,21 @@ void SoundAPI_Shutdown() {
     g_ctx.soundRefClickEnabled = false;
   }
 
+  // --- Music replacement cleanup: restore original menu music binding ---
+  if (g_ctx.musicReplaceEnabled) {
+    snd->SND_UnregisterSoundRefOverride(kMusicMainMenuSoundref);
+    g_ctx.musicReplaceEnabled = false;
+  }
+  if (g_ctx.musicBank) {
+    snd->SND_UnloadBank(g_ctx.musicBank);
+    g_ctx.musicBank = nullptr;
+  }
+
+  // --- Suppression cleanup: let the game horn play again ---
+  if (g_ctx.replaceHornEnabled) {
+    snd->SND_UnsuppressEventPlayback(kHornEventPrefix);
+  }
+
   if (g_ctx.bellInstance) {
     snd->SND_StopEvent(g_ctx.bellInstance, true);
     snd->SND_ReleaseEvent(g_ctx.bellInstance);
@@ -177,7 +173,7 @@ void SoundAPI_Shutdown() {
     g_ctx.bellBank = nullptr;
   }
   g_ctx.bellEventIndex = -1;
-  g_ctx.hornEventCount = 0;
+  g_ctx.hornActivityCount = 0;
   g_ctx.bellTestPlaying = false;
   g_ctx.bellReplacementActive = false;
   g_ctx.replaceHornEnabled = false;
@@ -210,19 +206,6 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
   g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Events: %d | Buses: %d | Banks: %d", eventCount, busCount, bankCount);
   ui->UI_Text(buffer);
 
-  // Show bus info
-  if (ui->UI_TreeNode("Bus List")) {
-    for (int i = 0; i < busCount && i < 100; i++) {
-      char busPath[256];
-      snd->SND_GetBusPath(i, busPath, sizeof(busPath));
-      float vol = snd->SND_GetBusVolume(i);
-      bool muted = snd->SND_GetBusMute(i);
-      g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "[%d] %s (vol: %.2f%s)", i, busPath, vol, muted ? ", MUTED" : "");
-      ui->UI_Text(buffer);
-    }
-    ui->UI_TreePop();
-  }
-
   ui->UI_Separator();
 
   // --- Horn Replacement UI ---
@@ -244,7 +227,66 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
         if (g_ctx.bellBank) {
           g_ctx.bellEventIndex = -1;
           g_ctx.bellInstance = nullptr;
-          g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Horn replacement enabled, bank loaded. Bell event will resolve on next tick.");
+
+          // LoadBankFile flushed System::Update and cleared the event cache,
+          // so the GUID lookup is valid immediately — no lazy retries.
+          int bankEventCount = snd->SND_GetBankEventCount(g_ctx.bellBank);
+          uint8_t eventGuid[16] = {};
+          if (bankEventCount > 0 && snd->SND_GetBankEventGuid(g_ctx.bellBank, 0, eventGuid)) {
+            g_ctx.bellEventIndex = snd->SND_FindEventIndexByGuid(eventGuid);
+          }
+          if (g_ctx.bellEventIndex < 0) {
+            char logBuf[192];
+            g_ctx.coreAPI->formatting->Fmt_Format(logBuf, sizeof(logBuf),
+              "Horn replacement: bell event not resolvable after load (bankEventCount=%d) — rolling back.", bankEventCount);
+            g_ctx.coreAPI->logger->Log(
+              g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN, logBuf);
+            snd->SND_UnloadBank(g_ctx.bellBank);
+            g_ctx.bellBank = nullptr;
+            g_ctx.replaceHornEnabled = false;
+            return;
+          }
+
+          g_ctx.bellInstance = snd->SND_CreateEventInstance(g_ctx.bellEventIndex);
+          if (!g_ctx.bellInstance) {
+            char logBuf[192];
+            g_ctx.coreAPI->formatting->Fmt_Format(logBuf, sizeof(logBuf),
+              "Horn replacement: SND_CreateEventInstance failed (event index %d) — rolling back.", g_ctx.bellEventIndex);
+            g_ctx.coreAPI->logger->Log(
+              g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN, logBuf);
+            snd->SND_UnloadBank(g_ctx.bellBank);
+            g_ctx.bellBank = nullptr;
+            g_ctx.bellEventIndex = -1;
+            g_ctx.replaceHornEnabled = false;
+            return;
+          }
+
+          // Block the game horn at the FMOD start boundary (first-sample
+          // silence) and reset the press-edge baseline.
+          if (!snd->SND_SuppressEventPlayback(kHornEventPrefix)) {
+            g_ctx.coreAPI->logger->Log(
+              g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
+              "Horn replacement: suppression not armed (EventInstance::start hook unavailable) — rolling back.");
+            snd->SND_ReleaseEvent(g_ctx.bellInstance);
+            g_ctx.bellInstance = nullptr;
+            snd->SND_UnloadBank(g_ctx.bellBank);
+            g_ctx.bellBank = nullptr;
+            g_ctx.bellEventIndex = -1;
+            g_ctx.replaceHornEnabled = false;
+            return;
+          }
+          g_ctx.hornActivityCount = snd->SND_GetSuppressedStartCount(kHornEventPrefix);
+          g_ctx.bellReplacementActive = false;
+          {
+            char bellPath[256] = {};
+            snd->SND_GetEventPath(g_ctx.bellEventIndex, bellPath, sizeof(bellPath));
+            char logBuf[320];
+            g_ctx.coreAPI->formatting->Fmt_Format(logBuf, sizeof(logBuf),
+              "Horn replacement enabled: bank loaded, event %d ('%s'), instance created, suppression armed.",
+              g_ctx.bellEventIndex, bellPath[0] ? bellPath : "<unresolved>");
+            g_ctx.coreAPI->logger->Log(
+              g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, logBuf);
+          }
         } else {
           g_ctx.replaceHornEnabled = false;
           g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN, "Failed to load bicycle_bell.bank.");
@@ -253,7 +295,8 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
     }
   } else {
     ui->UI_TextColored(0.4f, 1.0f, 0.4f, 1.0f, "Horn replacement ACTIVE");
-    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Bell event: %d | Horn events cached: %d", g_ctx.bellEventIndex, g_ctx.hornEventCount);
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Bell event: %d | Suppressed horn starts: %llu",
+      g_ctx.bellEventIndex, (unsigned long long)g_ctx.hornActivityCount);
     ui->UI_Text(buffer);
 
     // Manual test playback — independent of horn detection (bellTestPlaying guard).
@@ -276,6 +319,7 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
     if (ui->UI_Checkbox("Replace horn with bicycle bell", &g_ctx.replaceHornEnabled)) {
       if (!g_ctx.replaceHornEnabled) {
         // Cleanup — identical to monolithic original (full feature teardown):
+        snd->SND_UnsuppressEventPlayback(kHornEventPrefix);
         if (g_ctx.bellInstance) {
           snd->SND_StopEvent(g_ctx.bellInstance, true);
           snd->SND_ReleaseEvent(g_ctx.bellInstance);
@@ -286,7 +330,7 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
           g_ctx.bellBank = nullptr;
         }
         g_ctx.bellEventIndex = -1;
-        g_ctx.hornEventCount = 0;
+        g_ctx.hornActivityCount = 0;
         g_ctx.bellTestPlaying = false;
         g_ctx.bellReplacementActive = false;
         g_ctx.coreAPI->logger->Log(g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO, "Horn replacement disabled.");
@@ -306,21 +350,54 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
 
   if (ui->UI_Checkbox("Replace UI click with error sound", &g_ctx.soundRefClickEnabled)) {
     if (g_ctx.soundRefClickEnabled) {
-      // Rebind: game's click soundref → error event in the game's own UI bank.
-      // Applied immediately; the framework re-applies it automatically whenever
-      // the game reloads the soundref, so no per-frame polling is needed.
-      if (snd->SND_RegisterSoundRefOverride(kUiClickSoundref, kUiClickErrorSource)) {
-        g_ctx.coreAPI->logger->Log(
-          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
-          "SoundRef override registered: click -> error. Open the game menu and you will hear the error sound instead of the click.");
-      } else {
+      // Rebind: game's click soundref -> error event in the game's own UI bank.
+      //
+      // This section is the MANUAL example - every step is spelled out. The
+      // Menu Music section at the bottom is the convenience example: its
+      // SND_SoundRef_Replace performs this same sequence in one call (but
+      // queues it for the game thread instead of acting on the caller).
+      //
+      // Step 1: register the override in the framework's map (pure: it only
+      //         stores the mapping; live events are untouched for now).
+      bool registered = snd->SND_RegisterSoundRefOverride(kUiClickSoundref, kUiClickErrorSource);
+      if (!registered) {
         g_ctx.soundRefClickEnabled = false;
         g_ctx.coreAPI->logger->Log(
           g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
           "Failed to register SoundRef override (path not found in catalog).");
+      } else {
+        // Step 2: find the LIVE game event behind this soundref path.
+        void* clickEvent = snd->SND_FindGameEventByPath(kUiClickSoundref);
+        if (!clickEvent) {
+          // Event not created yet - the map alone is enough: the framework's
+          // SoundRef LoadConfig hook applies the override automatically the
+          // next time the game activates this soundref.
+          g_ctx.coreAPI->logger->Log(
+            g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+            "SoundRef override registered; event not live yet - takes effect on next activation by the game.");
+        } else {
+          // Step 3: remember playback state (the click is a one-shot, idle
+          //         between clicks; loops/menus may be PLAYING right now).
+          uint32_t wasState = snd->SND_GetGameEventPlaybackState(clickEvent);
+          // Step 4: re-create the instance: stop old -> release -> activate.
+          //         Activate re-runs SoundRef_LoadConfig, whose hook records
+          //         the original source (for OFF) and applies our override,
+          //         so the fresh instance is built from the error event.
+          bool activated = snd->SND_GameEvent_Activate(clickEvent);
+          // Step 5: Activate never starts playback - resume if it was playing.
+          if (activated && wasState == SPF_SOUND_EVENT_STATE_PLAYING) {
+            snd->SND_GameEvent_Start(clickEvent);
+          }
+          g_ctx.coreAPI->logger->Log(
+            g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+            "SoundRef override applied manually: click -> error. Open the game menu and you will hear the error sound instead of the click.");
+        }
       }
     } else {
-      // Unregister restores the original source — game plays its click again.
+      // Unregister is the reverse chain in one call: it restores the recorded
+      // original source on live events and queues the same rebind
+      // (stop -> activate -> resume) on the game thread - the original click
+      // sound comes back.
       if (snd->SND_UnregisterSoundRefOverride(kUiClickSoundref)) {
         g_ctx.coreAPI->logger->Log(
           g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
@@ -370,20 +447,121 @@ void RenderSoundTab(SPF_UI_API* ui, void* user_data) {
 
   ui->UI_Separator();
 
-  // --- Event Browser ---
-  if (ui->UI_TreeNode("Event Browser")) {
-    int maxShow = eventCount < 200 ? eventCount : 200;
-    for (int i = 0; i < maxShow; i++) {
-      char path[256];
-      snd->SND_GetEventPath(i, path, sizeof(path));
-      int liveCount = snd->SND_GetEventLiveInstanceCount(i);
-      if (liveCount > 0) {
-        g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "[%d] %s (live: %d)", i, path, liveCount);
-        ui->UI_TextColored(1.0f, 0.8f, 0.2f, 1.0f, buffer);
+  // --- Menu music replacement (automatic: VFS mount + SND_SoundRef_Replace) ---
+  // Unlike the click example above (rebinding within an already-loaded game
+  // bank), this one points the game at a bank it does not know. ONE automatic
+  // call does everything: SND_SoundRef_Replace registers the override, rewrites
+  // the live sound_event source and queues a game-thread rebind: stop old
+  // instance -> activate new source (the GAME loads our bank from VFS during
+  // activate) -> resume if was playing.
+  ui->UI_Text("Menu Music Replacement");
+  ui->UI_Separator();
+
+  if (ui->UI_Checkbox("Replace menu music with plugin bank", &g_ctx.musicReplaceEnabled)) {
+    if (g_ctx.musicReplaceEnabled) {
+      // 1. Mount the plugin data dir — game sees /spf/ExamplePlugin/disc1.bank.
+      //    Env_VfsMount is idempotent (same dir → same vpath, no duplicate mount).
+      char dataDir[512];
+      g_ctx.environmentAPI->Env_GetPluginDataDir(g_ctx.environmentHandle, dataDir, sizeof(dataDir));
+      char vpath[256];
+      bool mounted = g_ctx.environmentAPI->Env_VfsMount(
+        g_ctx.environmentHandle, dataDir, -1, 5000, vpath, sizeof(vpath));
+
+      // 2. Automatic full-cycle replace: register + source rewrite +
+      //    stop -> activate -> resume rebind (bank loads via game VFS itself).
+      if (mounted &&
+          snd->SND_SoundRef_Replace(kMusicMainMenuSoundref, kMusicMainMenuSource)) {
+        g_ctx.coreAPI->logger->Log(
+          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+          "Menu music replaced: soundref -> /spf/ExamplePlugin/disc1.bank#music/main_menu.");
+      } else {
+        // Roll back partial state so the checkbox reflects reality.
+        snd->SND_UnregisterSoundRefOverride(kMusicMainMenuSoundref);
+        g_ctx.musicReplaceEnabled = false;
+        g_ctx.coreAPI->logger->Log(
+          g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_WARN,
+          "Menu music replacement failed (mount/soundref). Check log.");
+      }
+    } else {
+      // Restore the original binding: source rewrite back + same rebind —
+      // the original game music resumes automatically.
+      snd->SND_UnregisterSoundRefOverride(kMusicMainMenuSoundref);
+      g_ctx.coreAPI->logger->Log(
+        g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME), SPF_LOG_INFO,
+        "Menu music replacement disabled, original sound restored.");
+    }
+  }
+
+  // --- Volume + mute for the menu-music bus (bus:/game/ui_music) ---
+  int musicBusIndex = -1;
+  {
+    int busCount = snd->SND_GetBusCount();
+    for (int i = 0; i < busCount; ++i) {
+      char busPath[256] = {};
+      snd->SND_GetBusPath(i, busPath, sizeof(busPath));
+      if (std::strcmp(busPath, "bus:/game/ui_music") == 0) {
+        musicBusIndex = i;
+        break;
       }
     }
-    ui->UI_TreePop();
   }
+
+  if (musicBusIndex >= 0) {
+    g_ctx.musicVolume = snd->SND_GetBusVolume(musicBusIndex);
+    g_ctx.musicMuted = snd->SND_GetBusMute(musicBusIndex);
+    if (!g_ctx.musicOrigCaptured) {
+      g_ctx.musicOrigVolume = g_ctx.musicVolume;
+      g_ctx.musicOrigMuted = g_ctx.musicMuted;
+      g_ctx.musicOrigCaptured = true;
+    }
+    if (ui->UI_SliderFloat("Menu Music Volume", &g_ctx.musicVolume, 0.0f, 1.0f, "%.2f", SPF_SLIDER_FLAG_NONE)) {
+      snd->SND_SetBusVolume(musicBusIndex, g_ctx.musicVolume);
+    }
+    if (ui->UI_Checkbox("Mute Menu Music Bus", &g_ctx.musicMuted)) {
+      snd->SND_SetBusMute(musicBusIndex, g_ctx.musicMuted);
+    }
+    if (ui->UI_Button("Reset Music Bus", 0, 0)) {
+      g_ctx.musicVolume = g_ctx.musicOrigVolume;
+      g_ctx.musicMuted = g_ctx.musicOrigMuted;
+      snd->SND_SetBusVolume(musicBusIndex, g_ctx.musicOrigVolume);
+      snd->SND_SetBusMute(musicBusIndex, g_ctx.musicOrigMuted);
+    }
+  } else {
+    ui->UI_TextColored(1.0f, 0.4f, 0.4f, 1.0f, "bus:/game/ui_music not found");
+  }
+
+  // --- Live state of the menu music soundref, same readback as click ---
+  char mSource[256] = {};
+  char mOverride[256] = {};
+  int mIdx = snd->SND_FindSoundRefIndex(kMusicMainMenuSoundref);
+  bool mFound = mIdx >= 0;
+  bool mActive = false;
+  if (mFound) {
+    snd->SND_GetSoundRefSource(mIdx, mSource, sizeof(mSource));
+    mActive = snd->SND_IsSoundRefActive(kMusicMainMenuSoundref);
+    snd->SND_GetSoundRefOverride(kMusicMainMenuSoundref, mOverride, sizeof(mOverride));
+  }
+
+  if (mFound) {
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "SoundRef: %s", kMusicMainMenuSoundref);
+    ui->UI_Text(buffer);
+
+    g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Live source: %s%s",
+      mSource[0] ? mSource : "(no live event)", mActive ? "" : " (inactive)");
+    ui->UI_Text(buffer);
+
+    if (mOverride[0]) {
+      g_ctx.coreAPI->formatting->Fmt_Format(buffer, sizeof(buffer), "Override: %s", mOverride);
+      ui->UI_TextColored(1.0f, 0.8f, 0.2f, 1.0f, buffer);
+    } else {
+      ui->UI_TextColored(0.6f, 0.6f, 0.6f, 1.0f, "Override: none");
+    }
+  } else {
+    ui->UI_TextColored(1.0f, 0.4f, 0.4f, 1.0f, "SoundRef path not found in catalog.");
+  }
+
+  ui->UI_Separator();
+
 }
 
 }  // namespace ExamplePlugin

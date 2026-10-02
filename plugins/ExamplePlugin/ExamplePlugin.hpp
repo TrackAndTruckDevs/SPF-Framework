@@ -158,11 +158,17 @@ struct PluginContext {
   void* bellBank = nullptr;
   int bellEventIndex = -1;
   void* bellInstance = nullptr;
-  int hornEventIndices[32] = {};
-  int hornEventCount = 0;
+  unsigned long long hornActivityCount = 0;  ///< suppressed-start counter baseline (press edge)
   bool bellTestPlaying = false;
   bool bellReplacementActive = false;
   bool soundRefClickEnabled = false;             ///< ExampleSoundAPI (SoundRef click→error rebinding)
+  bool musicReplaceEnabled = false;              ///< ExampleSoundAPI (menu music → plugin bank via VFS mount)
+  void* musicBank = nullptr;                     ///< ExampleSoundAPI (disc1.bank loaded for music replacement)
+  float musicVolume = 1.0f;                      ///< ExampleSoundAPI (volume of bus:/game/ui_music)
+  bool musicMuted = false;                       ///< ExampleSoundAPI (mute of bus:/game/ui_music)
+  float musicOrigVolume = 1.0f;                  ///< ExampleSoundAPI (original bus volume, captured at first discovery)
+  bool musicOrigMuted = false;                   ///< ExampleSoundAPI (original bus mute, captured at first discovery)
+  bool musicOrigCaptured = false;                ///< ExampleSoundAPI (true once originals were captured)
 };
 
 /**

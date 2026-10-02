@@ -1383,7 +1383,18 @@
         "reset_to_game": "초기화",
         "manual_override": "수동 오버라이드",
         "apply_listener": "리스너 적용",
-        "create_new_instance": "새 인스턴스 생성 및 재생"
+        "create_new_instance": "새 인스턴스 생성 및 재생",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef 카탈로그",
+        "soundref_live_events": "라이브 사운드 이벤트",
+        "soundref_path": "경로",
+        "soundref_source": "소스",
+        "soundref_category": "카테고리",
+        "soundref_enabled": "사용",
+        "soundref_refresh": "SoundRef 새로고침",
+        "soundref_no_entries": "SoundRef 항목을 찾을 수 없습니다.",
+        "soundref_origin": "원본",
+        "soundref_event": "이벤트"
     },
     "info_window": {
         "title": "환경 정보",

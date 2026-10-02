@@ -1383,7 +1383,18 @@
         "reset_to_game": "Réinitialiser",
         "manual_override": "Remplacement manuel",
         "apply_listener": "Appliquer l'auditeur",
-        "create_new_instance": "Créer et lancer une nouvelle instance"
+        "create_new_instance": "Créer et lancer une nouvelle instance",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "Catalogue SoundRef",
+        "soundref_live_events": "Événements sonores en direct",
+        "soundref_path": "Chemin",
+        "soundref_source": "Source",
+        "soundref_category": "Catégorie",
+        "soundref_enabled": "Activé",
+        "soundref_refresh": "Actualiser SoundRef",
+        "soundref_no_entries": "Aucune entrée SoundRef trouvée.",
+        "soundref_origin": "Origine",
+        "soundref_event": "Événement"
     },
     "info_window": {
         "title": "Informations sur l'environnement",

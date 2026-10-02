@@ -1383,7 +1383,18 @@
         "reset_to_game": "Resetovat",
         "manual_override": "Manuální přepsání",
         "apply_listener": "Použít posluchače",
-        "create_new_instance": "Vytvořit a přehrát novou instanci"
+        "create_new_instance": "Vytvořit a přehrát novou instanci",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "Katalog SoundRef",
+        "soundref_live_events": "Živé zvukové události",
+        "soundref_path": "Cesta",
+        "soundref_source": "Zdroj",
+        "soundref_category": "Kategorie",
+        "soundref_enabled": "Povoleno",
+        "soundref_refresh": "Obnovit SoundRef",
+        "soundref_no_entries": "Nebyly nalezeny žádné položky SoundRef.",
+        "soundref_origin": "Původ",
+        "soundref_event": "Událost"
     },
     "info_window": {
         "title": "Informace o prostředí",

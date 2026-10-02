@@ -1383,7 +1383,18 @@
         "reset_to_game": "リセット",
         "manual_override": "手動オーバーライド",
         "apply_listener": "リスナーを適用",
-        "create_new_instance": "新しいインスタンスを作成して再生"
+        "create_new_instance": "新しいインスタンスを作成して再生",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef カタログ",
+        "soundref_live_events": "ライブサウンドイベント",
+        "soundref_path": "パス",
+        "soundref_source": "ソース",
+        "soundref_category": "カテゴリ",
+        "soundref_enabled": "有効",
+        "soundref_refresh": "SoundRef を更新",
+        "soundref_no_entries": "SoundRef エントリが見つかりません。",
+        "soundref_origin": "元",
+        "soundref_event": "イベント"
     },
     "info_window": {
         "title": "環境情報",

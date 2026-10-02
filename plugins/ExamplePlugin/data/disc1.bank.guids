@@ -1,0 +1,8 @@
+{ce2de9dd-fd21-416c-b5a9-45c217da7403} bank:/disc1
+{1315eda7-1829-4dd8-9d1a-176f65637ab2} bank:/master
+{8b08cd73-6952-019a-1b53-9d9194907c2a} bank:/master.strings
+{e3504ea4-e791-43dd-af0b-beb87e487892} bus:/
+{6a613747-f665-4979-861f-cb4f53bb8552} event:/door_open
+{7bfb2d26-1241-4e6b-a1de-71ea3d836d6e} event:/music/delivery
+{716769e2-0fa6-4ec3-aae1-b964759f5d78} event:/music/main_menu
+{1217c3b8-7e2b-495a-936f-85f3318b1449} parameter:/play

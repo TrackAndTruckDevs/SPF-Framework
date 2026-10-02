@@ -324,6 +324,21 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
               owner.SetSoundEventCreateLockAddr(lockAddr);
             }
           }
+
+          /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_Create[1406bbe00]) ---/
+           * 1406bbe9e  48 8D 05 5B 1E B5 01          LEA RAX,[0x14220dd00]
+           * 1406bbea5  48 89 4F 40                   MOV qword ptr [RDI + 0x40],RCX
+           * 1406bbea9  48 89 4F 68                   MOV qword ptr [RDI + 0x68],RCX
+           * 1406bbead  48 8D 8F B0 00 00 00          LEA RCX,[RDI + 0xb0]
+           */
+          const char* sigVtable = "[LEA r64, [rip+off32]] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [LEA r64, [r64+off32]]";
+          uintptr_t addrVtableLea = PatternFinder::Find(pfnSoundEventCreate, 256, sigVtable);
+          if (phase.Step(addrVtableLea, "sound_event vtable LEA", "RT")) {
+            uintptr_t vtableAddr = PatternFinder::GetRipAddress(addrVtableLea, 3, 7);
+            if (phase.Step(vtableAddr, "sound_event vtable PTR_FUN", "ADR")) {
+              owner.SetSoundEventVtableAddr(vtableAddr);
+            }
+          }
         }
       }
     }
@@ -627,6 +642,63 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
     }
   }
 
+  // ── Phase 13: sound_event instance / playback-state / bound field offsets ──
+  /*
+   * Offsets observed in SoundEvent_Stop / SoundEvent_PlaybackControl decompilation.
+   * Drives the rebind fix (stop -> release -> activate) and the L2 game-event API.
+   */
+  {
+    auto phase = log.MakePhase("SoundEvent instance/state/bound offsets");
+
+    uintptr_t stopFn = owner.GetSoundEventStopFn();
+    uintptr_t playbackFn = owner.GetSoundEventPlaybackControlFn();
+    if (phase.Step(stopFn, "SoundEvent_Stop", "FN")) {
+      if (phase.Step(playbackFn, "SoundEvent_PlaybackControl", "FN")) {
+        /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_Stop[14028fb70]) ---/
+         * 14028fb7f  48 8B 89 A0 00 00 00          MOV RCX,qword ptr [RCX + 0xa0]
+         */
+        uintptr_t addrInstance = PatternFinder::Find(stopFn, 32, "[MOV r64, [r64+off32]]");
+        if (phase.Step(addrInstance, "SoundEvent instance MOV", "RT")) {
+          uint32_t instanceOffset = static_cast<uint32_t>(PatternFinder::ReadInt32(addrInstance + 3));
+          if (phase.StepOffset(static_cast<int32_t>(instanceOffset), "SoundEvent instance offset", "OFF")) {
+            owner.SetSoundEventInstanceOffset(instanceOffset);
+          }
+        }
+
+        /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_Stop[14028fb70]) ---/
+         * 14028fb86  C7 83 30 00 00 00 00 00 00 00  MOV dword ptr [RBX + 0x30],0x0
+         * 14028fb94  C7 87 30 00 00 00 00 00 00 00  MOV dword ptr [RDI + 0x30],0x0
+         * /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_PlaybackControl[14028f7f0]) ---/
+         * 14028f826  89 7F 30                        MOV dword ptr [RDI + 0x30],EBX
+         */
+        uintptr_t addrState = PatternFinder::Find(stopFn, 64, "[MOV dword ptr [r64+off8], imm32]");
+        if (phase.Step(addrState, "SoundEvent playback-state MOV", "RT")) {
+          uint32_t stateOffset = static_cast<uint32_t>(PatternFinder::ReadInt8(addrState + 2));
+          if (phase.StepOffset(static_cast<int32_t>(stateOffset), "SoundEvent playback-state offset", "OFF")) {
+            owner.SetSoundEventPlaybackStateOffset(stateOffset);
+          }
+        }
+
+        /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_PlaybackControl[14028f7f0]) ---/
+         * 14028f81b  8B 81 2C 00 00 00             MOV EAX,dword ptr [RCX + 0x2c]
+         * 14028f81e  83 F8 02                      CMP EAX,0x2
+         */
+        uintptr_t addrBound = PatternFinder::Find(playbackFn, 32, "[MOV r32, [r64+off8]]");
+        if (phase.Step(addrBound, "SoundEvent bound-field MOV", "RT")) {
+          uint32_t boundOffset = static_cast<uint32_t>(PatternFinder::ReadInt8(addrBound + 2));
+          if (phase.StepOffset(static_cast<int32_t>(boundOffset), "SoundEvent bound-field offset", "OFF")) {
+            owner.SetSoundEventBoundFieldOffset(boundOffset);
+          }
+        }
+
+        // Vtable order-shift guard: slot +0x10 must equal the pattern-found activate fn.
+        if (owner.GetSoundEventVtableAddr() != 0 && owner.ReadSoundEventVtableSlot(2) != owner.GetSoundEventActivateFn()) {
+          log.Error("vtable slot +0x10 != SoundEvent_ActivateFromSource - vtable order shifted");
+        }
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
   // Required: without these the core SoundRef path is unsafe or non-functional —
   // state/bound-lock/bound-state gate the SRW lock around prism_string writes
@@ -637,7 +709,8 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
   m_isReady = owner.GetBankListLockOffset() != 0 && owner.GetBankListHeadOffset() != 0 && owner.GetBankEventListHeadOffset() != 0 && owner.GetBankPathStringOffset() != 0 && owner.GetEventListTerminatorOffset() != 0 &&
               owner.GetEventPathOffset() != 0 && owner.GetEventGuidOffset() != 0 && owner.GetSoundEventListHeadOffset() != 0 && owner.GetSoundEventCreateLockAddr() != 0 && owner.GetSoundEventActivateFn() != 0 &&
               owner.GetSoundRefLoadConfigFn() != 0 && owner.GetUiSoundRefTableAddr() != 0 && owner.GetStudioSystemOffset() != 0 && owner.GetSoundEventNodeOffset() != 0 && owner.GetSoundEventPathOffset() != 0 &&
-              owner.GetSoundEventSourceOffset() != 0 && owner.GetSoundEventStateOffset() != 0 && owner.GetSoundEventBoundLockOffset() != 0 && owner.GetSoundEventBoundState() != 0 &&
+               owner.GetSoundEventSourceOffset() != 0 && owner.GetSoundEventStateOffset() != 0 && owner.GetSoundEventBoundLockOffset() != 0 && owner.GetSoundEventBoundState() != 0 &&
+               owner.GetSoundEventInstanceOffset() != 0 && owner.GetSoundEventPlaybackStateOffset() != 0 && owner.GetSoundEventBoundFieldOffset() != 0 &&
               owner.GetUiWrapperArrayBufferOffset() != 0 && owner.GetUiWrapperArrayCountOffset() != 0 && owner.GetUiWrapperEventOffset() != 0;
 
   return log.Finish(m_isReady);

@@ -1383,7 +1383,18 @@
         "reset_to_game": "重置",
         "manual_override": "手动覆盖",
         "apply_listener": "应用监听器",
-        "create_new_instance": "创建并播放新实例"
+        "create_new_instance": "创建并播放新实例",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "SoundRef 目录",
+        "soundref_live_events": "实时声音事件",
+        "soundref_path": "路径",
+        "soundref_source": "来源",
+        "soundref_category": "类别",
+        "soundref_enabled": "已启用",
+        "soundref_refresh": "刷新 SoundRef",
+        "soundref_no_entries": "未找到 SoundRef 条目。",
+        "soundref_origin": "来源",
+        "soundref_event": "事件"
     },
     "info_window": {
         "title": "环境信息",

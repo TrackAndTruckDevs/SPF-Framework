@@ -110,6 +110,15 @@ void SoundApi::FillSoundApi(SPF_Sound_API* sound_api) {
   sound_api->SND_Reset3DToOriginal = &T_SND_Reset3DToOriginal;
   sound_api->SND_HasOverrides = &T_SND_HasOverrides;
   sound_api->SND_RemoveAllOverrides = &T_SND_RemoveAllOverrides;
+  sound_api->SND_OverrideEventVolume = &T_SND_OverrideEventVolume;
+  sound_api->SND_RemoveEventVolumeOverride = &T_SND_RemoveEventVolumeOverride;
+  sound_api->SND_OverrideEventPitch = &T_SND_OverrideEventPitch;
+  sound_api->SND_RemoveEventPitchOverride = &T_SND_RemoveEventPitchOverride;
+  sound_api->SND_SetActivityCallback = &T_SND_SetActivityCallback;
+  sound_api->SND_SuppressEventPlayback = &T_SND_SuppressEventPlayback;
+  sound_api->SND_UnsuppressEventPlayback = &T_SND_UnsuppressEventPlayback;
+  sound_api->SND_GetSuppressedStartCount = &T_SND_GetSuppressedStartCount;
+  sound_api->SND_GetLastSuppressedInstance = &T_SND_GetLastSuppressedInstance;
 
   sound_api->SND_GetEventParameterCount = &T_SND_GetEventParameterCount;
   sound_api->SND_GetEventParameterByIndex = &T_SND_GetEventParameterByIndex;
@@ -117,6 +126,24 @@ void SoundApi::FillSoundApi(SPF_Sound_API* sound_api) {
   sound_api->SND_GetEventUserPropertyByIndex = &T_SND_GetEventUserPropertyByIndex;
   sound_api->SND_GetEventSoundSize = &T_SND_GetEventSoundSize;
   sound_api->SND_GetEventSampleLoadingState = &T_SND_GetEventSampleLoadingState;
+
+  // Game sound_event control (game layer)
+  sound_api->SND_GetGameEventCount = &T_SND_GetGameEventCount;
+  sound_api->SND_GetGameEventAt = &T_SND_GetGameEventAt;
+  sound_api->SND_FindGameEventByPath = &T_SND_FindGameEventByPath;
+  sound_api->SND_FindGameEventBySource = &T_SND_FindGameEventBySource;
+  sound_api->SND_FindGameEventByInstance = &T_SND_FindGameEventByInstance;
+  sound_api->SND_GetGameEventPlaybackState = &T_SND_GetGameEventPlaybackState;
+  sound_api->SND_IsGameEventBound = &T_SND_IsGameEventBound;
+  sound_api->SND_GameEvent_Activate = &T_SND_GameEvent_Activate;
+  sound_api->SND_GameEvent_Start = &T_SND_GameEvent_Start;
+  sound_api->SND_GameEvent_Stop = &T_SND_GameEvent_Stop;
+  sound_api->SND_GameEvent_SetPaused = &T_SND_GameEvent_SetPaused;
+  sound_api->SND_GameEvent_SetVolume = &T_SND_GameEvent_SetVolume;
+  sound_api->SND_GameEvent_SetPitch = &T_SND_GameEvent_SetPitch;
+  sound_api->SND_GameEvent_SetProperty = &T_SND_GameEvent_SetProperty;
+  sound_api->SND_GameEvent_Set3DAttributes = &T_SND_GameEvent_Set3DAttributes;
+  sound_api->SND_GameEvent_SetParameterByID = &T_SND_GameEvent_SetParameterByID;
 
   // SoundRef (game layer)
   sound_api->SND_GetSoundRefCount = &T_SND_GetSoundRefCount;
@@ -126,6 +153,7 @@ void SoundApi::FillSoundApi(SPF_Sound_API* sound_api) {
   sound_api->SND_FindSoundRefBySource = &T_SND_FindSoundRefBySource;
   sound_api->SND_IsSoundRefActive = &T_SND_IsSoundRefActive;
   sound_api->SND_RegisterSoundRefOverride = &T_SND_RegisterSoundRefOverride;
+  sound_api->SND_SoundRef_Replace = &T_SND_SoundRef_Replace;
   sound_api->SND_UnregisterSoundRefOverride = &T_SND_UnregisterSoundRefOverride;
   sound_api->SND_ClearSoundRefOverrides = &T_SND_ClearSoundRefOverrides;
   sound_api->SND_GetSoundRefOverride = &T_SND_GetSoundRefOverride;
@@ -600,7 +628,53 @@ void SoundApi::T_SND_Reset3DToOriginal(const char* event_path) {
 
 bool SoundApi::T_SND_HasOverrides() { return Fmod::FmodStudioHook::GetInstance().HasOverrides(); }
 
-void SoundApi::T_SND_RemoveAllOverrides() { Fmod::FmodStudioHook::GetInstance().RemoveAllOverrides(); }
+void SoundApi::T_SND_RemoveAllOverrides() {
+  Fmod::FmodStudioHook::GetInstance().RemoveAllOverrides();
+}
+
+void SoundApi::T_SND_OverrideEventVolume(const char* event_path, float volume) {
+  if (!event_path) return;
+  Fmod::FmodStudioHook::GetInstance().OverrideEventVolume(event_path, volume);
+}
+
+void SoundApi::T_SND_RemoveEventVolumeOverride(const char* event_path) {
+  if (!event_path) return;
+  Fmod::FmodStudioHook::GetInstance().RemoveEventVolumeOverride(event_path);
+}
+
+void SoundApi::T_SND_OverrideEventPitch(const char* event_path, float pitch) {
+  if (!event_path) return;
+  Fmod::FmodStudioHook::GetInstance().OverrideEventPitch(event_path, pitch);
+}
+
+void SoundApi::T_SND_RemoveEventPitchOverride(const char* event_path) {
+  if (!event_path) return;
+  Fmod::FmodStudioHook::GetInstance().RemoveEventPitchOverride(event_path);
+}
+
+void SoundApi::T_SND_SetActivityCallback(void (*callback)(void*, int, const char*, void*, const char*, float), void* user_data) {
+  Fmod::FmodStudioHook::GetInstance().SetActivityCallback(callback, user_data);
+}
+
+bool SoundApi::T_SND_SuppressEventPlayback(const char* path_prefix) {
+  if (!path_prefix || !path_prefix[0]) return false;
+  return Fmod::FmodStudioHook::GetInstance().SuppressEventPlayback(path_prefix);
+}
+
+bool SoundApi::T_SND_UnsuppressEventPlayback(const char* path_prefix) {
+  if (!path_prefix || !path_prefix[0]) return false;
+  return Fmod::FmodStudioHook::GetInstance().UnsuppressEventPlayback(path_prefix);
+}
+
+uint64_t SoundApi::T_SND_GetSuppressedStartCount(const char* path_prefix) {
+  if (!path_prefix || !path_prefix[0]) return 0;
+  return Fmod::FmodStudioHook::GetInstance().GetSuppressedStartCount(path_prefix);
+}
+
+void* SoundApi::T_SND_GetLastSuppressedInstance(const char* path_prefix) {
+  if (!path_prefix || !path_prefix[0]) return nullptr;
+  return Fmod::FmodStudioHook::GetInstance().GetLastSuppressedInstance(path_prefix);
+}
 
 // --- Event Description Introspection ---
 
@@ -672,6 +746,104 @@ int SoundApi::T_SND_GetEventSampleLoadingState(int event_index) {
   return state;
 }
 
+// --- L2: game sound_event control (game layer) ---
+
+int SoundApi::T_SND_GetGameEventCount() {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return 0;
+  return svc.GetGameEventCount();
+}
+
+void* SoundApi::T_SND_GetGameEventAt(int index) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return nullptr;
+  return svc.GetGameEventAt(index);
+}
+
+void* SoundApi::T_SND_FindGameEventByPath(const char* path) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !path) return nullptr;
+  return svc.FindGameEventByPath(path);
+}
+
+void* SoundApi::T_SND_FindGameEventBySource(const char* source) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !source) return nullptr;
+  return svc.FindGameEventBySource(source);
+}
+
+void* SoundApi::T_SND_FindGameEventByInstance(void* instance) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !instance) return nullptr;
+  return svc.FindGameEventByInstance(instance);
+}
+
+uint32_t SoundApi::T_SND_GetGameEventPlaybackState(void* event) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return 0;
+  return svc.GetGameEventPlaybackState(event);
+}
+
+bool SoundApi::T_SND_IsGameEventBound(void* event) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.IsGameEventBound(event);
+}
+
+bool SoundApi::T_SND_GameEvent_Activate(void* event) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventActivate(event);
+}
+
+bool SoundApi::T_SND_GameEvent_Start(void* event) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventStart(event);
+}
+
+bool SoundApi::T_SND_GameEvent_Stop(void* event) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventStop(event);
+}
+
+bool SoundApi::T_SND_GameEvent_SetPaused(void* event, bool paused) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventSetPaused(event, paused);
+}
+
+bool SoundApi::T_SND_GameEvent_SetVolume(void* event, float volume) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventSetVolume(event, volume);
+}
+
+bool SoundApi::T_SND_GameEvent_SetPitch(void* event, float pitch) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventSetPitch(event, pitch);
+}
+
+bool SoundApi::T_SND_GameEvent_SetProperty(void* event, int property_id, float value) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventSetProperty(event, property_id, value);
+}
+
+bool SoundApi::T_SND_GameEvent_Set3DAttributes(void* event, float pos_x, float pos_y, float pos_z) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady()) return false;
+  return svc.GameEventSet3DAttributes(event, pos_x, pos_y, pos_z);
+}
+
+bool SoundApi::T_SND_GameEvent_SetParameterByID(void* event, const uint8_t id[16], float value) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !id) return false;
+  return svc.GameEventSetParameterByID(event, id, value);
+}
+
 // --- SoundRef (game layer) ---
 
 int SoundApi::T_SND_GetSoundRefCount() {
@@ -721,6 +893,12 @@ bool SoundApi::T_SND_RegisterSoundRefOverride(const char* soundref_path, const c
   auto& svc = SoundService::GetInstance();
   if (!svc.IsReady() || !soundref_path || !source) return false;
   return svc.RegisterSoundRefOverride(soundref_path, source);
+}
+
+bool SoundApi::T_SND_SoundRef_Replace(const char* soundref_path, const char* source) {
+  auto& svc = SoundService::GetInstance();
+  if (!svc.IsReady() || !soundref_path || !source) return false;
+  return svc.SoundRefReplace(soundref_path, source);
 }
 
 bool SoundApi::T_SND_UnregisterSoundRefOverride(const char* soundref_path) {

@@ -2,6 +2,8 @@
 
 #include "SPF/SPF_API/SPF_Sound_API.h"
 
+#include <cstdint>
+
 namespace SPF::Modules::API {
 class SoundApi {
  public:
@@ -61,13 +63,32 @@ class SoundApi {
   static bool T_SND_SetEventPitch(void* instance, float pitch);
   static bool T_SND_GetEventPitch(void* instance, float* out_pitch);
   static bool T_SND_SetEvent3DAttributes(void* instance, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, float fwd_x, float fwd_y, float fwd_z, float up_x, float up_y, float up_z);
-  static bool T_SND_GetEvent3DAttributes(void* instance, float* out_pos_x, float* out_pos_y, float* out_pos_z, float* out_vel_x, float* out_vel_y, float* out_vel_z, float* out_fwd_x, float* out_fwd_y, float* out_fwd_z, float* out_up_x, float* out_up_y, float* out_up_z);
+  static bool T_SND_GetEvent3DAttributes(void* instance, float* out_pos_x, float* out_pos_y, float* out_pos_z, float* out_vel_x, float* out_vel_y, float* out_vel_z, float* out_fwd_x, float* out_fwd_y, float* out_fwd_z, float* out_up_x,
+                                         float* out_up_y, float* out_up_z);
   static bool T_SND_SetEventParameter(void* instance, const char* param_name, float value, bool ignore_seek_speed);
   static bool T_SND_GetEventParameter(void* instance, const char* param_name, float* out_value);
   static bool T_SND_SetEventTimelinePosition(void* instance, int position);
   static int T_SND_GetEventTimelinePosition(void* instance);
   static bool T_SND_SetEventLoop(void* instance, bool loop);
   static int T_SND_GetEventLoopCount(void* instance);
+
+  // --- L2: game sound_event control ---
+  static int T_SND_GetGameEventCount();
+  static void* T_SND_GetGameEventAt(int index);
+  static void* T_SND_FindGameEventByPath(const char* path);
+  static void* T_SND_FindGameEventBySource(const char* source);
+  static void* T_SND_FindGameEventByInstance(void* instance);
+  static uint32_t T_SND_GetGameEventPlaybackState(void* event);
+  static bool T_SND_IsGameEventBound(void* event);
+  static bool T_SND_GameEvent_Activate(void* event);
+  static bool T_SND_GameEvent_Start(void* event);
+  static bool T_SND_GameEvent_Stop(void* event);
+  static bool T_SND_GameEvent_SetPaused(void* event, bool paused);
+  static bool T_SND_GameEvent_SetVolume(void* event, float volume);
+  static bool T_SND_GameEvent_SetPitch(void* event, float pitch);
+  static bool T_SND_GameEvent_SetProperty(void* event, int property_id, float value);
+  static bool T_SND_GameEvent_Set3DAttributes(void* event, float pos_x, float pos_y, float pos_z);
+  static bool T_SND_GameEvent_SetParameterByID(void* event, const uint8_t id[16], float value);
 
   // --- SoundRef (game layer) ---
   static int T_SND_GetSoundRefCount();
@@ -77,6 +98,7 @@ class SoundApi {
   static int T_SND_FindSoundRefBySource(const char* source);
   static bool T_SND_IsSoundRefActive(const char* soundref_path);
   static bool T_SND_RegisterSoundRefOverride(const char* soundref_path, const char* source);
+  static bool T_SND_SoundRef_Replace(const char* soundref_path, const char* source);
   static bool T_SND_UnregisterSoundRefOverride(const char* soundref_path);
   static void T_SND_ClearSoundRefOverrides();
   static int T_SND_GetSoundRefOverride(const char* soundref_path, char* out_buffer, int buffer_size);
@@ -84,7 +106,8 @@ class SoundApi {
 
   static int T_SND_GetNumListeners();
   static bool T_SND_SetNumListeners(int count);
-  static bool T_SND_GetListenerAttributes(int index, float* out_pos_x, float* out_pos_y, float* out_pos_z, float* out_vel_x, float* out_vel_y, float* out_vel_z, float* out_fwd_x, float* out_fwd_y, float* out_fwd_z, float* out_up_x, float* out_up_y, float* out_up_z);
+  static bool T_SND_GetListenerAttributes(int index, float* out_pos_x, float* out_pos_y, float* out_pos_z, float* out_vel_x, float* out_vel_y, float* out_vel_z, float* out_fwd_x, float* out_fwd_y, float* out_fwd_z, float* out_up_x, float* out_up_y,
+                                          float* out_up_z);
   static bool T_SND_SetListenerAttributes(int index, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, float fwd_x, float fwd_y, float fwd_z, float up_x, float up_y, float up_z);
 
   static void* T_SND_LoadBankFile(const char* bank_path, const char* guids_path);
@@ -104,6 +127,15 @@ class SoundApi {
   static void T_SND_Reset3DToOriginal(const char* event_path);
   static bool T_SND_HasOverrides();
   static void T_SND_RemoveAllOverrides();
+  static void T_SND_OverrideEventVolume(const char* event_path, float volume);
+  static void T_SND_RemoveEventVolumeOverride(const char* event_path);
+  static void T_SND_OverrideEventPitch(const char* event_path, float pitch);
+  static void T_SND_RemoveEventPitchOverride(const char* event_path);
+  static void T_SND_SetActivityCallback(void (*callback)(void*, int, const char*, void*, const char*, float), void* user_data);
+  static bool T_SND_SuppressEventPlayback(const char* path_prefix);
+  static bool T_SND_UnsuppressEventPlayback(const char* path_prefix);
+  static uint64_t T_SND_GetSuppressedStartCount(const char* path_prefix);
+  static void* T_SND_GetLastSuppressedInstance(const char* path_prefix);
 
   static int T_SND_GetEventParameterCount(int event_index);
   static bool T_SND_GetEventParameterByIndex(int event_index, int param_index, char* out_name, int name_size, float* out_min, float* out_max, float* out_default);

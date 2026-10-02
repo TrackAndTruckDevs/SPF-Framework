@@ -1383,7 +1383,18 @@
         "reset_to_game": "Restablecer",
         "manual_override": "Anulación manual",
         "apply_listener": "Aplicar oyente",
-        "create_new_instance": "Crear y reproducir nueva instancia"
+        "create_new_instance": "Crear y reproducir nueva instancia",
+        "soundref_tab": "SoundRef",
+        "soundref_ui_table": "Catálogo SoundRef",
+        "soundref_live_events": "Eventos de sonido en vivo",
+        "soundref_path": "Ruta",
+        "soundref_source": "Origen",
+        "soundref_category": "Categoría",
+        "soundref_enabled": "Habilitado",
+        "soundref_refresh": "Actualizar SoundRef",
+        "soundref_no_entries": "No se encontraron entradas SoundRef.",
+        "soundref_origin": "Origen",
+        "soundref_event": "Evento"
     },
     "info_window": {
         "title": "Información del Entorno",

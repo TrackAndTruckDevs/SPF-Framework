@@ -153,6 +153,8 @@ class SoundWindow : public BaseWindow {
   bool m_parametersEnriched = false;
   std::vector<Data::GameData::SoundBankLoadInfo> m_bankLoadInfos;
   void* m_activeInstance = nullptr;
+  void* m_activeGameEvent = nullptr;
+  void* m_activeGameEventFor = nullptr;
   int m_playbackState = -1;
   bool m_autoLoop = false;
   char m_searchFilter[256] = {};
