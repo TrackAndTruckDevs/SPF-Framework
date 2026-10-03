@@ -65,6 +65,8 @@ using LoadBankMemory_t = FMOD_RESULT (*)(FMOD::Studio::System*, const char*, int
 using LoadBankCustom_t = FMOD_RESULT (*)(FMOD::Studio::System*, const FMOD_STUDIO_BANK_INFO*, unsigned int, FMOD::Studio::Bank**);
 using BankUnload_t = FMOD_RESULT (*)(FMOD::Studio::Bank*);
 using GetBankPath_t = FMOD_RESULT (*)(FMOD::Studio::Bank*, char*, int, int*);
+using SystemGetBankCount_t = FMOD_RESULT (*)(FMOD::Studio::System*, int*);
+using SystemGetBankList_t = FMOD_RESULT (*)(FMOD::Studio::System*, FMOD::Studio::Bank**, int, int*);
 
 std::mutex s_mutex;
 std::unordered_map<OverrideKey, float, OverrideKeyHash> s_parameterOverrides;
@@ -115,6 +117,8 @@ using BankGetEventCount_t = FMOD_RESULT (*)(FMOD::Studio::Bank*, int*);
 using BankGetEventList_t = FMOD_RESULT (*)(FMOD::Studio::Bank*, FMOD::Studio::EventDescription**, int, int*);
 BankGetEventCount_t s_fnBankGetEventCount = nullptr;
 BankGetEventList_t s_fnBankGetEventList = nullptr;
+SystemGetBankCount_t s_fnGetBankCount = nullptr;
+SystemGetBankList_t s_fnGetBankList = nullptr;
 using GetParamCount_t = FMOD_RESULT (*)(FMOD::Studio::EventDescription*, int*);
 using GetParamDescByIndex_t = FMOD_RESULT (*)(FMOD::Studio::EventDescription*, int, FMOD_STUDIO_PARAMETER_DESCRIPTION*);
 GetParamCount_t s_fnGetParamCount = nullptr;
@@ -279,6 +283,71 @@ std::string GetBankPath(FMOD::Studio::Bank* bank) {
   return buffer;
 }
 
+// Warm the desc->path cache at bank-load time so gameplay-time resolutions
+// hit the cache instead of walking the game's per-bank lists. Best effort:
+// a miss (game bank list not built yet) stays lazy. Runs only when some
+// consumer exists — with no overrides/rules/activity registered the paths
+// would never be read.
+void PrewarmDescPathCache(FMOD::Studio::Bank* bank) {
+  if (!bank || !s_fnBankGetEventCount || !s_fnBankGetEventList || !s_fnGetEventID) return;
+  FmodStudioHook::PathResolverCallback resolver = nullptr;
+  void* resolverUser = nullptr;
+  bool consumer = false;
+  {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    resolver = s_pathResolverCallback;
+    resolverUser = s_pathResolverUserData;
+    consumer = s_activityCallback != nullptr || !s_suppressionCounts.empty() ||
+               !s_parameterOverrides.empty() || !s_3dOverrides.empty() ||
+               !s_volumeOverrides.empty() || !s_pitchOverrides.empty();
+  }
+  if (!resolver || !consumer) return;
+  int count = 0;
+  if (s_fnBankGetEventCount(bank, &count) != FMOD_OK || count <= 0) return;
+  std::vector<FMOD::Studio::EventDescription*> descs(static_cast<size_t>(count));
+  int fetched = 0;
+  if (s_fnBankGetEventList(bank, descs.data(), count, &fetched) != FMOD_OK || fetched <= 0) return;
+  auto logger = Logging::LoggerFactory::GetInstance().GetLogger("FmodStudioHook");
+  int warmed = 0;
+  for (int i = 0; i < fetched; ++i) {
+    FMOD::Studio::EventDescription* desc = descs[i];
+    if (!desc) continue;
+    {
+      std::lock_guard<std::mutex> lock(s_mutex);
+      if (s_descPathCache.find(desc) != s_descPathCache.end()) continue;
+    }
+    FMOD_GUID guid{};
+    if (s_fnGetEventID(desc, &guid) != FMOD_OK) continue;
+    // Resolver walks game structures — call it without s_mutex held (same
+    // contract as GetEventPathFromInstance), then copy the result.
+    const char* resolved = resolver(resolverUser, reinterpret_cast<const uint8_t*>(&guid), nullptr);
+    if (!resolved || !resolved[0]) continue;
+    std::string path(resolved);
+    {
+      std::lock_guard<std::mutex> lock(s_mutex);
+      s_descPathCache[desc] = path;
+      PopulateParamCache(desc, path, logger);
+    }
+    ++warmed;
+  }
+  //if (warmed > 0) logger->Debug("[PATH] prewarmed {} event paths at bank load", warmed);
+}
+
+// Burst-resolve every already-loaded bank in one pass. Called when a
+// suppression rule is armed: at that point bank-load-time prewarm may have
+// been skipped (no consumer yet), so the first gameplay starts would walk
+// the game's per-bank lists one event at a time. Idempotent — descs already
+// in the cache are skipped.
+void PrewarmAllLoadedBanks() {
+  if (!s_studioSystem || !s_fnGetBankCount || !s_fnGetBankList) return;
+  int count = 0;
+  if (s_fnGetBankCount(s_studioSystem, &count) != FMOD_OK || count <= 0) return;
+  std::vector<FMOD::Studio::Bank*> banks(static_cast<size_t>(count));
+  int fetched = 0;
+  if (s_fnGetBankList(s_studioSystem, banks.data(), count, &fetched) != FMOD_OK || fetched <= 0) return;
+  for (int i = 0; i < fetched; ++i) PrewarmDescPathCache(banks[i]);
+}
+
 FMOD_RESULT WINAPI Detour_SetParameterByName(FMOD::Studio::EventInstance* inst, const char* name, float value) {
   auto& hook = FmodStudioHook::GetInstance();
   const bool wantOverride = hook.HasOverrides();
@@ -374,13 +443,21 @@ FMOD_RESULT WINAPI Detour_SetListenerAttributes(FMOD::Studio::System* sys, int i
 
 FMOD_RESULT WINAPI Detour_Start(FMOD::Studio::EventInstance* inst) {
   if (!inst) return s_trampolineStart(inst);
-  std::string eventPath = GetEventPathFromInstance(inst);
-  bool suppressed = false;
-  uint64_t attempts = 0;
   bool rulesActive = false;
+  bool wantActivity = false;
   {
     std::lock_guard<std::mutex> lock(s_mutex);
     rulesActive = !s_suppressionCounts.empty();
+    wantActivity = s_activityCallback != nullptr;
+  }
+  // Idle fast path: without suppression rules and an activity callback the
+  // resolved path would be discarded — skip the whole resolution chain.
+  if (!rulesActive && !wantActivity) return s_trampolineStart(inst);
+  std::string eventPath = GetEventPathFromInstance(inst);
+  bool suppressed = false;
+  uint64_t attempts = 0;
+  {
+    std::lock_guard<std::mutex> lock(s_mutex);
     if (!eventPath.empty()) {
       for (auto& kv : s_suppressionCounts) {
         if (eventPath.rfind(kv.first, 0) == 0) {
@@ -405,16 +482,17 @@ FMOD_RESULT WINAPI Detour_Start(FMOD::Studio::EventInstance* inst) {
       int n = s_unresolvedLogs.fetch_add(1) + 1;
       if (n <= 10)
         logger->Warn("[Suppression] start passed through: event path could NOT be resolved ({}/10) — rules active but cannot match", n);
-    } else {
-      static std::mutex s_loggedPathsMutex;
-      static std::unordered_set<std::string> s_loggedUnmatchedPaths;
-      bool firstTime = false;
-      {
-        std::lock_guard<std::mutex> lk(s_loggedPathsMutex);
-        firstTime = s_loggedUnmatchedPaths.insert(eventPath).second;
-      }
-      if (firstTime) logger->Info("[Suppression] start '{}' not matched by any suppression rule", eventPath);
-    }
+    } 
+    // else {
+    //   static std::mutex s_loggedPathsMutex;
+    //   static std::unordered_set<std::string> s_loggedUnmatchedPaths;
+    //   bool firstTime = false;
+    //   {
+    //     std::lock_guard<std::mutex> lk(s_loggedPathsMutex);
+    //     firstTime = s_loggedUnmatchedPaths.insert(eventPath).second;
+    //   }
+    //   if (firstTime) logger->Info("[Suppression] start '{}' not matched by any suppression rule", eventPath);
+    // }
   }
   if (suppressed) {
     // Bounded visibility: first attempts of each suppression run at INFO, the
@@ -435,7 +513,7 @@ FMOD_RESULT WINAPI Detour_Start(FMOD::Studio::EventInstance* inst) {
 }
 
 FMOD_RESULT WINAPI Detour_Stop(FMOD::Studio::EventInstance* inst, FMOD_STUDIO_STOP_MODE mode) {
-  if (inst) {
+  if (inst && FmodStudioHook::GetInstance().HasActivityCallback()) {
     std::string eventPath = GetEventPathFromInstance(inst);
     if (!eventPath.empty()) FireActivity(FmodStudioHook::kActivityStopped, eventPath.c_str(), inst, nullptr, 0.0f);
   }
@@ -451,28 +529,32 @@ FMOD_RESULT WINAPI Detour_CreateInstance(FMOD::Studio::EventDescription* desc, F
       std::lock_guard<std::mutex> lock(s_mutex);
       s_eventPathCache.erase(*instance);
     }
-    std::string eventPath = GetEventPathFromInstance(*instance);
-    FireActivity(FmodStudioHook::kActivityEventCreated, eventPath.c_str(), *instance, nullptr, 0.0f);
+    if (FmodStudioHook::GetInstance().HasActivityCallback()) {
+      std::string eventPath = GetEventPathFromInstance(*instance);
+      FireActivity(FmodStudioHook::kActivityEventCreated, eventPath.c_str(), *instance, nullptr, 0.0f);
+    }
   }
   return result;
 }
 
 FMOD_RESULT WINAPI Detour_Release(FMOD::Studio::EventInstance* inst) {
   if (inst) {
-    std::string eventPath = GetEventPathFromInstance(inst);
+    bool wantActivity = FmodStudioHook::GetInstance().HasActivityCallback();
+    std::string eventPath;
+    if (wantActivity) eventPath = GetEventPathFromInstance(inst);
     {
       std::lock_guard<std::mutex> lock(s_mutex);
       s_eventPathCache.erase(inst);
       s_suppressedInstances.erase(inst);
       if (s_lastSuppressedInstance == inst) s_lastSuppressedInstance = nullptr;
     }
-    FireActivity(FmodStudioHook::kActivityReleased, eventPath.c_str(), inst, nullptr, 0.0f);
+    if (wantActivity) FireActivity(FmodStudioHook::kActivityReleased, eventPath.c_str(), inst, nullptr, 0.0f);
   }
   return s_trampolineRelease(inst);
 }
 
 FMOD_RESULT WINAPI Detour_SetPaused(FMOD::Studio::EventInstance* inst, bool paused) {
-  if (inst) {
+  if (inst && FmodStudioHook::GetInstance().HasActivityCallback()) {
     std::string eventPath = GetEventPathFromInstance(inst);
     if (!eventPath.empty())
       FireActivity(paused ? FmodStudioHook::kActivityPaused : FmodStudioHook::kActivityUnpaused,
@@ -519,6 +601,7 @@ FMOD_RESULT WINAPI Detour_LoadBankFile(FMOD::Studio::System* sys, const char* fi
                                         FMOD::Studio::Bank** bank) {
   FMOD_RESULT result = s_trampolineLoadBankFile(sys, filename, flags, bank);
   if (result == FMOD_OK && bank && *bank) {
+    PrewarmDescPathCache(*bank);
     std::string bankPath = GetBankPath(*bank);
     if (bankPath.empty() && filename) bankPath = filename;
     FireActivity(FmodStudioHook::kActivityBankLoaded, bankPath.c_str(), nullptr, nullptr, 0.0f);
@@ -531,6 +614,7 @@ FMOD_RESULT WINAPI Detour_LoadBankMemory(FMOD::Studio::System* sys, const char* 
                                           FMOD::Studio::Bank** bank) {
   FMOD_RESULT result = s_trampolineLoadBankMemory(sys, data, size, mode, flags, bank);
   if (result == FMOD_OK && bank && *bank) {
+    PrewarmDescPathCache(*bank);
     std::string bankPath = GetBankPath(*bank);
     FireActivity(FmodStudioHook::kActivityBankLoaded, bankPath.c_str(), nullptr, nullptr, 0.0f);
   }
@@ -541,6 +625,7 @@ FMOD_RESULT WINAPI Detour_LoadBankCustom(FMOD::Studio::System* sys, const FMOD_S
                                           unsigned int flags, FMOD::Studio::Bank** bank) {
   FMOD_RESULT result = s_trampolineLoadBankCustom(sys, info, flags, bank);
   if (result == FMOD_OK && bank && *bank) {
+    PrewarmDescPathCache(*bank);
     std::string bankPath = GetBankPath(*bank);
     FireActivity(FmodStudioHook::kActivityBankLoaded, bankPath.c_str(), nullptr, nullptr, 0.0f);
   }
@@ -618,6 +703,8 @@ bool FmodStudioHook::Install() {
   s_fnBankGetPath = reinterpret_cast<GetBankPath_t>(fmodApi.Find("Bank::getPath"));
   s_fnBankGetEventCount = reinterpret_cast<BankGetEventCount_t>(fmodApi.Find("Bank::getEventCount"));
   s_fnBankGetEventList = reinterpret_cast<BankGetEventList_t>(fmodApi.Find("Bank::getEventList"));
+  s_fnGetBankCount = reinterpret_cast<SystemGetBankCount_t>(fmodApi.Find("System::getBankCount"));
+  s_fnGetBankList = reinterpret_cast<SystemGetBankList_t>(fmodApi.Find("System::getBankList"));
 
   if (!addrSetParamByName || !addrSetParamByID || !addrSet3D) {
     logger->Error("Could not find all required FMOD functions for '{}'.", m_displayName);
@@ -925,8 +1012,14 @@ bool FmodStudioHook::SuppressEventPlayback(const std::string& pathPrefix) {
     logger->Warn("EventInstance::start hook unavailable — suppression '{}' not active.", pathPrefix);
     return false;
   }
-  std::lock_guard lock(s_mutex);
-  s_suppressionCounts.try_emplace(pathPrefix, 0);
+  {
+    std::lock_guard lock(s_mutex);
+    s_suppressionCounts.try_emplace(pathPrefix, 0);
+  }
+  // Arm first (makes the prewarm's consumer check pass), then burst-resolve
+  // all loaded banks so gameplay starts hit warm caches instead of walking
+  // the game's per-bank lists one event at a time.
+  PrewarmAllLoadedBanks();
   logger->Info("Suppression armed: '{}'", pathPrefix);
   return true;
 }
