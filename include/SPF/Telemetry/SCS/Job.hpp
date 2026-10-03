@@ -32,4 +32,25 @@ struct JobData {
   float cargo_damage = 0.0f;
   float remaining_delivery_minutes = 0.0f;
 };
+
+struct CarJobConstants {
+  uint64_t income = 0;
+  uint32_t delivery_time = 0;
+  uint32_t planned_distance_km = 0;
+  std::string car_job_market;
+  bool customer_prio_cargo_handling = false;
+  bool customer_prio_time = false;
+  bool customer_prio_vehicle_appearance = false;
+  std::string cargo_id;
+  std::string cargo_name;
+  uint32_t cargo_unit_count = 0;
+  std::string destination_city_id;
+  std::string destination_city;
+  std::string destination_company_id;
+  std::string destination_company;
+  std::string source_city_id;
+  std::string source_city;
+  std::string source_company_id;
+  std::string source_company;
+};
 }  // namespace SPF::Telemetry::SCS

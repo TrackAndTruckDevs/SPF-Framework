@@ -72,6 +72,12 @@ struct TelemetryEventSignals {
   Utils::Signal<void(const SPF::Telemetry::SCS::JobConstants& data)> OnJobConstantsChanged;
 
   /**
+   * @brief Fired when the current car job's static configuration changes.
+   * @param data The new car job configuration constants.
+   */
+  Utils::Signal<void(const SPF::Telemetry::SCS::CarJobConstants& data)> OnCarJobConstantsChanged;
+
+  /**
    * @brief Fired when dynamic job data is updated.
    * @param data The updated job data.
    */

@@ -81,6 +81,8 @@ void GameDataProcessor::HandleChannelUpdate(const scs_string_t name, const scs_u
     m_commonData.next_rest_stop = value->value_s32.value;
     RecalculateRestStopTime();
     RecalculateRealTimeDurations();
+  } else if (strcmp(name, SCS_TELEMETRY_CHANNEL_next_mandatory_break) == 0) {
+    m_commonData.next_mandatory_break = value->value_s32.value;
   } else if (strcmp(name, SCS_TELEMETRY_CHANNEL_multiplayer_time_offset) == 0) {
     m_gameState.multiplayer_time_offset = value->value_s32.value;
   }

@@ -87,6 +87,7 @@ class TelemetryApi {
   static void InvokeTruckDataCallback(const SPF::Telemetry::SCS::TruckData& cpp_data, SPF_Telemetry_TruckData_Callback callback, void* user_data);
   static void InvokeTrailersCallback(const std::vector<SPF::Telemetry::SCS::Trailer>& cpp_data, SPF_Telemetry_Trailers_Callback callback, void* user_data);
   static void InvokeJobConstantsCallback(const SPF::Telemetry::SCS::JobConstants& cpp_data, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
+  static void InvokeCarJobConstantsCallback(const SPF::Telemetry::SCS::CarJobConstants& cpp_data, SPF_Telemetry_CarJobConstants_Callback callback, void* user_data);
   static void InvokeJobDataCallback(const SPF::Telemetry::SCS::JobData& cpp_data, SPF_Telemetry_JobData_Callback callback, void* user_data);
   static void InvokeNavigationDataCallback(const SPF::Telemetry::SCS::NavigationData& cpp_data, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
   static void InvokeControlsCallback(const SPF::Telemetry::SCS::Controls& cpp_data, SPF_Telemetry_Controls_Callback callback, void* user_data);
@@ -103,6 +104,7 @@ class TelemetryApi {
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForTruckData(SPF_Telemetry_Handle* h, SPF_Telemetry_TruckData_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForTrailers(SPF_Telemetry_Handle* h, SPF_Telemetry_Trailers_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForJobConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_JobConstants_Callback callback, void* user_data);
+  static SPF_Telemetry_Callback_Handle* Tel_RegisterForCarJobConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_CarJobConstants_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForJobData(SPF_Telemetry_Handle* h, SPF_Telemetry_JobData_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForNavigationData(SPF_Telemetry_Handle* h, SPF_Telemetry_NavigationData_Callback callback, void* user_data);
   static SPF_Telemetry_Callback_Handle* Tel_RegisterForControls(SPF_Telemetry_Handle* h, SPF_Telemetry_Controls_Callback callback, void* user_data);
@@ -120,6 +122,7 @@ class TelemetryApi {
   static void Tel_GetTruckData(SPF_Telemetry_Handle* h, SPF_TruckData* out_data, size_t struct_size);
   static void Tel_GetTrailers(SPF_Telemetry_Handle* h, SPF_Trailer* out_trailers, size_t struct_size, uint32_t* in_out_count);
   static void Tel_GetJobConstants(SPF_Telemetry_Handle* h, SPF_JobConstants* out_data, size_t struct_size);
+  static void Tel_GetCarJobConstants(SPF_Telemetry_Handle* h, SPF_CarJobConstants* out_data, size_t struct_size);
   static void Tel_GetJobData(SPF_Telemetry_Handle* h, SPF_JobData* out_data, size_t struct_size);
   static void Tel_GetNavigationData(SPF_Telemetry_Handle* h, SPF_NavigationData* out_data, size_t struct_size);
   static void Tel_GetControls(SPF_Telemetry_Handle* h, SPF_Controls* out_data, size_t struct_size);

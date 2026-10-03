@@ -85,6 +85,7 @@ void SCSTelemetryService::Initialize(const scs_telemetry_init_params_t* const pa
     registerForChannel(SCS_TELEMETRY_CHANNEL_game_time, SCS_U32_NIL, SCS_VALUE_TYPE_u32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
     registerForChannel(SCS_TELEMETRY_CHANNEL_multiplayer_time_offset, SCS_U32_NIL, SCS_VALUE_TYPE_s32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
     registerForChannel(SCS_TELEMETRY_CHANNEL_next_rest_stop, SCS_U32_NIL, SCS_VALUE_TYPE_s32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
+    registerForChannel(SCS_TELEMETRY_CHANNEL_next_mandatory_break, SCS_U32_NIL, SCS_VALUE_TYPE_s32, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
 
     // Job Channels
     registerForChannel(SCS_TELEMETRY_JOB_CHANNEL_cargo_damage, SCS_U32_NIL, SCS_VALUE_TYPE_float, SCS_TELEMETRY_CHANNEL_FLAG_none, StaticChannelCallback, this);
@@ -317,6 +318,14 @@ void SCSTelemetryService::HandleConfiguration(const scs_telemetry_configuration_
 
     // Notify about the job configuration update.
     m_eventManager.System.Telemetry.OnJobConstantsChanged.Call(m_jobProcessor->GetJobConstants());
+  } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_car_job) == 0) {
+    m_jobProcessor->HandleConfiguration(info);
+
+    // Notify about the car job configuration update.
+    m_eventManager.System.Telemetry.OnCarJobConstantsChanged.Call(m_jobProcessor->GetCarJobConstants());
+  } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_bus_job) == 0) {
+    // Bus job attributes are not documented in the SDK yet; reserved for future bus job support.
+    m_logger.Info("Bus job configuration received (attributes unsupported yet).");
   } else if (strcmp(info->id, SCS_TELEMETRY_CONFIG_substances) == 0) {
     m_gameDataProcessor->HandleConfiguration(info);
 
@@ -463,6 +472,7 @@ const SCS::TruckConstants& SCSTelemetryService::GetTruckConstants() const { retu
 const SCS::TruckData& SCSTelemetryService::GetTruckData() const { return m_truckProcessor->GetData(); }
 const std::vector<SCS::Trailer>& SCSTelemetryService::GetTrailers() const { return m_trailerProcessor->GetData(); }
 const SCS::JobConstants& SCSTelemetryService::GetJobConstants() const { return m_jobProcessor->GetJobConstants(); }
+const SCS::CarJobConstants& SCSTelemetryService::GetCarJobConstants() const { return m_jobProcessor->GetCarJobConstants(); }
 const SCS::JobData& SCSTelemetryService::GetJobData() const { return m_jobProcessor->GetJobData(); }
 const SCS::NavigationData& SCSTelemetryService::GetNavigationData() const { return m_jobProcessor->GetNavigationData(); }
 const SCS::Controls& SCSTelemetryService::GetControls() const { return m_controlsProcessor->GetData(); }
@@ -490,6 +500,7 @@ Utils::Signal<void(const SCS::TruckData&)>& SCSTelemetryService::GetTruckDataSig
 Utils::Signal<void(const std::vector<SCS::Trailer>&)>& SCSTelemetryService::GetTrailersSignal() { return m_eventManager.System.Telemetry.OnTrailersUpdated; }
 
 Utils::Signal<void(const SCS::JobConstants&)>& SCSTelemetryService::GetJobConstantsSignal() { return m_eventManager.System.Telemetry.OnJobConstantsChanged; }
+Utils::Signal<void(const SCS::CarJobConstants&)>& SCSTelemetryService::GetCarJobConstantsSignal() { return m_eventManager.System.Telemetry.OnCarJobConstantsChanged; }
 
 Utils::Signal<void(const SCS::JobData&)>& SCSTelemetryService::GetJobDataSignal() { return m_eventManager.System.Telemetry.OnJobDataUpdated; }
 

@@ -21,6 +21,21 @@ struct JobDeliveredEvent {
   bool auto_load_used = false;
 };
 
+// Holds data for the 'car_job_delivered' event
+struct CarJobDeliveredEvent {
+  int64_t revenue = 0;
+  int32_t earned_xp = 0;
+  float cargo_damage = 0.0f;
+  float vehicle_damage = 0.0f;
+  float distance_km = 0.0f;
+  uint32_t delivery_time = 0;
+};
+
+// Holds data for the 'car_job_cancelled' event
+struct CarJobCancelledEvent {
+  int64_t penalty = 0;
+};
+
 // Holds data for the 'player_fined' event
 struct PlayerFinedEvent {
   int64_t fine_amount = 0;
@@ -50,6 +65,8 @@ struct GameplayEvents {
   PlayerTollgatePaidEvent tollgate_paid;
   PlayerUseTransportEvent ferry_used;
   PlayerUseTransportEvent train_used;
+  CarJobDeliveredEvent car_job_delivered;
+  CarJobCancelledEvent car_job_cancelled;
 };
 
 // Contains boolean flags that are set to true for a single frame when an event occurs.
@@ -61,6 +78,8 @@ struct SpecialEvents {
   bool tollgate = false;
   bool ferry = false;
   bool train = false;
+  bool car_job_delivered = false;
+  bool car_job_cancelled = false;
 };
 
 }  // namespace SPF::Telemetry::SCS

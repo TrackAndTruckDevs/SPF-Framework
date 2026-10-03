@@ -43,6 +43,7 @@ struct CommonData {
   GameDateTime next_rest_stop_time;
   float next_rest_stop_real_minutes = 0.0f;
   std::vector<std::string> substances;
+  int32_t next_mandatory_break = 0;
 };
 
 // --- Wheels ---

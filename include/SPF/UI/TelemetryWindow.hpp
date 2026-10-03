@@ -33,6 +33,7 @@ class TelemetryWindow : public BaseWindow {
   void OnTruckDataUpdate(const Telemetry::SCS::TruckData& data);
   void OnTrailersUpdate(const std::vector<Telemetry::SCS::Trailer>& data);
   void OnJobConstantsUpdate(const Telemetry::SCS::JobConstants& data);
+  void OnCarJobConstantsUpdate(const Telemetry::SCS::CarJobConstants& data);
   void OnJobDataUpdate(const Telemetry::SCS::JobData& data);
   void OnNavigationDataUpdate(const Telemetry::SCS::NavigationData& data);
   void OnControlsUpdate(const Telemetry::SCS::Controls& data);
@@ -51,6 +52,7 @@ class TelemetryWindow : public BaseWindow {
   Utils::Sink<void(const Telemetry::SCS::TruckData&)> m_truckDataSink;
   Utils::Sink<void(const std::vector<Telemetry::SCS::Trailer>&)> m_trailersSink;
   Utils::Sink<void(const Telemetry::SCS::JobConstants&)> m_jobConstantsSink;
+  Utils::Sink<void(const Telemetry::SCS::CarJobConstants&)> m_carJobConstantsSink;
   Utils::Sink<void(const Telemetry::SCS::JobData&)> m_jobDataSink;
   Utils::Sink<void(const Telemetry::SCS::NavigationData&)> m_navigationDataSink;
   Utils::Sink<void(const Telemetry::SCS::Controls&)> m_controlsSink;
@@ -66,6 +68,7 @@ class TelemetryWindow : public BaseWindow {
   Telemetry::SCS::TruckData m_truckData;
   std::vector<Telemetry::SCS::Trailer> m_trailers;
   Telemetry::SCS::JobConstants m_jobConstants;
+  Telemetry::SCS::CarJobConstants m_carJobConstants;
   Telemetry::SCS::JobData m_jobData;
   Telemetry::SCS::NavigationData m_navigationData;
   Telemetry::SCS::Controls m_controls;
@@ -97,6 +100,7 @@ class TelemetryWindow : public BaseWindow {
   std::string m_locLabelNextRestStop;
   std::string m_locLabelNextRestStopReal;
   std::string m_locLabelNextRestStopTime;
+  std::string m_locLabelNextMandatoryBreak;
   std::string m_locLabelPaused;
   std::string m_locLabelGameId;
   std::string m_locLabelLocalScale;
@@ -111,6 +115,10 @@ class TelemetryWindow : public BaseWindow {
   std::string m_locLabelRenderTime;
   std::string m_locLabelPausedSimulationTime;
   std::string m_locLabelNoActiveJob;
+  std::string m_locLabelCarJob;
+  std::string m_locLabelNoActiveCarJob;
+  std::string m_locLabelCarJobUnits;
+  std::string m_locLabelCustomerPrio;
   std::string m_locLabelContract;
   std::string m_locLabelMarket;
   std::string m_locLabelIncome;
@@ -273,6 +281,8 @@ class TelemetryWindow : public BaseWindow {
   std::string m_locLabelTollgate;
   std::string m_locLabelFerry;
   std::string m_locLabelTrain;
+  std::string m_locLabelCarJobDelivered;
+  std::string m_locLabelCarJobCancelled;
   std::string m_locLabelLastGameplayEvent;
   std::string m_locLabelNoEventYet;
   std::string m_locLabelEventJobDelivered;
@@ -287,6 +297,9 @@ class TelemetryWindow : public BaseWindow {
   std::string m_locLabelEventTrain;
   std::string m_locLabelEventTrainRoute;
   std::string m_locLabelEventTrainRouteTo;
+  std::string m_locLabelEventCarJobDelivered;
+  std::string m_locLabelEventCarJobDeliveredDetails;
+  std::string m_locLabelEventCarJobCancelled;
 
   std::vector<std::string> m_locDaysOfWeek;
   std::string m_locFormatDayHourMinute;

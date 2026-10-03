@@ -76,11 +76,12 @@ The API consists of a series of getter functions that populate C structs (define
 |---|---|---|
 | `Tel_GetGameState` | `SPF_GameState*` | General game version and state info. Requires `struct_size`. |
 | `Tel_GetTimestamps` | `SPF_Timestamps*` | Simulation and render timestamps. Requires `struct_size`. |
-| `Tel_GetCommonData` | `SPF_CommonData*` | Common data like game time and rest stops. Requires `struct_size`. |
+| `Tel_GetCommonData` | `SPF_CommonData*` | Common data like game time, rest stops and mandatory break. Requires `struct_size`. |
 | `Tel_GetTruckConstants`| `SPF_TruckConstants*`| Static configuration of the player's truck. Requires `struct_size`. |
 | `Tel_GetTruckData` | `SPF_TruckData*` | Live, dynamic data for the player's truck. Requires `struct_size`. |
 | `Tel_GetTrailers` | `SPF_Trailer[]` | Data for all attached trailers. Requires `struct_size` of a single element. |
 | `Tel_GetJobConstants` | `SPF_JobConstants*`| Static information about the current job. Requires `struct_size`. |
+| `Tel_GetCarJobConstants` | `SPF_CarJobConstants*`| Static information about the current car job. Requires `struct_size`. |
 | `Tel_GetJobData` | `SPF_JobData*` | Dynamic data about the current job. Requires `struct_size`. |
 | `Tel_GetNavigationData`| `SPF_NavigationData*`| Data from the in-game GPS. Requires `struct_size`. |
 | `Tel_GetControls` | `SPF_Controls*` | Player control input data. Requires `struct_size`. |
@@ -102,6 +103,7 @@ This section lists the functions used to subscribe to telemetry data updates.
 | `Tel_RegisterForTrailerConstants`| `SPF_Telemetry_TrailerConstants_Callback`| Registers for static trailer configuration changes. |
 | `Tel_RegisterForTrailers` | `SPF_Telemetry_Trailers_Callback` | Registers for live data updates for active trailers. |
 | `Tel_RegisterForJobConstants` | `SPF_Telemetry_JobConstants_Callback`| Registers for static job information changes. |
+| `Tel_RegisterForCarJobConstants` | `SPF_Telemetry_CarJobConstants_Callback`| Registers for static car job configuration changes. |
 | `Tel_RegisterForJobData` | `SPF_Telemetry_JobData_Callback` | Registers for dynamic job data updates. |
 | `Tel_RegisterForNavigationData`| `SPF_Telemetry_NavigationData_Callback`| Registers for in-game GPS data updates. |
 | `Tel_RegisterForControls` | `SPF_Telemetry_Controls_Callback` | Registers for player control input updates. |
@@ -174,14 +176,38 @@ These structs describe the current job. `SPF_JobConstants` contains information 
 *   `uint32_t remaining_delivery_minutes`: Remaining time for the delivery in in-game minutes.
 
 ---
+### `SPF_CarJobConstants`
+Contains static information about the current *car job* (passenger/car transport jobs introduced in ETS2 1.20 / ATS 1.07). Car jobs are reported through a separate configuration (`SCS_TELEMETRY_CONFIG_car_job`) and are intentionally kept separate from truck job data so the two job types can evolve independently.
+
+> [!NOTE]
+> An empty `car_job_market` means there is no active car job.
+
+**Key Fields:**
+*   `uint64_t income`: The total income for completing the car job.
+*   `char car_job_market[...]`: Market identifier of the car job (empty when no car job is active).
+*   `char cargo_name[256]`, `char cargo_id[...]`: Display name and identifier of the cargo.
+*   `uint32_t cargo_unit_count`: Number of cargo units.
+*   `uint32_t planned_distance_km`: Planned route distance in kilometers.
+*   `uint32_t delivery_time`: Delivery deadline in in-game minutes.
+*   `bool customer_prio_cargo_handling`, `customer_prio_time`, `customer_prio_vehicle_appearance`: Customer priority flags for this car job.
+*   `source_*` / `destination_*`: Source and destination city/company names and IDs.
+
+> [!IMPORTANT]
+> Pass `sizeof(SPF_CarJobConstants)` as `struct_size` when polling, exactly like the other getters — this keeps your plugin ABI-safe against future field additions.
+
+---
 ### `SPF_SpecialEvents` & `SPF_GameplayEvents`
 `SPF_SpecialEvents` contains boolean flags that become `true` for a single frame when a specific event occurs. When a flag is true, you can then query the `SPF_GameplayEvents` struct to get detailed information about that event.
 
 **Example Event Flags (`SPF_SpecialEvents`):**
 *   `bool job_delivered`: True for one frame when a job is delivered.
+*   `bool car_job_delivered`: True for one frame when a car job is delivered.
+*   `bool car_job_cancelled`: True for one frame when a car job is cancelled.
 *   `bool fined`: True for one frame when the player is fined.
 
 When `fined` is true, the `player_fined` member of the `SPF_GameplayEvents` struct will be populated with details like the `fine_amount` and `fine_offence`.
+
+When `car_job_delivered` is true, the `car_job_delivered` member is populated with `revenue`, `earned_xp`, `cargo_damage`, `vehicle_damage`, `distance_km` and `delivery_time`. When `car_job_cancelled` is true, `car_job_cancelled.penalty` holds the cancellation penalty.
 
 ## Complete Example
 

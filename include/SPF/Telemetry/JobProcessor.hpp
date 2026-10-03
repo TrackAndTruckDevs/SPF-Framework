@@ -22,6 +22,7 @@ class JobProcessor {
   void HandleChannelUpdate(const scs_string_t name, const scs_u32_t index, const scs_value_t* value);
 
   const SCS::JobConstants& GetJobConstants() const { return m_jobConstants; }
+  const SCS::CarJobConstants& GetCarJobConstants() const { return m_carJobConstants; }
   const SCS::JobData& GetJobData() const { return m_jobData; }
   SCS::JobData& GetMutableJobData() { return m_jobData; }
   const SCS::NavigationData& GetNavigationData() const { return m_navigationData; }
@@ -32,6 +33,7 @@ class JobProcessor {
   GameContext& m_context;
 
   SCS::JobConstants m_jobConstants;
+  SCS::CarJobConstants m_carJobConstants;
   SCS::JobData m_jobData;
   SCS::NavigationData m_navigationData;
 };

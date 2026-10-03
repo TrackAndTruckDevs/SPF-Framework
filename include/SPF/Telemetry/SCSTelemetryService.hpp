@@ -52,6 +52,7 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   const SCS::TruckData& GetTruckData() const override;
   const std::vector<SCS::Trailer>& GetTrailers() const override;
   const SCS::JobConstants& GetJobConstants() const override;
+  const SCS::CarJobConstants& GetCarJobConstants() const override;
   const SCS::JobData& GetJobData() const override;
   const SCS::NavigationData& GetNavigationData() const override;
   const SCS::Controls& GetControls() const override;
@@ -75,6 +76,7 @@ class SCSTelemetryService final : public Modules::ITelemetryService {
   Utils::Signal<void(const SPF::Telemetry::SCS::TruckData&)>& GetTruckDataSignal() override;
   Utils::Signal<void(const std::vector<SPF::Telemetry::SCS::Trailer>&)>& GetTrailersSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::JobConstants&)>& GetJobConstantsSignal() override;
+  Utils::Signal<void(const SPF::Telemetry::SCS::CarJobConstants&)>& GetCarJobConstantsSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::JobData&)>& GetJobDataSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::NavigationData&)>& GetNavigationDataSignal() override;
   Utils::Signal<void(const SPF::Telemetry::SCS::Controls&)>& GetControlsSignal() override;

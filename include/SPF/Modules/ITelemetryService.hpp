@@ -33,6 +33,7 @@ class ITelemetryService {
   virtual const SPF::Telemetry::SCS::TruckData& GetTruckData() const = 0;
   virtual const std::vector<SPF::Telemetry::SCS::Trailer>& GetTrailers() const = 0;
   virtual const SPF::Telemetry::SCS::JobConstants& GetJobConstants() const = 0;
+  virtual const SPF::Telemetry::SCS::CarJobConstants& GetCarJobConstants() const = 0;
   virtual const SPF::Telemetry::SCS::JobData& GetJobData() const = 0;
   virtual const SPF::Telemetry::SCS::NavigationData& GetNavigationData() const = 0;
   virtual const SPF::Telemetry::SCS::Controls& GetControls() const = 0;
@@ -50,6 +51,7 @@ class ITelemetryService {
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::TruckData&)>& GetTruckDataSignal() = 0;
   virtual Utils::Signal<void(const std::vector<SPF::Telemetry::SCS::Trailer>&)>& GetTrailersSignal() = 0;
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::JobConstants&)>& GetJobConstantsSignal() = 0;
+  virtual Utils::Signal<void(const SPF::Telemetry::SCS::CarJobConstants&)>& GetCarJobConstantsSignal() = 0;
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::JobData&)>& GetJobDataSignal() = 0;
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::NavigationData&)>& GetNavigationDataSignal() = 0;
   virtual Utils::Signal<void(const SPF::Telemetry::SCS::Controls&)>& GetControlsSignal() = 0;

@@ -104,6 +104,7 @@ void TelemetryApi::Tel_GetCommonData(SPF_Telemetry_Handle* h, SPF_CommonData* ou
   for (uint32_t i = 0; i < c_data.substance_count; ++i) {
     strcpy_s(c_data.substances[i], SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.substances[i].c_str());
   }
+  c_data.next_mandatory_break = cpp_data.next_mandatory_break;
 
   memcpy(out_data, &c_data, (std::min)(struct_size, sizeof(SPF_CommonData)));
 }
@@ -378,6 +379,36 @@ void TelemetryApi::Tel_GetJobConstants(SPF_Telemetry_Handle* h, SPF_JobConstants
   memcpy(out_data, &c_data, (std::min)(struct_size, sizeof(SPF_JobConstants)));
 }
 
+void TelemetryApi::Tel_GetCarJobConstants(SPF_Telemetry_Handle* h, SPF_CarJobConstants* out_data, size_t struct_size) {
+  auto& pm = PluginManager::GetInstance();
+  if (!h || !out_data || struct_size == 0 || !pm.GetTelemetryService()) return;
+
+  const auto& cpp_data = pm.GetTelemetryService()->GetCarJobConstants();
+  SPF_CarJobConstants c_data;
+  memset(&c_data, 0, sizeof(SPF_CarJobConstants));
+
+  c_data.income = cpp_data.income;
+  c_data.delivery_time = cpp_data.delivery_time;
+  c_data.planned_distance_km = cpp_data.planned_distance_km;
+  strcpy_s(c_data.car_job_market, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.car_job_market.c_str());
+  c_data.customer_prio_cargo_handling = cpp_data.customer_prio_cargo_handling;
+  c_data.customer_prio_time = cpp_data.customer_prio_time;
+  c_data.customer_prio_vehicle_appearance = cpp_data.customer_prio_vehicle_appearance;
+  strcpy_s(c_data.cargo_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.cargo_id.c_str());
+  strcpy_s(c_data.cargo_name, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.cargo_name.c_str());
+  c_data.cargo_unit_count = cpp_data.cargo_unit_count;
+  strcpy_s(c_data.destination_city_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.destination_city_id.c_str());
+  strcpy_s(c_data.destination_city, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.destination_city.c_str());
+  strcpy_s(c_data.destination_company_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.destination_company_id.c_str());
+  strcpy_s(c_data.destination_company, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.destination_company.c_str());
+  strcpy_s(c_data.source_city_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.source_city_id.c_str());
+  strcpy_s(c_data.source_city, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.source_city.c_str());
+  strcpy_s(c_data.source_company_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.source_company_id.c_str());
+  strcpy_s(c_data.source_company, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.source_company.c_str());
+
+  memcpy(out_data, &c_data, (std::min)(struct_size, sizeof(SPF_CarJobConstants)));
+}
+
 void TelemetryApi::Tel_GetJobData(SPF_Telemetry_Handle* h, SPF_JobData* out_data, size_t struct_size) {
   auto& pm = PluginManager::GetInstance();
   if (!h || !out_data || struct_size == 0 || !pm.GetTelemetryService()) return;
@@ -443,6 +474,8 @@ void TelemetryApi::Tel_GetSpecialEvents(SPF_Telemetry_Handle* h, SPF_SpecialEven
   c_data.tollgate = cpp_data.tollgate;
   c_data.ferry = cpp_data.ferry;
   c_data.train = cpp_data.train;
+  c_data.car_job_delivered = cpp_data.car_job_delivered;
+  c_data.car_job_cancelled = cpp_data.car_job_cancelled;
 
   memcpy(out_data, &c_data, (std::min)(struct_size, sizeof(SPF_SpecialEvents)));
 }
@@ -487,6 +520,17 @@ void TelemetryApi::Tel_GetGameplayEvents(SPF_Telemetry_Handle* h, SPF_GameplayEv
   strcpy_s(c_data.train_used.target_name, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.train_used.target_name.c_str());
   strcpy_s(c_data.train_used.source_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.train_used.source_id.c_str());
   strcpy_s(c_data.train_used.target_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.train_used.target_id.c_str());
+
+  // Car Job Delivered
+  c_data.car_job_delivered.revenue = cpp_data.car_job_delivered.revenue;
+  c_data.car_job_delivered.earned_xp = cpp_data.car_job_delivered.earned_xp;
+  c_data.car_job_delivered.cargo_damage = cpp_data.car_job_delivered.cargo_damage;
+  c_data.car_job_delivered.vehicle_damage = cpp_data.car_job_delivered.vehicle_damage;
+  c_data.car_job_delivered.distance_km = cpp_data.car_job_delivered.distance_km;
+  c_data.car_job_delivered.delivery_time = cpp_data.car_job_delivered.delivery_time;
+
+  // Car Job Cancelled
+  c_data.car_job_cancelled.penalty = cpp_data.car_job_cancelled.penalty;
 
   memcpy(out_data, &c_data, (std::min)(struct_size, sizeof(SPF_GameplayEvents)));
 }
@@ -566,6 +610,7 @@ void TelemetryApi::InvokeCommonDataCallback(const CommonData& cpp_data, SPF_Tele
   c_data.next_rest_stop_time.Hour = cpp_data.next_rest_stop_time.Hour;
   c_data.next_rest_stop_time.Minute = cpp_data.next_rest_stop_time.Minute;
   c_data.next_rest_stop_real_minutes = cpp_data.next_rest_stop_real_minutes;
+  c_data.next_mandatory_break = cpp_data.next_mandatory_break;
 
   c_data.substance_count = static_cast<uint32_t>(std::min<size_t>(cpp_data.substances.size(), SPF_TELEMETRY_SUBSTANCE_MAX_COUNT));
   for (uint32_t i = 0; i < c_data.substance_count; ++i) {
@@ -857,6 +902,31 @@ void TelemetryApi::InvokeJobConstantsCallback(const JobConstants& cpp_data, SPF_
   callback(&c_data, user_data);
 }
 
+void TelemetryApi::InvokeCarJobConstantsCallback(const CarJobConstants& cpp_data, SPF_Telemetry_CarJobConstants_Callback callback, void* user_data) {
+  SPF_CarJobConstants c_data;
+
+  c_data.income = cpp_data.income;
+  c_data.delivery_time = cpp_data.delivery_time;
+  c_data.planned_distance_km = cpp_data.planned_distance_km;
+  strcpy_s(c_data.car_job_market, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.car_job_market.c_str());
+  c_data.customer_prio_cargo_handling = cpp_data.customer_prio_cargo_handling;
+  c_data.customer_prio_time = cpp_data.customer_prio_time;
+  c_data.customer_prio_vehicle_appearance = cpp_data.customer_prio_vehicle_appearance;
+  strcpy_s(c_data.cargo_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.cargo_id.c_str());
+  strcpy_s(c_data.cargo_name, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.cargo_name.c_str());
+  c_data.cargo_unit_count = cpp_data.cargo_unit_count;
+  strcpy_s(c_data.destination_city_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.destination_city_id.c_str());
+  strcpy_s(c_data.destination_city, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.destination_city.c_str());
+  strcpy_s(c_data.destination_company_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.destination_company_id.c_str());
+  strcpy_s(c_data.destination_company, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.destination_company.c_str());
+  strcpy_s(c_data.source_city_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.source_city_id.c_str());
+  strcpy_s(c_data.source_city, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.source_city.c_str());
+  strcpy_s(c_data.source_company_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.source_company_id.c_str());
+  strcpy_s(c_data.source_company, SPF_TELEMETRY_STRING_MAX_SIZE, cpp_data.source_company.c_str());
+
+  callback(&c_data, user_data);
+}
+
 void TelemetryApi::InvokeJobDataCallback(const JobData& cpp_data, SPF_Telemetry_JobData_Callback callback, void* user_data) {
   SPF_JobData c_data;
   c_data.on_job = cpp_data.on_job;
@@ -895,6 +965,8 @@ void TelemetryApi::InvokeSpecialEventsCallback(const SpecialEvents& cpp_data, SP
   c_data.tollgate = cpp_data.tollgate;
   c_data.ferry = cpp_data.ferry;
   c_data.train = cpp_data.train;
+  c_data.car_job_delivered = cpp_data.car_job_delivered;
+  c_data.car_job_cancelled = cpp_data.car_job_cancelled;
   callback(&c_data, user_data);
 }
 
@@ -934,6 +1006,17 @@ void TelemetryApi::InvokeGameplayEventsCallback(const char* event_id, const Game
   strcpy_s(c_data.train_used.source_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.train_used.source_id.c_str());
   strcpy_s(c_data.train_used.target_id, SPF_TELEMETRY_ID_MAX_SIZE, cpp_data.train_used.target_id.c_str());
 
+  // Car Job Delivered
+  c_data.car_job_delivered.revenue = cpp_data.car_job_delivered.revenue;
+  c_data.car_job_delivered.earned_xp = cpp_data.car_job_delivered.earned_xp;
+  c_data.car_job_delivered.cargo_damage = cpp_data.car_job_delivered.cargo_damage;
+  c_data.car_job_delivered.vehicle_damage = cpp_data.car_job_delivered.vehicle_damage;
+  c_data.car_job_delivered.distance_km = cpp_data.car_job_delivered.distance_km;
+  c_data.car_job_delivered.delivery_time = cpp_data.car_job_delivered.delivery_time;
+
+  // Car Job Cancelled
+  c_data.car_job_cancelled.penalty = cpp_data.car_job_cancelled.penalty;
+
   callback(event_id, &c_data, user_data);
 }
 
@@ -963,6 +1046,7 @@ void TelemetryApi::FillTelemetryApi(SPF_Telemetry_API* api) {
   api->Tel_GetTruckData = &TelemetryApi::Tel_GetTruckData;
   api->Tel_GetTrailers = &TelemetryApi::Tel_GetTrailers;
   api->Tel_GetJobConstants = &TelemetryApi::Tel_GetJobConstants;
+  api->Tel_GetCarJobConstants = &TelemetryApi::Tel_GetCarJobConstants;
   api->Tel_GetJobData = &TelemetryApi::Tel_GetJobData;
   api->Tel_GetNavigationData = &TelemetryApi::Tel_GetNavigationData;
   api->Tel_GetControls = &TelemetryApi::Tel_GetControls;
@@ -980,6 +1064,7 @@ void TelemetryApi::FillTelemetryApi(SPF_Telemetry_API* api) {
   api->Tel_RegisterForTruckData = &TelemetryApi::Tel_RegisterForTruckData;
   api->Tel_RegisterForTrailers = &TelemetryApi::Tel_RegisterForTrailers;
   api->Tel_RegisterForJobConstants = &TelemetryApi::Tel_RegisterForJobConstants;
+  api->Tel_RegisterForCarJobConstants = &TelemetryApi::Tel_RegisterForCarJobConstants;
   api->Tel_RegisterForJobData = &TelemetryApi::Tel_RegisterForJobData;
   api->Tel_RegisterForNavigationData = &TelemetryApi::Tel_RegisterForNavigationData;
   api->Tel_RegisterForControls = &TelemetryApi::Tel_RegisterForControls;
@@ -1107,6 +1192,21 @@ SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForJobConstants(SPF_Tel
   SubscriptionHandler<SPF::Telemetry::SCS::JobConstants>::InvokerFunction invoker = [callback](const SPF::Telemetry::SCS::JobConstants& cpp_data, void* ud) { TelemetryApi::InvokeJobConstantsCallback(cpp_data, callback, ud); };
 
   telemetryHandle->m_subscriptionHandlers.emplace_back(std::make_unique<SubscriptionHandler<SPF::Telemetry::SCS::JobConstants>>(pm.GetTelemetryService()->GetJobConstantsSignal(), invoker, user_data));
+  return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
+}
+
+SPF_Telemetry_Callback_Handle* TelemetryApi::Tel_RegisterForCarJobConstants(SPF_Telemetry_Handle* h, SPF_Telemetry_CarJobConstants_Callback callback, void* user_data) {
+  auto& pm = PluginManager::GetInstance();
+  if (!h || !callback || !pm.GetTelemetryService()) return nullptr;
+
+  Handles::TelemetryHandle* telemetryHandle = reinterpret_cast<Handles::TelemetryHandle*>(h);
+  if (!telemetryHandle) {
+    return nullptr;
+  }
+
+  SubscriptionHandler<SPF::Telemetry::SCS::CarJobConstants>::InvokerFunction invoker = [callback](const SPF::Telemetry::SCS::CarJobConstants& cpp_data, void* ud) { TelemetryApi::InvokeCarJobConstantsCallback(cpp_data, callback, ud); };
+
+  telemetryHandle->m_subscriptionHandlers.emplace_back(std::make_unique<SubscriptionHandler<SPF::Telemetry::SCS::CarJobConstants>>(pm.GetTelemetryService()->GetCarJobConstantsSignal(), invoker, user_data));
   return reinterpret_cast<SPF_Telemetry_Callback_Handle*>(telemetryHandle->m_subscriptionHandlers.back().get());
 }
 

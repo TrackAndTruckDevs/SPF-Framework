@@ -117,6 +117,14 @@ typedef void (*SPF_Telemetry_Trailers_Callback)(const SPF_Trailer* trailers, uin
 typedef void (*SPF_Telemetry_JobConstants_Callback)(const SPF_JobConstants* data, void* user_data);
 
 /**
+ * @brief Callback for when the current car job's static information changes (e.g., starting a new car job).
+ * @details An empty `car_job_market` means there is no active car job.
+ * @param data A pointer to the structure containing the new configuration constants for the car job.
+ * @param user_data The custom pointer you provided when registering the callback.
+ */
+typedef void (*SPF_Telemetry_CarJobConstants_Callback)(const SPF_CarJobConstants* data, void* user_data);
+
+/**
  * @brief Callback for when the current job's dynamic data is updated (fired each frame).
  * @param data A pointer to the structure containing live job data (e.g., cargo damage).
  * @param user_data The custom pointer you provided when registering the callback.
@@ -512,6 +520,24 @@ typedef struct SPF_Telemetry_API {
    * @return An opaque handle that represents the subscription.
    */
   SPF_Telemetry_Callback_Handle* (*Tel_RegisterForWorldReload)(SPF_Telemetry_Handle* h, SPF_Telemetry_WorldReload_Callback callback, void* user_data);
+
+  /**
+   * @brief Registers a callback for when the current car job's static information changes.
+   * @param h The telemetry context handle for your plugin.
+   * @param callback The function to be called when car job constant data is updated.
+   * @param user_data Optional user-defined data to be passed to the callback.
+   * @return An opaque handle that represents the subscription.
+   */
+  SPF_Telemetry_Callback_Handle* (*Tel_RegisterForCarJobConstants)(SPF_Telemetry_Handle* h, SPF_Telemetry_CarJobConstants_Callback callback, void* user_data);
+
+  /**
+   * @brief Retrieves the current car job's static configuration constants.
+   * @details An empty `car_job_market` means there is no active car job.
+   * @param h The telemetry context handle for your plugin.
+   * @param[out] out_data Pointer to an `SPF_CarJobConstants` struct to be filled with data.
+   * @param struct_size The size of the `SPF_CarJobConstants` structure you pass in.
+   */
+  void (*Tel_GetCarJobConstants)(SPF_Telemetry_Handle* h, SPF_CarJobConstants* out_data, size_t struct_size);
 
 } SPF_Telemetry_API;
 

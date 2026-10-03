@@ -182,6 +182,16 @@ typedef struct {
    * @brief The number of valid substance identifiers in the `substances` array.
    */
   uint32_t substance_count;
+
+  /**
+   * @brief Time until the next mandatory break is required.
+   * @unit minutes
+   * @source scs_telemetry_common_channels.h (ETS2 1.19+ / ATS 1.06+)
+   *
+   * A positive value indicates time remaining. A negative value indicates time overdue.
+   * When the mandatory break simulation is disabled the game may report 0 or a negative value.
+   */
+  int32_t next_mandatory_break;
 } SPF_CommonData;
 
 /**
@@ -497,6 +507,48 @@ typedef struct {
 } SPF_JobConstants;
 
 /**
+ * @struct SPF_CarJobConstants
+ * @brief Contains static information about the current car job (SCS_TELEMETRY_CONFIG_car_job).
+ *        An empty `car_job_market` means there is no active car job.
+ */
+typedef struct {
+  // --- Job Details ---
+  uint64_t income;               ///< The total income for completing the car job without penalties.
+  uint32_t delivery_time;        ///< The allotted time for the delivery. @unit minutes
+  uint32_t planned_distance_km;  ///< The planned distance for the car job. @unit km
+
+  /**
+   * @brief The market the car job was taken from.
+   *
+   * Possible values as defined by the SCS SDK are:
+   * - "quick_job"
+   * - "dispatch_job"
+   */
+  char car_job_market[SPF_TELEMETRY_ID_MAX_SIZE];
+
+  bool customer_prio_cargo_handling;         ///< Customer prioritizes cargo handling.
+  bool customer_prio_time;                   ///< Customer prioritizes delivery time.
+  bool customer_prio_vehicle_appearance;     ///< Customer prioritizes vehicle appearance at delivery.
+
+  // --- Cargo Details ---
+  char cargo_id[SPF_TELEMETRY_ID_MAX_SIZE];        ///< Internal ID of the cargo type.
+  char cargo_name[SPF_TELEMETRY_STRING_MAX_SIZE];  ///< Display name of the cargo.
+  uint32_t cargo_unit_count;                       ///< For cargoes composed of multiple units.
+
+  // --- Destination ---
+  char destination_city_id[SPF_TELEMETRY_ID_MAX_SIZE];      ///< Internal ID of the destination city.
+  char destination_city[SPF_TELEMETRY_STRING_MAX_SIZE];     ///< Display name of the destination city.
+  char destination_company_id[SPF_TELEMETRY_ID_MAX_SIZE];   ///< Internal ID of the destination company.
+  char destination_company[SPF_TELEMETRY_STRING_MAX_SIZE];  ///< Display name of the destination company.
+
+  // --- Source ---
+  char source_city_id[SPF_TELEMETRY_ID_MAX_SIZE];      ///< Internal ID of the source city.
+  char source_city[SPF_TELEMETRY_STRING_MAX_SIZE];     ///< Display name of the source city.
+  char source_company_id[SPF_TELEMETRY_ID_MAX_SIZE];   ///< Internal ID of the source company.
+  char source_company[SPF_TELEMETRY_STRING_MAX_SIZE];  ///< Display name of the source company.
+} SPF_CarJobConstants;
+
+/**
  * @struct SPF_JobData
  * @brief Contains dynamic, frequently changing data about the current job.
  */
@@ -529,6 +581,8 @@ typedef struct {
   bool tollgate;       ///< True for one frame when the player pays a toll.
   bool ferry;          ///< True for one frame when the player uses a ferry.
   bool train;          ///< True for one frame when the player uses a train.
+  bool car_job_delivered;  ///< True for one frame when a car job is delivered.
+  bool car_job_cancelled;  ///< True for one frame when a car job is cancelled.
 } SPF_SpecialEvents;
 
 /**
@@ -552,6 +606,27 @@ typedef struct {
 typedef struct {
   int64_t penalty;  ///< The financial penalty for cancelling the job.
 } SPF_GameplayEvent_JobCancelled;
+
+/**
+ * @struct SPF_GameplayEvent_CarJobDelivered
+ * @brief Data associated with a 'car_job.delivered' event.
+ */
+typedef struct {
+  int64_t revenue;         ///< The final revenue for the car job.
+  int32_t earned_xp;       ///< Experience points earned.
+  float cargo_damage;      ///< Final cargo damage (0.0-1.0).
+  float vehicle_damage;    ///< Final vehicle damage (0.0-1.0).
+  float distance_km;       ///< The actual distance driven for the car job. @unit km
+  uint32_t delivery_time;  ///< The time taken to complete the car job. @unit minutes
+} SPF_GameplayEvent_CarJobDelivered;
+
+/**
+ * @struct SPF_GameplayEvent_CarJobCancelled
+ * @brief Data associated with a 'car_job.cancelled' event.
+ */
+typedef struct {
+  int64_t penalty;  ///< The financial penalty for cancelling the car job.
+} SPF_GameplayEvent_CarJobCancelled;
 
 /**
  * @struct SPF_GameplayEvent_PlayerFined
@@ -627,6 +702,8 @@ typedef struct {
   SPF_GameplayEvent_TollgatePaid tollgate_paid;
   SPF_GameplayEvent_FerryUsed ferry_used;
   SPF_GameplayEvent_TrainUsed train_used;
+  SPF_GameplayEvent_CarJobDelivered car_job_delivered;
+  SPF_GameplayEvent_CarJobCancelled car_job_cancelled;
 } SPF_GameplayEvents;
 
 /**

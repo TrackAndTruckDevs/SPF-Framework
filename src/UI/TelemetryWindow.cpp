@@ -38,6 +38,7 @@ TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::st
       m_truckDataSink(m_telemetryService.GetTruckDataSignal()),
       m_trailersSink(m_telemetryService.GetTrailersSignal()),
       m_jobConstantsSink(m_telemetryService.GetJobConstantsSignal()),
+      m_carJobConstantsSink(m_telemetryService.GetCarJobConstantsSignal()),
       m_jobDataSink(m_telemetryService.GetJobDataSignal()),
       m_navigationDataSink(m_telemetryService.GetNavigationDataSignal()),
       m_controlsSink(m_telemetryService.GetControlsSignal()),
@@ -52,6 +53,7 @@ TelemetryWindow::TelemetryWindow(const std::string& componentName, const std::st
   m_truckDataSink.Connect<&TelemetryWindow::OnTruckDataUpdate>(this);
   m_trailersSink.Connect<&TelemetryWindow::OnTrailersUpdate>(this);
   m_jobConstantsSink.Connect<&TelemetryWindow::OnJobConstantsUpdate>(this);
+  m_carJobConstantsSink.Connect<&TelemetryWindow::OnCarJobConstantsUpdate>(this);
   m_jobDataSink.Connect<&TelemetryWindow::OnJobDataUpdate>(this);
   m_navigationDataSink.Connect<&TelemetryWindow::OnNavigationDataUpdate>(this);
   m_controlsSink.Connect<&TelemetryWindow::OnControlsUpdate>(this);
@@ -89,6 +91,7 @@ void TelemetryWindow::RefreshLocalization() {
   m_locLabelNextRestStop = loc.Get("telemetry_window.labels.next_rest_stop");
   m_locLabelNextRestStopReal = loc.Get("telemetry_window.labels.next_rest_stop_real");
   m_locLabelNextRestStopTime = loc.Get("telemetry_window.labels.next_rest_stop_time");
+  m_locLabelNextMandatoryBreak = loc.Get("telemetry_window.labels.next_mandatory_break");
   m_locLabelPaused = loc.Get("telemetry_window.labels.paused");
   m_locLabelGameId = loc.Get("telemetry_window.labels.game_id");
   m_locLabelLocalScale = loc.Get("telemetry_window.labels.local_scale");
@@ -103,6 +106,10 @@ void TelemetryWindow::RefreshLocalization() {
   m_locLabelRenderTime = loc.Get("telemetry_window.labels.render_time");
   m_locLabelPausedSimulationTime = loc.Get("telemetry_window.labels.paused_simulation_time");
   m_locLabelNoActiveJob = loc.Get("telemetry_window.labels.no_active_job");
+  m_locLabelCarJob = loc.Get("telemetry_window.labels.car_job");
+  m_locLabelNoActiveCarJob = loc.Get("telemetry_window.labels.no_active_car_job");
+  m_locLabelCarJobUnits = loc.Get("telemetry_window.labels.car_job_units");
+  m_locLabelCustomerPrio = loc.Get("telemetry_window.labels.customer_prio");
   m_locLabelContract = loc.Get("telemetry_window.labels.contract");
   m_locLabelMarket = loc.Get("telemetry_window.labels.market");
   m_locLabelIncome = loc.Get("telemetry_window.labels.income");
@@ -265,6 +272,8 @@ void TelemetryWindow::RefreshLocalization() {
   m_locLabelTollgate = loc.Get("telemetry_window.labels.tollgate");
   m_locLabelFerry = loc.Get("telemetry_window.labels.ferry");
   m_locLabelTrain = loc.Get("telemetry_window.labels.train");
+  m_locLabelCarJobDelivered = loc.Get("telemetry_window.labels.car_job_delivered");
+  m_locLabelCarJobCancelled = loc.Get("telemetry_window.labels.car_job_cancelled");
   m_locLabelLastGameplayEvent = loc.Get("telemetry_window.labels.last_gameplay_event");
   m_locLabelNoEventYet = loc.Get("telemetry_window.labels.no_event_yet");
   m_locLabelEventJobDelivered = loc.Get("telemetry_window.labels.event_job_delivered");
@@ -279,6 +288,9 @@ void TelemetryWindow::RefreshLocalization() {
   m_locLabelEventTrain = loc.Get("telemetry_window.labels.event_train");
   m_locLabelEventTrainRoute = loc.Get("telemetry_window.labels.event_train_route");
   m_locLabelEventTrainRouteTo = loc.Get("telemetry_window.labels.event_train_route_to");
+  m_locLabelEventCarJobDelivered = loc.Get("telemetry_window.labels.event_car_job_delivered");
+  m_locLabelEventCarJobDeliveredDetails = loc.Get("telemetry_window.labels.event_car_job_delivered_details");
+  m_locLabelEventCarJobCancelled = loc.Get("telemetry_window.labels.event_car_job_cancelled");
 
   m_locDaysOfWeek = {loc.Get("telemetry_window.days_of_week.monday"),
                      loc.Get("telemetry_window.days_of_week.tuesday"),
@@ -429,6 +441,21 @@ void TelemetryWindow::RenderContent() {
           ImGui::Text(m_locLabelNextRestStopTime.c_str(), day_to_string(commonData.next_rest_stop_time.DayOfWeek), commonData.next_rest_stop_time.Hour, commonData.next_rest_stop_time.Minute);
         }
 
+        ImGui::Text(m_locLabelNextMandatoryBreak.c_str(), commonData.next_mandatory_break);
+        if (commonData.next_mandatory_break > 0) {
+          ImGui::SameLine();
+          int total_minutes = commonData.next_mandatory_break;
+          int total_hours = total_minutes / 60;
+          int minutes = total_minutes % 60;
+          if (total_hours >= 24) {
+            int days = total_hours / 24;
+            int hours = total_hours % 24;
+            ImGui::Text(m_locFormatDaysHoursMinutes.c_str(), days, hours, minutes);
+          } else {
+            ImGui::Text(m_locFormatHoursMinutes.c_str(), total_hours, minutes);
+          }
+        }
+
         ImGui::Separator();
         ImGui::Text(m_locLabelPaused.c_str(), gameState.paused ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         ImGui::Text(m_locLabelGameName.c_str(), gameState.game_name.c_str());
@@ -497,6 +524,28 @@ void TelemetryWindow::RenderContent() {
             ImGui::Text(m_locFormatHoursMinutes.c_str(), hours, minutes);
           }
         }
+      }
+
+      ImGui::SeparatorText(m_locLabelCarJob.c_str());
+      if (m_carJobConstants.car_job_market.empty()) {
+        ImGui::TextUnformatted(m_locLabelNoActiveCarJob.c_str());
+      } else {
+        ImGui::Text(m_locLabelMarket.c_str(), m_carJobConstants.car_job_market.c_str());
+        ImGui::Text(m_locLabelIncome.c_str(), m_carJobConstants.income);
+        ImGui::Text(m_locLabelPlannedDistance.c_str(), m_carJobConstants.planned_distance_km);
+        ImGui::Text(m_locLabelCustomerPrio.c_str(), m_carJobConstants.customer_prio_cargo_handling ? m_locGenericYes.c_str() : m_locGenericNo.c_str(), m_carJobConstants.customer_prio_time ? m_locGenericYes.c_str() : m_locGenericNo.c_str(),
+                    m_carJobConstants.customer_prio_vehicle_appearance ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
+
+        ImGui::SeparatorText(m_locLabelCargo.c_str());
+        ImGui::Text(m_locLabelCargoInfo.c_str(), m_carJobConstants.cargo_name.c_str(), m_carJobConstants.cargo_id.c_str());
+        ImGui::Text(m_locLabelCarJobUnits.c_str(), m_carJobConstants.cargo_unit_count);
+
+        ImGui::SeparatorText(m_locLabelRoute.c_str());
+        ImGui::Text(m_locLabelSource.c_str(), m_carJobConstants.source_company.c_str(), m_carJobConstants.source_company_id.c_str(), m_carJobConstants.source_city.c_str(), m_carJobConstants.source_city_id.c_str());
+        ImGui::Text(m_locLabelDestination.c_str(), m_carJobConstants.destination_company.c_str(), m_carJobConstants.destination_company_id.c_str(), m_carJobConstants.destination_city.c_str(), m_carJobConstants.destination_city_id.c_str());
+
+        ImGui::SeparatorText(m_locLabelTime.c_str());
+        ImGui::Text(m_locLabelDeliveryDeadline.c_str(), m_carJobConstants.delivery_time);
       }
       ImGui::EndTabItem();
     }
@@ -854,6 +903,8 @@ void TelemetryWindow::RenderContent() {
         ImGui::Text(m_locLabelTollgate.c_str(), specialEvents.tollgate ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         ImGui::Text(m_locLabelFerry.c_str(), specialEvents.ferry ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         ImGui::Text(m_locLabelTrain.c_str(), specialEvents.train ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
+        ImGui::Text(m_locLabelCarJobDelivered.c_str(), specialEvents.car_job_delivered ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
+        ImGui::Text(m_locLabelCarJobCancelled.c_str(), specialEvents.car_job_cancelled ? m_locGenericYes.c_str() : m_locGenericNo.c_str());
         ImGui::Separator();
         ImGui::TextUnformatted(m_locLabelLastGameplayEvent.c_str());
         const std::string& lastEventId = m_lastGameplayEventId;
@@ -883,6 +934,13 @@ void TelemetryWindow::RenderContent() {
           ImGui::Text(m_locLabelEventTrain.c_str(), data.pay_amount);
           ImGui::Text(m_locLabelEventTrainRoute.c_str(), data.source_name.c_str(), data.source_id.c_str());
           ImGui::Text(m_locLabelEventTrainRouteTo.c_str(), data.target_name.c_str(), data.target_id.c_str());
+        } else if (lastEventId == SCS_TELEMETRY_GAMEPLAY_EVENT_car_job_delivered) {
+          const auto& data = gameplayEvents.car_job_delivered;
+          ImGui::Text(m_locLabelEventCarJobDelivered.c_str(), data.revenue, data.earned_xp, data.cargo_damage * 100.0f, data.vehicle_damage * 100.0f);
+          ImGui::Text(m_locLabelEventCarJobDeliveredDetails.c_str(), data.distance_km, data.delivery_time);
+        } else if (lastEventId == SCS_TELEMETRY_GAMEPLAY_EVENT_car_job_cancelled) {
+          const auto& data = gameplayEvents.car_job_cancelled;
+          ImGui::Text(m_locLabelEventCarJobCancelled.c_str(), data.penalty);
         }
       }
       ImGui::EndTabItem();
@@ -899,6 +957,7 @@ void TelemetryWindow::OnTruckConstantsUpdate(const Telemetry::SCS::TruckConstant
 void TelemetryWindow::OnTruckDataUpdate(const Telemetry::SCS::TruckData& data) { m_truckData = data; }
 void TelemetryWindow::OnTrailersUpdate(const std::vector<Telemetry::SCS::Trailer>& data) { m_trailers = data; }
 void TelemetryWindow::OnJobConstantsUpdate(const Telemetry::SCS::JobConstants& data) { m_jobConstants = data; }
+void TelemetryWindow::OnCarJobConstantsUpdate(const Telemetry::SCS::CarJobConstants& data) { m_carJobConstants = data; }
 void TelemetryWindow::OnJobDataUpdate(const Telemetry::SCS::JobData& data) { m_jobData = data; }
 void TelemetryWindow::OnNavigationDataUpdate(const Telemetry::SCS::NavigationData& data) { m_navigationData = data; }
 void TelemetryWindow::OnControlsUpdate(const Telemetry::SCS::Controls& data) { m_controls = data; }

@@ -16,6 +16,37 @@ void JobProcessor::Initialize(const scs_telemetry_init_params_v100_t* const scs_
 void JobProcessor::Shutdown() { m_logger.Info("JobProcessor shut down."); }
 
 void JobProcessor::HandleConfiguration(const scs_telemetry_configuration_t* info) {
+  if (strcmp(info->id, SCS_TELEMETRY_CONFIG_car_job) == 0) {
+    m_logger.Info("JobProcessor handling car job configuration...");
+
+    ConfigAttributeReader reader(info->attributes);
+
+    m_carJobConstants.income = reader.GetU64(SCS_TELEMETRY_CONFIG_ATTRIBUTE_income).value_or(0);
+    m_carJobConstants.delivery_time = reader.GetU32(SCS_TELEMETRY_CONFIG_ATTRIBUTE_delivery_time).value_or(0);
+    m_carJobConstants.planned_distance_km = reader.GetU32(SCS_TELEMETRY_CONFIG_ATTRIBUTE_planned_distance_km).value_or(0);
+    m_carJobConstants.car_job_market = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_car_job_market).value_or("");
+
+    m_carJobConstants.customer_prio_cargo_handling = reader.GetBool(SCS_TELEMETRY_CONFIG_ATTRIBUTE_customer_prio_cargo_handling).value_or(false);
+    m_carJobConstants.customer_prio_time = reader.GetBool(SCS_TELEMETRY_CONFIG_ATTRIBUTE_customer_prio_time).value_or(false);
+    m_carJobConstants.customer_prio_vehicle_appearance = reader.GetBool(SCS_TELEMETRY_CONFIG_ATTRIBUTE_customer_prio_vehicle_appearance).value_or(false);
+
+    m_carJobConstants.cargo_id = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_id).value_or("");
+    m_carJobConstants.cargo_name = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo).value_or("");
+    m_carJobConstants.cargo_unit_count = reader.GetU32(SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo_unit_count).value_or(0);
+
+    m_carJobConstants.destination_city_id = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city_id).value_or("");
+    m_carJobConstants.destination_city = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city).value_or("");
+    m_carJobConstants.destination_company_id = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company_id).value_or("");
+    m_carJobConstants.destination_company = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company).value_or("");
+
+    m_carJobConstants.source_city_id = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city_id).value_or("");
+    m_carJobConstants.source_city = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city).value_or("");
+    m_carJobConstants.source_company_id = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company_id).value_or("");
+    m_carJobConstants.source_company = reader.GetString(SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_company).value_or("");
+
+    return;
+  }
+
   if (strcmp(info->id, SCS_TELEMETRY_CONFIG_job) != 0) {
     return;  // Not a job config.
   }

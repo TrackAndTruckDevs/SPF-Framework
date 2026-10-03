@@ -47,6 +47,23 @@ void EventsProcessor::HandleGameplayEvent(const scs_telemetry_gameplay_event_t* 
 
     auto& data = m_gameplayEvents.job_cancelled;
     data.penalty = reader.GetS64(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cancel_penalty).value_or(0);
+  } else if (strcmp(info->id, SCS_TELEMETRY_GAMEPLAY_EVENT_car_job_delivered) == 0) {
+    m_logger.Info("[Event] Car Job Delivered");
+    m_specialEvents.car_job_delivered = true;
+
+    auto& data = m_gameplayEvents.car_job_delivered;
+    data.revenue = reader.GetS64(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_revenue).value_or(0);
+    data.earned_xp = reader.GetS32(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_earned_xp).value_or(0);
+    data.cargo_damage = reader.GetFloat(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cargo_damage).value_or(0.0f);
+    data.vehicle_damage = reader.GetFloat(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_vehicle_damage).value_or(0.0f);
+    data.distance_km = reader.GetFloat(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_distance_km).value_or(0.0f);
+    data.delivery_time = reader.GetU32(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_delivery_time).value_or(0);
+  } else if (strcmp(info->id, SCS_TELEMETRY_GAMEPLAY_EVENT_car_job_cancelled) == 0) {
+    m_logger.Info("[Event] Car Job Cancelled");
+    m_specialEvents.car_job_cancelled = true;
+
+    auto& data = m_gameplayEvents.car_job_cancelled;
+    data.penalty = reader.GetS64(SCS_TELEMETRY_GAMEPLAY_EVENT_ATTRIBUTE_cancel_penalty).value_or(0);
   } else if (strcmp(info->id, SCS_TELEMETRY_GAMEPLAY_EVENT_player_fined) == 0) {
     m_logger.Info("[Event] Player Fined");
     m_specialEvents.fined = true;
