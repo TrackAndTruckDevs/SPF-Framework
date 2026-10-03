@@ -1,9 +1,7 @@
 #include "SPF/Fmod/FmodStudioHook.hpp"
-
 #include "SPF/Fmod/FmodApi.hpp"
 #include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
-
 #include "MinHook.h"
 
 #include <algorithm>
@@ -129,7 +127,8 @@ void PopulateParamCache(FMOD::Studio::EventDescription* desc, const std::string&
     for (int i = 0; i < numParams; ++i) {
       FMOD_STUDIO_PARAMETER_DESCRIPTION pd = {};
       if (s_fnGetParamDescByIndex(desc, i, &pd) == FMOD_OK && pd.name) {
-        std::lock_guard lock(s_mutex);
+        // Callers (GetEventPathFromInstance) already hold s_mutex — locking
+        // again here deadlocks MSVC builds (non-recursive std::mutex).
         s_paramIdToName[ParamIdKey(pd.id)] = pd.name;
       }
     }
