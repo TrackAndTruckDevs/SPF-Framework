@@ -86,11 +86,10 @@ SPF_Notification_Handle NotificationWindow::ShowEx(const SPF_Notification_Params
   notif.customColor = ImVec4(params.r, params.g, params.b, params.a);
   if (params.custom_icon) notif.customIcon = params.custom_icon;
 
-  m_notifications.push_back(notif);
+  // Sound is deferred to the first render so queued TOP notifications don't play it before they appear
+  notif.pendingSound = playSound && notif.mode != SPF_NOTIF_MODE_STICKY;
 
-  if (playSound && notif.mode != SPF_NOTIF_MODE_STICKY) {
-    UISounds::PlayMessageSound();
-  }
+  m_notifications.push_back(notif);
 
   return reinterpret_cast<SPF_Notification_Handle>(notif.handle);
 }
@@ -229,6 +228,11 @@ void NotificationWindow::RenderContent() {
 }
 
 void NotificationWindow::RenderSingleNotification(NotificationData& notif, int index) {
+  if (notif.pendingSound) {
+    UISounds::PlayMessageSound();
+    notif.pendingSound = false;
+  }
+
   // Unique ID based on handle (stable)
   std::string windowName = "##notif_" + std::to_string(notif.handle);
 

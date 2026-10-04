@@ -67,6 +67,7 @@ class NotificationWindow : public BaseWindow {
     uint64_t handle = 0;
     bool isProgrammatic = false;
     bool initialized = false;
+    bool pendingSound = false;  // Played on first render, not on enqueue
     ImVec4 customColor = ImVec4(0, 0, 0, 0);
     std::string customIcon;
   };
