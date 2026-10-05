@@ -77,7 +77,12 @@ void GameCameraManager::Uninstall() {
     logger->Info("Uninstalling Game Camera Service...");
     m_isReady = false;
     m_initializeCameraFunc = nullptr;
-    m_activeCamera = nullptr;
+    // Deactivate before destroying: the interior camera restores the game code it patched
+    // for roll, otherwise the finders re-scan NOPs on world reload and lose those sites.
+    if (m_activeCamera) {
+      m_activeCamera->OnDeactivate();
+      m_activeCamera = nullptr;
+    }
     m_cameras.clear();
     m_activeCameraObject = 0;
     m_defaultsObjects.clear();

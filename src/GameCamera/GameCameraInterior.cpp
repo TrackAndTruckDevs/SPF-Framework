@@ -96,10 +96,15 @@ void GameCameraInterior::SetRoll(float degrees) {
 void GameCameraInterior::SetRollPatchesApplied(bool apply) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
   if (apply) {
-    m_rollPatches[0].addr = gameData.GetInteriorRollZeroStoreAddr();
-    m_rollPatches[0].length = 10;  // mov dword [reg+disp32], imm32
-    m_rollPatches[1].addr = gameData.GetInteriorRollControllerStoreAddr();
-    m_rollPatches[1].length = 8;  // movss [reg+disp32], xmm
+    // An applied patch keeps its address: losing it would leave the NOPs in for good.
+    if (!m_rollPatches[0].applied) {
+      m_rollPatches[0].addr = gameData.GetInteriorRollZeroStoreAddr();
+      m_rollPatches[0].length = 10;  // mov dword [reg+disp32], imm32
+    }
+    if (!m_rollPatches[1].applied) {
+      m_rollPatches[1].addr = gameData.GetInteriorRollControllerStoreAddr();
+      m_rollPatches[1].length = 8;  // movss [reg+disp32], xmm
+    }
   }
 
   for (auto& patch : m_rollPatches) {
