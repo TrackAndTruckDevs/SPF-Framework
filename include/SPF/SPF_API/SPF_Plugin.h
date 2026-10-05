@@ -97,6 +97,7 @@ typedef struct SPF_Environment_API SPF_Environment_API;
 typedef struct SPF_GameWorld_API SPF_GameWorld_API;
 typedef struct SPF_Climate_API SPF_Climate_API;
 typedef struct SPF_Sound_API SPF_Sound_API;
+typedef struct SPF_Economy_API SPF_Economy_API;
 
 // --- Handle Types (Opaque pointers used as context identifiers) ---
 typedef struct SPF_Config_Handle SPF_Config_Handle;
@@ -448,6 +449,12 @@ struct SPF_Core_API {
    *        buses, VCAs, events, parameters, listeners, banks, and FMOD hook overrides.
    */
   SPF_Sound_API* sound;
+
+  /**
+   * @brief Economy API. For reading and controlling money: balance, add/set money,
+   *        and blocking game-initiated money operations.
+   */
+  SPF_Economy_API* economy;
 };
 
 // =================================================================================================

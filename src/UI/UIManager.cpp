@@ -4,6 +4,7 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Data/GameData/GameWorldService.hpp"
+#include "SPF/Data/GameData/EconomyService.hpp"
 #include "SPF/Data/GameData/SoundService.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
@@ -40,6 +41,7 @@
 #include "SPF/UI/Fonts/NotoSansSCRegular.h"
 #include "SPF/UI/Fonts/RobotoMonoRegular.h"
 #include "SPF/UI/GameConsoleWindow.hpp"  // Added for GameConsoleWindow creation
+#include "SPF/UI/EconomyWindow.hpp"     // Added for EconomyWindow creation
 #include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
 #include "SPF/UI/HooksWindow.hpp"        // Added for HooksWindow creation
 #include "SPF/UI/IMESupport.hpp"
@@ -1326,6 +1328,10 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   // Sound Window
   auto soundWindow = std::make_shared<SoundWindow>("framework", "sound_window", Data::GameData::SoundService::GetInstance());
   RegisterWindow(soundWindow);
+
+  // Economy Window
+  auto economyWindow = std::make_shared<EconomyWindow>("framework", "economy_window", Data::GameData::EconomyService::GetInstance());
+  RegisterWindow(economyWindow);
 
   // Notifications (Global) — must be created before the status check block below,
   // because Updated fires ShowNotificationEx which needs m_notificationWindow.

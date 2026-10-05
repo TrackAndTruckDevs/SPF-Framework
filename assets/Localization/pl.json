@@ -1406,6 +1406,29 @@
         "soundref_origin": "Pochodzenie",
         "soundref_event": "Zdarzenie"
     },
+    "economy_window": {
+      "title": "Ekonomia",
+      "not_ready": "Usługa ekonomii nie jest zainicjowana. Wczytaj grę.",
+      "tab_money": "Pieniądze",
+      "balance": {
+        "title": "Saldo bankowe",
+        "value": "Saldo: %lld",
+        "debt_state": "Dług: %s",
+        "debt_yes": "TAK",
+        "debt_no": "NIE"
+      },
+      "money": {
+        "amount_label": "Kwota",
+        "add": "Dodaj",
+        "subtract": "Odejmij",
+        "set": "Ustaw"
+      },
+      "control": {
+        "title": "Sterowanie grą",
+        "lock_checkbox": "Blokuj operacje pieniężne gry",
+        "lock_tooltip": "Po włączeniu wszystkie operacje pieniężne inicjowane przez grę (wpłata/wypłata) są blokowane. AddMoney/SetMoney z frameworku zawsze przechodzą."
+      }
+    },
     "info_window": {
         "title": "Informacje o środowisku",
         "tabs": {

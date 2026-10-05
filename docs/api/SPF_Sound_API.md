@@ -11,21 +11,9 @@ The API has two independent layers. Choose the layer by answering one question: 
 
 ## Getting the API
 
-Request the Sound API from the framework during your plugin's initialization.
+Request the Sound API from the framework in your plugin's `OnActivated` callback.
 
-**Example: C**
-```c
-#include "SPF/SPF_API/SPF_Plugin.h"
-#include "SPF/SPF_API/SPF_Sound_API.h"
-
-SPF_Sound_API* s_soundAPI = NULL;
-
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_soundAPI = (SPF_Sound_API*)params->GetAPI(SPF_API_SOUND);
-}
-```
-
-**Example: OnActivated callback (Recommended)**
+**Example: OnActivated callback**
 ```cpp
 SPF_Sound_API* s_soundAPI = NULL;
 

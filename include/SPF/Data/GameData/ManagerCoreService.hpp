@@ -33,22 +33,22 @@ class ManagerCoreService : public IWorldScopedService {
   bool IsGameplayManagerReady() const { return m_isInitialized && m_gameplayManagerAddr != 0; }
   bool IsCameraManagerReady() const { return m_isInitialized && m_cameraManagerAddr != 0; }
   bool IsEnvObjectOffsetReady() const { return m_isInitialized && m_envObjectOffset != 0; }
-  bool IsTimeManagerReady() const { return m_isInitialized && m_timeMgrPtrAddr != 0; }
+  bool IsEconomyManagerReady() const { return m_isInitialized && m_economyManagerAddr != 0; }
   bool IsSoundManagerReady() const { return m_isInitialized && m_soundManagerAddr != 0; }
-  bool IsReady() const { return IsGameplayManagerReady() && IsCameraManagerReady() && IsEnvObjectOffsetReady() && IsTimeManagerReady() && IsSoundManagerReady(); }
+  bool IsReady() const { return IsGameplayManagerReady() && IsCameraManagerReady() && IsEnvObjectOffsetReady() && IsEconomyManagerReady() && IsSoundManagerReady(); }
 
   // --- Public Getters ---
   uintptr_t GetGameplayManagerAddr() const { return m_gameplayManagerAddr; }
   uintptr_t GetCameraManagerAddr() const { return m_cameraManagerAddr; }
   intptr_t GetEnvObjectOffset() const { return m_envObjectOffset; }
-  uintptr_t GetTimeMgrPtrAddr() const { return m_timeMgrPtrAddr; }
+  uintptr_t GetEconomyManagerAddr() const { return m_economyManagerAddr; }
   uintptr_t GetSoundManagerAddr() const { return m_soundManagerAddr; }
 
   // --- Public Setters (for use by finder implementations) ---
   void SetGameplayManagerAddr(uintptr_t addr) { m_gameplayManagerAddr = addr; }
   void SetCameraManagerAddr(uintptr_t addr) { m_cameraManagerAddr = addr; }
   void SetEnvObjectOffset(intptr_t offset) { m_envObjectOffset = offset; }
-  void SetTimeMgrPtrAddr(uintptr_t addr) { m_timeMgrPtrAddr = addr; }
+  void SetEconomyManagerAddr(uintptr_t addr) { m_economyManagerAddr = addr; }
   void SetSoundManagerAddr(uintptr_t addr) { m_soundManagerAddr = addr; }
 
  private:
@@ -61,7 +61,7 @@ class ManagerCoreService : public IWorldScopedService {
   uintptr_t m_gameplayManagerAddr = 0;
   uintptr_t m_cameraManagerAddr = 0;
   intptr_t m_envObjectOffset = 0;
-  uintptr_t m_timeMgrPtrAddr = 0;
+  uintptr_t m_economyManagerAddr = 0;
   uintptr_t m_soundManagerAddr = 0;
   std::vector<std::unique_ptr<IManagerDataFinder>> m_dataFinders;
 };

@@ -1406,6 +1406,29 @@
         "soundref_origin": "Oorsprong",
         "soundref_event": "Gebeurtenis"
     },
+    "economy_window": {
+      "title": "Economie",
+      "not_ready": "Economiedienst is niet geïnitialiseerd. Laad het spel.",
+      "tab_money": "Geld",
+      "balance": {
+        "title": "Banksaldo",
+        "value": "Saldo: %lld",
+        "debt_state": "Schuld: %s",
+        "debt_yes": "JA",
+        "debt_no": "NEE"
+      },
+      "money": {
+        "amount_label": "Bedrag",
+        "add": "Toevoegen",
+        "subtract": "Aftrekken",
+        "set": "Instellen"
+      },
+      "control": {
+        "title": "Spelbesturing",
+        "lock_checkbox": "Geldtransacties van het spel blokkeren",
+        "lock_tooltip": "Wanneer ingeschakeld, worden alle door het spel geïnitieerde geldtransacties (storten/opnemen) geblokkeerd. AddMoney/SetMoney van het framework gaan altijd door."
+      }
+    },
     "info_window": {
         "title": "Omgevingsinformatie",
         "tabs": {

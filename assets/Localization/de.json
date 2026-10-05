@@ -1406,6 +1406,29 @@
         "soundref_origin": "Ursprung",
         "soundref_event": "Ereignis"
     },
+    "economy_window": {
+      "title": "Wirtschaft",
+      "not_ready": "Wirtschaftsdienst ist nicht initialisiert. Bitte ins Spiel laden.",
+      "tab_money": "Geld",
+      "balance": {
+        "title": "Bankguthaben",
+        "value": "Guthaben: %lld",
+        "debt_state": "Schulden: %s",
+        "debt_yes": "JA",
+        "debt_no": "NEIN"
+      },
+      "money": {
+        "amount_label": "Betrag",
+        "add": "Hinzufügen",
+        "subtract": "Abheben",
+        "set": "Setzen"
+      },
+      "control": {
+        "title": "Spielsteuerung",
+        "lock_checkbox": "Geldoperationen des Spiels blockieren",
+        "lock_tooltip": "Wenn aktiviert, werden alle vom Spiel initiierten Geldoperationen (Einzahlung/Auszahlung) blockiert. AddMoney/SetMoney des Frameworks passieren immer."
+      }
+    },
     "info_window": {
         "title": "Umgebungsinformationen",
         "tabs": {

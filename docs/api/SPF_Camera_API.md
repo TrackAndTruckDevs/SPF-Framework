@@ -4,19 +4,19 @@ The SPF Camera API provides extensive control over the in-game camera system. It
 
 ## Getting the API
 
-To use the camera API, you first need to get a pointer to the `SPF_Camera_API` struct from the framework. This is typically done during your plugin's initialization phase by requesting the API by its unique name.
+To use the camera API, get a pointer to the `SPF_Camera_API` struct in your plugin's `OnActivated` callback.
 
-**Example: C**
-```c
+**Example: OnActivated callback**
+```cpp
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_Camera_API.h"
 
 // Global pointer to the Camera API
 SPF_Camera_API* s_cameraAPI = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_cameraAPI = (SPF_Camera_API*)params->GetAPI(SPF_API_CAMERA);
-    
+void OnActivated(const SPF_Core_API* core_api) {
+    s_cameraAPI = core_api->camera;
+
     if (s_cameraAPI) {
         // The API was successfully acquired and is ready to use.
         // For example, you can now switch the camera:

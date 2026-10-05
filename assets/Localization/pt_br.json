@@ -1406,6 +1406,29 @@
         "soundref_origin": "Origem",
         "soundref_event": "Evento"
     },
+    "economy_window": {
+      "title": "Economia",
+      "not_ready": "O serviço de economia não está inicializado. Carregue o jogo.",
+      "tab_money": "Dinheiro",
+      "balance": {
+        "title": "Saldo bancário",
+        "value": "Saldo: %lld",
+        "debt_state": "Dívida: %s",
+        "debt_yes": "SIM",
+        "debt_no": "NÃO"
+      },
+      "money": {
+        "amount_label": "Valor",
+        "add": "Adicionar",
+        "subtract": "Subtrair",
+        "set": "Definir"
+      },
+      "control": {
+        "title": "Controle do jogo",
+        "lock_checkbox": "Bloquear operações de dinheiro do jogo",
+        "lock_tooltip": "Quando ativado, todas as operações de dinheiro iniciadas pelo jogo (depósito/saque) são bloqueadas. AddMoney/SetMoney da framework sempre passam."
+      }
+    },
     "info_window": {
         "title": "Informações do Ambiente",
         "tabs": {

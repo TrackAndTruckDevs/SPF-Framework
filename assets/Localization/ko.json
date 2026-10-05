@@ -1406,6 +1406,29 @@
         "soundref_origin": "원본",
         "soundref_event": "이벤트"
     },
+    "economy_window": {
+      "title": "경제",
+      "not_ready": "경제 서비스가 초기화되지 않았습니다. 게임을 불러오세요.",
+      "tab_money": "돈",
+      "balance": {
+        "title": "은행 잔액",
+        "value": "잔액: %lld",
+        "debt_state": "부채: %s",
+        "debt_yes": "예",
+        "debt_no": "아니오"
+      },
+      "money": {
+        "amount_label": "금액",
+        "add": "추가",
+        "subtract": "빼기",
+        "set": "설정"
+      },
+      "control": {
+        "title": "게임 제어",
+        "lock_checkbox": "게임의 돈 관련 작업 차단",
+        "lock_tooltip": "활성화하면 게임이 시작한 모든 돈 관련 작업(입금/출금)이 차단됩니다. 프레임워크의 AddMoney/SetMoney는 항상 통과합니다."
+      }
+    },
     "info_window": {
         "title": "환경 정보",
         "tabs": {

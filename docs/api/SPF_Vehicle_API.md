@@ -4,18 +4,18 @@ The SPF Vehicle API provides an interface for interacting with the game's traffi
 
 ## Getting the API
 
-Request the Vehicle API from the framework during your plugin's initialization.
+Request the Vehicle API from the framework in your plugin's `OnActivated` callback.
 
-**Example: C**
-```c
+**Example: OnActivated callback**
+```cpp
 #include "SPF/SPF_API/SPF_Plugin.h"
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
 
 // Global pointer to the Vehicle API
 SPF_Vehicle_API* s_vehicleAPI = NULL;
 
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_vehicleAPI = (SPF_Vehicle_API*)params->GetAPI(SPF_API_VEHICLE);
+void OnActivated(const SPF_Core_API* core_api) {
+    s_vehicleAPI = core_api->vehicle;
 }
 ```
 

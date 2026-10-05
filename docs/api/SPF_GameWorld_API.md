@@ -4,22 +4,9 @@ The SPF Game World API provides an interface for inspecting and interacting with
 
 ## Getting the API
 
-Request the Game World API from the framework during your plugin's initialization.
+Request the Game World API from the framework in your plugin's `OnActivated` callback.
 
-**Example: C**
-```c
-#include "SPF/SPF_API/SPF_Plugin.h"
-#include "SPF/SPF_API/SPF_GameWorld_API.h"
-
-// Global pointer to the Game World API
-SPF_GameWorld_API* s_gameWorldAPI = NULL;
-
-SPF_PLUGIN_ENTRY void MyPlugin_Init(const SPF_Plugin_Init_Params* params) {
-    s_gameWorldAPI = (SPF_GameWorld_API*)params->GetAPI(SPF_API_GAMEWORLD); // Or retrieve via core_api->gameworld inside OnActivated
-}
-```
-
-**Example: OnActivated callback (Recommended)**
+**Example: OnActivated callback**
 ```cpp
 SPF_GameWorld_API* s_gameWorldAPI = NULL;
 

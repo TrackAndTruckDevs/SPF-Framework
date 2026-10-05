@@ -1406,6 +1406,29 @@
         "soundref_origin": "来源",
         "soundref_event": "事件"
     },
+    "economy_window": {
+      "title": "经济",
+      "not_ready": "经济服务尚未初始化。请加载进入游戏。",
+      "tab_money": "金钱",
+      "balance": {
+        "title": "银行余额",
+        "value": "余额: %lld",
+        "debt_state": "债务: %s",
+        "debt_yes": "是",
+        "debt_no": "否"
+      },
+      "money": {
+        "amount_label": "金额",
+        "add": "增加",
+        "subtract": "减少",
+        "set": "设置"
+      },
+      "control": {
+        "title": "游戏控制",
+        "lock_checkbox": "阻止游戏金钱操作",
+        "lock_tooltip": "启用后，游戏发起的所有金钱操作（存款/取款）将被阻止。框架的 AddMoney/SetMoney 始终可以通过。"
+      }
+    },
     "info_window": {
         "title": "环境信息",
         "tabs": {

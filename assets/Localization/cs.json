@@ -1406,6 +1406,29 @@
         "soundref_origin": "Původ",
         "soundref_event": "Událost"
     },
+    "economy_window": {
+      "title": "Ekonomika",
+      "not_ready": "Služba ekonomiky není inicializována. Načtěte se do hry.",
+      "tab_money": "Peníze",
+      "balance": {
+        "title": "Bankovní zůstatek",
+        "value": "Zůstatek: %lld",
+        "debt_state": "Dluh: %s",
+        "debt_yes": "ANO",
+        "debt_no": "NE"
+      },
+      "money": {
+        "amount_label": "Částka",
+        "add": "Přidat",
+        "subtract": "Odebrat",
+        "set": "Nastavit"
+      },
+      "control": {
+        "title": "Ovládání hry",
+        "lock_checkbox": "Blokovat peněžní operace hry",
+        "lock_tooltip": "Při zapnutí jsou blokovány všechny peněžní operace zahájené hrou (vklad/výběr). AddMoney/SetMoney frameworku procházejí vždy."
+      }
+    },
     "info_window": {
         "title": "Informace o prostředí",
         "tabs": {

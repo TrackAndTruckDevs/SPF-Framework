@@ -313,43 +313,43 @@ void GameWorldService::SetPreviewTime(uint32_t totalMinutes) {
 uint32_t GameWorldService::GetSimulationTime() {
   if (!m_isInitialized) return 0;
 
-  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
-  if (!timeMgrPtrAddr) return 0;
+  uintptr_t economyPtrAddr = ManagerCoreService::GetInstance().GetEconomyManagerAddr();
+  if (!economyPtrAddr) return 0;
 
-  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
-  if (!timeMgr) return 0;
+  uintptr_t economy = *(uintptr_t*)economyPtrAddr;
+  if (!economy) return 0;
 
-  return *(uint32_t*)(timeMgr + m_simulationTimeOffset);
+  return *(uint32_t*)(economy + m_simulationTimeOffset);
 }
 
 void GameWorldService::SetSimulationTime(uint32_t totalMinutes) {
   if (!m_isInitialized) return;
 
-  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
-  if (!timeMgrPtrAddr) return;
+  uintptr_t economyPtrAddr = ManagerCoreService::GetInstance().GetEconomyManagerAddr();
+  if (!economyPtrAddr) return;
 
-  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
-  if (!timeMgr) return;
+  uintptr_t economy = *(uintptr_t*)economyPtrAddr;
+  if (!economy) return;
 
-  *(uint32_t*)(timeMgr + m_simulationTimeOffset) = totalMinutes;
-  *(float*)(timeMgr + m_subMinuteSecondsOffset) = 0.0f;
+  *(uint32_t*)(economy + m_simulationTimeOffset) = totalMinutes;
+  *(float*)(economy + m_subMinuteSecondsOffset) = 0.0f;
 }
 
 uint32_t GameWorldService::GetRealPlayTime() {
   if (!m_isInitialized) return 0;
 
-  uintptr_t timeMgrPtrAddr = ManagerCoreService::GetInstance().GetTimeMgrPtrAddr();
-  if (!timeMgrPtrAddr) return 0;
+  uintptr_t economyPtrAddr = ManagerCoreService::GetInstance().GetEconomyManagerAddr();
+  if (!economyPtrAddr) return 0;
 
-  uintptr_t timeMgr = *(uintptr_t*)timeMgrPtrAddr;
-  if (!timeMgr) return 0;
+  uintptr_t economy = *(uintptr_t*)economyPtrAddr;
+  if (!economy) return 0;
 
   // In version 1.60+, Real Play Time is part of an array_t<uint32_t>.
   // We detect this by the offset value (e.g., 0x1B98 vs 0x1C8).
   if (m_realPlayTimeOffset > 0x1000) {
     // Read the data pointer from the array_t structure (at offset +0x08).
     // As per Ghidra 1.60 analysis, the structure is accessed via an array helper.
-    uintptr_t arrayDataPtr = *(uintptr_t*)(timeMgr + m_realPlayTimeOffset + 0x08);
+    uintptr_t arrayDataPtr = *(uintptr_t*)(economy + m_realPlayTimeOffset + 0x08);
     if (!arrayDataPtr) return 0;
 
     // Read the first element (minutes) which corresponds to the local player.
@@ -357,7 +357,7 @@ uint32_t GameWorldService::GetRealPlayTime() {
   }
 
   // Version 1.59 and older: direct uint32_t access.
-  return *(uint32_t*)(timeMgr + m_realPlayTimeOffset);
+  return *(uint32_t*)(economy + m_realPlayTimeOffset);
 }
 
 float GameWorldService::GetMapScale() {

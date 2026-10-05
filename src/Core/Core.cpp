@@ -3,6 +3,7 @@
 #include "SPF/Config/ConfigService.hpp"
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
+#include "SPF/Data/GameData/EconomyService.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
@@ -621,6 +622,7 @@ void Core::InitHooks() {
   ClimateService::GetInstance().Initialize();
   SoundService::GetInstance().Initialize();
   ManagerCoreService::GetInstance().Initialize();
+  EconomyService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 

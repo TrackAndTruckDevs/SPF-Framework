@@ -80,7 +80,7 @@ void ManagerCoreService::Reset() {
   m_gameplayManagerAddr = 0;
   m_cameraManagerAddr = 0;
   m_envObjectOffset = 0;
-  m_timeMgrPtrAddr = 0;
+  m_economyManagerAddr = 0;
   for (const auto& finder : m_dataFinders) {
     finder->Reset();
   }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "nlohmann/json.hpp"  // IWYU pragma: keep
 #include "nlohmann/json_fwd.hpp"
 
 #include <string>

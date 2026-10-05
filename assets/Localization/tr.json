@@ -1406,6 +1406,29 @@
         "soundref_origin": "Köken",
         "soundref_event": "Olay"
     },
+    "economy_window": {
+      "title": "Ekonomi",
+      "not_ready": "Ekonomi servisi başlatılmamış. Lütfen oyuna yüklenin.",
+      "tab_money": "Para",
+      "balance": {
+        "title": "Banka Bakiyesi",
+        "value": "Bakiye: %lld",
+        "debt_state": "Borç: %s",
+        "debt_yes": "EVET",
+        "debt_no": "HAYIR"
+      },
+      "money": {
+        "amount_label": "Tutar",
+        "add": "Ekle",
+        "subtract": "Çıkar",
+        "set": "Ayarla"
+      },
+      "control": {
+        "title": "Oyun Kontrolü",
+        "lock_checkbox": "Oyun para işlemlerini engelle",
+        "lock_tooltip": "Etkinleştirildiğinde, oyun tarafından başlatılan tüm para işlemleri (para yatırma/çekme) engellenir. Framework'ün AddMoney/SetMoney işlemleri her zaman geçer."
+      }
+    },
     "info_window": {
         "title": "Ortam Bilgileri",
         "tabs": {

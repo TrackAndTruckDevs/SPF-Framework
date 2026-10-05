@@ -1406,6 +1406,29 @@
         "soundref_origin": "元",
         "soundref_event": "イベント"
     },
+    "economy_window": {
+      "title": "経済",
+      "not_ready": "経済サービスが初期化されていません。ゲームをロードしてください。",
+      "tab_money": "お金",
+      "balance": {
+        "title": "銀行残高",
+        "value": "残高: %lld",
+        "debt_state": "借金: %s",
+        "debt_yes": "あり",
+        "debt_no": "なし"
+      },
+      "money": {
+        "amount_label": "金額",
+        "add": "追加",
+        "subtract": "減らす",
+        "set": "設定"
+      },
+      "control": {
+        "title": "ゲーム制御",
+        "lock_checkbox": "ゲームの金钱操作をブロック",
+        "lock_tooltip": "有効にすると、ゲームが開始したすべての金钱操作（入金/出金）がブロックされます。フレームワークの AddMoney/SetMoney は常に通過します。"
+      }
+    },
     "info_window": {
         "title": "環境情報",
         "tabs": {
