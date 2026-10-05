@@ -34,6 +34,20 @@ namespace SPF::Utils {
 
 namespace {
 
+// True if addr falls inside the main game module's mapped sections. Used to
+// reject a JMP thunk that leaves the .exe, which is the signature of a
+// third-party inline hook (MinHook/TruckersMP) rather than a real thunk.
+static bool IsAddressInMainModule(uintptr_t addr) {
+  static uintptr_t lo = 0, hi = 0;
+  if (!hi) {
+    for (const auto& sec : PatternFinder::GetModuleSections(nullptr)) {
+      if (!lo || sec.base < lo) lo = sec.base;
+      if (sec.base + sec.size > hi) hi = sec.base + sec.size;
+    }
+  }
+  return hi && addr >= lo && addr < hi;
+}
+
 /**
  * @brief Invokes a memory-scanning/reading lambda inside an SEH guard.
  * @tparam ResultT Return type of the guarded operation.
@@ -273,14 +287,21 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature
     auto signatureVec = SignatureToVector(signature);
     if (signatureVec.empty() || base == 0 || size == 0) return 0;
 
-    // Follow JMP thunk if present at the start address
+    // Follow JMP thunk if present at the start address, but only when it stays
+    // inside the game module. A third-party inline hook (MinHook/TruckersMP)
+    // overwrites the entry with a JMP into its own allocation; following that
+    // would scan foreign memory and can read past the end of a committed page
+    // (0xC0000005). The signatures we look for sit past the few patched bytes,
+    // so scanning the original function instead still finds them.
     uint8_t* pBase = reinterpret_cast<uint8_t*>(base);
     if (pBase[0] == 0xE9) {  // JMP rel32
       uintptr_t target = GetRipAddress(base, 1, 5);
-      if (target) {
-        auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+      auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
+      if (target && IsAddressInMainModule(target)) {
         logger->Info("Find: Following JMP thunk from 0x{:X} to 0x{:X}", base, target);
         base = target;
+      } else if (target) {
+        logger->Warn("Find: NOT following JMP thunk from 0x{:X} to 0x{:X} (outside game module, likely a third-party hook); scanning original bytes", base, target);
       }
     }
 
