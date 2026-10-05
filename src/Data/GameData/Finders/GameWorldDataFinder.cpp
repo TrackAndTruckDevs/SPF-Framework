@@ -498,11 +498,39 @@ bool WorldDataFinder::TryFindOffsets(GameWorldService& owner) {
   // ── Phase 11: Pause Status Offset ──
   /*
    * 4.1 [OFFSET: Pause Status] (Updated for v1.60; SIB-aware since v1.61)
+   *
+   * PAUSE_SIG (CMP byte [r64+off32], r8 ; JE) is not unique inside
+   * CoreEngine_UpdateLoop: the VR/Oculus rebuild adds earlier bool checks of the
+   * same shape before the real pause test
+   *   /--- Ghidra:(eurotrucks2_oculus.exe[1.61.1.1001]) ---/
+   *   1404267a1  41 38 B4 24 C8 0B 00 00  CMP byte ptr [R12 + 0xbc8],SIL
+   *   1404267a9  74 08                    JZ   0x1404267b3            <- false match
+   *   ...
+   *   1404268a0  41 38 94 24 B1 0A 00 00  CMP byte ptr [R12 + 0xab1],DL
+   *   1404268a8  74 10                    JZ   0x1404268ba            <- real pause
+   *   1404268ba  F3 41 0F 10 94 24 ...    MOVSS XMM2,[R12 + 0x8ac]    <- Global Warp
+   * Taking the first match anchors on the wrong field (silently wrong Pause Status
+   * offset) and leaves the Global Warp read out of the 32-byte window, so it reports
+   * NOT FOUND. Pick the pause match the Global Warp MOVSS actually follows; fall back
+   * to the first match when none qualifies.
    */
   {
     auto phase = log.MakePhase("Pause Status Offset");
 
-    addr = PatternFinder::Find(pfnCoreEngineLoop, 1500, PAUSE_SIG);
+    const uintptr_t loopEnd = pfnCoreEngineLoop ? pfnCoreEngineLoop + 1500 : 0;
+    uintptr_t firstMatch = 0;
+    for (uintptr_t scan = pfnCoreEngineLoop; scan && scan < loopEnd;) {
+      uintptr_t cand = PatternFinder::Find(scan, static_cast<size_t>(loopEnd - scan), PAUSE_SIG);
+      if (!cand) break;
+      if (!firstMatch) firstMatch = cand;
+      if (PatternFinder::Find(cand, 32, WARP_CHAIN)) {
+        addr = cand;
+        break;
+      }
+      scan = cand + 1;
+    }
+    if (!addr) addr = firstMatch;
+
     if (phase.Step(addr, "Pause Status signature", "RT")) {
       // ModRM is byte 2 of the CMP instruction (41 38 <ModRM> ...).
       int32_t pauseOff = ReadModRMDisp32(addr + 2);
