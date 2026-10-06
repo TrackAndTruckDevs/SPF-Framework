@@ -1427,6 +1427,30 @@
         "title": "Ovládání hry",
         "lock_checkbox": "Blokovat peněžní operace hry",
         "lock_tooltip": "Při zapnutí jsou blokovány všechny peněžní operace zahájené hrou (vklad/výběr). AddMoney/SetMoney frameworku procházejí vždy."
+      },
+      "tab_loans": "Úvěry",
+      "loans": {
+        "credit_limit_title": "Úvěrový limit",
+        "credit_limit": "Dostupný úvěr: %lld",
+        "active_title": "Aktivní úvěry",
+        "offers_title": "Nabídky úvěrů",
+        "no_loans": "Žádné aktivní úvěry.",
+        "no_offers": "Žádné nabídky úvěrů.",
+        "col_remaining": "Zbytek",
+        "col_amount": "Částka",
+        "col_start_day": "Den zahájení",
+        "col_rate": "Sazba (%)",
+        "col_weeks": "Týdny",
+        "col_action": "Akce",
+        "repay": "Splatit",
+        "limit_label": "Limit",
+        "set_limit": "Nastavit limit",
+        "edit": "Upravit",
+        "save": "Uložit",
+        "cancel": "Zrušit",
+        "edit_title": "Úprava úvěru #%d",
+        "take": "Vzít",
+        "new_loan_title": "Nový úvěr"
       }
     },
     "info_window": {

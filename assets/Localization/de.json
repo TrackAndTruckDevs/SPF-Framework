@@ -1427,6 +1427,30 @@
         "title": "Spielsteuerung",
         "lock_checkbox": "Geldoperationen des Spiels blockieren",
         "lock_tooltip": "Wenn aktiviert, werden alle vom Spiel initiierten Geldoperationen (Einzahlung/Auszahlung) blockiert. AddMoney/SetMoney des Frameworks passieren immer."
+      },
+      "tab_loans": "Kredite",
+      "loans": {
+        "credit_limit_title": "Kreditlimit",
+        "credit_limit": "Verfügbarer Kredit: %lld",
+        "active_title": "Aktive Kredite",
+        "offers_title": "Kreditangebote",
+        "no_loans": "Keine aktiven Kredite.",
+        "no_offers": "Keine Kreditangebote.",
+        "col_remaining": "Restbetrag",
+        "col_amount": "Betrag",
+        "col_start_day": "Starttag",
+        "col_rate": "Zinssatz (%)",
+        "col_weeks": "Wochen",
+        "col_action": "Aktion",
+        "repay": "Tilgen",
+        "limit_label": "Limit",
+        "set_limit": "Limit setzen",
+        "edit": "Bearbeiten",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "edit_title": "Kredit #%d bearbeiten",
+        "take": "Aufnehmen",
+        "new_loan_title": "Neuer Kredit"
       }
     },
     "info_window": {

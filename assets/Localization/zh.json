@@ -1427,6 +1427,30 @@
         "title": "游戏控制",
         "lock_checkbox": "阻止游戏金钱操作",
         "lock_tooltip": "启用后，游戏发起的所有金钱操作（存款/取款）将被阻止。框架的 AddMoney/SetMoney 始终可以通过。"
+      },
+      "tab_loans": "贷款",
+      "loans": {
+        "credit_limit_title": "信用额度",
+        "credit_limit": "可用信用: %lld",
+        "active_title": "活跃贷款",
+        "offers_title": "贷款报价",
+        "no_loans": "没有活跃贷款。",
+        "no_offers": "没有贷款报价。",
+        "col_remaining": "剩余",
+        "col_amount": "金额",
+        "col_start_day": "开始日",
+        "col_rate": "利率 (%)",
+        "col_weeks": "周数",
+        "col_action": "操作",
+        "repay": "还款",
+        "limit_label": "额度",
+        "set_limit": "设置额度",
+        "edit": "编辑",
+        "save": "保存",
+        "cancel": "取消",
+        "edit_title": "编辑贷款 #%d",
+        "take": "借款",
+        "new_loan_title": "新贷款"
       }
     },
     "info_window": {

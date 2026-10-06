@@ -1427,6 +1427,30 @@
         "title": "Control del juego",
         "lock_checkbox": "Bloquear operaciones de dinero del juego",
         "lock_tooltip": "Cuando está activado, todas las operaciones de dinero iniciadas por el juego (depósito/retiro) se bloquean. AddMoney/SetMoney del framework siempre pasan."
+      },
+      "tab_loans": "Préstamos",
+      "loans": {
+        "credit_limit_title": "Límite de crédito",
+        "credit_limit": "Crédito disponible: %lld",
+        "active_title": "Préstamos activos",
+        "offers_title": "Ofertas de préstamo",
+        "no_loans": "No hay préstamos activos.",
+        "no_offers": "No hay ofertas de préstamo.",
+        "col_remaining": "Restante",
+        "col_amount": "Cantidad",
+        "col_start_day": "Día de inicio",
+        "col_rate": "Tasa (%)",
+        "col_weeks": "Semanas",
+        "col_action": "Acción",
+        "repay": "Pagar",
+        "limit_label": "Límite",
+        "set_limit": "Establecer límite",
+        "edit": "Editar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "edit_title": "Editar préstamo #%d",
+        "take": "Pedir",
+        "new_loan_title": "Nuevo préstamo"
       }
     },
     "info_window": {

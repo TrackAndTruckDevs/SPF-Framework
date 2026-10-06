@@ -1427,6 +1427,30 @@
         "title": "게임 제어",
         "lock_checkbox": "게임의 돈 관련 작업 차단",
         "lock_tooltip": "활성화하면 게임이 시작한 모든 돈 관련 작업(입금/출금)이 차단됩니다. 프레임워크의 AddMoney/SetMoney는 항상 통과합니다."
+      },
+      "tab_loans": "대출",
+      "loans": {
+        "credit_limit_title": "한도",
+        "credit_limit": "사용 가능 한도: %lld",
+        "active_title": "진행 중인 대출",
+        "offers_title": "대출 제안",
+        "no_loans": "진행 중인 대출이 없습니다.",
+        "no_offers": "대출 제안이 없습니다.",
+        "col_remaining": "잔액",
+        "col_amount": "금액",
+        "col_start_day": "시작일",
+        "col_rate": "이자율 (%)",
+        "col_weeks": "주 수",
+        "col_action": "동작",
+        "repay": "상환",
+        "limit_label": "한도",
+        "set_limit": "한도 설정",
+        "edit": "편집",
+        "save": "저장",
+        "cancel": "취소",
+        "edit_title": "대출 #%d 편집",
+        "take": "받기",
+        "new_loan_title": "새 대출"
       }
     },
     "info_window": {

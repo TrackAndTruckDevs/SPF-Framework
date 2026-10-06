@@ -1427,6 +1427,30 @@
         "title": "Sterowanie grą",
         "lock_checkbox": "Blokuj operacje pieniężne gry",
         "lock_tooltip": "Po włączeniu wszystkie operacje pieniężne inicjowane przez grę (wpłata/wypłata) są blokowane. AddMoney/SetMoney z frameworku zawsze przechodzą."
+      },
+      "tab_loans": "Kredyty",
+      "loans": {
+        "credit_limit_title": "Limit kredytowy",
+        "credit_limit": "Dostępny kredyt: %lld",
+        "active_title": "Aktywne kredyty",
+        "offers_title": "Oferty kredytów",
+        "no_loans": "Brak aktywnych kredytów.",
+        "no_offers": "Brak ofert kredytów.",
+        "col_remaining": "Pozostało",
+        "col_amount": "Kwota",
+        "col_start_day": "Dzień startu",
+        "col_rate": "Oprocentowanie (%)",
+        "col_weeks": "Tygodnie",
+        "col_action": "Akcja",
+        "repay": "Spłać",
+        "limit_label": "Limit",
+        "set_limit": "Ustaw limit",
+        "edit": "Edytuj",
+        "save": "Zapisz",
+        "cancel": "Anuluj",
+        "edit_title": "Edycja kredytu #%d",
+        "take": "Weź",
+        "new_loan_title": "Nowy kredyt"
       }
     },
     "info_window": {

@@ -1427,6 +1427,30 @@
         "title": "Spelbesturing",
         "lock_checkbox": "Geldtransacties van het spel blokkeren",
         "lock_tooltip": "Wanneer ingeschakeld, worden alle door het spel geïnitieerde geldtransacties (storten/opnemen) geblokkeerd. AddMoney/SetMoney van het framework gaan altijd door."
+      },
+      "tab_loans": "Leningen",
+      "loans": {
+        "credit_limit_title": "Kredietlimiet",
+        "credit_limit": "Beschikbaar krediet: %lld",
+        "active_title": "Actieve leningen",
+        "offers_title": "Leningaanbiedingen",
+        "no_loans": "Geen actieve leningen.",
+        "no_offers": "Geen leningaanbiedingen.",
+        "col_remaining": "Resterend",
+        "col_amount": "Bedrag",
+        "col_start_day": "Startdag",
+        "col_rate": "Rentepercentage (%)",
+        "col_weeks": "Weken",
+        "col_action": "Actie",
+        "repay": "Afbetalen",
+        "limit_label": "Limiet",
+        "set_limit": "Limiet instellen",
+        "edit": "Bewerken",
+        "save": "Opslaan",
+        "cancel": "Annuleren",
+        "edit_title": "Lening #%d bewerken",
+        "take": "Afsluiten",
+        "new_loan_title": "Nieuwe lening"
       }
     },
     "info_window": {

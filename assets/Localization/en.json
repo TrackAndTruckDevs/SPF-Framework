@@ -1427,6 +1427,30 @@
       "title": "Game Control",
       "lock_checkbox": "Block game money operations",
       "lock_tooltip": "When enabled, all money operations initiated by the game (deposit/withdraw) are blocked. Framework AddMoney/SetMoney always pass through."
+    },
+    "tab_loans": "Loans",
+    "loans": {
+      "credit_limit_title": "Credit Limit",
+      "credit_limit": "Available credit: %lld",
+      "active_title": "Active Loans",
+      "offers_title": "Loan Offers",
+      "no_loans": "No active loans.",
+      "no_offers": "No loan offers.",
+      "col_remaining": "Remaining",
+      "col_amount": "Amount",
+      "col_start_day": "Start Day",
+      "col_rate": "Rate (%)",
+      "col_weeks": "Weeks",
+      "col_action": "Action",
+      "repay": "Repay",
+      "limit_label": "Limit",
+      "set_limit": "Set Limit",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit_title": "Edit Loan #%d",
+      "take": "Take",
+      "new_loan_title": "New Loan"
     }
   },
   "info_window": {

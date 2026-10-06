@@ -1427,6 +1427,30 @@
         "title": "ゲーム制御",
         "lock_checkbox": "ゲームの金钱操作をブロック",
         "lock_tooltip": "有効にすると、ゲームが開始したすべての金钱操作（入金/出金）がブロックされます。フレームワークの AddMoney/SetMoney は常に通過します。"
+      },
+      "tab_loans": "ローン",
+      "loans": {
+        "credit_limit_title": "与信枠",
+        "credit_limit": "利用可能与信: %lld",
+        "active_title": "アクティブなローン",
+        "offers_title": "ローンの提案",
+        "no_loans": "アクティブなローンはありません。",
+        "no_offers": "ローンの提案はありません。",
+        "col_remaining": "残額",
+        "col_amount": "金額",
+        "col_start_day": "開始日",
+        "col_rate": "金利 (%)",
+        "col_weeks": "週数",
+        "col_action": "操作",
+        "repay": "返済",
+        "limit_label": "上限",
+        "set_limit": "上限を設定",
+        "edit": "編集",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "edit_title": "ローン #%d を編集",
+        "take": "借りる",
+        "new_loan_title": "新しいローン"
       }
     },
     "info_window": {

@@ -91,6 +91,70 @@ typedef bool (*SPF_ECO_SetGameControl_t)(bool lock);
 /** @brief Returns true if game money operations are currently blocked. */
 typedef bool (*SPF_ECO_GetGameControlLocked_t)(void);
 
+/** @brief Snapshot of one active loan. */
+typedef struct SPF_ECO_ActiveLoanInfo {
+  int64_t remaining;  /**< Remaining debt. */
+  int64_t amount;     /**< Initial loan amount. */
+  uint32_t startDay;  /**< Game day the loan started. */
+  float rate;         /**< Annual rate as fraction (0.05 = 5%). */
+  uint32_t weeks;     /**< Loan term in weeks. */
+} SPF_ECO_ActiveLoanInfo;
+
+/** @brief Snapshot of one bank loan offer. */
+typedef struct SPF_ECO_LoanOfferInfo {
+  uint32_t amount; /**< Offered amount. */
+  float rate;      /**< Annual rate as fraction (0.05 = 5%). */
+  uint32_t weeks;  /**< Offered term in weeks. */
+} SPF_ECO_LoanOfferInfo;
+
+/** @brief Returns the credit limit the game enforces on loan amounts. Returns 0 if not ready. */
+typedef int64_t (*SPF_ECO_GetCreditLimit_t)(void);
+
+/** @brief Returns the loan limit config value (bank_data::loan_limit). Returns 0 if not ready. */
+typedef int64_t (*SPF_ECO_GetLoanLimit_t)(void);
+
+/** @brief Overwrites the credit limit config value. Returns false if not ready. */
+typedef bool (*SPF_ECO_SetCreditLimit_t)(int64_t limit);
+
+/** @brief Returns the number of active loans. Returns 0 if not ready. */
+typedef int32_t (*SPF_ECO_GetActiveLoanCount_t)(void);
+
+/** @brief Reads active loan at idx into out. Returns false if not ready or idx invalid. */
+typedef bool (*SPF_ECO_GetActiveLoan_t)(int32_t idx, SPF_ECO_ActiveLoanInfo* out);
+
+/** @brief Returns the number of loan offers. Returns 0 if not ready. */
+typedef int32_t (*SPF_ECO_GetOfferCount_t)(void);
+
+/** @brief Reads loan offer at idx into out. Returns false if not ready or idx invalid. */
+typedef bool (*SPF_ECO_GetOffer_t)(int32_t idx, SPF_ECO_LoanOfferInfo* out);
+
+/** @brief Returns true if the game would allow repaying the loan at idx. */
+typedef bool (*SPF_ECO_CanRepayLoan_t)(int32_t idx);
+
+/** @brief Repays and removes the loan at idx via the game's own withdraw/remove path. */
+typedef bool (*SPF_ECO_RepayLoan_t)(int32_t idx);
+
+/** @brief Creates a new custom loan (factory path) and deposits the amount. rate: annual fraction (0.05 = 5%). */
+typedef bool (*SPF_ECO_TakeLoan_t)(uint64_t amount, float rate, uint32_t weeks);
+
+/** @brief Takes the bank's loan offer at idx (game's take branch). */
+typedef bool (*SPF_ECO_TakeOffer_t)(int32_t idx);
+
+/** @brief Sets remaining debt of the loan at idx (direct write). */
+typedef bool (*SPF_ECO_SetLoanRemaining_t)(int32_t idx, int64_t value);
+
+/** @brief Sets initial amount of the loan at idx (direct write). */
+typedef bool (*SPF_ECO_SetLoanAmount_t)(int32_t idx, int64_t value);
+
+/** @brief Sets annual rate as fraction (0.05 = 5%) of the loan at idx (direct write). */
+typedef bool (*SPF_ECO_SetLoanRate_t)(int32_t idx, float value);
+
+/** @brief Sets term in weeks of the loan at idx (direct write). */
+typedef bool (*SPF_ECO_SetLoanWeeks_t)(int32_t idx, uint32_t value);
+
+/** @brief Sets start day of the loan at idx (direct write). */
+typedef bool (*SPF_ECO_SetLoanStartDay_t)(int32_t idx, uint32_t value);
+
 // =================================================================================================
 // 2. API STRUCTURE
 // =================================================================================================
@@ -127,6 +191,37 @@ typedef struct SPF_Economy_API {
   /** @brief Game money-operation lock. @{ */
   SPF_ECO_SetGameControl_t ECO_SetGameControl;
   SPF_ECO_GetGameControlLocked_t ECO_GetGameControlLocked;
+  /** @} */
+
+  /** @brief Credit limit. @{ */
+  SPF_ECO_GetCreditLimit_t ECO_GetCreditLimit;
+  SPF_ECO_GetLoanLimit_t ECO_GetLoanLimit;
+  SPF_ECO_SetCreditLimit_t ECO_SetCreditLimit;
+  /** @} */
+
+  /** @brief Active loans read. @{ */
+  SPF_ECO_GetActiveLoanCount_t ECO_GetActiveLoanCount;
+  SPF_ECO_GetActiveLoan_t ECO_GetActiveLoan;
+  /** @} */
+
+  /** @brief Loan offers read. @{ */
+  SPF_ECO_GetOfferCount_t ECO_GetOfferCount;
+  SPF_ECO_GetOffer_t ECO_GetOffer;
+  /** @} */
+
+  /** @brief Loan take/repay (game paths). @{ */
+  SPF_ECO_CanRepayLoan_t ECO_CanRepayLoan;
+  SPF_ECO_RepayLoan_t ECO_RepayLoan;
+  SPF_ECO_TakeLoan_t ECO_TakeLoan;
+  SPF_ECO_TakeOffer_t ECO_TakeOffer;
+  /** @} */
+
+  /** @brief Loan field editing (direct writes). @{ */
+  SPF_ECO_SetLoanRemaining_t ECO_SetLoanRemaining;
+  SPF_ECO_SetLoanAmount_t ECO_SetLoanAmount;
+  SPF_ECO_SetLoanRate_t ECO_SetLoanRate;
+  SPF_ECO_SetLoanWeeks_t ECO_SetLoanWeeks;
+  SPF_ECO_SetLoanStartDay_t ECO_SetLoanStartDay;
   /** @} */
 } SPF_Economy_API;
 

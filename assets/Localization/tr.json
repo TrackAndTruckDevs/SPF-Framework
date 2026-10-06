@@ -1427,6 +1427,30 @@
         "title": "Oyun Kontrolü",
         "lock_checkbox": "Oyun para işlemlerini engelle",
         "lock_tooltip": "Etkinleştirildiğinde, oyun tarafından başlatılan tüm para işlemleri (para yatırma/çekme) engellenir. Framework'ün AddMoney/SetMoney işlemleri her zaman geçer."
+      },
+      "tab_loans": "Krediler",
+      "loans": {
+        "credit_limit_title": "Kredi limiti",
+        "credit_limit": "Kullanılabilir kredi: %lld",
+        "active_title": "Aktif krediler",
+        "offers_title": "Kredi teklifleri",
+        "no_loans": "Aktif kredi yok.",
+        "no_offers": "Kredi teklifi yok.",
+        "col_remaining": "Kalan",
+        "col_amount": "Tutar",
+        "col_start_day": "Başlangıç günü",
+        "col_rate": "Faiz oranı (%)",
+        "col_weeks": "Haftalar",
+        "col_action": "İşlem",
+        "repay": "Öde",
+        "limit_label": "Limit",
+        "set_limit": "Limiti ayarla",
+        "edit": "Düzenle",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "edit_title": "Krediyi düzenle #%d",
+        "take": "Al",
+        "new_loan_title": "Yeni kredi"
       }
     },
     "info_window": {
