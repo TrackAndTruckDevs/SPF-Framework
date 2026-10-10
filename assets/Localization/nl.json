@@ -137,6 +137,10 @@
                     "report": {
                         "title": "Report Sink",
                         "description": "Schakel externe foutrapportage in of uit om het framework te helpen verbeteren."
+                    },
+                    "game_log": {
+                        "title": "Spellog naar bestand",
+                        "description": "Vastgelegde spelberichten ook naar het framework-logbestand (framework.log) schrijven."
                     }
                 }
             },
@@ -171,8 +175,8 @@
                     "hooks_window": {
                         "title": "Hooks"
                     },
-                    "game_console_window": {
-                        "title": "Spelconsole"
+                    "tools_window": {
+                        "title": "Gereedschap"
                     },
                     "camera_window": {
                         "title": "Camera"
@@ -660,11 +664,16 @@
             "internal_name": "Om deze hook in je plugin te gebruiken, specificeer je de volgende naam in het `requiredHooks`-beleid:"
         }
     },
-    "game_console_window": {
-        "title": "Spelconsole",
+    "tools_window": {
+        "tab_console_log": "Console / Log",
+        "title": "Gereedschap",
         "info_text": "Testveld voor het invoeren van commando's in de spelconsole. Werkt zelfs als g_console en g_developer zijn uitgeschakeld in het config.cfg-bestand (d.w.z. ingesteld op '0').",
         "enable_hook_text": "Activeer de GameConsole hook in het '%s' venster.",
-        "send_button": "Verzenden"
+        "send_button": "Verzenden",
+        "dump_commands": "Opdrachten naar log dumpen",
+        "game_log_label": "Spellog",
+        "checkbox_game_log_to_file": "Naar bestand schrijven",
+        "tooltip_game_log_to_file": "Vastgelegde spelberichten ook naar framework.log schrijven."
     },
     "camera_window": {
         "title": "Camera",
@@ -1140,163 +1149,163 @@
         }
     },
     "climate_window": {
-            "title": "Klimaat & Weer",
-            "not_ready": "Klimaatdienst is niet gereed.",
-            "subtitle": "Weer & Klimaat",
-            "select_climate": "Selecteer Klimaat",
-            "refresh_list": "Ververs Lijst",
-            "active_climate": "Actief klimaat: %s",
-            "time_autostep": "Tijd Auto-Stap (voor test)",
-            "btn_stop_minus": "Stop -1",
-            "btn_minus_1min": "-1 min",
-            "btn_stop_plus": "Stop +1",
-            "btn_plus_1min": "+1 min",
-            "sun_profiles_count": "Zonprofielen Aantal: %d",
-            "active_sun_profile": "Actief zonprofiel: %s (idx: %d)",
-            "next_sun_profile": "Volgend zonprofiel: %s (idx: %d)",
-            "transition_progress": "Overgang: %.1f%%",
-            "active_elev": "Actieve hoogte: %.4f rad",
-            "next_elev": "Volgende hoogte: %.4f rad",
-            "sun_angle": "Zonhoek: %.4f rad (%.1f°)",
-            "nice": "Mooi",
-            "bad": "Slecht",
-            "next_weather": "Volgend weer: %s (%d)",
-            "interpolated_change": "Geïnterpoleerde verandering",
-            "interpolated_tooltip": "Een soepele overgang duurt ongeveer 20 spelminuten.\nU kunt dit aanpassen met de weermengingsschuifregelaar.",
-            "weather_mixing": "weermengingspercentage: %.1f%%",
-            "no_transition": "De overgang vindt niet plaats",
-            "duration": "Duur (min)",
-            "bad_weather_factor": "g_bad_weather_factor: %.3f",
-            "factor": "Factor",
-            "set": "Instellen",
-            "bad_weather_mode": "Slechtweermodus: %s (%u)",
-            "bad_weather_active": "Actief",
-            "bad_weather_inactive": "Inactief",
-            "remaining_time": "echte tijd in seconden tot de volgende weerwijziging: %.0f s (%u min)",
-            "variation_status": "Actief: %s (varIdx: %llu/%llu) | Volgend: %s (varIdx: %llu/%llu)",
-            "set_active_variation": "Actieve variatie instellen in {}",
-            "set_next_variation": "Volgende variatie instellen in {}",
-            "active_tag": " actief",
-            "blend_label": "meng @{:.0f}%",
-            "next_var_fmt": "[%llu] %s",
-            "section_env_profile": "Omgevingsprofiel",
-            "section_sun": "Zon",
-            "section_moon_stars": "Maan & Sterren",
-            "section_sky_textures": "Hemel & Texturen",
-            "section_cloud_shadows": "Wolkschaduwen",
-            "section_temperature": "Temperatuur",
-            "section_rain_lightning": "Regen & Bliksem",
-            "section_snow": "Sneeuw",
-            "section_fog": "Mist",
-            "section_ambient_env": "Omgeving & Omgevingslicht",
-            "section_post_process": "Nabewerking",
-            "section_wind_blending": "Wind & Menging",
-            "sun": {
-                "low_elevation": "Lage hoogte",
-                "high_elevation": "Hoge hoogte",
-                "direction": "Zonrichting",
-                "direction_forward": "1 (voorwaarts)",
-                "direction_zenith": "0 (zenit)",
-                "direction_backward": "-1 (achterwaarts)",
-                "color": "Zonkleur",
-                "opacity": "Zondekking",
-                "halo_color": "Zonhalo-kleur",
-                "shadow_strength": "Zonschaduwsterkte",
-                "shaft_color": "Zonstraalkleur",
-                "shaft_size": "Zonstraalgrootte"
-            },
-            "moon": {
-                "color": "Maan kleur",
-                "halo_color": "Maanhalo-kleur",
-                "halo_scale": "Maanhalo-schaal",
-                "starmap_color": "Sterrenkaartkleur",
-                "stars_color": "Sterrenkleur",
-                "stars_texture": "Sterrentextuur"
-            },
-            "sky": {
-                "color": "Hemelkleur",
-                "bottom_color": "Hemelbodemkleur",
-                "skybox_texture": "Skybox-textuur",
-                "skycloud_mask_texture": "Hemelwolkenmaskertextuur",
-                "mirror_sky_texture": "Spiegelhemeltextuur"
-            },
-            "cloud_shadows": {
-                "weight": "Wolkschaduwgewicht",
-                "texture": "Wolkschaduwtextuur",
-                "area_size": "Wolkschaduwgebiedsgrootte",
-                "speed": "Wolkschaduwsnelheid"
-            },
-            "temperature": {
-                "label": "Temperatuur"
-            },
-            "rain_lightning": {
-                "rain_intensity": "Regenintensiteit",
-                "lightning_intensity": "Bliksemintensiteit",
-                "lightning_mask": "Bliksemmasker",
-                "rain_max_wetness": "Regen maximale natheid",
-                "rain_additional_ambient": "Regen extra omgevingslicht"
-            },
-            "snow": {
-                "intensity": "Sneeuwintensiteit",
-                "flake_size_range": "Sneeuwvlokgroottebereik",
-                "additional_ambient": "Sneeuw extra omgevingslicht",
-                "chaos_rate": "Sneeuw chaos snelheid",
-                "chaos_weight": "Sneeuw chaos gewicht"
-            },
-            "fog": {
-                "color": "Mistkleur",
-                "color_2": "Mistkleur 2",
-                "vgradient": "Mistverloop",
-                "offset": "Mistoffset",
-                "density": "Mistdichtheid"
-            },
-            "ambient_env": {
-                "ambient": "Omgevingslicht",
-                "diffuse": "Diffuus",
-                "specular": "Spiegelend",
-                "env": "Omgeving",
-                "env_static_mod": "Omgeving Statisch Mod"
-            },
-            "post_process": {
-                "tone_mapping": "Toonmapping",
-                "contrast": "Contrast",
-                "shoulder_length": "Schouderlengte",
-                "color_grading": "Kleurcorrectie",
-                "color_balance": "Kleurbalans",
-                "color_saturation": "Kleurverzadiging",
-                "bloom": "Bloom",
-                "bloom_threshold": "Drempel",
-                "bloom_limit": "Limiet",
-                "bloom_intensity": "Bloom-intensiteit",
-                "bloom_standard_deviation": "Standaardafwijking",
-                "depth_of_field": "Dieptescherpte",
-                "dof_start": "Start",
-                "dof_transition": "Overgang",
-                "dof_filter_size": "Filtergrootte",
-                "eye_adaptation": "Oogaanpassing",
-                "low_intensity_min": "Lage intensiteit Min",
-                "low_intensity_max": "Lage intensiteit Max",
-                "low_intensity_color": "Lage intensiteitskleur",
-                "dark_adaptation_speed": "Donkeradaptatiesnelheid",
-                "bright_adaptation_speed": "Helderadaptatiesnelheid",
-                "target_gray": "Doelgrijs",
-                "exposure_scale": "Belichtingsschaal",
-                "min_scale": "Min Schaal",
-                "max_scale": "Max Schaal",
-                "scale_override": "Schaaloverschrijving"
-            },
-            "wind_blending": {
-                "wind_type": "Windtype",
-                "speed_coef": "Snelheidscoëfficiënt",
-                "stability": "Stabiliteit",
-                "blend_weight": "Menggewicht"
-            },
-            "env_profile": {
-                "lamps_on_elevation": "Lampen aan hoogte",
-                "day_in_year": "Dag in jaar",
-                "summer_time": "Zomertijd",
-                "thunderstorm_probability": "Onweerskans"
-            }
+        "title": "Klimaat & Weer",
+        "not_ready": "Klimaatdienst is niet gereed.",
+        "subtitle": "Weer & Klimaat",
+        "select_climate": "Selecteer Klimaat",
+        "refresh_list": "Ververs Lijst",
+        "active_climate": "Actief klimaat: %s",
+        "time_autostep": "Tijd Auto-Stap (voor test)",
+        "btn_stop_minus": "Stop -1",
+        "btn_minus_1min": "-1 min",
+        "btn_stop_plus": "Stop +1",
+        "btn_plus_1min": "+1 min",
+        "sun_profiles_count": "Zonprofielen Aantal: %d",
+        "active_sun_profile": "Actief zonprofiel: %s (idx: %d)",
+        "next_sun_profile": "Volgend zonprofiel: %s (idx: %d)",
+        "transition_progress": "Overgang: %.1f%%",
+        "active_elev": "Actieve hoogte: %.4f rad",
+        "next_elev": "Volgende hoogte: %.4f rad",
+        "sun_angle": "Zonhoek: %.4f rad (%.1f°)",
+        "nice": "Mooi",
+        "bad": "Slecht",
+        "next_weather": "Volgend weer: %s (%d)",
+        "interpolated_change": "Geïnterpoleerde verandering",
+        "interpolated_tooltip": "Een soepele overgang duurt ongeveer 20 spelminuten.\nU kunt dit aanpassen met de weermengingsschuifregelaar.",
+        "weather_mixing": "weermengingspercentage: %.1f%%",
+        "no_transition": "De overgang vindt niet plaats",
+        "duration": "Duur (min)",
+        "bad_weather_factor": "g_bad_weather_factor: %.3f",
+        "factor": "Factor",
+        "set": "Instellen",
+        "bad_weather_mode": "Slechtweermodus: %s (%u)",
+        "bad_weather_active": "Actief",
+        "bad_weather_inactive": "Inactief",
+        "remaining_time": "echte tijd in seconden tot de volgende weerwijziging: %.0f s (%u min)",
+        "variation_status": "Actief: %s (varIdx: %llu/%llu) | Volgend: %s (varIdx: %llu/%llu)",
+        "set_active_variation": "Actieve variatie instellen in {}",
+        "set_next_variation": "Volgende variatie instellen in {}",
+        "active_tag": " actief",
+        "blend_label": "meng @{:.0f}%",
+        "next_var_fmt": "[%llu] %s",
+        "section_env_profile": "Omgevingsprofiel",
+        "section_sun": "Zon",
+        "section_moon_stars": "Maan & Sterren",
+        "section_sky_textures": "Hemel & Texturen",
+        "section_cloud_shadows": "Wolkschaduwen",
+        "section_temperature": "Temperatuur",
+        "section_rain_lightning": "Regen & Bliksem",
+        "section_snow": "Sneeuw",
+        "section_fog": "Mist",
+        "section_ambient_env": "Omgeving & Omgevingslicht",
+        "section_post_process": "Nabewerking",
+        "section_wind_blending": "Wind & Menging",
+        "sun": {
+            "low_elevation": "Lage hoogte",
+            "high_elevation": "Hoge hoogte",
+            "direction": "Zonrichting",
+            "direction_forward": "1 (voorwaarts)",
+            "direction_zenith": "0 (zenit)",
+            "direction_backward": "-1 (achterwaarts)",
+            "color": "Zonkleur",
+            "opacity": "Zondekking",
+            "halo_color": "Zonhalo-kleur",
+            "shadow_strength": "Zonschaduwsterkte",
+            "shaft_color": "Zonstraalkleur",
+            "shaft_size": "Zonstraalgrootte"
+        },
+        "moon": {
+            "color": "Maan kleur",
+            "halo_color": "Maanhalo-kleur",
+            "halo_scale": "Maanhalo-schaal",
+            "starmap_color": "Sterrenkaartkleur",
+            "stars_color": "Sterrenkleur",
+            "stars_texture": "Sterrentextuur"
+        },
+        "sky": {
+            "color": "Hemelkleur",
+            "bottom_color": "Hemelbodemkleur",
+            "skybox_texture": "Skybox-textuur",
+            "skycloud_mask_texture": "Hemelwolkenmaskertextuur",
+            "mirror_sky_texture": "Spiegelhemeltextuur"
+        },
+        "cloud_shadows": {
+            "weight": "Wolkschaduwgewicht",
+            "texture": "Wolkschaduwtextuur",
+            "area_size": "Wolkschaduwgebiedsgrootte",
+            "speed": "Wolkschaduwsnelheid"
+        },
+        "temperature": {
+            "label": "Temperatuur"
+        },
+        "rain_lightning": {
+            "rain_intensity": "Regenintensiteit",
+            "lightning_intensity": "Bliksemintensiteit",
+            "lightning_mask": "Bliksemmasker",
+            "rain_max_wetness": "Regen maximale natheid",
+            "rain_additional_ambient": "Regen extra omgevingslicht"
+        },
+        "snow": {
+            "intensity": "Sneeuwintensiteit",
+            "flake_size_range": "Sneeuwvlokgroottebereik",
+            "additional_ambient": "Sneeuw extra omgevingslicht",
+            "chaos_rate": "Sneeuw chaos snelheid",
+            "chaos_weight": "Sneeuw chaos gewicht"
+        },
+        "fog": {
+            "color": "Mistkleur",
+            "color_2": "Mistkleur 2",
+            "vgradient": "Mistverloop",
+            "offset": "Mistoffset",
+            "density": "Mistdichtheid"
+        },
+        "ambient_env": {
+            "ambient": "Omgevingslicht",
+            "diffuse": "Diffuus",
+            "specular": "Spiegelend",
+            "env": "Omgeving",
+            "env_static_mod": "Omgeving Statisch Mod"
+        },
+        "post_process": {
+            "tone_mapping": "Toonmapping",
+            "contrast": "Contrast",
+            "shoulder_length": "Schouderlengte",
+            "color_grading": "Kleurcorrectie",
+            "color_balance": "Kleurbalans",
+            "color_saturation": "Kleurverzadiging",
+            "bloom": "Bloom",
+            "bloom_threshold": "Drempel",
+            "bloom_limit": "Limiet",
+            "bloom_intensity": "Bloom-intensiteit",
+            "bloom_standard_deviation": "Standaardafwijking",
+            "depth_of_field": "Dieptescherpte",
+            "dof_start": "Start",
+            "dof_transition": "Overgang",
+            "dof_filter_size": "Filtergrootte",
+            "eye_adaptation": "Oogaanpassing",
+            "low_intensity_min": "Lage intensiteit Min",
+            "low_intensity_max": "Lage intensiteit Max",
+            "low_intensity_color": "Lage intensiteitskleur",
+            "dark_adaptation_speed": "Donkeradaptatiesnelheid",
+            "bright_adaptation_speed": "Helderadaptatiesnelheid",
+            "target_gray": "Doelgrijs",
+            "exposure_scale": "Belichtingsschaal",
+            "min_scale": "Min Schaal",
+            "max_scale": "Max Schaal",
+            "scale_override": "Schaaloverschrijving"
+        },
+        "wind_blending": {
+            "wind_type": "Windtype",
+            "speed_coef": "Snelheidscoëfficiënt",
+            "stability": "Stabiliteit",
+            "blend_weight": "Menggewicht"
+        },
+        "env_profile": {
+            "lamps_on_elevation": "Lampen aan hoogte",
+            "day_in_year": "Dag in jaar",
+            "summer_time": "Zomertijd",
+            "thunderstorm_probability": "Onweerskans"
+        }
     },
     "sound_window": {
         "title": "Geluiden (FMOD)",
@@ -1407,51 +1416,51 @@
         "soundref_event": "Gebeurtenis"
     },
     "economy_window": {
-      "title": "Economie",
-      "not_ready": "Economiedienst is niet geïnitialiseerd. Laad het spel.",
-      "tab_money": "Geld",
-      "balance": {
-        "title": "Banksaldo",
-        "value": "Saldo: %lld",
-        "debt_state": "Schuld: %s",
-        "debt_yes": "JA",
-        "debt_no": "NEE"
-      },
-      "money": {
-        "amount_label": "Bedrag",
-        "add": "Toevoegen",
-        "subtract": "Aftrekken",
-        "set": "Instellen"
-      },
-      "control": {
-        "title": "Spelbesturing",
-        "lock_checkbox": "Geldtransacties van het spel blokkeren",
-        "lock_tooltip": "Wanneer ingeschakeld, worden alle door het spel geïnitieerde geldtransacties (storten/opnemen) geblokkeerd. AddMoney/SetMoney van het framework gaan altijd door."
-      },
-      "tab_loans": "Leningen",
-      "loans": {
-        "credit_limit_title": "Kredietlimiet",
-        "credit_limit": "Beschikbaar krediet: %lld",
-        "active_title": "Actieve leningen",
-        "offers_title": "Leningaanbiedingen",
-        "no_loans": "Geen actieve leningen.",
-        "no_offers": "Geen leningaanbiedingen.",
-        "col_remaining": "Resterend",
-        "col_amount": "Bedrag",
-        "col_start_day": "Startdag",
-        "col_rate": "Rentepercentage (%)",
-        "col_weeks": "Weken",
-        "col_action": "Actie",
-        "repay": "Afbetalen",
-        "limit_label": "Limiet",
-        "set_limit": "Limiet instellen",
-        "edit": "Bewerken",
-        "save": "Opslaan",
-        "cancel": "Annuleren",
-        "edit_title": "Lening #%d bewerken",
-        "take": "Afsluiten",
-        "new_loan_title": "Nieuwe lening"
-      }
+        "title": "Economie",
+        "not_ready": "Economiedienst is niet geïnitialiseerd. Laad het spel.",
+        "tab_money": "Geld",
+        "balance": {
+            "title": "Banksaldo",
+            "value": "Saldo: %lld",
+            "debt_state": "Schuld: %s",
+            "debt_yes": "JA",
+            "debt_no": "NEE"
+        },
+        "money": {
+            "amount_label": "Bedrag",
+            "add": "Toevoegen",
+            "subtract": "Aftrekken",
+            "set": "Instellen"
+        },
+        "control": {
+            "title": "Spelbesturing",
+            "lock_checkbox": "Geldtransacties van het spel blokkeren",
+            "lock_tooltip": "Wanneer ingeschakeld, worden alle door het spel geïnitieerde geldtransacties (storten/opnemen) geblokkeerd. AddMoney/SetMoney van het framework gaan altijd door."
+        },
+        "tab_loans": "Leningen",
+        "loans": {
+            "credit_limit_title": "Kredietlimiet",
+            "credit_limit": "Beschikbaar krediet: %lld",
+            "active_title": "Actieve leningen",
+            "offers_title": "Leningaanbiedingen",
+            "no_loans": "Geen actieve leningen.",
+            "no_offers": "Geen leningaanbiedingen.",
+            "col_remaining": "Resterend",
+            "col_amount": "Bedrag",
+            "col_start_day": "Startdag",
+            "col_rate": "Rentepercentage (%)",
+            "col_weeks": "Weken",
+            "col_action": "Actie",
+            "repay": "Afbetalen",
+            "limit_label": "Limiet",
+            "set_limit": "Limiet instellen",
+            "edit": "Bewerken",
+            "save": "Opslaan",
+            "cancel": "Annuleren",
+            "edit_title": "Lening #%d bewerken",
+            "take": "Afsluiten",
+            "new_loan_title": "Nieuwe lening"
+        }
     },
     "info_window": {
         "title": "Omgevingsinformatie",

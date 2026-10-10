@@ -4,9 +4,12 @@
 #include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
+#include <cstddef>
 #include <cstdint>
 #include <psapi.h>
 #include <string>
+#include <vector>
+#include <winnt.h>
 
 GameConsole& GameConsole::GetInstance() {
   static GameConsole instance;
@@ -78,4 +81,96 @@ void GameConsole::Execute(const std::string& command) {
     auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger(m_name);
     logger->Warn("Attempted to execute command while service is not active: {}", command);
   }
+}
+
+const std::vector<std::string>& GameConsole::GetCommandList() {
+  if (!m_commandListBuilt) {
+    BuildCommandList();
+    m_commandListBuilt = true;
+  }
+  return m_commandList;
+}
+
+bool GameConsole::BuildCommandList() {
+  auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger(m_name);
+
+  if (!m_consoleDataFinder.TryFind()) {
+    logger->Error("Console command registry discovery failed; command list unavailable.");
+    return false;
+  }
+
+  constexpr size_t kMaxPerSource = 4096;
+
+  auto appendName = [&](const char* name) {
+    if (!name || IsBadReadPtr(const_cast<char*>(name), 1) || name[0] == '\0') return;
+    m_commandList.emplace_back(name);
+  };
+
+  // Source 1: console command list (head -> ... -> sentinel).
+  size_t list1Count = 0;
+  {
+    const uintptr_t sentinel = m_consoleDataFinder.GetConsoleListSentinelAddr();
+    uintptr_t node = *reinterpret_cast<uintptr_t*>(m_consoleDataFinder.GetConsoleListHeadAddr());
+    while (node != 0 && node != sentinel && list1Count < kMaxPerSource) {
+      if (IsBadReadPtr(reinterpret_cast<void*>(node), sizeof(uintptr_t))) break;
+      const char* name = *reinterpret_cast<const char**>(node + m_consoleDataFinder.GetConsoleNameOffset());
+      appendName(name);
+      ++list1Count;
+      node = *reinterpret_cast<uintptr_t*>(node + m_consoleDataFinder.GetConsoleNextOffset());
+    }
+  }
+
+  // Source 2: script command list (head -> ... -> null), name inline at +0x08.
+  size_t list2Count = 0;
+  {
+    const int32_t nameOffset = m_consoleDataFinder.GetScriptNameOffset();
+    const int32_t nextOffset = m_consoleDataFinder.GetScriptNextOffset();
+    uintptr_t node = *reinterpret_cast<uintptr_t*>(m_consoleDataFinder.GetScriptListHeadAddr());
+    while (node != 0 && list2Count < kMaxPerSource) {
+      if (IsBadReadPtr(reinterpret_cast<void*>(node), static_cast<SIZE_T>(nextOffset + sizeof(uintptr_t)))) break;
+      appendName(reinterpret_cast<const char*>(node + nameOffset));
+      ++list2Count;
+      node = *reinterpret_cast<uintptr_t*>(node + nextOffset);
+    }
+  }
+
+  // Source 3: input constants array — element+8 holds 3 packed SCS tokens
+  // (3 qwords), decoded into a dotted string by the game's token-decode
+  // helper (FUN_1402156c0, discovered as inputConstCopyNameFn).
+  size_t inputCount = 0;
+  {
+    const size_t count = *reinterpret_cast<size_t*>(m_consoleDataFinder.GetInputConstSizeAddr());
+    const uintptr_t data = *reinterpret_cast<uintptr_t*>(m_consoleDataFinder.GetInputConstDataAddr());
+    const uintptr_t decodeFn = m_consoleDataFinder.GetInputConstCopyNameFnAddr();
+    if (data != 0 && decodeFn != 0) {
+      const size_t bounded = (count < kMaxPerSource) ? count : kMaxPerSource;
+      using DecodeTokensFn = void (*)(void* outString, const void* tokens);
+      for (size_t i = 0; i < bounded; ++i) {
+        const uintptr_t slot = data + i * sizeof(uintptr_t);
+        if (IsBadReadPtr(reinterpret_cast<void*>(slot), sizeof(uintptr_t))) break;
+        const uintptr_t element = *reinterpret_cast<uintptr_t*>(slot);
+        if (element == 0) continue;
+
+        // Decoded-string object layout (verified from FUN_1402156c0):
+        // +0x00 vtable, +0x08 buffer*, +0x10 length (u32), +0x14 capacity (u32),
+        // +0x18 inline buffer (capacity 0x27).
+        alignas(16) uint8_t decoded[0x40] = {};
+        reinterpret_cast<DecodeTokensFn>(decodeFn)(decoded, reinterpret_cast<const void*>(element + m_consoleDataFinder.GetInputConstNameOffset()));
+        const char* buffer = *reinterpret_cast<const char**>(decoded + 0x08);
+        const uint32_t len = *reinterpret_cast<uint32_t*>(decoded + 0x10);
+        if (buffer != nullptr && len != 0 && !IsBadReadPtr(const_cast<char*>(buffer), len)) {
+          m_commandList.emplace_back(buffer, len);
+          ++inputCount;
+        }
+        const uintptr_t vtable = *reinterpret_cast<uintptr_t*>(decoded);
+        if (vtable != 0) {
+          const uintptr_t dtor = *reinterpret_cast<uintptr_t*>(vtable);
+          reinterpret_cast<void (*)(void*, int)>(dtor)(decoded, 0);
+        }
+      }
+    }
+  }
+
+  logger->Info("Cached {} console commands (list1={}, list2={}, input={}).", m_commandList.size(), list1Count, list2Count, inputCount);
+  return !m_commandList.empty();
 }

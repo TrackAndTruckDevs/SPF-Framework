@@ -158,7 +158,7 @@ class FmodApi : public Hooks::IHook {
   std::string m_name = "FmodApi";
   std::string m_displayName = "FMOD API";
   std::string m_ownerName = "framework";
-  std::string m_signature;
+  std::string m_signature = "export table scan: fmodstudio.dll / fmod.dll";
   std::unordered_map<std::string, void*> m_exports;
 
   static void ParseExportTable(uintptr_t base, const char* dllName, std::unordered_map<std::string, void*>& out);

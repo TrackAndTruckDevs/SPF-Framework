@@ -84,7 +84,7 @@ class ScsNameResolver : public IHook {
   std::string m_name = "ScsNameResolver";
   std::string m_displayName = "SCS Name Resolver";
   bool m_isEnabled = true;
-  std::string m_signature;
+  std::string m_signature = "ResolveUnitName / DecodeSCSTokenToString / UnitIdToToken (byte patterns)";
 
   // --- Runtime State ---
   uintptr_t m_resolveAddr = 0;

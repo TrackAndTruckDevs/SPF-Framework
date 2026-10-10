@@ -35,7 +35,7 @@ void MyPlugin_OnActivated(const SPF_Core_API* core_api) {
 
 ## Function Reference
 
-The API consists of a single function, accessed via the `console` member of your `SPF_Core_API` pointer.
+The API is accessed via the `console` member of your `SPF_Core_API` pointer.
 
 ---
 ### `void GCon_ExecuteCommand(const char* command)`
@@ -46,6 +46,36 @@ Executes a command string in the in-game console as if a user had typed it.
     *   `command`: The full command string to execute (e.g., `"g_traffic 1.0"`, `"g_set_time 14 30"`).
 
 **Important Note:** This API is for **executing** existing game commands only. It does not provide a way for plugins to **register** new custom commands with the console.
+
+---
+### `int GCon_GetCommandCount(void)`
+
+Returns the total number of console commands the game supports.
+
+*   **Returns:** Number of available commands, or `0` if discovery failed.
+*   **Details:** The command list is discovered once (a one-time scan of the game's three command sources: console commands, script commands, and input constants) and cached. Subsequent calls return the cached count without rescanning.
+
+---
+### `int GCon_GetCommandNameByIndex(int index, char* out_buffer, int buffer_size)`
+
+Copies the command name at `index` into `out_buffer`. Use together with `GCon_GetCommandCount` to iterate the full command list (e.g., to build an autocomplete UI in your plugin).
+
+*   **Parameters:**
+    *   `index`: Zero-based command index (`0 .. GCon_GetCommandCount() - 1`).
+    *   `out_buffer`: Destination buffer for the null-terminated command name.
+    *   `buffer_size`: Size of `out_buffer` in bytes. The name is truncated if it does not fit.
+*   **Returns:** `1` on success, `0` on failure (NULL buffer, `buffer_size <= 0`, or index out of range).
+
+**Enumerating all commands:**
+```c
+int count = s_coreAPI->console->GCon_GetCommandCount();
+for (int i = 0; i < count; i++) {
+    char name[128];
+    if (s_coreAPI->console->GCon_GetCommandNameByIndex(i, name, sizeof(name))) {
+        printf("command: %s\n", name);
+    }
+}
+```
 
 ## Complete Example
 

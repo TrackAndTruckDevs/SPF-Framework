@@ -137,6 +137,10 @@
           "report": {
             "title": "Report Sink",
             "description": "Enable or disable remote error reporting to help improve the framework."
+          },
+          "game_log": {
+            "title": "Game Log to File",
+            "description": "Also write captured game log messages to the framework log file (framework.log) with the Game logger."
           }
         }
       },
@@ -171,8 +175,8 @@
           "hooks_window": {
             "title": "Hooks"
           },
-          "game_console_window": {
-            "title": "Game Console"
+          "tools_window": {
+            "title": "Tools"
           },
           "camera_window": {
             "title": "Camera"
@@ -660,11 +664,16 @@
       "internal_name": "To use this hook in your plugin, specify the following name in the `requiredHooks` policy:"
     }
   },
-  "game_console_window": {
-    "title": "Game Console",
+  "tools_window": {
+    "tab_console_log": "Console / Log",
+    "title": "Tools",
     "info_text": "Test field for entering commands into the game console. Works even if g_console and g_developer are disabled in the config.cfg file (i.e., set to '0').",
     "enable_hook_text": "Enable the GameConsole hook in the '%s' window.",
-    "send_button": "Send"
+    "send_button": "Send",
+    "dump_commands": "Dump commands to log",
+    "game_log_label": "Game Log",
+    "checkbox_game_log_to_file": "Log to file",
+    "tooltip_game_log_to_file": "Also write captured game messages to the framework log file (framework.log)."
   },
   "camera_window": {
     "title": "Camera",

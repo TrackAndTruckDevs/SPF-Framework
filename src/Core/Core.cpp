@@ -4,6 +4,7 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Data/GameData/ClimateService.hpp"
 #include "SPF/Data/GameData/EconomyService.hpp"
+#include "SPF/Data/GameData/MailService.hpp"
 #include "SPF/Data/GameData/GameDataCameraService.hpp"
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
@@ -23,6 +24,7 @@
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
 #include "SPF/Hooks/GameLogHook.hpp"
+#include "SPF/Hooks/GameTools/PrismArrayResolver.hpp"
 #include "SPF/Hooks/GameTools/PrismStringResolver.hpp"
 #include "SPF/Hooks/GameTools/ScsNameResolver.hpp"
 #include "SPF/Hooks/HookManager.hpp"
@@ -493,6 +495,7 @@ void Core::InitServices() {
   hookManager.RegisterFeatureHook(&GameConsole::GetInstance());
   hookManager.RegisterFeatureHook(&GameTools::ScsNameResolver::GetInstance());
   hookManager.RegisterFeatureHook(&GameTools::PrismStringResolver::GetInstance());
+  hookManager.RegisterFeatureHook(&GameTools::PrismArrayResolver::GetInstance());
   hookManager.RegisterFeatureHook(&Fmod::FmodApi::GetInstance());
   hookManager.RegisterFeatureHook(&Fmod::FmodStudioHook::GetInstance());
   m_configService->ReconcileHookStates(hookManager.GetFeatureHooks(), nullptr);
@@ -541,6 +544,7 @@ void Core::InitManagersAndPlugins() {
       LoggerFactory::GetInstance().ApplyConfigurationFor(componentName, componentConfig);
     }
   }
+  GameLogHook::SetLogToFrameworkEnabled(m_configService->GetValue("framework", "logging.sinks.game_log", false).get<bool>());
 
   // Phase 3: Reconcile config state with discovered plugins (e.g., add new plugins to config).
   m_logger->Info("-> [Init] Reconciling plugin states...");
@@ -623,6 +627,7 @@ void Core::InitHooks() {
   SoundService::GetInstance().Initialize();
   ManagerCoreService::GetInstance().Initialize();
   EconomyService::GetInstance().Initialize();
+  MailService::GetInstance().Initialize();
   GameObjectSessionService::GetInstance().Initialize();
   GameObjectFileSystemService::GetInstance().Initialize();
 
@@ -1028,6 +1033,16 @@ void Core::OnSettingWasChanged(const Events::UI::OnSettingWasChanged& e) {
   // m_logger->Debug("Setting changed: System='{}', Component='{}', Path='{}', Value='{}'", e.systemName, e.componentName, e.keyPath, e.newValue.dump());
 
   bool wasHandledByFramework = false;
+
+  // Game log -> framework log toggle lives under the logging system but is not a sink;
+  // LoggerFactory consumes every "logging" event, so handle it here before polling.
+  if (e.systemName == "logging" && e.componentName == "framework" && e.keyPath == "sinks.game_log") {
+    if (e.newValue.is_boolean()) {
+      Hooks::GameLogHook::SetLogToFrameworkEnabled(e.newValue.get<bool>());
+      wasHandledByFramework = true;
+    }
+  }
+
   // --- POLL FRAMEWORK SERVICES ---
   for (auto* service : m_configurableServices) {
     if (service->OnSettingChanged(e.systemName, e.componentName, e.keyPath, e.newValue)) {

@@ -137,6 +137,10 @@
                     "report": {
                         "title": "Récepteur de rapports",
                         "description": "Activer ou désactiver le signalement d'erreurs à distance pour aider à améliorer le framework."
+                    },
+                    "game_log": {
+                        "title": "Journal du jeu vers fichier",
+                        "description": "Écrire aussi les messages du jeu capturés dans le fichier journal du framework (framework.log)."
                     }
                 }
             },
@@ -171,8 +175,8 @@
                     "hooks_window": {
                         "title": "Hooks"
                     },
-                    "game_console_window": {
-                        "title": "Console de jeu"
+                    "tools_window": {
+                        "title": "Outils"
                     },
                     "camera_window": {
                         "title": "Caméra"
@@ -660,11 +664,16 @@
             "internal_name": "Pour utiliser ce hook dans votre plugin, spécifiez le nom suivant dans la politique `requiredHooks` :"
         }
     },
-    "game_console_window": {
-        "title": "Console de jeu",
+    "tools_window": {
+        "tab_console_log": "Console / Journal",
+        "title": "Outils",
         "info_text": "Champ de test pour entrer des commandes dans la console de jeu. Fonctionne même si g_console et g_developer sont désactivés dans le fichier config.cfg (c'est-à-dire, mis à '0').",
         "enable_hook_text": "Activez le hook GameConsole dans la fenêtre '%s'.",
-        "send_button": "Envoyer"
+        "send_button": "Envoyer",
+        "dump_commands": "Vider les commandes dans le journal",
+        "game_log_label": "Journal du jeu",
+        "checkbox_game_log_to_file": "Écrire dans un fichier",
+        "tooltip_game_log_to_file": "Écrire aussi les messages du jeu capturés dans framework.log."
     },
     "camera_window": {
         "title": "Caméra",
@@ -1407,51 +1416,51 @@
         "soundref_event": "Événement"
     },
     "economy_window": {
-      "title": "Économie",
-      "not_ready": "Le service d'économie n'est pas initialisé. Veuillez charger le jeu.",
-      "tab_money": "Argent",
-      "balance": {
-        "title": "Solde bancaire",
-        "value": "Solde : %lld",
-        "debt_state": "Dette : %s",
-        "debt_yes": "OUI",
-        "debt_no": "NON"
-      },
-      "money": {
-        "amount_label": "Montant",
-        "add": "Ajouter",
-        "subtract": "Soustraire",
-        "set": "Définir"
-      },
-      "control": {
-        "title": "Contrôle du jeu",
-        "lock_checkbox": "Bloquer les opérations monétaires du jeu",
-        "lock_tooltip": "Lorsqu'elle est activée, toutes les opérations monétaires initiées par le jeu (dépôt/retrait) sont bloquées. AddMoney/SetMoney du framework passent toujours."
-      },
-      "tab_loans": "Prêts",
-      "loans": {
-        "credit_limit_title": "Limite de crédit",
-        "credit_limit": "Crédit disponible : %lld",
-        "active_title": "Prêts actifs",
-        "offers_title": "Offres de prêt",
-        "no_loans": "Aucun prêt actif.",
-        "no_offers": "Aucune offre de prêt.",
-        "col_remaining": "Restant",
-        "col_amount": "Montant",
-        "col_start_day": "Jour de début",
-        "col_rate": "Taux (%)",
-        "col_weeks": "Semaines",
-        "col_action": "Action",
-        "repay": "Rembourser",
-        "limit_label": "Limite",
-        "set_limit": "Définir la limite",
-        "edit": "Modifier",
-        "save": "Enregistrer",
-        "cancel": "Annuler",
-        "edit_title": "Modifier le prêt #%d",
-        "take": "Emprunter",
-        "new_loan_title": "Nouveau prêt"
-      }
+        "title": "Économie",
+        "not_ready": "Le service d'économie n'est pas initialisé. Veuillez charger le jeu.",
+        "tab_money": "Argent",
+        "balance": {
+            "title": "Solde bancaire",
+            "value": "Solde : %lld",
+            "debt_state": "Dette : %s",
+            "debt_yes": "OUI",
+            "debt_no": "NON"
+        },
+        "money": {
+            "amount_label": "Montant",
+            "add": "Ajouter",
+            "subtract": "Soustraire",
+            "set": "Définir"
+        },
+        "control": {
+            "title": "Contrôle du jeu",
+            "lock_checkbox": "Bloquer les opérations monétaires du jeu",
+            "lock_tooltip": "Lorsqu'elle est activée, toutes les opérations monétaires initiées par le jeu (dépôt/retrait) sont bloquées. AddMoney/SetMoney du framework passent toujours."
+        },
+        "tab_loans": "Prêts",
+        "loans": {
+            "credit_limit_title": "Limite de crédit",
+            "credit_limit": "Crédit disponible : %lld",
+            "active_title": "Prêts actifs",
+            "offers_title": "Offres de prêt",
+            "no_loans": "Aucun prêt actif.",
+            "no_offers": "Aucune offre de prêt.",
+            "col_remaining": "Restant",
+            "col_amount": "Montant",
+            "col_start_day": "Jour de début",
+            "col_rate": "Taux (%)",
+            "col_weeks": "Semaines",
+            "col_action": "Action",
+            "repay": "Rembourser",
+            "limit_label": "Limite",
+            "set_limit": "Définir la limite",
+            "edit": "Modifier",
+            "save": "Enregistrer",
+            "cancel": "Annuler",
+            "edit_title": "Modifier le prêt #%d",
+            "take": "Emprunter",
+            "new_loan_title": "Nouveau prêt"
+        }
     },
     "info_window": {
         "title": "Informations sur l'environnement",

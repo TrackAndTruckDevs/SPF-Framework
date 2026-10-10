@@ -53,6 +53,26 @@ typedef struct SPF_GameConsole_API {
    */
   void (*GCon_ExecuteCommand)(const char* command);
 
+  /**
+   * @brief Returns the total number of console commands the game supports.
+   * @details The list is discovered once (one-time pattern scan of the game's
+   *          three command sources: console commands, script commands and input
+   *          constants) and cached; subsequent calls return the cached count.
+   * @return Number of available commands, or 0 if discovery failed.
+   */
+  int (*GCon_GetCommandCount)(void);
+
+  /**
+   * @brief Copies the command name at 'index' into 'out_buffer'.
+   * @details Use after GCon_GetCommandCount to iterate the full command list
+   *          (e.g. for building an autocomplete UI in your plugin).
+   * @param index Zero-based command index (0 .. GCon_GetCommandCount()-1).
+   * @param out_buffer Destination buffer for the null-terminated command name.
+   * @param buffer_size Size of 'out_buffer' in bytes. The name is truncated if needed.
+   * @return 1 on success, 0 on failure (NULL buffer, buffer_size <= 0, or index out of range).
+   */
+  int (*GCon_GetCommandNameByIndex)(int index, char* out_buffer, int buffer_size);
+
 } SPF_GameConsole_API;
 
 #ifdef __cplusplus

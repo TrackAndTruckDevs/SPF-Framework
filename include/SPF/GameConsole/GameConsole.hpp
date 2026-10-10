@@ -2,10 +2,12 @@
 
 
 
+#include "SPF/Data/GameData/Finders/ConsoleDataFinder.hpp"
 #include "SPF/Hooks/IHook.hpp"
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 
 
@@ -53,6 +55,14 @@ class GameConsole : public SPF::Hooks::IHook {
    */
   void Execute(const std::string& command);
 
+  /**
+   * @brief Returns all console commands known to the game.
+   * @details Scans the game's three command sources once on first call and
+   * caches the result; subsequent calls return the cached list.
+   * @return Cached command list (empty if discovery failed).
+   */
+  const std::vector<std::string>& GetCommandList();
+
   // --- IHook Implementation ---
   const std::string& GetName() const override { return m_name; }
   const std::string& GetDisplayName() const override { return m_displayName; }
@@ -85,4 +95,10 @@ class GameConsole : public SPF::Hooks::IHook {
   // --- Runtime State ---
   uintptr_t m_hookedAddress = 0;
   ExecuteCommandFn m_ExecuteGameCommand = nullptr;
+
+  // --- Command List Cache ---
+  bool BuildCommandList();
+  SPF::Data::GameData::Finders::ConsoleDataFinder m_consoleDataFinder;
+  std::vector<std::string> m_commandList;
+  bool m_commandListBuilt = false;
 };

@@ -107,7 +107,7 @@ class FmodStudioHook : public Hooks::IHook {
   std::string m_name = "FmodStudioHook";
   std::string m_displayName = "FMOD Studio";
   std::string m_ownerName = "framework";
-  std::string m_signature;
+  std::string m_signature = "MinHook detours on FMOD Studio API (createInstance / loadBank / event playback)";
   bool m_isEnabled = true;
   bool m_installed = false;
 

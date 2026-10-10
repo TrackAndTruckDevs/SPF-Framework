@@ -9,5 +9,7 @@ class GameConsoleApi {
 
  private:
   static void GCon_ExecuteCommand(const char* command);
+  static int GCon_GetCommandCount();
+  static int GCon_GetCommandNameByIndex(int index, char* out_buffer, int buffer_size);
 };
 }  // namespace SPF::Modules::API

@@ -137,6 +137,10 @@
                     "report": {
                         "title": "Приемник отчетов",
                         "description": "Включить или выключить удаленную отчетность об ошибках для улучшения фреймворка."
+                    },
+                    "game_log": {
+                        "title": "Записывать игровые сообщения в лог фреймворка (framework.log).",
+                        "description": "Также записывать перехваченные сообщения игры в лог фреймворка (framework.log) через логгер Game."
                     }
                 }
             },
@@ -171,8 +175,8 @@
                     "hooks_window": {
                         "title": "Хуки"
                     },
-                    "game_console_window": {
-                        "title": "Игровая консоль"
+                    "tools_window": {
+                        "title": "Инструменты"
                     },
                     "camera_window": {
                         "title": "Камера"
@@ -660,11 +664,16 @@
             "internal_name": "Чтобы использовать этот хук в вашем плагине, укажите следующее имя в политике `requiredHooks`:"
         }
     },
-    "game_console_window": {
-        "title": "Игровая консоль",
+    "tools_window": {
+        "tab_console_log": "Консоль / Лог",
+        "title": "Инструменты",
         "info_text": "Тестовое поле для ввода команд в игровую консоль. Работает, даже если g_console и g_developer отключены в файле config.cfg (т.е. установлены в '0').",
         "enable_hook_text": "Включите хук GameConsole в окне '%s'.",
-        "send_button": "Отправить"
+        "send_button": "Отправить",
+        "dump_commands": "Дамп команд в лог",
+        "game_log_label": "Игровой лог",
+        "checkbox_game_log_to_file": "Запись в файл",
+        "tooltip_game_log_to_file": "Также записывать перехваченные сообщения игры в лог фреймворка (framework.log)."
     },
     "camera_window": {
         "title": "Камера",
@@ -1140,163 +1149,163 @@
         }
     },
     "climate_window": {
-            "title": "Климат & Погода",
-            "not_ready": "Климатический сервис не готов.",
-            "subtitle": "Погода & Климат",
-            "select_climate": "Выбрать Климат",
-            "refresh_list": "Обновить Список",
-            "active_climate": "Активный климат: %s",
-            "time_autostep": "Автошаг Времени (для теста)",
-            "btn_stop_minus": "Стоп -1",
-            "btn_minus_1min": "-1 мин",
-            "btn_stop_plus": "Стоп +1",
-            "btn_plus_1min": "+1 мин",
-            "sun_profiles_count": "Количество Солнечных Профилей: %d",
-            "active_sun_profile": "Активный Солнечный Профиль: %s (idx: %d)",
-            "next_sun_profile": "Следующий Солнечный Профиль: %s (idx: %d)",
-            "transition_progress": "Переход: %.1f%%",
-            "active_elev": "Активное Возвышение: %.4f рад",
-            "next_elev": "Следующее Возвышение: %.4f рад",
-            "sun_angle": "Угол Солнца: %.4f рад (%.1f°)",
-            "nice": "Хорошо",
-            "bad": "Плохо",
-            "next_weather": "Следующая Погода: %s (%d)",
-            "interpolated_change": "Интерполированное Изменение",
-            "interpolated_tooltip": "Плавный переход занимает около 20 игровых минут.\nВы можете настроить это с помощью ползунка Смешивания Погоды.",
-            "weather_mixing": "процент смешивания погоды: %.1f%%",
-            "no_transition": "Переход не происходит",
-            "duration": "Длительность (мин)",
-            "bad_weather_factor": "g_bad_weather_factor: %.3f",
-            "factor": "Фактор",
-            "set": "Установить",
-            "bad_weather_mode": "Режим Плохой Погоды: %s (%u)",
-            "bad_weather_active": "Активен",
-            "bad_weather_inactive": "Неактивен",
-            "remaining_time": "реальное время в секундах до следующего изменения погоды: %.0f с (%u мин)",
-            "variation_status": "Активен: %s (varIdx: %llu/%llu) | Следующий: %s (varIdx: %llu/%llu)",
-            "set_active_variation": "Установить Активную Вариацию в {}",
-            "set_next_variation": "Установить Следующую Вариацию в {}",
-            "active_tag": " активен",
-            "blend_label": "смесь @{:.0f}%",
-            "next_var_fmt": "[%llu] %s",
-            "section_env_profile": "Профиль Окружения",
-            "section_sun": "Солнце",
-            "section_moon_stars": "Луна & Звёзды",
-            "section_sky_textures": "Небо & Текстуры",
-            "section_cloud_shadows": "Тени Облаков",
-            "section_temperature": "Температура",
-            "section_rain_lightning": "Дождь & Молнии",
-            "section_snow": "Снег",
-            "section_fog": "Туман",
-            "section_ambient_env": "Окружение & Среда",
-            "section_post_process": "Пост-Обработка",
-            "section_wind_blending": "Ветер & Смешивание",
-            "sun": {
-                "low_elevation": "Низкое Возвышение",
-                "high_elevation": "Высокое Возвышение",
-                "direction": "Направление Солнца",
-                "direction_forward": "1 (вперёд)",
-                "direction_zenith": "0 (зенит)",
-                "direction_backward": "-1 (назад)",
-                "color": "Цвет Солнца",
-                "opacity": "Непрозрачность Солнца",
-                "halo_color": "Цвет Ореола Солнца",
-                "shadow_strength": "Сила Тени Солнца",
-                "shaft_color": "Цвет Солнечного Луча",
-                "shaft_size": "Размер Солнечного Луча"
-            },
-            "moon": {
-                "color": "Цвет Луны",
-                "halo_color": "Цвет Ореола Луны",
-                "halo_scale": "Масштаб Ореола Луны",
-                "starmap_color": "Цвет Звёздной Карты",
-                "stars_color": "Цвет Звёзд",
-                "stars_texture": "Текстура Звёзд"
-            },
-            "sky": {
-                "color": "Цвет Неба",
-                "bottom_color": "Нижний Цвет Неба",
-                "skybox_texture": "Текстура Скайбокса",
-                "skycloud_mask_texture": "Текстура Маски Облаков",
-                "mirror_sky_texture": "Текстура Зеркального Неба"
-            },
-            "cloud_shadows": {
-                "weight": "Вес Тени Облака",
-                "texture": "Текстура Тени Облака",
-                "area_size": "Размер Области Тени Облака",
-                "speed": "Скорость Тени Облака"
-            },
-            "temperature": {
-                "label": "Температура"
-            },
-            "rain_lightning": {
-                "rain_intensity": "Интенсивность Дождя",
-                "lightning_intensity": "Интенсивность Молний",
-                "lightning_mask": "Маска Молний",
-                "rain_max_wetness": "Макс. Влажность Дождя",
-                "rain_additional_ambient": "Доп. Окружение Дождя"
-            },
-            "snow": {
-                "intensity": "Интенсивность Снега",
-                "flake_size_range": "Диапазон Размера Снежинок",
-                "additional_ambient": "Доп. Окружение Снега",
-                "chaos_rate": "Скорость Хаоса Снега",
-                "chaos_weight": "Вес Хаоса Снега"
-            },
-            "fog": {
-                "color": "Цвет Тумана",
-                "color_2": "Цвет Тумана 2",
-                "vgradient": "Вертикальный Градиент Тумана",
-                "offset": "Смещение Тумана",
-                "density": "Плотность Тумана"
-            },
-            "ambient_env": {
-                "ambient": "Окружающий",
-                "diffuse": "Диффузный",
-                "specular": "Зеркальный",
-                "env": "Среда",
-                "env_static_mod": "Статическая Модификация Среды"
-            },
-            "post_process": {
-                "tone_mapping": "Тоновое Отображение",
-                "contrast": "Контраст",
-                "shoulder_length": "Длина Плеча",
-                "color_grading": "Цветокоррекция",
-                "color_balance": "Баланс Цвета",
-                "color_saturation": "Насыщенность Цвета",
-                "bloom": "Блум",
-                "bloom_threshold": "Порог",
-                "bloom_limit": "Лимит",
-                "bloom_intensity": "Интенсивность Блума",
-                "bloom_standard_deviation": "Стандартное Отклонение",
-                "depth_of_field": "Глубина Резкости",
-                "dof_start": "Начало",
-                "dof_transition": "Переход",
-                "dof_filter_size": "Размер Фильтра",
-                "eye_adaptation": "Адаптация Глаза",
-                "low_intensity_min": "Мин. Низкая Интенсивность",
-                "low_intensity_max": "Макс. Низкая Интенсивность",
-                "low_intensity_color": "Цвет Низкой Интенсивности",
-                "dark_adaptation_speed": "Скорость Адаптации к Темноте",
-                "bright_adaptation_speed": "Скорость Адаптации к Свету",
-                "target_gray": "Целевой Серый",
-                "exposure_scale": "Масштаб Экспозиции",
-                "min_scale": "Мин. Масштаб",
-                "max_scale": "Макс. Масштаб",
-                "scale_override": "Переопределение Масштаба"
-            },
-            "wind_blending": {
-                "wind_type": "Тип Ветра",
-                "speed_coef": "Коэф. Скорости",
-                "stability": "Стабильность",
-                "blend_weight": "Вес Смешивания"
-            },
-            "env_profile": {
-                "lamps_on_elevation": "Возвышение Включения Фонарей",
-                "day_in_year": "День в Году",
-                "summer_time": "Летнее Время",
-                "thunderstorm_probability": "Вероятность Грозы"
-            }
+        "title": "Климат & Погода",
+        "not_ready": "Климатический сервис не готов.",
+        "subtitle": "Погода & Климат",
+        "select_climate": "Выбрать Климат",
+        "refresh_list": "Обновить Список",
+        "active_climate": "Активный климат: %s",
+        "time_autostep": "Автошаг Времени (для теста)",
+        "btn_stop_minus": "Стоп -1",
+        "btn_minus_1min": "-1 мин",
+        "btn_stop_plus": "Стоп +1",
+        "btn_plus_1min": "+1 мин",
+        "sun_profiles_count": "Количество Солнечных Профилей: %d",
+        "active_sun_profile": "Активный Солнечный Профиль: %s (idx: %d)",
+        "next_sun_profile": "Следующий Солнечный Профиль: %s (idx: %d)",
+        "transition_progress": "Переход: %.1f%%",
+        "active_elev": "Активное Возвышение: %.4f рад",
+        "next_elev": "Следующее Возвышение: %.4f рад",
+        "sun_angle": "Угол Солнца: %.4f рад (%.1f°)",
+        "nice": "Хорошо",
+        "bad": "Плохо",
+        "next_weather": "Следующая Погода: %s (%d)",
+        "interpolated_change": "Интерполированное Изменение",
+        "interpolated_tooltip": "Плавный переход занимает около 20 игровых минут.\nВы можете настроить это с помощью ползунка Смешивания Погоды.",
+        "weather_mixing": "процент смешивания погоды: %.1f%%",
+        "no_transition": "Переход не происходит",
+        "duration": "Длительность (мин)",
+        "bad_weather_factor": "g_bad_weather_factor: %.3f",
+        "factor": "Фактор",
+        "set": "Установить",
+        "bad_weather_mode": "Режим Плохой Погоды: %s (%u)",
+        "bad_weather_active": "Активен",
+        "bad_weather_inactive": "Неактивен",
+        "remaining_time": "реальное время в секундах до следующего изменения погоды: %.0f с (%u мин)",
+        "variation_status": "Активен: %s (varIdx: %llu/%llu) | Следующий: %s (varIdx: %llu/%llu)",
+        "set_active_variation": "Установить Активную Вариацию в {}",
+        "set_next_variation": "Установить Следующую Вариацию в {}",
+        "active_tag": " активен",
+        "blend_label": "смесь @{:.0f}%",
+        "next_var_fmt": "[%llu] %s",
+        "section_env_profile": "Профиль Окружения",
+        "section_sun": "Солнце",
+        "section_moon_stars": "Луна & Звёзды",
+        "section_sky_textures": "Небо & Текстуры",
+        "section_cloud_shadows": "Тени Облаков",
+        "section_temperature": "Температура",
+        "section_rain_lightning": "Дождь & Молнии",
+        "section_snow": "Снег",
+        "section_fog": "Туман",
+        "section_ambient_env": "Окружение & Среда",
+        "section_post_process": "Пост-Обработка",
+        "section_wind_blending": "Ветер & Смешивание",
+        "sun": {
+            "low_elevation": "Низкое Возвышение",
+            "high_elevation": "Высокое Возвышение",
+            "direction": "Направление Солнца",
+            "direction_forward": "1 (вперёд)",
+            "direction_zenith": "0 (зенит)",
+            "direction_backward": "-1 (назад)",
+            "color": "Цвет Солнца",
+            "opacity": "Непрозрачность Солнца",
+            "halo_color": "Цвет Ореола Солнца",
+            "shadow_strength": "Сила Тени Солнца",
+            "shaft_color": "Цвет Солнечного Луча",
+            "shaft_size": "Размер Солнечного Луча"
+        },
+        "moon": {
+            "color": "Цвет Луны",
+            "halo_color": "Цвет Ореола Луны",
+            "halo_scale": "Масштаб Ореола Луны",
+            "starmap_color": "Цвет Звёздной Карты",
+            "stars_color": "Цвет Звёзд",
+            "stars_texture": "Текстура Звёзд"
+        },
+        "sky": {
+            "color": "Цвет Неба",
+            "bottom_color": "Нижний Цвет Неба",
+            "skybox_texture": "Текстура Скайбокса",
+            "skycloud_mask_texture": "Текстура Маски Облаков",
+            "mirror_sky_texture": "Текстура Зеркального Неба"
+        },
+        "cloud_shadows": {
+            "weight": "Вес Тени Облака",
+            "texture": "Текстура Тени Облака",
+            "area_size": "Размер Области Тени Облака",
+            "speed": "Скорость Тени Облака"
+        },
+        "temperature": {
+            "label": "Температура"
+        },
+        "rain_lightning": {
+            "rain_intensity": "Интенсивность Дождя",
+            "lightning_intensity": "Интенсивность Молний",
+            "lightning_mask": "Маска Молний",
+            "rain_max_wetness": "Макс. Влажность Дождя",
+            "rain_additional_ambient": "Доп. Окружение Дождя"
+        },
+        "snow": {
+            "intensity": "Интенсивность Снега",
+            "flake_size_range": "Диапазон Размера Снежинок",
+            "additional_ambient": "Доп. Окружение Снега",
+            "chaos_rate": "Скорость Хаоса Снега",
+            "chaos_weight": "Вес Хаоса Снега"
+        },
+        "fog": {
+            "color": "Цвет Тумана",
+            "color_2": "Цвет Тумана 2",
+            "vgradient": "Вертикальный Градиент Тумана",
+            "offset": "Смещение Тумана",
+            "density": "Плотность Тумана"
+        },
+        "ambient_env": {
+            "ambient": "Окружающий",
+            "diffuse": "Диффузный",
+            "specular": "Зеркальный",
+            "env": "Среда",
+            "env_static_mod": "Статическая Модификация Среды"
+        },
+        "post_process": {
+            "tone_mapping": "Тоновое Отображение",
+            "contrast": "Контраст",
+            "shoulder_length": "Длина Плеча",
+            "color_grading": "Цветокоррекция",
+            "color_balance": "Баланс Цвета",
+            "color_saturation": "Насыщенность Цвета",
+            "bloom": "Блум",
+            "bloom_threshold": "Порог",
+            "bloom_limit": "Лимит",
+            "bloom_intensity": "Интенсивность Блума",
+            "bloom_standard_deviation": "Стандартное Отклонение",
+            "depth_of_field": "Глубина Резкости",
+            "dof_start": "Начало",
+            "dof_transition": "Переход",
+            "dof_filter_size": "Размер Фильтра",
+            "eye_adaptation": "Адаптация Глаза",
+            "low_intensity_min": "Мин. Низкая Интенсивность",
+            "low_intensity_max": "Макс. Низкая Интенсивность",
+            "low_intensity_color": "Цвет Низкой Интенсивности",
+            "dark_adaptation_speed": "Скорость Адаптации к Темноте",
+            "bright_adaptation_speed": "Скорость Адаптации к Свету",
+            "target_gray": "Целевой Серый",
+            "exposure_scale": "Масштаб Экспозиции",
+            "min_scale": "Мин. Масштаб",
+            "max_scale": "Макс. Масштаб",
+            "scale_override": "Переопределение Масштаба"
+        },
+        "wind_blending": {
+            "wind_type": "Тип Ветра",
+            "speed_coef": "Коэф. Скорости",
+            "stability": "Стабильность",
+            "blend_weight": "Вес Смешивания"
+        },
+        "env_profile": {
+            "lamps_on_elevation": "Возвышение Включения Фонарей",
+            "day_in_year": "День в Году",
+            "summer_time": "Летнее Время",
+            "thunderstorm_probability": "Вероятность Грозы"
+        }
     },
     "sound_window": {
         "title": "Звуки (FMOD)",
@@ -1407,51 +1416,51 @@
         "soundref_event": "Событие"
     },
     "economy_window": {
-      "title": "Экономика",
-      "not_ready": "Сервис экономики не инициализирован. Загрузитесь в игру.",
-      "tab_money": "Деньги",
-      "balance": {
-        "title": "Баланс банка",
-        "value": "Баланс: %lld",
-        "debt_state": "Долг: %s",
-        "debt_yes": "ДА",
-        "debt_no": "НЕТ"
-      },
-      "money": {
-        "amount_label": "Сумма",
-        "add": "Добавить",
-        "subtract": "Снять",
-        "set": "Установить"
-      },
-      "control": {
-        "title": "Управление игрой",
-        "lock_checkbox": "Блокировать денежные операции игры",
-        "lock_tooltip": "Когда включено, все денежные операции, инициированные игрой (депозит/снятие), блокируются. AddMoney/SetMoney фреймворка проходят всегда."
-      },
-      "tab_loans": "Кредиты",
-      "loans": {
-        "credit_limit_title": "Кредитный лимит",
-        "credit_limit": "Доступный кредит: %lld",
-        "active_title": "Активные кредиты",
-        "offers_title": "Предложения кредитов",
-        "no_loans": "Нет активных кредитов.",
-        "no_offers": "Нет предложений кредитов.",
-        "col_remaining": "Остаток",
-        "col_amount": "Сумма",
-        "col_start_day": "День старта",
-        "col_rate": "Ставка (%)",
-        "col_weeks": "Недели",
-        "col_action": "Действие",
-        "repay": "Погасить",
-        "limit_label": "Лимит",
-        "set_limit": "Установить лимит",
-        "edit": "Редактировать",
-        "save": "Сохранить",
-        "cancel": "Отменить",
-        "edit_title": "Редактирование кредита #%d",
-        "take": "Взять",
-        "new_loan_title": "Новый кредит"
-      }
+        "title": "Экономика",
+        "not_ready": "Сервис экономики не инициализирован. Загрузитесь в игру.",
+        "tab_money": "Деньги",
+        "balance": {
+            "title": "Баланс банка",
+            "value": "Баланс: %lld",
+            "debt_state": "Долг: %s",
+            "debt_yes": "ДА",
+            "debt_no": "НЕТ"
+        },
+        "money": {
+            "amount_label": "Сумма",
+            "add": "Добавить",
+            "subtract": "Снять",
+            "set": "Установить"
+        },
+        "control": {
+            "title": "Управление игрой",
+            "lock_checkbox": "Блокировать денежные операции игры",
+            "lock_tooltip": "Когда включено, все денежные операции, инициированные игрой (депозит/снятие), блокируются. AddMoney/SetMoney фреймворка проходят всегда."
+        },
+        "tab_loans": "Кредиты",
+        "loans": {
+            "credit_limit_title": "Кредитный лимит",
+            "credit_limit": "Доступный кредит: %lld",
+            "active_title": "Активные кредиты",
+            "offers_title": "Предложения кредитов",
+            "no_loans": "Нет активных кредитов.",
+            "no_offers": "Нет предложений кредитов.",
+            "col_remaining": "Остаток",
+            "col_amount": "Сумма",
+            "col_start_day": "День старта",
+            "col_rate": "Ставка (%)",
+            "col_weeks": "Недели",
+            "col_action": "Действие",
+            "repay": "Погасить",
+            "limit_label": "Лимит",
+            "set_limit": "Установить лимит",
+            "edit": "Редактировать",
+            "save": "Сохранить",
+            "cancel": "Отменить",
+            "edit_title": "Редактирование кредита #%d",
+            "take": "Взять",
+            "new_loan_title": "Новый кредит"
+        }
     },
     "info_window": {
         "title": "Информация об окружении",

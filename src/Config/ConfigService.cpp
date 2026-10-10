@@ -267,6 +267,14 @@ nlohmann::ordered_json SerializeLogging(const ManifestData& manifest, const Mani
     }
     sinksNode["report"] = node;
   }
+  if (manifest.logging.sinks.game_log.has_value()) {
+    nlohmann::ordered_json node;
+    node["_value"] = manifest.logging.sinks.game_log.value();
+    if (const auto* meta = findLoggingMeta("sinks.game_log")) {
+      InjectMetadata(node, meta->titleKey.value_or(""), meta->descriptionKey.value_or(""));
+    }
+    sinksNode["game_log"] = node;
+  }
   if (!sinksNode.empty()) {
     j["sinks"] = sinksNode;
   }

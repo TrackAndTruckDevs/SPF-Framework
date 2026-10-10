@@ -762,25 +762,52 @@ uintptr_t PatternFinder::FindFunctionByString(const char* str, bool findStart, c
     }
     auto startFunc = std::chrono::high_resolution_clock::now();
 
-    // Find ALL occurrences of the string in memory
+    // Find ALL occurrences of the string in memory, then split into exact
+    // (null-terminated) matches and substring matches. A query like "imgup"
+    // would otherwise hit "imgupload" via pure memcmp and return the wrong xref.
     auto stringAddrs = FindAllRawInternal(nullptr, (const uint8_t*)str, strlen(str), false);
     if (stringAddrs.empty()) {
       logger->Error("FindFunctionByString('{}'): string not found in module memory", str);
       return 0;
     }
 
-    std::vector<uintptr_t> allXrefs;
-    for (uintptr_t sAddr : stringAddrs) {
-      // Get direct XREFs (LEA/MOV [REG], [RIP+offset])
-      std::vector<uintptr_t> xrefs = FindXrefs(sAddr);
-      allXrefs.insert(allXrefs.end(), xrefs.begin(), xrefs.end());
-
-      // Get indirect pointers (data pointers to this string)
-      std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
-      for (uintptr_t ptrAddr : ptrs) {
-        auto indirect = FindXrefs(ptrAddr);
-        allXrefs.insert(allXrefs.end(), indirect.begin(), indirect.end());
+    size_t strLen = strlen(str);
+    std::vector<uintptr_t> exactAddrs;
+    std::vector<uintptr_t> substringAddrs;
+    auto sections = GetModuleSections(nullptr);
+    for (uintptr_t addr : stringAddrs) {
+      bool exact = false;
+      for (const auto& sec : sections) {
+        if (addr >= sec.base && addr + strLen < sec.base + sec.size) {
+          exact = (*reinterpret_cast<const uint8_t*>(addr + strLen) == 0);
+          break;
+        }
       }
+      (exact ? exactAddrs : substringAddrs).push_back(addr);
+    }
+
+    auto collectXrefs = [](const std::vector<uintptr_t>& addrs) {
+      std::vector<uintptr_t> xrefs;
+      for (uintptr_t sAddr : addrs) {
+        // Get direct XREFs (LEA/MOV [REG], [RIP+offset])
+        std::vector<uintptr_t> direct = FindXrefs(sAddr);
+        xrefs.insert(xrefs.end(), direct.begin(), direct.end());
+
+        // Get indirect pointers (data pointers to this string)
+        std::vector<uintptr_t> ptrs = FindDataPointers(sAddr);
+        for (uintptr_t ptrAddr : ptrs) {
+          auto indirect = FindXrefs(ptrAddr);
+          xrefs.insert(xrefs.end(), indirect.begin(), indirect.end());
+        }
+      }
+      return xrefs;
+    };
+
+    // Exact (null-terminated) matches first; substring matches only as fallback.
+    std::vector<uintptr_t> allXrefs = collectXrefs(exactAddrs);
+    if (allXrefs.empty() && !substringAddrs.empty()) {
+      logger->Debug("FindFunctionByString('{}'): no XREFs from exact matches, falling back to {} substring match(es)", str, substringAddrs.size());
+      allXrefs = collectXrefs(substringAddrs);
     }
 
     auto endFunc = std::chrono::high_resolution_clock::now();

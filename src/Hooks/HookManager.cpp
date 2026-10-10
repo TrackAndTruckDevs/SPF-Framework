@@ -175,7 +175,7 @@ void HookManager::ReconcileHookState(IHook* hook, bool configuredEnabledState) {
 
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("HookManager");
   // A hook should be active if it's explicitly enabled in config OR if any plugin requires it.
-  bool shouldBeActive = configuredEnabledState || IsHookRequired(hook->GetName());
+  bool shouldBeActive = configuredEnabledState || IsHookRequired(hook->GetName()) || hook->GetOwnerName() == "framework";
 
   if (shouldBeActive) {
     if (!hook->IsInstalled()) {

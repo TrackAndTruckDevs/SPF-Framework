@@ -137,6 +137,10 @@
                     "report": {
                         "title": "보고서 싱크",
                         "description": "프레임워크 개선을 위해 원격 오류 보고를 활성화하거나 비활성화합니다."
+                    },
+                    "game_log": {
+                        "title": "게임 로그 파일 기록",
+                        "description": "캡처한 게임 메시지를 프레임워크 로그 파일(framework.log)에도 기록합니다."
                     }
                 }
             },
@@ -171,8 +175,8 @@
                     "hooks_window": {
                         "title": "후크"
                     },
-                    "game_console_window": {
-                        "title": "게임 콘솔"
+                    "tools_window": {
+                        "title": "도구"
                     },
                     "camera_window": {
                         "title": "카메라"
@@ -660,11 +664,16 @@
             "internal_name": "플러그인에서 이 후크를 사용하려면 'requiredHooks' 정책에 다음 이름을 지정하십시오."
         }
     },
-    "game_console_window": {
-        "title": "게임 콘솔",
+    "tools_window": {
+        "tab_console_log": "콘솔 / 로그",
+        "title": "도구",
         "info_text": "게임 콘솔에 명령을 입력하기 위한 테스트 필드입니다. config.cfg 파일에서 g_console 및 g_developer가 비활성화되어 있어도('0'으로 설정) 작동합니다.",
         "enable_hook_text": "'%s' 창에서 GameConsole 후크를 활성화하십시오.",
-        "send_button": "보내기"
+        "send_button": "보내기",
+        "dump_commands": "명령을 로그로 덤프",
+        "game_log_label": "게임 로그",
+        "checkbox_game_log_to_file": "파일에 기록",
+        "tooltip_game_log_to_file": "캡처한 게임 메시지를 framework.log에도 기록합니다."
     },
     "camera_window": {
         "title": "카메라",
@@ -1140,163 +1149,163 @@
         }
     },
     "climate_window": {
-            "title": "기후 및 날씨",
-            "not_ready": "기후 서비스가 준비되지 않았습니다.",
-            "subtitle": "날씨 및 기후",
-            "select_climate": "기후 선택",
-            "refresh_list": "목록 새로고침",
-            "active_climate": "활성 기후: %s",
-            "time_autostep": "시간 자동 진행(테스트용)",
-            "btn_stop_minus": "중지 -1",
-            "btn_minus_1min": "-1분",
-            "btn_stop_plus": "중지 +1",
-            "btn_plus_1min": "+1분",
-            "sun_profiles_count": "태양 프로파일 수: %d",
-            "active_sun_profile": "활성 태양 프로파일: %s (idx: %d)",
-            "next_sun_profile": "다음 태양 프로파일: %s (idx: %d)",
-            "transition_progress": "전환: %.1f%%",
-            "active_elev": "활성 고도: %.4f rad",
-            "next_elev": "다음 고도: %.4f rad",
-            "sun_angle": "태양 각도: %.4f rad (%.1f°)",
-            "nice": "좋음",
-            "bad": "나쁨",
-            "next_weather": "다음 날씨: %s (%d)",
-            "interpolated_change": "보간 변경",
-            "interpolated_tooltip": "부드러운 전환은 약 20 게임 분이 소요됩니다.\n날씨 혼합 슬라이더로 조정할 수 있습니다.",
-            "weather_mixing": "날씨 혼합 비율: %.1f%%",
-            "no_transition": "전환이 발생하지 않음",
-            "duration": "기간(분)",
-            "bad_weather_factor": "g_bad_weather_factor: %.3f",
-            "factor": "계수",
-            "set": "설정",
-            "bad_weather_mode": "악천후 모드: %s (%u)",
-            "bad_weather_active": "활성",
-            "bad_weather_inactive": "비활성",
-            "remaining_time": "다음 날씨 변화까지의 실제 시간(초): %.0f초(%u분)",
-            "variation_status": "활성: %s (varIdx: %llu/%llu) | 다음: %s (varIdx: %llu/%llu)",
-            "set_active_variation": "{}에서 활성 변형 설정",
-            "set_next_variation": "{}에서 다음 변형 설정",
-            "active_tag": " 활성",
-            "blend_label": "혼합 @{:.0f}%",
-            "next_var_fmt": "[%llu] %s",
-            "section_env_profile": "환경 프로파일",
-            "section_sun": "태양",
-            "section_moon_stars": "달과 별",
-            "section_sky_textures": "하늘 및 텍스처",
-            "section_cloud_shadows": "구름 그림자",
-            "section_temperature": "온도",
-            "section_rain_lightning": "비와 번개",
-            "section_snow": "눈",
-            "section_fog": "안개",
-            "section_ambient_env": "앰비언트 및 환경",
-            "section_post_process": "후처리",
-            "section_wind_blending": "바람 및 혼합",
-            "sun": {
-                "low_elevation": "낮은 고도",
-                "high_elevation": "높은 고도",
-                "direction": "태양 방향",
-                "direction_forward": "1(앞)",
-                "direction_zenith": "0(천정)",
-                "direction_backward": "-1(뒤)",
-                "color": "태양 색상",
-                "opacity": "태양 불투명도",
-                "halo_color": "태양 후광 색상",
-                "shadow_strength": "태양 그림자 강도",
-                "shaft_color": "햇살 색상",
-                "shaft_size": "햇살 크기"
-            },
-            "moon": {
-                "color": "달 색상",
-                "halo_color": "달 후광 색상",
-                "halo_scale": "달 후광 배율",
-                "starmap_color": "별지도 색상",
-                "stars_color": "별 색상",
-                "stars_texture": "별 텍스처"
-            },
-            "sky": {
-                "color": "하늘 색상",
-                "bottom_color": "하늘 하단 색상",
-                "skybox_texture": "스카이박스 텍스처",
-                "skycloud_mask_texture": "하늘구름 마스크 텍스처",
-                "mirror_sky_texture": "반사 하늘 텍스처"
-            },
-            "cloud_shadows": {
-                "weight": "구름 그림자 가중치",
-                "texture": "구름 그림자 텍스처",
-                "area_size": "구름 그림자 영역 크기",
-                "speed": "구름 그림자 속도"
-            },
-            "temperature": {
-                "label": "온도"
-            },
-            "rain_lightning": {
-                "rain_intensity": "비 강도",
-                "lightning_intensity": "번개 강도",
-                "lightning_mask": "번개 마스크",
-                "rain_max_wetness": "비 최대 습기",
-                "rain_additional_ambient": "비 추가 앰비언트"
-            },
-            "snow": {
-                "intensity": "눈 강도",
-                "flake_size_range": "눈송이 크기 범위",
-                "additional_ambient": "눈 추가 앰비언트",
-                "chaos_rate": "눈 혼돈 비율",
-                "chaos_weight": "눈 혼돈 가중치"
-            },
-            "fog": {
-                "color": "안개 색상",
-                "color_2": "안개 색상 2",
-                "vgradient": "안개 수직 그래디언트",
-                "offset": "안개 오프셋",
-                "density": "안개 밀도"
-            },
-            "ambient_env": {
-                "ambient": "앰비언트",
-                "diffuse": "확산",
-                "specular": "반사",
-                "env": "환경",
-                "env_static_mod": "환경 정적 Mod"
-            },
-            "post_process": {
-                "tone_mapping": "톤 매핑",
-                "contrast": "대비",
-                "shoulder_length": "숄더 길이",
-                "color_grading": "컬러 그레이딩",
-                "color_balance": "색상 균형",
-                "color_saturation": "색상 채도",
-                "bloom": "블룸",
-                "bloom_threshold": "임계값",
-                "bloom_limit": "제한",
-                "bloom_intensity": "블룸 강도",
-                "bloom_standard_deviation": "표준 편차",
-                "depth_of_field": "피사계 심도",
-                "dof_start": "시작",
-                "dof_transition": "전환",
-                "dof_filter_size": "필터 크기",
-                "eye_adaptation": "눈 적응",
-                "low_intensity_min": "저강도 최소",
-                "low_intensity_max": "저강도 최대",
-                "low_intensity_color": "저강도 색상",
-                "dark_adaptation_speed": "암순응 속도",
-                "bright_adaptation_speed": "명순응 속도",
-                "target_gray": "목표 회색",
-                "exposure_scale": "노출 스케일",
-                "min_scale": "최소 스케일",
-                "max_scale": "최대 스케일",
-                "scale_override": "스케일 오버라이드"
-            },
-            "wind_blending": {
-                "wind_type": "바람 유형",
-                "speed_coef": "속도 계수",
-                "stability": "안정성",
-                "blend_weight": "혼합 가중치"
-            },
-            "env_profile": {
-                "lamps_on_elevation": "등불 켜짐 고도",
-                "day_in_year": "연중 일수",
-                "summer_time": "하절기",
-                "thunderstorm_probability": "뇌우 확률"
-            }
+        "title": "기후 및 날씨",
+        "not_ready": "기후 서비스가 준비되지 않았습니다.",
+        "subtitle": "날씨 및 기후",
+        "select_climate": "기후 선택",
+        "refresh_list": "목록 새로고침",
+        "active_climate": "활성 기후: %s",
+        "time_autostep": "시간 자동 진행(테스트용)",
+        "btn_stop_minus": "중지 -1",
+        "btn_minus_1min": "-1분",
+        "btn_stop_plus": "중지 +1",
+        "btn_plus_1min": "+1분",
+        "sun_profiles_count": "태양 프로파일 수: %d",
+        "active_sun_profile": "활성 태양 프로파일: %s (idx: %d)",
+        "next_sun_profile": "다음 태양 프로파일: %s (idx: %d)",
+        "transition_progress": "전환: %.1f%%",
+        "active_elev": "활성 고도: %.4f rad",
+        "next_elev": "다음 고도: %.4f rad",
+        "sun_angle": "태양 각도: %.4f rad (%.1f°)",
+        "nice": "좋음",
+        "bad": "나쁨",
+        "next_weather": "다음 날씨: %s (%d)",
+        "interpolated_change": "보간 변경",
+        "interpolated_tooltip": "부드러운 전환은 약 20 게임 분이 소요됩니다.\n날씨 혼합 슬라이더로 조정할 수 있습니다.",
+        "weather_mixing": "날씨 혼합 비율: %.1f%%",
+        "no_transition": "전환이 발생하지 않음",
+        "duration": "기간(분)",
+        "bad_weather_factor": "g_bad_weather_factor: %.3f",
+        "factor": "계수",
+        "set": "설정",
+        "bad_weather_mode": "악천후 모드: %s (%u)",
+        "bad_weather_active": "활성",
+        "bad_weather_inactive": "비활성",
+        "remaining_time": "다음 날씨 변화까지의 실제 시간(초): %.0f초(%u분)",
+        "variation_status": "활성: %s (varIdx: %llu/%llu) | 다음: %s (varIdx: %llu/%llu)",
+        "set_active_variation": "{}에서 활성 변형 설정",
+        "set_next_variation": "{}에서 다음 변형 설정",
+        "active_tag": " 활성",
+        "blend_label": "혼합 @{:.0f}%",
+        "next_var_fmt": "[%llu] %s",
+        "section_env_profile": "환경 프로파일",
+        "section_sun": "태양",
+        "section_moon_stars": "달과 별",
+        "section_sky_textures": "하늘 및 텍스처",
+        "section_cloud_shadows": "구름 그림자",
+        "section_temperature": "온도",
+        "section_rain_lightning": "비와 번개",
+        "section_snow": "눈",
+        "section_fog": "안개",
+        "section_ambient_env": "앰비언트 및 환경",
+        "section_post_process": "후처리",
+        "section_wind_blending": "바람 및 혼합",
+        "sun": {
+            "low_elevation": "낮은 고도",
+            "high_elevation": "높은 고도",
+            "direction": "태양 방향",
+            "direction_forward": "1(앞)",
+            "direction_zenith": "0(천정)",
+            "direction_backward": "-1(뒤)",
+            "color": "태양 색상",
+            "opacity": "태양 불투명도",
+            "halo_color": "태양 후광 색상",
+            "shadow_strength": "태양 그림자 강도",
+            "shaft_color": "햇살 색상",
+            "shaft_size": "햇살 크기"
+        },
+        "moon": {
+            "color": "달 색상",
+            "halo_color": "달 후광 색상",
+            "halo_scale": "달 후광 배율",
+            "starmap_color": "별지도 색상",
+            "stars_color": "별 색상",
+            "stars_texture": "별 텍스처"
+        },
+        "sky": {
+            "color": "하늘 색상",
+            "bottom_color": "하늘 하단 색상",
+            "skybox_texture": "스카이박스 텍스처",
+            "skycloud_mask_texture": "하늘구름 마스크 텍스처",
+            "mirror_sky_texture": "반사 하늘 텍스처"
+        },
+        "cloud_shadows": {
+            "weight": "구름 그림자 가중치",
+            "texture": "구름 그림자 텍스처",
+            "area_size": "구름 그림자 영역 크기",
+            "speed": "구름 그림자 속도"
+        },
+        "temperature": {
+            "label": "온도"
+        },
+        "rain_lightning": {
+            "rain_intensity": "비 강도",
+            "lightning_intensity": "번개 강도",
+            "lightning_mask": "번개 마스크",
+            "rain_max_wetness": "비 최대 습기",
+            "rain_additional_ambient": "비 추가 앰비언트"
+        },
+        "snow": {
+            "intensity": "눈 강도",
+            "flake_size_range": "눈송이 크기 범위",
+            "additional_ambient": "눈 추가 앰비언트",
+            "chaos_rate": "눈 혼돈 비율",
+            "chaos_weight": "눈 혼돈 가중치"
+        },
+        "fog": {
+            "color": "안개 색상",
+            "color_2": "안개 색상 2",
+            "vgradient": "안개 수직 그래디언트",
+            "offset": "안개 오프셋",
+            "density": "안개 밀도"
+        },
+        "ambient_env": {
+            "ambient": "앰비언트",
+            "diffuse": "확산",
+            "specular": "반사",
+            "env": "환경",
+            "env_static_mod": "환경 정적 Mod"
+        },
+        "post_process": {
+            "tone_mapping": "톤 매핑",
+            "contrast": "대비",
+            "shoulder_length": "숄더 길이",
+            "color_grading": "컬러 그레이딩",
+            "color_balance": "색상 균형",
+            "color_saturation": "색상 채도",
+            "bloom": "블룸",
+            "bloom_threshold": "임계값",
+            "bloom_limit": "제한",
+            "bloom_intensity": "블룸 강도",
+            "bloom_standard_deviation": "표준 편차",
+            "depth_of_field": "피사계 심도",
+            "dof_start": "시작",
+            "dof_transition": "전환",
+            "dof_filter_size": "필터 크기",
+            "eye_adaptation": "눈 적응",
+            "low_intensity_min": "저강도 최소",
+            "low_intensity_max": "저강도 최대",
+            "low_intensity_color": "저강도 색상",
+            "dark_adaptation_speed": "암순응 속도",
+            "bright_adaptation_speed": "명순응 속도",
+            "target_gray": "목표 회색",
+            "exposure_scale": "노출 스케일",
+            "min_scale": "최소 스케일",
+            "max_scale": "최대 스케일",
+            "scale_override": "스케일 오버라이드"
+        },
+        "wind_blending": {
+            "wind_type": "바람 유형",
+            "speed_coef": "속도 계수",
+            "stability": "안정성",
+            "blend_weight": "혼합 가중치"
+        },
+        "env_profile": {
+            "lamps_on_elevation": "등불 켜짐 고도",
+            "day_in_year": "연중 일수",
+            "summer_time": "하절기",
+            "thunderstorm_probability": "뇌우 확률"
+        }
     },
     "sound_window": {
         "title": "사운드 (FMOD)",
@@ -1407,51 +1416,51 @@
         "soundref_event": "이벤트"
     },
     "economy_window": {
-      "title": "경제",
-      "not_ready": "경제 서비스가 초기화되지 않았습니다. 게임을 불러오세요.",
-      "tab_money": "돈",
-      "balance": {
-        "title": "은행 잔액",
-        "value": "잔액: %lld",
-        "debt_state": "부채: %s",
-        "debt_yes": "예",
-        "debt_no": "아니오"
-      },
-      "money": {
-        "amount_label": "금액",
-        "add": "추가",
-        "subtract": "빼기",
-        "set": "설정"
-      },
-      "control": {
-        "title": "게임 제어",
-        "lock_checkbox": "게임의 돈 관련 작업 차단",
-        "lock_tooltip": "활성화하면 게임이 시작한 모든 돈 관련 작업(입금/출금)이 차단됩니다. 프레임워크의 AddMoney/SetMoney는 항상 통과합니다."
-      },
-      "tab_loans": "대출",
-      "loans": {
-        "credit_limit_title": "한도",
-        "credit_limit": "사용 가능 한도: %lld",
-        "active_title": "진행 중인 대출",
-        "offers_title": "대출 제안",
-        "no_loans": "진행 중인 대출이 없습니다.",
-        "no_offers": "대출 제안이 없습니다.",
-        "col_remaining": "잔액",
-        "col_amount": "금액",
-        "col_start_day": "시작일",
-        "col_rate": "이자율 (%)",
-        "col_weeks": "주 수",
-        "col_action": "동작",
-        "repay": "상환",
-        "limit_label": "한도",
-        "set_limit": "한도 설정",
-        "edit": "편집",
-        "save": "저장",
-        "cancel": "취소",
-        "edit_title": "대출 #%d 편집",
-        "take": "받기",
-        "new_loan_title": "새 대출"
-      }
+        "title": "경제",
+        "not_ready": "경제 서비스가 초기화되지 않았습니다. 게임을 불러오세요.",
+        "tab_money": "돈",
+        "balance": {
+            "title": "은행 잔액",
+            "value": "잔액: %lld",
+            "debt_state": "부채: %s",
+            "debt_yes": "예",
+            "debt_no": "아니오"
+        },
+        "money": {
+            "amount_label": "금액",
+            "add": "추가",
+            "subtract": "빼기",
+            "set": "설정"
+        },
+        "control": {
+            "title": "게임 제어",
+            "lock_checkbox": "게임의 돈 관련 작업 차단",
+            "lock_tooltip": "활성화하면 게임이 시작한 모든 돈 관련 작업(입금/출금)이 차단됩니다. 프레임워크의 AddMoney/SetMoney는 항상 통과합니다."
+        },
+        "tab_loans": "대출",
+        "loans": {
+            "credit_limit_title": "한도",
+            "credit_limit": "사용 가능 한도: %lld",
+            "active_title": "진행 중인 대출",
+            "offers_title": "대출 제안",
+            "no_loans": "진행 중인 대출이 없습니다.",
+            "no_offers": "대출 제안이 없습니다.",
+            "col_remaining": "잔액",
+            "col_amount": "금액",
+            "col_start_day": "시작일",
+            "col_rate": "이자율 (%)",
+            "col_weeks": "주 수",
+            "col_action": "동작",
+            "repay": "상환",
+            "limit_label": "한도",
+            "set_limit": "한도 설정",
+            "edit": "편집",
+            "save": "저장",
+            "cancel": "취소",
+            "edit_title": "대출 #%d 편집",
+            "take": "받기",
+            "new_loan_title": "새 대출"
+        }
     },
     "info_window": {
         "title": "환경 정보",

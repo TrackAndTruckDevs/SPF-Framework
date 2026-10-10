@@ -17,7 +17,6 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include <algorithm>
-#include <cfloat>
 #include <memory>
 #include <set>
 #include <string>

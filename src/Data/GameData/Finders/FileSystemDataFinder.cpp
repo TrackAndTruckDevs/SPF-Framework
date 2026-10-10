@@ -29,7 +29,7 @@ const char* UFS_GET_MANAGER_ACCESSOR_SIG = "[SUB r64, imm8] [MOVSXD r64, r32] 48
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(UFS_RegisterMount[140155fc0]) ---/
  * 14015646e  4C 8D 0D 43 6B F6 01          LEA R9,[0x1420bcfb8] "[ufs] The table of UFS mo..."
  */
-const char* UFS_REGISTER_MOUNT_STR = "[ufs] The table of UFS mounted devices is full";
+const char* UFS_REGISTER_MOUNT_STR = "[ufs] The table of UFS mounted devices is full.";
 
 /**
  * @brief Signature for Node Structure (DevicePtr and VirtualPath).

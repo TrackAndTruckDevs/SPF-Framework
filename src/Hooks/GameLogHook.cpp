@@ -13,9 +13,11 @@
 
 #include "SPF/Hooks/BaseHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
+#include "SPF/Logging/Sinks/GameLogWindowSink.hpp"
 #include "SPF/Modules/GameLogEventManager.hpp"
 #include "SPF/Utils/Windows.hpp"  // IWYU pragma: keep
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -59,15 +61,20 @@ void Detour_GameLog(int level, const char* format, va_list args) {
   // Broadcast the raw message to plugins so they can do their own parsing
   SPF::Modules::GameLogEventManager::GetInstance().Broadcast(formatted_message);
 
+  // Feed the dedicated game log buffer for the Tools window (parsing happens in the sink)
+  SPF::Logging::Sinks::GameLogWindowSink::GetInstance().Push(formatted_message);
+
   // Also, log it to the framework's "Game" logger, but with the correct level
-  auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("Game");
-  if (logger) {
-    if (strstr(formatted_message, "<ERROR>")) {
-      logger->Error("{}", formatted_message);
-    } else if (strstr(formatted_message, "<WARNING>")) {
-      logger->Warn("{}", formatted_message);
-    } else {
-      logger->Info("{}", formatted_message);
+  if (SPF::Hooks::GameLogHook::IsLogToFrameworkEnabled()) {
+    auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("Game");
+    if (logger) {
+      if (strstr(formatted_message, "<ERROR>")) {
+        logger->Error("{}", formatted_message);
+      } else if (strstr(formatted_message, "<WARNING>")) {
+        logger->Warn("{}", formatted_message);
+      } else {
+        logger->Info("{}", formatted_message);
+      }
     }
   }
 
@@ -77,7 +84,9 @@ void Detour_GameLog(int level, const char* format, va_list args) {
 
 namespace SPF::Hooks {
 
-GameLogHook::GameLogHook() : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework") {}
+std::atomic<bool> GameLogHook::s_logToFramework{false};
+
+GameLogHook::GameLogHook() : BaseHook("GameLogHook", "Game Log", "str:[msg] There were at least %u more nested messages we had to drop.", "framework", true) {}
 
 GameLogHook& GameLogHook::GetInstance() {
   static GameLogHook instance;

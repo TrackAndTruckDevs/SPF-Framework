@@ -137,6 +137,10 @@
                     "report": {
                         "title": "Destinazione Report",
                         "description": "Abilita o disabilita la segnalazione remota degli errori per aiutare a migliorare il framework."
+                    },
+                    "game_log": {
+                        "title": "Log di gioco su file",
+                        "description": "Scrivi anche i messaggi di gioco acquisiti nel file di log del framework (framework.log)."
                     }
                 }
             },
@@ -171,8 +175,8 @@
                     "hooks_window": {
                         "title": "Hook"
                     },
-                    "game_console_window": {
-                        "title": "Console di Gioco"
+                    "tools_window": {
+                        "title": "Strumenti"
                     },
                     "camera_window": {
                         "title": "Fotocamera"
@@ -660,11 +664,16 @@
             "internal_name": "Per usare questo hook nel tuo plugin, specifica il seguente nome nella policy `requiredHooks`:"
         }
     },
-    "game_console_window": {
-        "title": "Console di Gioco",
+    "tools_window": {
+        "tab_console_log": "Console / Log",
+        "title": "Strumenti",
         "info_text": "Campo di prova per inserire comandi nella console di gioco. Funziona anche se g_console e g_developer sono disabilitati nel file config.cfg (cioè impostati su '0').",
         "enable_hook_text": "Abilita l'hook GameConsole nella finestra '%s'.",
-        "send_button": "Invia"
+        "send_button": "Invia",
+        "dump_commands": "Scarica i comandi nel log",
+        "game_log_label": "Log di gioco",
+        "checkbox_game_log_to_file": "Scrivi su file",
+        "tooltip_game_log_to_file": "Scrivi anche i messaggi di gioco acquisiti in framework.log."
     },
     "camera_window": {
         "title": "Fotocamera",
@@ -1140,163 +1149,163 @@
         }
     },
     "climate_window": {
-            "title": "Clima e Meteo",
-            "not_ready": "Il servizio climatico non è pronto.",
-            "subtitle": "Meteo e Clima",
-            "select_climate": "Seleziona clima",
-            "refresh_list": "Aggiorna elenco",
-            "active_climate": "Clima attivo: %s",
-            "time_autostep": "Avanzamento automatico del tempo (test)",
-            "btn_stop_minus": "Ferma -1",
-            "btn_minus_1min": "-1 min",
-            "btn_stop_plus": "Ferma +1",
-            "btn_plus_1min": "+1 min",
-            "sun_profiles_count": "Numero di profili solari: %d",
-            "active_sun_profile": "Profilo solare attivo: %s (idx: %d)",
-            "next_sun_profile": "Prossimo profilo solare: %s (idx: %d)",
-            "transition_progress": "Transizione: %.1f%%",
-            "active_elev": "Elevazione attiva: %.4f rad",
-            "next_elev": "Prossima elevazione: %.4f rad",
-            "sun_angle": "Angolo solare: %.4f rad (%.1f°)",
-            "nice": "Bello",
-            "bad": "Cattivo",
-            "next_weather": "Prossimo meteo: %s (%d)",
-            "interpolated_change": "Cambio interpolato",
-            "interpolated_tooltip": "Una transizione graduale richiede circa 20 minuti di gioco.\nPuoi regolarla con il cursore di mescolamento meteo.",
-            "weather_mixing": "percentuale di mescolamento meteo: %.1f%%",
-            "no_transition": "La transizione non avviene",
-            "duration": "Durata (min)",
-            "bad_weather_factor": "g_bad_weather_factor: %.3f",
-            "factor": "Fattore",
-            "set": "Imposta",
-            "bad_weather_mode": "Modalità maltempo: %s (%u)",
-            "bad_weather_active": "Attivo",
-            "bad_weather_inactive": "Inattivo",
-            "remaining_time": "tempo reale in secondi fino al prossimo cambio meteo: %.0f s (%u min)",
-            "variation_status": "Attivo: %s (varIdx: %llu/%llu) | Prossimo: %s (varIdx: %llu/%llu)",
-            "set_active_variation": "Imposta variazione attiva in {}",
-            "set_next_variation": "Imposta prossima variazione in {}",
-            "active_tag": " attivo",
-            "blend_label": "mescolamento @{:.0f}%",
-            "next_var_fmt": "[%llu] %s",
-            "section_env_profile": "Profilo ambientale",
-            "section_sun": "Sole",
-            "section_moon_stars": "Luna e Stelle",
-            "section_sky_textures": "Cielo e Texture",
-            "section_cloud_shadows": "Ombre delle nuvole",
-            "section_temperature": "Temperatura",
-            "section_rain_lightning": "Pioggia e Fulmini",
-            "section_snow": "Neve",
-            "section_fog": "Nebb",
-            "section_ambient_env": "Ambiente e Contesto",
-            "section_post_process": "Post-elaborazione",
-            "section_wind_blending": "Vento e Mescolamento",
-            "sun": {
-                "low_elevation": "Bassa elevazione",
-                "high_elevation": "Alta elevazione",
-                "direction": "Direzione del sole",
-                "direction_forward": "1 (avanti)",
-                "direction_zenith": "0 (zenit)",
-                "direction_backward": "-1 (indietro)",
-                "color": "Colore del sole",
-                "opacity": "Opacità del sole",
-                "halo_color": "Colore dell'alone solare",
-                "shadow_strength": "Forza dell'ombra solare",
-                "shaft_color": "Colore dei raggi solari",
-                "shaft_size": "Dimensione dei raggi solari"
-            },
-            "moon": {
-                "color": "Colore della luna",
-                "halo_color": "Colore dell'alone lunare",
-                "halo_scale": "Scala dell'alone lunare",
-                "starmap_color": "Colore della mappa stellare",
-                "stars_color": "Colore delle stelle",
-                "stars_texture": "Texture delle stelle"
-            },
-            "sky": {
-                "color": "Colore del cielo",
-                "bottom_color": "Colore inferiore del cielo",
-                "skybox_texture": "Texture del skybox",
-                "skycloud_mask_texture": "Texture della maschera cielo-nuvole",
-                "mirror_sky_texture": "Texture del cielo specchio"
-            },
-            "cloud_shadows": {
-                "weight": "Peso delle ombre delle nuvole",
-                "texture": "Texture delle ombre delle nuvole",
-                "area_size": "Dimensione area ombre delle nuvole",
-                "speed": "Velocità delle ombre delle nuvole"
-            },
-            "temperature": {
-                "label": "Temperatura"
-            },
-            "rain_lightning": {
-                "rain_intensity": "Intensità della pioggia",
-                "lightning_intensity": "Intensità dei fulmini",
-                "lightning_mask": "Maschera dei fulmini",
-                "rain_max_wetness": "Bagnatura massima della pioggia",
-                "rain_additional_ambient": "Ambiente aggiuntivo della pioggia"
-            },
-            "snow": {
-                "intensity": "Intensità della neve",
-                "flake_size_range": "Intervallo di dimensione dei fiocchi di neve",
-                "additional_ambient": "Ambiente aggiuntivo della neve",
-                "chaos_rate": "Tasso di caos della neve",
-                "chaos_weight": "Peso del caos della neve"
-            },
-            "fog": {
-                "color": "Colore della nebbia",
-                "color_2": "Colore della nebbia 2",
-                "vgradient": "Vgradiente della nebbia",
-                "offset": "Offset della nebbia",
-                "density": "Densità della nebbia"
-            },
-            "ambient_env": {
-                "ambient": "Ambiente",
-                "diffuse": "Diffuso",
-                "specular": "Speculare",
-                "env": "Contesto",
-                "env_static_mod": "Mod statico contesto"
-            },
-            "post_process": {
-                "tone_mapping": "Mappatura dei toni",
-                "contrast": "Contrasto",
-                "shoulder_length": "Lunghezza spalla",
-                "color_grading": "Gradazione colore",
-                "color_balance": "Bilanciamento colore",
-                "color_saturation": "Saturazione colore",
-                "bloom": "Bloom",
-                "bloom_threshold": "Soglia",
-                "bloom_limit": "Limite",
-                "bloom_intensity": "Intensità del bloom",
-                "bloom_standard_deviation": "Deviazione standard",
-                "depth_of_field": "Profondità di campo",
-                "dof_start": "Inizio",
-                "dof_transition": "Transizione",
-                "dof_filter_size": "Dimensione filtro",
-                "eye_adaptation": "Adattamento oculare",
-                "low_intensity_min": "Intensità bassa min",
-                "low_intensity_max": "Intensità bassa max",
-                "low_intensity_color": "Colore a bassa intensità",
-                "dark_adaptation_speed": "Velocità di adattamento al buio",
-                "bright_adaptation_speed": "Velocità di adattamento alla luce",
-                "target_gray": "Grigio target",
-                "exposure_scale": "Scala di esposizione",
-                "min_scale": "Scala min",
-                "max_scale": "Scala max",
-                "scale_override": "Override scala"
-            },
-            "wind_blending": {
-                "wind_type": "Tipo di vento",
-                "speed_coef": "Coeff di velocità",
-                "stability": "Stabilità",
-                "blend_weight": "Peso di mescolamento"
-            },
-            "env_profile": {
-                "lamps_on_elevation": "Accensione lampioni per elevazione",
-                "day_in_year": "Giorno nell'anno",
-                "summer_time": "Ora legale",
-                "thunderstorm_probability": "Probabilità di temporale"
-            }
+        "title": "Clima e Meteo",
+        "not_ready": "Il servizio climatico non è pronto.",
+        "subtitle": "Meteo e Clima",
+        "select_climate": "Seleziona clima",
+        "refresh_list": "Aggiorna elenco",
+        "active_climate": "Clima attivo: %s",
+        "time_autostep": "Avanzamento automatico del tempo (test)",
+        "btn_stop_minus": "Ferma -1",
+        "btn_minus_1min": "-1 min",
+        "btn_stop_plus": "Ferma +1",
+        "btn_plus_1min": "+1 min",
+        "sun_profiles_count": "Numero di profili solari: %d",
+        "active_sun_profile": "Profilo solare attivo: %s (idx: %d)",
+        "next_sun_profile": "Prossimo profilo solare: %s (idx: %d)",
+        "transition_progress": "Transizione: %.1f%%",
+        "active_elev": "Elevazione attiva: %.4f rad",
+        "next_elev": "Prossima elevazione: %.4f rad",
+        "sun_angle": "Angolo solare: %.4f rad (%.1f°)",
+        "nice": "Bello",
+        "bad": "Cattivo",
+        "next_weather": "Prossimo meteo: %s (%d)",
+        "interpolated_change": "Cambio interpolato",
+        "interpolated_tooltip": "Una transizione graduale richiede circa 20 minuti di gioco.\nPuoi regolarla con il cursore di mescolamento meteo.",
+        "weather_mixing": "percentuale di mescolamento meteo: %.1f%%",
+        "no_transition": "La transizione non avviene",
+        "duration": "Durata (min)",
+        "bad_weather_factor": "g_bad_weather_factor: %.3f",
+        "factor": "Fattore",
+        "set": "Imposta",
+        "bad_weather_mode": "Modalità maltempo: %s (%u)",
+        "bad_weather_active": "Attivo",
+        "bad_weather_inactive": "Inattivo",
+        "remaining_time": "tempo reale in secondi fino al prossimo cambio meteo: %.0f s (%u min)",
+        "variation_status": "Attivo: %s (varIdx: %llu/%llu) | Prossimo: %s (varIdx: %llu/%llu)",
+        "set_active_variation": "Imposta variazione attiva in {}",
+        "set_next_variation": "Imposta prossima variazione in {}",
+        "active_tag": " attivo",
+        "blend_label": "mescolamento @{:.0f}%",
+        "next_var_fmt": "[%llu] %s",
+        "section_env_profile": "Profilo ambientale",
+        "section_sun": "Sole",
+        "section_moon_stars": "Luna e Stelle",
+        "section_sky_textures": "Cielo e Texture",
+        "section_cloud_shadows": "Ombre delle nuvole",
+        "section_temperature": "Temperatura",
+        "section_rain_lightning": "Pioggia e Fulmini",
+        "section_snow": "Neve",
+        "section_fog": "Nebb",
+        "section_ambient_env": "Ambiente e Contesto",
+        "section_post_process": "Post-elaborazione",
+        "section_wind_blending": "Vento e Mescolamento",
+        "sun": {
+            "low_elevation": "Bassa elevazione",
+            "high_elevation": "Alta elevazione",
+            "direction": "Direzione del sole",
+            "direction_forward": "1 (avanti)",
+            "direction_zenith": "0 (zenit)",
+            "direction_backward": "-1 (indietro)",
+            "color": "Colore del sole",
+            "opacity": "Opacità del sole",
+            "halo_color": "Colore dell'alone solare",
+            "shadow_strength": "Forza dell'ombra solare",
+            "shaft_color": "Colore dei raggi solari",
+            "shaft_size": "Dimensione dei raggi solari"
+        },
+        "moon": {
+            "color": "Colore della luna",
+            "halo_color": "Colore dell'alone lunare",
+            "halo_scale": "Scala dell'alone lunare",
+            "starmap_color": "Colore della mappa stellare",
+            "stars_color": "Colore delle stelle",
+            "stars_texture": "Texture delle stelle"
+        },
+        "sky": {
+            "color": "Colore del cielo",
+            "bottom_color": "Colore inferiore del cielo",
+            "skybox_texture": "Texture del skybox",
+            "skycloud_mask_texture": "Texture della maschera cielo-nuvole",
+            "mirror_sky_texture": "Texture del cielo specchio"
+        },
+        "cloud_shadows": {
+            "weight": "Peso delle ombre delle nuvole",
+            "texture": "Texture delle ombre delle nuvole",
+            "area_size": "Dimensione area ombre delle nuvole",
+            "speed": "Velocità delle ombre delle nuvole"
+        },
+        "temperature": {
+            "label": "Temperatura"
+        },
+        "rain_lightning": {
+            "rain_intensity": "Intensità della pioggia",
+            "lightning_intensity": "Intensità dei fulmini",
+            "lightning_mask": "Maschera dei fulmini",
+            "rain_max_wetness": "Bagnatura massima della pioggia",
+            "rain_additional_ambient": "Ambiente aggiuntivo della pioggia"
+        },
+        "snow": {
+            "intensity": "Intensità della neve",
+            "flake_size_range": "Intervallo di dimensione dei fiocchi di neve",
+            "additional_ambient": "Ambiente aggiuntivo della neve",
+            "chaos_rate": "Tasso di caos della neve",
+            "chaos_weight": "Peso del caos della neve"
+        },
+        "fog": {
+            "color": "Colore della nebbia",
+            "color_2": "Colore della nebbia 2",
+            "vgradient": "Vgradiente della nebbia",
+            "offset": "Offset della nebbia",
+            "density": "Densità della nebbia"
+        },
+        "ambient_env": {
+            "ambient": "Ambiente",
+            "diffuse": "Diffuso",
+            "specular": "Speculare",
+            "env": "Contesto",
+            "env_static_mod": "Mod statico contesto"
+        },
+        "post_process": {
+            "tone_mapping": "Mappatura dei toni",
+            "contrast": "Contrasto",
+            "shoulder_length": "Lunghezza spalla",
+            "color_grading": "Gradazione colore",
+            "color_balance": "Bilanciamento colore",
+            "color_saturation": "Saturazione colore",
+            "bloom": "Bloom",
+            "bloom_threshold": "Soglia",
+            "bloom_limit": "Limite",
+            "bloom_intensity": "Intensità del bloom",
+            "bloom_standard_deviation": "Deviazione standard",
+            "depth_of_field": "Profondità di campo",
+            "dof_start": "Inizio",
+            "dof_transition": "Transizione",
+            "dof_filter_size": "Dimensione filtro",
+            "eye_adaptation": "Adattamento oculare",
+            "low_intensity_min": "Intensità bassa min",
+            "low_intensity_max": "Intensità bassa max",
+            "low_intensity_color": "Colore a bassa intensità",
+            "dark_adaptation_speed": "Velocità di adattamento al buio",
+            "bright_adaptation_speed": "Velocità di adattamento alla luce",
+            "target_gray": "Grigio target",
+            "exposure_scale": "Scala di esposizione",
+            "min_scale": "Scala min",
+            "max_scale": "Scala max",
+            "scale_override": "Override scala"
+        },
+        "wind_blending": {
+            "wind_type": "Tipo di vento",
+            "speed_coef": "Coeff di velocità",
+            "stability": "Stabilità",
+            "blend_weight": "Peso di mescolamento"
+        },
+        "env_profile": {
+            "lamps_on_elevation": "Accensione lampioni per elevazione",
+            "day_in_year": "Giorno nell'anno",
+            "summer_time": "Ora legale",
+            "thunderstorm_probability": "Probabilità di temporale"
+        }
     },
     "sound_window": {
         "title": "Suoni (FMOD)",
@@ -1407,51 +1416,51 @@
         "soundref_event": "Evento"
     },
     "economy_window": {
-      "title": "Economia",
-      "not_ready": "Il servizio economia non è inizializzato. Carica il gioco.",
-      "tab_money": "Denaro",
-      "balance": {
-        "title": "Saldo bancario",
-        "value": "Saldo: %lld",
-        "debt_state": "Debito: %s",
-        "debt_yes": "SÌ",
-        "debt_no": "NO"
-      },
-      "money": {
-        "amount_label": "Importo",
-        "add": "Aggiungi",
-        "subtract": "Sottrai",
-        "set": "Imposta"
-      },
-      "control": {
-        "title": "Controllo del gioco",
-        "lock_checkbox": "Blocca le operazioni di denaro del gioco",
-        "lock_tooltip": "Se abilitate, tutte le operazioni di denaro avviate dal gioco (deposito/prelievo) vengono bloccate. AddMoney/SetMoney del framework passano sempre."
-      },
-      "tab_loans": "Prestiti",
-      "loans": {
-        "credit_limit_title": "Limite di credito",
-        "credit_limit": "Credito disponibile: %lld",
-        "active_title": "Prestiti attivi",
-        "offers_title": "Offerte di prestito",
-        "no_loans": "Nessun prestito attivo.",
-        "no_offers": "Nessuna offerta di prestito.",
-        "col_remaining": "Residuo",
-        "col_amount": "Importo",
-        "col_start_day": "Giorno di inizio",
-        "col_rate": "Tasso (%)",
-        "col_weeks": "Settimane",
-        "col_action": "Azione",
-        "repay": "Rimborsare",
-        "limit_label": "Limite",
-        "set_limit": "Imposta limite",
-        "edit": "Modifica",
-        "save": "Salva",
-        "cancel": "Annulla",
-        "edit_title": "Modifica prestito #%d",
-        "take": "Richiedi",
-        "new_loan_title": "Nuovo prestito"
-      }
+        "title": "Economia",
+        "not_ready": "Il servizio economia non è inizializzato. Carica il gioco.",
+        "tab_money": "Denaro",
+        "balance": {
+            "title": "Saldo bancario",
+            "value": "Saldo: %lld",
+            "debt_state": "Debito: %s",
+            "debt_yes": "SÌ",
+            "debt_no": "NO"
+        },
+        "money": {
+            "amount_label": "Importo",
+            "add": "Aggiungi",
+            "subtract": "Sottrai",
+            "set": "Imposta"
+        },
+        "control": {
+            "title": "Controllo del gioco",
+            "lock_checkbox": "Blocca le operazioni di denaro del gioco",
+            "lock_tooltip": "Se abilitate, tutte le operazioni di denaro avviate dal gioco (deposito/prelievo) vengono bloccate. AddMoney/SetMoney del framework passano sempre."
+        },
+        "tab_loans": "Prestiti",
+        "loans": {
+            "credit_limit_title": "Limite di credito",
+            "credit_limit": "Credito disponibile: %lld",
+            "active_title": "Prestiti attivi",
+            "offers_title": "Offerte di prestito",
+            "no_loans": "Nessun prestito attivo.",
+            "no_offers": "Nessuna offerta di prestito.",
+            "col_remaining": "Residuo",
+            "col_amount": "Importo",
+            "col_start_day": "Giorno di inizio",
+            "col_rate": "Tasso (%)",
+            "col_weeks": "Settimane",
+            "col_action": "Azione",
+            "repay": "Rimborsare",
+            "limit_label": "Limite",
+            "set_limit": "Imposta limite",
+            "edit": "Modifica",
+            "save": "Salva",
+            "cancel": "Annulla",
+            "edit_title": "Modifica prestito #%d",
+            "take": "Richiedi",
+            "new_loan_title": "Nuovo prestito"
+        }
     },
     "info_window": {
         "title": "Informazioni sull'ambiente",

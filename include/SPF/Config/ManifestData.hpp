@@ -57,9 +57,10 @@ struct LoggingData {
    * @brief Defines which logging sinks are enabled by default.
    */
   struct Sinks {
-    std::optional<bool> file;    ///< @brief True to enable the file sink.
-    std::optional<bool> ui;      ///< @brief True to enable the UI logger window sink.
-    std::optional<bool> report;  ///< @brief True to enable the remote error reporting sink.
+    std::optional<bool> file;      ///< @brief True to enable the file sink.
+    std::optional<bool> ui;        ///< @brief True to enable the UI logger window sink.
+    std::optional<bool> report;    ///< @brief True to enable the remote error reporting sink.
+    std::optional<bool> game_log;  ///< @brief True to also write captured game log messages to the framework log (framework.log).
   } sinks;
 };
 

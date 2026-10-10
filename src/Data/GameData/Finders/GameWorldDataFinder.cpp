@@ -99,10 +99,10 @@ const char* SKYBOX_SIG = "[45|41] [6-7?] [JNE rel8]";
 
 /**
  * @brief Unique string anchor to locate the CoreEngine_UpdateLoop function.
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(CoreEngine_UpdateLoop[140416a70]) ---/
- * 1404170b2  48 8D 0D C7 F0 CF 01          LEA RCX,[0x142116180]
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(CoreEngine_UpdateLoop[140427690]) ---/
+ * 140427fe9  48 8D 0D F8 97 E1 01          LEA RCX,[0x1422417e8] = "scene_pre_fx"
  */
-const char* CORE_LOOP_STRING = "Forcing restart_shader_time() to avoid inaccu";
+const char* CORE_LOOP_STRING = "scene_pre_fx";
 
 /**
  * @brief Signature for the Pause Status check.

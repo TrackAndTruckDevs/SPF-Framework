@@ -66,9 +66,10 @@ inline const ManifestData& GetFrameworkManifestData() {
       .logging = {.level = "trace",  // logging level, for sink file, UI has its own filter ("trace", "debug", "info", "warn", "error", "critical")
                   .sinks =
                     {
-                      .file = true,   // create a log file
-                      .ui = true,     // display logging in UI
-                      .report = true  // enable remote error reporting
+                      .file = true,      // create a log file
+                      .ui = true,        // display logging in UI
+                      .report = true,    // enable remote error reporting
+                      .game_log = false  // also write game log messages to framework.log
                     }},
       // .localization
       .localization = {.language = "en", .sync_plugin_languages = true},
@@ -149,8 +150,8 @@ inline const ManifestData& GetFrameworkManifestData() {
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 4, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"hooks_window",
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 5, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
-                         {"game_console_window",
-                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 6, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
+                          {"tools_window",
+                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 6, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"camera_window",
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 7, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"gameworld_window",
@@ -185,7 +186,8 @@ inline const ManifestData& GetFrameworkManifestData() {
                           {"sinks", "settings_window.setting_names.logging.sinks.title", ""},
                           {"sinks.file", "settings_window.setting_names.logging.sinks.file.title", "settings_window.setting_names.logging.sinks.file.description"},
                           {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"},
-                          {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"}},
+                           {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"},
+                           {"sinks.game_log", "settings_window.setting_names.logging.sinks.game_log.title", "settings_window.setting_names.logging.sinks.game_log.description"}},
       .localizationMetadata = {{"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"},
                                {"sync_plugin_languages", "settings_window.setting_names.localization.sync_plugin_languages.title", "settings_window.setting_names.localization.sync_plugin_languages.description"}},
       .uiMetadata = {
@@ -199,7 +201,7 @@ inline const ManifestData& GetFrameworkManifestData() {
         {"logger_window", "settings_window.setting_names.ui.windows.logger_window.title", ""},
         {"telemetry_window", "settings_window.setting_names.ui.windows.telemetry_window.title", ""},
         {"hooks_window", "settings_window.setting_names.ui.windows.hooks_window.title", ""},
-        {"game_console_window", "settings_window.setting_names.ui.windows.game_console_window.title", ""},
+        {"tools_window", "settings_window.setting_names.ui.windows.tools_window.title", ""},
         {"camera_window", "settings_window.setting_names.ui.windows.camera_window.title", ""},
         {"gameworld_window", "settings_window.setting_names.ui.windows.gameworld_window.title", ""},
         {"climate_window", "settings_window.setting_names.ui.windows.climate_window.title", ""},

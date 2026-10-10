@@ -9,7 +9,6 @@
 
 #include "imgui.h"
 
-#include <cctype>  // for isxdigit
 #include <string>
 
 namespace SPF::UI {
@@ -54,7 +53,7 @@ void HooksWindow::RenderContent() {
       ImGui::PushID(hook->GetName().c_str());
 
       // --- Enabled Checkbox ---
-      bool isRequired = m_hookManager.IsHookRequired(hook->GetName());
+      bool isRequired = m_hookManager.IsHookRequired(hook->GetName()) || hook->GetOwnerName() == "framework";
       bool isEnabled = hook->IsEnabled();
 
       if (isRequired) {

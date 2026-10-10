@@ -40,7 +40,7 @@
 #include "SPF/UI/Fonts/NotoSansRegular.h"
 #include "SPF/UI/Fonts/NotoSansSCRegular.h"
 #include "SPF/UI/Fonts/RobotoMonoRegular.h"
-#include "SPF/UI/GameConsoleWindow.hpp"  // Added for GameConsoleWindow creation
+#include "SPF/UI/ToolsWindow.hpp"  // Added for ToolsWindow creation
 #include "SPF/UI/EconomyWindow.hpp"     // Added for EconomyWindow creation
 #include "SPF/UI/GameWorldWindow.hpp"    // Added for GameWorldWindow creation
 #include "SPF/UI/HooksWindow.hpp"        // Added for HooksWindow creation
@@ -1305,9 +1305,9 @@ void UIManager::CreateAndRegisterFrameworkWindows() {
   auto telemetryWindow = std::make_shared<TelemetryWindow>("framework", "telemetry_window", *m_telemetryService);
   RegisterWindow(telemetryWindow);
 
-  // Game Console Window
-  auto gameConsoleWindow = std::make_shared<GameConsoleWindow>("framework", "game_console_window", *m_eventManager);
-  RegisterWindow(gameConsoleWindow);
+  // Tools Window (console + game log)
+  auto toolsWindow = std::make_shared<ToolsWindow>("framework", "tools_window", *m_eventManager);
+  RegisterWindow(toolsWindow);
 
   // Camera Window
   auto cameraWindow = std::make_shared<CameraWindow>("framework", "camera_window", GameCamera::GameCameraManager::GetInstance());
