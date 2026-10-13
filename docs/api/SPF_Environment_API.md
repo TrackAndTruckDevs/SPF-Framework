@@ -297,3 +297,32 @@ Reads the mount at a flat zero-based index (pools in index order) and fills **al
       // m.vpath, m.physical_path, m.pool_index, m.order
     }
     ```
+
+### Section 9: Game Language
+
+These functions read and change the game's current language — the same language the game's options menu sets. The list comes from the game's `/locale/` catalog; the setter uses the game's own set path (validates the code, applies it, and updates the language CVar cache so the choice survives opening the game options).
+
+---
+**`int Env_GetGameLanguage(SPF_Environment_Handle* h, char* out_buffer, int buffer_size)`**
+Gets the game's current language code.
+*   **Returns:** Actual string length. Example: `"uk_uk"`, `"en_gb"`.
+
+---
+**`int Env_GetGameLanguageCount(SPF_Environment_Handle* h)`**
+Gets the number of languages installed under the game's `/locale/` directory.
+*   **Returns:** Language count, or `0` when the finder is not ready.
+
+---
+**`int Env_GetGameLanguageAt(SPF_Environment_Handle* h, int index, char* out_buffer, int buffer_size)`**
+Reads one installed language code from the list by index.
+*   **Parameters:**
+    *   `index`: `0 .. Env_GetGameLanguageCount()-1`.
+*   **Returns:** Length of the language code, or `0` when the index is invalid.
+
+---
+**`bool Env_SetGameLanguage(SPF_Environment_Handle* h, const char* lang)`**
+Sets the game language using the game's own set path (validates against the installed list, applies it, and updates the language CVar cache).
+*   **Parameters:**
+    *   `lang`: Language code (e.g. `"uk_uk"`). Use codes from `Env_GetGameLanguageAt`.
+*   **Returns:** `true` if the language was applied.
+*   **Note:** The framework UI and mail text pick up the new language on the next access.

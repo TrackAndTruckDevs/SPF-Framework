@@ -445,6 +445,46 @@ typedef struct SPF_Environment_API {
    */
   bool (*Env_VfsGetMountAt)(SPF_Environment_Handle* h, int index, SPF_VfsMountInfo* out_info);
 
+  // =============================================================================================
+  // Section 9: Game Language
+  // =============================================================================================
+
+  /**
+   * @brief Gets the game's current language code.
+   * @param h The context handle.
+   * @param out_buffer Buffer to receive the language code.
+   * @param buffer_size Size of the output buffer.
+   * @return Length of string. Example: "uk_uk", "en_gb".
+   */
+  int (*Env_GetGameLanguage)(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
+
+  /**
+   * @brief Gets the number of languages installed under the game's /locale/ directory.
+   * @param h The context handle.
+   * @return Language count, or 0 when the finder is not ready.
+   */
+  int (*Env_GetGameLanguageCount)(SPF_Environment_Handle* h);
+
+  /**
+   * @brief Reads one installed language code from the list by index.
+   * @param h The context handle.
+   * @param index Zero-based index in [0, Env_GetGameLanguageCount).
+   * @param out_buffer Buffer to receive the language code.
+   * @param buffer_size Size of the output buffer.
+   * @return Length of the language code, or 0 when the index is invalid.
+   */
+  int (*Env_GetGameLanguageAt)(SPF_Environment_Handle* h, int index, char* out_buffer, int buffer_size);
+
+  /**
+   * @brief Sets the game language (same path the game's options menu uses).
+   * @details Validates the code against the installed /locale/ list, applies it,
+   *          and updates the language CVar cache in one call.
+   * @param h The context handle.
+   * @param lang Language code (e.g. "uk_uk"). Use codes from Env_GetGameLanguageAt.
+   * @return true if the language was applied.
+   */
+  bool (*Env_SetGameLanguage)(SPF_Environment_Handle* h, const char* lang);
+
 } SPF_Environment_API;
 
 #ifdef __cplusplus

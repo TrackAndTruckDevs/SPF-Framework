@@ -1,6 +1,7 @@
 #include "SPF/UI/InfoWindow.hpp"
 
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
+#include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -46,6 +47,7 @@ void InfoWindow::RefreshLocalization() {
   m_locGameIsSteam = loc.Get("info_window.game.is_steam");
   m_locGameActiveProfile = loc.Get("info_window.game.active_profile");
   m_locGameProfileType = loc.Get("info_window.game.profile_type");
+  m_locGameLanguage = loc.Get("info_window.game.language");
   m_locGameExePath = loc.Get("info_window.game.exe_path");
   m_locGameRootPath = loc.Get("info_window.game.root_path");
   m_locGameCommandLine = loc.Get("info_window.game.command_line");
@@ -159,6 +161,30 @@ void InfoWindow::RenderGameTab() {
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameProfileType.c_str());
   ImGui::SameLine();
   Typography::Text(TextStyle::Regular().Color(Colors::WHITE), "%s", status.profileType.c_str());
+
+  Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameLanguage.c_str());
+  ImGui::SameLine();
+  {
+    auto& session = Data::GameData::GameObjectSessionService::GetInstance();
+    const std::string currentLang = session.GetGameLanguage();
+    const auto langList = session.GetLanguageList();
+    int currentIdx = 0;
+    for (int i = 0; i < (int)langList.size(); ++i) {
+      if (langList[i] == currentLang) {
+        currentIdx = i;
+        break;
+      }
+    }
+    ImGui::SetNextItemWidth(160.0f);
+    if (ImGui::BeginCombo("##game_language", currentLang.c_str())) {
+      for (int i = 0; i < (int)langList.size(); ++i) {
+        if (ImGui::Selectable(langList[i].c_str(), i == currentIdx)) {
+          session.SetGameLanguage(langList[i]);
+        }
+      }
+      ImGui::EndCombo();
+    }
+  }
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameExePath.c_str());
   ImGui::TextWrapped("%s", info.exePath.string().c_str());

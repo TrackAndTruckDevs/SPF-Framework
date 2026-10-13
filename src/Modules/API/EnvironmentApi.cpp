@@ -1,6 +1,7 @@
 #include "SPF/Modules/API/EnvironmentApi.hpp"
 
 #include "SPF/Data/GameData/GameObjectFileSystemService.hpp"
+#include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/SPF_API/SPF_Environment_API.h"
 #include "SPF/System/EnvironmentManager.hpp"
 #include "SPF/System/PathManager.hpp"
@@ -188,6 +189,28 @@ bool EnvironmentApi::Env_VfsGetMountAt(SPF_Environment_Handle* h, int index, SPF
   return true;
 }
 
+// Section 9: Game Language
+int EnvironmentApi::Env_GetGameLanguage(SPF_Environment_Handle* h, char* out, int size) {
+  return SafeCopyString(Data::GameData::GameObjectSessionService::GetInstance().GetGameLanguage(), out, size);
+}
+
+int EnvironmentApi::Env_GetGameLanguageCount(SPF_Environment_Handle* h) {
+  if (!h) return 0;
+  return static_cast<int>(Data::GameData::GameObjectSessionService::GetInstance().GetLanguageList().size());
+}
+
+int EnvironmentApi::Env_GetGameLanguageAt(SPF_Environment_Handle* h, int index, char* out, int size) {
+  if (!h || index < 0) return 0;
+  const auto list = Data::GameData::GameObjectSessionService::GetInstance().GetLanguageList();
+  if (index >= static_cast<int>(list.size())) return 0;
+  return SafeCopyString(list[static_cast<size_t>(index)], out, size);
+}
+
+bool EnvironmentApi::Env_SetGameLanguage(SPF_Environment_Handle* h, const char* lang) {
+  if (!h || !lang || !*lang) return false;
+  return !Data::GameData::GameObjectSessionService::GetInstance().SetGameLanguage(lang).empty();
+}
+
 void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
   if (!api) return;
 
@@ -237,6 +260,11 @@ void EnvironmentApi::FillEnvironmentApi(SPF_Environment_API* api) {
 
   api->Env_VfsGetMountCount = &EnvironmentApi::Env_VfsGetMountCount;
   api->Env_VfsGetMountAt = &EnvironmentApi::Env_VfsGetMountAt;
+
+  api->Env_GetGameLanguage = &EnvironmentApi::Env_GetGameLanguage;
+  api->Env_GetGameLanguageCount = &EnvironmentApi::Env_GetGameLanguageCount;
+  api->Env_GetGameLanguageAt = &EnvironmentApi::Env_GetGameLanguageAt;
+  api->Env_SetGameLanguage = &EnvironmentApi::Env_SetGameLanguage;
 }
 
 }  // namespace SPF::Modules::API

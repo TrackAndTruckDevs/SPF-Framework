@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace SPF::Data::GameData {
@@ -32,6 +33,27 @@ class GameObjectSessionService {
   uint32_t GetProfileDisplayNameOffset() const { return m_profileDisplayNameOffset; }
   uint32_t GetProfileTypeOffset() const { return m_profileTypeOffset; }
 
+  /** @brief LoadLocale(const char* lang) — loads + registers mail text units from /locale/%s/mails.sii. */
+  uintptr_t GetLoadLocaleAddr() const { return m_loadLocaleAddr; }
+
+  /** @brief Address of the game's current language pointer global (PTR_PTR_142e068d0). */
+  uintptr_t GetGameLanguagePtrAddr() const { return m_gameLanguagePtrAddr; }
+
+  /** @brief FUN_14041c6c0(lang) — sets application language AND writes CVar cache in one call. */
+  uintptr_t GetSetLanguageFuncAddr() const { return m_setLanguageFuncAddr; }
+
+  /** @brief Returns prism_string array of available languages (locale/ subdirs). */
+  uintptr_t GetLanguageListFuncAddr() const { return m_languageListFuncAddr; }
+
+  /** @brief Current game language string (e.g. "ru_ru"), or empty. */
+  std::string GetGameLanguage() const;
+
+  /** @brief Languages installed under /locale/ (array_t<string_dyn_t>, stride 0x20). */
+  std::vector<std::string> GetLanguageList() const;
+
+  /** @brief Calls game SetLanguage (app language + CVar cache); returns the effective language. */
+  std::string SetGameLanguage(const std::string& lang);
+
   // --- Setters for finders ---
   void SetSessionMgrPtrAddr(uintptr_t addr) { m_sessionMgrPtrAddr = addr; }
   void SetGamePtrAddr(uintptr_t addr) { m_gamePtrAddr = addr; }
@@ -39,6 +61,10 @@ class GameObjectSessionService {
   void SetConvoyStatusOffset(uint32_t offset) { m_convoyStatusOffset = offset; }
   void SetProfileDisplayNameOffset(uint32_t offset) { m_profileDisplayNameOffset = offset; }
   void SetProfileTypeOffset(uint32_t offset) { m_profileTypeOffset = offset; }
+  void SetLoadLocaleAddr(uintptr_t addr) { m_loadLocaleAddr = addr; }
+  void SetGameLanguagePtrAddr(uintptr_t addr) { m_gameLanguagePtrAddr = addr; }
+  void SetSetLanguageFuncAddr(uintptr_t addr) { m_setLanguageFuncAddr = addr; }
+  void SetLanguageListFuncAddr(uintptr_t addr) { m_languageListFuncAddr = addr; }
 
  private:
   GameObjectSessionService() = default;
@@ -53,6 +79,10 @@ class GameObjectSessionService {
   uint32_t m_convoyStatusOffset = 0;
   uint32_t m_profileDisplayNameOffset = 0;
   uint32_t m_profileTypeOffset = 0;
+  uintptr_t m_loadLocaleAddr = 0;
+  uintptr_t m_gameLanguagePtrAddr = 0;
+  uintptr_t m_setLanguageFuncAddr = 0;
+  uintptr_t m_languageListFuncAddr = 0;
 
   std::vector<std::unique_ptr<ISessionDataFinder>> m_dataFinders;
 };

@@ -63,6 +63,12 @@ class EnvironmentApi {
   static bool Env_VfsUnmount(SPF_Environment_Handle* h);
   static int Env_VfsGetMountCount(SPF_Environment_Handle* h);
   static bool Env_VfsGetMountAt(SPF_Environment_Handle* h, int index, SPF_VfsMountInfo* out_info);
+
+  // Section 9: Game Language
+  static int Env_GetGameLanguage(SPF_Environment_Handle* h, char* out_buffer, int buffer_size);
+  static int Env_GetGameLanguageCount(SPF_Environment_Handle* h);
+  static int Env_GetGameLanguageAt(SPF_Environment_Handle* h, int index, char* out_buffer, int buffer_size);
+  static bool Env_SetGameLanguage(SPF_Environment_Handle* h, const char* lang);
 };
 
 }  // namespace SPF::Modules::API

@@ -154,6 +154,81 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
     }
   }
 
+  // ── Phase 4: Text Locale — LoadLocale + language API ──
+  {
+    auto phase = log.MakePhase("Mail Text Locale");
+
+    /**
+     * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14083e740[14083e740]) ---/
+     * 14083e871  48 8D 15 A0 C5 5D 01          LEA RDX,[0x141e1ae18]
+     * FindFunctionByString(anchor, true) -> function start (FUN_14083e740).
+     */
+    uintptr_t loadLocale = PatternFinder::FindFunctionByString("/locale/%s/mails.sii", true);
+    if (phase.Step(loadLocale, "LoadLocale function", "FN")) {
+      owner.SetLoadLocaleAddr(loadLocale);
+    }
+
+    /**
+     * SetApplicationLanguage — located by its locale override path string.
+     * /--- Ghidra:(amtrucks_1_61.exe) Fun:(SetApplicationLanguage[14151dd40]) ---/
+     * 14151e25e  48 89 44 24 20                MOV qword ptr [RSP + 0x20],RAX
+     */
+    uintptr_t xrefSetLang = PatternFinder::FindFunctionByString("/local.override.sii", false);
+    if (phase.Step(xrefSetLang, "SetApplicationLanguage xref", "RT")) {
+      uintptr_t setLangFn = PatternFinder::GetFunctionStart(xrefSetLang);
+      phase.Step(setLangFn, "SetApplicationLanguage function", "FN");
+
+      /**
+       * PTR_PTR_142e068d0 — current language global written by SetApplicationLanguage.
+       * /--- Ghidra:(amtrucks_1_61.exe) Fun:(SetApplicationLanguage[14151dd40]) ---/
+       * 14151e8d8  48 8D 0D F1 7F 8E 01          LEA RCX,[0x142e068d0]
+       * 14151e8df  E8 2C 73 BD FE                CALL 0x1400f5c10
+       * 14151e8e4  48 8D 0D 25 EC 15 02          LEA RCX,[0x14367d510]
+       * 14151e8eb  FF 15 27 F2 89 00             CALL qword ptr [0x141dbdb18]
+       * 14151e8f1  4D 85 ED                      TEST R13,R13
+       */
+      uintptr_t addrLangGlobal = PatternFinder::Find(xrefSetLang, 1750, "[LEA r64, [rip+off32]] [CALL rel32] [LEA r64, [rip+off32]] [CALL [rip+off32]] [TEST r64, r64]");
+      if (phase.Step(addrLangGlobal, "Language global sequence", "RT")) {
+        uintptr_t langPtr = PatternFinder::GetRipAddress(addrLangGlobal, 3, 7);
+        if (phase.Step(langPtr, "Current language pointer", "DATA")) {
+          owner.SetGameLanguagePtrAddr(langPtr);
+        }
+      }
+
+      /**
+       * Language list function — called from SetApplicationLanguage start.
+       * /--- Ghidra:(amtrucks_1_61.exe) Fun:(SetApplicationLanguage[14151dd40]) ---/
+       * 14151dd40  48 89 4C 24 08                MOV qword ptr [RSP + 0x8],RCX
+       * 14151dd78  E8 83 E9 FF FF                CALL 0x14151c700
+       * 14151dd7d  48 8B D3                      MOV RDX,RBX
+       */
+      uintptr_t addrListCall = PatternFinder::Find(setLangFn, 64, "[CALL rel32] [MOV r64, r64]");
+      if (phase.Step(addrListCall, "Language list CALL", "RT")) {
+        uintptr_t listFn = PatternFinder::GetRipAddress(addrListCall, 1, 5);
+        if (phase.Step(listFn, "Language list function", "FN")) {
+          owner.SetLanguageListFuncAddr(listFn);
+        }
+      }
+    }
+
+    /**
+     * FUN_14041c6c0 — set application language + write CVar cache in one call.
+     * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1403fcff0[1403fcff0]) ---/
+     * 1403fdbd6  48 8D 05 EF CE E3 01          LEA RAX,[0x14223aacc] = "en_us"
+     * 1403fdbe5  E8 D6 EA 01 00                CALL 0x14041c6c0
+     */
+    uintptr_t xrefEnUs = PatternFinder::FindFunctionByString("en_us", false);
+    if (phase.Step(xrefEnUs, "SetLanguage xref (en_us)", "RT")) {
+      uintptr_t addrSetCall = PatternFinder::Find(xrefEnUs, 32, "[CALL rel32]");
+      if (phase.Step(addrSetCall, "SetLanguage CALL", "RT")) {
+        uintptr_t setLanguageFn = PatternFinder::GetRipAddress(addrSetCall, 1, 5);
+        if (phase.Step(setLanguageFn, "SetLanguage function (set + CVar cache)", "FN")) {
+          owner.SetSetLanguageFuncAddr(setLanguageFn);
+        }
+      }
+    }
+  }
+
   // --- Final Readiness Check ---
   m_isReady = owner.GetGamePtrAddr() != 0 && owner.GetProfileHandleOffset() != 0 && owner.GetSessionMgrPtrAddr() != 0 && owner.GetConvoyStatusOffset() != 0 && owner.GetProfileDisplayNameOffset() != 0 && owner.GetProfileTypeOffset() != 0;
 
