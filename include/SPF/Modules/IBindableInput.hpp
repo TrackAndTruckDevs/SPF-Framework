@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/System/Keyboard.hpp"
 
 #include "nlohmann/json.hpp"  // IWYU pragma: keep
@@ -102,6 +103,26 @@ struct IBindableInput {
    * @return The InputType enum value.
    */
   virtual InputType GetType() const = 0;
+
+  /**
+   * @brief Gets the device slot this input is tied to, or Input::kAnyDevice.
+   */
+  uint8_t GetDevice() const { return m_device; }
+
+ protected:
+  // Reads the optional "device" field of a binding's JSON.
+  void ReadDevice(const nlohmann::ordered_json& config) {
+    if (config.contains("device") && config["device"].is_string()) {
+      m_device = Input::InputDevices::SlotFor(config["device"].get<std::string>());
+    }
+  }
+
+  // Writes the "device" field, left out for an input tied to no device.
+  void WriteDevice(nlohmann::ordered_json& json) const {
+    if (m_device != Input::kAnyDevice) json["device"] = Input::InputDevices::IdOf(m_device);
+  }
+
+  uint8_t m_device = Input::kAnyDevice;
 };
 
 }  // namespace SPF::Modules

@@ -1505,6 +1505,7 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohm
       kept.erase("type");
       kept.erase("key");
       kept.erase("bindings");
+      kept.erase("device");
     } else if (originalBinding.contains("consume")) {
       // Button <-> axis: only the consume policy applies to both.
       kept["consume"] = originalBinding["consume"];
@@ -1526,6 +1527,7 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohm
     finalNewBinding["bindings"] = mergedData["bindings"];
   } else {
     finalNewBinding["key"] = mergedData["key"];
+    if (mergedData.contains("device")) finalNewBinding["device"] = mergedData["device"];
   }
 
   finalNewBinding["consume"] = mergedData.value("consume", "never");
@@ -1665,6 +1667,7 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
         std::string origKey = originalBinding.value("key", "");
         std::string origPressType = originalBinding.value("press_type", "short");
         std::string origSide = originalBinding.value("side", "both");
+        std::string origDevice = originalBinding.value("device", "");
         auto const& origBindings = originalBinding.contains("bindings") ? originalBinding["bindings"] : nlohmann::ordered_json();
 
         for (auto& binding : bindingsArray) {
@@ -1679,7 +1682,7 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
             if (origType == "chord") {
               keyOrChordMatch = (binding.contains("bindings") && binding["bindings"] == origBindings);
             } else {
-              keyOrChordMatch = (binding.value("key", "") == origKey);
+              keyOrChordMatch = (binding.value("key", "") == origKey && binding.value("device", "") == origDevice);
             }
 
             // 3. Compare side (only relevant for axes)
@@ -1715,6 +1718,7 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
               clean["bindings"] = current["bindings"];
             } else {
               clean["key"] = current["key"];
+              if (current.contains("device")) clean["device"] = current["device"];
             }
             clean["consume"] = current.value("consume", "never");
 

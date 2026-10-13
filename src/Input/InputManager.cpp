@@ -4,6 +4,7 @@
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Hooks/User32Hook.hpp"
 #include "SPF/Input/IInputConsumer.hpp"
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Modules/ChordInput.hpp"
@@ -59,6 +60,37 @@ bool IsAxis(GamepadButton button) {
     default:
       return false;
   }
+}
+
+// Ties a captured input's JSON to the device it came from.
+static nlohmann::ordered_json ForDevice(nlohmann::ordered_json json, uint8_t device) {
+  if (device != kAnyDevice) json["device"] = InputDevices::IdOf(device);
+  return json;
+}
+
+template <typename Event, typename Once>
+bool InputManager::DispatchPerDevice(const Event& event, uint32_t anyCode, bool isButton, Once&& once) {
+  if (event.device == kAnyDevice) return once(event, true);
+
+  // A button stays down for the any-device bindings until every device holding it lets go.
+  bool forward = true;
+  if (isButton) {
+    auto& holders = m_anyDeviceHolders[anyCode];
+    if (event.pressed) {
+      holders.insert(event.device);
+    } else {
+      holders.erase(event.device);
+      forward = holders.empty();
+    }
+  }
+
+  bool capturing = (m_captureState == InputCaptureState::Capturing);
+  bool block = once(event, true);
+  if (capturing || !forward) return block;
+
+  Event anyDeviceEvent = event;
+  anyDeviceEvent.device = kAnyDevice;
+  return once(anyDeviceEvent, false) || block;
 }
 
 InputManager& InputManager::GetInstance() {
@@ -194,9 +226,19 @@ bool InputManager::PublishMouseWheel(const MouseWheelEvent& event, uint8_t prior
   return false;
 }
 
-bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority) {
+bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority, uint8_t device) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
+  if (device == kAnyDevice) return PublishAxisMoveOnce(deviceType, axisIndex, kAnyDevice, value, priority);
+
+  // As DispatchPerDevice: the device's own code first, then the any-device one outside a capture.
+  bool capturing = (m_captureState == InputCaptureState::Capturing);
+  bool block = PublishAxisMoveOnce(deviceType, axisIndex, device, value, priority);
+  if (capturing) return block;
+  return PublishAxisMoveOnce(deviceType, axisIndex, kAnyDevice, value, priority) || block;
+}
+
+bool InputManager::PublishAxisMoveOnce(uint8_t deviceType, int axisIndex, uint8_t device, float value, uint8_t priority) {
+  uint32_t hardwareCode = WithDevice((static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex), device);
 
   auto& state = m_axisStates[hardwareCode];
   uint64_t now = GetTickCount64();
@@ -208,7 +250,7 @@ bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float valu
   bool isRecentlyUpdated = (now - state.lastTimestamp < 500);  // 500ms window for priority lock
 
   if (isLowerPriority && isRecentlyUpdated) {
-    return IsAxisConsumed(deviceType, axisIndex);
+    return IsAxisCodeConsumed(hardwareCode, deviceType, axisIndex);
   }
 
   state.lastPriority = priority;
@@ -268,7 +310,7 @@ bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float valu
             break;
         }
 
-        inputObj = std::make_shared<Modules::GamepadAxisInput>(nlohmann::ordered_json{{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(btn)}});
+        inputObj = std::make_shared<Modules::GamepadAxisInput>(ForDevice({{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(btn)}}, device));
         captured = true;
       } else if (deviceType == 0x03) {  // Mouse
         if (axisIndex == 2) {           // ONLY Scroll Wheel
@@ -276,7 +318,7 @@ bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float valu
           captured = true;
         }
       } else if (deviceType == 0x04) {  // Joystick
-        inputObj = std::make_shared<Modules::JoystickAxisInput>(nlohmann::ordered_json{{"type", "joystick_axis"}, {"key", std::to_string(axisIndex)}});
+        inputObj = std::make_shared<Modules::JoystickAxisInput>(ForDevice({{"type", "joystick_axis"}, {"key", std::to_string(axisIndex)}}, device));
         captured = true;
       }
 
@@ -331,10 +373,14 @@ bool InputManager::PublishAxisMove(uint8_t deviceType, int axisIndex, float valu
   return shouldBlock;
 }
 
-bool InputManager::IsAxisConsumed(uint8_t deviceType, int axisIndex) const {
+bool InputManager::IsAxisConsumed(uint8_t deviceType, int axisIndex, uint8_t device) const {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  uint32_t hardwareCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
+  uint32_t anyCode = (static_cast<uint32_t>(deviceType) << 24) | 0x00010000 | static_cast<uint32_t>(axisIndex);
+  if (IsAxisCodeConsumed(anyCode, deviceType, axisIndex)) return true;
+  return device != kAnyDevice && IsAxisCodeConsumed(WithDevice(anyCode, device), deviceType, axisIndex);
+}
 
+bool InputManager::IsAxisCodeConsumed(uint32_t hardwareCode, uint8_t deviceType, int axisIndex) const {
   auto it = m_axisStates.find(hardwareCode);
   if (it == m_axisStates.end()) return false;
 
@@ -443,9 +489,14 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
 
 bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priority) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  uint32_t anyCode = 0x02000000 | static_cast<uint32_t>(event.button);
+  return DispatchPerDevice(event, anyCode, !IsAxis(event.button), [&](const GamepadEvent& e, bool isFirst) { return PublishGamepadEventOnce(e, priority, isFirst); });
+}
+
+bool InputManager::PublishGamepadEventOnce(const GamepadEvent& event, uint8_t priority, bool notifyConsumers) {
   // Update currently pressed hardware codes for chords (only for digital buttons)
   if (!IsAxis(event.button)) {
-    uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
+    uint32_t hardwareCode = WithDevice(0x02000000 | static_cast<uint32_t>(event.button), event.device);
 
     auto& state = m_inputStates[hardwareCode];
     uint64_t now = GetTickCount64();
@@ -464,19 +515,22 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priori
 
   // Check frame-based capture set
   if (!IsAxis(event.button)) {
-    uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
+    uint32_t hardwareCode = WithDevice(0x02000000 | static_cast<uint32_t>(event.button), event.device);
     if (m_capturedHardwareCodesThisFrame.count(hardwareCode)) {
       return true;
     }
   }
 
   // First, process the event through the state machine to determine if it should be blocked from the game.
-  bool shouldBlock = ProcessAndDecide(event, priority);
+  bool shouldBlock = ProcessAndDecideOnce(event, priority);
 
   // In capture mode, the decision from ProcessAndDecide is final.
   if (m_captureState == InputCaptureState::Capturing && event.pressed && !IsAxis(event.button)) {
     return shouldBlock;
   }
+
+  // The UI hears each event once, not again for its any-device pass.
+  if (!notifyConsumers) return shouldBlock;
 
   // Second, regardless of blocking, propagate the event to internal UI consumers.
   if (IsAxis(event.button)) {
@@ -507,8 +561,13 @@ bool InputManager::PublishGamepadEvent(const GamepadEvent& event, uint8_t priori
 
 bool InputManager::PublishJoystickEvent(const JoystickEvent& event, uint8_t priority) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  uint32_t anyCode = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
+  return DispatchPerDevice(event, anyCode, true, [&](const JoystickEvent& e, bool isFirst) { return PublishJoystickEventOnce(e, priority, isFirst); });
+}
+
+bool InputManager::PublishJoystickEventOnce(const JoystickEvent& event, uint8_t priority, bool notifyConsumers) {
   // Update currently pressed hardware codes for chords
-  uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
+  uint32_t hardwareCode = WithDevice(0x04000000 | static_cast<uint32_t>(event.buttonIndex), event.device);
 
   auto& state = m_inputStates[hardwareCode];
   uint64_t now = GetTickCount64();
@@ -530,11 +589,14 @@ bool InputManager::PublishJoystickEvent(const JoystickEvent& event, uint8_t prio
 
   // This function now mirrors PublishKeyboardEvent.
   // Process the event through the state machine to determine blocking
-  bool shouldBlock = ProcessAndDecide(event, priority);
+  bool shouldBlock = ProcessAndDecideOnce(event, priority);
 
   if (m_captureState == InputCaptureState::Capturing && event.pressed) {
     return shouldBlock;
   }
+
+  // The UI hears each event once, not again for its any-device pass.
+  if (!notifyConsumers) return shouldBlock;
 
   // Propagate to consumers
   if (event.pressed) {
@@ -628,9 +690,9 @@ void InputManager::HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldB
       m_pendingMouseReleases.insert(static_cast<System::MouseButton>(rawCode));
       m_pendingVirtualReleases.insert(hardwareCode);
     } else if (type == 0x04) {  // Joystick
-      m_pendingJoystickReleases.insert(static_cast<int>(rawCode));
+      m_pendingJoystickReleases.insert(hardwareCode);
     } else if (type == 0x02) {  // Gamepad
-      m_pendingGamepadReleases.insert(static_cast<System::GamepadButton>(rawCode));
+      m_pendingGamepadReleases.insert(hardwareCode);
     }
     m_keysLeakedToGame.erase(hardwareCode);
   }
@@ -761,9 +823,14 @@ void InputManager::ProcessJoystickActions() {
 
 bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  uint32_t anyCode = 0x02000000 | static_cast<uint32_t>(event.button);
+  return DispatchPerDevice(event, anyCode, !IsAxis(event.button), [&](const GamepadEvent& e, bool) { return ProcessAndDecideOnce(e, priority); });
+}
+
+bool InputManager::ProcessAndDecideOnce(const GamepadEvent& event, uint8_t priority) {
   if (event.button == System::GamepadButton::Unknown) return true;  // Ignore unknown gamepad buttons
 
-  uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(event.button);
+  uint32_t hardwareCode = WithDevice(0x02000000 | static_cast<uint32_t>(event.button), event.device);
 
   auto& state = m_inputStates[hardwareCode];
   uint64_t now = GetTickCount64();
@@ -802,9 +869,10 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority)
       }
 
       // Optimization: If this code is already held, ignore repeated polling events
-      // during capture to avoid resetting the chord finalization timer.
-      if (m_captureHeldCodes.count(hardwareCode)) {
-        return true;
+      // during capture to avoid resetting the chord finalization timer. The same button
+      // seen through another API (another device slot) counts as held too.
+      for (uint32_t heldCode : m_captureHeldCodes) {
+        if (WithAnyDevice(heldCode) == WithAnyDevice(hardwareCode)) return true;
       }
 
       m_captureHeldCodes.insert(hardwareCode);
@@ -813,9 +881,9 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority)
       m_lastCaptureTimestamp = now_ms;
 
       if (isAxis) {
-        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadAxisInput>(nlohmann::ordered_json{{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadAxisInput>(ForDevice({{"type", "gamepad_axis"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}}, event.device));
       } else {
-        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadInput>(nlohmann::ordered_json{{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}});
+        m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::GamepadInput>(ForDevice({{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(event.button)}}, event.device));
       }
       m_isWaitingForCaptureFinalize = false;
     } else if (m_captureHeldCodes.count(hardwareCode)) {
@@ -843,9 +911,13 @@ bool InputManager::ProcessAndDecide(const GamepadEvent& event, uint8_t priority)
   return HandleInputState(hardwareCode, event.pressed, event.value, m_inputStates[hardwareCode]);
 }
 
-bool InputManager::IsGamepadButtonBlocked(System::GamepadButton button) const {
+bool InputManager::IsGamepadButtonBlocked(System::GamepadButton button, uint8_t device) const {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  uint32_t hardwareCode = 0x02000000 | static_cast<uint32_t>(button);
+  uint32_t anyCode = 0x02000000 | static_cast<uint32_t>(button);
+  return IsButtonCodeBlocked(anyCode) || (device != kAnyDevice && IsButtonCodeBlocked(WithDevice(anyCode, device)));
+}
+
+bool InputManager::IsButtonCodeBlocked(uint32_t hardwareCode) const {
   auto it = m_inputStates.find(hardwareCode);
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
@@ -1063,12 +1135,17 @@ bool InputManager::ProcessAndDecide(const MouseButtonEvent& event, uint8_t prior
 
 bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  uint32_t anyCode = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
+  return DispatchPerDevice(event, anyCode, true, [&](const JoystickEvent& e, bool) { return ProcessAndDecideOnce(e, priority); });
+}
+
+bool InputManager::ProcessAndDecideOnce(const JoystickEvent& event, uint8_t priority) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   auto buttonIndex = event.buttonIndex;
 
   if (buttonIndex < 0 || buttonIndex >= 128) return true;  // Ignore invalid joystick buttons
 
-  uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
+  uint32_t hardwareCode = WithDevice(0x04000000 | static_cast<uint32_t>(buttonIndex), event.device);
 
   auto& state = m_inputStates[hardwareCode];
   uint64_t now = GetTickCount64();
@@ -1080,7 +1157,7 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority
     if (event.pressed) {
       m_captureHeldCodes.insert(hardwareCode);
       m_captureRecordedCodes.insert(hardwareCode);
-      m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::JoystickInput>(nlohmann::ordered_json{{"type", "joystick"}, {"key", JoystickButtonMapping::GetInstance().ToString(buttonIndex)}});
+      m_captureCodeToInputMap[hardwareCode] = std::make_shared<Modules::JoystickInput>(ForDevice({{"type", "joystick"}, {"key", JoystickButtonMapping::GetInstance().ToString(buttonIndex)}}, event.device));
       m_isWaitingForCaptureFinalize = false;
     } else {
       m_captureHeldCodes.erase(hardwareCode);
@@ -1105,7 +1182,7 @@ bool InputManager::ProcessAndDecide(const JoystickEvent& event, uint8_t priority
 
   // Specific fix for Joystick release cleanup:
   if (!event.pressed) {
-    m_pendingJoystickReleases.erase(buttonIndex);
+    m_pendingJoystickReleases.erase(hardwareCode);
     m_pendingVirtualReleases.erase(hardwareCode);
   }
   return block;
@@ -1227,11 +1304,10 @@ bool InputManager::IsMouseButtonBlocked(System::MouseButton button) const {
   return (it != m_inputStates.end()) ? it->second.blockInput : false;
 }
 
-bool InputManager::IsJoystickButtonBlocked(int buttonIndex) const {
+bool InputManager::IsJoystickButtonBlocked(int buttonIndex, uint8_t device) const {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  uint32_t hardwareCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
-  auto it = m_inputStates.find(hardwareCode);
-  return (it != m_inputStates.end()) ? it->second.blockInput : false;
+  uint32_t anyCode = 0x04000000 | static_cast<uint32_t>(buttonIndex);
+  return IsButtonCodeBlocked(anyCode) || (device != kAnyDevice && IsButtonCodeBlocked(WithDevice(anyCode, device)));
 }
 
 bool InputManager::ConsumeMouseReleaseRequest(System::MouseButton button) {
@@ -1244,34 +1320,35 @@ bool InputManager::ConsumeMouseReleaseRequest(System::MouseButton button) {
   return false;
 }
 
-bool InputManager::ConsumeJoystickReleaseRequest(int buttonIndex) {
-  std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  auto it = m_pendingJoystickReleases.find(buttonIndex);
-  if (it != m_pendingJoystickReleases.end()) {
-    m_pendingJoystickReleases.erase(it);
-    return true;
-  }
-  return false;
+// A release is pending for a device if it was requested for that device's code or the any-device one.
+static bool ConsumePendingRelease(std::set<uint32_t>& pending, uint32_t anyCode, uint8_t device) {
+  if (pending.erase(anyCode) > 0) return true;
+  return device != kAnyDevice && pending.erase(WithDevice(anyCode, device)) > 0;
 }
 
-bool InputManager::HasPendingJoystickRelease(int buttonIndex) const {
-  std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  return m_pendingJoystickReleases.count(buttonIndex) > 0;
+static bool HasPendingRelease(const std::set<uint32_t>& pending, uint32_t anyCode, uint8_t device) {
+  if (pending.count(anyCode) > 0) return true;
+  return device != kAnyDevice && pending.count(WithDevice(anyCode, device)) > 0;
 }
 
-bool InputManager::ConsumeGamepadReleaseRequest(System::GamepadButton button) {
+bool InputManager::ConsumeJoystickReleaseRequest(int buttonIndex, uint8_t device) {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  auto it = m_pendingGamepadReleases.find(button);
-  if (it != m_pendingGamepadReleases.end()) {
-    m_pendingGamepadReleases.erase(it);
-    return true;
-  }
-  return false;
+  return ConsumePendingRelease(m_pendingJoystickReleases, 0x04000000 | static_cast<uint32_t>(buttonIndex), device);
 }
 
-bool InputManager::HasPendingGamepadRelease(System::GamepadButton button) const {
+bool InputManager::HasPendingJoystickRelease(int buttonIndex, uint8_t device) const {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
-  return m_pendingGamepadReleases.count(button) > 0;
+  return HasPendingRelease(m_pendingJoystickReleases, 0x04000000 | static_cast<uint32_t>(buttonIndex), device);
+}
+
+bool InputManager::ConsumeGamepadReleaseRequest(System::GamepadButton button, uint8_t device) {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  return ConsumePendingRelease(m_pendingGamepadReleases, 0x02000000 | static_cast<uint32_t>(button), device);
+}
+
+bool InputManager::HasPendingGamepadRelease(System::GamepadButton button, uint8_t device) const {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  return HasPendingRelease(m_pendingGamepadReleases, 0x02000000 | static_cast<uint32_t>(button), device);
 }
 
 bool InputManager::IsPendingVirtualRelease(uint32_t hardwareCode) {

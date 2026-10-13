@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
 #include "SPF/System/Keyboard.hpp"
@@ -42,12 +43,14 @@ struct GamepadEvent {
   bool pressed = false;                    // For digital button presses
   float value = 0.0f;                      // For analog inputs like triggers and sticks
   PressType pressType = PressType::Short;  // To distinguish short/long presses
+  uint8_t device = kAnyDevice;             // InputDevices slot of the device it came from
 };
 
 struct JoystickEvent {
   int buttonIndex = -1;
   bool pressed = false;
   PressType pressType = PressType::Short;
+  uint8_t device = kAnyDevice;  // InputDevices slot of the device it came from
 };
 
 /**

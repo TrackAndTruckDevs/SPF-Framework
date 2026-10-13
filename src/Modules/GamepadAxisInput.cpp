@@ -35,6 +35,7 @@ GamepadAxisInput::GamepadAxisInput(const nlohmann::ordered_json& config) {
   m_smoothing = config.value("smoothing", 0.0f);
   m_rangeMin = config.value("range_min", isTrigger ? 0.0f : -1.0f);
   m_rangeMax = config.value("range_max", 1.0f);
+  ReadDevice(config);
 }
 
 bool GamepadAxisInput::IsTriggeredBy(const Input::GamepadEvent& event) const {
@@ -70,7 +71,7 @@ uint32_t GamepadAxisInput::GetHardwareCode() const {
       index = 0xFF;
       break;
   }
-  return 0x02010000 | static_cast<uint32_t>(index);
+  return Input::WithDevice(0x02010000 | static_cast<uint32_t>(index), m_device);
 }
 
 bool GamepadAxisInput::IsActive(const std::set<uint32_t>& pressedCodes) const {
@@ -187,13 +188,14 @@ bool GamepadAxisInput::InvolvesHardwareCode(uint32_t code) const { return GetHar
 bool GamepadAxisInput::IsSameAs(const IBindableInput& other) const {
   if (other.GetType() != InputType::GamepadAxis) return false;
   const auto& axisInput = static_cast<const GamepadAxisInput&>(other);
-  return m_axis == axisInput.m_axis;
+  return m_axis == axisInput.m_axis && m_device == other.GetDevice();
 }
 
 nlohmann::ordered_json GamepadAxisInput::ToJson() const {
   nlohmann::ordered_json j;
   j["type"] = "gamepad_axis";
   j["key"] = GamepadButtonMapping::GetInstance().GetButtonName(m_axis);
+  WriteDevice(j);
   j["mode"] = m_mode;
 
   if (m_mode == "analog") {

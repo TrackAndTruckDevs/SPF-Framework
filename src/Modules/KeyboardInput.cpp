@@ -18,16 +18,21 @@ using namespace SPF::System;
 KeyboardInput::KeyboardInput(const nlohmann::ordered_json& config) {
   std::string keyName = config.value("key", "Unknown");
   m_key = VirtualKeyMapping::GetInstance().GetKey(keyName);
+  ReadDevice(config);
 }
 
 bool KeyboardInput::IsTriggeredBy(const Input::KeyboardEvent& event) const {
-  // Check if the key matches
-  return event.key == m_key;
+  // Keyboard events never come from one known device.
+  return event.key == m_key && m_device == Input::kAnyDevice;
 }
 
 bool KeyboardInput::IsTriggeredBy(System::Keyboard key) const { return key == m_key; }
 
-nlohmann::ordered_json KeyboardInput::ToJson() const { return {{"type", "keyboard"}, {"key", std::string(VirtualKeyMapping::GetInstance().GetKeyName(m_key))}}; }
+nlohmann::ordered_json KeyboardInput::ToJson() const {
+  nlohmann::ordered_json j = {{"type", "keyboard"}, {"key", std::string(VirtualKeyMapping::GetInstance().GetKeyName(m_key))}};
+  WriteDevice(j);
+  return j;
+}
 
 std::string KeyboardInput::GetDisplayName() const { return VirtualKeyMapping::GetInstance().GetKeyDisplayName(m_key); }
 
@@ -35,7 +40,7 @@ bool KeyboardInput::IsValid() const { return m_key != System::Keyboard::Unknown;
 
 InputType KeyboardInput::GetType() const { return InputType::Keyboard; }
 
-uint32_t KeyboardInput::GetHardwareCode() const { return 0x01000000 | static_cast<uint32_t>(m_key); }
+uint32_t KeyboardInput::GetHardwareCode() const { return Input::WithDevice(0x01000000 | static_cast<uint32_t>(m_key), m_device); }
 
 bool KeyboardInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
@@ -47,7 +52,7 @@ bool KeyboardInput::IsSameAs(const IBindableInput& other) const {
   }
 
   const auto& otherKeyboardInput = static_cast<const KeyboardInput&>(other);
-  return this->m_key == otherKeyboardInput.m_key;
+  return this->m_key == otherKeyboardInput.m_key && m_device == other.GetDevice();
 }
 
 float KeyboardInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }

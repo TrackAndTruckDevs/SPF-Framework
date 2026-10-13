@@ -115,6 +115,8 @@ api->Settings_SetJson(h, defaults);
     *   `behavior`: `"toggle"`.
     *   `press_threshold_ms`: `500`.
 
+    **Device:** A default binding works with any device. A binding the user captures from a DirectInput device (wheel, button box, pedals, a non-Xbox gamepad) is saved with a `device` field (`"dinput:{product GUID}"`) and only triggers on that device, so the same button on two devices can drive two actions. Xbox pads, the keyboard and the mouse can't be told apart and stay on any device.
+
 *   **Windows**: `Defaults_AddWindow(h, name, visible, interactive, x, y, w, h, collapsed, autoScroll)`
     *   Defines the initial state of your plugin's ImGui windows.
 

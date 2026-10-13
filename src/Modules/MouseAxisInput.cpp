@@ -41,13 +41,14 @@ MouseAxisInput::MouseAxisInput(const nlohmann::ordered_json& config) {
   m_smoothing = config.value("smoothing", 0.0f);
   m_rangeMin = config.value("range_min", -100.0f);
   m_rangeMax = config.value("range_max", 100.0f);
+  ReadDevice(config);
 }
 
 bool MouseAxisInput::IsTriggeredBy(const Input::MouseMoveEvent& event) const {
   return false;  // Axes use GetValue
 }
 
-uint32_t MouseAxisInput::GetHardwareCode() const { return 0x03010000 | static_cast<uint32_t>(m_axisIndex); }
+uint32_t MouseAxisInput::GetHardwareCode() const { return Input::WithDevice(0x03010000 | static_cast<uint32_t>(m_axisIndex), m_device); }
 
 bool MouseAxisInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
@@ -148,13 +149,14 @@ bool MouseAxisInput::InvolvesHardwareCode(uint32_t code) const { return GetHardw
 bool MouseAxisInput::IsSameAs(const IBindableInput& other) const {
   if (other.GetType() != InputType::MouseAxis) return false;
   const auto& otherInput = static_cast<const MouseAxisInput&>(other);
-  return m_axisIndex == otherInput.m_axisIndex;
+  return m_axisIndex == otherInput.m_axisIndex && m_device == other.GetDevice();
 }
 
 nlohmann::ordered_json MouseAxisInput::ToJson() const {
   nlohmann::ordered_json j;
   j["type"] = "mouse_axis";
   j["key"] = std::to_string(m_axisIndex);
+  WriteDevice(j);
   j["mode"] = m_mode;
 
   if (m_mode == "analog") {
