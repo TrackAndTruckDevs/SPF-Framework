@@ -332,6 +332,7 @@ void Core::Reset() {
   // Reset one-shot state for the new telemetry session.
   m_deferredInitDone.store(false);
   m_worldLoadedOnce = false;
+  GameConsole::GetInstance().SetWorldReady(false);
 
   // Drop any deferred tasks that never executed (they may capture freed manager state).
   {
@@ -1219,6 +1220,7 @@ void Core::OnTelemetryFrameStart() {
       } else {
         m_logger->Info("First world load detected. Finalizing world initialization.");
         m_worldLoadedOnce = true;
+        GameConsole::GetInstance().SetWorldReady(true);
       }
       // Core finalizes its own world-scoped state directly, then notifies external consumers.
       FinalizeWorldInitialization();

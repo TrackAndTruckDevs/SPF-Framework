@@ -73,6 +73,34 @@ typedef struct SPF_GameConsole_API {
    */
   int (*GCon_GetCommandNameByIndex)(int index, char* out_buffer, int buffer_size);
 
+  /**
+   * @brief Returns whether developer cheats are currently enabled.
+   * @details Reads the game's 'g_developer' cvar (cached for up to 1000 ms).
+   *          Cheat commands routed through GCon_ExecuteCommand are rejected
+   *          while this returns 0.
+   * @return 1 if cheats are enabled (g_developer > 0), 0 otherwise.
+   */
+  int (*GCon_IsCheatsEnabled)(void);
+
+  /**
+   * @brief Enables developer cheats by setting 'g_developer 1'.
+   * @details Submits the cvar write through the game's console queue
+   *          (same path as a user typing 'g_developer 1').
+   */
+  void (*GCon_EnableCheats)(void);
+
+  /**
+   * @brief Executes a command and reports the rejection reason.
+   * @details Same routing as GCon_ExecuteCommand, but returns success/failure
+   *          and fills 'out_error' with a human-readable reason on failure
+   *          (e.g. world not loaded, cheats disabled, unknown command).
+   * @param command The command string to execute (e.g. "cheat money 10000").
+   * @param out_error Optional destination for the error text; may be NULL.
+   * @param error_size Size of 'out_error' in bytes; ignored if out_error is NULL.
+   * @return 1 if the command was dispatched/accepted, 0 if rejected.
+   */
+  int (*GCon_ExecuteCommandEx)(const char* command, char* out_error, int error_size);
+
 } SPF_GameConsole_API;
 
 #ifdef __cplusplus

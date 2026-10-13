@@ -13,8 +13,8 @@
 #include <cstring>
 #include <libloaderapi.h>
 #include <memoryapi.h>
-#include <mutex>
 #include <minwindef.h>
+#include <mutex>
 #include <psapi.h>
 #include <regex>
 #include <sstream>
@@ -666,17 +666,15 @@ std::vector<uintptr_t> PatternFinder::FindCallXrefs(uintptr_t targetFunc, const 
     std::string modKey = moduleName ? moduleName : "";
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("PatternFinder");
 
-    // Check if cache for this module exists
-    if (instance.m_callXrefCache.count(modKey)) {
-      auto& modCache = instance.m_callXrefCache[modKey];
-      return modCache.count(targetFunc) ? modCache[targetFunc] : std::vector<uintptr_t>();
-    }
-
-    // Build CALL XREF cache for the module
-    auto startCache = std::chrono::high_resolution_clock::now();
-    logger->Debug("Building CALL XREF cache for module '{}' (one-time scan)...", modKey);
-
     auto& modCache = instance.m_callXrefCache[modKey];
+
+    // Lazy per-target cache: the first query for a target scans .text for
+    // E8/E9 whose decoded target equals it; later queries reuse the result.
+    auto it = modCache.find(targetFunc);
+    if (it != modCache.end()) return it->second;
+
+    auto startScan = std::chrono::high_resolution_clock::now();
+    std::vector<uintptr_t> xrefs;
     auto sections = GetModuleSections(moduleName);
 
     for (const auto& sec : sections) {
@@ -686,20 +684,23 @@ std::vector<uintptr_t> PatternFinder::FindCallXrefs(uintptr_t targetFunc, const 
       const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
       for (uintptr_t i = 0; i <= sec.size - 5; ++i) {
         // Direct relative call: CALL rel32 (E8 disp32). Target = addr + 5 + rel32.
-        if (data[i] == 0xE8) {
-          uintptr_t callTarget = GetRipAddress(sec.base + i, 1, 5);
-          if (callTarget) {
-            modCache[callTarget].push_back(sec.base + i);
+        // Direct relative jump: JMP rel32 (E9 disp32) — compiler tail-call, same semantics.
+        if (data[i] == 0xE8 || data[i] == 0xE9) {
+          if (GetRipAddress(sec.base + i, 1, 5) == targetFunc) {
+            xrefs.push_back(sec.base + i);
           }
         }
       }
     }
 
-    auto endCache = std::chrono::high_resolution_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endCache - startCache).count();
-    logger->Info("CALL XREF cache for '{}' ready: {} entries found in {} ms", modKey.empty() ? "main" : modKey, modCache.size(), ms);
+    auto endScan = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(endScan - startScan).count();
+    if (ms > 5) {
+      logger->Debug("FindCallXrefs(0x{:X}) for '{}': {} xrefs in {} ms", targetFunc, modKey.empty() ? "main" : modKey, xrefs.size(), ms);
+    }
 
-    return modCache.count(targetFunc) ? modCache[targetFunc] : std::vector<uintptr_t>();
+    modCache[targetFunc] = std::move(xrefs);
+    return modCache[targetFunc];
   });
 }
 
@@ -1009,9 +1010,7 @@ std::vector<std::string> PatternFinder::FindAllStringsByRules(const StringScanRu
 
     for (const auto& sec : sections) {
       if (sec.base == 0 || sec.size <= suffixLen + 1) continue;
-      if (std::find(rules.excludedSections.begin(), rules.excludedSections.end(), sec.name) !=
-          rules.excludedSections.end())
-        continue;
+      if (std::find(rules.excludedSections.begin(), rules.excludedSections.end(), sec.name) != rules.excludedSections.end()) continue;
 
       const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
       for (size_t i = 0; i + suffixLen <= sec.size; ++i) {
@@ -1406,6 +1405,34 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
 
     const auto& first = signature[0];
 
+    // One-time256-entry LUTs keep the scan loop O(1) per byte:
+    // first — LIST/RANGE byte checks skip the per-byte std::vector walk in
+    //   Matches() (EXACT already has the memchr fast path below);
+    // second — when the first matcher consumes exactly one byte and the
+    //   second is a simple single-byte rule, candidates are rejected on
+    //   data[i+1] BEFORE MatchInternal, whose setup cost dwarfs a table read.
+    auto simpleByte = [](const ByteMatcher& m) {
+      if (m.optional || m.minCount != 1 || m.maxCount != 1) return false;
+      return m.type == ByteMatcher::EXACT || m.type == ByteMatcher::LIST || m.type == ByteMatcher::RANGE;
+    };
+    auto fillLut = [](uint8_t (&lut)[256], const ByteMatcher& m) {
+      if (m.type == ByteMatcher::EXACT) {
+        lut[m.min] = 1;
+      } else if (m.type == ByteMatcher::RANGE) {
+        for (int v = m.min; v <= m.max; ++v) lut[static_cast<uint8_t>(v)] = 1;
+      } else if (m.type == ByteMatcher::LIST) {
+        for (uint8_t v : m.values) lut[v] = 1;
+      }
+    };
+
+    uint8_t firstLut[256] = {};
+    const bool useFirstLut = !first.optional && first.minCount == 1 && first.maxCount == 1 && (first.type == ByteMatcher::LIST || first.type == ByteMatcher::RANGE);
+    if (useFirstLut) fillLut(firstLut, first);
+
+    uint8_t secondLut[256] = {};
+    const bool useSecondLut = signature.size() >= 2 && simpleByte(first) && simpleByte(signature[1]);
+    if (useSecondLut) fillLut(secondLut, signature[1]);
+
     for (const auto& sec : sections) {
       if (sec.size < minLen) continue;
       const uint8_t* data = reinterpret_cast<const uint8_t*>(sec.base);
@@ -1415,9 +1442,13 @@ uintptr_t PatternFinder::Find(const char* moduleName, const std::vector<ByteMatc
           const uint8_t* found = static_cast<const uint8_t*>(memchr(data + i, first.min, sec.size - minLen - i + 1));
           if (!found) break;
           i = reinterpret_cast<uintptr_t>(found) - reinterpret_cast<uintptr_t>(data);
+        } else if (useFirstLut) {
+          if (!firstLut[data[i]]) continue;
         } else if (!first.optional && first.type != ByteMatcher::GROUP && first.type != ByteMatcher::ALTERNATION && !first.Matches(data[i])) {
           continue;
         }
+
+        if (useSecondLut && !secondLut[data[i + 1]]) continue;
 
         size_t matchLen = 0;
         if (MatchInternal(data + i, sec.size - i, signature, 0, 0, matchLen)) return sec.base + i;

@@ -60,6 +60,54 @@ class ConsoleDataFinder {
   /** @brief Base of the input constants array (assert path; optional). */
   uintptr_t GetInputConstArrayBaseAddr() const { return m_inputConstArrayBaseAddr; }
 
+  /** @brief Cheat dispatcher function (prints subcommand list). */
+  uintptr_t GetCheatDispatcherAddr() const { return m_cheatDispatcherAddr; }
+  /** @brief Cheat gate function (g_developer check + dispatcher call). */
+  uintptr_t GetCheatGateAddr() const { return m_cheatGateAddr; }
+  /** @brief Global holding the cheat manager pointer. */
+  uintptr_t GetCheatManagerPtrAddr() const { return m_cheatManagerPtrAddr; }
+  /** @brief g_developer cvar structure address. */
+  uintptr_t GetDeveloperCvarAddr() const { return m_developerCvarAddr; }
+  /** @brief GetAndCacheValue cvar reader called by the cheat gate. */
+  uintptr_t GetAndCacheValueAddr() const { return m_getAndCacheValueAddr; }
+  /** @brief Cheat wrapper tokens array offset (wrapper+tokensOff). */
+  int32_t GetCheatTokensOffset() const { return m_cheatTokensOff; }
+  /** @brief Cheat wrapper total size (tokensOff + ctrlOff + 8). */
+  int64_t GetCheatWrapperSize() const { return m_cheatWrapperSize; }
+  /** @brief Shared control block inner pointer field (emptyCtrl()+N). */
+  int32_t GetCheatCtrlInnerOffset() const { return m_cheatCtrlInnerOff; }
+  /** @brief Cheat manager data pointer field. */
+  int32_t GetCheatManagerDataOffset() const { return m_cheatManagerDataOff; }
+  /** @brief Cheat manager count field. */
+  int32_t GetCheatManagerCountOffset() const { return m_cheatManagerCountOff; }
+  /** @brief Cheat entry stride (IMUL imm32). */
+  int32_t GetCheatEntryStride() const { return m_cheatEntryStride; }
+  /** @brief Temporary prism_string buffer size for token push. */
+  int32_t GetCheatTempPrismSize() const { return m_cheatTempPrismSize; }
+  /** @brief Decoded-string buffer pointer field. */
+  int32_t GetCheatDecodedBufferOffset() const { return m_cheatDecodedBufferOff; }
+  /** @brief Decoded-string length field. */
+  int32_t GetCheatDecodedLenOffset() const { return m_cheatDecodedLenOff; }
+  /** @brief Cheat entry name field. */
+  int32_t GetCheatEntryNameOffset() const { return m_cheatEntryNameOff; }
+
+  /** @brief prism array vtable address (array+0x00) from the command token builder. */
+  uintptr_t GetArrayVtableAddr() const { return m_arrayVtableAddr; }
+  /** @brief prism_string element vtable address from the command token builder. */
+  uintptr_t GetElementVtableAddr() const { return m_elementVtableAddr; }
+  /** @brief Array data pointer field offset (+0x08). */
+  int32_t GetArrayDataOffset() const { return m_arrayDataOff; }
+  /** @brief Array size field offset (+0x10). */
+  int32_t GetArraySizeOffset() const { return m_arraySizeOff; }
+  /** @brief Array capacity field offset (+0x18). */
+  int32_t GetArrayCapOffset() const { return m_arrayCapOff; }
+  /** @brief Array shared control block field offset (+0x20). */
+  int32_t GetArrayCtrlOffset() const { return m_arrayCtrlOff; }
+  /** @brief Refcount field offset within the shared control block (+0x58). */
+  int32_t GetCtrlRefcountOffset() const { return m_ctrlRefcountOff; }
+  /** @brief Refcount increment taken when acquiring the shared ctrl (0x100000000). */
+  int64_t GetCtrlRefcountIncrement() const { return m_ctrlRefcountInc; }
+
  private:
   uintptr_t m_consoleListHeadAddr = 0;
   uintptr_t m_consoleListSentinelAddr = 0;
@@ -79,6 +127,31 @@ class ConsoleDataFinder {
   uintptr_t m_suggestionsCountAddr = 0;
 
   uintptr_t m_inputConstArrayBaseAddr = 0;
+
+  uintptr_t m_cheatDispatcherAddr = 0;
+  uintptr_t m_cheatGateAddr = 0;
+  uintptr_t m_cheatManagerPtrAddr = 0;
+  uintptr_t m_developerCvarAddr = 0;
+  uintptr_t m_getAndCacheValueAddr = 0;
+  int32_t m_cheatTokensOff = 0;
+  int64_t m_cheatWrapperSize = 0;
+  int32_t m_cheatCtrlInnerOff = 0;
+  int32_t m_cheatManagerDataOff = 0;
+  int32_t m_cheatManagerCountOff = 0;
+  int32_t m_cheatEntryStride = 0;
+  int32_t m_cheatTempPrismSize = 0;
+  int32_t m_cheatDecodedBufferOff = 0;
+  int32_t m_cheatDecodedLenOff = 0;
+  int32_t m_cheatEntryNameOff = 0;
+
+  uintptr_t m_arrayVtableAddr = 0;
+  uintptr_t m_elementVtableAddr = 0;
+  int32_t m_arrayDataOff = 0;
+  int32_t m_arraySizeOff = 0;
+  int32_t m_arrayCapOff = 0;
+  int32_t m_arrayCtrlOff = 0;
+  int32_t m_ctrlRefcountOff = 0;
+  int64_t m_ctrlRefcountInc = 0;
 
   bool m_isReady = false;
 };

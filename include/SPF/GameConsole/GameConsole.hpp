@@ -5,6 +5,8 @@
 #include "SPF/Data/GameData/Finders/ConsoleDataFinder.hpp"
 #include "SPF/Hooks/IHook.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -52,8 +54,25 @@ class GameConsole : public SPF::Hooks::IHook {
   /**
    * @brief Executes a console command.
    * @param command The command to execute.
+   * @param error Optional; filled with a human-readable rejection reason.
+   * @return true if the command was dispatched/accepted; false if rejected
+   *         (e.g. world not loaded, console service inactive).
    */
-  void Execute(const std::string& command);
+  bool Execute(const std::string& command, std::string* error = nullptr);
+
+  // Executes a game cheat subcommand via the cheat gate.
+  // subcommand: cheat name (without the "cheat" prefix); args: forwarded to the handler.
+  // Returns true if the gate accepted and executed the cheat.
+  bool ExecuteCheat(const std::string& subcommand, const std::vector<std::string>& args, std::string* error = nullptr);
+
+  // Enables developer cheats by setting g_developer 1 via the console queue.
+  void EnableCheats();
+
+  // Returns true if the g_developer cvar value is > 0 (cheat gate open).
+  bool IsCheatsEnabled();
+
+  // Updates world-session readiness (set by Core alongside m_worldLoadedOnce).
+  void SetWorldReady(bool ready) { m_worldReady.store(ready, std::memory_order_relaxed); }
 
   /**
    * @brief Returns all console commands known to the game.
@@ -95,6 +114,15 @@ class GameConsole : public SPF::Hooks::IHook {
   // --- Runtime State ---
   uintptr_t m_hookedAddress = 0;
   ExecuteCommandFn m_ExecuteGameCommand = nullptr;
+  uintptr_t m_getAndCacheValueFn = 0;
+
+  // --- World session state (mirrors Core::m_worldLoadedOnce via SetWorldReady) ---
+  std::atomic<bool> m_worldReady{false};
+
+  // --- Cheat status cache (g_developer) ---
+  bool m_cheatsEnabled = false;
+  bool m_cheatsEnabledValid = false;
+  std::chrono::steady_clock::time_point m_cheatsCheckedAt{};
 
   // --- Command List Cache ---
   bool BuildCommandList();
