@@ -55,7 +55,6 @@ void GameObjectSessionService::Reset() {
   m_convoyStatusOffset = 0;
   m_profileDisplayNameOffset = 0;
   m_profileTypeOffset = 0;
-  m_loadLocaleAddr = 0;
   m_gameLanguagePtrAddr = 0;
   m_setLanguageFuncAddr = 0;
   m_languageListFuncAddr = 0;

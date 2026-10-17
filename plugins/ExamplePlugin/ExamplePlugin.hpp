@@ -34,6 +34,7 @@
 #include <SPF/SPF_API/SPF_KeyBinds_API.h>
 #include <SPF/SPF_API/SPF_Localization_API.h>
 #include <SPF/SPF_API/SPF_Logger_API.h>
+#include <SPF/SPF_API/SPF_Mail_API.h>
 #include <SPF/SPF_API/SPF_Manifest_API.h>
 #include <SPF/SPF_API/SPF_Plugin.h>
 #include <SPF/SPF_API/SPF_Telemetry_API.h>
@@ -80,6 +81,7 @@ struct PluginContext {
   SPF_GameWorld_API* gameworldAPI = nullptr;
   const SPF_Climate_API* climateAPI = nullptr;
   SPF_Sound_API* soundAPI = nullptr;
+  SPF_Mail_API* mailAPI = nullptr;
   SPF_JsonWriter_API* jsonWriterAPI = nullptr;
   SPF_JsonIO_API* jsonIOAPI = nullptr;
   SPF_Environment_API* environmentAPI = nullptr;

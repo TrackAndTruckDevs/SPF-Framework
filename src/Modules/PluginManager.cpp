@@ -27,6 +27,7 @@
 #include "SPF/Modules/API/ManifestApi.hpp"
 #include "SPF/Modules/API/SoundApi.hpp"
 #include "SPF/Modules/API/EconomyApi.hpp"
+#include "SPF/Modules/API/MailApi.hpp"
 #include "SPF/Modules/API/TelemetryApi.hpp"
 #include "SPF/Modules/API/UIApi.hpp"
 #include "SPF/Modules/API/VehicleApi.hpp"
@@ -586,6 +587,7 @@ void PluginManager::FillAPIs() {
   API::ClimateApi::FillClimateApi(&m_climateAPI);
   API::SoundApi::FillSoundApi(&m_soundAPI);
   API::EconomyApi::FillEconomyApi(&m_economyAPI);
+  API::MailApi::FillMailApi(&m_mailAPI);
   API::GameConsoleApi::FillGameConsoleApi(&m_gameConsoleAPI);
   API::FormattingApi::FillFormattingApi(&m_formattingAPI);
   API::GameLogApi::FillGameLogApi(&m_gameLogAPI);
@@ -624,6 +626,7 @@ void PluginManager::FillAPIs() {
   m_coreAPI.gameworld = &m_gameworldAPI;
   m_coreAPI.sound = &m_soundAPI;
   m_coreAPI.economy = &m_economyAPI;
+  m_coreAPI.mail = &m_mailAPI;
   m_coreAPI.climate = &m_climateAPI;
   m_coreAPI.environment = &m_environmentAPI;
   m_coreAPI.json_writer = &m_jsonWriterAPI;

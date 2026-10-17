@@ -65,6 +65,55 @@ constexpr int BUFFER_OFFSET_DISP_POS = 3;  // 48 8B 41 08 → byte at +3
  */
 constexpr size_t LENGTH_OFFSET_SEARCH_WINDOW = 32;
 constexpr int LENGTH_OFFSET_DISP_POS = 2;  // 89 53 10 → byte at +2
+
+/*
+ * String anchor for the empty-init sequence (LEA site, not function start).
+ *
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14084d030[14084d030]) ---/
+ * 14084d079  48 8D 05 B8 6B A7 01          LEA RAX,[0x1422c3c38] = "mailtext.ovs.new_routes"
+ */
+const char* EMPTY_INIT_ANCHOR_STR = "mailtext.ovs.new_routes";
+
+/*
+ * prism_string vtable LEA: LEA r64,[rip+off32] followed by 45 XOR r32,r32.
+ * Search window: 128 bytes from the anchor xref.
+ *
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14084d030[14084d030]) ---/
+ * 14084d0ba  48 8D 15 0F 48 98 01          LEA RDX,[0x1421d18d0]
+ * 14084d0c1  45 33 ED                      XOR R13D,R13D
+ */
+const char* EMPTY_INIT_VTABLE_SIG = "[LEA r64, [rip+off32]] 45 [XOR r32, r32]";
+constexpr size_t EMPTY_INIT_VTABLE_WINDOW = 128;
+constexpr size_t EMPTY_INIT_VTABLE_LEN = 7;  // LEA is 7 bytes — start search after it
+
+/*
+ * Static empty C-string LEA right after the vtable LEA.
+ * Search window: 32 bytes from vtable LEA + 7 (skip self-match).
+ *
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14084d030[14084d030]) ---/
+ * 14084d0c9  48 8D 05 5E 43 5A 01          LEA RAX,[0x141df142e]
+ */
+constexpr size_t EMPTY_INIT_STR_WINDOW = 32;
+
+/*
+ * prism_string destructor: string anchor near its CALL site.
+ * Do NOT jump to the function start — we need the LEA/xref address itself.
+ *
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1416b3990[1416b3990]) ---/
+ * 1416b39ed  48 8D 05 88 2F DA 00          LEA RAX,[0x14245697c] = "imgup"
+ */
+const char* PRISM_STRING_DTOR_ANCHOR_STR = "imgup";
+
+/*
+ * CALL rel32 to prism_string destructor followed by MOV r8, imm8.
+ * Search window: 64 bytes from the anchor xref.
+ *
+ * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1416b3990[1416b3990]) ---/
+ * 1416b3a1d  E8 5E 7B A6 FE                CALL 0x14011b580
+ * 1416b3a22  B0 01                         MOV AL,0x1
+ */
+const char* PRISM_STRING_DTOR_SIG = "[CALL rel32] [MOV r8, imm8]";
+constexpr size_t PRISM_STRING_DTOR_WINDOW = 64;
 }  // namespace
 
 // ============================================================================
@@ -83,6 +132,10 @@ bool PrismStringResolver::Install() {
   int32_t bufferOffset = 0;
   int32_t lengthOffset = 0;
   uintptr_t addrBufferMov = 0;
+  uintptr_t vtableAddr = 0;
+  uintptr_t emptyStringAddr = 0;
+  uintptr_t etalonAnchor = 0;
+  uintptr_t dtorFn = 0;
 
   // ── Phase 1: prism_string_set function ──
   {
@@ -137,6 +190,47 @@ bool PrismStringResolver::Install() {
     }
   }
 
+  // ── Phase 4: Empty-init vtable + static empty string ──
+  {
+    auto phase = log.MakePhase("Empty Init Anchors");
+
+    // 1. String anchor (LEA site, not function start) — cached for reuse
+    uintptr_t anchor = Utils::PatternFinder::FindFunctionByString(EMPTY_INIT_ANCHOR_STR, false);
+    if (phase.Step(anchor, "empty-init anchor string", "REF")) {
+      etalonAnchor = anchor;
+      // 2. vtable LEA (LEA r64,[rip+off32] + XOR r32,r32), window from the anchor
+      uintptr_t addrVtableLea = Utils::PatternFinder::Find(anchor, EMPTY_INIT_VTABLE_WINDOW, EMPTY_INIT_VTABLE_SIG);
+      if (phase.Step(addrVtableLea, "vtable LEA", "RT")) {
+        vtableAddr = Utils::PatternFinder::GetRipAddress(addrVtableLea, 3, 7);
+        phase.Step(vtableAddr, "prism_string vtable", "ADR");
+
+        // 3. Empty C-string LEA after the vtable LEA (+7 to skip self-match)
+        uintptr_t addrStrLea = Utils::PatternFinder::Find(addrVtableLea + EMPTY_INIT_VTABLE_LEN, EMPTY_INIT_STR_WINDOW, "[LEA r64, [rip+off32]]");
+        if (phase.Step(addrStrLea, "empty string LEA", "RT")) {
+          emptyStringAddr = Utils::PatternFinder::GetRipAddress(addrStrLea, 3, 7);
+          phase.Step(emptyStringAddr, "static empty string", "ADR");
+        }
+      }
+    }
+  }
+
+  // ── Phase 5: prism_string destructor ──
+  {
+    auto phase = log.MakePhase("prism_string Destructor");
+
+    // 1. String anchor (LEA site, not function start)
+    uintptr_t anchor = Utils::PatternFinder::FindFunctionByString(PRISM_STRING_DTOR_ANCHOR_STR, false);
+    if (phase.Step(anchor, "dtor anchor string", "REF")) {
+      // 2. CALL rel32 + MOV r8,imm8 within 64 bytes of the anchor xref
+      uintptr_t callSite = Utils::PatternFinder::Find(anchor, PRISM_STRING_DTOR_WINDOW, PRISM_STRING_DTOR_SIG);
+      if (phase.Step(callSite, "prism_string dtor CALL site", "RT")) {
+        // 3. Resolve CALL rel32 target
+        dtorFn = Utils::PatternFinder::GetRipAddress(callSite, 1, 5);
+        phase.Step(dtorFn, "prism_string dtor", "FN");
+      }
+    }
+  }
+
   bool ready = (setFn != 0) && (bufferOffset != 0) && (lengthOffset != 0);
 
   if (ready) {
@@ -148,6 +242,22 @@ bool PrismStringResolver::Install() {
     log.Error("prism_string_set discovery incomplete. String R/W will be unavailable.");
   }
 
+  m_etalonAnchor = etalonAnchor;  // cache even on partial failure
+  if (dtorFn) {
+    m_prismStringDtor = dtorFn;
+    log.Info("Found prism_string dtor at {:#x}", dtorFn);
+  } else {
+    log.Error("prism_string dtor not found. String cleanup will be unavailable.");
+  }
+  if (vtableAddr && emptyStringAddr) {
+    m_vtableAddr = vtableAddr;
+    m_emptyStringAddr = emptyStringAddr;
+    log.Info("Found empty-init anchors: vtable {:#x}, empty string {:#x}", vtableAddr, emptyStringAddr);
+  } else {
+    log.Error("Empty-init anchors not found. InitEmpty() will be unavailable.");
+  }
+
+  // Empty-init anchors are optional: string R/W works without them.
   return log.Finish(ready);
 }
 
@@ -156,6 +266,10 @@ void PrismStringResolver::Uninstall() {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger(m_name);
     logger->Info("Disabling prism string resolver, clearing pointers.");
     m_prismStringSet = 0;
+    m_prismStringDtor = 0;
+    m_etalonAnchor = 0;
+    m_vtableAddr = 0;
+    m_emptyStringAddr = 0;
     m_bufferOffset = 0;
     m_lengthOffset = 0;
   }
@@ -179,6 +293,31 @@ bool PrismStringResolver::Set(void* prismString, const char* value) {
   });
 
   return calledOk;
+}
+
+bool PrismStringResolver::InitEmpty(void* prismString) {
+  if (!m_vtableAddr || !m_emptyStringAddr || !prismString || m_bufferOffset <= 0 || m_lengthOffset <= 0) {
+    return false;
+  }
+
+  return Utils::InvokeSafe([&]() {
+    auto base = static_cast<uint8_t*>(prismString);
+    // vtable at +0x00, buffer at discovered offset (+0x08), length at +0x10.
+    *reinterpret_cast<uintptr_t*>(base) = m_vtableAddr;
+    *reinterpret_cast<uintptr_t*>(base + m_bufferOffset) = m_emptyStringAddr;
+    *reinterpret_cast<uint32_t*>(base + m_lengthOffset) = 0;
+  });
+}
+
+bool PrismStringResolver::Destroy(void* prismString) {
+  if (!m_prismStringDtor || !prismString) {
+    return false;
+  }
+
+  return Utils::InvokeSafe([&]() {
+    auto func = reinterpret_cast<void (*)(void*)>(m_prismStringDtor);
+    func(prismString);
+  });
 }
 
 const char* PrismStringResolver::GetBuffer(const void* prismString) const {

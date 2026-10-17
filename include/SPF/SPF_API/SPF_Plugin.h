@@ -98,6 +98,7 @@ typedef struct SPF_GameWorld_API SPF_GameWorld_API;
 typedef struct SPF_Climate_API SPF_Climate_API;
 typedef struct SPF_Sound_API SPF_Sound_API;
 typedef struct SPF_Economy_API SPF_Economy_API;
+typedef struct SPF_Mail_API SPF_Mail_API;
 
 // --- Handle Types (Opaque pointers used as context identifiers) ---
 typedef struct SPF_Config_Handle SPF_Config_Handle;
@@ -455,6 +456,13 @@ struct SPF_Core_API {
    *        and blocking game-initiated money operations.
    */
   SPF_Economy_API* economy;
+
+  /**
+   * @brief Mail API. For reading and controlling the game's mailbox: deliver
+   *        def-based and custom letters, read inbox/pending, manage custom
+   *        letter identities, and register runtime mail texts/defs.
+   */
+  SPF_Mail_API* mail;
 };
 
 // =================================================================================================

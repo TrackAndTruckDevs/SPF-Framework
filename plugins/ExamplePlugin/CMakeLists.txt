@@ -32,6 +32,7 @@ add_library(${PLUGIN_NAME} SHARED
     "ExampleJsonAPI.cpp"
     "ExampleKeybindsAPI.cpp"
     "ExampleLocalizationAPI.cpp"
+    "ExampleMailAPI.cpp"
     "ExampleSoundAPI.cpp"
     "ExampleStylingAPI.cpp"
     "ExampleTelemetryAPI.cpp"

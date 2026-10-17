@@ -41,21 +41,6 @@ ScsNameResolver& ScsNameResolver::GetInstance() {
 // ============================================================================
 namespace {
 /*
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(ResolveUnitName[140126ad0]) ---/
- * 140126ad0  40 53                         PUSH RBX
- * 140126ad2  48 83 EC 70                   SUB RSP,0x70
- * 140126ad6  48 8B D9                      MOV RBX,RCX
- * 140126ad9  85 D2                         TEST EDX,EDX
- * 140126adb  75 0D                         JNZ 0x140126aea
- * 140126add  49 8B D0                      MOV RDX,R8
- * 140126ae0  48 83 C4 70                   ADD RSP,0x70
- * 140126ae4  5B                            POP RBX
- * 140126ae5  E9 36 F1 FF FF                JMP 0x140125c20
- * 140126aea  48 89 AC 24 80 00 00 00       MOV qword ptr [RSP + 0x80],RBP
- */
-const char* RESOLVE_UNIT_NAME_SIG = "40 [PUSH r64] [SUB r64, imm8] [MOV r64, r64] [TEST r32, r32] [JNE rel8] [MOV r64, r64] [ADD r64, imm8] [POP r64] [JMP rel32] [MOV [r64+sib+off32], r64]";
-
-/*
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DecodeSCSTokenToString[1400ece20]) ---/
  * 1400ece20  48 89 5C 24 10                MOV qword ptr [RSP + 0x10],RBX
  * 1400ece25  56                            PUSH RSI
@@ -94,7 +79,22 @@ bool ScsNameResolver::Install() {
   logger->Info("Searching for SCS name resolver functions...");
 
   // --- 1. ResolveUnitName ---
-  uintptr_t resolveAddr = Utils::PatternFinder::Find(RESOLVE_UNIT_NAME_SIG);
+  /**
+   * ResolveUnitName(builder*, name_id, unit*) — decodes name_id into the dotted
+   * name inside a stack dynstring builder (etalon FUN_14049b120):
+   * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14049b120[14049b120]) ---/
+   * 14049b3ce  48 8D 05 A3 FC DA 01          LEA RAX,[0x14224b078] = "driver.xxx"
+   * FindBackward from that LEA site, [CALL rel32], window 64:
+   * 14049b3c9  E8 62 07 C9 FF                CALL 0x14012bb30
+   */
+  uintptr_t nameLea = Utils::PatternFinder::FindFunctionByString("driver.xxx", false);
+  uintptr_t resolveAddr = 0;
+  if (Utils::PatternFinder::IsValidAddress(nameLea)) {
+    uintptr_t nameCall = Utils::PatternFinder::FindBackward(nameLea, 64, "[CALL rel32]");
+    if (Utils::PatternFinder::IsValidAddress(nameCall)) {
+      resolveAddr = Utils::PatternFinder::GetRipAddress(nameCall, 1, 5);
+    }
+  }
   if (!Utils::PatternFinder::IsValidAddress(resolveAddr)) {
     logger->Critical("'ResolveUnitName' not found or invalid. Name resolution will be unavailable.");
     return false;

@@ -23,6 +23,7 @@
 #include "SPF/SPF_API/SPF_Vehicle_API.h"
 #include "SPF/SPF_API/SPF_Sound_API.h"
 #include "SPF/SPF_API/SPF_Economy_API.h"
+#include "SPF/SPF_API/SPF_Mail_API.h"
 #include "SPF/SPF_API/SPF_VirtInput_API.h"
 #include "SPF/Utils/Signal.hpp"
 
@@ -176,6 +177,7 @@ class PluginManager {
   SPF_Climate_API m_climateAPI{};
   SPF_Sound_API m_soundAPI{};
   SPF_Economy_API m_economyAPI{};
+  SPF_Mail_API m_mailAPI{};
 
   static std::vector<std::string> s_available_languages_cache;
   static std::vector<const char*> s_available_languages_c_str_cache;

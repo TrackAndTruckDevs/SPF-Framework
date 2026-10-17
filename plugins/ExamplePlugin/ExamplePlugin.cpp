@@ -32,6 +32,7 @@
 #include "ExampleJsonAPI.hpp"
 #include "ExampleKeybindsAPI.hpp"
 #include "ExampleLocalizationAPI.hpp"
+#include "ExampleMailAPI.hpp"
 #include "ExampleSoundAPI.hpp"
 #include "ExampleStylingAPI.hpp"
 #include "ExampleTelemetryAPI.hpp"
@@ -197,6 +198,7 @@ void OnActivated(const SPF_Core_API* core_api) {
   g_ctx.environmentAPI = g_ctx.coreAPI->environment;
   g_ctx.uiAPI = g_ctx.coreAPI->ui;
   g_ctx.soundAPI = g_ctx.coreAPI->sound;
+  g_ctx.mailAPI = g_ctx.coreAPI->mail;
   g_ctx.jsonWriterAPI = g_ctx.coreAPI->json_writer;
   g_ctx.jsonIOAPI = g_ctx.coreAPI->json_io;
 
@@ -334,6 +336,10 @@ void RenderMainWindow(SPF_UI_API* ui, void* user_data) {
   }
   if (ui->UI_BeginTabItem("Sound", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
     RenderSoundTab(ui, user_data);
+    ui->UI_EndTabItem();
+  }
+  if (ui->UI_BeginTabItem("Mail", nullptr, SPF_TAB_ITEM_FLAG_NONE)) {
+    RenderMailTab(ui, user_data);
     ui->UI_EndTabItem();
   }
 

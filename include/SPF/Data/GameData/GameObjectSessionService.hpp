@@ -33,8 +33,7 @@ class GameObjectSessionService {
   uint32_t GetProfileDisplayNameOffset() const { return m_profileDisplayNameOffset; }
   uint32_t GetProfileTypeOffset() const { return m_profileTypeOffset; }
 
-  /** @brief LoadLocale(const char* lang) — loads + registers mail text units from /locale/%s/mails.sii. */
-  uintptr_t GetLoadLocaleAddr() const { return m_loadLocaleAddr; }
+
 
   /** @brief Address of the game's current language pointer global (PTR_PTR_142e068d0). */
   uintptr_t GetGameLanguagePtrAddr() const { return m_gameLanguagePtrAddr; }
@@ -61,7 +60,6 @@ class GameObjectSessionService {
   void SetConvoyStatusOffset(uint32_t offset) { m_convoyStatusOffset = offset; }
   void SetProfileDisplayNameOffset(uint32_t offset) { m_profileDisplayNameOffset = offset; }
   void SetProfileTypeOffset(uint32_t offset) { m_profileTypeOffset = offset; }
-  void SetLoadLocaleAddr(uintptr_t addr) { m_loadLocaleAddr = addr; }
   void SetGameLanguagePtrAddr(uintptr_t addr) { m_gameLanguagePtrAddr = addr; }
   void SetSetLanguageFuncAddr(uintptr_t addr) { m_setLanguageFuncAddr = addr; }
   void SetLanguageListFuncAddr(uintptr_t addr) { m_languageListFuncAddr = addr; }
@@ -79,7 +77,6 @@ class GameObjectSessionService {
   uint32_t m_convoyStatusOffset = 0;
   uint32_t m_profileDisplayNameOffset = 0;
   uint32_t m_profileTypeOffset = 0;
-  uintptr_t m_loadLocaleAddr = 0;
   uintptr_t m_gameLanguagePtrAddr = 0;
   uintptr_t m_setLanguageFuncAddr = 0;
   uintptr_t m_languageListFuncAddr = 0;

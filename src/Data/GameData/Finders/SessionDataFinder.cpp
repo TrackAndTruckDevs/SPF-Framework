@@ -154,19 +154,9 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
     }
   }
 
-  // ── Phase 4: Text Locale — LoadLocale + language API ──
+  // ── Phase 4: Text Locale — language API ──
   {
-    auto phase = log.MakePhase("Mail Text Locale");
-
-    /**
-     * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_14083e740[14083e740]) ---/
-     * 14083e871  48 8D 15 A0 C5 5D 01          LEA RDX,[0x141e1ae18]
-     * FindFunctionByString(anchor, true) -> function start (FUN_14083e740).
-     */
-    uintptr_t loadLocale = PatternFinder::FindFunctionByString("/locale/%s/mails.sii", true);
-    if (phase.Step(loadLocale, "LoadLocale function", "FN")) {
-      owner.SetLoadLocaleAddr(loadLocale);
-    }
+    auto phase = log.MakePhase("Text Locale");
 
     /**
      * SetApplicationLanguage — located by its locale override path string.
