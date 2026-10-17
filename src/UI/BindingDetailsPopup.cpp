@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace SPF::UI {
@@ -698,12 +699,12 @@ void BindingDetailsPopup::Render() {
     // The slider and buttons will modify m_currentPressThreshold, which persists across frames.
     bool valueChanged = false;
 
-    ImGui::PushButtonRepeat(true);
+    ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
     if (ImGui::ArrowButton("##left", ImGuiDir_Left)) {
       m_currentPressThreshold -= 5;
       valueChanged = true;
     }
-    ImGui::PopButtonRepeat();
+    ImGui::PopItemFlag();
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(150);
@@ -716,12 +717,12 @@ void BindingDetailsPopup::Render() {
 
     ImGui::SameLine();
 
-    ImGui::PushButtonRepeat(true);
+    ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
     if (ImGui::ArrowButton("##right", ImGuiDir_Right)) {
       m_currentPressThreshold += 5;
       valueChanged = true;
     }
-    ImGui::PopButtonRepeat();
+    ImGui::PopItemFlag();
 
     // Clamp the value on every frame to provide immediate feedback.
     m_currentPressThreshold = std::clamp(m_currentPressThreshold, 50, 5000);

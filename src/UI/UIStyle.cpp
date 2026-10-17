@@ -47,9 +47,9 @@ void Style::ApplyGameStyle(float scaleFactor) {
   style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.25f, 0.30f, 0.40f, 0.95f);
   style.Colors[ImGuiCol_Tab] = ImVec4(0.15f, 0.19f, 0.24f, 1.00f);
   style.Colors[ImGuiCol_TabHovered] = ImVec4(0.22f, 0.27f, 0.36f, 1.00f);
-  style.Colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.40f, 0.50f, 1.00f);
-  style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.15f, 0.19f, 0.24f, 1.00f);
-  style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.30f, 0.40f, 0.50f, 1.00f);
+  style.Colors[ImGuiCol_TabSelected] = ImVec4(0.30f, 0.40f, 0.50f, 1.00f);
+  style.Colors[ImGuiCol_TabDimmed] = ImVec4(0.15f, 0.19f, 0.24f, 1.00f);
+  style.Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.30f, 0.40f, 0.50f, 1.00f);
   style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
   style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
   style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
