@@ -2,6 +2,7 @@
 
 #include "SPF/Config/EnumMappings.hpp"
 #include "SPF/Input/IInputConsumer.hpp"
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Modules/IBindableInput.hpp"
 #include "SPF/System/GamepadButton.hpp"
@@ -120,7 +121,8 @@ class InputManager {
   // New: Generic Axis Event Publishing
   // deviceType: 0x02 (Gamepad), 0x03 (Mouse), 0x04 (Joystick)
   // axisIndex: For Mouse (0=X, 1=Y, 2=WheelY). For Gamepad/Joystick (0..N)
-  bool PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority = 2);
+  // device: InputDevices slot of the device the axis belongs to, kAnyDevice if unknown.
+  bool PublishAxisMove(uint8_t deviceType, int axisIndex, float value, uint8_t priority = 2, uint8_t device = kAnyDevice);
 
   bool PublishKeyboardEvent(const KeyboardEvent& event, uint8_t priority = 2);
   bool PublishGamepadEvent(const GamepadEvent& event, uint8_t priority = 2);
@@ -157,8 +159,9 @@ class InputManager {
 
   bool IsKeyBlocked(System::Keyboard key) const;
   bool IsMouseButtonBlocked(System::MouseButton button) const;
-  bool IsJoystickButtonBlocked(int buttonIndex) const;
-  bool IsGamepadButtonBlocked(System::GamepadButton button) const;
+  // A device's input is blocked if a binding to that device or to any device blocks it.
+  bool IsJoystickButtonBlocked(int buttonIndex, uint8_t device = kAnyDevice) const;
+  bool IsGamepadButtonBlocked(System::GamepadButton button, uint8_t device = kAnyDevice) const;
 
   bool IsKeyboardCaptured() const;
   bool IsMouseCaptured() const;
@@ -172,7 +175,7 @@ class InputManager {
   bool ShouldBlockKeyFromGame(System::Keyboard key, bool consumedByKeybind) const;
 
   // New: Check if an axis is consumed by the framework
-  bool IsAxisConsumed(uint8_t deviceType, int axisIndex) const;
+  bool IsAxisConsumed(uint8_t deviceType, int axisIndex, uint8_t device = kAnyDevice) const;
 
   /**
    * @brief Consumes a virtual mouse release request. Used by DInput8Hook to inject fake Up events.
@@ -182,11 +185,11 @@ class InputManager {
   /**
    * @brief Consumes a virtual joystick release request. Used by DInput8Hook to inject fake Up events.
    */
-  bool ConsumeJoystickReleaseRequest(int buttonIndex);
-  bool HasPendingJoystickRelease(int buttonIndex) const;
+  bool ConsumeJoystickReleaseRequest(int buttonIndex, uint8_t device = kAnyDevice);
+  bool HasPendingJoystickRelease(int buttonIndex, uint8_t device = kAnyDevice) const;
 
-  bool ConsumeGamepadReleaseRequest(System::GamepadButton button);
-  bool HasPendingGamepadRelease(System::GamepadButton button) const;
+  bool ConsumeGamepadReleaseRequest(System::GamepadButton button, uint8_t device = kAnyDevice);
+  bool HasPendingGamepadRelease(System::GamepadButton button, uint8_t device = kAnyDevice) const;
 
   /**
    * @brief Checks if a key release event is a virtual one sent by the framework itself.
@@ -284,11 +287,33 @@ class InputManager {
   // Mouse buttons that need a virtual release event injected into the DirectInput8 buffer.
   std::set<System::MouseButton> m_pendingMouseReleases;
 
-  // Joystick buttons that need a virtual release event injected into the DirectInput8 buffer.
-  std::set<int> m_pendingJoystickReleases;
+  // Hardware codes of the joystick buttons that need a virtual release event injected into the DirectInput8 buffer.
+  std::set<uint32_t> m_pendingJoystickReleases;
 
-  // Gamepad buttons that need a virtual release event injected into the DirectInput8 buffer.
-  std::set<System::GamepadButton> m_pendingGamepadReleases;
+  // Hardware codes of the gamepad buttons that need a virtual release event injected into the DirectInput8 buffer.
+  std::set<uint32_t> m_pendingGamepadReleases;
+
+  // Devices holding each any-device button code down, so it's only released once none of them holds it.
+  std::map<uint32_t, std::set<uint8_t>> m_anyDeviceHolders;
+
+  /**
+   * @brief Runs an event from a known device through `once` twice: as itself, for the bindings to
+   * that device, then as from any device, for the bindings to no device in particular.
+   * During a capture only the first runs, so the captured binding is tied to the device.
+   * @param anyCode The event's hardware code without its device.
+   * @param isButton True for a button, whose any-device release waits for every device to let go.
+   * @param once Called with (event, isFirst); returns whether the input should be blocked.
+   */
+  template <typename Event, typename Once>
+  bool DispatchPerDevice(const Event& event, uint32_t anyCode, bool isButton, Once&& once);
+
+  bool PublishGamepadEventOnce(const GamepadEvent& event, uint8_t priority, bool notifyConsumers);
+  bool ProcessAndDecideOnce(const GamepadEvent& event, uint8_t priority);
+  bool PublishJoystickEventOnce(const JoystickEvent& event, uint8_t priority, bool notifyConsumers);
+  bool ProcessAndDecideOnce(const JoystickEvent& event, uint8_t priority);
+  bool PublishAxisMoveOnce(uint8_t deviceType, int axisIndex, uint8_t device, float value, uint8_t priority);
+  bool IsAxisCodeConsumed(uint32_t hardwareCode, uint8_t deviceType, int axisIndex) const;
+  bool IsButtonCodeBlocked(uint32_t hardwareCode) const;
 
   /**
    * @brief Unified helper method to handle input state updates and blocking logic.

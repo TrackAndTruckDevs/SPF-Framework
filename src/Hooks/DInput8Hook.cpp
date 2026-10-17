@@ -1,5 +1,6 @@
 #include "SPF/Hooks/DInput8Hook.hpp"
 
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/Logger.hpp"
@@ -13,6 +14,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <libloaderapi.h>
 #include <map>
 #include <minwindef.h>
@@ -138,8 +140,28 @@ struct PerDeviceState {
   LONG axes[8] = {0};  // X, Y, Z, RX, RY, RZ, SL0, SL1
   LONG axisMin[8] = {0};
   LONG axisMax[8] = {0};
+  uint8_t deviceSlot = SPF::Input::kAnyDevice;
+  bool deviceSlotKnown = false;
 };
 static std::map<IDirectInputDevice8W*, PerDeviceState> g_perDeviceStates;
+
+// The device's InputDevices slot, from its product GUID: unlike the instance GUID, it doesn't
+// change when the device is plugged into another USB port. Xbox pads stay on kAnyDevice:
+// XInput reports them too, with no way to tell which DirectInput device is which XInput pad.
+static uint8_t DeviceSlotOf(IDirectInputDevice8W* self, const DIDEVICEINSTANCEW& instance) {
+  if (SPF::Input::InputManager::GetInstance().GetDeviceType((UINT_PTR)self) == SPF::System::DeviceType::Xbox) return SPF::Input::kAnyDevice;
+
+  auto& state = g_perDeviceStates[self];
+  if (!state.deviceSlotKnown) {
+    const GUID& g = instance.guidProduct;
+    char id[64];
+    std::snprintf(id, sizeof(id), "dinput:{%08lX-%04hX-%04hX-%02X%02X-%02X%02X%02X%02X%02X%02X}", g.Data1, g.Data2, g.Data3, g.Data4[0], g.Data4[1], g.Data4[2], g.Data4[3], g.Data4[4], g.Data4[5], g.Data4[6],
+                  g.Data4[7]);
+    state.deviceSlot = SPF::Input::InputDevices::SlotFor(id);
+    state.deviceSlotKnown = true;
+  }
+  return state.deviceSlot;
+}
 
 static DWORD g_lastSeenSequence = 0;  // Global sync for sequence numbers across all DInput devices
 
@@ -180,8 +202,9 @@ static void MaskMouseState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvD
   }
 }
 
-static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID lpvData) {
+static void MaskJoystickState(IDirectInputDevice8W* self, const DIDEVICEINSTANCEW& instance, DWORD cbData, LPVOID lpvData) {
   auto& inputManager = SPF::Input::InputManager::GetInstance();
+  uint8_t device = DeviceSlotOf(self, instance);
   int maxButtons = (cbData >= sizeof(DIJOYSTATE2)) ? 128 : (cbData >= sizeof(DIJOYSTATE) ? 32 : 0);
   if (maxButtons <= 0) return;
 
@@ -194,11 +217,11 @@ static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID l
   for (int i = 0; i < maxButtons; ++i) {
     if (DIJOFS_BUTTON0 + i >= (int)cbData) break;
 
-    bool blocked = inputManager.IsJoystickButtonBlocked(i);
+    bool blocked = inputManager.IsJoystickButtonBlocked(i, device);
     if (!blocked && isGamepad) {
       auto gamepadBtn = mapping.FromDInput(DIJOFS_BUTTON0 + i);
       if (gamepadBtn != SPF::System::GamepadButton::Unknown) {
-        blocked = inputManager.IsGamepadButtonBlocked(gamepadBtn);
+        blocked = inputManager.IsGamepadButtonBlocked(gamepadBtn, device);
       }
     }
 
@@ -233,7 +256,7 @@ static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID l
       else
         mappedIdx = -1;
 
-      if (mappedIdx != -1) consumed = inputManager.IsAxisConsumed(0x02, mappedIdx);
+      if (mappedIdx != -1) consumed = inputManager.IsAxisConsumed(0x02, mappedIdx, device);
     } else if (isGamepad) {
       if (axisIdx == 2)
         mappedIdx = 2;
@@ -247,9 +270,9 @@ static void MaskJoystickState(IDirectInputDevice8W* self, DWORD cbData, LPVOID l
         mappedIdx = 6;
       else if (axisIdx == 7)
         mappedIdx = 7;
-      consumed = inputManager.IsAxisConsumed(typeNum, mappedIdx);
+      consumed = inputManager.IsAxisConsumed(typeNum, mappedIdx, device);
     } else {
-      consumed = inputManager.IsAxisConsumed(typeNum, axisIdx);
+      consumed = inputManager.IsAxisConsumed(typeNum, axisIdx, device);
     }
 
     if (consumed) {
@@ -450,7 +473,7 @@ static void HandleKeyboardData(DIDEVICEOBJECTDATA* rgdod, DWORD* pdwInOut) {
   *pdwInOut = writeIdx;
 }
 
-static void ProcessPovData(IDirectInputDevice8W* self, PerDeviceState& state, DIDEVICEOBJECTDATA& data, SPF::System::DeviceType type) {
+static void ProcessPovData(IDirectInputDevice8W* self, PerDeviceState& state, DIDEVICEOBJECTDATA& data, SPF::System::DeviceType type, uint8_t device) {
   int povIdx = -1;
   if (data.dwOfs == DIJOFS_POV(0))
     povIdx = 0;
@@ -512,9 +535,9 @@ static void ProcessPovData(IDirectInputDevice8W* self, PerDeviceState& state, DI
     bool blocked = false;
 
     if (curActive != prevActive)
-      blocked = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, dirs[j], curActive, curActive ? 1.0f : 0.0f}, 2);
+      blocked = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, dirs[j], curActive, curActive ? 1.0f : 0.0f, SPF::Input::PressType::Short, device}, 2);
     else if (curActive)
-      blocked = inputManager.ProcessAndDecide(SPF::Input::GamepadEvent{0, dirs[j], true, 1.0f}, 2);
+      blocked = inputManager.ProcessAndDecide(SPF::Input::GamepadEvent{0, dirs[j], true, 1.0f, SPF::Input::PressType::Short, device}, 2);
 
     if (curActive && !blocked) activeToGame[j] = true;
   }
@@ -559,6 +582,7 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
   inputManager.UpdateDeviceType((UINT_PTR)self, instance.tszProductName, vid, pid);
 
   auto type = inputManager.GetDeviceType((UINT_PTR)self);
+  uint8_t device = DeviceSlotOf(self, instance);
   auto& state = g_perDeviceStates[self];
   DWORD writeIdx = 0;
 
@@ -577,9 +601,9 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
 
       if (pressed) {
         if (gamepadBtn != SPF::System::GamepadButton::Unknown)
-          block = inputManager.IsGamepadButtonBlocked(gamepadBtn);
+          block = inputManager.IsGamepadButtonBlocked(gamepadBtn, device);
         else
-          block = inputManager.IsJoystickButtonBlocked(btnIdx);
+          block = inputManager.IsJoystickButtonBlocked(btnIdx, device);
       }
 
       if (pressed != state.buttonStates[btnIdx]) {
@@ -587,15 +611,15 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
         state.virtualUpSent[btnIdx] = false;
         bool managerBlock = false;
         if (gamepadBtn != SPF::System::GamepadButton::Unknown)
-          managerBlock = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, gamepadBtn, pressed, pressed ? 1.0f : 0.0f}, 2);
+          managerBlock = inputManager.PublishGamepadEvent(SPF::Input::GamepadEvent{0, gamepadBtn, pressed, pressed ? 1.0f : 0.0f, SPF::Input::PressType::Short, device}, 2);
         else
-          managerBlock = inputManager.PublishJoystickEvent(SPF::Input::JoystickEvent{btnIdx, pressed}, 2);
+          managerBlock = inputManager.PublishJoystickEvent(SPF::Input::JoystickEvent{btnIdx, pressed, SPF::Input::PressType::Short, device}, 2);
         if (managerBlock && pressed) block = true;
       }
     }
     // 2. POV
     else if (rgdod[i].dwOfs >= DIJOFS_POV(0) && rgdod[i].dwOfs <= DIJOFS_POV(3)) {
-      ProcessPovData(self, state, rgdod[i], type);
+      ProcessPovData(self, state, rgdod[i], type, device);
     }
     // 3. Axes
     else if (rgdod[i].dwOfs >= DIJOFS_X && rgdod[i].dwOfs <= DIJOFS_SLIDER(1)) {
@@ -676,9 +700,9 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
             // Split combined Z axis: rawVal is -1..1 (0 at rest)
             float lt = (rawVal > 0.01f) ? rawVal : 0.0f;
             float rt = (rawVal < -0.01f) ? -rawVal : 0.0f;
-            inputManager.PublishAxisMove(0x02, 4, lt, 2);
-            inputManager.PublishAxisMove(0x02, 5, rt, 2);
-            block = inputManager.IsAxisConsumed(0x02, 4) || inputManager.IsAxisConsumed(0x02, 5);
+            inputManager.PublishAxisMove(0x02, 4, lt, 2, device);
+            inputManager.PublishAxisMove(0x02, 5, rt, 2, device);
+            block = inputManager.IsAxisConsumed(0x02, 4, device) || inputManager.IsAxisConsumed(0x02, 5, device);
             goto next_object;
           } else if (axisIdx == 3)
             mappedIdx = 2;  // Rx -> RS X
@@ -707,7 +731,7 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
             mappedIdx = 7;
         }
 
-        if (mappedIdx != -1 && inputManager.PublishAxisMove(finalType, mappedIdx, finalNormValue, 2)) {
+        if (mappedIdx != -1 && inputManager.PublishAxisMove(finalType, mappedIdx, finalNormValue, 2, device)) {
           block = true;
         }
       }
@@ -726,7 +750,7 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
   // Virtual Injections
   sequence = (writeIdx > 0) ? rgdod[writeIdx - 1].dwSequence : sequence;
   for (int b = 0; b < 128; ++b) {
-    if (inputManager.HasPendingJoystickRelease(b) && !state.virtualUpSent[b]) {
+    if (inputManager.HasPendingJoystickRelease(b, device) && !state.virtualUpSent[b]) {
       state.virtualUpSent[b] = true;
       InjectVirtualEvent(rgdod, writeIdx, capacity, DIJOFS_BUTTON0 + b, 0, sequence);
     }
@@ -734,7 +758,7 @@ static void HandleJoystickData(IDirectInputDevice8W* self, const DIDEVICEINSTANC
   if (type == SPF::System::DeviceType::Xbox || type == SPF::System::DeviceType::PlayStation) {
     for (int b = static_cast<int>(SPF::System::GamepadButton::FaceDown); b <= static_cast<int>(SPF::System::GamepadButton::RightStick); ++b) {
       auto btn = static_cast<SPF::System::GamepadButton>(b);
-      if (inputManager.ConsumeGamepadReleaseRequest(btn)) {
+      if (inputManager.ConsumeGamepadReleaseRequest(btn, device)) {
         for (DWORD off = DIJOFS_BUTTON0; off < DIJOFS_BUTTON0 + 32; ++off) {
           if (mapping.FromDInput(off) == btn) {
             InjectVirtualEvent(rgdod, writeIdx, capacity, off, 0, sequence);
@@ -757,7 +781,7 @@ static void ProcessDeviceState(IDirectInputDevice8W* self, DWORD cbData, LPVOID 
     else if (type == DI8DEVTYPE_KEYBOARD)
       MaskKeyboardState(cbData, lpvData);
     else if (type >= DI8DEVTYPE_JOYSTICK)
-      MaskJoystickState(self, cbData, lpvData);
+      MaskJoystickState(self, instance, cbData, lpvData);
   }
 }
 

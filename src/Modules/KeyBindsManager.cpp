@@ -5,6 +5,7 @@
 #include "SPF/Core/InitializationReport.hpp"
 #include "SPF/Events/EventManager.hpp"
 #include "SPF/Events/PluginEvents.hpp"
+#include "SPF/Input/InputDevices.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
@@ -444,7 +445,7 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::KeyboardEvent&
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::GamepadEvent& event, Input::PressType pressType) const {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x02000000 | static_cast<uint32_t>(event.button);
+  uint32_t code = Input::WithDevice(0x02000000 | static_cast<uint32_t>(event.button), event.device);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
   const Binding* bestActiveBinding = nullptr;
@@ -518,7 +519,7 @@ ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::MouseButtonEve
 
 ConsumptionPolicy KeyBindsManager::GetPolicyForEvent(const Input::JoystickEvent& event, Input::PressType pressType) const {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x04000000 | static_cast<uint32_t>(event.buttonIndex);
+  uint32_t code = Input::WithDevice(0x04000000 | static_cast<uint32_t>(event.buttonIndex), event.device);
   const auto& pressedCodes = m_inputManager.GetCurrentlyPressedHardwareCodes();
 
   const Binding* bestActiveBinding = nullptr;
@@ -615,29 +616,7 @@ bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) { return
 
 void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pressType) {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint8_t type = (hardwareCode >> 24) & 0xFF;
-  uint32_t raw = hardwareCode & 0x00FFFFFF;
-
-  switch (type) {
-    case 0x01:
-      TriggerAction(static_cast<System::Keyboard>(raw), pressType);
-      break;
-    case 0x02:
-      TriggerAction(static_cast<System::GamepadButton>(raw), pressType);
-      break;
-    case 0x03:
-      TriggerAction(static_cast<System::MouseButton>(raw), pressType);
-      break;
-    case 0x04:
-      TriggerAction(static_cast<int>(raw), pressType);
-      break;
-  }
-}
-
-void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) {
-  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x02000000 | static_cast<uint32_t>(button);
-  const Binding* best = FindBestBinding(code, pressType);
+  const Binding* best = FindBestBinding(hardwareCode, pressType);
   if (best) {
     for (const auto& [actionKey, action] : m_actions) {
       for (const auto& b : action.Inputs) {
@@ -651,56 +630,13 @@ void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressTy
   }
 }
 
-void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType pressType) {
-  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x01000000 | static_cast<uint32_t>(key);
-  const Binding* best = FindBestBinding(code, pressType);
-  if (best) {
-    for (const auto& [actionKey, action] : m_actions) {
-      for (const auto& b : action.Inputs) {
-        if (&b == best) {
-          if (action.Callback) action.Callback();
-          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
-          return;
-        }
-      }
-    }
-  }
-}
+void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) { TriggerAction(0x02000000 | static_cast<uint32_t>(button), pressType); }
 
-void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType pressType) {
-  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x03000000 | static_cast<uint32_t>(button);
-  const Binding* best = FindBestBinding(code, pressType);
-  if (best) {
-    for (const auto& [actionKey, action] : m_actions) {
-      for (const auto& b : action.Inputs) {
-        if (&b == best) {
-          if (action.Callback) action.Callback();
-          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
-          return;
-        }
-      }
-    }
-  }
-}
+void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType pressType) { TriggerAction(0x01000000 | static_cast<uint32_t>(key), pressType); }
 
-void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType) {
-  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
-  uint32_t code = 0x04000000 | static_cast<uint32_t>(buttonIndex);
-  const Binding* best = FindBestBinding(code, pressType);
-  if (best) {
-    for (const auto& [actionKey, action] : m_actions) {
-      for (const auto& b : action.Inputs) {
-        if (&b == best) {
-          if (action.Callback) action.Callback();
-          if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
-          return;
-        }
-      }
-    }
-  }
-}
+void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType pressType) { TriggerAction(0x03000000 | static_cast<uint32_t>(button), pressType); }
+
+void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType) { TriggerAction(0x04000000 | static_cast<uint32_t>(buttonIndex), pressType); }
 
 float KeyBindsManager::GetActionValue(const std::string& actionName) const {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);

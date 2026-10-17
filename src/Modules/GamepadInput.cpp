@@ -19,14 +19,19 @@ using namespace SPF::System;
 GamepadInput::GamepadInput(const nlohmann::ordered_json& config) {
   std::string buttonName = config.value("key", config.value("button", "UNKNOWN_BUTTON"));
   m_button = GamepadButtonMapping::GetInstance().GetButton(buttonName);
+  ReadDevice(config);
 }
 
 bool GamepadInput::IsTriggeredBy(const Input::GamepadEvent& event) const {
   // Check if the button matches
-  return event.button == m_button;
+  return event.button == m_button && event.device == m_device;
 }
 
-nlohmann::ordered_json GamepadInput::ToJson() const { return {{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}}; }
+nlohmann::ordered_json GamepadInput::ToJson() const {
+  nlohmann::ordered_json j = {{"type", "gamepad"}, {"key", GamepadButtonMapping::GetInstance().GetButtonName(m_button)}};
+  WriteDevice(j);
+  return j;
+}
 
 std::string GamepadInput::GetDisplayName() const {
   // Get the globally detected device type from the InputManager
@@ -40,7 +45,7 @@ bool GamepadInput::IsValid() const { return m_button != System::GamepadButton::U
 
 InputType GamepadInput::GetType() const { return InputType::Gamepad; }
 
-uint32_t GamepadInput::GetHardwareCode() const { return 0x02000000 | static_cast<uint32_t>(m_button); }
+uint32_t GamepadInput::GetHardwareCode() const { return Input::WithDevice(0x02000000 | static_cast<uint32_t>(m_button), m_device); }
 
 bool GamepadInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
@@ -52,7 +57,7 @@ bool GamepadInput::IsSameAs(const IBindableInput& other) const {
   }
 
   const auto& otherGamepadInput = static_cast<const GamepadInput&>(other);
-  return this->m_button == otherGamepadInput.m_button;
+  return this->m_button == otherGamepadInput.m_button && m_device == other.GetDevice();
 }
 
 float GamepadInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }

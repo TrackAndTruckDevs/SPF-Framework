@@ -17,6 +17,7 @@ MouseInput::MouseInput(const nlohmann::ordered_json& config) : m_button(System::
   if (config.contains("key") && config["key"].is_string()) {
     m_button = System::MouseButtonMapping::GetInstance().FromString(config["key"].get<std::string>());
   }
+  ReadDevice(config);
 }
 
 bool MouseInput::IsTriggeredBy(const Input::MouseButtonEvent& event) const {
@@ -24,10 +25,14 @@ bool MouseInput::IsTriggeredBy(const Input::MouseButtonEvent& event) const {
   // Note: The MouseInput object itself doesn't store pressType. The comparison here
   // is simply checking if the raw event matches the button. PressType matching
   // is handled by KeyBindsManager.
-  return static_cast<int>(m_button) == event.iButton;
+  return static_cast<int>(m_button) == event.iButton && m_device == Input::kAnyDevice;
 }
 
-nlohmann::ordered_json MouseInput::ToJson() const { return {{"type", "mouse"}, {"key", System::MouseButtonMapping::GetInstance().ToString(m_button)}}; }
+nlohmann::ordered_json MouseInput::ToJson() const {
+  nlohmann::ordered_json j = {{"type", "mouse"}, {"key", System::MouseButtonMapping::GetInstance().ToString(m_button)}};
+  WriteDevice(j);
+  return j;
+}
 
 std::string MouseInput::GetDisplayName() const { return System::MouseButtonMapping::GetInstance().GetButtonDisplayName(m_button); }
 
@@ -36,7 +41,7 @@ bool MouseInput::IsValid() const {
   return m_button != System::MouseButton::Unknown && m_button != System::MouseButton::Left;
 }
 
-uint32_t MouseInput::GetHardwareCode() const { return 0x03000000 | static_cast<uint32_t>(m_button); }
+uint32_t MouseInput::GetHardwareCode() const { return Input::WithDevice(0x03000000 | static_cast<uint32_t>(m_button), m_device); }
 
 bool MouseInput::IsActive(const std::set<uint32_t>& pressedCodes) const { return pressedCodes.count(GetHardwareCode()) > 0; }
 
@@ -49,7 +54,7 @@ bool MouseInput::IsSameAs(const IBindableInput& other) const {  // Check if the 
 
   // If so, cast it and compare the underlying button
   const auto& otherMouseInput = static_cast<const MouseInput&>(other);
-  return this->m_button == otherMouseInput.m_button;
+  return this->m_button == otherMouseInput.m_button && m_device == other.GetDevice();
 }
 
 float MouseInput::GetValue(const std::set<uint32_t>& pressedHardwareCodes, const std::map<uint32_t, float>& axisValues) const { return IsActive(pressedHardwareCodes) ? 1.0f : 0.0f; }
