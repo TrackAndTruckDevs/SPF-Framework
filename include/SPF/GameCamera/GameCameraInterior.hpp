@@ -117,10 +117,17 @@ class GameCameraInterior : public IGameCamera {
   // Head roll (camera tilt) in degrees; the vanilla game has none. The game keeps
   // (yaw, pitch, roll) as a contiguous float3 and rewrites the roll every frame, so while a
   // non-zero roll is requested the instructions doing that are disabled (see
-  // SetRollPatchesApplied). The requested value survives camera switches: it can be set
+  // ApplyRollMode). The requested value survives camera switches: it can be set
   // while the camera is inactive and is applied on activation. SetRoll(0) restores the game.
   bool GetRoll(float* out_deg) const;
   void SetRoll(float degrees);
+  // Additive roll in degrees, on top of the game's own (a head tracker's, with c_ht_roll)
+  // instead of replacing it: those two instructions jump to a stub that stores the game's
+  // value and adds the offset to it. An absolute SetRoll() wins while it's non-zero.
+  bool GetRollOffset(float* out_deg) const;
+  void SetRollOffset(float degrees);
+  // The game's own roll, offset excluded. False while an absolute roll suppresses it.
+  bool GetBaseRoll(float* out_deg) const;
 
   // --- Interior Logic Individual API ---
   bool GetZoomFovFactor(float* out_val) const;
@@ -216,9 +223,14 @@ class GameCameraInterior : public IGameCamera {
   // Roll override (radians), re-applied every frame while active.
   bool m_rollActive = false;
   float m_rollRadians = 0.0f;
+  // Additive roll offset (radians).
+  bool m_rollOffsetActive = false;
+  float m_rollOffsetRadians = 0.0f;
 
-  // While the roll override is active, the two game instructions that rewrite the roll
-  // every frame are NOPed; the original bytes are restored when it stops.
+  // What the two game instructions that rewrite the roll every frame do: the game's code,
+  // NOPed (absolute roll), or detoured to the stub (additive roll). The original bytes are
+  // restored when going back to the game.
+  enum class RollMode { Game, Pinned, Additive };
   struct CodePatch {
     uintptr_t addr = 0;
     size_t length = 0;
@@ -226,7 +238,22 @@ class GameCameraInterior : public IGameCamera {
     bool applied = false;
   };
   CodePatch m_rollPatches[2];
-  void SetRollPatchesApplied(bool apply);
+  RollMode m_rollMode = RollMode::Game;
+  RollMode WantedRollMode() const;
+  void ApplyRollMode(RollMode mode);
+  // Writes the roll the current mode wants into the camera.
+  void WriteRollField();
+  // Builds the detours into m_rollStub from the patches' original bytes. False if the bytes
+  // aren't the expected stores or no memory could be had near the game's code.
+  bool BuildRollStubs();
+
+  // The detours' page, allocated within a rel32 jump of the game's code and never freed: a
+  // game thread could still be running it. Its first floats are the game's last roll and
+  // the offset (radians), read and written by the stubs.
+  unsigned char* m_rollStub = nullptr;
+  bool m_rollStubFailed = false;
+  float* RollBaseSlot() const { return reinterpret_cast<float*>(m_rollStub); }
+  float* RollOffsetSlot() const { return reinterpret_cast<float*>(m_rollStub) + 1; }
 
   // Cached speed FOV change factor while dynamic FOV is disabled.
   bool m_dynamicFovActive = true;
