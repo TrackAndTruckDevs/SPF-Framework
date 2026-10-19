@@ -20,8 +20,12 @@ class DXGIHook {
   static void Uninstall();
   static void Remove();
   static bool IsInstalled();
+  static void ReplayInitialization();
 
   static Rendering::RenderAPI GetDetectedAPI();
+  // Called by OpenGLHook from the first actual wglSwapBuffers — the backend
+  // proves itself by executing
+  static void NotifyOpenGLDetected();
 
   inline static HWND MainWindow = nullptr;
   inline static bool block_wndproc_message = false;

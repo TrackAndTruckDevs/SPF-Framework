@@ -61,19 +61,23 @@ bool HookManager::InstallGraphicsHooks(Rendering::RenderAPI api) {
   logger->Info("Installing graphics hooks...");
 
   if (api == Rendering::RenderAPI::OpenGL) {
+    // Already proven — the GL detour alone carries the frame.
     if (!OpenGLHook::Install()) {
       logger->Critical("Failed to install OpenGL hooks. Framework will not function.");
       return false;
     }
   } else {
+    // Unknown at startup: arm BOTH detour families — whichever backend the
+    // game actually runs proves itself by firing its own detour (first flip
+    // for D3D, first wglSwapBuffers for GL). An armed hook whose detour
+    // never fires stays idle and costs nothing.
+    if (!OpenGLHook::Install()) {
+      logger->Critical("Failed to install OpenGL hooks. Framework will not function.");
+      return false;
+    }
     if (!DXGIHook::Install()) {
       logger->Critical("Failed to install DXGI hooks. Framework will not function.");
       return false;
-    }
-    if (api == Rendering::RenderAPI::Unknown) {
-      if (!OpenGLHook::Install()) {
-        logger->Warn("Failed to install OpenGL hooks. This is non-critical if the game is not using OpenGL.");
-      }
     }
   }
 

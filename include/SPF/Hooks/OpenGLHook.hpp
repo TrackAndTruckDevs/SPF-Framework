@@ -30,6 +30,9 @@ class OpenGLHook {
 
   // --- Public State ---
   inline static HWND MainWindow = nullptr;
+  // HDC from the first wglSwapBuffers — lets ReplayInitialization re-fire the
+  // one-shot OnInit for listeners that connected after it already happened.
+  inline static HDC InitHDC = nullptr;
   inline static bool block_wndproc_message = false;
 
  private:

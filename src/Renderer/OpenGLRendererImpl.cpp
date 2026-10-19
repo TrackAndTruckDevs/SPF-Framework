@@ -145,6 +145,15 @@ void OpenGLRendererImpl::OnInit(HDC hdc) {
   if (m_isImGuiInitialized) {
     return;
   }
+
+  // The replay path delivers OnInit from the game thread, where no GL context
+  // may be current — GL work must run on the render thread, defer to OnPresent.
+  if (wglGetCurrentContext() == nullptr) {
+    m_pendingInit = true;
+    m_logger->Info("No current GL context — deferring ImGui init to the next present.");
+    return;
+  }
+
   m_logger->Info("OnInit signal received. Initializing ImGui for OpenGL...");
   m_hdc = hdc;
 
@@ -165,7 +174,12 @@ void OpenGLRendererImpl::OnInit(HDC hdc) {
 
 void OpenGLRendererImpl::OnPresent(HDC hdc) {
   if (!m_isImGuiInitialized) {
-    return;
+    if (m_pendingInit) {
+      OnInit(hdc);  // render thread: the game context is current during swap
+    }
+    if (!m_isImGuiInitialized) {
+      return;
+    }
   }
 
   // Ensure the correct context is active

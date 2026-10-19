@@ -2,7 +2,6 @@
 
 #include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
-#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Utils/Windows.hpp"
 
 #include <GL/gl.h>
@@ -53,11 +52,15 @@ bool OpenGLHook::Install() {
   auto logger = GetLogger();
   if (g_isCreatedOpenGL) {
     logger->Info("OpenGL hook already created, ensuring it is enabled...");
-    if (g_pSwapBuffersTarget && MH_EnableHook(g_pSwapBuffersTarget) != MH_OK) {
-      logger->Error("Failed to re-enable hook for wglSwapBuffers.");
-      return false;
+    if (g_pSwapBuffersTarget) {
+      const MH_STATUS enableStatus = MH_EnableHook(g_pSwapBuffersTarget);
+      // MH_ERROR_ENABLED means the hook is already active — not a failure.
+      if (enableStatus != MH_OK && enableStatus != MH_ERROR_ENABLED) {
+        logger->Error("Failed to re-enable hook for wglSwapBuffers (MH status {}).", static_cast<int>(enableStatus));
+        return false;
+      }
     }
-    logger->Info("OpenGL hook successfully re-enabled.");
+    logger->Info("OpenGL hook is enabled.");
     return true;
   }
 
@@ -135,6 +138,7 @@ BOOL WINAPI new_wglSwapBuffers(HDC hDC) {
 
     g_isInitedOpenGL = true;
     OpenGLHook::MainWindow = WindowFromDC(hDC);
+    OpenGLHook::InitHDC = hDC;
     logger->Info("Game HWND captured via HDC: {0:p}", static_cast<void*>(OpenGLHook::MainWindow));
 
     WNDPROC old_wnd_proc = (WNDPROC)GetPropW(OpenGLHook::MainWindow, L"SPF_WndProcHook");
@@ -151,7 +155,7 @@ BOOL WINAPI new_wglSwapBuffers(HDC hDC) {
     SetPropW(OpenGLHook::MainWindow, L"SPF_OriginalWndProc", (HANDLE)g_originalWndProcOpenGL);
     logger->Info("Original OpenGL WndProc at {0:p}, hooked with ours.", reinterpret_cast<void*>(g_originalWndProcOpenGL));
 
-    DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::OpenGL);
+    DXGIHook::NotifyOpenGLDetected();
     OpenGLHook::OnInit.Call(hDC);
   }
 

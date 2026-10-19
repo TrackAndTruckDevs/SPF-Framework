@@ -34,6 +34,9 @@ class OpenGLRendererImpl : public RendererBase {
   HDC m_hdc = nullptr;
   HGLRC m_originalContext = nullptr;
   bool m_isImGuiInitialized = false;
+  // Set when OnInit arrives on a thread with no current GL context — all GL
+  // work is then performed on the render thread at the next OnPresent.
+  bool m_pendingInit = false;
 
   // --- Sinks for Hook Signals ---
   Utils::Sink<void(HDC hdc)> m_onInitSink;

@@ -289,8 +289,6 @@ add_library(SPF SHARED
     "src/Hooks/HookManager.cpp"
     "src/Hooks/BaseHook.cpp"
     "src/Hooks/User32Hook.cpp"
-    "src/Hooks/D3D11Hook.cpp"
-    "src/Hooks/D3D12Hook.cpp"
     "src/Hooks/DXGIHook.cpp"
     "src/Hooks/OpenGLHook.cpp"
     "src/Hooks/DInput8Hook.cpp"

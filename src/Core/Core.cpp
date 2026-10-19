@@ -23,6 +23,7 @@
 #include "SPF/GameCamera/GameCameraManager.hpp"
 #include "SPF/GameConsole/GameConsole.hpp"
 #include "SPF/Hooks/CameraHooks.hpp"
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Hooks/GameLogHook.hpp"
 #include "SPF/Hooks/GameTools/PrismArrayResolver.hpp"
 #include "SPF/Hooks/GameTools/PrismStringResolver.hpp"
@@ -39,7 +40,6 @@
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/Modules/PluginManager.hpp"
-#include "SPF/Renderer/RenderAPI.hpp"
 #include "SPF/Renderer/Renderer.hpp"
 #include "SPF/System/ApiService.hpp"
 #include "SPF/System/EnvironmentManager.hpp"
@@ -145,6 +145,12 @@ void Core::Preload() {
 
   // Initialize services that do not depend on the game SDK.
   InitServices();
+
+  // Resolve the game's DXGI device layout and start swapchain acquisition.
+  // The plugin loads after the game's graphics init, so the swapchain usually
+  // already exists — acquisition reads it from the game-owned global device;
+  // otherwise the poll thread wraps it the moment the game creates it.
+  Hooks::DXGIHook::Install();
 
   // Set the installation status detected by ConfigService into EnvironmentManager
   EnvironmentManager::GetInstance().SetInstallationStatus(m_configService->GetInstallationStatus());
@@ -637,12 +643,12 @@ void Core::InitHooks() {
   m_eventManager->Init(*m_renderer);
   m_inputManager->Initialize();
 
-  // 4. Install hooks. DXGIHook uses runtime probe (GetDevice at first Present)
-  //    to detect D3D11 vs D3D12 — no static API detection needed.
+  // 4. Install hooks. DXGIHook probes the API via GetDevice at the first
+  //    wrapped Present — pass whatever is already known, no static detection.
   auto& hookManager = HookManager::GetInstance();
 
   m_logger->Info("-> [Init] Installing DXGI hook...");
-  if (!hookManager.InstallGraphicsHooks(Rendering::RenderAPI::Unknown)) {
+  if (!hookManager.InstallGraphicsHooks(Hooks::DXGIHook::GetDetectedAPI())) {
     m_logger->Error("DXGI hook installation failed. UI will not be available.");
   }
 

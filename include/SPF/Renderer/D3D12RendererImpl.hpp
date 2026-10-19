@@ -5,6 +5,7 @@
 #include "SPF/Renderer/RendererBase.hpp"
 #include "SPF/UI/UIManager.hpp"
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include <cstddef>
 #include <d3d12.h>
@@ -65,9 +66,11 @@ class D3D12RendererImpl : public RendererBase {
   ComPtr<ID3D12CommandAllocator> m_assetCommandAllocator;
   std::mutex m_descHeapMutex;
 
-  // Render Target
-  std::vector<ComPtr<ID3D12Resource>> m_mainRenderTargetResource;
+  // Render Target — buffer pointers are non-owning: the swapchain owns the
+  // backbuffers, and the per-flip identity check rebuilds them on change.
+  std::vector<ID3D12Resource*> m_mainRenderTargetResource;
   std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_mainRenderTargetDescriptors;
+  UINT m_rtBufferCount = 0;
 
   // Synchronization
   ComPtr<ID3D12Fence> m_fence;
@@ -79,7 +82,7 @@ class D3D12RendererImpl : public RendererBase {
 
   void CreateRenderTarget(IDXGISwapChain* swapChain);
   void CleanupRenderTarget();
-  void WaitForLastSubmittedFrame();
+  void WaitForLastSubmittedFrame(DWORD maxWaitMs = INFINITE);
 
   // Sinks for DXGIHook signals
   Utils::Sink<void(IDXGISwapChain* swapChain, ID3D12Device* device, ID3D12CommandQueue* commandQueue)> m_onInitSink;

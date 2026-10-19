@@ -81,7 +81,13 @@ void D3D12RendererImpl::Shutdown() {
   }
   m_logger->Info("Shutting down ImGui D3D12 implementation...");
 
-  WaitForLastSubmittedFrame();
+  // Bounded wait on purpose: the fence is the GAME's command queue, so an
+  // unbounded wait inherits whatever GPU backlog the game is carrying at
+  // unload (world teardown can take seconds). Our own frame work is tiny;
+  // if the fence has not reached us within the budget we are queued behind
+  // the game, and the driver defers destruction of in-flight resources.
+  constexpr DWORD kShutdownMaxWaitMs = 500;
+  WaitForLastSubmittedFrame(kShutdownMaxWaitMs);
 
   ImGui_ImplDX12_Shutdown();
   ImGui_ImplWin32_Shutdown();
@@ -258,7 +264,7 @@ void D3D12RendererImpl::OnD3D12Init(IDXGISwapChain* swapChain, ID3D12Device* dev
   if (m_isImGuiInitialized) {
     return;
   }
-  m_logger->Info("D3D12Hook OnInit received. Initializing ImGui D3D12 backend...");
+  m_logger->Info("OnD3D12Init received. Initializing ImGui D3D12 backend...");
 
   // Store the essential D3D12 objects provided by the hook.
   // We use ComPtr for automatic reference management, which is safer than manual Release().
@@ -356,8 +362,23 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain* swapChain) {
     return;
   }
 
-  // Render targets are created here on the first Present call after initialization,
-  // or after a resize event. This ensures they are always valid.
+  if (m_renderTargetsCreated) {
+    // The swapchain may have been recreated (new buffers) since the last
+    // flip — compare object identity and buffer count before touching the
+    // cached descriptors.
+    DXGI_SWAP_CHAIN_DESC rtDesc = {};
+    bool stale = FAILED(swapChain->GetDesc(&rtDesc)) || rtDesc.BufferCount != m_rtBufferCount;
+    for (UINT i = 0; !stale && i < m_rtBufferCount; ++i) {
+      ComPtr<ID3D12Resource> buffer;
+      if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(buffer.GetAddressOf()))) || buffer.Get() != m_mainRenderTargetResource[i]) {
+        stale = true;
+      }
+    }
+    if (stale) {
+      CleanupRenderTarget();
+      m_renderTargetsCreated = false;
+    }
+  }
   if (!m_renderTargetsCreated) {
     CreateRenderTarget(swapChain);
     if (!m_renderTargetsCreated) {
@@ -412,7 +433,7 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain* swapChain) {
   D3D12_RESOURCE_BARRIER barrier = {};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = m_mainRenderTargetResource[backBufferIdx].Get();
+  barrier.Transition.pResource = m_mainRenderTargetResource[backBufferIdx];
   barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
   barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -452,6 +473,10 @@ void D3D12RendererImpl::OnD3D12Present(IDXGISwapChain* swapChain) {
       return;
     }
   }
+
+  // The RTV descriptors and buffer pointers persist across frames: the
+  // resize detour waits for this frame's GPU work in OnD3D12BeforeResize
+  // and releases everything just before the game's ResizeBuffers runs.
 }
 
 void D3D12RendererImpl::OnD3D12BeforeResize(IDXGISwapChain* swapChain, UINT width, UINT height) {
@@ -486,7 +511,8 @@ void D3D12RendererImpl::CreateRenderTarget(IDXGISwapChain* swapChain) {
     return;
   }
 
-  m_mainRenderTargetResource.resize(desc.BufferCount);
+  m_rtBufferCount = desc.BufferCount;
+  m_mainRenderTargetResource.assign(desc.BufferCount, nullptr);
   m_mainRenderTargetDescriptors.resize(desc.BufferCount);
 
   D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
@@ -503,15 +529,18 @@ void D3D12RendererImpl::CreateRenderTarget(IDXGISwapChain* swapChain) {
   D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 
   for (UINT i = 0; i < desc.BufferCount; i++) {
-    m_mainRenderTargetResource[i].Reset();
-    hr = swapChain->GetBuffer(i, IID_PPV_ARGS(m_mainRenderTargetResource[i].GetAddressOf()));
+    ComPtr<ID3D12Resource> buffer;
+    hr = swapChain->GetBuffer(i, IID_PPV_ARGS(buffer.GetAddressOf()));
     if (FAILED(hr)) {
       m_logger->Error("CreateRenderTarget: swapChain->GetBuffer failed for buffer {}. (HRESULT: {:#x})", i, static_cast<unsigned int>(hr));
       return;
     }
 
-    m_pd3dDevice->CreateRenderTargetView(m_mainRenderTargetResource[i].Get(), NULL, rtvHandle);
+    m_pd3dDevice->CreateRenderTargetView(buffer.Get(), NULL, rtvHandle);
     m_mainRenderTargetDescriptors[i] = rtvHandle;
+    // Non-owning: the swapchain keeps the buffer alive, so no reference of
+    // ours can ever block ResizeBuffers.
+    m_mainRenderTargetResource[i] = buffer.Get();
     rtvHandle.ptr += rtvDescriptorSize;
   }
 
@@ -520,16 +549,17 @@ void D3D12RendererImpl::CreateRenderTarget(IDXGISwapChain* swapChain) {
 }
 
 void D3D12RendererImpl::CleanupRenderTarget() {
-  // This function must be called before the swap chain is resized.
-  // It waits for the GPU to finish using the resources and then releases our references to them.
+  // Called before the swap chain is resized: wait for the GPU, then drop
+  // the cached buffer pointers, descriptors and RTV heap.
   WaitForLastSubmittedFrame();
   m_logger->Debug("Cleaning up render targets...");
   m_mainRenderTargetResource.clear();
   m_mainRenderTargetDescriptors.clear();
   m_pd3dRtvDescHeap.Reset();
+  m_rtBufferCount = 0;
 }
 
-void D3D12RendererImpl::WaitForLastSubmittedFrame() {
+void D3D12RendererImpl::WaitForLastSubmittedFrame(DWORD maxWaitMs) {
   if (!m_fence || !m_fenceEvent) return;
 
   // Check if the last signaled value has already been reached.
@@ -544,8 +574,10 @@ void D3D12RendererImpl::WaitForLastSubmittedFrame() {
     return;
   }
 
-  // Wait for the event to be signaled.
-  WaitForSingleObject(m_fenceEvent, INFINITE);
+  // Wait for the event to be signaled (optionally bounded by the caller).
+  if (WaitForSingleObject(m_fenceEvent, maxWaitMs) == WAIT_TIMEOUT) {
+    m_logger->Warn("WaitForLastSubmittedFrame: fence {} not completed within {} ms; continuing.", m_fenceLastSignaledValue, maxWaitMs);
+  }
 }
 
 }  // namespace SPF::Rendering

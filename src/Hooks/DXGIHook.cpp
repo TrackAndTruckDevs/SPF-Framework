@@ -1,33 +1,52 @@
 // --- THE STRATEGY ---
-// Unified DXGI hook that works for both D3D11 and D3D12 games.
+// Game-owned DXGI interception that never enters the Present chain. The
+// swapchain Present slot is the most contested address in the stack (Steam
+// overlay, OptiScaler, RTSS, driver frame generation); we stay out of it by
+// hooking the GAME's own code instead of dxgi.dll:
 //
-// 1. Create a dummy D3D11 device + swap chain to scrape the DXGI vtable.
-//    vtable[8] = Present, vtable[13] = ResizeBuffers — identical for
-//    both D3D11 and D3D12 swap chains (both derive from IDXGISwapChain).
+// 1. FLIP HOOK — the game presents through one small backend flip function
+//    that reads the swapchain pointer and calls [vtable+8] (Present). The
+//    function is resolved from its unique error string, and MinHook detours
+//    it inside the game's .text. No dxgi code is patched, no vtable is
+//    wrapped, nothing another agent hooks (Present/Present1/ResizeBuffers)
+//    is touched — the driver sees a vanilla Present call from the game.
 //
-// 2. Hook Present and ResizeBuffers.
+// 2. ACQUISITION — the flip receives the backend object every frame; the
+//    swapchain pointer lives in pattern-resolved slots on it (DXGI 1.3
+//    preferred, classic fallback). Recreation swaps the pointer — the next
+//    flip hands us the new instance. No poll thread, no import tables.
 //
-// 3. On the FIRST real Present call from the game, probe GetDevice():
-//    - Try GetDevice(ID3D11Device*) → D3D11 game
-//    - If that fails, try GetDevice(ID3D12Device*) → D3D12 game
+// 3. First flip probes GetDevice():
+//    - GetDevice(ID3D11Device*) -> D3D11 game
+//    - IDXGISwapChain3 + GetDevice(ID3D12Device*) -> D3D12 game
+//    D3D12 additionally hooks ExecuteCommandLists (queue vtable[10], via the
+//    game's own device) to capture the command queue, then disables itself.
 //
-// 4. For D3D12 games: additionally hook ExecuteCommandLists (vtable[10]
-//    of ID3D12CommandQueue) to capture the game's command queue pointer.
-//    Once captured, disable the temporary hook.
+// 4. RESIZE — the game's own resize function (string-anchored, entry in the
+//    game's .text) is detoured as well: OnBeforeResize releases our
+//    backbuffer references, the original runs ResizeBuffers unblocked, and
+//    OnResize fires afterwards. Render targets persist across frames —
+//    no shared dxgi.dll code is touched at any point.
 //
-// 5. Fire OnD3D11Init or OnD3D12Init with the resolved objects.
-//    All subsequent Present calls fire OnPresent.
-//
-// This eliminates the unreliable GetModuleHandle-based detection — both
-// d3d11.dll and d3d12.dll are present in both modes (DXGI dependencies).
+// 5. Diagnostics: FinderLog walks every extraction step; detection, resize
+//    changes and hook transitions are logged with pointers so a stall is
+//    always attributable to a specific link.
 
 #include "SPF/Hooks/DXGIHook.hpp"
 
+#include "SPF/Hooks/OpenGLHook.hpp"
+#include "SPF/Logging/Logger.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 #include "SPF/Renderer/RenderAPI.hpp"
+#include "SPF/Utils/FinderLog.hpp"
+#include "SPF/Utils/PatternFinder.hpp"
 #include "SPF/Utils/Windows.hpp"
 
+#include <atomic>
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <d3d11.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
@@ -35,248 +54,192 @@
 #include <libloaderapi.h>
 #include <memory>
 #include <MinHook.h>
-#include <minwinbase.h>
 #include <minwindef.h>
 #include <windef.h>
+#include <windows.h>
 #include <winerror.h>
 #include <winnt.h>
 #include <wrl/client.h>
 
-namespace SPF::Hooks {
-using namespace SPF::Logging;
 using Microsoft::WRL::ComPtr;
+
+namespace SPF::Hooks {
+
+using FnGameFlip = uint64_t (*)(void* backend);
+using FnGameResize = void (*)(void* backend, uint64_t param2, uint8_t format, uint32_t width, uint32_t height);
+using FnExecuteCommandLists = void(STDMETHODCALLTYPE*)(ID3D12CommandQueue*, UINT, ID3D12CommandList* const*);
+
+// ID3D12CommandQueue inherits IUnknown (0-2) -> ID3D12Object (3-6) ->
+// ID3D12DeviceChild (7) -> UpdateTileMappings (8), CopyTileMappings (9),
+// ExecuteCommandLists (10).
+constexpr int kExecuteCommandListsSlot = 10;
+
+std::shared_ptr<SPF::Logging::Logger> GetLogger() { return SPF::Logging::LoggerFactory::GetInstance().GetLogger("DXGIHook"); }
+
+// --- Game-owned DXGI layout (pattern-resolved, never hardcoded) ---
+size_t g_offSwapChain1 = 0;  // backend+this: IDXGISwapChain1* (DXGI 1.3 path, preferred)
+size_t g_offSwapChain = 0;   // backend+this: IDXGISwapChain* (classic path)
+uintptr_t g_flipTarget = 0;   // game flip function entry (detour target)
+uintptr_t g_resizeTarget = 0;  // game resize-backbuffers function entry (detour target)
+FnGameFlip o_GameFlip = nullptr;
+FnGameResize o_GameResize = nullptr;
+std::atomic<bool> g_layoutResolved{false};
+
+std::atomic<bool> g_hooksActive{false};
+std::atomic<bool> g_isCreated{false};
+std::atomic<Rendering::RenderAPI> g_detectedAPI{Rendering::RenderAPI::Unknown};
+std::atomic<bool> g_isInited{false};
+std::atomic<bool> g_needUpdateInfo{true};
+std::atomic<bool> g_isExecuteHooked{false};
+
+thread_local int g_presentDepth = 0;
+thread_local bool g_loggedRecursionGuard = false;
+
+ID3D12CommandQueue* g_pGameCommandQueue = nullptr;
+FnExecuteCommandLists o_ExecuteCommandLists = nullptr;
+void* g_pExecuteCommandListsTarget = nullptr;
+
+WNDPROC g_originalWndProc = nullptr;
+
+// Objects from the first successful init fire — used to replay signals for
+// listeners that connect after detection (Renderer connects during Main Init,
+// while the first flip lands within milliseconds of the detour).
+ComPtr<IDXGISwapChain> g_replaySwapChain;
+ComPtr<ID3D11Device> g_replayDevice11;
+ComPtr<ID3D12Device> g_replayDevice12;
+
+// ---------------------------------------------------------------------------
+// Game DXGI layout resolution
+// ---------------------------------------------------------------------------
 
 namespace {
 
-auto GetLogger() {
-  static auto logger = LoggerFactory::GetInstance().GetLogger("DXGIHook");
-  return logger;
-}
+constexpr const char* kPresentFailedStr = "[dxgi] Present failed (0x%lx)";
+constexpr const char* kResizingBackbuffersStr = "[dxgi] Resizing backbuffers: %u %u (flags: %lx)";
+constexpr const char* kMovR64Off32Test = "[MOV r64, [r64+off32]] [TEST r64, r64]";
+constexpr const char* kMovR64Off32 = "[MOV r64, [r64+off32]]";
+constexpr size_t kFlipToMovWindow = 128;
+constexpr size_t kMovToMovWindow = 64;
 
-// --- Function pointer types ---
-using FnPresent = HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT);
-using FnResizeBuffers = HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT);
-using FnExecuteCommandLists = void(STDMETHODCALLTYPE*)(ID3D12CommandQueue*, UINT, ID3D12CommandList* const*);
+bool ResolveGameDxgiLayout() {
+  if (g_layoutResolved.load(std::memory_order_acquire)) return true;
 
-// --- Hook function prototypes ---
-HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
-HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags);
-void STDMETHODCALLTYPE new_ExecuteCommandLists(ID3D12CommandQueue* pQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
-LRESULT CALLBACK WndProcDXGI(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  Utils::FinderLog log("DXGIHook");
+  auto phase = log.MakePhase("Game DXGI layout");
 
-// --- Original function pointers ---
-inline FnPresent o_Present = nullptr;
-inline FnResizeBuffers o_ResizeBuffers = nullptr;
-inline FnExecuteCommandLists o_ExecuteCommandLists = nullptr;
-
-// --- Hook targets (vtable addresses) ---
-inline LPVOID g_pPresentTarget = nullptr;
-inline LPVOID g_pResizeBuffersTarget = nullptr;
-inline LPVOID g_pExecuteCommandListsTarget = nullptr;
-
-// --- State ---
-inline WNDPROC g_originalWndProc = nullptr;
-bool g_isCreated = false;
-bool g_needUpdateInfo = true;
-bool g_isInited = false;
-Rendering::RenderAPI g_detectedAPI = Rendering::RenderAPI::Unknown;
-
-// D3D12-specific: command queue capture
-inline ID3D12CommandQueue* g_pGameCommandQueue = nullptr;
-bool g_isExecuteHooked = false;
-
-void RestoreWndProc() {
-  if (g_originalWndProc != nullptr && DXGIHook::MainWindow != nullptr) {
-    SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
-    RemovePropW(DXGIHook::MainWindow, L"SPF_WndProcHook");
-    RemovePropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc");
-    GetLogger()->Info("Restored original WndProc.");
-    g_originalWndProc = nullptr;
+  // Flip function entry: unique error string -> function start.
+  // --- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1402c1130[1402c1130]) ---
+  // 1402c1130  48 83 EC 28                   SUB RSP,0x28
+  uintptr_t flipEntry = Utils::PatternFinder::FindFunctionByString(kPresentFailedStr, true);
+  if (!phase.Step(flipEntry, "Flip function entry (Present-failed string)", "CODE")) {
+    log.Finish(false);
+    return false;
   }
+
+  // Preferred swapchain slot: MOV reads backend+0x130, TEST guards null.
+  // --- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1402c1130[1402c1130]) ---
+  // 1402c1169  4C 8B 89 30 01 00 00          MOV R9,qword ptr [RCX + 0x130]
+  // 1402c1170  4D 85 C9                      TEST R9,R9
+  uintptr_t movPreferred = Utils::PatternFinder::Find(flipEntry, kFlipToMovWindow, kMovR64Off32Test);
+  if (!phase.Step(movPreferred, "MOV/TEST slot (IDXGISwapChain1)", "CODE")) {
+    log.Finish(false);
+    return false;
+  }
+  int movLen = 0;
+  int32_t offPreferred = Utils::PatternFinder::ReadInstructionDisp(movPreferred, movLen);
+  if (!phase.StepOffset(offPreferred, "IDXGISwapChain1 slot offset", "DATA")) {
+    log.Finish(false);
+    return false;
+  }
+
+  // Classic swapchain slot: next MOV past the first (movLen bytes —
+  // self-exclusion).
+  // --- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1402c1130[1402c1130]) ---
+  // 1402c117d  48 8B 89 28 01 00 00          MOV RCX,qword ptr [RCX + 0x128]
+  uintptr_t movClassic = Utils::PatternFinder::Find(movPreferred + static_cast<uintptr_t>(movLen), kMovToMovWindow, kMovR64Off32);
+  if (!phase.Step(movClassic, "MOV slot (IDXGISwapChain)", "CODE")) {
+    log.Finish(false);
+    return false;
+  }
+  int movLen2 = 0;
+  int32_t offClassic = Utils::PatternFinder::ReadInstructionDisp(movClassic, movLen2);
+  if (!phase.StepOffset(offClassic, "IDXGISwapChain slot offset", "DATA")) {
+    log.Finish(false);
+    return false;
+  }
+
+  // Resize-backbuffers entry: unique resize log string -> function start.
+  // --- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1402c0eb0[1402c0eb0]) ---
+  // 1402c0eb0  40 53                         PUSH RBX
+  uintptr_t resizeEntry = Utils::PatternFinder::FindFunctionByString(kResizingBackbuffersStr, true);
+  if (!phase.Step(resizeEntry, "Resize function entry (Resizing-backbuffers string)", "CODE")) {
+    log.Finish(false);
+    return false;
+  }
+
+  g_offSwapChain1 = static_cast<size_t>(offPreferred);
+  g_offSwapChain = static_cast<size_t>(offClassic);
+  g_flipTarget = flipEntry;
+  g_resizeTarget = resizeEntry;
+  g_layoutResolved.store(true, std::memory_order_release);
+
+  log.Finish(!phase.HasFailure());
+  log.Info("[Layout] Flip function {} — resize function {} — swapchain slots +0x{:X} (preferred) / +0x{:X} (classic).", log.Rel(flipEntry), log.Rel(resizeEntry), offPreferred, offClassic);
+  return true;
 }
 
 }  // namespace
 
-// --- Public API ---
-
-bool DXGIHook::Install() {
-  auto logger = GetLogger();
-  if (g_isCreated) {
-    logger->Info("DXGI hooks already created, ensuring they are enabled...");
-    if (g_pPresentTarget && MH_EnableHook(g_pPresentTarget) != MH_OK) {
-      logger->Error("Failed to re-enable Present hook.");
-      return false;
-    }
-    if (g_pResizeBuffersTarget && MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
-      logger->Error("Failed to re-enable ResizeBuffers hook.");
-      return false;
-    }
-    logger->Info("DXGI hooks successfully re-enabled.");
-    return true;
-  }
-
-  logger->Info("Installing unified DXGI hooks (D3D11/D3D12)...");
-
-  HWND hWnd = FindWindowA("prism3d", NULL);
-  if (hWnd == NULL) {
-    logger->Critical("Could not find game window with class 'prism3d'.");
-    return false;
-  }
-  logger->Info("Found game window HWND: {0:p}", static_cast<void*>(hWnd));
-
-  auto hD3D11 = GetModuleHandle(TEXT("d3d11.dll"));
-  if (!hD3D11) {
-    logger->Critical("d3d11.dll is not loaded — cannot create dummy swap chain for vtable scraping.");
-    return false;
-  }
-
-  using FnD3D11CreateDeviceAndSwapChain =
-      HRESULT(WINAPI*)(IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT, const D3D_FEATURE_LEVEL*, UINT, UINT,
-                       const DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**, ID3D11Device**, D3D_FEATURE_LEVEL*,
-                       ID3D11DeviceContext**);
-
-  auto pCreateDevice = reinterpret_cast<FnD3D11CreateDeviceAndSwapChain>(
-      GetProcAddress(hD3D11, "D3D11CreateDeviceAndSwapChain"));
-  if (!pCreateDevice) {
-    logger->Critical("Failed to get D3D11CreateDeviceAndSwapChain address.");
-    return false;
-  }
-
-  D3D_FEATURE_LEVEL featureLevel;
-  DXGI_SWAP_CHAIN_DESC swapChainDesc{};
-  swapChainDesc.BufferCount = 1;
-  swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-  swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  swapChainDesc.OutputWindow = hWnd;
-  swapChainDesc.SampleDesc.Count = 1;
-  swapChainDesc.Windowed = TRUE;
-  swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-  ComPtr<ID3D11Device> pDevice;
-  ComPtr<ID3D11DeviceContext> pContext;
-  ComPtr<IDXGISwapChain> pSwapChain;
-
-  HRESULT hr = pCreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, NULL, 0, D3D11_SDK_VERSION,
-                              &swapChainDesc, &pSwapChain, &pDevice, &featureLevel, &pContext);
-  if (FAILED(hr)) {
-    logger->Critical("Failed to create dummy D3D11 device/swap chain. HRESULT: {:#x}", static_cast<unsigned>(hr));
-    return false;
-  }
-  logger->Info("Dummy D3D11 device and swap chain created for vtable scraping.");
-
-  void** vtable = *reinterpret_cast<void***>(pSwapChain.Get());
-  g_pPresentTarget = vtable[8];    // IDXGISwapChain::Present
-  g_pResizeBuffersTarget = vtable[13];  // IDXGISwapChain::ResizeBuffers
-
-  // Dummy resources released by ComPtr here.
-
-  if (MH_CreateHook(g_pPresentTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_Present),
-                    reinterpret_cast<LPVOID*>(&o_Present)) != MH_OK) {
-    logger->Critical("Failed to create hook for Present.");
-    return false;
-  }
-
-  if (MH_CreateHook(g_pResizeBuffersTarget, reinterpret_cast<LPVOID>(&new_IDXGISwapChain_ResizeBuffers),
-                    reinterpret_cast<LPVOID*>(&o_ResizeBuffers)) != MH_OK) {
-    logger->Critical("Failed to create hook for ResizeBuffers.");
-    MH_RemoveHook(g_pPresentTarget);
-    return false;
-  }
-
-  if (MH_EnableHook(g_pPresentTarget) != MH_OK || MH_EnableHook(g_pResizeBuffersTarget) != MH_OK) {
-    logger->Critical("Failed to enable Present/ResizeBuffers hooks.");
-    MH_RemoveHook(g_pPresentTarget);
-    MH_RemoveHook(g_pResizeBuffersTarget);
-    return false;
-  }
-
-  logger->Info("Unified DXGI hooks installed. Waiting for first Present call to detect API...");
-  g_isCreated = true;
-  return true;
-}
-
-void DXGIHook::Uninstall() {
-  auto logger = GetLogger();
-  if (!g_isCreated) return;
-
-  logger->Info("Disabling DXGI hooks for reload...");
-  RestoreWndProc();
-
-  if (g_pPresentTarget) MH_DisableHook(g_pPresentTarget);
-  if (g_pResizeBuffersTarget) MH_DisableHook(g_pResizeBuffersTarget);
-  if (g_pExecuteCommandListsTarget) MH_DisableHook(g_pExecuteCommandListsTarget);
-
-  g_isInited = false;
-  g_needUpdateInfo = true;
-  g_isExecuteHooked = false;
-  g_pGameCommandQueue = nullptr;
-  g_detectedAPI = Rendering::RenderAPI::Unknown;
-
-  logger->Info("DXGI hooks disabled.");
-}
-
-void DXGIHook::Remove() {
-  auto logger = GetLogger();
-  if (!g_isCreated) return;
-
-  logger->Info("Removing DXGI hooks for shutdown...");
-  RestoreWndProc();
-
-  if (g_pPresentTarget) {
-    MH_DisableHook(g_pPresentTarget);
-    MH_RemoveHook(g_pPresentTarget);
-  }
-  if (g_pResizeBuffersTarget) {
-    MH_DisableHook(g_pResizeBuffersTarget);
-    MH_RemoveHook(g_pResizeBuffersTarget);
-  }
-  if (g_pExecuteCommandListsTarget) {
-    MH_DisableHook(g_pExecuteCommandListsTarget);
-    MH_RemoveHook(g_pExecuteCommandListsTarget);
-  }
-
-  g_pPresentTarget = nullptr;
-  g_pResizeBuffersTarget = nullptr;
-  g_pExecuteCommandListsTarget = nullptr;
-  o_Present = nullptr;
-  o_ResizeBuffers = nullptr;
-  o_ExecuteCommandLists = nullptr;
-  g_pGameCommandQueue = nullptr;
-
-  g_isExecuteHooked = false;
-  g_isInited = false;
-  g_needUpdateInfo = true;
-  g_isCreated = false;
-  g_detectedAPI = Rendering::RenderAPI::Unknown;
-
-  logger->Info("DXGI hooks completely removed.");
-}
-
-bool DXGIHook::IsInstalled() { return g_isCreated; }
-
-Rendering::RenderAPI DXGIHook::GetDetectedAPI() { return g_detectedAPI; }
-
-// --- Hook Implementations ---
+// ---------------------------------------------------------------------------
+// WndProc + Present handling
+// ---------------------------------------------------------------------------
 
 namespace {
 
-void STDMETHODCALLTYPE new_ExecuteCommandLists(ID3D12CommandQueue* pQueue, UINT NumCommandLists,
-                                                ID3D12CommandList* const* ppCommandLists) {
-  if (g_pGameCommandQueue == nullptr) {
-    g_pGameCommandQueue = pQueue;
-    GetLogger()->Info("Game's D3D12 Command Queue captured: {0:p}", static_cast<void*>(g_pGameCommandQueue));
+void STDMETHODCALLTYPE new_ExecuteCommandLists(ID3D12CommandQueue* pQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
+
+LRESULT CALLBACK WndProcDXGI(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  DXGIHook::block_wndproc_message = false;
+  try {
+    DXGIHook::OnWndProc.Call(hwnd, msg, wParam, lParam);
+  } catch (const std::exception& e) {
+    GetLogger()->Critical("Exception in WndProc hook: {}", e.what());
+  } catch (...) {
+    GetLogger()->Critical("Unknown exception in WndProc hook.");
   }
-  MH_DisableHook(g_pExecuteCommandListsTarget);
-  o_ExecuteCommandLists(pQueue, NumCommandLists, ppCommandLists);
+
+  if (DXGIHook::block_wndproc_message) {
+    return 0;
+  }
+
+  return CallWindowProcW(g_originalWndProc, hwnd, msg, wParam, lParam);
 }
 
-HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+void InstallGameWndProc() {
+  auto logger = GetLogger();
+
+  WNDPROC oldWndProc = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook"));
+  if (oldWndProc != nullptr) {
+    WNDPROC prevOriginal = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc"));
+    if (prevOriginal != nullptr) {
+      SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
+      logger->Info("Cleaned up previous WndProc hook.");
+    }
+  }
+
+  g_originalWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
+  SetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook", reinterpret_cast<HANDLE>(WndProcDXGI));
+  SetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc", reinterpret_cast<HANDLE>(g_originalWndProc));
+  logger->Info("Original WndProc at {}, hooked.", reinterpret_cast<void*>(g_originalWndProc));
+}
+
+void HandlePresent(IDXGISwapChain* pSwapChain) {
+  auto logger = GetLogger();
+
   if (g_needUpdateInfo) {
     g_needUpdateInfo = false;
-    auto logger = GetLogger();
-    logger->Debug("First Present call — detecting API via GetDevice...");
+    logger->Debug("First flip call — detecting API via GetDevice...");
 
-    // Try D3D11 first
     ComPtr<ID3D11Device> d3d11Device;
     if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D11Device), &d3d11Device))) {
       g_detectedAPI = Rendering::RenderAPI::D3D11;
@@ -285,34 +248,20 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
       DXGI_SWAP_CHAIN_DESC desc;
       pSwapChain->GetDesc(&desc);
       DXGIHook::MainWindow = desc.OutputWindow;
-      logger->Info("Game HWND captured: {0:p}", static_cast<void*>(DXGIHook::MainWindow));
+      logger->Info("Game HWND captured: {}", static_cast<void*>(DXGIHook::MainWindow));
 
       if (g_isInited) {
         DXGIHook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);
       } else {
         logger->Info("First-time D3D11 initialization. Hooking WndProc and firing OnInit...");
-
-        WNDPROC oldWndProc = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook"));
-        if (oldWndProc != nullptr) {
-          WNDPROC prevOriginal = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc"));
-          if (prevOriginal != nullptr) {
-            SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
-            logger->Info("Cleaned up previous WndProc hook.");
-          }
-        }
-
-        g_originalWndProc = reinterpret_cast<WNDPROC>(
-            SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
-        SetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook", reinterpret_cast<HANDLE>(WndProcDXGI));
-        SetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc", reinterpret_cast<HANDLE>(g_originalWndProc));
-        logger->Info("Original WndProc at {0:p}, hooked.", reinterpret_cast<void*>(g_originalWndProc));
-
+        InstallGameWndProc();
+        g_replaySwapChain = pSwapChain;
+        g_replayDevice11 = d3d11Device;
         DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::D3D11);
         DXGIHook::OnD3D11Init.Call(pSwapChain, d3d11Device.Get());
         g_isInited = true;
       }
     } else {
-      // Try D3D12
       ComPtr<IDXGISwapChain3> swapChain3;
       if (SUCCEEDED(pSwapChain->QueryInterface(IID_PPV_ARGS(&swapChain3)))) {
         ComPtr<ID3D12Device> d3d12Device;
@@ -323,28 +272,15 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
           DXGI_SWAP_CHAIN_DESC desc;
           pSwapChain->GetDesc(&desc);
           DXGIHook::MainWindow = desc.OutputWindow;
-          logger->Info("Game HWND captured: {0:p}", static_cast<void*>(DXGIHook::MainWindow));
+          logger->Info("Game HWND captured: {}", static_cast<void*>(DXGIHook::MainWindow));
 
           if (g_isInited) {
             DXGIHook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);
           } else if (g_pGameCommandQueue != nullptr) {
             logger->Info("D3D12 init (command queue already captured). Hooking WndProc and firing OnInit...");
-
-            WNDPROC oldWndProc = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook"));
-            if (oldWndProc != nullptr) {
-              WNDPROC prevOriginal = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc"));
-              if (prevOriginal != nullptr) {
-                SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
-                logger->Info("Cleaned up previous WndProc hook.");
-              }
-            }
-
-            g_originalWndProc = reinterpret_cast<WNDPROC>(
-                SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
-            SetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook", reinterpret_cast<HANDLE>(WndProcDXGI));
-            SetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc", reinterpret_cast<HANDLE>(g_originalWndProc));
-            logger->Info("Original WndProc at {0:p}, hooked.", reinterpret_cast<void*>(g_originalWndProc));
-
+            InstallGameWndProc();
+            g_replaySwapChain = swapChain3;
+            g_replayDevice12 = d3d12Device;
             DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::D3D12);
             DXGIHook::OnD3D12Init.Call(swapChain3.Get(), d3d12Device.Get(), g_pGameCommandQueue);
             g_isInited = true;
@@ -356,10 +292,9 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
             D3D12_COMMAND_QUEUE_DESC queueDesc = {D3D12_COMMAND_LIST_TYPE_DIRECT, 0, D3D12_COMMAND_QUEUE_FLAG_NONE, 0};
             if (SUCCEEDED(d3d12Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pDummyQueue)))) {
               void** pVTable = *reinterpret_cast<void***>(pDummyQueue.Get());
-              g_pExecuteCommandListsTarget = pVTable[10];
+              g_pExecuteCommandListsTarget = pVTable[kExecuteCommandListsSlot];
 
-              if (MH_CreateHook(g_pExecuteCommandListsTarget, reinterpret_cast<LPVOID>(&new_ExecuteCommandLists),
-                                reinterpret_cast<LPVOID*>(&o_ExecuteCommandLists)) == MH_OK) {
+              if (MH_CreateHook(g_pExecuteCommandListsTarget, reinterpret_cast<LPVOID>(&new_ExecuteCommandLists), reinterpret_cast<LPVOID*>(&o_ExecuteCommandLists)) == MH_OK) {
                 if (MH_EnableHook(g_pExecuteCommandListsTarget) == MH_OK) {
                   logger->Info("ExecuteCommandLists hook enabled. Waiting for command queue capture...");
                 } else {
@@ -371,40 +306,27 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
             }
           }
         } else {
-          GetLogger()->Error("Failed to get D3D12 device from swap chain.");
+          logger->Error("Failed to get D3D12 device from swap chain.");
         }
       } else {
-        GetLogger()->Error("Failed to get IDXGISwapChain3 interface.");
+        logger->Error("Failed to get IDXGISwapChain3 interface.");
       }
     }
   }
 
-  // Handle D3D12 deferred init: command queue captured after API was detected
+  // D3D12 deferred init: command queue captured after API was detected.
   if (g_detectedAPI == Rendering::RenderAPI::D3D12 && g_pGameCommandQueue != nullptr && !g_isInited && DXGIHook::MainWindow != nullptr) {
     try {
-      auto logger = GetLogger();
       g_isInited = true;
       logger->Info("D3D12 command queue captured. Initializing ImGui renderer...");
-
-      WNDPROC oldWndProc = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook"));
-      if (oldWndProc != nullptr) {
-        WNDPROC prevOriginal = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc"));
-        if (prevOriginal != nullptr) {
-          SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
-          logger->Info("Cleaned up previous WndProc hook.");
-        }
-      }
-
-      g_originalWndProc = reinterpret_cast<WNDPROC>(
-          SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
-      SetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook", reinterpret_cast<HANDLE>(WndProcDXGI));
-      SetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc", reinterpret_cast<HANDLE>(g_originalWndProc));
-      logger->Info("Original WndProc at {0:p}, hooked.", reinterpret_cast<void*>(g_originalWndProc));
+      InstallGameWndProc();
 
       ComPtr<IDXGISwapChain3> swapChain3;
       if (SUCCEEDED(pSwapChain->QueryInterface(IID_PPV_ARGS(&swapChain3)))) {
         ComPtr<ID3D12Device> d3d12Device;
         if (SUCCEEDED(swapChain3->GetDevice(IID_PPV_ARGS(&d3d12Device)))) {
+          g_replaySwapChain = swapChain3;
+          g_replayDevice12 = d3d12Device;
           DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::D3D12);
           DXGIHook::OnD3D12Init.Call(swapChain3.Get(), d3d12Device.Get(), g_pGameCommandQueue);
         } else {
@@ -416,10 +338,10 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
         g_isInited = false;
       }
     } catch (const std::exception& e) {
-      GetLogger()->Critical("Exception during D3D12 deferred init: {}", e.what());
+      logger->Critical("Exception during D3D12 deferred init: {}", e.what());
       g_isInited = false;
     } catch (...) {
-      GetLogger()->Critical("Unknown exception during D3D12 deferred init.");
+      logger->Critical("Unknown exception during D3D12 deferred init.");
       g_isInited = false;
     }
   }
@@ -428,61 +350,298 @@ HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_Present(IDXGISwapChain* pSwapChain,
     try {
       DXGIHook::OnPresent.Call(pSwapChain);
     } catch (const std::exception& e) {
-      GetLogger()->Critical("Exception during OnPresent: {}", e.what());
+      logger->Critical("Exception during OnPresent: {}", e.what());
     } catch (...) {
-      GetLogger()->Critical("Unknown exception during OnPresent.");
+      logger->Critical("Unknown exception during OnPresent.");
     }
   }
-
-  return o_Present(pSwapChain, SyncInterval, Flags);
 }
 
-HRESULT STDMETHODCALLTYPE new_IDXGISwapChain_ResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount,
-                                                           UINT Width, UINT Height, DXGI_FORMAT NewFormat,
-                                                           UINT SwapChainFlags) {
-  if (g_isInited) {
-    try {
-      GetLogger()->Debug("ResizeBuffers called. Firing OnBeforeResize.");
-      DXGIHook::OnBeforeResize.Call(pSwapChain, Width, Height);
-    } catch (const std::exception& e) {
-      GetLogger()->Critical("Exception during OnBeforeResize: {}", e.what());
-    } catch (...) {
-      GetLogger()->Critical("Unknown exception during OnBeforeResize.");
-    }
+void RestoreWndProcIfHooked() {
+  if (g_originalWndProc != nullptr && DXGIHook::MainWindow != nullptr) {
+    SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
+    RemovePropW(DXGIHook::MainWindow, L"SPF_WndProcHook");
+    RemovePropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc");
+    GetLogger()->Info("Restored original WndProc.");
+    g_originalWndProc = nullptr;
   }
-
-  g_needUpdateInfo = true;
-  HRESULT hr = o_ResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
-
-  if (g_isInited) {
-    try {
-      GetLogger()->Debug("ResizeBuffers done. Firing OnResize.");
-      DXGIHook::OnResize.Call(pSwapChain, Width, Height);
-    } catch (const std::exception& e) {
-      GetLogger()->Critical("Exception during OnResize: {}", e.what());
-    } catch (...) {
-      GetLogger()->Critical("Unknown exception during OnResize.");
-    }
-  }
-
-  return hr;
 }
 
-LRESULT CALLBACK WndProcDXGI(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  try {
-    DXGIHook::block_wndproc_message = false;
-    DXGIHook::OnWndProc.Call(hWnd, uMsg, wParam, lParam);
-
-    if (DXGIHook::block_wndproc_message) {
-      return 0;
-    }
-  } catch (const std::exception& e) {
-    GetLogger()->Critical("Exception during WndProc: {}", e.what());
-  } catch (...) {
-    GetLogger()->Critical("Unknown exception during WndProc.");
+uintptr_t ReadBackendSwapChain(const void* backend) {
+  const uintptr_t base = reinterpret_cast<uintptr_t>(backend);
+  uintptr_t addr = 0;
+  if (g_offSwapChain1 != 0) {
+    addr = static_cast<uintptr_t>(Utils::PatternFinder::ReadInt64(base + g_offSwapChain1));
   }
-  return CallWindowProc(g_originalWndProc, hWnd, uMsg, wParam, lParam);
+  if (addr == 0 && g_offSwapChain != 0) {
+    addr = static_cast<uintptr_t>(Utils::PatternFinder::ReadInt64(base + g_offSwapChain));
+  }
+  return addr;
+}
+
+uint64_t new_GameFlip(void* backend) {
+  if (!g_hooksActive.load(std::memory_order_acquire) || o_GameFlip == nullptr) {
+    return o_GameFlip(backend);
+  }
+
+  if (g_presentDepth > 0) {
+    if (!g_loggedRecursionGuard) {
+      g_loggedRecursionGuard = true;
+      GetLogger()->Warn("Recursive flip detected (depth {}) — chaining directly to original.", g_presentDepth);
+    }
+    return o_GameFlip(backend);
+  }
+  ++g_presentDepth;
+
+  // Swapchain pointer from the backend: DXGI 1.3 slot first (flip prefers
+  // it), classic slot as fallback.
+  const uintptr_t swapChainAddr = ReadBackendSwapChain(backend);
+  if (swapChainAddr != 0) {
+    try {
+      HandlePresent(reinterpret_cast<IDXGISwapChain*>(swapChainAddr));
+    } catch (const std::exception& e) {
+      GetLogger()->Critical("Exception during flip handling: {}", e.what());
+    } catch (...) {
+      GetLogger()->Critical("Unknown exception during flip handling.");
+    }
+  }
+
+  --g_presentDepth;
+  return o_GameFlip(backend);
+}
+
+void new_GameResize(void* backend, uint64_t param2, uint8_t format, uint32_t width, uint32_t height) {
+  if (o_GameResize == nullptr) {
+    return;
+  }
+  if (!g_hooksActive.load(std::memory_order_acquire)) {
+    o_GameResize(backend, param2, format, width, height);
+    return;
+  }
+
+  auto logger = GetLogger();
+  const uintptr_t swapChainAddr = ReadBackendSwapChain(backend);
+  IDXGISwapChain* swapChain = reinterpret_cast<IDXGISwapChain*>(swapChainAddr);
+
+  // Listeners release their backbuffer references first, the original
+  // ResizeBuffers runs unblocked, then listeners rebuild. Both signal calls
+  // are exception-guarded: a throwing listener must never skip the resize.
+  if (g_isInited && swapChain != nullptr) {
+    try {
+      DXGIHook::OnBeforeResize.Call(swapChain, width, height);
+    } catch (const std::exception& e) {
+      logger->Critical("Exception during OnBeforeResize: {}", e.what());
+    } catch (...) {
+      logger->Critical("Unknown exception during OnBeforeResize.");
+    }
+  }
+
+  o_GameResize(backend, param2, format, width, height);
+
+  if (g_isInited && swapChain != nullptr) {
+    try {
+      logger->Debug("Game resize {}x{} — firing OnResize.", width, height);
+      DXGIHook::OnResize.Call(swapChain, width, height);
+    } catch (const std::exception& e) {
+      logger->Critical("Exception during OnResize: {}", e.what());
+    } catch (...) {
+      logger->Critical("Unknown exception during OnResize.");
+    }
+  }
+}
+
+void STDMETHODCALLTYPE new_ExecuteCommandLists(ID3D12CommandQueue* pQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+  if (g_pGameCommandQueue == nullptr) {
+    g_pGameCommandQueue = pQueue;
+    GetLogger()->Info("Game's D3D12 Command Queue captured: {}", static_cast<void*>(g_pGameCommandQueue));
+  }
+  MH_DisableHook(g_pExecuteCommandListsTarget);
+  o_ExecuteCommandLists(pQueue, NumCommandLists, ppCommandLists);
 }
 
 }  // namespace
+
+// --- Public API ---
+
+bool DXGIHook::Install() {
+  auto logger = GetLogger();
+
+  const bool reactivating = g_isCreated;
+  if (reactivating) {
+    logger->Info("DXGI acquisition already active — re-enabling hooks.");
+    g_hooksActive = true;
+    if (g_flipTarget != 0) {
+      MH_STATUS status = MH_EnableHook(reinterpret_cast<LPVOID>(g_flipTarget));
+      if (status != MH_OK && status != MH_ERROR_ENABLED) {
+        logger->Critical("Failed to re-enable flip hook (MinHook status {}).", static_cast<int>(status));
+        return false;
+      }
+    }
+    if (g_resizeTarget != 0) {
+      MH_STATUS status = MH_EnableHook(reinterpret_cast<LPVOID>(g_resizeTarget));
+      if (status != MH_OK && status != MH_ERROR_ENABLED) {
+        logger->Critical("Failed to re-enable resize hook (MinHook status {}).", static_cast<int>(status));
+        return false;
+      }
+    }
+  } else {
+    // OpenGLHook claims GL from its first wglSwapBuffers.
+    logger->Info("Installing flip-function detour (game-owned code, no shared-DXGI patches)...");
+
+    if (!ResolveGameDxgiLayout()) {
+      logger->Critical("Game DXGI layout resolution failed — swapchain acquisition unavailable on this build.");
+      return false;
+    }
+
+    if (MH_CreateHook(reinterpret_cast<LPVOID>(g_flipTarget), reinterpret_cast<LPVOID>(&new_GameFlip), reinterpret_cast<LPVOID*>(&o_GameFlip)) != MH_OK) {
+      logger->Critical("Failed to create flip hook at {}.", reinterpret_cast<void*>(g_flipTarget));
+      return false;
+    }
+    if (MH_EnableHook(reinterpret_cast<LPVOID>(g_flipTarget)) != MH_OK) {
+      logger->Critical("Failed to enable flip hook at {}.", reinterpret_cast<void*>(g_flipTarget));
+      return false;
+    }
+
+    if (MH_CreateHook(reinterpret_cast<LPVOID>(g_resizeTarget), reinterpret_cast<LPVOID>(&new_GameResize), reinterpret_cast<LPVOID*>(&o_GameResize)) != MH_OK) {
+      logger->Critical("Failed to create resize hook at {}.", reinterpret_cast<void*>(g_resizeTarget));
+      return false;
+    }
+    if (MH_EnableHook(reinterpret_cast<LPVOID>(g_resizeTarget)) != MH_OK) {
+      logger->Critical("Failed to enable resize hook at {}.", reinterpret_cast<void*>(g_resizeTarget));
+      return false;
+    }
+
+    g_needUpdateInfo = true;
+    g_hooksActive = true;
+    g_isCreated = true;
+  }
+
+  logger->Info("DXGI flip hook active at {}, resize hook active at {}.", reinterpret_cast<void*>(g_flipTarget), reinterpret_cast<void*>(g_resizeTarget));
+  return true;
+}
+
+void DXGIHook::Uninstall() {
+  auto logger = GetLogger();
+  if (!g_isCreated) return;
+
+  logger->Info("Disabling DXGI hooks for reload...");
+  g_hooksActive = false;
+  if (g_flipTarget != 0) {
+    MH_DisableHook(reinterpret_cast<LPVOID>(g_flipTarget));
+  }
+  if (g_resizeTarget != 0) {
+    MH_DisableHook(reinterpret_cast<LPVOID>(g_resizeTarget));
+  }
+  RestoreWndProcIfHooked();
+
+  if (g_pExecuteCommandListsTarget != nullptr) {
+    MH_DisableHook(g_pExecuteCommandListsTarget);
+  }
+
+  g_isInited = false;
+  g_needUpdateInfo = true;
+  g_isExecuteHooked = false;
+  g_loggedRecursionGuard = false;
+  g_pGameCommandQueue = nullptr;
+  g_detectedAPI = Rendering::RenderAPI::Unknown;
+  g_replaySwapChain.Reset();
+  g_replayDevice11.Reset();
+  g_replayDevice12.Reset();
+
+  logger->Info("DXGI hooks disabled (flip hook registration retained for fast reload).");
+}
+
+void DXGIHook::Remove() {
+  auto logger = GetLogger();
+  if (!g_isCreated) return;
+
+  logger->Info("Removing DXGI hooks for shutdown...");
+  Uninstall();
+
+  if (g_flipTarget != 0) {
+    // Uninstall() above already disabled it — only the MinHook registration
+    // needs to go away here.
+    MH_RemoveHook(reinterpret_cast<LPVOID>(g_flipTarget));
+    g_flipTarget = 0;
+    o_GameFlip = nullptr;
+  }
+
+  if (g_resizeTarget != 0) {
+    MH_RemoveHook(reinterpret_cast<LPVOID>(g_resizeTarget));
+    g_resizeTarget = 0;
+    o_GameResize = nullptr;
+  }
+
+  if (g_pExecuteCommandListsTarget != nullptr) {
+    MH_RemoveHook(g_pExecuteCommandListsTarget);
+    g_pExecuteCommandListsTarget = nullptr;
+  }
+  o_ExecuteCommandLists = nullptr;
+
+  g_pGameCommandQueue = nullptr;
+  g_isExecuteHooked = false;
+  g_isInited = false;
+  g_needUpdateInfo = true;
+  g_isCreated = false;
+  g_layoutResolved = false;
+  g_offSwapChain1 = 0;
+  g_offSwapChain = 0;
+  g_detectedAPI = Rendering::RenderAPI::Unknown;
+
+  logger->Info("DXGI hooks completely removed.");
+}
+
+bool DXGIHook::IsInstalled() { return g_isCreated; }
+
+Rendering::RenderAPI DXGIHook::GetDetectedAPI() { return g_detectedAPI; }
+
+void DXGIHook::NotifyOpenGLDetected() {
+  auto logger = GetLogger();
+  const Rendering::RenderAPI api = g_detectedAPI.load();
+  if (api != Rendering::RenderAPI::Unknown && api != Rendering::RenderAPI::OpenGL) {
+    logger->Critical("wglSwapBuffers fired but API already detected ({}) — ignoring stale OpenGL claim.", static_cast<int>(api));
+    return;
+  }
+
+  g_detectedAPI = Rendering::RenderAPI::OpenGL;
+  if (g_isInited) {
+    return;
+  }
+
+  logger->Info("OpenGL backend proven by wglSwapBuffers. Firing API detection...");
+  DXGIHook::OnAPIDetected.Call(Rendering::RenderAPI::OpenGL);
+  g_isInited = true;
+}
+
+void DXGIHook::ReplayInitialization() {
+  auto logger = GetLogger();
+  if (!g_isInited || g_detectedAPI == Rendering::RenderAPI::Unknown) return;
+
+  if (g_detectedAPI == Rendering::RenderAPI::D3D11) {
+    if (!g_replaySwapChain || !g_replayDevice11) return;
+    logger->Info("Replaying D3D11 init signals for late-connected listeners...");
+    OnAPIDetected.Call(Rendering::RenderAPI::D3D11);
+    OnD3D11Init.Call(g_replaySwapChain.Get(), g_replayDevice11.Get());
+    return;
+  }
+
+  if (g_detectedAPI == Rendering::RenderAPI::D3D12) {
+    if (!g_replaySwapChain || !g_replayDevice12 || g_pGameCommandQueue == nullptr) return;
+    logger->Info("Replaying D3D12 init signals for late-connected listeners...");
+    OnAPIDetected.Call(Rendering::RenderAPI::D3D12);
+    OnD3D12Init.Call(g_replaySwapChain.Get(), g_replayDevice12.Get(), g_pGameCommandQueue);
+    return;
+  }
+
+  if (g_detectedAPI == Rendering::RenderAPI::OpenGL) {
+    logger->Info("Replaying OpenGL init signal for late-connected listeners...");
+    OnAPIDetected.Call(Rendering::RenderAPI::OpenGL);
+    // OnInit fired on the first wglSwapBuffers, before any listener existed —
+    // re-fire it now (same semantics as the D3D11/D3D12 init replays above).
+    if (Hooks::OpenGLHook::InitHDC != nullptr) {
+      Hooks::OpenGLHook::OnInit.Call(Hooks::OpenGLHook::InitHDC);
+    }
+  }
+}
+
 }  // namespace SPF::Hooks

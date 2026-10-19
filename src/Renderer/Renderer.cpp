@@ -44,9 +44,22 @@ Renderer::~Renderer() {
 void Renderer::Init() {
   m_logger->Info("Connecting to DXGIHook::OnAPIDetected for deferred API detection...");
   m_onAPIDetectedSink.Connect<&Renderer::OnAPIDetected>(this);
+
+  // The game swapchain exists before the plugin loads, so detection fires
+  // within milliseconds of the wrap — typically before this Connect. Replay
+  // the stored init signals so late listeners see the same sequence.
+  if (Hooks::DXGIHook::GetDetectedAPI() != Rendering::RenderAPI::Unknown) {
+    m_logger->Info("API already detected — replaying DXGIHook initialization signals...");
+    Hooks::DXGIHook::ReplayInitialization();
+  }
 }
 
 void Renderer::OnAPIDetected(Rendering::RenderAPI api) {
+  if (m_impl) {
+    // Detection can fire live from the poll thread while Init() replays from the
+    // game thread — only one implementation ever exists.
+    return;
+  }
   m_logger->Info("API detected by DXGIHook: {}. Creating renderer implementation...", static_cast<int>(api));
   m_detectedAPI = api;
 

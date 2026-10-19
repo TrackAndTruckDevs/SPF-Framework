@@ -162,8 +162,18 @@ void D3D11RendererImpl::OnInit(IDXGISwapChain* swapChain, ID3D11Device* device) 
 }
 
 void D3D11RendererImpl::OnPresent(IDXGISwapChain* swapChain) {
+  if (swapChain != m_swapChain.Get()) {
+    // The swapchain was recreated — the cached chain and any view built on
+    // its buffers are stale; rebuild below against the new instance.
+    m_swapChain = swapChain;
+    CleanupRenderTarget();
+  }
+
   if (m_mainRenderTargetView == nullptr) {
-    return;
+    CreateRenderTarget();
+    if (m_mainRenderTargetView == nullptr) {
+      return;
+    }
   }
 
   // Ask the UIManager to update state (fonts, plugins, etc.) before the ImGui frame starts.
@@ -188,6 +198,10 @@ void D3D11RendererImpl::OnPresent(IDXGISwapChain* swapChain) {
   // Render the ImGui draw data.
   ImGui::Render();
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+  // The view persists across frames: the resize detour releases it in
+  // OnBeforeResize just before the game's ResizeBuffers, and recreates it
+  // in OnResize — no per-frame churn, no outstanding reference surprises.
 }
 
 void D3D11RendererImpl::OnBeforeResize(IDXGISwapChain* swapChain, UINT width, UINT height) {
@@ -226,7 +240,7 @@ void D3D11RendererImpl::CleanupRenderTarget() {
     ID3D11RenderTargetView* nullViews[] = {nullptr};
     m_context->OMSetRenderTargets(1, nullViews, nullptr);
     m_mainRenderTargetView.Reset();
-    m_logger->Info("Render target cleaned up successfully.");
+    m_logger->Debug("Render target cleaned up successfully.");
   }
 }
 
