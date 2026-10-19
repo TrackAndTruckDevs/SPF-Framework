@@ -9,7 +9,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 
 namespace SPF::GameCamera {
 GameCameraInterior::GameCameraInterior() {
@@ -31,7 +33,13 @@ void GameCameraInterior::OnActivate() {
     m_pCameraObject = hooks.GetGetCameraObjectFunc()((void*)pStandardManager, static_cast<int>(GetType()));
     if (m_pCameraObject) {
       logger->Debug("DIAGNOSTIC: Interior Camera Object Address: 0x{:X}", reinterpret_cast<uintptr_t>(m_pCameraObject));
-      if (m_rollActive) SetRoll(m_rollRadians * (180.0f / 3.14159265f));
+      // The patches were restored on deactivation, so the camera holds the game's own roll.
+      if (m_rollStub) {
+        auto rollOffset = gameData.GetInteriorRollOffset();
+        *RollBaseSlot() = rollOffset ? *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) : 0.0f;
+      }
+      ApplyRollMode(WantedRollMode());
+      WriteRollField();
     }
   }
 }
@@ -39,10 +47,10 @@ void GameCameraInterior::OnActivate() {
 void GameCameraInterior::OnDeactivate() {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
   logger->Info("Deactivating Interior Camera.");
-  m_pCameraObject = nullptr;  // Clear the pointer when not active
   // Restore the game's code while inactive, but keep the requested roll so it comes back
   // when the interior camera is re-activated.
-  SetRollPatchesApplied(false);
+  ApplyRollMode(RollMode::Game);
+  m_pCameraObject = nullptr;  // Clear the pointer when not active
 }
 
 void GameCameraInterior::Update(float dt) {
@@ -54,13 +62,10 @@ void GameCameraInterior::Update(float dt) {
   // so this per-frame update is no longer necessary for populating local data.
   // It can be used for other per-frame logic if needed in the future.
 
-  // Keeps the roll pinned even if the game's own writers could not be patched.
-  if (m_rollActive) {
-    auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
-    if (rollOffset) {
-      *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = m_rollRadians;
-    }
-  }
+  // Keeps the roll pinned even if the game's own writers could not be patched. Additive,
+  // it covers the frames the game skips its head tracking update and writes no roll at all
+  // (the stubs only run when it does).
+  WriteRollField();
 }
 
 bool GameCameraInterior::GetRoll(float* out_deg) const {
@@ -82,21 +87,71 @@ void GameCameraInterior::SetRoll(float degrees) {
   m_rollActive = degrees != 0.0f;
   if (!m_pCameraObject) return;
 
-  auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
-  if (!rollOffset) {
+  if (!Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset()) {
     auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
     logger->Warn("Cannot set roll: yaw/pitch offsets are missing.");
     return;
   }
 
-  SetRollPatchesApplied(m_rollActive);
-  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = m_rollRadians;
+  ApplyRollMode(WantedRollMode());
+  WriteRollField();
 }
 
-void GameCameraInterior::SetRollPatchesApplied(bool apply) {
+bool GameCameraInterior::GetRollOffset(float* out_deg) const {
+  if (!out_deg) return false;
+  *out_deg = m_rollOffsetRadians * (180.0f / 3.14159265f);
+  return true;
+}
+
+void GameCameraInterior::SetRollOffset(float degrees) {
+  // Remembered even while the camera is inactive; OnActivate() re-applies it.
+  m_rollOffsetRadians = degrees * (3.14159265f / 180.0f);
+  m_rollOffsetActive = degrees != 0.0f;
+  if (m_rollStub) *RollOffsetSlot() = m_rollOffsetRadians;
+  if (!m_pCameraObject || !Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset()) return;
+
+  ApplyRollMode(WantedRollMode());
+  WriteRollField();
+}
+
+bool GameCameraInterior::GetBaseRoll(float* out_deg) const {
+  if (!out_deg) return false;
+  if (m_rollMode == RollMode::Pinned) return false;
+  if (m_rollMode == RollMode::Additive) {
+    *out_deg = *RollBaseSlot() * (180.0f / 3.14159265f);
+    return true;
+  }
+  if (!m_pCameraObject) return false;
+  auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
+  if (!rollOffset) return false;
+  *out_deg = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) * (180.0f / 3.14159265f);
+  return true;
+}
+
+GameCameraInterior::RollMode GameCameraInterior::WantedRollMode() const {
+  if (m_rollActive) return RollMode::Pinned;
+  if (!m_rollOffsetActive) return RollMode::Game;
+  // Without the stubs, the offset falls back to replacing the game's roll.
+  return m_rollStubFailed ? RollMode::Pinned : RollMode::Additive;
+}
+
+void GameCameraInterior::WriteRollField() {
+  if (!m_pCameraObject || m_rollMode == RollMode::Game) return;
+  auto rollOffset = Data::GameData::GameDataCameraService::GetInstance().GetInteriorRollOffset();
+  if (!rollOffset) return;
+  float value;
+  if (m_rollMode == RollMode::Additive) {
+    value = *RollBaseSlot() + m_rollOffsetRadians;
+  } else {
+    value = m_rollActive ? m_rollRadians : m_rollOffsetRadians;
+  }
+  *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = value;
+}
+
+void GameCameraInterior::ApplyRollMode(RollMode mode) {
   auto& gameData = Data::GameData::GameDataCameraService::GetInstance();
-  if (apply) {
-    // An applied patch keeps its address: losing it would leave the NOPs in for good.
+  if (mode != RollMode::Game) {
+    // An applied patch keeps its address: losing it would leave the patch in for good.
     if (!m_rollPatches[0].applied) {
       m_rollPatches[0].addr = gameData.GetInteriorRollZeroStoreAddr();
       m_rollPatches[0].length = 10;  // mov dword [reg+disp32], imm32
@@ -106,23 +161,167 @@ void GameCameraInterior::SetRollPatchesApplied(bool apply) {
       m_rollPatches[1].length = 8;  // movss [reg+disp32], xmm
     }
   }
+  if (mode == RollMode::Additive && !m_rollStub && !BuildRollStubs()) {
+    m_rollStubFailed = true;
+    auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameCameraInterior");
+    logger->Warn("Cannot add the roll offset to the game's roll: it replaces it instead.");
+    mode = RollMode::Pinned;
+  }
+  if (mode == m_rollMode) return;
 
-  for (auto& patch : m_rollPatches) {
-    if (!patch.addr || patch.applied == apply) continue;
+  // Back to the game's roll, which would otherwise keep ours on the frames the game writes
+  // none: its own last value when we were adding to it, the vanilla 0 when pinning.
+  if (mode == RollMode::Game && m_pCameraObject) {
+    auto rollOffset = gameData.GetInteriorRollOffset();
+    if (rollOffset) *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(m_pCameraObject) + rollOffset) = m_rollMode == RollMode::Additive ? *RollBaseSlot() : 0.0f;
+  }
+
+  // The zero store's stub starts at +32 in the page, the controller store's at +96.
+  static constexpr size_t kStubOffsets[2] = {32, 96};
+  for (int i = 0; i < 2; ++i) {
+    auto& patch = m_rollPatches[i];
+    if (!patch.addr) continue;
 
     DWORD oldProtect = 0;
     if (!VirtualProtect(reinterpret_cast<void*>(patch.addr), patch.length, PAGE_EXECUTE_READWRITE, &oldProtect)) continue;
     auto* code = reinterpret_cast<unsigned char*>(patch.addr);
-    if (apply) {
+    if (patch.applied) {
+      memcpy(code, patch.original, patch.length);
+      patch.applied = false;
+    }
+    if (mode != RollMode::Game) {
       memcpy(patch.original, code, patch.length);
       memset(code, 0x90, patch.length);
-    } else {
-      memcpy(code, patch.original, patch.length);
+      if (mode == RollMode::Additive) {
+        const auto rel = static_cast<int32_t>(reinterpret_cast<intptr_t>(m_rollStub + kStubOffsets[i]) - static_cast<intptr_t>(patch.addr + 5));
+        code[0] = 0xE9;  // jmp rel32
+        memcpy(code + 1, &rel, 4);
+      }
+      patch.applied = true;
     }
     VirtualProtect(reinterpret_cast<void*>(patch.addr), patch.length, oldProtect, &oldProtect);
     FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(patch.addr), patch.length);
-    patch.applied = apply;
   }
+  m_rollMode = mode;
+}
+
+namespace {
+// Reserves a page within a rel32 jump (+-2 GB, with some margin) of `target`.
+unsigned char* AllocateNear(uintptr_t target) {
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  const uintptr_t granularity = si.dwAllocationGranularity;
+  const uintptr_t range = 0x7FF00000;
+  const uintptr_t lowest = target > range ? target - range : granularity;
+  const uintptr_t highest = target + range;
+  const uintptr_t start = target & ~(granularity - 1);
+  for (uintptr_t step = granularity; step < range; step += granularity) {
+    for (uintptr_t candidate : {start - step, start + step}) {
+      if (candidate < lowest || candidate > highest) continue;
+      MEMORY_BASIC_INFORMATION mbi;
+      if (!VirtualQuery(reinterpret_cast<void*>(candidate), &mbi, sizeof(mbi)) || mbi.State != MEM_FREE) continue;
+      if (void* page = VirtualAlloc(reinterpret_cast<void*>(candidate), si.dwPageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
+        return static_cast<unsigned char*>(page);
+      }
+    }
+  }
+  return nullptr;
+}
+
+struct Emitter {
+  unsigned char* p;
+  void Bytes(std::initializer_list<unsigned char> bytes) {
+    for (unsigned char b : bytes) *p++ = b;
+  }
+  void Raw(const unsigned char* src, size_t n) {
+    memcpy(p, src, n);
+    p += n;
+  }
+  void Int32(int32_t v) {
+    memcpy(p, &v, 4);
+    p += 4;
+  }
+  // rel32 to `target`, from the end of the instruction: `trailing` bytes still follow it.
+  void RipRel(const void* target, size_t trailing = 0) {
+    Int32(static_cast<int32_t>(reinterpret_cast<intptr_t>(target) - reinterpret_cast<intptr_t>(p + 4 + trailing)));
+  }
+  // jmp qword [rip+0] followed by the absolute address: no range limit.
+  void JumpTo(uintptr_t target) {
+    Bytes({0xFF, 0x25, 0x00, 0x00, 0x00, 0x00});
+    memcpy(p, &target, 8);
+    p += 8;
+  }
+};
+}  // namespace
+
+bool GameCameraInterior::BuildRollStubs() {
+  const auto& zero = m_rollPatches[0];
+  const auto& ctrl = m_rollPatches[1];
+  if (!zero.addr || !ctrl.addr) return false;
+  // The game's bytes, also when a patch is already in (NOPs for an absolute roll).
+  unsigned char zeroBytes[10], ctrlBytes[8];
+  memcpy(zeroBytes, zero.applied ? zero.original : reinterpret_cast<const unsigned char*>(zero.addr), sizeof(zeroBytes));
+  memcpy(ctrlBytes, ctrl.applied ? ctrl.original : reinterpret_cast<const unsigned char*>(ctrl.addr), sizeof(ctrlBytes));
+
+  // mov dword [base+disp32], 0: C7 /0, mod=10, no SIB.
+  const unsigned char zeroModrm = zeroBytes[1];
+  if (zeroBytes[0] != 0xC7 || (zeroModrm >> 6) != 2 || ((zeroModrm >> 3) & 7) != 0 || (zeroModrm & 7) == 4) return false;
+  if (zeroBytes[6] || zeroBytes[7] || zeroBytes[8] || zeroBytes[9]) return false;
+  // movss [base+disp32], xmmN: F3 0F 11 /r, mod=10, no SIB.
+  const unsigned char ctrlModrm = ctrlBytes[3];
+  if (ctrlBytes[0] != 0xF3 || ctrlBytes[1] != 0x0F || ctrlBytes[2] != 0x11 || (ctrlModrm >> 6) != 2 || (ctrlModrm & 7) == 4) return false;
+
+  unsigned char* page = AllocateNear(ctrl.addr);
+  if (!page) return false;
+  const auto farFrom = [page](uintptr_t addr) { return std::abs(reinterpret_cast<intptr_t>(page) - static_cast<intptr_t>(addr)) > 0x7FF00000; };
+  if (farFrom(zero.addr) || farFrom(ctrl.addr)) {
+    VirtualFree(page, 0, MEM_RELEASE);
+    return false;
+  }
+
+  float* base = reinterpret_cast<float*>(page);
+  float* offset = base + 1;
+  unsigned char* xmmSave = page + 16;  // 16 bytes
+  *base = 0.0f;
+  *offset = m_rollOffsetRadians;
+
+  // Zero store (no head tracking): the game's roll is 0, the camera gets the offset.
+  {
+    const unsigned char baseReg = zeroModrm & 7;
+    const unsigned char scratch = baseReg == 0 ? 1 : 0;  // rax, or rcx when rax is the base
+    Emitter e{page + 32};
+    e.Bytes({0xC7, 0x05});  // mov dword [rip+base], 0
+    e.RipRel(base, 4);
+    e.Int32(0);
+    e.Bytes({static_cast<unsigned char>(0x50 + scratch)});  // push scratch
+    e.Bytes({0x8B, static_cast<unsigned char>((scratch << 3) | 5)});  // mov scratch32, [rip+offset]
+    e.RipRel(offset);
+    e.Bytes({0x89, static_cast<unsigned char>(0x80 | (scratch << 3) | baseReg)});  // mov [base+disp32], scratch32
+    e.Raw(zeroBytes + 2, 4);
+    e.Bytes({static_cast<unsigned char>(0x58 + scratch)});  // pop scratch
+    e.JumpTo(zero.addr + zero.length);
+  }
+
+  // Controller store (head tracker's roll in xmmN): keep it, write it plus the offset, and
+  // give xmmN back untouched.
+  {
+    const unsigned char rm = static_cast<unsigned char>((((ctrlModrm >> 3) & 7) << 3) | 5);  // xmmN, [rip+rel32]
+    Emitter e{page + 96};
+    e.Bytes({0x0F, 0x11, rm});  // movups [rip+save], xmmN
+    e.RipRel(xmmSave);
+    e.Bytes({0xF3, 0x0F, 0x11, rm});  // movss [rip+base], xmmN
+    e.RipRel(base);
+    e.Bytes({0xF3, 0x0F, 0x58, rm});  // addss xmmN, [rip+offset]
+    e.RipRel(offset);
+    e.Raw(ctrlBytes, sizeof(ctrlBytes));  // movss [base+disp32], xmmN
+    e.Bytes({0x0F, 0x10, rm});  // movups xmmN, [rip+save]
+    e.RipRel(xmmSave);
+    e.JumpTo(ctrl.addr + ctrl.length);
+  }
+
+  FlushInstructionCache(GetCurrentProcess(), page, 160);
+  m_rollStub = page;
+  return true;
 }
 
 void GameCameraInterior::SetSeatPosition(float x, float y, float z) {

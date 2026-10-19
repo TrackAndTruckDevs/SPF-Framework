@@ -166,6 +166,18 @@ Gets or sets the current head rotation of the driver.
 Gets or sets the head roll (camera tilt) of the driver, in degrees. `0` is level, which is the game's vanilla behavior (the game has no roll of its own).
 *   The value is kept while another camera is active and re-applied when the interior camera is activated again.
 *   Setting `0` gives control back to the game.
+*   It replaces the game's own roll, including a head tracker's (`c_ht_roll 1`). To tilt the head on top of it, use `Cam_SetInteriorRollOffset`.
+
+---
+**`Cam_GetInteriorRollOffset(float* degrees)` / `Cam_SetInteriorRollOffset(float degrees)`**
+Gets or sets a roll offset, in degrees, added on top of the game's own roll instead of replacing it: with a head tracker rolling the head (`c_ht_roll 1`), the camera gets the tracker's roll plus the offset.
+*   The value is kept while another camera is active and re-applied when the interior camera is activated again.
+*   Setting `0` gives control back to the game.
+*   An absolute roll set with `Cam_SetInteriorRoll` takes precedence while it is non-zero.
+
+---
+**`Cam_GetInteriorBaseRoll(float* degrees)`**
+Gets the game's own roll, in degrees, without the offset: the head tracker's roll, or `0` without one. Returns `false` while an absolute roll set with `Cam_SetInteriorRoll` suppresses it.
 
 ---
 **`Cam_GetInteriorFov(float* fov)` / `Cam_SetInteriorFov(float fov)`**

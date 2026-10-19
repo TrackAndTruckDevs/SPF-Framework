@@ -163,6 +163,32 @@ typedef bool (*SPF_Camera_GetInteriorRoll_t)(float* degrees);
 typedef void (*SPF_Camera_SetInteriorRoll_t)(float degrees);
 
 /**
+ * @brief Gets the additive head roll offset of the interior camera.
+ * @param[out] degrees Pointer to a float to store the offset in degrees.
+ * @return True on success, false otherwise.
+ */
+typedef bool (*SPF_Camera_GetInteriorRollOffset_t)(float* degrees);
+
+/**
+ * @brief Sets an additive head roll offset on the interior camera.
+ * @param degrees Offset in degrees, added on top of the game's own roll (a head tracker's
+ * roll, e.g. with `c_ht_roll 1`) instead of replacing it. Setting 0 restores the game.
+ * @details Unlike `Cam_SetInteriorRoll`, the game keeps writing its roll: the offset is added
+ * after it every frame. An absolute roll set with `Cam_SetInteriorRoll` takes precedence
+ * while it is non-zero. The offset is kept across camera switches.
+ */
+typedef void (*SPF_Camera_SetInteriorRollOffset_t)(float degrees);
+
+/**
+ * @brief Gets the game's own head roll of the interior camera, without any offset.
+ * @param[out] degrees Pointer to a float to store the roll in degrees (a head tracker's roll,
+ * or 0 without one).
+ * @return False while an absolute roll is set with `Cam_SetInteriorRoll` (the game's roll is
+ * suppressed then) or if the camera isn't available.
+ */
+typedef bool (*SPF_Camera_GetInteriorBaseRoll_t)(float* degrees);
+
+/**
  * @brief Gets the base Field of View (FOV) for the interior camera.
  * @param[out] fov Pointer to a float to store the FOV value.
  * @return True on success, false otherwise.
@@ -2386,6 +2412,14 @@ typedef struct SPF_Camera_API {
   SPF_Camera_GetInteriorRoll_t Cam_GetInteriorRoll;
   /** @brief Sets the interior camera's roll in degrees. See `SPF_Camera_SetInteriorRoll_t`. */
   SPF_Camera_SetInteriorRoll_t Cam_SetInteriorRoll;
+
+  // --- Interior Roll Offset (appended to keep the struct layout ABI-compatible) ---
+  /** @brief Gets the interior camera's additive roll offset. See `SPF_Camera_GetInteriorRollOffset_t`. */
+  SPF_Camera_GetInteriorRollOffset_t Cam_GetInteriorRollOffset;
+  /** @brief Sets the interior camera's additive roll offset. See `SPF_Camera_SetInteriorRollOffset_t`. */
+  SPF_Camera_SetInteriorRollOffset_t Cam_SetInteriorRollOffset;
+  /** @brief Gets the game's own interior roll. See `SPF_Camera_GetInteriorBaseRoll_t`. */
+  SPF_Camera_GetInteriorBaseRoll_t Cam_GetInteriorBaseRoll;
 
 } SPF_Camera_API;
 
