@@ -59,6 +59,10 @@ void GameObjectSessionService::Reset() {
   m_setLanguageFuncAddr = 0;
   m_languageListFuncAddr = 0;
   m_isInitialized = false;
+
+  for (auto& finder : m_dataFinders) {
+    finder->Reset();
+  }
 }
 
 std::string GameObjectSessionService::GetGameLanguage() const {

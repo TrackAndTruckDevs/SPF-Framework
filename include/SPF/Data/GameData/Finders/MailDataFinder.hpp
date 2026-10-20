@@ -27,6 +27,9 @@ class MailDataFinder {
   /** @brief Returns the internal name of the finder for logging purposes. */
   const char* GetName() const { return "MailDataFinder"; }
 
+  /** @brief Resets readiness so the next TryFind re-scans patterns. */
+  void Reset() { m_isReady = false; }
+
  private:
   bool m_isReady = false;
 };

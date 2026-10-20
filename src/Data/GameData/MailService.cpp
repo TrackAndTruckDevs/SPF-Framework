@@ -278,6 +278,8 @@ void MailService::Reset() {
   m_unitArrayDataAddr = 0;
   m_unitArrayCountAddr = 0;
   m_unitArrayCapacityAddr = 0;
+
+  m_finder.Reset();
 }
 
 bool MailService::TryFindAllOffsets() {

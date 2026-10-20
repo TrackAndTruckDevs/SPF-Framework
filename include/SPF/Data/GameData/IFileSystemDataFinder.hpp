@@ -27,6 +27,9 @@ class IFileSystemDataFinder {
    */
   bool IsReady() const { return m_isReady; }
 
+  /** @brief Resets readiness so the next TryFindOffsets re-scans patterns. */
+  void Reset() { m_isReady = false; }
+
  protected:
   bool m_isReady = false;
 };

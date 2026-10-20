@@ -62,7 +62,7 @@ void GameObjectFileSystemService::Reset() {
   // m_vfsMounts intentionally kept: live UFS mounts must survive Reset.
 
   for (auto& finder : m_dataFinders) {
-    // In the current architecture, finders handle their own state
+    finder->Reset();
   }
 }
 

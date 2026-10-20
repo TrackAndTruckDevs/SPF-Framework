@@ -14,6 +14,12 @@ class ISessionDataFinder {
   virtual bool TryFindOffsets(GameObjectSessionService& owner) = 0;
   virtual bool IsReady() const = 0;
   virtual const char* GetName() const = 0;
+
+  /** @brief Resets readiness so the next TryFindOffsets re-scans patterns. */
+  void Reset() { m_isReady = false; }
+
+ protected:
+  bool m_isReady = false;
 };
 
 }  // namespace SPF::Data::GameData
