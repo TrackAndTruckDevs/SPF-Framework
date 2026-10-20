@@ -19,10 +19,11 @@ const char* UPDATE_ENV_STRING = "Missing Headquarters %s";
 
 /**
  * @brief Pattern for the first CALL rel32 inside the anchor function — targets UpdateEnvironmentState.
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
- * 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
+ * /--- Ghidra:(amtrucks_1_62b.exe) Fun:(FUN_14087ae50[14087ae50]) ---/
+ * 14087aed8  E8 E3 5F C7 FF                CALL 0x1404f0ec0
+ * 14087aedd  48 8D 05 64 A3 A9 01          LEA RAX,[0x142315248]
  */
-const char* UPDATE_ENV_CALL_SIG = "[CALL rel32]";
+const char* UPDATE_ENV_CALL_SIG = "[CALL rel32] [LEA r64, [rip+off32]]";
 
 /**
  * @brief Unique string anchor to locate the SetWeather function entry.
@@ -248,7 +249,7 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
       // 1.1 First CALL rel32 inside the function body — targets UpdateEnvironmentState.
       // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
       // 14085497c  E8 6F FA C7 FF                CALL 0x1404d43f0
-      uintptr_t addrCall = Utils::PatternFinder::Find(pfnEnvOwner, 128, UPDATE_ENV_CALL_SIG);
+      uintptr_t addrCall = Utils::PatternFinder::Find(pfnEnvOwner, 156, UPDATE_ENV_CALL_SIG);
       if (phase.Step(addrCall, "UpdateEnvironmentState CALL", "RT")) {
         uintptr_t pfnUpdateEnv = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
         if (phase.Step(pfnUpdateEnv, "UpdateEnvironmentState", "FN")) {

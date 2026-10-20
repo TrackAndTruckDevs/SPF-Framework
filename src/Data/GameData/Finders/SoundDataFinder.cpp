@@ -448,13 +448,16 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
           }
 
           /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_140442180[140442180]) ---/
-           * 14044249e  48 C7 47 20 21 00 00 00       MOV qword ptr [RDI + 0x20],0x21
-           * 1404424a6  EB 27                         JMP 0x1404424cf
+           * 140442496  48 83 F8 21                   CMP RAX,0x21
+           * /--- Ghidra:(amtrucks_1_62b.exe) ---/
+           * 14044ad46  48 83 F9 21                   CMP RCX,0x21
+           * 1.62 stores [RDI+0x20] via register (MOV [RDI+0x20],RSI), imm32 count
+           * only survives as CMP imm8.
            */
           uintptr_t addrUiCountInit =
-              PatternFinder::FindBackward(addrMov, 150, "[MOV qword ptr [r64+off8], imm64_32] [JMP rel8]");
+              PatternFinder::FindBackward(addrMov, 150, "[CMP r64, imm8]");
           if (phase.Step(addrUiCountInit, "UI SoundRef count init", "RT")) {
-            int32_t uiCount = PatternFinder::ReadInt32(addrUiCountInit + 4);
+            int32_t uiCount = PatternFinder::ReadInt8(addrUiCountInit + 3);
             if (phase.StepOffset(uiCount, "UI SoundRef count", "CNT")) {
               owner.SetUiSoundRefCount(static_cast<uint32_t>(uiCount));
             }
@@ -514,6 +517,11 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
                      */
                     uintptr_t addrVnCountCmp = PatternFinder::Find(addrVnCountMov, 16, "[CMP r64, imm8]");
                     if (phase.Step(addrVnCountCmp, "voice-nav count CMP", "RT")) {
+                      int32_t vnMax = PatternFinder::ReadInt8(addrVnCountCmp + 3);
+                      if (phase.StepOffset(vnMax, "voice-nav max entries", "CNT")) {
+                        owner.SetVoiceNavMaxEntries(static_cast<uint32_t>(vnMax));
+                      }
+
                       /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_140442180[140442180]) ---/
                        * 1404427a1  48 8B 4B 08                   MOV RCX,qword ptr [RBX + 0x8]
                        */
@@ -525,19 +533,9 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
                         }
 
                         /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_140442180[140442180]) ---/
-                         * 1404427bd  48 C7 43 10 26 00 00 00       MOV qword ptr [RBX + 0x10],0x26
+                         * 1404427ea  4D 8B 84 02 B0 B2 D7 02       MOV R8,qword ptr [R10 + RAX*0x1 + 0x2d7b2b0]
                          */
-                        uintptr_t addrVnMaxMov = PatternFinder::Find(addrVnBufMov, 64, "[MOV qword ptr [r64+off8], imm64_32]");
-                        if (phase.Step(addrVnMaxMov, "voice-nav max MOV", "RT")) {
-                          int32_t vnMax = PatternFinder::ReadInt32(addrVnMaxMov + 4);
-                          if (phase.StepOffset(vnMax, "voice-nav max entries", "CNT")) {
-                            owner.SetVoiceNavMaxEntries(static_cast<uint32_t>(vnMax));
-                          }
-
-                          /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_140442180[140442180]) ---/
-                           * 1404427ea  4D 8B 84 02 B0 B2 D7 02       MOV R8,qword ptr [R10 + RAX*0x1 + 0x2d7b2b0]
-                           */
-                          uintptr_t addrVnPathMov = PatternFinder::Find(addrVnMaxMov, 64, "[MOV r64, [r64+sib+off32]]");
+                          uintptr_t addrVnPathMov = PatternFinder::Find(addrVnCountCmp, 128, "[MOV r64, [r64+sib+off32]]");
                           if (phase.Step(addrVnPathMov, "voice-nav path SIB MOV", "RT")) {
                             int32_t vnPathDisp = PatternFinder::ReadInt32(addrVnPathMov + 4);
 
@@ -580,7 +578,7 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
                            * 14044282f  49 83 C3 28                   ADD R11,0x28
                            */
                           uintptr_t addrVnSizeAdd =
-                              PatternFinder::Find(addrVnMaxMov, 128, "[ADD r64, imm8] [ADD r64, imm8]");
+                              PatternFinder::Find(addrVnBufMov, 256, "[ADD r64, imm8] [ADD r64, imm8]");
                           if (phase.Step(addrVnSizeAdd, "voice-nav entry ADD pair", "RT")) {
                             int32_t vnEntrySize = PatternFinder::ReadInt8(addrVnSizeAdd + 3);
                             if (phase.StepOffset(vnEntrySize, "voice-nav entry size", "SZ")) {
@@ -604,7 +602,6 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
                               }
                             }
                           }
-                        }
                       }
                     }
                   }

@@ -312,7 +312,7 @@ bool MailDataFinder::TryFind(MailService& owner) {
      * 140841d7e  48 89 15 33 77 54 02          MOV [0x142d894b8],RDX   <- count
      */
     if (collectorFn) {
-      uintptr_t capCmp = PatternFinder::Find(collectorFn, 512, "48 3B 15");
+      uintptr_t capCmp = PatternFinder::Find(collectorFn, 512, "48 3b [3d|15]");
       uintptr_t unitArrayCapacityAddr = 0;
       uintptr_t unitArrayDataAddr = 0;
       uintptr_t unitArrayCountAddr = 0;
@@ -322,10 +322,11 @@ bool MailDataFinder::TryFind(MailService& owner) {
         phase.Step(unitArrayCapacityAddr, "unit array capacity", "DAT");
       }
       if (capCmp) {
-        uintptr_t chain = PatternFinder::Find(capCmp, 64, "[MOV r64, [rip+off32]] [LEA r64, [r64+off8]] [MOV [rip+off32], r64]");
+        uintptr_t chain = PatternFinder::Find(capCmp, 64, "[MOV r64, [rip+off32]] [LEA r64, [r64+off8]]? [MOV [rip+off32], r64]");
         if (phase.Step(chain, "data/count chain", "RT")) {
           unitArrayDataAddr = PatternFinder::GetRipAddress(chain, 3, 7);
-          unitArrayCountAddr = PatternFinder::GetRipAddress(chain + 11, 3, 7);
+          uintptr_t chainStore = PatternFinder::Find(chain + 7, 16, "[MOV [rip+off32], r64]");
+          unitArrayCountAddr = PatternFinder::GetRipAddress(chainStore, 3, 7);
           owner.SetUnitArrayDataAddr(unitArrayDataAddr);
           owner.SetUnitArrayCountAddr(unitArrayCountAddr);
           phase.Step(unitArrayDataAddr, "unit array data", "DAT");

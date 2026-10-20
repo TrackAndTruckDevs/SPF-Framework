@@ -30,7 +30,7 @@ const char* GAMEPLAY_MANAGER_SIG = "[MOV r64, [rip+off32]]";
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_140854930[140854930]) ---/
  * 140854952  48 8B 88 90 09 00 00          MOV RCX,qword ptr [RAX + 0x990]
  */
-const char* ENV_OBJECT_OFFSET_SIG = "[MOV r64, [r64+off32]]";
+const char* ENV_OBJECT_OFFSET_SIG = "[MOV r64, [r64+off32]] [MOV r64, [r64+off32]]";
 
 /**
  * @brief Unique string anchor to locate the function that loads CameraManager.
@@ -85,15 +85,21 @@ bool ManagerCoreDataFinder::TryFindOffsets(ManagerCoreService& owner) {
   {
     auto phase = log.MakePhase("GameplayManager");
 
-    uintptr_t stringXref = PatternFinder::FindFunctionByString(GAMEPLAY_MANAGER_STR, true);
+    /** /--- Ghidra:(amtrucks_1_62b.exe) Fun:(FUN_14087ae50[14087ae50]) ---/
+     * 14087aedd  48 8D 05 64 A3 A9 01          LEA RAX,[0x142315248] = "/ui/cargo_load_screen.sii"
+     */
+    uintptr_t stringXref = PatternFinder::FindFunctionByString(GAMEPLAY_MANAGER_STR, false);
     if (phase.Step(stringXref, "Gameplay manager string XREF", "REF")) {
-      uintptr_t addrMov = PatternFinder::Find(stringXref, 32, GAMEPLAY_MANAGER_SIG);
+      /** /--- Ghidra:(amtrucks_1_62b.exe) Fun:(FUN_14087ae50[14087ae50]) ---/
+       * 14087aea4  48 8B 05 4D DD E9 02          MOV RAX,qword ptr [0x143718bf8]
+       */
+      uintptr_t addrMov = PatternFinder::FindBackward(stringXref, 72, GAMEPLAY_MANAGER_SIG);
       if (phase.Step(addrMov, "GameplayManager MOV", "RT")) {
         uintptr_t gameplayManager = PatternFinder::GetRipAddress(addrMov, 3, 7);
         phase.Step(gameplayManager, "GameplayManager", "DATA");
         if (PatternFinder::IsValidAddress(gameplayManager)) owner.SetGameplayManagerAddr(gameplayManager);
 
-        uintptr_t addrEnv = PatternFinder::Find(addrMov, 24, ENV_OBJECT_OFFSET_SIG);
+        uintptr_t addrEnv = PatternFinder::Find(addrMov, 64, ENV_OBJECT_OFFSET_SIG);
         if (phase.Step(addrEnv, "Environment Object MOV", "RT")) {
           int32_t envOffset = PatternFinder::ReadInt32(addrEnv + 3);
           if (phase.StepOffset(envOffset, "Environment Object offset", "OFF")) {

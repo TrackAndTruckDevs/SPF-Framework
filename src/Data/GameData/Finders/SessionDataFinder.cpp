@@ -205,11 +205,14 @@ bool SessionDataFinder::TryFindOffsets(GameObjectSessionService& owner) {
      * FUN_14041c6c0 — set application language + write CVar cache in one call.
      * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1403fcff0[1403fcff0]) ---/
      * 1403fdbd6  48 8D 05 EF CE E3 01          LEA RAX,[0x14223aacc] = "en_us"
-     * 1403fdbe5  E8 D6 EA 01 00                CALL 0x14041c6c0
+     *
+     * /--- Ghidra:(amtrucks_1_62b.exe) Fun:(FUN_140405780[140405780]) ---/
+     * 140406375  E8 46 EA 01 00                CALL 0x140424dc0
+     * 14040637a  48 8B 05 DF 4C 9B 02          MOV RAX,qword ptr [0x142dbb060]
      */
     uintptr_t xrefEnUs = PatternFinder::FindFunctionByString("en_us", false);
     if (phase.Step(xrefEnUs, "SetLanguage xref (en_us)", "RT")) {
-      uintptr_t addrSetCall = PatternFinder::Find(xrefEnUs, 32, "[CALL rel32]");
+      uintptr_t addrSetCall = PatternFinder::Find(xrefEnUs, 32, "[CALL rel32] [MOV r64, [rip+off32]]");
       if (phase.Step(addrSetCall, "SetLanguage CALL", "RT")) {
         uintptr_t setLanguageFn = PatternFinder::GetRipAddress(addrSetCall, 1, 5);
         if (phase.Step(setLanguageFn, "SetLanguage function (set + CVar cache)", "FN")) {

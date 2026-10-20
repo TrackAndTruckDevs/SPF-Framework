@@ -12,41 +12,11 @@
 #include "SPF/Utils/FinderLog.hpp"
 #include "SPF/Utils/PatternFinder.hpp"
 
-#include <cstddef>
 #include <cstdint>
 
 namespace SPF::Data::GameData::Finders {
 
 using namespace SPF::Utils;
-
-namespace {
-/*
- * ConsoleCompleteCommand anchor.
- *
- * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
- * 141525deb  49 3B FD                      CMP RDI,R13
- * 141525dee  0F 84 64 01 00 00             JZ 0x141525f58
- * 141525df4  49 8B 46 08                   MOV RAX,qword ptr [R14 + 0x8]
- * 141525df8  0F B6 08                      MOVZX ECX,byte ptr [RAX]
- */
-const char* CONSOLE_COMPLETE_SIG = "[CMP r64, r64] [JE rel32] [MOV r64, [r64+off8]] [MOVZX r32, [r64]]";
-
-constexpr size_t HEAD_LOAD_WINDOW = 64;     // backward from anchor
-constexpr size_t SENTINEL_LEA_WINDOW = 16;  // from head load
-constexpr size_t NAME_CMP_WINDOW = 32;      // from anchor
-constexpr size_t NAME_COPY_WINDOW = 64;     // from name CMP
-constexpr size_t NEXT1_WINDOW = 312;        // from name copy
-constexpr size_t LOOP_EXIT_WINDOW = 32;     // from list advance
-constexpr size_t HEAD2_LOAD_WINDOW = 32;    // from loop exit
-constexpr size_t NAME2_LEA_WINDOW = 32;     // from head2 load
-constexpr size_t NEXT2_WINDOW = 312;        // from name2 LEA
-constexpr size_t HEAD3_LOAD_WINDOW = 32;    // from list2 advance
-constexpr size_t DATA3_LOAD_WINDOW = 64;    // from head3 load
-constexpr size_t ELEMENT_WINDOW = 32;       // from data3 load
-constexpr size_t SUGGESTIONS_WINDOW = 352;  // from element match
-constexpr size_t ARRAY_BASE_WINDOW = 1200;  // from suggestions data
-constexpr size_t CHEAT_GATE_WINDOW = 64;    // gate prologue MOV/LEA window
-}  // namespace
 
 bool ConsoleDataFinder::TryFind() {
   if (m_isReady) return true;
@@ -58,9 +28,23 @@ bool ConsoleDataFinder::TryFind() {
   {
     auto phase = log.MakePhase("ConsoleCompleteCommand Anchor");
 
-    addrAnchor = PatternFinder::Find(CONSOLE_COMPLETE_SIG);
-    if (phase.Step(addrAnchor, "CMP/JE/MOV/MOVZX anchor", "RT")) {
-      // Step 12 target sits later in the chain; anchor validated above.
+    /*
+     * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1415c8100[1415c8100]) ---/
+     * 1415c8eb4  48 8D 15 2D 01 E7 00          LEA RDX,[0x142438fe8] = "ver. %s (%s)"
+     */
+    uintptr_t leaSite = PatternFinder::FindFunctionByString("ver. %s (%s)", false);
+    if (phase.Step(leaSite, "ver. %s (%s) string xref", "RT")) {
+      /*
+       * /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1415c8100[1415c8100]) ---/
+       * 1415c91f0  E8 6B CB F5 FF                CALL 0x141525d60
+       * 1415c91f5  84 C0                         TEST AL,AL
+       * 1415c91f7  74 3F                         JZ 0x1415c9238
+       */
+      const uintptr_t addrCall = PatternFinder::Find(leaSite, 850, "[CALL rel32] [TEST r8, r8] [JE rel8]");
+      if (phase.Step(addrCall, "CALL ConsoleCompleteCommand (TEST/JZ)", "RT")) {
+        addrAnchor = PatternFinder::GetRipAddress(addrCall, 1, 5);
+        phase.Step(addrAnchor, "ConsoleCompleteCommand entry", "FN");
+      }
     }
   }
   if (!addrAnchor) return log.Finish(false);
@@ -76,7 +60,7 @@ bool ConsoleDataFinder::TryFind() {
      * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
      * 141525db8  48 8B 3D 41 C6 21 01          MOV RDI,qword ptr [0x142742400]
      */
-    uintptr_t addrHeadLoad = PatternFinder::FindBackward(addrAnchor, HEAD_LOAD_WINDOW, "[MOV r64, [rip+off32]]");
+    uintptr_t addrHeadLoad = PatternFinder::Find(addrAnchor, 128, "[MOV r64, [rip+off32]]");
     if (phase.Step(addrHeadLoad, "list1 head load", "RT")) {
       m_consoleListHeadAddr = PatternFinder::GetRipAddress(addrHeadLoad, 3, 7);
       phase.Step(m_consoleListHeadAddr, "console command list head", "DATA");
@@ -89,7 +73,7 @@ bool ConsoleDataFinder::TryFind() {
      * 141525dbf  4C 8D 2D 4A C6 21 01          LEA R13,[0x142742410]
      */
     if (addrHeadLoad) {
-      uintptr_t addrSentinel = PatternFinder::Find(addrHeadLoad, SENTINEL_LEA_WINDOW, "[LEA r64, [rip+off32]]");
+      uintptr_t addrSentinel = PatternFinder::Find(addrHeadLoad, 16, "[LEA r64, [rip+off32]]");
       if (phase.Step(addrSentinel, "list1 sentinel LEA", "RT")) {
         m_consoleListSentinelAddr = PatternFinder::GetRipAddress(addrSentinel, 3, 7);
         phase.Step(m_consoleListSentinelAddr, "console command list sentinel", "DATA");
@@ -103,7 +87,7 @@ bool ConsoleDataFinder::TryFind() {
      * 141525dff  48 8B 57 10                   MOV RDX,qword ptr [RDI + 0x10]
      * 141525e03  48 2B D0                      SUB RDX,RAX
      */
-    uintptr_t addrNameCmp = PatternFinder::Find(addrAnchor, NAME_CMP_WINDOW, "[MOV r64, [r64+off8]] [SUB r64, r64]");
+    uintptr_t addrNameCmp = PatternFinder::Find(addrAnchor, 256, "[MOV r64, [r64+off8]] [SUB r64, r64]");
     if (phase.Step(addrNameCmp, "list1 name compare", "RT")) {
       int len = 0;
       m_consoleNameOffset = PatternFinder::ReadInstructionDisp(addrNameCmp, len);
@@ -116,7 +100,7 @@ bool ConsoleDataFinder::TryFind() {
        * 141525e1a  48 8B 47 10                   MOV RAX,qword ptr [RDI + 0x10]
        * 141525e1e  49 8B D9                      MOV RBX,R9
        */
-      uintptr_t addrNameCopy = PatternFinder::Find(addrNameCmp, NAME_COPY_WINDOW, "[MOV r64, [r64+off8]] [MOV r64, r64]");
+      uintptr_t addrNameCopy = PatternFinder::Find(addrNameCmp, 64, "[MOV r64, [r64+off8]] [MOV r64, r64]");
       if (phase.Step(addrNameCopy, "list1 name copy", "RT")) {
         int lenCopy = 0;
         int32_t nameCopyOffset = PatternFinder::ReadInstructionDisp(addrNameCopy, lenCopy);
@@ -130,7 +114,7 @@ bool ConsoleDataFinder::TryFind() {
        * 141525f29  48 8B 3F                      MOV RDI,qword ptr [RDI]
        * 141525f2c  4C 8D 05 9D B9 CA 00          LEA R8,[0x1421d18d0]
        */
-      uintptr_t addrAdvance = PatternFinder::Find(addrNameCmp, NEXT1_WINDOW, "[MOV r64, [r64]] [LEA r64, [rip+off32]]");
+      uintptr_t addrAdvance = PatternFinder::Find(addrNameCmp, 312, "[MOV r64, [r64]] [LEA r64, [rip+off32]]");
       if (phase.Step(addrAdvance, "list1 advance (next @ +0x00, no disp)", "NODE")) {
         m_consoleNextOffset = 0;  // pattern [MOV r64, [r64]] has no displacement
 
@@ -140,7 +124,7 @@ bool ConsoleDataFinder::TryFind() {
          * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
          * 141525f41  49 3B FD                      CMP RDI,R13
          */
-        addrLoopExit = PatternFinder::Find(addrAdvance, LOOP_EXIT_WINDOW, "[CMP r64, r64]");
+        addrLoopExit = PatternFinder::Find(addrAdvance, 64, "[CMP r64, r64]");
         phase.Step(addrLoopExit, "list1 loop exit CMP", "RT");
       }
     }
@@ -158,7 +142,7 @@ bool ConsoleDataFinder::TryFind() {
      * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
      * 141525f58  4C 8B 2D 79 2D 16 02          MOV R13,qword ptr [0x143688cd8]
      */
-    uintptr_t addrHead2 = PatternFinder::Find(addrLoopExit, HEAD2_LOAD_WINDOW, "[MOV r64, [rip+off32]]");
+    uintptr_t addrHead2 = PatternFinder::Find(addrLoopExit, 64, "[MOV r64, [rip+off32]]");
     if (phase.Step(addrHead2, "list2 head load", "RT")) {
       m_scriptListHeadAddr = PatternFinder::GetRipAddress(addrHead2, 3, 7);
       phase.Step(m_scriptListHeadAddr, "script command list head", "DATA");
@@ -169,7 +153,7 @@ bool ConsoleDataFinder::TryFind() {
        * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
        * 141525f70  49 8D 45 08                   LEA RAX,[R13 + 0x8]
        */
-      uintptr_t addrName2 = PatternFinder::Find(addrHead2, NAME2_LEA_WINDOW, "[LEA r64, [r64+off8]]");
+      uintptr_t addrName2 = PatternFinder::Find(addrHead2, 32, "[LEA r64, [r64+off8]]");
       if (phase.Step(addrName2, "list2 name LEA", "RT")) {
         int len = 0;
         m_scriptNameOffset = PatternFinder::ReadInstructionDisp(addrName2, len);
@@ -182,7 +166,7 @@ bool ConsoleDataFinder::TryFind() {
          * 141526094  4D 8B AD 30 01 00 00          MOV R13,qword ptr [R13 + 0x130]
          * 14152609b  4C 8D 0D 8C B3 8C 00          LEA R9,[0x141df142e]
          */
-        addrNext2 = PatternFinder::Find(addrName2, NEXT2_WINDOW, "[MOV r64, [r64+off32]] [LEA r64, [rip+off32]]");
+        addrNext2 = PatternFinder::Find(addrName2, 400, "[MOV r64, [r64+off32]] [LEA r64, [rip+off32]]");
         if (phase.Step(addrNext2, "list2 advance", "NODE")) {
           int lenNext = 0;
           m_scriptNextOffset = PatternFinder::ReadInstructionDisp(addrNext2, lenNext);
@@ -204,7 +188,7 @@ bool ConsoleDataFinder::TryFind() {
      * /--- Ghidra:(amtrucks_1_61.exe) Fun:(ConsoleCompleteCommand[141525d60]) ---/
      * 1415260ab  48 8B 05 FE CD 21 01          MOV RAX,qword ptr [0x142742eb0]
      */
-    uintptr_t addrSize = PatternFinder::Find(addrNext2, HEAD3_LOAD_WINDOW, "[MOV r64, [rip+off32]]");
+    uintptr_t addrSize = PatternFinder::Find(addrNext2, 32, "[MOV r64, [rip+off32]]");
     if (phase.Step(addrSize, "input array size load", "RT")) {
       m_inputConstSizeAddr = PatternFinder::GetRipAddress(addrSize, 3, 7);
       phase.Step(m_inputConstSizeAddr, "input constants size", "DATA");
@@ -216,7 +200,7 @@ bool ConsoleDataFinder::TryFind() {
        * 1415260d8  48 8B 05 C9 CD 21 01          MOV RAX,qword ptr [0x142742ea8]
        * 1415260df  48 8D 4D 40                   LEA RCX,[RBP + 0x40]
        */
-      uintptr_t addrData = PatternFinder::Find(addrSize, DATA3_LOAD_WINDOW, "[MOV r64, [rip+off32]] [LEA r64, [r64+off8]]");
+      uintptr_t addrData = PatternFinder::Find(addrSize, 64, "[MOV r64, [rip+off32]] [LEA r64, [r64+off8]]");
       if (phase.Step(addrData, "input array data load", "RT")) {
         m_inputConstDataAddr = PatternFinder::GetRipAddress(addrData, 3, 7);
         phase.Step(m_inputConstDataAddr, "input constants data", "DATA");
@@ -229,7 +213,7 @@ bool ConsoleDataFinder::TryFind() {
          * 1415260e7  48 83 C2 08                   ADD RDX,0x8
          * 1415260eb  E8 D0 F5 CE FE                CALL 0x1402156c0
          */
-        addrElement = PatternFinder::Find(addrData, ELEMENT_WINDOW, "[MOV r64, [r64+sib]] [ADD r64, imm8] [CALL rel32]");
+        addrElement = PatternFinder::Find(addrData, 32, "[MOV r64, [r64+sib]] [ADD r64, imm8] [CALL rel32]");
         if (phase.Step(addrElement, "input array element access", "RT")) {
           m_inputConstNameOffset = PatternFinder::ReadInt8(addrElement + 7);  // imm8 of ADD at 1415260ea
           phase.StepOffset(m_inputConstNameOffset, "input element name offset", "OFF");
@@ -253,7 +237,7 @@ bool ConsoleDataFinder::TryFind() {
      * 14152622a  48 8B 0D AF 33 8E 01          MOV RCX,qword ptr [0x142e095e0]
      * 141526231  48 8B 05 B0 33 8E 01          MOV RAX,qword ptr [0x142e095e8]
      */
-    uintptr_t addrSugg = PatternFinder::Find(addrElement, SUGGESTIONS_WINDOW, "[MOV r64, [rip+off32]] [MOV r64, [rip+off32]]");
+    uintptr_t addrSugg = PatternFinder::Find(addrElement, 400, "[MOV r64, [rip+off32]] [MOV r64, [rip+off32]]");
     if (phase.Step(addrSugg, "suggestions globals", "RT")) {
       m_suggestionsDataAddr = PatternFinder::GetRipAddress(addrSugg, 3, 7);
       phase.Step(m_suggestionsDataAddr, "suggestions data", "DATA");
@@ -269,7 +253,7 @@ bool ConsoleDataFinder::TryFind() {
        * 1415266b7  E8 44 E2 BC FE                CALL 0x1400f4900
        * 1415266bc  48 89 44 24 30                MOV qword ptr [RSP + 0x30],RAX
        */
-      uintptr_t addrArrayBase = PatternFinder::Find(addrSugg, ARRAY_BASE_WINDOW, "[LEA r64, [rip+off32]] [CALL rel32] [MOV [r64+off8], r64]");
+      uintptr_t addrArrayBase = PatternFinder::Find(addrSugg, 1200, "[LEA r64, [rip+off32]] [CALL rel32] [MOV [r64+off8], r64]");
       if (phase.StepOptional(addrArrayBase, "input array base LEA", "RT")) {
         m_inputConstArrayBaseAddr = PatternFinder::GetRipAddress(addrArrayBase, 3, 7);
         phase.StepOptional(m_inputConstArrayBaseAddr, "input array base", "DATA");
@@ -476,8 +460,8 @@ bool ConsoleDataFinder::TryFind() {
       for (uintptr_t callSite : xrefs) {
         const uintptr_t start = PatternFinder::GetFunctionStart(callSite);
         if (!start) continue;
-        const uintptr_t movIns = PatternFinder::Find(start, CHEAT_GATE_WINDOW, "[MOV r64, [rip+off32]]");
-        const uintptr_t leaIns = PatternFinder::Find(start, CHEAT_GATE_WINDOW, "[LEA r64, [rip+off32]]");
+        const uintptr_t movIns = PatternFinder::Find(start, 64, "[MOV r64, [rip+off32]]");
+        const uintptr_t leaIns = PatternFinder::Find(start, 64, "[LEA r64, [rip+off32]]");
         if (movIns && leaIns) {
           m_cheatGateAddr = start;
           gateMovIns = movIns;
@@ -563,8 +547,7 @@ bool ConsoleDataFinder::TryFind() {
       if (ctrlOk) {
         vtIns = PatternFinder::Find(ins1 + 10,
                                     64,
-                                    "[LEA r64, [rip+off32]] [MOV [r64+off8], r64] "
-                                    "[LEA r64, [rip+off32]] [MOV [r64+off8], r64] [MOV [r64+off8], r64]");
+                                    "[LEA r64, [rip+off32]] [MOV [r64+off8], r64] [LEA r64, [rip+off32]] [MOV [r64+off8], r64] [MOV [r64+off8], r64]");
         if (phase.Step(vtIns, "array/element vtable stores", "FN")) {
           m_arrayVtableAddr = PatternFinder::GetRipAddress(vtIns, 3, 7);
           phase.Step(m_arrayVtableAddr, "array vtable", "DATA");
@@ -612,7 +595,7 @@ bool ConsoleDataFinder::TryFind() {
       int32_t dataSlot = 0;
       if (vtableOk) {
         // Step 3 (len 256 from the wrapper node store): size slot — the first MOV.
-        const uintptr_t sizeIns = PatternFinder::Find(nodeIns, 256, "[MOV r64, [r64+off8]] [LEA r64, [r64+off8]] [CMP r64, [r64+off8]]");
+        const uintptr_t sizeIns = PatternFinder::Find(nodeIns, 256, "[MOV r64, [r64+off8]] [LEA r64, [r64+off8]]? {[CMP r64, [r64+off8]] | [CMP r64, imm8]}");
         if (phase.Step(sizeIns, "size load (MOV/LEA/CMP)", "FN")) {
           int dispLen = 0;
           sizeSlot = PatternFinder::ReadInstructionDisp(sizeIns, dispLen);
@@ -620,7 +603,7 @@ bool ConsoleDataFinder::TryFind() {
 
           if (sizeOk) {
             // Step 4 (len 16): cap slot — the CMP operand.
-            const uintptr_t capIns = PatternFinder::Find(sizeIns, 16, "[CMP r64, [r64+off8]]");
+            const uintptr_t capIns = PatternFinder::Find(sizeIns, 32, "[CMP r64, [r64+off8]]");
             if (phase.Step(capIns, "cap load (grow CMP)", "FN")) {
               capSlot = PatternFinder::ReadInstructionDisp(capIns, dispLen);
               capOk = phase.StepOffset(capSlot, "array cap slot", "OFF");
@@ -643,7 +626,7 @@ bool ConsoleDataFinder::TryFind() {
                    * 1401e21c7 4C 8B 44 24 68 MOV R8,qword ptr [RSP + 0x68]
                    * 1401e21cc 48 8D 50 01 LEA RDX,[RAX + 0x1]
                    */
-                  const uintptr_t dataIns = PatternFinder::Find(baseIns, 32, "[MOV r64, [r64+off8]] [LEA r64, [r64+off8]]");
+                  const uintptr_t dataIns = PatternFinder::Find(baseIns, 32, "[MOV r64, [r64+off8]] [LEA r64, [r64+off8]]? [SHL r64, imm8]");
                   if (phase.Step(dataIns, "data load (MOV)", "FN")) {
                     dataSlot = PatternFinder::ReadInstructionDisp(dataIns, dispLen);
                     dataOk = phase.StepOffset(dataSlot, "array data slot", "OFF");
