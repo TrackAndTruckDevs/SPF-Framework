@@ -174,7 +174,12 @@ void Logger::LogV(LogLevel level, fmt::string_view format_str, fmt::format_args 
     if (sink->ShouldFilterByLevel() && msg.level < m_level.load(std::memory_order_relaxed)) {
       continue;  // Skip this sink if it filters and the level is too low
     }
-    sink->Log(msg);
+    // A failing sink must never propagate to the caller: logging often happens
+    // inside catch blocks and from DllMain, where an escaping exception is fatal.
+    try {
+      sink->Log(msg);
+    } catch (...) {
+    }
   }
 }
 
