@@ -75,8 +75,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
       }
 
       // Now, create our Core instance, passing the module handle.
-      g_Core = std::make_unique<SPF::Core::Core>(hModule);
-      g_Core->Preload();
+      // An exception escaping DllMain crashes the game (CRT fail-fast), so refuse
+      // the load instead and let the game continue without the framework.
+      try {
+        g_Core = std::make_unique<SPF::Core::Core>(hModule);
+        g_Core->Preload();
+      } catch (...) {
+        g_Core.reset();
+        MH_Uninitialize();
+        return FALSE;
+      }
 
       // Logger is now available after Core is constructed and Init is called inside scs_telemetry_init.
       // We can't log here yet, as the logger is initialized in Core::Init.

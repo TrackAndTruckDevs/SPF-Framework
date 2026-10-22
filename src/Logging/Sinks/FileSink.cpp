@@ -46,18 +46,15 @@ void FileSink::Log(const LogMessage& msg) {
   }
 
   // Try to obtain local wall-clock time using C++20 zoned_time.
-  // Fall back to UTC if the timezone database (tzdb) is unavailable on the platform.
-  std::chrono::local_time<std::chrono::milliseconds> localTime;
-  bool timeConverted = false;
+  // Fall back to UTC if the timezone database (tzdb) is unavailable on the platform
+  // (e.g. Wine/CrossOver without icu.dll).
+  // Cast timestamp to milliseconds resolution so that %S formats with 3 fractional digits.
+  auto msTime = std::chrono::time_point_cast<std::chrono::milliseconds>(msg.timestamp);
+  std::chrono::local_time<std::chrono::milliseconds> localTime{msTime.time_since_epoch()};
 
   try {
-    // Cast timestamp to milliseconds resolution so that %S formats with 3 fractional digits.
-    auto msTime = std::chrono::time_point_cast<std::chrono::milliseconds>(msg.timestamp);
     localTime = std::chrono::zoned_time{std::chrono::current_zone(), msTime}.get_local_time();
-    timeConverted = true;
   } catch (...) {
-    auto msTime = std::chrono::time_point_cast<std::chrono::milliseconds>(msg.timestamp);
-    localTime = std::chrono::local_time<std::chrono::milliseconds>{msTime.time_since_epoch()};
   }
 
   // Convert Windows thread ID hex string (e.g. "0xfcc") into a decimal number.
@@ -69,25 +66,15 @@ void FileSink::Log(const LogMessage& msg) {
     std::from_chars(tidStr.data(), tidStr.data() + tidStr.size(), threadIdDec, 10);
   }
 
-  std::string formatted_log;
-  if (timeConverted) {
-    formatted_log = fmt::format(fmt::runtime(m_formatter_pattern),
-                                fmt::arg("timestamp", localTime),
-                                fmt::arg("thread", threadIdDec),
-                                fmt::arg("level", LogLevelToString(msg.level)),
-                                fmt::arg("source_type", msg.is_plugin ? "P" : "F"),
-                                fmt::arg("logger_name", msg.logger_name),
-                                fmt::arg("message", fmt::to_string(msg.formatted_message)));
-  } else {
-    // Append 'Z' to mark UTC time if timezone conversion fails
-    formatted_log = fmt::format(fmt::runtime(m_formatter_pattern),
-                                fmt::arg("timestamp", fmt::format("{:%Y-%m-%d %H:%M:%S}Z", localTime)),
-                                fmt::arg("thread", threadIdDec),
-                                fmt::arg("level", LogLevelToString(msg.level)),
-                                fmt::arg("source_type", msg.is_plugin ? "P" : "F"),
-                                fmt::arg("logger_name", msg.logger_name),
-                                fmt::arg("message", fmt::to_string(msg.formatted_message)));
-  }
+  // The timestamp must stay a chrono value in every case: the pattern applies a chrono
+  // spec to it (e.g. "{timestamp:%Y-%m-%d %H:%M:%S}"), which fmt rejects for strings.
+  std::string formatted_log = fmt::format(fmt::runtime(m_formatter_pattern),
+                                          fmt::arg("timestamp", localTime),
+                                          fmt::arg("thread", threadIdDec),
+                                          fmt::arg("level", LogLevelToString(msg.level)),
+                                          fmt::arg("source_type", msg.is_plugin ? "P" : "F"),
+                                          fmt::arg("logger_name", msg.logger_name),
+                                          fmt::arg("message", fmt::to_string(msg.formatted_message)));
 
   m_file << formatted_log << std::endl;
 }
