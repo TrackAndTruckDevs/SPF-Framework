@@ -222,7 +222,7 @@ bool PrismStringResolver::Install() {
     uintptr_t anchor = Utils::PatternFinder::FindFunctionByString(PRISM_STRING_DTOR_ANCHOR_STR, false);
     if (phase.Step(anchor, "dtor anchor string", "REF")) {
       // 2. CALL rel32 + MOV r8,imm8 within 64 bytes of the anchor xref
-      uintptr_t callSite = Utils::PatternFinder::Find(anchor, PRISM_STRING_DTOR_WINDOW, PRISM_STRING_DTOR_SIG);
+      uintptr_t callSite = Utils::PatternFinder::Find(anchor +7, PRISM_STRING_DTOR_WINDOW, PRISM_STRING_DTOR_SIG);
       if (phase.Step(callSite, "prism_string dtor CALL site", "RT")) {
         // 3. Resolve CALL rel32 target
         dtorFn = Utils::PatternFinder::GetRipAddress(callSite, 1, 5);
