@@ -222,12 +222,12 @@ void InstallGameWndProc() {
   if (oldWndProc != nullptr) {
     WNDPROC prevOriginal = reinterpret_cast<WNDPROC>(GetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc"));
     if (prevOriginal != nullptr) {
-      SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
+      SetWindowLongPtrW(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(prevOriginal));
       logger->Info("Cleaned up previous WndProc hook.");
     }
   }
 
-  g_originalWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
+  g_originalWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(DXGIHook::MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProcDXGI)));
   SetPropW(DXGIHook::MainWindow, L"SPF_WndProcHook", reinterpret_cast<HANDLE>(WndProcDXGI));
   SetPropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc", reinterpret_cast<HANDLE>(g_originalWndProc));
   logger->Info("Original WndProc at {}, hooked.", reinterpret_cast<void*>(g_originalWndProc));
@@ -359,7 +359,7 @@ void HandlePresent(IDXGISwapChain* pSwapChain) {
 
 void RestoreWndProcIfHooked() {
   if (g_originalWndProc != nullptr && DXGIHook::MainWindow != nullptr) {
-    SetWindowLongPtr(DXGIHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
+    SetWindowLongPtrW(DXGIHook::MainWindow, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
     RemovePropW(DXGIHook::MainWindow, L"SPF_WndProcHook");
     RemovePropW(DXGIHook::MainWindow, L"SPF_OriginalWndProc");
     GetLogger()->Info("Restored original WndProc.");
