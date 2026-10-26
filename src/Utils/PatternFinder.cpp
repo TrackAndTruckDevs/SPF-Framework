@@ -301,7 +301,7 @@ uintptr_t PatternFinder::Find(uintptr_t base, size_t size, const char* signature
         logger->Info("Find: Following JMP thunk from 0x{:X} to 0x{:X}", base, target);
         base = target;
       } else if (target) {
-        logger->Warn("Find: NOT following JMP thunk from 0x{:X} to 0x{:X} (outside game module, likely a third-party hook); scanning original bytes", base, target);
+        logger->Info("Find: Skipping JMP thunk at 0x{:X} -> 0x{:X} (third-party inline hook, e.g. TruckersMP/MinHook); scanning original function bytes instead", base, target);
       }
     }
 

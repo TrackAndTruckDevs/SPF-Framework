@@ -192,41 +192,11 @@ const char* PROFILES_ARRAY_SIG = "[MOV r64, [r64+off8]]";
 const char* SUN_ANGLE_SIG = "F3 41 0F 10 96 ? ? ? ? [MOV [r64+off8], r64]";
 
 /**
- * @brief Pattern to locate the WeatherBlendProgress function entry.
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d0920[1404d0920]) ---/
- * 1404d0920  44 8B 81 78 3E 00 00       MOV R8D,dword ptr [RCX + 0x3e78]
- * 1404d0927  B8 6D C1 16 6C             MOV EAX,0x6c16c16d
- * 1404d092c  F3 0F 10 81 7C 3E 00 00    MOVSS XMM0,dword ptr [RCX + 0x3e7c]
- * 1404d0934  0F 57 C9                   XORPS XMM1,XMM1
- */
-const char* WEATHER_BLEND_PROGRESS_SIG = "44 [MOV r32, [r64+off32]] [MOV r32, imm32] [MOVSS xmm, [r64+off32]] [XORPS xmm, xmm]";
-
-/**
  * @brief Pattern for the IMUL qword ptr [rip+off32] against the transition duration global.
  * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d0920[1404d0920]) ---/
  * 1404d09bb  48 F7 2D E6 5E 73 02       IMUL qword ptr [0x142c068a8]
  */
 const char* TRANSITION_DURATION_SIG = "48 F7 2D";
-
-/**
- * @brief Pattern to locate the BadWeatherUpdate function entry.
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
- * 1404d7620  40 53                         PUSH RBX
- * 1404d7622  48 83 EC 20                   SUB RSP,0x20
- * 1404d7626  48 8B 05 13 D6 07 03          MOV RAX,qword ptr [0x143554c40]
- * 1404d762d  48 8B D9                      MOV RBX,RCX
- * 1404d7630  80 B8 EC 08 00 00 00          CMP byte ptr [RAX + 0x8ec],0x0
- * 1404d7637  0F 85 94 01 00 00             JNZ 0x1404d77d1
- * 1404d763d  48 8B 0D 8C D6 07 03          MOV RCX,qword ptr [0x143554cd0]
- */
-const char* BAD_WEATHER_FN_SIG = "40 [PUSH r64] [SUB r64, imm8] [MOV r64, [rip+off32]] [MOV r64, r64] [CMP byte ptr [r64+off32], imm8] [JNE rel32] [MOV r64, [rip+off32]]";
-
-/**
- * @brief Pattern for the LEA r64, [rip+off32] that addresses the g_bad_weather_factor container.
- * /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
- * 1404d7689  48 8D 0D A0 13 71 02          LEA RCX,[0x142be8a30]
- */
-const char* BAD_WEATHER_FACTOR_LEA_SIG = "[LEA r64, [rip+off32]]";
 
 }  // namespace
 
@@ -560,20 +530,33 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
   {
     auto phase = log.MakePhase("Weather Blend Progress");
 
-    // 7. Find WeatherBlendProgress function entry.
-    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d0920[1404d0920]) ---/
-    // * 1404d0920  44 8B 81 78 3E 00 00       MOV R8D,dword ptr [RCX + 0x3e78]
-    // * 1404d0927  B8 6D C1 16 6C             MOV EAX,0x6c16c16d
-    // * 1404d092c  F3 0F 10 81 7C 3E 00 00    MOVSS XMM0,dword ptr [RCX + 0x3e7c]
-    // * 1404d0934  0F 57 C9                   XORPS XMM1,XMM1
-    uintptr_t pfnWeatherBlend = Utils::PatternFinder::Find(WEATHER_BLEND_PROGRESS_SIG);
-    if (phase.Step(pfnWeatherBlend, "WeatherBlendProgress", "FN")) {
-      owner.SetWeatherBlendProgressFnAddr(pfnWeatherBlend);
+    // 7. Find function via string, go to function start.
+    // /--- Ghidra:(amtrucks_1_62.exe) Fun:(FUN_1404f2ad0[1404f2ad0]) ---/
+    // * 1404f2ad0  40 55                         PUSH RBP
+    uintptr_t pfnEnvChange = Utils::PatternFinder::FindFunctionByString(
+        "[env] Active change (%.2f): profile %s/%s (mixed %.2f) to profile %s/%s (mixed %.2f)", true);
+    uintptr_t callTarget = 0;
+    if (phase.Step(pfnEnvChange, "WeatherBlend entry (env change)", "FN")) {
+      // 7.0 CALL rel32 followed by 0x44 within 64 bytes — WeatherBlendProgress callee.
+      // /--- Ghidra:(amtrucks_1_62.exe) Fun:(FUN_1404f2ad0[1404f2ad0]) ---/
+      // * 1404f2af1  E8 0A A9 FF FF                CALL 0x1404ed400
+      // * 1404f2af6  44 0F 28 C0                   MOVAPS XMM8,XMM0
+      uintptr_t addrCall = Utils::PatternFinder::Find(pfnEnvChange, 64, "[CALL rel32] 44");
+      if (phase.Step(addrCall, "WeatherBlend CALL", "RT")) {
+        callTarget = Utils::PatternFinder::GetRipAddress(addrCall, 1, 5);
+        if (phase.Step(callTarget, "WeatherBlendProgress target", "FN")) {
+          owner.SetWeatherBlendProgressFnAddr(callTarget);
+        } else {
+          all_found = false;
+        }
+      } else {
+        all_found = false;
+      }
 
       // 7.1 Transition duration global (for SetTransitionDuration)
       // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d0920[1404d0920]) ---/
       // * 1404d09bb  48 F7 2D E6 5E 73 02    IMUL qword ptr [0x142c068a8]
-      uintptr_t addrDuration = Utils::PatternFinder::Find(pfnWeatherBlend, 160, TRANSITION_DURATION_SIG);
+      uintptr_t addrDuration = Utils::PatternFinder::Find(callTarget, 180, TRANSITION_DURATION_SIG);
       if (phase.StepOptional(addrDuration, "Transition duration IMUL", "RT")) {
         uintptr_t durGlobal = Utils::PatternFinder::GetRipAddress(addrDuration, 3, 7);
         if (phase.StepOptional(durGlobal, "Transition duration global", "DATA")) {
@@ -590,22 +573,17 @@ bool ClimateDataFinder::TryFindOffsets(ClimateService& owner) {
   {
     auto phase = log.MakePhase("Bad Weather Factor");
 
-    // 8. Find BadWeatherUpdate function entry.
-    // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
-    // * 1404d7620  40 53                         PUSH RBX
-    // * 1404d7622  48 83 EC 20                   SUB RSP,0x20
-    // * 1404d7626  48 8B 05 13 D6 07 03          MOV RAX,qword ptr [0x143554c40]
-    // * 1404d762d  48 8B D9                      MOV RBX,RCX
-    // * 1404d7630  80 B8 EC 08 00 00 00          CMP byte ptr [RAX + 0x8ec],0x0
-    // * 1404d7637  0F 85 94 01 00 00             JNZ 0x1404d77d1
-    // * 1404d763d  48 8B 0D 8C D6 07 03          MOV RCX,qword ptr [0x143554cd0]
-    uintptr_t pfnBadWeather = Utils::PatternFinder::Find(BAD_WEATHER_FN_SIG);
-    if (phase.Step(pfnBadWeather, "BadWeatherUpdate", "FN")) {
-      // 8.1 Pointer-to-pointer to the g_bad_weather_factor container.
-      // /--- Ghidra:(amtrucks_1_60.exe) Fun:(FUN_1404d7620[1404d7620]) ---/
-      // * 1404d7689  48 8D 0D A0 13 71 02       LEA RCX,[0x142be8a30]
-      uintptr_t addrLea = Utils::PatternFinder::Find(pfnBadWeather, 128, BAD_WEATHER_FACTOR_LEA_SIG);
-      if (phase.Step(addrLea, "BadWeatherFactor LEA", "RT")) {
+    // 8. Find LEA referencing "@@lane_departure_warning@@" without going to function start.
+    // /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1410f5530[1410f5530]) ---/
+    // * 1410f697c  48 8D 05 55 21 29 01          LEA RAX,[0x142388ad8] = "@@lane_departure_warning@@"
+    uintptr_t pfnLaneDep = Utils::PatternFinder::FindFunctionByString("@@lane_departure_warning@@", false);
+    if (phase.Step(pfnLaneDep, "lane_departure_warning LEA", "FN")) {
+      // 8.1 LEA + CALL within 128 bytes — extract g_bad_weather_factor.
+      // /--- Ghidra:(amtrucks_1_61.exe) Fun:(FUN_1410f5530[1410f5530]) ---/
+      // * 1410f6a28  48 8D 0D 61 A9 C4 01          LEA RCX,[0x142d41390]
+      // * 1410f6a2f  E8 7C 5D 0E FF                CALL 0x1401dc7b0
+      uintptr_t addrLea = Utils::PatternFinder::Find(pfnLaneDep, 128, "[LEA r64, [rip+off32]] [CALL rel32]");
+      if (phase.Step(addrLea, "BadWeatherFactor LEA+CALL", "RT")) {
         uintptr_t ptrPtr = Utils::PatternFinder::GetRipAddress(addrLea, 3, 7);
         if (phase.Step(ptrPtr, "BadWeatherFactor ptr-to-ptr", "DATA")) {
           owner.SetBadWeatherFactorPtr(ptrPtr);

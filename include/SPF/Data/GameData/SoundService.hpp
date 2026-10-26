@@ -372,15 +372,15 @@ private:
   uint32_t GetSoundEventInstanceOffset() const { return m_soundEventInstanceOffset; }
   uint32_t GetSoundEventPlaybackStateOffset() const { return m_soundEventPlaybackStateOffset; }
   uint32_t GetSoundEventBoundFieldOffset() const { return m_soundEventBoundFieldOffset; }
-  uintptr_t GetSoundEventCreateLockAddr() const { return m_soundEventCreateLockAddr; }
-  uintptr_t GetSoundEventActivateFn() const { return m_soundEventActivateFn; }
-  // sound_event vtable: slot = byte offset / 8 (PTR_FUN via SoundEvent_Create LEA)
+
+  // sound_event vtable: slot index = byte offset / 8, base found via LEA in SoundEvent_Create
   uintptr_t GetSoundEventVtableAddr() const { return m_soundEventVtableAddr; }
   uintptr_t ReadSoundEventVtableSlot(uint32_t slot) const {
     if (!m_soundEventVtableAddr) return 0;
     return reinterpret_cast<const uintptr_t*>(m_soundEventVtableAddr)[slot];
   }
   uintptr_t GetSoundEventDestructFn() const { return ReadSoundEventVtableSlot(0); }
+  uintptr_t GetSoundEventActivateFn() const { return ReadSoundEventVtableSlot(2); }
   uintptr_t GetSoundEventPlaybackControlFn() const { return ReadSoundEventVtableSlot(3); }
   uintptr_t GetSoundEventSetParameterByIDFn() const { return ReadSoundEventVtableSlot(4); }
   uintptr_t GetSoundEventStopFn() const { return ReadSoundEventVtableSlot(5); }
@@ -391,6 +391,8 @@ private:
   uintptr_t GetSoundEventSetPropertyFn() const { return ReadSoundEventVtableSlot(12); }
   uintptr_t GetSoundEventSet3DAttributesFn() const { return ReadSoundEventVtableSlot(13); }
   uintptr_t GetSoundEventGetMinMaxDistanceFn() const { return ReadSoundEventVtableSlot(14); }
+  uintptr_t GetSoundEventCreateLockAddr() const { return m_soundEventCreateLockAddr; }
+
   uintptr_t GetSoundRefLoadConfigFn() const { return m_soundRefLoadConfigFn; }
   uintptr_t GetUiSoundRefTableAddr() const { return m_uiSoundRefTableAddr; }
   uintptr_t GetVoiceNavTableAddr() const { return m_voiceNavTableAddr; }
@@ -479,9 +481,12 @@ private:
   uint32_t m_soundEventNodeOffset = 0;
   uint32_t m_soundEventPathOffset = 0;
   uint32_t m_soundEventSourceOffset = 0;
-  uintptr_t m_soundEventCreateLockAddr = 0;
-  uintptr_t m_soundEventActivateFn = 0;
+  uint32_t m_soundEventInstanceOffset = 0;
+  uint32_t m_soundEventPlaybackStateOffset = 0;
+  uint32_t m_soundEventBoundFieldOffset = 0;
   uintptr_t m_soundEventVtableAddr = 0;
+  uintptr_t m_soundEventActivateFn = 0;
+  uintptr_t m_soundEventCreateLockAddr = 0;
   uintptr_t m_soundRefLoadConfigFn = 0;
   uintptr_t m_uiSoundRefTableAddr = 0;
   uintptr_t m_voiceNavTableAddr = 0;
@@ -503,9 +508,6 @@ private:
   uint32_t m_voiceNavIndexOffset = 0;
   uint32_t m_voiceNavCategoryOffset = 0;
   uint32_t m_soundEventBoundState = 0;
-  uint32_t m_soundEventInstanceOffset = 0;      // EventInstance* at sound_event_t+0xA0 (SoundEvent_Stop)
-  uint32_t m_soundEventPlaybackStateOffset = 0; // playback state dword at sound_event_t+0x30 (0/1/3/4)
-  uint32_t m_soundEventBoundFieldOffset = 0;    // bound-state dword at sound_event_t+0x2C (2 = bound)
   std::vector<EventCacheEntry> m_eventCache;
   std::vector<void*> m_pluginBanks;
 

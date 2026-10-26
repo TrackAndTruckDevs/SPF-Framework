@@ -346,37 +346,31 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
 
   // ── Phase 10: SoundEvent_ActivateFromSource Function ──
   /*
-   * Project-wide search for mid-function prologue pattern, then GetFunctionStart.
-   * /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_ActivateFromSource[14028f370]) ---/
-   * 14028f3d8  49 8B D7                      MOV RDX,R15
-   * 14028f3db  48 89 7C 24 30                MOV qword ptr [RSP + 0x30],RDI
-   * 14028f3e0  48 89 54 24 28                MOV qword ptr [RSP + 0x28],RDX
-   * 14028f3e5  48 89 5C 24 20                MOV qword ptr [RSP + 0x20],RBX
-   * 14028f3ea  48 89 7C 24 38                MOV qword ptr [RSP + 0x38],RDI
-   * 14028f3ef  40 38 39                      CMP byte ptr [RCX],DIL
+   * Address taken from live vtable slot 2 (+0x10) — single source of truth.
+   * Pattern scan removed: third-party tools (TruckersMP) hook the function,
+   * corrupting the byte pattern while the vtable still points at the call site.
    */
   {
     auto phase = log.MakePhase("SoundEvent_ActivateFromSource");
 
-    const char* sig = "[MOV r64, r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] [MOV [r64+off8], r64] 40 [CMP [r64], r8]";
-    uintptr_t addrMatch = PatternFinder::Find(sig);
-    if (phase.Step(addrMatch, "ActivateFromSource pattern", "RT")) {
-      uintptr_t pfnActivate = PatternFinder::GetFunctionStart(addrMatch);
-      if (phase.Step(pfnActivate, "SoundEvent_ActivateFromSource", "FN")) {
-        owner.SetSoundEventActivateFn(pfnActivate);
+    uintptr_t pfnActivate = owner.ReadSoundEventVtableSlot(2);
+    if (phase.Step(pfnActivate, "SoundEvent_ActivateFromSource", "FN")) {
+      owner.SetSoundEventActivateFn(pfnActivate);
 
-        // source prism offset
-        /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_ActivateFromSource[14028f370]) ---/
-         * 14028f412  48 8D 56 60                   LEA RDX,[RSI + 0x60]
-         * 14028f416  48 83 F8 FF                   CMP RAX,-0x1
-         */
-        const char* sigSource = "[LEA r64, [r64+off8]] [CMP r64, imm8]";
-        uintptr_t addrSourceLea = PatternFinder::Find(pfnActivate, 256, sigSource);
-        if (phase.Step(addrSourceLea, "SoundEvent source LEA", "RT")) {
-          int8_t sourceOffset = PatternFinder::ReadInt8(addrSourceLea + 3);
-          if (phase.StepOffset(static_cast<int32_t>(sourceOffset), "SoundEvent source offset", "OFF")) {
-            owner.SetSoundEventSourceOffset(static_cast<uint32_t>(sourceOffset));
-          }
+      // source prism offset
+      /** /--- Ghidra:(amtrucks_1_61.exe) Fun:(SoundEvent_ActivateFromSource[14028f370]) ---/
+       * 14028f412  48 8D 56 60                   LEA RDX,[RSI + 0x60]
+       * 14028f416  48 83 F8 FF                   CMP RAX,-0x1
+       * 14028f41a  75 0F                         JNZ 0x14028f42b
+       * 14028f41c  48 8D 4C 24 20                LEA RCX,[RSP + 0x20]
+       * 14028f421  E8 EA 67 E6 FF                CALL 0x1400f5c10
+       */
+      const char* sigSource = "[LEA r64, [r64+off8]] [CMP r64, imm8] [JNE rel8] [LEA r64, [r64+off8]] [CALL rel32]";
+      uintptr_t addrSourceLea = PatternFinder::Find(sigSource);
+      if (phase.Step(addrSourceLea, "SoundEvent source LEA", "RT")) {
+        int8_t sourceOffset = PatternFinder::ReadInt8(addrSourceLea + 3);
+        if (phase.StepOffset(static_cast<int32_t>(sourceOffset), "SoundEvent source offset", "OFF")) {
+          owner.SetSoundEventSourceOffset(static_cast<uint32_t>(sourceOffset));
         }
       }
     }
@@ -688,10 +682,6 @@ bool SoundDataFinder::TryFindOffsets(SoundService& owner) {
           }
         }
 
-        // Vtable order-shift guard: slot +0x10 must equal the pattern-found activate fn.
-        if (owner.GetSoundEventVtableAddr() != 0 && owner.ReadSoundEventVtableSlot(2) != owner.GetSoundEventActivateFn()) {
-          log.Error("vtable slot +0x10 != SoundEvent_ActivateFromSource - vtable order shifted");
-        }
       }
     }
   }
