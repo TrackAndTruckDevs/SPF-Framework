@@ -352,7 +352,8 @@ private:
   static void HookedSoundRefLoadConfig(void* event);
   void InstallSystemUpdateHook();
   void RemoveSystemUpdateHook();
-  static void HookedSystemUpdate(void* system);
+  // Returns FMOD_RESULT (an int-sized enum) — must match Studio::System::update.
+  static int HookedSystemUpdate(void* system);
   const char* ResolveEventPathByGuid(const uint8_t guid[16]);
 
   uint32_t GetBankListLockOffset() const { return m_bankListLockOffset; }
@@ -546,9 +547,12 @@ private:
 
   void* m_loadConfigTrampoline = nullptr;
   bool m_loadConfigHookInstalled = false;
+  // Written by MinHook under its own lock; never cleared while the detour may still run.
   void* m_systemUpdateTrampoline = nullptr;
   uintptr_t m_systemUpdateFnAddr = 0;
   bool m_systemUpdateHookInstalled = false;
+  // Serializes Install/RemoveSystemUpdateHook; never taken by the detour.
+  std::mutex m_systemUpdateHookMutex;
   std::vector<void*> m_pendingRebinds;
   std::mutex m_pendingRebindMutex;
   std::atomic<uint32_t> m_gameThreadId{0};

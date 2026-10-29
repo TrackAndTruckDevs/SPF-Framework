@@ -2677,6 +2677,10 @@ void SoundService::ProcessPendingSoundRefRebinds() {
 }
 
 void SoundService::InstallSystemUpdateHook() {
+  // Install is reachable from the Core tick and from any plugin thread via
+  // ResolveFmodFunctions(); without this lock a losing thread's failure path
+  // used to clear the winner's trampoline and stop forwarding System::update.
+  std::lock_guard<std::mutex> lock(m_systemUpdateHookMutex);
   if (m_systemUpdateHookInstalled) return;
   uintptr_t updateFn = reinterpret_cast<uintptr_t>(m_fmodFn.System_Update);
   if (updateFn == 0) {
@@ -2690,17 +2694,21 @@ void SoundService::InstallSystemUpdateHook() {
     logger->Warn("System::update hook: MH_Initialize failed: {}", static_cast<int>(initStatus));
     return;
   }
+  // MinHook writes the trampoline into the member under its own lock and only
+  // on success, so a concurrent MH_EnableHook(MH_ALL_HOOKS) from another
+  // component can never enable the detour before the original is published.
   MH_STATUS status = MH_CreateHook(reinterpret_cast<LPVOID>(updateFn), reinterpret_cast<LPVOID>(&SoundService::HookedSystemUpdate), reinterpret_cast<LPVOID*>(&m_systemUpdateTrampoline));
   if (status != MH_OK) {
     logger->Error("MH_CreateHook(System::update) failed: {}", static_cast<int>(status));
-    m_systemUpdateTrampoline = nullptr;
     return;
   }
   status = MH_EnableHook(reinterpret_cast<LPVOID>(updateFn));
-  if (status != MH_OK) {
+  // MH_ERROR_ENABLED: another component already enabled all hooks, ours included.
+  if (status != MH_OK && status != MH_ERROR_ENABLED) {
     logger->Error("MH_EnableHook(System::update) failed: {}", static_cast<int>(status));
-    MH_RemoveHook(reinterpret_cast<LPVOID>(updateFn));
-    m_systemUpdateTrampoline = nullptr;
+    if (MH_RemoveHook(reinterpret_cast<LPVOID>(updateFn)) == MH_OK) {
+      m_systemUpdateTrampoline = nullptr;
+    }
     return;
   }
   m_systemUpdateFnAddr = updateFn;
@@ -2709,22 +2717,30 @@ void SoundService::InstallSystemUpdateHook() {
 }
 
 void SoundService::RemoveSystemUpdateHook() {
+  std::lock_guard<std::mutex> lock(m_systemUpdateHookMutex);
   if (!m_systemUpdateHookInstalled) return;
   MH_DisableHook(reinterpret_cast<LPVOID>(m_systemUpdateFnAddr));
-  MH_RemoveHook(reinterpret_cast<LPVOID>(m_systemUpdateFnAddr));
+  MH_STATUS status = MH_RemoveHook(reinterpret_cast<LPVOID>(m_systemUpdateFnAddr));
+  if (status != MH_OK) {
+    // The detour may still be live: keep the trampoline so it keeps forwarding.
+    Logging::LoggerFactory::GetInstance().GetLogger("SoundService")->Error("MH_RemoveHook(System::update) failed: {}", static_cast<int>(status));
+    return;
+  }
   m_systemUpdateTrampoline = nullptr;
   m_systemUpdateFnAddr = 0;
   m_systemUpdateHookInstalled = false;
 }
 
-void SoundService::HookedSystemUpdate(void* system) {
+int SoundService::HookedSystemUpdate(void* system) {
   SoundService& self = GetInstance();
+  FMOD_RESULT result = FMOD_OK;
   if (self.m_systemUpdateTrampoline != nullptr) {
-    reinterpret_cast<void (*)(void*)>(self.m_systemUpdateTrampoline)(system);
+    result = reinterpret_cast<FMOD_RESULT (*)(void*)>(self.m_systemUpdateTrampoline)(system);
   }
-  if (tls_insidePluginUpdate) return;
+  if (tls_insidePluginUpdate) return result;
   self.m_gameThreadId.store(::GetCurrentThreadId());
   self.ProcessPendingSoundRefRebinds();
+  return result;
 }
 
 void SoundService::HookedSoundRefLoadConfig(void* event) {
