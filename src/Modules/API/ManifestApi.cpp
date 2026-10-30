@@ -201,6 +201,24 @@ static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* grou
   ctx->manifest->keybinds.actions[sanitizedGroup][action].push_back(std::move(def));
 }
 
+static void Defaults_SetKeybindBehavior(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, const char* behavior) {
+  if (!h || !group || !action || !behavior) return;
+  std::string behaviorStr = behavior;
+  if (behaviorStr != "hold" && behaviorStr != "toggle") {
+    LogError("Defaults_SetKeybindBehavior", "Behavior must be \"hold\" or \"toggle\".");
+    return;
+  }
+
+  auto* ctx = Cast(h);
+  auto& actions = ctx->manifest->keybinds.actions;
+  auto groupIt = actions.find(SanitizeGroup(ctx->pluginName, group));
+  if (groupIt == actions.end() || groupIt->second.find(action) == groupIt->second.end()) {
+    LogError("Defaults_SetKeybindBehavior", "Call Defaults_AddKeybind for the action first.");
+    return;
+  }
+  for (auto& def : groupIt->second[action]) def.behavior = behaviorStr;
+}
+
 static void Defaults_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, bool isVisible, bool isInteractive, int x, int y, int w, int height, bool isCollapsed, bool autoScroll) {
   if (!h || !windowName || *windowName == '\0') return;
 
@@ -320,6 +338,8 @@ static void FillBuilderApi(SPF_Manifest_Builder_API* api) {
   api->Meta_AddKeybind = Meta_AddKeybind;
   api->Meta_AddWindow = Meta_AddWindow;
   api->Meta_AddStandardSetting = Meta_AddStandardSetting;
+
+  api->Defaults_SetKeybindBehavior = Defaults_SetKeybindBehavior;
 }
 
 // =================================================================================================

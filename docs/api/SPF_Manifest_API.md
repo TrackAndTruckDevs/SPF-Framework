@@ -115,6 +115,11 @@ api->Settings_SetJson(h, defaults);
     *   `behavior`: `"toggle"`.
     *   `press_threshold_ms`: `500`.
 
+    **Behavior**: `Defaults_SetKeybindBehavior(h, group, action, behavior)`
+    *   Makes the action's bindings (those added so far with `Defaults_AddKeybind`, so call it after them) default to `"hold"` or `"toggle"`.
+    *   Only reaches players with no saved value for the binding: one already in a player's settings keeps its behavior. Use `Kbind_SetBindingBehavior` to change a saved one.
+    *   Added at the end of the builder table: set `Info_SetMinFrameworkVersion` to a framework that has it.
+
     **Device:** A default binding works with any device. A binding the user captures from a DirectInput device (wheel, button box, pedals, a non-Xbox gamepad) is saved with a `device` field (`"dinput:{product GUID}"`) and only triggers on that device, so the same button on two devices can drive two actions. Xbox pads, the keyboard and the mouse can't be told apart and stay on any device.
 
 *   **Windows**: `Defaults_AddWindow(h, name, visible, interactive, x, y, w, h, collapsed, autoScroll)`
