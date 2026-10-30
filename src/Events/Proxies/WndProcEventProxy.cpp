@@ -79,6 +79,14 @@ void WndProcEventProxy::OnWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     }
   }
 
+  // Focus loss: the OS stops delivering key-ups to an unfocused window, so
+  // every key the keybind machine still considers down must be released here
+  // (before the ImGui handler, which may swallow focus messages too).
+  // Second flushes are no-ops: the first one already cleared every state.
+  if (uMsg == WM_KILLFOCUS || (uMsg == WM_ACTIVATE && LOWORD(wParam) == WA_INACTIVE)) {
+    SPF::Input::InputManager::GetInstance().FlushOwnedInputs();
+  }
+
   // Let ImGui have the first chance to process the message.
   if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
     // If ImGui consumes the message, block it from the game and stop further processing here.

@@ -27,16 +27,12 @@ namespace {
  */
 const char* GET_CAMERA_OBJECT_SIG = "[SUB r64, imm8] [MOVSXD r64, r32] [CMP r64, [r64+off8]] [JB rel8]";
 
-/** /--- Ghidra:(amtrucks_1_60.exe) Fun:(UpdateCameraProjection[140771010]) ---/
- * 140771010  48 89 5C 24 08                MOV qword ptr [RSP + 0x8],RBX
- * 140771015  48 89 74 24 10                MOV qword ptr [RSP + 0x10],RSI
- * 14077101a  57                            PUSH RDI
- * 14077101b  48 83 EC 70                   SUB RSP,0x70
- * 14077101f  0F B6 41 2C                   MOVZX EAX,byte ptr [RCX + 0x2c]
- * 140771023  48 8D 51 3C                   LEA RDX,[RCX + 0x3c]
- * 140771027  F3 0F 5E CA                   DIVSS XMM1,XMM2
+/** /--- Ghidra:(amtrucks_1_61.exe) Fun:(UpdateCameraProjection[140797db0]) ---/
+ * 140797dc7  F3 0F 5E CA                   DIVSS XMM1,XMM2
+ * 140797dcb  48 8B D9                      MOV RBX,RCX
+ * 140797dce  88 44 24 20                   MOV byte ptr [RSP + 0x20],AL
  */
-const char* UPDATE_CAMERA_PROJECTION_SIG = "[MOV [r64+off8], r64] [MOV [r64+off8], r64] [PUSH r64] [SUB r64, imm8] [MOVZX r32, [r64+off8]] [LEA r64, [r64+off8]] [DIVSS xmm, xmm]";
+const char* UPDATE_CAMERA_PROJECTION_SIG = "[DIVSS xmm, xmm] [MOV r64, r64] [MOV [r64+off8], r8]";
 
 /** /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
  * 14053ef66  48 8D 0D 6B 0D BF 01          LEA RCX,[0x14212fcd8] = "Camera roll speed: %.2f"
@@ -91,8 +87,16 @@ bool CameraHooks::Install() {
     m_getCameraObjectFunc = reinterpret_cast<GetCameraObjectFunc>(getCamObjAddr);
 
     // --- 3. Find UpdateCameraProjection ---
-    uintptr_t updateProjAddr = Utils::PatternFinder::Find(UPDATE_CAMERA_PROJECTION_SIG);
-    if (!phase.Step(updateProjAddr, "UpdateCameraProjection", "FN")) {
+    // Anchor on a stable mid-function sequence, then resolve the true prologue
+    // via Windows exception tables (.pdata) — reliable across game versions.
+    uintptr_t updateProjAnchor = Utils::PatternFinder::Find(UPDATE_CAMERA_PROJECTION_SIG);
+    if (!phase.Step(updateProjAnchor, "UpdateCameraProjection (anchor)", "RT")) {
+      log.Error("The camera system will be unavailable.");
+      Uninstall();  // Clean up partially installed hooks
+      return log.Finish(false);
+    }
+    uintptr_t updateProjAddr = Utils::PatternFinder::GetFunctionStart(updateProjAnchor);
+    if (!phase.Step(updateProjAddr, "UpdateCameraProjection (.pdata prologue)", "FN")) {
       log.Error("The camera system will be unavailable.");
       Uninstall();  // Clean up partially installed hooks
       return log.Finish(false);

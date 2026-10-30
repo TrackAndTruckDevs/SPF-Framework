@@ -107,6 +107,12 @@ class InputManager {
   enum class InputCaptureState { Idle, Capturing };
   void StartInputCapture(const std::string& actionFullName, const nlohmann::ordered_json& originalBinding);
   void CancelInputCapture();
+
+  // --- Focus-loss cleanup ---
+  // Releases every input the machine currently considers down (window lost
+  // focus, app deactivated, capture started). Held keys deliver their hold
+  // release; pending taps are cancelled without firing.
+  void FlushOwnedInputs();
   InputCaptureState GetCaptureState() const { return m_captureState; }
 
   // --- Consumer Management ---

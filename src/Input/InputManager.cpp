@@ -37,6 +37,7 @@
 #include <memory>
 #include <minwindef.h>
 #include <mutex>
+#include <set>
 #include <string>
 #include <sysinfoapi.h>
 #include <vector>
@@ -477,10 +478,36 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
   // If a consumer (like ImGui) handled the event, we block it from the game
   // and stop propagation to our own keybinds system to prevent accidental triggers.
   if (consumedByConsumer && event.key != System::Keyboard::Escape) {
-    state.blockInput = event.pressed;
-    state.isDown = event.pressed;
-    state.wasDown = event.pressed;
-    return true;
+    if (event.pressed) {
+      // A press consumed by the UI must not touch the keybind machine at all:
+      // writing isDown/wasDown here fabricates a transition HandleInputState
+      // never saw (stale pressTimestamp then feeds the long-press check), and
+      // the matching release would be needed to undo it.
+      if (!state.isDown) {
+        // The game never sees this press, so it must not see the matching
+        // release either: record the block decision (the job the old code did
+        // with `blockInput = event.pressed`) without faking the edges. A key
+        // the machine already holds (autorepeat mid-hold) keeps its press-time
+        // policy decision so the game's press/release pair stays consistent.
+        state.blockInput = true;
+      }
+      return true;
+    }
+    // A release consumed by the UI still has to complete the keybind
+    // lifecycle: a key the machine saw go down must be seen going up, or
+    // holds stay latched forever when focus moves mid-press. The return
+    // value mirrors what the game saw at press time (blockInput), so press
+    // and release reach the game as a consistent pair.
+    const bool holdActive = m_heldInputs.find(hardwareCode) != m_heldInputs.end();
+    const bool blockFromGame = ProcessAndDecide(event, priority);
+    if (!holdActive) {
+      // The old consumed branch deliberately cleared wasDown together with
+      // isDown: a tap whose release lands under UI focus must die here —
+      // typing must never trigger actions. A hold keeps its edge so
+      // EvaluateActionLogic delivers the hold release on the next frame.
+      state.wasDown = false;
+    }
+    return blockFromGame;
   }
 
   // If not consumed by UI, then process for keybinds and decide on blocking.
@@ -1037,8 +1064,7 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
         shouldBlock = !m_gameControlsMouseButtons;
         break;
       case Config::ConsumptionPolicy::Manual:
-        shouldBlock = bestShort ? bestShort->programmaticallyBlocked
-                                : (bestLong ? bestLong->programmaticallyBlocked : false);
+        shouldBlock = bestShort ? bestShort->programmaticallyBlocked : (bestLong ? bestLong->programmaticallyBlocked : false);
         break;
       default:
         shouldBlock = false;
@@ -1076,6 +1102,12 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
     }
   } else if (!isDown) {
     m_keysLeakedToGame.erase(hardwareCode);
+    // Release without a matching down transition: blockInput (set when the
+    // UI consumed the press) only serves to hide this event from the game.
+    // Consume it here so an up key never keeps reporting blocked.
+    const bool block = state.blockInput;
+    state.blockInput = false;
+    return block;
   }
 
   return state.blockInput;
@@ -1267,6 +1299,11 @@ void InputManager::StartInputCapture(const std::string& actionFullName, const nl
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("InputManager");
   logger->Info("Starting key capture for action: {}", actionFullName);
+  // The capture UI owns the keyboard from here on; releases during capture
+  // are swallowed (see the capture branch in PublishKeyboardEvent), so any
+  // hold still active now would never terminate. Release it before capture
+  // begins.
+  FlushOwnedInputs();
   m_captureState = InputCaptureState::Capturing;
   m_capturingActionFullName = actionFullName;
   m_capturingOriginalBinding = originalBinding;
@@ -1277,6 +1314,32 @@ void InputManager::StartInputCapture(const std::string& actionFullName, const nl
   m_captureInitialAxisValues = m_activeAxisValues;  // Snapshot!
   m_captureCodeToInputMap.clear();
   m_isWaitingForCaptureFinalize = false;
+}
+
+void InputManager::FlushOwnedInputs() {
+  std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  for (auto& [code, state] : m_inputStates) {
+    if (!state.isDown) continue;
+    uint8_t type = (code >> 24) & 0xFF;
+    if (type != 0x01 && type != 0x02 && type != 0x03 && type != 0x04) continue;
+
+    // Active hold: deliver the same release EvaluateActionLogic would have
+    // delivered on the real key-up, then drop the hold entry.
+    auto held = m_heldInputs.find(code);
+    if (held != m_heldInputs.end()) {
+      Modules::KeyBindsManager::GetInstance().TriggerAction(code, held->second);
+      m_heldInputs.erase(held);
+    }
+
+    // Pending tap (short/toggle not yet fired): cancel it silently — the
+    // release edge never fires because both edges are cleared together.
+    state.isDown = false;
+    state.wasDown = false;
+    state.blockInput = false;
+    state.longPressTriggered = false;
+    m_keysLeakedToGame.erase(code);
+    m_currentlyPressedHardwareCodes.erase(code);
+  }
 }
 
 void InputManager::CancelInputCapture() {
