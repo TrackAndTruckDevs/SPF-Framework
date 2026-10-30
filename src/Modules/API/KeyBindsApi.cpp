@@ -351,6 +351,30 @@ void KeyBindsApi::Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const ch
   UI::UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, binding->originalBindingJson);
 }
 
+bool KeyBindsApi::Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior) {
+  if (!h || !actionName || index < 0) return false;
+  if (behavior != SPF_BEHAVIOR_HOLD && behavior != SPF_BEHAVIOR_TOGGLE) return false;
+  // Same applicability as the getter: NA there means the binding has no behavior to set.
+  SPF_ActivationBehavior current = Kbind_GetBindingBehavior(h, actionName, index);
+  if (current == SPF_BEHAVIOR_NA) return false;
+  if (current == behavior) return true;
+
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+  auto& pm = PluginManager::GetInstance();
+  auto* kbm = pm.GetKeyBindsManager();
+  auto* configService = pm.GetConfigService();
+  if (!kbm || !configService) return false;
+
+  const auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(index));
+  if (!binding) return false;
+  // Copied: the update rebuilds the bindings, freeing this one.
+  nlohmann::ordered_json originalBinding = binding->originalBindingJson;
+
+  configService->UpdateBindingProperty(fullActionName, originalBinding, "behavior", behavior == SPF_BEHAVIOR_HOLD ? "hold" : "toggle");
+  return Kbind_GetBindingBehavior(h, actionName, index) == behavior;
+}
+
 void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   if (!api) return;
 
@@ -377,6 +401,7 @@ void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   api->Kbind_Register_Ex = &KeyBindsApi::Kbind_Register_Ex;
   api->Kbind_OpenRebindPopup = &KeyBindsApi::Kbind_OpenRebindPopup;
   api->Kbind_OpenBindingDetailsPopup = &KeyBindsApi::Kbind_OpenBindingDetailsPopup;
+  api->Kbind_SetBindingBehavior = &KeyBindsApi::Kbind_SetBindingBehavior;
 }
 
 }  // namespace SPF::Modules::API

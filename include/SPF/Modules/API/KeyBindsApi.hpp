@@ -32,5 +32,6 @@ class KeyBindsApi {
   static int Kbind_GetActionNameByIndex(SPF_KeyBinds_Handle* h, int index, char* out_buffer, int buffer_size);
   static void Kbind_OpenRebindPopup(SPF_KeyBinds_Handle* h, const char* actionName, int bindingIndex);
   static void Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index);
+  static bool Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior);
 };
 }  // namespace SPF::Modules::API

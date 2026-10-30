@@ -295,7 +295,8 @@ typedef struct SPF_Manifest_Builder_API {
    *          Optimized for binary on/off actions (e.g., "Open Menu", "Honk").
    *          - @b press_type: Defaults to "short" (triggers immediately on press).
    *          - @b press_threshold_ms: Defaults to 500ms (relevant if user later switches to "long" press in UI).
-   *          - @b behavior: Defaults to "toggle" (standard one-time trigger).
+   *          - @b behavior: Defaults to "toggle" (standard one-time trigger). Use
+   *            `Defaults_SetKeybindBehavior` to make an action default to "hold".
    *          - @b value: Internally produces 0.0 (released) or 1.0 (pressed).
    *
    *          #### B. Analog Inputs ("gamepad_axis", "mouse_axis", "joystick_axis")
@@ -456,6 +457,24 @@ typedef struct SPF_Manifest_Builder_API {
    * @param descKey Localization key for the description.
    */
   void (*Meta_AddStandardSetting)(SPF_Manifest_Builder_Handle* h, const char* system, const char* key, const char* titleKey, const char* descKey);
+
+  /**
+   * @brief Sets the default activation behavior (Hold/Toggle) of an action's digital bindings.
+   *
+   * @details Applies to every binding declared so far for the action with `Defaults_AddKeybind`,
+   *          so call it after them. Like any default, it only reaches players who have no saved
+   *          value for the binding yet: a binding already saved in a player's settings keeps its
+   *          behavior. Use `Kbind_SetBindingBehavior` to change a saved one.
+   *
+   *          Added at the end of the table: a plugin calling it needs a framework that has it,
+   *          so set `Info_SetMinFrameworkVersion` accordingly.
+   *
+   * @param h          The builder handle.
+   * @param groupName  The group name (must match `Defaults_AddKeybind`).
+   * @param actionName The action name (must match `Defaults_AddKeybind`).
+   * @param behavior   "hold" (active while held) or "toggle" (one trigger per press).
+   */
+  void (*Defaults_SetKeybindBehavior)(SPF_Manifest_Builder_Handle* h, const char* groupName, const char* actionName, const char* behavior);
 
 } SPF_Manifest_Builder_API;
 

@@ -618,6 +618,39 @@ typedef struct SPF_KeyBinds_API {
    */
   void (*Kbind_OpenBindingDetailsPopup)(SPF_KeyBinds_Handle* h, const char* actionName, int index);
 
+  /**
+   * @brief Sets the activation behavior (Hold/Toggle) of a specific binding.
+   *
+   * @details Writes through the same pipeline as the Hold/Toggle choice in the native
+   *          binding details popup, so the player's settings file, the runtime keybind
+   *          state and the Settings window all stay in sync. Use it to carry over a
+   *          plugin's own hold/toggle setting into the player's bindings, or to offer the
+   *          choice from your own UI. To only change what new players get, use
+   *          `Defaults_SetKeybindBehavior` in the manifest instead.
+   *
+   *          ### Applicability:
+   *          Same as `Kbind_GetBindingBehavior`: digital bindings, and axes in
+   *          `SPF_MODE_DIGITAL`. Anything else, or `SPF_BEHAVIOR_NA`, is ignored.
+   *
+   *          ### IMPORTANT:
+   *          - The action's bindings are rebuilt, so binding pointers and indices read
+   *            before the call may not hold after it. Re-read `Kbind_GetBindingCount`.
+   *          - The change is saved to the player's settings file with the framework's
+   *            other unsaved changes (at the latest when the game closes), as from the
+   *            native popup.
+   *          - Added at the end of the table: a plugin calling it needs a framework that
+   *            has it, so set `Info_SetMinFrameworkVersion` accordingly.
+   *
+   * @param h The context handle obtained from `Kbind_GetContext`.
+   * @param actionName The logical name of the action (e.g., "UI.toggle").
+   *                   ### Smart Naming:
+   *                   The API automatically prepends your Plugin ID if it's missing.
+   * @param index The zero-based index of the binding (see `Kbind_GetBindingCount`).
+   * @param behavior `SPF_BEHAVIOR_HOLD` or `SPF_BEHAVIOR_TOGGLE`.
+   * @return true if the binding now has this behavior (including when it already had it).
+   */
+  bool (*Kbind_SetBindingBehavior)(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior);
+
 } SPF_KeyBinds_API;
 
 #ifdef __cplusplus

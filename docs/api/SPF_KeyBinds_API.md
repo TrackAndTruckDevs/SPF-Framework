@@ -134,6 +134,16 @@ Opens the framework's native "press a key" rebind popup for a specific action, f
 *   **Note:** This is the exact same popup, conflict-resolution flow, and config write path used by the framework's own Settings window. Because everything goes through the shared config, the result is automatically reflected in the config file, the running keybind state, and the native Settings window if it's open — you don't need to do anything extra to keep them in sync. The popup renders itself as a top-level overlay on the next frame; you don't render anything for it yourself, and it's safe to call from inside your own window's rendering code.
 
 ---
+**`bool Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior)`**
+Sets the activation behavior (Hold/Toggle) of a specific binding, through the same write path as the Hold/Toggle choice in the binding details popup.
+*   **h:** The context handle obtained from `Kbind_GetContext`.
+*   **actionName:** The logical name of the action (e.g., `"UI.toggle"`). **Smart Naming** is applied.
+*   **index:** The zero-based index of the binding (see `Kbind_GetBindingCount`).
+*   **behavior:** `SPF_BEHAVIOR_HOLD` or `SPF_BEHAVIOR_TOGGLE`.
+*   **Returns:** `true` if the binding now has this behavior (including when it already had it). Bindings with no behavior (analog axes) return `false`.
+*   **Note:** The action's bindings are rebuilt, so re-read `Kbind_GetBindingCount` after it. The change is saved to the player's settings file with the framework's other unsaved changes (at the latest when the game closes). To only change what new players get, use `Defaults_SetKeybindBehavior` in the manifest instead. Added at the end of the table: set `Info_SetMinFrameworkVersion` to a framework that has it.
+
+---
 **`void Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**
 Opens the framework's native "binding details" (gear icon) popup for a specific binding, from your own custom DearImGui menu.
 *   **h:** The context handle obtained from `Kbind_GetContext`.
