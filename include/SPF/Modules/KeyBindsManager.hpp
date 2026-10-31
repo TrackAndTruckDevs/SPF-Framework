@@ -60,6 +60,7 @@ struct Binding {
   std::optional<std::chrono::milliseconds> PressThreshold;
   nlohmann::ordered_json originalBindingJson;  // Store the original JSON for better conflict reporting
   bool programmaticallyBlocked = false;        // Used when Policy is set to Manual
+  bool HoldActive = false;                     // A Hold binding currently held down
 };
 
 struct Action {
@@ -68,7 +69,10 @@ struct Action {
   void* UserData = nullptr;
   StateCallback StateCb;
   void* StateUserData = nullptr;
+  // Logical state, tracked whether or not a state callback is registered:
+  // active while a Hold binding is held or a Toggle binding has latched it.
   bool ActiveState = false;
+  bool ToggleActive = false;
   std::vector<Binding> Inputs;
   // Kbind_SetBlockState's last request, kept here so bindings rebuilt from the
   // config (e.g. after a rebind) inherit it.
@@ -110,6 +114,11 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   void RegisterActionState(const std::string& actionKey, StateCallback callback, void* userData);
   bool IsActionActive(const std::string& actionKey) const;
   bool ResetActionState(const std::string& actionKey);
+  /**
+   * @brief Recomputes an action's ActiveState from its toggle latch and held
+   *        Hold bindings, and reports a change to its state callback.
+   */
+  static void RefreshActiveState(const std::string& actionKey, Action& action);
   void UnregisterOwner(const std::string& owner);
 
   /**

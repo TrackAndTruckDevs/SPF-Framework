@@ -35,5 +35,6 @@ class KeyBindsApi {
   static void Kbind_RegisterState(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_State_Callback callback, void* user_data);
   static bool Kbind_IsActionActive(SPF_KeyBinds_Handle* h, const char* actionName);
   static bool Kbind_ResetActionState(SPF_KeyBinds_Handle* h, const char* actionName);
+  static bool Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior);
 };
 }  // namespace SPF::Modules::API

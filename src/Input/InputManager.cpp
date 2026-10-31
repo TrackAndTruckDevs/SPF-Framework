@@ -994,6 +994,12 @@ bool InputManager::ShouldBlockKeyFromGame(System::Keyboard key, bool consumedByK
 }
 
 bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float value, ButtonState& state) {
+  auto flushed = m_releasedByFlush.find(hardwareCode);
+  if (flushed != m_releasedByFlush.end()) {
+    if (isDown) return flushed->second;
+    m_releasedByFlush.erase(flushed);
+  }
+
   // Track keys leaked to game
   if (isDown) {
     m_keysLeakedToGame.insert(hardwareCode);
@@ -1322,6 +1328,11 @@ void InputManager::FlushOwnedInputs() {
     if (!state.isDown) continue;
     uint8_t type = (code >> 24) & 0xFF;
     if (type != 0x01 && type != 0x02 && type != 0x03 && type != 0x04) continue;
+
+    // Pads and joysticks keep being polled without focus, so a button still
+    // held would read as a new press right away and restart the hold just
+    // released. It has to come up first (see HandleInputState).
+    if (type == 0x02 || type == 0x04) m_releasedByFlush[code] = state.blockInput;
 
     // Active hold: deliver the same release EvaluateActionLogic would have
     // delivered on the real key-up, then drop the hold entry.
