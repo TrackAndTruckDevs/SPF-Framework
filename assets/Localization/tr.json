@@ -271,7 +271,8 @@
         "details_button_tooltip": "Tuş atama davranışını yapılandır",
         "not_available": "Tuş atama yapılandırması mevcut değil."
       },
-      "unassigned_text": "Atanmamış"
+      "unassigned_text": "Atanmamış",
+      "lock_tooltip": "Bu ayarlar eklenti tarafından kilitlenmiştir ve değiştirilemez."
     },
     "table": {
       "setting": "Ayar",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Akümülatör Modu",
       "accumulator_mode_label_description": "Etkinleştirildiğinde, eksen sanal bir düğme gibi davranır. Çubuğu hareket ettirmek, değerin artma veya azalma hızını kontrol eder ve çubuk bırakıldığında değer olduğu yerde kalır.",
       "invert_label": "Ekseni Ters Çevir",
-      "invert_label_description": "Eksen yönünü tersine çevirir (Pozitif, Negatif olur ve tersi)."
+      "invert_label_description": "Eksen yönünü tersine çevirir (Pozitif, Negatif olur ve tersi).",
+      "lock_tooltip": "Bu ayarlar eklenti tarafından kilitlenmiştir ve değiştirilemez."
     },
     "conflict": {
       "press_type_message": "Bu basım türü '**{}**' zaten şu eylem tarafından kullanılıyor:",

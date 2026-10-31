@@ -76,32 +76,32 @@ inline const ManifestData& GetFrameworkManifestData() {
       // .keybinds
       .keybinds = {.actions = {{"framework.ui.main_window",
                                 {{"toggle",
-                                  {{
+                                 {.bindings = {{
                                     .type = "keyboard",       // keyboard, gamepad
                                     .key = "KEY_DELETE",      // VirtualKeyMapping.cpp, GamepadButtonMapping.cpp
                                     .pressType = "short",     // short, long
                                     .pressThresholdMs = 500,  // How long does it take to get a long press to work
                                     .consume = "always",      // never, on_ui_focus, always, manual
                                     .behavior = "toggle",     // toggle, hold
-                                  }}}}},
+                                  }}}}}},
                                {"framework.ui",
                                 {{"close_focused",
-                                  {{
+                                 {.bindings = {{
                                     .type = "keyboard",
                                     .key = "KEY_ESCAPE",
                                     .pressType = "short",
                                     .consume = "on_ui_focus",
-                                  }}}}},
+                                  }}}}}},
                                {"framework.input",
                                 {{"toggle_mouse_overridden",
-                                  {{
+                                 {.bindings = {{
                                     .type = "mouse",
                                     .key = "MOUSE_MIDDLE",
                                     .pressType = "short",
                                     .pressThresholdMs = 500,
                                     .consume = "on_ui_focus",
                                     .behavior = "hold",
-                                  }}}}}}},
+                                  }}}}}}}},
       // .ui
       .ui = {.windows = {{"main_window",
                           {
@@ -150,8 +150,8 @@ inline const ManifestData& GetFrameworkManifestData() {
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 4, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"hooks_window",
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 5, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
-                          {"tools_window",
-                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 6, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
+                         {"tools_window",
+                          {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 6, .allowUndocking = true, .autoScroll = false, .isDeveloperOnly = true}},
                          {"camera_window",
                           {.isVisible = true, .isInteractive = false, .posX = 0, .posY = 0, .sizeW = 0, .sizeH = 0, .isCollapsed = false, .isDocked = true, .dockPriority = 7, .allowUndocking = false, .autoScroll = false, .isDeveloperOnly = true}},
                          {"gameworld_window",
@@ -186,8 +186,8 @@ inline const ManifestData& GetFrameworkManifestData() {
                           {"sinks", "settings_window.setting_names.logging.sinks.title", ""},
                           {"sinks.file", "settings_window.setting_names.logging.sinks.file.title", "settings_window.setting_names.logging.sinks.file.description"},
                           {"sinks.ui", "settings_window.setting_names.logging.sinks.ui.title", "settings_window.setting_names.logging.sinks.ui.description"},
-                           {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"},
-                           {"sinks.game_log", "settings_window.setting_names.logging.sinks.game_log.title", "settings_window.setting_names.logging.sinks.game_log.description"}},
+                          {"sinks.report", "settings_window.setting_names.logging.sinks.report.title", "settings_window.setting_names.logging.sinks.report.description"},
+                          {"sinks.game_log", "settings_window.setting_names.logging.sinks.game_log.title", "settings_window.setting_names.logging.sinks.game_log.description"}},
       .localizationMetadata = {{"language", "settings_window.setting_names.localization.language.title", "settings_window.setting_names.localization.language.description"},
                                {"sync_plugin_languages", "settings_window.setting_names.localization.sync_plugin_languages.title", "settings_window.setting_names.localization.sync_plugin_languages.description"}},
       .uiMetadata = {

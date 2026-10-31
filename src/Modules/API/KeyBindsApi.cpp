@@ -12,6 +12,7 @@
 #include "SPF/UI/UIManager.hpp"
 
 #include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -32,6 +33,26 @@ std::string SanitizeName(const std::string& pluginName, const char* actionName) 
     return prefix + name;
   }
   return name;
+}
+
+bool GetActionLockFlags(const std::string& fullActionName, bool& lockKey, bool& lockBehavior, bool& lockPressType) {
+  lockKey = lockBehavior = lockPressType = false;
+  auto& pm = PluginManager::GetInstance();
+  auto* cs = pm.GetConfigService();
+  if (!cs) return false;
+  const auto* keybinds = cs->GetMergedConfig("keybinds");
+  if (!keybinds) return false;
+  const size_t dot = fullActionName.find('.');
+  if (dot == std::string::npos) return false;
+  const std::string group = fullActionName.substr(0, dot);
+  const std::string action = fullActionName.substr(dot + 1);
+  if (!keybinds->contains(group) || !(*keybinds)[group].contains(action)) return false;
+  const auto& actionObject = (*keybinds)[group][action];
+  if (!actionObject.is_object()) return false;
+  lockKey = actionObject.value("lock_key", false);
+  lockBehavior = actionObject.value("lock_behavior", false);
+  lockPressType = actionObject.value("lock_press_type", false);
+  return true;
 }
 }  // namespace
 
@@ -60,6 +81,38 @@ void KeyBindsApi::Kbind_Register_Ex(SPF_KeyBinds_Handle* h, const char* actionNa
   if (pm.GetKeyBindsManager()) {
     pm.GetKeyBindsManager()->RegisterActionEx(fullActionName, [callback](const std::string& id, void* data) { callback(id.c_str(), data); }, user_data);
   }
+}
+
+void KeyBindsApi::Kbind_RegisterState(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_State_Callback callback, void* user_data) {
+  if (!h || !actionName || !callback) return;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+  auto& pm = PluginManager::GetInstance();
+  if (pm.GetKeyBindsManager()) {
+    pm.GetKeyBindsManager()->RegisterActionState(fullActionName, [callback](const std::string& id, bool active, void* data) { callback(id.c_str(), active, data); }, user_data);
+  }
+}
+
+bool KeyBindsApi::Kbind_IsActionActive(SPF_KeyBinds_Handle* h, const char* actionName) {
+  if (!h || !actionName) return false;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+  auto& pm = PluginManager::GetInstance();
+  if (pm.GetKeyBindsManager()) {
+    return pm.GetKeyBindsManager()->IsActionActive(fullActionName);
+  }
+  return false;
+}
+
+bool KeyBindsApi::Kbind_ResetActionState(SPF_KeyBinds_Handle* h, const char* actionName) {
+  if (!h || !actionName) return false;
+  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
+  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
+  auto& pm = PluginManager::GetInstance();
+  if (pm.GetKeyBindsManager()) {
+    return pm.GetKeyBindsManager()->ResetActionState(fullActionName);
+  }
+  return false;
 }
 
 void KeyBindsApi::Kbind_UnregisterAll(SPF_KeyBinds_Handle* h) {
@@ -323,6 +376,10 @@ void KeyBindsApi::Kbind_OpenRebindPopup(SPF_KeyBinds_Handle* h, const char* acti
   auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
   std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
 
+  bool lockKey = false, lockBehavior = false, lockPressType = false;
+  GetActionLockFlags(fullActionName, lockKey, lockBehavior, lockPressType);
+  if (lockKey) return;
+
   nlohmann::ordered_json originalBinding = nlohmann::ordered_json::object();
   if (bindingIndex >= 0) {
     auto& pm = PluginManager::GetInstance();
@@ -348,31 +405,10 @@ void KeyBindsApi::Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const ch
   const auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(index));
   if (!binding) return;
 
-  UI::UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, binding->originalBindingJson);
-}
+  bool lock = false, lockBehavior = false, lockPressType = false;
+  GetActionLockFlags(fullActionName, lock, lockBehavior, lockPressType);
 
-bool KeyBindsApi::Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior) {
-  if (!h || !actionName || index < 0) return false;
-  if (behavior != SPF_BEHAVIOR_HOLD && behavior != SPF_BEHAVIOR_TOGGLE) return false;
-  // Same applicability as the getter: NA there means the binding has no behavior to set.
-  SPF_ActivationBehavior current = Kbind_GetBindingBehavior(h, actionName, index);
-  if (current == SPF_BEHAVIOR_NA) return false;
-  if (current == behavior) return true;
-
-  auto* kbdHandle = reinterpret_cast<Handles::KeyBindsHandle*>(h);
-  std::string fullActionName = SanitizeName(kbdHandle->pluginName, actionName);
-  auto& pm = PluginManager::GetInstance();
-  auto* kbm = pm.GetKeyBindsManager();
-  auto* configService = pm.GetConfigService();
-  if (!kbm || !configService) return false;
-
-  const auto* binding = kbm->GetBinding(fullActionName, static_cast<size_t>(index));
-  if (!binding) return false;
-  // Copied: the update rebuilds the bindings, freeing this one.
-  nlohmann::ordered_json originalBinding = binding->originalBindingJson;
-
-  configService->UpdateBindingProperty(fullActionName, originalBinding, "behavior", behavior == SPF_BEHAVIOR_HOLD ? "hold" : "toggle");
-  return Kbind_GetBindingBehavior(h, actionName, index) == behavior;
+  UI::UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, binding->originalBindingJson, lock, lockBehavior, lockPressType);
 }
 
 void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
@@ -401,7 +437,9 @@ void KeyBindsApi::FillKeyBindsApi(SPF_KeyBinds_API* api) {
   api->Kbind_Register_Ex = &KeyBindsApi::Kbind_Register_Ex;
   api->Kbind_OpenRebindPopup = &KeyBindsApi::Kbind_OpenRebindPopup;
   api->Kbind_OpenBindingDetailsPopup = &KeyBindsApi::Kbind_OpenBindingDetailsPopup;
-  api->Kbind_SetBindingBehavior = &KeyBindsApi::Kbind_SetBindingBehavior;
+  api->Kbind_RegisterState = &KeyBindsApi::Kbind_RegisterState;
+  api->Kbind_IsActionActive = &KeyBindsApi::Kbind_IsActionActive;
+  api->Kbind_ResetActionState = &KeyBindsApi::Kbind_ResetActionState;
 }
 
 }  // namespace SPF::Modules::API

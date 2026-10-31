@@ -38,6 +38,9 @@ void RenderGeneralTab(SPF_UI_API* ui, void* user_data) {
   // Keybinds: suppress bound action + mouse look while checkboxes are on.
   RenderKeybindBlockingSection(ui);
 
+  // Keybinds: logical action state (state callback registered in OnActivated).
+  RenderKeybindStateSection(ui);
+
   // Hooks: toggle the GameStringFormatting detour behavior (hook already installed).
   RenderHooksSection(ui);
 

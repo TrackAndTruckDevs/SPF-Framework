@@ -55,6 +55,13 @@ void KeybindsAPI_OnActivated() {
     g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, "BEEP! (Honk action triggered in plugin)");
   });
 
+  // State callback: instead of reconstructing hold/toggle state from bare trigger signals,
+  // follow the framework's logical state. Fires only on genuine transitions; re-registering
+  // replaces the previous state callback for this action. The action already exists
+  // (declared in the manifest) so registration succeeds. "Test.StateTest" is a dedicated
+  // demo action with no side effects — only this callback reflects its state.
+  g_ctx.coreAPI->keybinds->Kbind_RegisterState(g_ctx.keybindsHandle, "Test.StateTest", OnActionStateChanged, (void*)"Test.StateTest");
+
   // --- Restore dynamic actions the player already bound ---
   // WHY explicit restore? Dynamic metadata is added by *code* each session; the framework
   // remembers key→action_id mappings, but without re-registering the action id the mapping
@@ -65,7 +72,7 @@ void KeybindsAPI_OnActivated() {
     char actionName[128];
     g_ctx.coreAPI->keybinds->Kbind_GetActionNameByIndex(g_ctx.keybindsHandle, i, actionName, sizeof(actionName));
 
-    if (strstr(actionName, "MainWindow.toggle") == nullptr && strstr(actionName, "Camera.cycle") == nullptr && strstr(actionName, "Demo.honk") == nullptr && strstr(actionName, "Test.Axis") == nullptr) {
+    if (strstr(actionName, "MainWindow.toggle") == nullptr && strstr(actionName, "Camera.cycle") == nullptr && strstr(actionName, "Demo.honk") == nullptr && strstr(actionName, "Test.Axis") == nullptr && strstr(actionName, "Test.StateTest") == nullptr) {
       // user_data tag lets OnDynamicActionTriggered distinguish "restored on load"
       // from "user just clicked Register" in the same callback.
       g_ctx.coreAPI->keybinds->Kbind_Register_Ex(g_ctx.keybindsHandle, actionName, OnDynamicActionTriggered, (void*)"RestoredDynamic");
@@ -109,6 +116,23 @@ void OnDynamicActionTriggered(const char* action_id, void* user_data) {
     SPF_Notification_Params p = {SPF_NOTIFICATION_SUCCESS, msg_buf, SPF_NOTIF_MODE_TOP, 2.0f};
     g_ctx.uiAPI->UI_ShowNotification(&p);
   }
+}
+
+// ------------------------------------------------------------------------------------------------
+// State callbacks
+// ------------------------------------------------------------------------------------------------
+
+void OnActionStateChanged(const char* action_id, bool active, void* user_data) {
+  if (!g_ctx.coreAPI) {
+    return;
+  }
+  auto logger = g_ctx.coreAPI->logger->Log_GetContext(PLUGIN_NAME);
+
+  char log_buf[256];
+  g_ctx.coreAPI->formatting->Fmt_Format(log_buf, sizeof(log_buf), "[STATE] '%s' -> %s (user_data: %s)",
+                                        action_id ? action_id : "NULL", active ? "ACTIVE" : "INACTIVE",
+                                        user_data ? (const char*)user_data : "NULL");
+  g_ctx.coreAPI->logger->Log(logger, SPF_LOG_INFO, log_buf);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -206,6 +230,36 @@ void RenderKeybindBlockingSection(SPF_UI_API* ui) {
   static bool blockMouse = false;
   if (ui->UI_Checkbox("Block Game Mouse Look", &blockMouse)) {
     ui->UI_SetMouseBlockState(blockMouse, false, false);
+  }
+
+  ui->UI_Separator();
+}
+
+// ------------------------------------------------------------------------------------------------
+// UI: logical action state (General tab)
+// ------------------------------------------------------------------------------------------------
+
+void RenderKeybindStateSection(SPF_UI_API* ui) {
+  if (!g_ctx.coreAPI || !g_ctx.coreAPI->keybinds || !g_ctx.keybindsHandle || !ui) {
+    ui->UI_Text("Keybinds API is not available.");
+    return;
+  }
+
+  ui->UI_Text("Logical Action State (state callback registered in OnActivated):");
+  ui->UI_Text("Bind the 'Test.StateTest' action (default KEY_G) and watch it flip below.");
+
+  // Re-sync without waiting for the next transition: same value the last state callback reported.
+  const bool isActive = g_ctx.coreAPI->keybinds->Kbind_IsActionActive(g_ctx.keybindsHandle, "Test.StateTest");
+  ui->UI_Text(isActive ? "Test.StateTest: ACTIVE" : "Test.StateTest: inactive");
+
+  // Force the action inactive — delivers one final active=false and IsActionActive resets.
+  // Use it when your plugin ends the state itself (e.g. the player left the cabin and the look
+  // view must close regardless of the key).
+  if (ui->UI_Button("Reset Test.StateTest", 0, 0)) {
+    if (g_ctx.coreAPI->keybinds->Kbind_ResetActionState(g_ctx.keybindsHandle, "Test.StateTest")) {
+      SPF_Notification_Params p = {SPF_NOTIFICATION_WARNING, "Test.StateTest was active -> reset to inactive.", SPF_NOTIF_MODE_TOP, 2.0f};
+      ui->UI_ShowNotification(&p);
+    }
   }
 
   ui->UI_Separator();

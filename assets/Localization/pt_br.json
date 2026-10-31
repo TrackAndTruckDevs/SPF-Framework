@@ -271,7 +271,8 @@
         "details_button_tooltip": "Configurar comportamento do atalho",
         "not_available": "A configuração de teclas não está disponível."
       },
-      "unassigned_text": "Não atribuído"
+      "unassigned_text": "Não atribuído",
+      "lock_tooltip": "Estas configurações estão bloqueadas pelo plugin e não podem ser alteradas."
     },
     "table": {
       "setting": "Configuração",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Modo acumulador",
       "accumulator_mode_label_description": "Quando ativado, o eixo age como um botão virtual. Mover o stick controla la velocidade com que o valor aumenta ou diminui, e o valor permanece onde está quando o stick é solto.",
       "invert_label": "Inverter eixo",
-      "invert_label_description": "Inverte a direção do eixo (positivo torna-se negativo e vice-versa)."
+      "invert_label_description": "Inverte a direção do eixo (positivo torna-se negativo e vice-versa).",
+      "lock_tooltip": "Estas configurações estão bloqueadas pelo plugin e não podem ser alteradas."
     },
     "conflict": {
       "press_type_message": "O tipo de pressão '**{}**' já está em uso pela ação:",

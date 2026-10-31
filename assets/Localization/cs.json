@@ -271,7 +271,8 @@
         "details_button_tooltip": "Konfigurovat chování klávesové zkratky",
         "not_available": "Konfigurace klávesových zkratek není k dispozici."
       },
-      "unassigned_text": "Nepřiřazeno"
+      "unassigned_text": "Nepřiřazeno",
+      "lock_tooltip": "Tato nastavení jsou uzamčena pluginem a nelze je změnit."
     },
     "table": {
       "setting": "Nastavení",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Režim akumulátoru",
       "accumulator_mode_label_description": "Pokud je povoleno, osa funguje jako virtuální knoflík. Pohybem páčky ovládáte rychlost, jakou se hodnota zvyšuje nebo snižuje, a hodnota zůstává tam, kde je, když páčku uvolníte.",
       "invert_label": "Invertovat osu",
-      "invert_label_description": "Obrátí směr osy (Kladná se stane Zápornou a naopak)."
+      "invert_label_description": "Obrátí směr osy (Kladná se stane Zápornou a naopak).",
+      "lock_tooltip": "Tato nastavení jsou uzamčena pluginem a nelze je změnit."
     },
     "conflict": {
       "press_type_message": "Typ stisku '**{}**' je již používán akcí:",

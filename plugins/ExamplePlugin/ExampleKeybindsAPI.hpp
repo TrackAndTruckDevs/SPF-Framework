@@ -61,4 +61,27 @@ void RenderDynamicKeybindsTab(SPF_UI_API* ui, void* user_data);
  */
 void RenderKeybindBlockingSection(SPF_UI_API* ui);
 
+/**
+ * @brief State callback: reports the action's logical active state on genuine transitions.
+ * @param action_id Full internal name of the action (e.g. "ExamplePlugin.MainWindow.toggle").
+ * @param active true when the action became active, false when it became inactive.
+ * @param user_data Opaque pointer passed at registration.
+ *
+ * Signature must match SPF_Keybind_State_Callback:
+ *   void (*)(const char* action_id, bool active, void* user_data)
+ *
+ * Unlike the legacy Kbind_Register trigger (fires on every press/release), this fires only on
+ * logical transitions: hold → press/release (releases guaranteed, incl. on focus loss), toggle →
+ * each flip. Stored/dispatched independently of the legacy callback; re-registering replaces the
+ * previous state callback for this action.
+ */
+void OnActionStateChanged(const char* action_id, bool active, void* user_data);
+
+/**
+ * @brief Renders the state-callback demos under the General tab.
+ * @details Shows the current logical state (Kbind_IsActionActive) and lets you force it
+ * inactive (Kbind_ResetActionState — delivers one final active=false and resets the state).
+ */
+void RenderKeybindStateSection(SPF_UI_API* ui);
+
 }  // namespace ExamplePlugin

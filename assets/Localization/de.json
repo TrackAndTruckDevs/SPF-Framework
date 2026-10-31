@@ -271,7 +271,8 @@
         "details_button_tooltip": "Verhalten der Tastenkombination konfigurieren",
         "not_available": "Konfiguration der Tastenkombinationen nicht verfügbar."
       },
-      "unassigned_text": "Nicht zugewiesen"
+      "unassigned_text": "Nicht zugewiesen",
+      "lock_tooltip": "Diese Einstellungen sind durch das Plugin gesperrt und können nicht geändert werden."
     },
     "table": {
       "setting": "Einstellung",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Akkumulatormodus",
       "accumulator_mode_label_description": "Wenn aktiviert, fungiert die Achse wie ein virtueller Drehknopf. Das Bewegen des Sticks steuert die Geschwindigkeit, mit der sich der Wert erhöht oder verringert, und der Wert bleibt dort, wo er ist, wenn der Stick losgelassen wird.",
       "invert_label": "Achse invertieren",
-      "invert_label_description": "Kehrt die Achsenrichtung um (Positiv wird Negativ und umgekehrt)."
+      "invert_label_description": "Kehrt die Achsenrichtung um (Positiv wird Negativ und umgekehrt).",
+      "lock_tooltip": "Diese Einstellungen sind durch das Plugin gesperrt und können nicht geändert werden."
     },
     "conflict": {
       "press_type_message": "Die Druckart '**{}**' wird bereits von der Aktion verwendet:",

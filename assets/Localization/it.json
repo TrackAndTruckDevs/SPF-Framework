@@ -271,7 +271,8 @@
         "details_button_tooltip": "Configura comportamento del tasto",
         "not_available": "La configurazione dei tasti non è disponibile."
       },
-      "unassigned_text": "Non assegnato"
+      "unassigned_text": "Non assegnato",
+      "lock_tooltip": "Queste impostazioni sono bloccate dal plugin e non possono essere modificate."
     },
     "table": {
       "setting": "Impostazione",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Modalità accumulatore",
       "accumulator_mode_label_description": "Se abilitato, l'asse agisce come una manopola virtuale. Muovere lo stick controlla la velocità con cui il valore aumenta o diminuisce, e il valore rimane dove si trova quando lo stick viene rilasciato.",
       "invert_label": "Inverti asse",
-      "invert_label_description": "Inverte la direzione dell'asse (il positivo diventa negativo e viceversa)."
+      "invert_label_description": "Inverte la direzione dell'asse (il positivo diventa negativo e viceversa).",
+      "lock_tooltip": "Queste impostazioni sono bloccate dal plugin e non possono essere modificate."
     },
     "conflict": {
       "press_type_message": "Il tipo di pressione '**{}**' è già in uso dall'azione:",

@@ -90,12 +90,31 @@ struct KeybindDefinition {
 };
 
 /**
+ * @brief Defines a single keybind action: its bindings plus per-action lock flags.
+ * @details Locks live at the action level, not per binding. A lock forces the
+ *          corresponding property (key / behavior / press type) to the value
+ *          declared via `Defaults_AddKeybind` and prevents the player from
+ *          changing it in the UI / config. Flags are only serialized when set.
+ */
+struct ActionDefinition {
+  /// @brief The action's keybindings.
+  std::vector<KeybindDefinition> bindings;
+
+  /// @brief When set, the action's key(s) cannot be changed, added, or removed.
+  std::optional<bool> lockKey;
+  /// @brief When set, the action's behavior (hold/toggle) is forced and immutable.
+  std::optional<bool> lockBehavior;
+  /// @brief When set, the action's press type (short/long) is forced and immutable.
+  std::optional<bool> lockPressType;
+};
+
+/**
  * @brief Container for all keybind action definitions for a component.
  */
 struct KeybindsData {
   /// @brief Map of action groups to actions to their binding definitions.
-  /// Format: { "groupName": { "actionName": [ ...bindings... ] } }
-  std::map<std::string, std::map<std::string, std::vector<KeybindDefinition>>> actions;
+  /// Format: { "groupName": { "actionName": ActionDefinition } }
+  std::map<std::string, std::map<std::string, ActionDefinition>> actions;
 };
 
 // --- UI Settings Block ---

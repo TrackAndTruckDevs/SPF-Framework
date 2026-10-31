@@ -271,7 +271,8 @@
         "details_button_tooltip": "配置按键绑定行为",
         "not_available": "按键绑定配置不可用。"
       },
-      "unassigned_text": "未分配"
+      "unassigned_text": "未分配",
+      "lock_tooltip": "这些设置已被插件锁定，无法更改。"
     },
     "table": {
       "setting": "设置",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "累加器模式",
       "accumulator_mode_label_description": "启用后，轴的作用类似于虚拟旋钮。移动摇杆控制值增加或减少的速度，松开摇杆时值保持不变。",
       "invert_label": "反转轴",
-      "invert_label_description": "反转轴方向（正向变为负向，反之亦然）。"
+      "invert_label_description": "反转轴方向（正向变为负向，反之亦然）。",
+      "lock_tooltip": "这些设置已被插件锁定，无法更改。"
     },
     "conflict": {
       "press_type_message": "按压类型'**{}**'已被该操作使用：",

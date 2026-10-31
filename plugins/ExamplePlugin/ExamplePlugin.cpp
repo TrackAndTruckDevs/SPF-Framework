@@ -38,6 +38,7 @@
 #include "ExampleTelemetryAPI.hpp"
 #include "ExampleVehicleAPI.hpp"
 #include "ExampleVirtInputAPI.hpp"
+#include <cstddef>
 
 namespace ExamplePlugin {
 
@@ -110,12 +111,24 @@ void BuildManifest(SPF_Manifest_Builder_Handle* h, const SPF_Manifest_Builder_AP
   {
     api->Defaults_AddKeybind(h, "MainWindow", "toggle", "keyboard", "KEY_F5", "always");
     api->Defaults_AddKeybind(h, "MainWindow", "toggle", "chord", "keyboard:KEY_LCONTROL+keyboard:KEY_F5", "always");
-    api->Defaults_AddKeybind(h, "Camera", "cycle", "keyboard", "KEY_F6", "always");
+    api->Defaults_AddKeybindEx(h, "Camera", "cycle", "keyboard", "KEY_F6", "always", NULL, "hold", -1);
     // Demo.honk: manual consume policy so ExampleKeybindsAPI can demonstrate blocking.
     api->Defaults_AddKeybind(h, "Demo", "honk", "keyboard", "KEY_H", "manual");
     // Analog test axis: keyboard space OR gamepad trigger (ExampleVirtInputAPI Input Test).
     api->Defaults_AddKeybind(h, "Test", "Axis", "keyboard", "KEY_SPACE", "never");
     api->Defaults_AddKeybind(h, "Test", "Axis", "gamepad_axis", "RIGHT_TRIGGER_AXIS", "never");
+    // Dedicated state-demo action: no side effects, only the state callback fires/logs.
+    // Defaults to toggle behavior — every press flips ACTIVE/INACTIVE so the demo is observable.
+    api->Defaults_AddKeybind(h, "Test", "StateTest", "keyboard", "KEY_G", "never");
+
+    // Locking demo — call after all Defaults_AddKeybind for the action. Each flag is
+    // independent; the locked property is forced from the declared default and made
+    // read-only in the UI. Locking the key can conflict with other plugins, so prefer
+    // locking behavior/press type alone when that is enough.
+    //   Camera.cycle   : keep the bound key, but force hold + short press.
+    //   Demo.honk      : lock the key so players cannot rebind the horn.
+    api->Defaults_LockKeybind(h, "Camera", "cycle", false, true, false);
+    api->Defaults_LockKeybind(h, "Demo", "honk", true, false, false);
   }
 
   // Window defaults for MainWindow (name must match OnRegisterUI registration).

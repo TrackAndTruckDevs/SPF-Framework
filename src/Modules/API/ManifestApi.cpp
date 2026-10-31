@@ -198,25 +198,72 @@ static void Defaults_AddKeybind(SPF_Manifest_Builder_Handle* h, const char* grou
     if (key && *key) def.key = key;
   }
 
-  ctx->manifest->keybinds.actions[sanitizedGroup][action].push_back(std::move(def));
+  ctx->manifest->keybinds.actions[sanitizedGroup][action].bindings.push_back(std::move(def));
 }
 
-static void Defaults_SetKeybindBehavior(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, const char* behavior) {
-  if (!h || !group || !action || !behavior) return;
-  std::string behaviorStr = behavior;
-  if (behaviorStr != "hold" && behaviorStr != "toggle") {
-    LogError("Defaults_SetKeybindBehavior", "Behavior must be \"hold\" or \"toggle\".");
-    return;
+static void Defaults_AddKeybindEx(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, const char* type, const char* key, const char* consume,
+                                  const char* pressType, const char* behavior, int pressThresholdMs) {
+  if (!h || !group || !action || *group == '\0' || *action == '\0') return;
+
+  auto* ctx = Cast(h);
+  std::string sanitizedGroup = SanitizeGroup(ctx->pluginName, group);
+
+  KeybindDefinition def;
+  std::string typeStr = type ? type : "";
+  def.type = typeStr;
+  if (consume && *consume) def.consume = consume;
+
+  bool isAxis = (typeStr.find("_axis") != std::string::npos);
+  if (!isAxis && typeStr != "chord") {
+    if (pressType && *pressType) def.pressType = pressType;
+    if (behavior && *behavior) def.behavior = behavior;
+    if (pressThresholdMs >= 0) def.pressThresholdMs = pressThresholdMs;
   }
+
+  if (typeStr == "chord" && key) {
+    std::string fullChord(key);
+    std::stringstream ss(fullChord);
+    std::string part;
+
+    while (std::getline(ss, part, '+')) {
+      part.erase(0, part.find_first_not_of(" "));
+      part.erase(part.find_last_not_of(" ") + 1);
+
+      size_t colonPos = part.find(':');
+      if (colonPos != std::string::npos) {
+        KeybindDefinition sub;
+        sub.type = part.substr(0, colonPos);
+        sub.key = part.substr(colonPos + 1);
+        def.bindings.push_back(std::move(sub));
+      } else {
+        KeybindDefinition sub;
+        sub.type = "keyboard";
+        sub.key = part;
+        def.bindings.push_back(std::move(sub));
+      }
+    }
+  } else {
+    if (key && *key) def.key = key;
+  }
+
+  ctx->manifest->keybinds.actions[sanitizedGroup][action].bindings.push_back(std::move(def));
+}
+
+static void Defaults_LockKeybind(SPF_Manifest_Builder_Handle* h, const char* group, const char* action, bool lockKey, bool lockBehavior, bool lockPressType) {
+  if (!h || !group || !action) return;
+  if (!lockKey && !lockBehavior && !lockPressType) return;
 
   auto* ctx = Cast(h);
   auto& actions = ctx->manifest->keybinds.actions;
   auto groupIt = actions.find(SanitizeGroup(ctx->pluginName, group));
   if (groupIt == actions.end() || groupIt->second.find(action) == groupIt->second.end()) {
-    LogError("Defaults_SetKeybindBehavior", "Call Defaults_AddKeybind for the action first.");
+    LogError("Defaults_LockKeybind", "Call Defaults_AddKeybind for the action first.");
     return;
   }
-  for (auto& def : groupIt->second[action]) def.behavior = behaviorStr;
+  auto& actionDef = groupIt->second[action];
+  if (lockKey) actionDef.lockKey = true;
+  if (lockBehavior) actionDef.lockBehavior = true;
+  if (lockPressType) actionDef.lockPressType = true;
 }
 
 static void Defaults_AddWindow(SPF_Manifest_Builder_Handle* h, const char* windowName, bool isVisible, bool isInteractive, int x, int y, int w, int height, bool isCollapsed, bool autoScroll) {
@@ -339,7 +386,8 @@ static void FillBuilderApi(SPF_Manifest_Builder_API* api) {
   api->Meta_AddWindow = Meta_AddWindow;
   api->Meta_AddStandardSetting = Meta_AddStandardSetting;
 
-  api->Defaults_SetKeybindBehavior = Defaults_SetKeybindBehavior;
+  api->Defaults_AddKeybindEx = Defaults_AddKeybindEx;
+  api->Defaults_LockKeybind = Defaults_LockKeybind;
 }
 
 // =================================================================================================

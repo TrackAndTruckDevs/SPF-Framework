@@ -271,7 +271,8 @@
         "details_button_tooltip": "キーバインドの動作を設定",
         "not_available": "キーバインド設定は利用できません。"
       },
-      "unassigned_text": "未割り当て"
+      "unassigned_text": "未割り当て",
+      "lock_tooltip": "これらの設定はプラグインによってロックされており、変更できません。"
     },
     "table": {
       "setting": "設定",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "アキュムレータモード",
       "accumulator_mode_label_description": "有効にすると、軸は仮想ノブのように動作します。スティックを動かすことで値が増減する速度を制御し、スティックを離すと値はその位置に留まります。",
       "invert_label": "軸を反転",
-      "invert_label_description": "軸の方向を反転させます（正が負になり、その逆も同様です）。"
+      "invert_label_description": "軸の方向を反転させます（正が負になり、その逆も同様です）。",
+      "lock_tooltip": "これらの設定はプラグインによってロックされており、変更できません。"
     },
     "conflict": {
       "press_type_message": "押下タイプ「**{}**」はすでにアクションで使用されています：",

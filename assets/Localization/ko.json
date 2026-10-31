@@ -271,7 +271,8 @@
         "details_button_tooltip": "키 바인딩 동작 구성",
         "not_available": "키 바인딩 구성을 사용할 수 없습니다."
       },
-      "unassigned_text": "할당되지 않음"
+      "unassigned_text": "할당되지 않음",
+      "lock_tooltip": "이 설정은 플러그인에 의해 잠겨 있어 변경할 수 없습니다."
     },
     "table": {
       "setting": "설정",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "어큐뮬레이터 모드",
       "accumulator_mode_label_description": "활성화되면 축이 가상 노브처럼 작동합니다. 스틱을 움직이면 값이 증가하거나 감소하는 속도가 제어되며, 스틱을 놓으면 값이 그대로 유지됩니다.",
       "invert_label": "축 반전",
-      "invert_label_description": "축 방향을 반전시킵니다(양수가 음수가 되고 그 반대도 마찬가지)."
+      "invert_label_description": "축 방향을 반전시킵니다(양수가 음수가 되고 그 반대도 마찬가지).",
+      "lock_tooltip": "이 설정은 플러그인에 의해 잠겨 있어 변경할 수 없습니다."
     },
     "conflict": {
       "press_type_message": "누름 유형 '**{}**'은(는) 이미 해당 작업에서 사용 중입니다:",

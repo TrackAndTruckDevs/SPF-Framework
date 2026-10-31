@@ -46,8 +46,11 @@ class BindingDetailsPopup {
    * @param actionFullName Fully-qualified action name (e.g. "MyPlugin.UI.toggle").
    * @param bindingJson The binding's current JSON representation (as returned by the
    *                     binding's ToJson(), or read back from config).
+   * @param lockKey When true the key is locked by the plugin (whole popup read-only).
+   * @param lockBehavior When true the behavior field is locked by the plugin.
+   * @param lockPressType When true the press-type field is locked by the plugin.
    */
-  void Open(const std::string& actionFullName, const nlohmann::ordered_json& bindingJson);
+  void Open(const std::string& actionFullName, const nlohmann::ordered_json& bindingJson, bool lockKey = false, bool lockBehavior = false, bool lockPressType = false);
 
   /**
    * @brief Draws the popup, if open. Must be called once per frame from a top-level
@@ -64,6 +67,9 @@ class BindingDetailsPopup {
   std::unique_ptr<Utils::Sink<void(const std::string&)>> m_onLanguageChangedSink;
 
   bool m_shouldOpen = false;
+  bool m_lockKey = false;
+  bool m_lockBehavior = false;
+  bool m_lockPressType = false;
   std::optional<std::string> m_editingBindingAction;
   std::optional<nlohmann::ordered_json> m_editingBindingDetails;
   nlohmann::ordered_json m_originalBindingCopy;
@@ -98,6 +104,7 @@ class BindingDetailsPopup {
   std::string m_rangeMaxLabelKey;
   std::string m_accumulatorModeLabelKey;
   std::string m_invertLabelKey;
+  std::string m_lockTooltipKey;
 
   std::string m_conflictPressTypeMessage;
   std::string m_conflictSwapQuestion;

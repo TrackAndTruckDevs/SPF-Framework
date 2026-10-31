@@ -115,10 +115,19 @@ api->Settings_SetJson(h, defaults);
     *   `behavior`: `"toggle"`.
     *   `press_threshold_ms`: `500`.
 
-    **Behavior**: `Defaults_SetKeybindBehavior(h, group, action, behavior)`
-    *   Makes the action's bindings (those added so far with `Defaults_AddKeybind`, so call it after them) default to `"hold"` or `"toggle"`.
-    *   Only reaches players with no saved value for the binding: one already in a player's settings keeps its behavior. Use `Kbind_SetBindingBehavior` to change a saved one.
-    *   Added at the end of the builder table: set `Info_SetMinFrameworkVersion` to a framework that has it.
+    **Keybinds (Extended)**: `Defaults_AddKeybindEx(h, group, action, type, key, consume, pressType, behavior, pressThresholdMs)`
+    *   Fully explicit version of `Defaults_AddKeybind` for when the framework defaults are not enough (e.g. to default an action to `"hold"` or a `"long"` press).
+    *   Takes the same parameters as `Defaults_AddKeybind` plus the digital-input fields:
+        *   `pressType`: `"short"` or `"long"`. Pass `NULL` to keep the framework default (`"short"`).
+        *   `behavior`: `"toggle"` or `"hold"`. Pass `NULL` to keep the framework default (`"toggle"`). Ignored for axes.
+        *   `pressThresholdMs`: ms to qualify as a long press. Pass `-1` to keep the framework default (`500`). Only meaningful when `pressType` is `"long"`.
+    *   The intended companion of `Defaults_LockKeybind`: to lock an action to a non-default value, declare it here and then lock it.
+
+    **Behavior Lock**: `Defaults_LockKeybind(h, group, action, lockKey, lockBehavior, lockPressType)`
+    *   Locks parts of an action so the player cannot change them (rebinding, behavior, press type).
+    *   Each lock forces the value **declared for the action** (`Defaults_AddKeybind` or `Defaults_AddKeybindEx`) and makes the field read-only in the UI.
+    *   For an action declared with plain `Defaults_AddKeybind`, locking behavior fixes it to `"toggle"` (the framework default) — there is no way to lock it to `"hold"` without `Defaults_AddKeybindEx`.
+    *   Call it after all `Defaults_AddKeybind` / `Defaults_AddKeybindEx` calls for the action. Only set a lock when you actually need it: locking the key can conflict with other plugins.
 
     **Device:** A default binding works with any device. A binding the user captures from a DirectInput device (wheel, button box, pedals, a non-Xbox gamepad) is saved with a `device` field (`"dinput:{product GUID}"`) and only triggers on that device, so the same button on two devices can drive two actions. Xbox pads, the keyboard and the mouse can't be told apart and stay on any device.
 

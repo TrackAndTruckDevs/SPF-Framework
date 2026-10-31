@@ -39,10 +39,17 @@ class EventManager;
 namespace SPF::Modules {
 using ActionCallback = std::function<void()>;
 using ActionCallbackEx = std::function<void(const std::string&, void*)>;
+using StateCallback = std::function<void(const std::string&, bool, void*)>;
 
 enum class ActivationBehavior {
   Toggle,  // Action is triggered once
   Hold     // Action is triggered on press, and again on release
+};
+
+enum class TriggerEdge {
+  Press,    // Logical activation edge (hold press, toggle trigger)
+  Release,  // Logical deactivation edge (hold release)
+  Long      // Long-press threshold reached
 };
 
 struct Binding {
@@ -59,6 +66,9 @@ struct Action {
   ActionCallback Callback;
   ActionCallbackEx CallbackEx;
   void* UserData = nullptr;
+  StateCallback StateCb;
+  void* StateUserData = nullptr;
+  bool ActiveState = false;
   std::vector<Binding> Inputs;
   // Kbind_SetBlockState's last request, kept here so bindings rebuilt from the
   // config (e.g. after a rebind) inherit it.
@@ -97,6 +107,9 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
 
   void RegisterAction(const std::string& actionKey, ActionCallback callback);
   void RegisterActionEx(const std::string& actionKey, ActionCallbackEx callback, void* userData);
+  void RegisterActionState(const std::string& actionKey, StateCallback callback, void* userData);
+  bool IsActionActive(const std::string& actionKey) const;
+  bool ResetActionState(const std::string& actionKey);
   void UnregisterOwner(const std::string& owner);
 
   /**
@@ -176,11 +189,11 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
 
   std::chrono::milliseconds GetLongPressThreshold() const;
 
-  void TriggerAction(System::GamepadButton button, Input::PressType pressType);
-  void TriggerAction(System::Keyboard key, Input::PressType pressType);
-  void TriggerAction(System::MouseButton button, Input::PressType pressType);
-  void TriggerAction(int buttonIndex, Input::PressType pressType);
-  void TriggerAction(uint32_t hardwareCode, Input::PressType pressType);
+  void TriggerAction(System::GamepadButton button, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
+  void TriggerAction(System::Keyboard key, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
+  void TriggerAction(System::MouseButton button, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
+  void TriggerAction(int buttonIndex, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
+  void TriggerAction(uint32_t hardwareCode, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
 
   /**
    * @brief Gets the current normalized value (0.0 to 1.0 or -1.0 to 1.0) for an action.

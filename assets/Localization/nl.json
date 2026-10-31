@@ -271,7 +271,8 @@
         "details_button_tooltip": "Gedrag van sneltoets configureren",
         "not_available": "Configuratie van sneltoetsen is niet beschikbaar."
       },
-      "unassigned_text": "Niet toegewezen"
+      "unassigned_text": "Niet toegewezen",
+      "lock_tooltip": "Deze instellingen zijn vergrendeld door de plugin en kunnen niet worden gewijzigd."
     },
     "table": {
       "setting": "Instelling",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Accumulatormodus",
       "accumulator_mode_label_description": "Indien ingeschakeld, werkt de as als een virtuele knop. Het bewegen van de stick regelt de snelheid waarmee de waarde toeneemt of afneemt, en de waarde blijft waar hij is wanneer de stick wordt losgelaten.",
       "invert_label": "As omkeren",
-      "invert_label_description": "Keert de asrichting om (Positief wordt Negatief en vice versa)."
+      "invert_label_description": "Keert de asrichting om (Positief wordt Negatief en vice versa).",
+      "lock_tooltip": "Deze instellingen zijn vergrendeld door de plugin en kunnen niet worden gewijzigd."
     },
     "conflict": {
       "press_type_message": "Het druktype '**{}**' wordt al gebruikt door de actie:",

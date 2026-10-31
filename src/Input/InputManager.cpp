@@ -1030,7 +1030,7 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
 
     if (const auto* binding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short)) {
       if (binding->Behavior == Modules::ActivationBehavior::Hold) {
-        Modules::KeyBindsManager::GetInstance().TriggerAction(hardwareCode, PressType::Short);
+        Modules::KeyBindsManager::GetInstance().TriggerAction(hardwareCode, PressType::Short, Modules::TriggerEdge::Press);
         SetHoldState(hardwareCode, PressType::Short);
       }
     }
@@ -1327,7 +1327,7 @@ void InputManager::FlushOwnedInputs() {
     // delivered on the real key-up, then drop the hold entry.
     auto held = m_heldInputs.find(code);
     if (held != m_heldInputs.end()) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(code, held->second);
+      Modules::KeyBindsManager::GetInstance().TriggerAction(code, held->second, Modules::TriggerEdge::Release);
       m_heldInputs.erase(held);
     }
 
@@ -1450,10 +1450,10 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
     auto it = m_heldInputs.find(hardwareCode);
     if (it != m_heldInputs.end()) {
       PressType originalPressType = it->second;
-      keyBindsManager.TriggerAction(hardwareCode, originalPressType);
+      keyBindsManager.TriggerAction(hardwareCode, originalPressType, Modules::TriggerEdge::Release);
       m_heldInputs.erase(it);
     } else if (!state.longPressTriggered) {
-      keyBindsManager.TriggerAction(hardwareCode, PressType::Short);
+      keyBindsManager.TriggerAction(hardwareCode, PressType::Short, Modules::TriggerEdge::Press);
     }
   }
   // --- Detect and Handle Hold (for Long Press) ---
@@ -1504,7 +1504,7 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
               }
             }
 
-            keyBindsManager.TriggerAction(hardwareCode, PressType::Long);
+            keyBindsManager.TriggerAction(hardwareCode, PressType::Long, Modules::TriggerEdge::Long);
 
             // Update block policy based on long press action
             auto policy = longPressBinding->Policy;

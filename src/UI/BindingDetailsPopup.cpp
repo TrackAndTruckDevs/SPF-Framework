@@ -11,6 +11,7 @@
 #include "SPF/Modules/InputFactory.hpp"
 #include "SPF/Modules/KeyBindsManager.hpp"
 #include "SPF/UI/UIElements.hpp"
+#include "SPF/UI/Icons.hpp"
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/UITypographyHelper.hpp"
 #include "SPF/Utils/Signal.hpp"
@@ -73,15 +74,19 @@ void BindingDetailsPopup::RefreshLocalization() {
   m_rangeMaxLabelKey = loc.Get("settings_window.binding_details_popup.range_max_label");
   m_accumulatorModeLabelKey = loc.Get("settings_window.binding_details_popup.accumulator_mode_label");
   m_invertLabelKey = loc.Get("settings_window.binding_details_popup.invert_label");
+  m_lockTooltipKey = loc.Get("settings_window.binding_details_popup.lock_tooltip");
 }
 
-void BindingDetailsPopup::Open(const std::string& actionFullName, const nlohmann::ordered_json& bindingJson) {
+void BindingDetailsPopup::Open(const std::string& actionFullName, const nlohmann::ordered_json& bindingJson, bool lockKey, bool lockBehavior, bool lockPressType) {
   m_editingBindingAction = actionFullName;
   m_editingBindingDetails = bindingJson;
   m_currentPressThreshold = bindingJson.value("press_threshold_ms", 500);
   m_originalBindingCopy = bindingJson;
   m_pressTypeSwapConflict.reset();
   m_pressTypeSwapNewValue.reset();
+  m_lockKey = lockKey;
+  m_lockBehavior = lockBehavior;
+  m_lockPressType = lockPressType;
   m_shouldOpen = true;
 }
 
@@ -512,8 +517,16 @@ void BindingDetailsPopup::Render() {
     }
 
     // --- Press Type Setting with Radio Buttons ---
+    if (m_lockPressType) ImGui::BeginDisabled();
     ImGui::TextUnformatted(m_pressTypeLabelKey.c_str());
     addTooltip("settings_window.binding_details_popup.press_type_label");
+    if (m_lockPressType) ImGui::SameLine();
+    if (m_lockPressType) {
+      ImGui::TextUnformatted(ICON_FA_LOCK);
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", m_lockTooltipKey.c_str());
+      }
+    }
     ImGui::SameLine();
     ImGui::PushID("details_press_type_radios");
 
@@ -629,6 +642,7 @@ void BindingDetailsPopup::Render() {
         ImGui::Separator();
       }
     }
+    if (m_lockPressType) ImGui::EndDisabled();
   }
 
   // --- Behavior Setting ---
@@ -636,8 +650,16 @@ void BindingDetailsPopup::Render() {
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
+    if (m_lockBehavior) ImGui::BeginDisabled();
     ImGui::TextUnformatted(m_behaviorLabelKey.c_str());
     addTooltip("settings_window.binding_details_popup.behavior_label");
+    if (m_lockBehavior) ImGui::SameLine();
+    if (m_lockBehavior) {
+      ImGui::TextUnformatted(ICON_FA_LOCK);
+      if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", m_lockTooltipKey.c_str());
+      }
+    }
     ImGui::SameLine();
     ImGui::PushID("details_behavior");
     std::string currentBehavior = bindingJson.value("behavior", "toggle");
@@ -653,6 +675,7 @@ void BindingDetailsPopup::Render() {
       m_originalBindingCopy = bindingJson;
     }
     ImGui::PopID();
+    if (m_lockBehavior) ImGui::EndDisabled();
   }
 
   // --- Consume Policy Setting ---

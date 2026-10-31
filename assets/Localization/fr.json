@@ -271,7 +271,8 @@
         "details_button_tooltip": "Configurer le comportement du raccourci",
         "not_available": "La configuration des raccourcis n'est pas disponible."
       },
-      "unassigned_text": "Non assigné"
+      "unassigned_text": "Non assigné",
+      "lock_tooltip": "Ces paramètres sont verrouillés par le plugin et ne peuvent pas être modifiés."
     },
     "table": {
       "setting": "Paramètre",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Mode accumulateur",
       "accumulator_mode_label_description": "Lorsqu'il est activé, l'axe agit comme un bouton virtuel. Le mouvement du stick contrôle la vitesse à laquelle la valeur augmente ou diminue, et la valeur reste là où elle est quand le stick est relâché.",
       "invert_label": "Inverser l'axe",
-      "invert_label_description": "Inverse la direction de l'axe (Positif devient Négatif et vice-versa)."
+      "invert_label_description": "Inverse la direction de l'axe (Positif devient Négatif et vice-versa).",
+      "lock_tooltip": "Ces paramètres sont verrouillés par le plugin et ne peuvent pas être modifiés."
     },
     "conflict": {
       "press_type_message": "Le type de pression '**{}**' est déjà utilisé par l'action :",

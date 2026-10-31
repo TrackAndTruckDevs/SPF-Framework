@@ -294,9 +294,14 @@ typedef struct SPF_Manifest_Builder_API {
    *          #### A. Digital Inputs ("keyboard", "gamepad")
    *          Optimized for binary on/off actions (e.g., "Open Menu", "Honk").
    *          - @b press_type: Defaults to "short" (triggers immediately on press).
+   *            Locking it with Defaults_LockKeybind (lockPressType) fixes it to "short".
+   *            To lock an action to a different press type (e.g., "long") instead,
+   *            declare it with Defaults_AddKeybindEx (which lets you set press_type explicitly) and then lock it.
    *          - @b press_threshold_ms: Defaults to 500ms (relevant if user later switches to "long" press in UI).
-   *          - @b behavior: Defaults to "toggle" (standard one-time trigger). Use
-   *            `Defaults_SetKeybindBehavior` to make an action default to "hold".
+   *          - @b behavior: Defaults to "toggle" (standard one-time trigger).
+   *            Locking it with `Defaults_LockKeybind` (lockBehavior) fixes it to "toggle".
+   *            To lock an action to "hold" instead, declare it with `Defaults_AddKeybindEx`
+   *            (which lets you set behavior explicitly) and then lock it.
    *          - @b value: Internally produces 0.0 (released) or 1.0 (pressed).
    *
    *          #### B. Analog Inputs ("gamepad_axis", "mouse_axis", "joystick_axis")
@@ -459,22 +464,55 @@ typedef struct SPF_Manifest_Builder_API {
   void (*Meta_AddStandardSetting)(SPF_Manifest_Builder_Handle* h, const char* system, const char* key, const char* titleKey, const char* descKey);
 
   /**
-   * @brief Sets the default activation behavior (Hold/Toggle) of an action's digital bindings.
+   * @brief Like Defaults_AddKeybind, but lets the plugin fully specify the binding.
    *
-   * @details Applies to every binding declared so far for the action with `Defaults_AddKeybind`,
-   *          so call it after them. Like any default, it only reaches players who have no saved
-   *          value for the binding yet: a binding already saved in a player's settings keeps its
-   *          behavior. Use `Kbind_SetBindingBehavior` to change a saved one.
+   * @details This is the extended, fully explicit version of `Defaults_AddKeybind`.
+   *          Use it when the framework defaults are not enough — e.g. to default an
+   *          action to "hold" or a "long" press, which `Defaults_AddKeybind` cannot
+   *          express. It accepts the same parameters plus the digital-input fields.
+   *
+   *          It is the intended companion of `Defaults_LockKeybind`: to lock an action
+   *          to a non-default value, declare it here and then lock it.
+   *
+   * @param h The manifest builder handle.
+   * @param groupName Action group identifier (same smart-naming rules as Defaults_AddKeybind).
+   * @param actionName The logical action name (same as Defaults_AddKeybind).
+   * @param type Input category (same values as Defaults_AddKeybind).
+   * @param key Physical input identifier (same format as Defaults_AddKeybind).
+   * @param consume Input consumption policy (same values as Defaults_AddKeybind).
+   * @param pressType The press type for digital bindings: "short" or "long".
+   *                  Pass NULL to keep the framework default ("short").
+   * @param behavior The activation behavior for digital bindings: "toggle" or "hold".
+   *                 Pass NULL to keep the framework default ("toggle"). Ignored for axes.
+   * @param pressThresholdMs Time in ms to qualify as a long press. Pass -1 to keep the
+   *                         framework default (500). Only meaningful when pressType is "long".
+   */
+  void (*Defaults_AddKeybindEx)(SPF_Manifest_Builder_Handle* h, const char* groupName, const char* actionName, const char* type, const char* key, const char* consume, const char* pressType, const char* behavior, int pressThresholdMs);
+
+  /**
+   * @brief Locks parts of a keybind action so the player cannot change them.
+   *
+   * @details Locks apply at the action level (all bindings of the action). Each flag is
+   *          independent; the corresponding property (key / behavior / press type) is taken
+   *          from what the action's `Defaults_AddKeybind` or `Defaults_AddKeybindEx` declared,
+   *          and when locked it is forced onto the player's config (overwriting a saved value)
+   *          and made immutable in the UI (lock icon + read-only field).
+   *
+   *          Call this after all `Defaults_AddKeybind`  or `Defaults_AddKeybindEx` calls for the action. Only set a lock
+   *          when you actually need it: locking the key can conflict with other plugins, so
+   *          prefer locking behavior or press type alone when that is enough.
    *
    *          Added at the end of the table: a plugin calling it needs a framework that has it,
    *          so set `Info_SetMinFrameworkVersion` accordingly.
    *
-   * @param h          The builder handle.
-   * @param groupName  The group name (must match `Defaults_AddKeybind`).
-   * @param actionName The action name (must match `Defaults_AddKeybind`).
-   * @param behavior   "hold" (active while held) or "toggle" (one trigger per press).
+   * @param h              The builder handle.
+   * @param groupName      The group name (must match `Defaults_AddKeybind`).
+   * @param actionName     The action name (must match `Defaults_AddKeybind`).
+   * @param lockKey        Lock the action's key(s): player cannot rebind, add, or remove a key.
+   * @param lockBehavior   Lock the action's behavior (hold/toggle) to the declared value.
+   * @param lockPressType  Lock the action's press type (short/long) to the declared value.
    */
-  void (*Defaults_SetKeybindBehavior)(SPF_Manifest_Builder_Handle* h, const char* groupName, const char* actionName, const char* behavior);
+  void (*Defaults_LockKeybind)(SPF_Manifest_Builder_Handle* h, const char* groupName, const char* actionName, bool lockKey, bool lockBehavior, bool lockPressType);
 
 } SPF_Manifest_Builder_API;
 

@@ -283,6 +283,10 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
       newAction.Callback = actionIt->second.Callback;
       newAction.CallbackEx = actionIt->second.CallbackEx;
       newAction.UserData = actionIt->second.UserData;
+      // And the state callback + current state, so hold/toggle tracking survives a rebind.
+      newAction.StateCb = actionIt->second.StateCb;
+      newAction.StateUserData = actionIt->second.StateUserData;
+      newAction.ActiveState = actionIt->second.ActiveState;
       // And the plugin's Kbind_SetBlockState request, which the config doesn't hold.
       newAction.programmaticallyBlocked = actionIt->second.programmaticallyBlocked;
 
@@ -348,6 +352,36 @@ void KeyBindsManager::RegisterActionEx(const std::string& actionKey, ActionCallb
     auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
     if (logger) logger->Warn("Attempted to register an extended callback for an unknown action '{}'.", actionKey);
   }
+}
+
+void KeyBindsManager::RegisterActionState(const std::string& actionKey, StateCallback callback, void* userData) {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it != m_actions.end()) {
+    it->second.StateCb = std::move(callback);
+    it->second.StateUserData = userData;
+    it->second.ActiveState = false;
+  } else {
+    auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
+    if (logger) logger->Warn("Attempted to register a state callback for an unknown action '{}'.", actionKey);
+  }
+}
+
+bool KeyBindsManager::IsActionActive(const std::string& actionKey) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  return it != m_actions.end() && it->second.ActiveState;
+}
+
+bool KeyBindsManager::ResetActionState(const std::string& actionKey) {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it == m_actions.end() || !it->second.ActiveState) return false;
+  it->second.ActiveState = false;
+  if (it->second.StateCb) {
+    it->second.StateCb(actionKey, false, it->second.StateUserData);
+  }
+  return true;
 }
 
 void KeyBindsManager::UnregisterOwner(const std::string& owner) {
@@ -615,15 +649,27 @@ bool KeyBindsManager::OnGamepadButtonPress(const GamepadEvent& event) {
 
 bool KeyBindsManager::OnGamepadButtonRelease(const GamepadEvent& event) { return false; }
 
-void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pressType) {
+void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pressType, TriggerEdge edge) {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   const Binding* best = FindBestBinding(hardwareCode, pressType);
   if (best) {
-    for (const auto& [actionKey, action] : m_actions) {
-      for (const auto& b : action.Inputs) {
+    for (auto& [actionKey, action] : m_actions) {
+      for (auto& b : action.Inputs) {
         if (&b == best) {
           if (action.Callback) action.Callback();
           if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
+          if (action.StateCb) {
+            if (best->Behavior == ActivationBehavior::Hold) {
+              const bool wantActive = (edge != TriggerEdge::Release);
+              if (action.ActiveState != wantActive) {
+                action.ActiveState = wantActive;
+                action.StateCb(actionKey, wantActive, action.StateUserData);
+              }
+            } else if (edge != TriggerEdge::Release) {
+              action.ActiveState = !action.ActiveState;
+              action.StateCb(actionKey, action.ActiveState, action.StateUserData);
+            }
+          }
           return;
         }
       }
@@ -631,13 +677,13 @@ void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pres
   }
 }
 
-void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType) { TriggerAction(0x02000000 | static_cast<uint32_t>(button), pressType); }
+void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x02000000 | static_cast<uint32_t>(button), pressType, edge); }
 
-void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType pressType) { TriggerAction(0x01000000 | static_cast<uint32_t>(key), pressType); }
+void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x01000000 | static_cast<uint32_t>(key), pressType, edge); }
 
-void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType pressType) { TriggerAction(0x03000000 | static_cast<uint32_t>(button), pressType); }
+void KeyBindsManager::TriggerAction(System::MouseButton button, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x03000000 | static_cast<uint32_t>(button), pressType, edge); }
 
-void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType) { TriggerAction(0x04000000 | static_cast<uint32_t>(buttonIndex), pressType); }
+void KeyBindsManager::TriggerAction(int buttonIndex, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x04000000 | static_cast<uint32_t>(buttonIndex), pressType, edge); }
 
 float KeyBindsManager::GetActionValue(const std::string& actionName) const {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
@@ -735,6 +781,7 @@ void KeyBindsManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) 
 
   for (const auto& key : keysToMove) {
     auto node = m_actions.extract(key);
+    node.mapped().ActiveState = false;
     m_inactiveActions[e.pluginName][key] = std::move(node.mapped());
     logger->Info("  -> Deactivated action: {}", key);
   }

@@ -271,7 +271,8 @@
         "details_button_tooltip": "Configure keybind behavior",
         "not_available": "Keybinding configuration is not available."
       },
-      "unassigned_text": "Unassigned"
+      "unassigned_text": "Unassigned",
+      "lock_tooltip": "These settings are locked by the plugin and cannot be changed."
     },
     "table": {
       "setting": "Setting",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Accumulator Mode",
       "accumulator_mode_label_description": "When enabled, the axis acts like a virtual knob. Moving the stick controls the speed at which the value increases or decreases, and the value stays where it is when the stick is released.",
       "invert_label": "Invert Axis",
-      "invert_label_description": "Reverses the axis direction (Positive becomes Negative and vice-versa)."
+      "invert_label_description": "Reverses the axis direction (Positive becomes Negative and vice-versa).",
+      "lock_tooltip": "These settings are locked by the plugin and cannot be changed."
     },
     "conflict": {
       "press_type_message": "The press type '**{}**' is already used by the action:",

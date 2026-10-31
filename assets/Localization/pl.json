@@ -271,7 +271,8 @@
         "details_button_tooltip": "Konfiguruj zachowanie skrótu klawiszowego",
         "not_available": "Konfiguracja skrótów klawiszowych jest niedostępna."
       },
-      "unassigned_text": "Nieprzypisany"
+      "unassigned_text": "Nieprzypisany",
+      "lock_tooltip": "Te ustawienia są zablokowane przez wtyczkę i nie można ich zmienić."
     },
     "table": {
       "setting": "Ustawienie",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Tryb akumulatora",
       "accumulator_mode_label_description": "Po włączeniu oś działa jak wirtualne pokrętło. Ruch drążka kontroluje prędkość, z jaką wartość rośnie lub maleje, a wartość pozostaje na miejscu po zwolnieniu drążka.",
       "invert_label": "Odwróć oś",
-      "invert_label_description": "Odwraca kierunek osi (Dodatni staje się Ujemnym i odwrotnie)."
+      "invert_label_description": "Odwraca kierunek osi (Dodatni staje się Ujemnym i odwrotnie).",
+      "lock_tooltip": "Te ustawienia są zablokowane przez wtyczkę i nie można ich zmienić."
     },
     "conflict": {
       "press_type_message": "Typ naciśnięcia '**{}**' jest już używany przez akcję:",

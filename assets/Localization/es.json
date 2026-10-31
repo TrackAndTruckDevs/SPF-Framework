@@ -271,7 +271,8 @@
         "details_button_tooltip": "Configurar comportamiento de la combinación de teclas",
         "not_available": "La configuración de las combinaciones de teclas no está disponible."
       },
-      "unassigned_text": "Sin asignar"
+      "unassigned_text": "Sin asignar",
+      "lock_tooltip": "Estos ajustes están bloqueados por el plugin y no se pueden cambiar."
     },
     "table": {
       "setting": "Configuración",
@@ -343,7 +344,8 @@
       "accumulator_mode_label": "Modo acumulador",
       "accumulator_mode_label_description": "Cuando está activado, el eje actúa como un dial virtual. Al mover el stick se controla la velocidad a la que el valor aumenta o disminuye, y el valor permanece donde está cuando se suelta el stick.",
       "invert_label": "Invertir eje",
-      "invert_label_description": "Invierte la dirección del eje (el positivo se vuelve negativo y viceversa)."
+      "invert_label_description": "Invierte la dirección del eje (el positivo se vuelve negativo y viceversa).",
+      "lock_tooltip": "Estos ajustes están bloqueados por el plugin y no se pueden cambiar."
     },
     "conflict": {
       "press_type_message": "El tipo de pulsación '**{}**' ya está en uso por la acción:",

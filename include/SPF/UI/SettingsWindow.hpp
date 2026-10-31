@@ -57,6 +57,7 @@ class SettingsWindow : public BaseWindow {
   std::string m_keybindsKeyHeaderKey;
 
   std::string m_keybindsUnassignedTextKey;
+  std::string m_keybindsLockTooltipKey;
 
   std::string m_noConfigurableComponentsKey;
   std::string m_componentInfoErrorKey;

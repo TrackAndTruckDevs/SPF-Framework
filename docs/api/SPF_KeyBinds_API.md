@@ -134,14 +134,26 @@ Opens the framework's native "press a key" rebind popup for a specific action, f
 *   **Note:** This is the exact same popup, conflict-resolution flow, and config write path used by the framework's own Settings window. Because everything goes through the shared config, the result is automatically reflected in the config file, the running keybind state, and the native Settings window if it's open — you don't need to do anything extra to keep them in sync. The popup renders itself as a top-level overlay on the next frame; you don't render anything for it yourself, and it's safe to call from inside your own window's rendering code.
 
 ---
-**`bool Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior)`**
-Sets the activation behavior (Hold/Toggle) of a specific binding, through the same write path as the Hold/Toggle choice in the binding details popup.
+**`void Kbind_RegisterState(SPF_KeyBinds_Handle* h, const char* actionName, SPF_Keybind_State_Callback callback, void* user_data)`**
+Registers a state callback: instead of a bare trigger signal, the framework reports the action's logical active state and your plugin just follows it.
 *   **h:** The context handle obtained from `Kbind_GetContext`.
-*   **actionName:** The logical name of the action (e.g., `"UI.toggle"`). **Smart Naming** is applied.
-*   **index:** The zero-based index of the binding (see `Kbind_GetBindingCount`).
-*   **behavior:** `SPF_BEHAVIOR_HOLD` or `SPF_BEHAVIOR_TOGGLE`.
-*   **Returns:** `true` if the binding now has this behavior (including when it already had it). Bindings with no behavior (analog axes) return `false`.
-*   **Note:** The action's bindings are rebuilt, so re-read `Kbind_GetBindingCount` after it. The change is saved to the player's settings file with the framework's other unsaved changes (at the latest when the game closes). To only change what new players get, use `Defaults_SetKeybindBehavior` in the manifest instead. Added at the end of the table: set `Info_SetMinFrameworkVersion` to a framework that has it.
+*   **actionName:** The logical name of the action. **Smart Naming** is applied. The action must already exist (declared in the manifest or created dynamically), same as `Kbind_Register`.
+*   **callback:** The state callback (receives `action_id`, `active` and `user_data`), called only on logical state transitions:
+    *   **Hold binding:** `active=true` on press, `active=false` on release. Releases are guaranteed to be delivered, including on focus loss (alt-tab) and when the framework UI starts capturing input.
+    *   **Toggle binding:** every trigger flips the state; the callback reports each flip.
+*   **user_data:** An arbitrary pointer that will be passed back to the callback, so one function can serve many actions.
+*   **Note:** Stored and dispatched independently of the legacy `Kbind_Register` callback; re-registering replaces the previous state callback for this action. Prefer this over `Kbind_Register` for hold/toggle state — with `Kbind_Register` the plugin receives a bare signal on every press and release and has to reconstruct the state itself, which breaks when a release is missed. Added at the end of the table: set `Info_SetMinFrameworkVersion` to a framework that has it.
+
+---
+**`bool Kbind_IsActionActive(SPF_KeyBinds_Handle* h, const char* actionName)`**
+Returns the action's current logical active state — the same value the last state callback reported.
+*   **Returns:** `true` if the action is currently active. Use it to re-sync after your own UI or camera changes, or at startup, without waiting for the next transition.
+
+---
+**`bool Kbind_ResetActionState(SPF_KeyBinds_Handle* h, const char* actionName)`**
+Forces the action inactive.
+*   **Behavior:** If the action was active, one final `active=false` state callback is delivered and `Kbind_IsActionActive` starts returning `false`. Use it when your plugin ends the state itself (e.g. the player left the cabin and the look view must close regardless of the key).
+*   **Returns:** `true` if the action was active and got reset, `false` if it was already inactive.
 
 ---
 **`void Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**

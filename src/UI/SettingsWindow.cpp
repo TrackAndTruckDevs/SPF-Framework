@@ -68,6 +68,7 @@ void SettingsWindow::RefreshLocalization() {
   m_keybindsKeyHeaderKey = loc.Get("settings_window.keybinds_drawer.table.key");
 
   m_keybindsUnassignedTextKey = loc.Get("settings_window.keybinds_drawer.unassigned_text");
+  m_keybindsLockTooltipKey = loc.Get("settings_window.keybinds_drawer.lock_tooltip");
 
   m_noConfigurableComponentsKey = loc.Get("settings_window.main_area.no_configurable_components");
   m_componentInfoErrorKey = loc.Get("settings_window.main_area.component_info_error");
@@ -565,6 +566,10 @@ void SettingsWindow::RenderKeybindsSettings() {
               }
             }
 
+            const bool lockKey = actionObject->is_object() && actionObject->value("lock_key", false);
+            const bool lockBehavior = actionObject->is_object() && actionObject->value("lock_behavior", false);
+            const bool lockPressType = actionObject->is_object() && actionObject->value("lock_press_type", false);
+
             ImGui::TableNextRow();
             // --- Column 0: Action Name and Add Button ---
             ImGui::TableSetColumnIndex(0);
@@ -583,6 +588,14 @@ void SettingsWindow::RenderKeybindsSettings() {
             float yOffset = (rowContentHeight - textHeight) * 0.5f;
             if (yOffset > 0) {
               ImGui::SetCursorPosY(ImGui::GetCursorPosY() + yOffset);
+            }
+
+            if (lockKey) {
+              Typography::Text(ICON_FA_LOCK);
+              if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", m_keybindsLockTooltipKey.c_str());
+              }
+              ImGui::SameLine();
             }
 
             Typography::Text(actionDisplayName.c_str());
@@ -605,9 +618,11 @@ void SettingsWindow::RenderKeybindsSettings() {
             ImGui::SameLine(ImGui::GetColumnWidth() - (buttonWidth * 0.5f) - ImGui::GetStyle().CellPadding.x);
 
             ImGui::PushID((fullActionName + ":add_button").c_str());
+            if (lockKey) ImGui::BeginDisabled();
             if (ImGui::SmallButton(ICON_FA_PLUS)) {
               UIManager::GetInstance().GetKeyCapturePopup().Open(fullActionName, nlohmann::ordered_json::object());
             }
+            if (lockKey) ImGui::EndDisabled();
             if (ImGui::IsItemHovered()) {
               ImGui::SetTooltip("%s", loc.Get("settings_window.keybinds_drawer.table.add_button_tooltip").c_str());
             }
@@ -625,9 +640,11 @@ void SettingsWindow::RenderKeybindsSettings() {
               if (bindings->empty()) {
                 ImGui::PushID((fullActionName + ":add_new").c_str());
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+                if (lockKey) ImGui::BeginDisabled();
                 if (Button(m_keybindsUnassignedTextKey.c_str())) {
                   UIManager::GetInstance().GetKeyCapturePopup().Open(fullActionName, nlohmann::ordered_json::object());
                 }
+                if (lockKey) ImGui::EndDisabled();
                 if (ImGui::IsItemHovered()) {
                   ImGui::SetTooltip("%s", loc.Get("settings_window.keybinds_drawer.table.key_button_tooltip").c_str());
                 }
@@ -662,9 +679,11 @@ void SettingsWindow::RenderKeybindsSettings() {
                   std::string uniqueId = fullActionName + ":" + buttonText;
 
                   ImGui::PushID(uniqueId.c_str());
+                  if (lockKey) ImGui::BeginDisabled();
                   if (Button(buttonText.c_str())) {
                     UIManager::GetInstance().GetKeyCapturePopup().Open(fullActionName, bindingJson);
                   }
+                  if (lockKey) ImGui::EndDisabled();
                   if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip("%s", loc.Get("settings_window.keybinds_drawer.table.key_button_tooltip").c_str());
                   }
@@ -673,7 +692,7 @@ void SettingsWindow::RenderKeybindsSettings() {
 
                   ImGui::PushID(("details_" + uniqueId).c_str());
                   if (ImGui::SmallButton(ICON_FA_GEAR)) {
-                    UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, bindingJson);
+                    UIManager::GetInstance().GetBindingDetailsPopup().Open(fullActionName, bindingJson, lockKey, lockBehavior, lockPressType);
                   }
                   if (ImGui::IsItemHovered()) {
                     ImGui::SetTooltip("%s", loc.Get("settings_window.keybinds_drawer.table.details_button_tooltip").c_str());

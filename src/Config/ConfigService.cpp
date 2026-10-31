@@ -372,86 +372,96 @@ nlohmann::ordered_json SerializeUI(const ManifestData& manifest, const ManifestD
 }
 
 // Helper to serialize keybinds settings from ManifestData to  nlohmann::ordered_json.
+nlohmann::ordered_json SerializeActionBindings(const std::vector<KeybindDefinition>& defs) {
+  nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
+  for (const auto& def : defs) {
+    nlohmann::ordered_json temp;
+    std::string typeStr = def.type.value_or("");
+    if (!typeStr.empty()) temp["type"] = typeStr;
+
+    if (typeStr == "chord" && !def.bindings.empty()) {
+      nlohmann::ordered_json subArray = nlohmann::ordered_json::array();
+      for (const auto& subDef : def.bindings) {
+        nlohmann::ordered_json subJ;
+        if (subDef.type.has_value()) subJ["type"] = *subDef.type;
+        if (subDef.key.has_value()) subJ["key"] = *subDef.key;
+        subArray.push_back(subJ);
+      }
+      temp["bindings"] = subArray;
+    } else {
+      if (def.key.has_value()) temp["key"] = def.key.value();
+    }
+
+    auto input = Modules::InputFactory::CreateFromJson(temp);
+    nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
+
+    bool isAxis = (typeStr.find("_axis") != std::string::npos);
+    std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
+
+    nlohmann::ordered_json final_j;
+    final_j["type"] = input_j.value("type", typeStr);
+
+    if (final_j["type"] == "chord") {
+      final_j["bindings"] = input_j["bindings"];
+    } else {
+      final_j["key"] = input_j["key"];
+    }
+
+    final_j["consume"] = def.consume.value_or("never");
+
+    if (isAxis) {
+      final_j["mode"] = mode;
+      if (mode == "analog") {
+        final_j["curve"] = input_j.value("curve", "linear");
+        final_j["invert"] = input_j.value("invert", false);
+        final_j["deadzone"] = input_j.value("deadzone", 0.0);
+        final_j["saturation"] = input_j.value("saturation", 1.0);
+        final_j["sensitivity"] = input_j.value("sensitivity", 1.0);
+        final_j["smoothing"] = input_j.value("smoothing", 0.0);
+
+        bool isMouse = (final_j["type"] == "mouse_axis");
+        bool accumulator = input_j.value("accumulator", isMouse);
+        final_j["accumulator"] = accumulator;
+
+        bool isTrigger = false;
+        if (final_j["key"].is_string()) {
+          std::string k = final_j["key"].get<std::string>();
+          isTrigger = (k.find("TRIGGER") != std::string::npos);
+        }
+
+        final_j["range_min"] = input_j.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
+        final_j["range_max"] = input_j.value("range_max", isMouse ? 100.0 : 1.0);
+      } else {
+        final_j["threshold"] = input_j.value("threshold", 0.5);
+        final_j["behavior"] = def.behavior.value_or("toggle");
+        final_j["press_type"] = def.pressType.value_or("short");
+        final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+      }
+    } else {
+      final_j["behavior"] = def.behavior.value_or("toggle");
+      final_j["press_type"] = def.pressType.value_or("short");
+      final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
+    }
+
+    if (!final_j.empty()) bindingsArray.push_back(final_j);
+  }
+  return bindingsArray;
+}
+
 nlohmann::ordered_json SerializeKeybinds(const ManifestData& manifest) {
   nlohmann::ordered_json keybinds;
   for (const auto& [group, actions] : manifest.keybinds.actions) {
-    for (const auto& [name, defs] : actions) {
-      nlohmann::ordered_json bindingsArray = nlohmann::ordered_json::array();
-      for (const auto& def : defs) {
-        nlohmann::ordered_json temp;
-        std::string typeStr = def.type.value_or("");
-        if (!typeStr.empty()) temp["type"] = typeStr;
-
-        if (typeStr == "chord" && !def.bindings.empty()) {
-          nlohmann::ordered_json subArray = nlohmann::ordered_json::array();
-          for (const auto& subDef : def.bindings) {
-            nlohmann::ordered_json subJ;
-            if (subDef.type.has_value()) subJ["type"] = *subDef.type;
-            if (subDef.key.has_value()) subJ["key"] = *subDef.key;
-            subArray.push_back(subJ);
-          }
-          temp["bindings"] = subArray;
-        } else {
-          if (def.key.has_value()) temp["key"] = def.key.value();
-        }
-
-        auto input = Modules::InputFactory::CreateFromJson(temp);
-        nlohmann::ordered_json input_j = input ? input->ToJson() : temp;
-
-        bool isAxis = (typeStr.find("_axis") != std::string::npos);
-        std::string mode = input_j.value("mode", isAxis ? "analog" : "digital");
-
-        nlohmann::ordered_json final_j;
-        final_j["type"] = input_j.value("type", typeStr);
-
-        if (final_j["type"] == "chord") {
-          final_j["bindings"] = input_j["bindings"];
-        } else {
-          final_j["key"] = input_j["key"];
-        }
-
-        final_j["consume"] = def.consume.value_or("never");
-
-        if (isAxis) {
-          final_j["mode"] = mode;
-          if (mode == "analog") {
-            final_j["curve"] = input_j.value("curve", "linear");
-            final_j["invert"] = input_j.value("invert", false);
-            final_j["deadzone"] = input_j.value("deadzone", 0.0);
-            final_j["saturation"] = input_j.value("saturation", 1.0);
-            final_j["sensitivity"] = input_j.value("sensitivity", 1.0);
-            final_j["smoothing"] = input_j.value("smoothing", 0.0);
-
-            bool isMouse = (final_j["type"] == "mouse_axis");
-            bool accumulator = input_j.value("accumulator", isMouse);
-            final_j["accumulator"] = accumulator;
-
-            bool isTrigger = false;
-            if (final_j["key"].is_string()) {
-              std::string k = final_j["key"].get<std::string>();
-              isTrigger = (k.find("TRIGGER") != std::string::npos);
-            }
-
-            final_j["range_min"] = input_j.value("range_min", isMouse ? -100.0 : (isTrigger ? 0.0 : -1.0));
-            final_j["range_max"] = input_j.value("range_max", isMouse ? 100.0 : 1.0);
-          } else {
-            final_j["threshold"] = input_j.value("threshold", 0.5);
-            final_j["behavior"] = def.behavior.value_or("toggle");
-            final_j["press_type"] = def.pressType.value_or("short");
-            final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
-          }
-        } else {
-          final_j["behavior"] = def.behavior.value_or("toggle");
-          final_j["press_type"] = def.pressType.value_or("short");
-          final_j["press_threshold_ms"] = def.pressThresholdMs.value_or(500);
-        }
-
-        if (!final_j.empty()) bindingsArray.push_back(final_j);
-      }
+    for (const auto& [name, actionDef] : actions) {
+      nlohmann::ordered_json bindingsArray = SerializeActionBindings(actionDef.bindings);
 
       if (!bindingsArray.empty()) {
         nlohmann::ordered_json actionObject;
         actionObject["bindings"] = bindingsArray;
+
+        // Locks are recorded on the action only when something is actually locked.
+        if (actionDef.lockKey.value_or(false)) actionObject["lock_key"] = true;
+        if (actionDef.lockBehavior.value_or(false)) actionObject["lock_behavior"] = true;
+        if (actionDef.lockPressType.value_or(false)) actionObject["lock_press_type"] = true;
 
         // Keybinds do not use fallback, they are unique to the plugin.
         for (const auto& meta : manifest.keybindsMetadata) {
@@ -988,6 +998,7 @@ void ConfigService::AggregateIsolatedSystem(const std::string& systemName, Initi
 void ConfigService::MergePrioritySystem(const std::string& systemName, InitializationReport& report) {
   nlohmann::ordered_json finalConfig = nlohmann::ordered_json::object();
   std::vector<nlohmann::ordered_json> usedKeyValues;
+  std::vector<std::string> usedKeyOwners;  // Parallel to usedKeyValues: the action that owns each taken key.
   m_keybindOwnership.clear();
 
   report.InfoMessages.push_back(fmt::format("Starting priority merge for system: '{}'", systemName));
@@ -1041,17 +1052,20 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
 
         for (const auto& key_value : *keys_to_assign) {
           bool conflict = false;
+          size_t conflictIdx = 0;
           try {
             auto new_input_obj = Modules::InputFactory::CreateFromJson(key_value);
             if (new_input_obj) {
               std::string new_press_type = key_value.value("press_type", "short");
 
-              for (const auto& used_binding_json : usedKeyValues) {
+              for (size_t usedIdx = 0; usedIdx < usedKeyValues.size(); ++usedIdx) {
+                const auto& used_binding_json = usedKeyValues[usedIdx];
                 auto existing_input_obj = Modules::InputFactory::CreateFromJson(used_binding_json);
                 if (existing_input_obj && new_input_obj->IsSameAs(*existing_input_obj)) {
                   std::string existing_press_type = used_binding_json.value("press_type", "short");
                   if (new_press_type == existing_press_type) {
                     conflict = true;
+                    conflictIdx = usedIdx;
                     break;
                   }
                 }
@@ -1064,10 +1078,12 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
 
           if (conflict) {
             m_dirtyComponents.insert(componentName);
-            report.Warnings.push_back({fmt::format("Keybind conflict for action '{}' in component '{}'. The key '{}' is already taken. This binding will be ignored.", fullActionKey, componentName, key_value.dump()), fullActionKey});
+            const std::string conflictingOwner = (conflictIdx < usedKeyOwners.size()) ? usedKeyOwners[conflictIdx] : "?";
+            report.Warnings.push_back({fmt::format("Keybind conflict for action '{}' in component '{}'. The key '{}' is already taken by action '{}'. This binding will be ignored.", fullActionKey, componentName, key_value.dump(), conflictingOwner), fullActionKey});
           } else {
             successful_keys.push_back(key_value);
             usedKeyValues.push_back(key_value);
+            usedKeyOwners.push_back(fullActionKey);
           }
         }
 
@@ -1181,6 +1197,76 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
         finalConfig[groupName] = nlohmann::ordered_json::object();
       }
       finalConfig[groupName][actionName] = {{"bindings", nlohmann::ordered_json::array()}};
+    }
+  }
+
+  // Lock enforcement: manifest locks override the player's saved value for the
+  // locked fields only; unlocked fields keep the player's value. UI reads the
+  // lock markers to decide which fields are editable.
+  report.InfoMessages.push_back("Lock enforcement: applying manifest locks...");
+  for (const auto& [componentName, manifest] : m_manifests) {
+    for (const auto& [group, actions] : manifest.keybinds.actions) {
+      for (const auto& [actionName, actionDef] : actions) {
+        const bool lockKey = actionDef.lockKey.value_or(false);
+        const bool lockBehavior = actionDef.lockBehavior.value_or(false);
+        const bool lockPressType = actionDef.lockPressType.value_or(false);
+        if (!lockKey && !lockBehavior && !lockPressType) continue;
+        if (!finalConfig.contains(group) || !finalConfig[group].contains(actionName)) continue;
+
+        auto& actionNode = finalConfig[group][actionName];
+        if (!actionNode.is_object()) continue;
+        if (!actionNode.contains("bindings") || !actionNode["bindings"].is_array()) continue;
+        auto& bindingsArray = actionNode["bindings"];
+        const auto manifestBindings = SerializeActionBindings(actionDef.bindings);
+
+        if (lockKey) {
+          // The manifest declares the keys; player values are overwritten for the key.
+          nlohmann::ordered_json forcedArray = nlohmann::ordered_json::array();
+          for (size_t i = 0; i < manifestBindings.size(); ++i) {
+            nlohmann::ordered_json mergedBinding;
+            if (i < bindingsArray.size() && bindingsArray[i].is_object()) {
+              mergedBinding = bindingsArray[i];
+              mergedBinding.erase("key");
+              mergedBinding.erase("type");
+              mergedBinding.erase("device");
+              mergedBinding.erase("bindings");
+            }
+            mergedBinding["type"] = manifestBindings[i].value("type", "");
+            if (manifestBindings[i].contains("bindings")) {
+              mergedBinding["bindings"] = manifestBindings[i]["bindings"];
+            } else {
+              mergedBinding["key"] = manifestBindings[i]["key"];
+            }
+            if (manifestBindings[i].contains("device")) mergedBinding["device"] = manifestBindings[i]["device"];
+            forcedArray.push_back(mergedBinding);
+          }
+          bindingsArray = forcedArray;
+        }
+
+        if (lockBehavior || lockPressType) {
+          size_t idx = 0;
+          for (auto& binding : bindingsArray) {
+            if (!binding.is_object()) continue;
+            if (lockBehavior && idx < manifestBindings.size() && manifestBindings[idx].contains("behavior")) {
+              binding["behavior"] = manifestBindings[idx]["behavior"];
+            } else if (lockBehavior && !actionDef.bindings.empty()) {
+              binding["behavior"] = actionDef.bindings[0].behavior.value_or("toggle");
+            }
+            if (lockPressType && idx < manifestBindings.size() && manifestBindings[idx].contains("press_type")) {
+              binding["press_type"] = manifestBindings[idx]["press_type"];
+              binding["press_threshold_ms"] = manifestBindings[idx].value("press_threshold_ms", 500);
+            } else if (lockPressType && !actionDef.bindings.empty()) {
+              binding["press_type"] = actionDef.bindings[0].pressType.value_or("short");
+              binding["press_threshold_ms"] = actionDef.bindings[0].pressThresholdMs.value_or(500);
+            }
+            ++idx;
+          }
+        }
+
+        if (lockKey) actionNode["lock_key"] = true;
+        if (lockBehavior) actionNode["lock_behavior"] = true;
+        if (lockPressType) actionNode["lock_press_type"] = true;
+      }
     }
   }
 
@@ -1481,6 +1567,10 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohm
     return;
   }
   auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
+  if (actionObject.is_object() && actionObject.value("lock_key", false)) {
+    if (logger) logger->Warn("UpdateBinding: Action '{}' is key-locked by the plugin; rebind blocked.", actionFullName);
+    return;
+  }
   if (!actionObject.is_object() || !actionObject.contains("bindings") || !actionObject["bindings"].is_array()) {
     if (logger) logger->Error("UpdateBinding failed: 'bindings' array not found or is not an array for action '{}'.", actionFullName);
     return;
@@ -1493,7 +1583,7 @@ void ConfigService::UpdateBinding(const std::string& actionFullName, const nlohm
   nlohmann::ordered_json mergedData = nlohmann::ordered_json::object();
   const auto& ownerManifest = m_manifests.at(componentName);
   if (ownerManifest.keybinds.actions.count(groupName) && ownerManifest.keybinds.actions.at(groupName).count(actionName)) {
-    const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName);
+    const auto& defaultBindings = ownerManifest.keybinds.actions.at(groupName).at(actionName).bindings;
     if (!defaultBindings.empty()) {
       const auto& def = defaultBindings[0];
       mergedData["consume"] = def.consume.value_or("never");
@@ -1624,6 +1714,10 @@ bool ConfigService::_DeleteBindingInternal(const std::string& actionFullName, co
 
   if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
     auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
+    if (actionObject.is_object() && actionObject.value("lock_key", false)) {
+      if (logger) logger->Warn("_DeleteBindingInternal: Action '{}' is key-locked by the plugin; deletion blocked.", actionFullName);
+      return false;
+    }
     if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
       auto& bindingsArray = actionObject["bindings"];
 
@@ -1667,6 +1761,16 @@ void ConfigService::UpdateBindingProperty(const std::string& actionFullName, con
 
   if (m_mergedConfigs.count("keybinds") && m_mergedConfigs["keybinds"].contains(groupName) && m_mergedConfigs["keybinds"][groupName].contains(actionName)) {
     auto& actionObject = m_mergedConfigs["keybinds"][groupName][actionName];
+    if (actionObject.is_object()) {
+      if (propertyName == "behavior" && actionObject.value("lock_behavior", false)) {
+        if (logger) logger->Warn("UpdateBindingProperty: Action '{}' behavior is locked by the plugin; change blocked.", actionFullName);
+        return;
+      }
+      if ((propertyName == "press_type" || propertyName == "press_threshold_ms") && actionObject.value("lock_press_type", false)) {
+        if (logger) logger->Warn("UpdateBindingProperty: Action '{}' press type is locked by the plugin; change blocked.", actionFullName);
+        return;
+      }
+    }
     if (actionObject.is_object() && actionObject.contains("bindings") && actionObject["bindings"].is_array()) {
       auto& bindingsArray = actionObject["bindings"];
 
