@@ -640,6 +640,14 @@ typedef struct SPF_KeyBinds_API {
    *            (alt-tab) and when the framework UI starts capturing input.
    *          - Toggle binding: every trigger flips the state; the callback
    *            reports each flip.
+   *          - Several bindings: the action stays active while any Hold binding
+   *            is held or a Toggle binding has latched it.
+   *          - A rebind or a behavior change that leaves no Toggle binding ends a
+   *            toggled state (one final `active=false`).
+   *
+   *          The callback runs on the thread that delivered the input, which may
+   *          be the input thread rather than the game's: keep it short and
+   *          thread-safe, or read `Kbind_IsActionActive` from your update instead.
    *
    *          Independent of the legacy `Kbind_Register` callback: this one is
    *          stored and dispatched separately, and re-registering replaces the
@@ -662,8 +670,10 @@ typedef struct SPF_KeyBinds_API {
    * @brief Gets the action's current logical active state (the same value the
    *        last state callback reported).
    *
-   * @details Use it to re-sync after your own UI or camera changes, or at
-   *          startup, without waiting for the next transition.
+   * @details The state is tracked whether or not a state callback is registered,
+   *          so polling this every frame is enough. Use it to re-sync after your
+   *          own UI or camera changes, or at startup, without waiting for the next
+   *          transition.
    *
    * @param h The context handle obtained from `Kbind_GetContext`.
    * @param actionName The logical name of the action.
@@ -688,6 +698,41 @@ typedef struct SPF_KeyBinds_API {
    * @return true if the action was active and got reset, false if it was already inactive.
    */
   bool (*Kbind_ResetActionState)(SPF_KeyBinds_Handle* h, const char* actionName);
+
+  /**
+   * @brief Sets the activation behavior (Hold/Toggle) of a specific binding.
+   *
+   * @details Writes through the same pipeline as the Hold/Toggle choice in the native
+   *          binding details popup, so the player's settings file, the runtime keybind
+   *          state and the Settings window all stay in sync. Use it to carry a plugin's
+   *          own hold/toggle setting over into the player's bindings once, or to offer the
+   *          choice from your own UI. To only change what new players get, declare the
+   *          behavior with `Defaults_AddKeybindEx` instead.
+   *
+   *          ### Applicability:
+   *          Same as `Kbind_GetBindingBehavior`: digital bindings, and axes in
+   *          `SPF_MODE_DIGITAL`. Anything else, or `SPF_BEHAVIOR_NA`, is ignored.
+   *          A behavior locked with `Defaults_LockKeybind` can't be changed.
+   *
+   *          ### IMPORTANT:
+   *          - The action's bindings are rebuilt, so binding pointers and indices read
+   *            before the call may not hold after it. Re-read `Kbind_GetBindingCount`.
+   *          - The change is saved to the player's settings file with the framework's
+   *            other unsaved changes (at the latest when the game closes), as from the
+   *            native popup.
+   *          - Added at the end of the table: a plugin calling it needs a framework that
+   *            has it, so set `Info_SetMinFrameworkVersion` accordingly.
+   *
+   * @param h The context handle obtained from `Kbind_GetContext`.
+   * @param actionName The logical name of the action (e.g., "UI.toggle").
+   *                   ### Smart Naming:
+   *                   The API automatically prepends your Plugin ID if it's missing.
+   * @param index The zero-based index of the binding (see `Kbind_GetBindingCount`).
+   * @param behavior `SPF_BEHAVIOR_HOLD` or `SPF_BEHAVIOR_TOGGLE`.
+   * @return true if the binding now has this behavior (including when it already had it),
+   *         false if it doesn't apply or the behavior is locked.
+   */
+  bool (*Kbind_SetBindingBehavior)(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior);
 
 } SPF_KeyBinds_API;
 

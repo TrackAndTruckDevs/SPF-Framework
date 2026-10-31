@@ -141,19 +141,30 @@ Registers a state callback: instead of a bare trigger signal, the framework repo
 *   **callback:** The state callback (receives `action_id`, `active` and `user_data`), called only on logical state transitions:
     *   **Hold binding:** `active=true` on press, `active=false` on release. Releases are guaranteed to be delivered, including on focus loss (alt-tab) and when the framework UI starts capturing input.
     *   **Toggle binding:** every trigger flips the state; the callback reports each flip.
+    *   **Several bindings:** the action stays active while any Hold binding is held or a Toggle binding has latched it.
+    *   **Rebind or behavior change:** if no Toggle binding is left, a toggled state ends with one final `active=false`.
+    *   **Thread:** the callback runs on the thread that delivered the input, which may be the input thread rather than the game's. Keep it short and thread-safe, or read `Kbind_IsActionActive` from your update instead.
 *   **user_data:** An arbitrary pointer that will be passed back to the callback, so one function can serve many actions.
 *   **Note:** Stored and dispatched independently of the legacy `Kbind_Register` callback; re-registering replaces the previous state callback for this action. Prefer this over `Kbind_Register` for hold/toggle state — with `Kbind_Register` the plugin receives a bare signal on every press and release and has to reconstruct the state itself, which breaks when a release is missed. Added at the end of the table: set `Info_SetMinFrameworkVersion` to a framework that has it.
 
 ---
 **`bool Kbind_IsActionActive(SPF_KeyBinds_Handle* h, const char* actionName)`**
 Returns the action's current logical active state — the same value the last state callback reported.
-*   **Returns:** `true` if the action is currently active. Use it to re-sync after your own UI or camera changes, or at startup, without waiting for the next transition.
+*   **Returns:** `true` if the action is currently active. The state is tracked whether or not a state callback is registered, so polling this every frame is enough. Use it to re-sync after your own UI or camera changes, or at startup, without waiting for the next transition.
 
 ---
 **`bool Kbind_ResetActionState(SPF_KeyBinds_Handle* h, const char* actionName)`**
 Forces the action inactive.
 *   **Behavior:** If the action was active, one final `active=false` state callback is delivered and `Kbind_IsActionActive` starts returning `false`. Use it when your plugin ends the state itself (e.g. the player left the cabin and the look view must close regardless of the key).
 *   **Returns:** `true` if the action was active and got reset, `false` if it was already inactive.
+
+---
+**`bool Kbind_SetBindingBehavior(SPF_KeyBinds_Handle* h, const char* actionName, int index, SPF_ActivationBehavior behavior)`**
+Sets the activation behavior (Hold/Toggle) of a specific binding, through the same pipeline as the Hold/Toggle choice in the native binding details popup (settings file, runtime state and Settings window stay in sync).
+*   **index:** The zero-based index of the binding (see `Kbind_GetBindingCount`).
+*   **behavior:** `SPF_BEHAVIOR_HOLD` or `SPF_BEHAVIOR_TOGGLE`.
+*   **Returns:** `true` if the binding now has this behavior (including when it already had it). `false` if it doesn't apply (same applicability as `Kbind_GetBindingBehavior`) or the behavior is locked with `Defaults_LockKeybind`.
+*   **Note:** Use it to carry a plugin's own hold/toggle setting over into the player's bindings once, or to offer the choice from your own UI. To only change what new players get, declare the behavior with `Defaults_AddKeybindEx`. The action's bindings are rebuilt, so re-read `Kbind_GetBindingCount` after it. The change is saved with the framework's other unsaved changes (at the latest when the game closes). Added at the end of the table: set `Info_SetMinFrameworkVersion` to a framework that has it.
 
 ---
 **`void Kbind_OpenBindingDetailsPopup(SPF_KeyBinds_Handle* h, const char* actionName, int index)`**

@@ -266,6 +266,9 @@ class InputManager {
 
   // Unified state for tracking inputs that are in a "hold" behavior state
   std::map<uint32_t, PressType> m_heldInputs;
+  // Gamepad and joystick buttons released by FlushOwnedInputs while still
+  // held, with their block decision: ignored until they come up.
+  std::map<uint32_t, bool> m_releasedByFlush;
 
   // State for XInputHook (legacy, might be removed later)
   std::unique_ptr<Utils::Sink<void(DWORD, XINPUT_STATE*)>> m_xinputSink;

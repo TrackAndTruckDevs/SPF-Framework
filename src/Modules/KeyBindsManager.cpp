@@ -287,6 +287,7 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
       newAction.StateCb = actionIt->second.StateCb;
       newAction.StateUserData = actionIt->second.StateUserData;
       newAction.ActiveState = actionIt->second.ActiveState;
+      newAction.ToggleActive = actionIt->second.ToggleActive;
       // And the plugin's Kbind_SetBlockState request, which the config doesn't hold.
       newAction.programmaticallyBlocked = actionIt->second.programmaticallyBlocked;
 
@@ -302,8 +303,18 @@ void KeyBindsManager::UpdateKeybindings(const nlohmann::ordered_json* keyBindsCo
         }
       }
 
+      // The rebuilt bindings start released. A toggle latch only survives if a
+      // Toggle binding is left to undo it: switched to Hold, the action would
+      // otherwise stay active with no key down until the next press.
+      bool hasToggle = false;
+      for (const auto& b : newAction.Inputs) {
+        if (b.Behavior == ActivationBehavior::Toggle) hasToggle = true;
+      }
+      if (!hasToggle) newAction.ToggleActive = false;
+
       // Replace the old action with the newly created one.
       actionIt->second = std::move(newAction);
+      RefreshActiveState(fullActionKey, actionIt->second);
     }
   }
 
@@ -360,7 +371,6 @@ void KeyBindsManager::RegisterActionState(const std::string& actionKey, StateCal
   if (it != m_actions.end()) {
     it->second.StateCb = std::move(callback);
     it->second.StateUserData = userData;
-    it->second.ActiveState = false;
   } else {
     auto logger = LoggerFactory::GetInstance().GetLogger("KeyBindsManager");
     if (logger) logger->Warn("Attempted to register a state callback for an unknown action '{}'.", actionKey);
@@ -377,11 +387,21 @@ bool KeyBindsManager::ResetActionState(const std::string& actionKey) {
   std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
   auto it = m_actions.find(actionKey);
   if (it == m_actions.end() || !it->second.ActiveState) return false;
-  it->second.ActiveState = false;
-  if (it->second.StateCb) {
-    it->second.StateCb(actionKey, false, it->second.StateUserData);
-  }
+  // A Hold key still down stays released until it is pressed again.
+  it->second.ToggleActive = false;
+  for (auto& b : it->second.Inputs) b.HoldActive = false;
+  RefreshActiveState(actionKey, it->second);
   return true;
+}
+
+void KeyBindsManager::RefreshActiveState(const std::string& actionKey, Action& action) {
+  bool active = action.ToggleActive;
+  for (const auto& b : action.Inputs) {
+    if (b.HoldActive) active = true;
+  }
+  if (active == action.ActiveState) return;
+  action.ActiveState = active;
+  if (action.StateCb) action.StateCb(actionKey, active, action.StateUserData);
 }
 
 void KeyBindsManager::UnregisterOwner(const std::string& owner) {
@@ -658,18 +678,14 @@ void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pres
         if (&b == best) {
           if (action.Callback) action.Callback();
           if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
-          if (action.StateCb) {
-            if (best->Behavior == ActivationBehavior::Hold) {
-              const bool wantActive = (edge != TriggerEdge::Release);
-              if (action.ActiveState != wantActive) {
-                action.ActiveState = wantActive;
-                action.StateCb(actionKey, wantActive, action.StateUserData);
-              }
-            } else if (edge != TriggerEdge::Release) {
-              action.ActiveState = !action.ActiveState;
-              action.StateCb(actionKey, action.ActiveState, action.StateUserData);
-            }
+          // Each Hold binding is tracked on its own, so with two keys held,
+          // releasing one leaves the action active.
+          if (b.Behavior == ActivationBehavior::Hold) {
+            b.HoldActive = (edge != TriggerEdge::Release);
+          } else if (edge != TriggerEdge::Release) {
+            action.ToggleActive = !action.ToggleActive;
           }
+          RefreshActiveState(actionKey, action);
           return;
         }
       }
@@ -782,6 +798,8 @@ void KeyBindsManager::OnPluginUnloaded(const Events::OnPluginWillBeUnloaded& e) 
   for (const auto& key : keysToMove) {
     auto node = m_actions.extract(key);
     node.mapped().ActiveState = false;
+    node.mapped().ToggleActive = false;
+    for (auto& b : node.mapped().Inputs) b.HoldActive = false;
     m_inactiveActions[e.pluginName][key] = std::move(node.mapped());
     logger->Info("  -> Deactivated action: {}", key);
   }
