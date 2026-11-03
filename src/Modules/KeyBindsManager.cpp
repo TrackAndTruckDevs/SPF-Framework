@@ -693,6 +693,46 @@ void KeyBindsManager::TriggerAction(uint32_t hardwareCode, Input::PressType pres
   }
 }
 
+bool KeyBindsManager::LocateBinding(const Binding* binding, std::string& actionKey, size_t& index) const {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  if (!binding) return false;
+  for (const auto& [key, action] : m_actions) {
+    for (size_t i = 0; i < action.Inputs.size(); ++i) {
+      if (&action.Inputs[i] == binding) {
+        actionKey = key;
+        index = i;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void KeyBindsManager::ReleaseBinding(const std::string& actionKey, size_t index) {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it == m_actions.end() || index >= it->second.Inputs.size()) return;
+  auto& action = it->second;
+  auto& b = action.Inputs[index];
+  if (b.Behavior != ActivationBehavior::Hold) return;
+  if (action.Callback) action.Callback();
+  if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
+  b.HoldActive = false;
+  RefreshActiveState(actionKey, action);
+}
+
+void KeyBindsManager::TapBinding(const std::string& actionKey, size_t index) {
+  std::lock_guard<std::recursive_mutex> lock(m_actionsMutex);
+  auto it = m_actions.find(actionKey);
+  if (it == m_actions.end() || index >= it->second.Inputs.size()) return;
+  auto& action = it->second;
+  if (action.Inputs[index].Behavior != ActivationBehavior::Toggle) return;
+  if (action.Callback) action.Callback();
+  if (action.CallbackEx) action.CallbackEx(actionKey, action.UserData);
+  action.ToggleActive = !action.ToggleActive;
+  RefreshActiveState(actionKey, action);
+}
+
 void KeyBindsManager::TriggerAction(System::GamepadButton button, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x02000000 | static_cast<uint32_t>(button), pressType, edge); }
 
 void KeyBindsManager::TriggerAction(System::Keyboard key, Input::PressType pressType, TriggerEdge edge) { TriggerAction(0x01000000 | static_cast<uint32_t>(key), pressType, edge); }

@@ -38,6 +38,9 @@ namespace SPF::Events {
 struct GamepadEvent;
 class EventManager;
 }  // namespace Events
+namespace SPF::Modules {
+struct Binding;
+}  // namespace SPF::Modules
 
 namespace SPF::Input {
 struct ButtonState {
@@ -264,8 +267,19 @@ class InputManager {
   // State machine for analog axes (hardwareCode -> AxisState)
   std::map<uint32_t, AxisState> m_axisStates;
 
+  // A key claimed by the binding its press went to: a Hold binding, or a
+  // Toggle chord (whose tap fires on release). Every key of a chord gets an
+  // entry pointing at the chord, so whichever comes up first releases or taps
+  // it, and the others come up silently: the binding picked at release time,
+  // from the keys still down, could be another one.
+  struct HeldInput {
+    std::string ActionKey;
+    size_t BindingIndex = 0;
+    bool Toggle = false;    // a Toggle chord waiting for its tap
+    bool Released = false;  // another key of the chord already released it
+  };
   // Unified state for tracking inputs that are in a "hold" behavior state
-  std::map<uint32_t, PressType> m_heldInputs;
+  std::map<uint32_t, HeldInput> m_heldInputs;
   // Gamepad and joystick buttons released by FlushOwnedInputs while still
   // held, with their block decision: ignored until they come up.
   std::map<uint32_t, bool> m_releasedByFlush;
@@ -342,7 +356,15 @@ class InputManager {
   void EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state);
 
   void HandleRetroactiveBlocking(uint32_t hardwareCode, bool shouldBlock);
-  void SetHoldState(uint32_t hardwareCode, PressType type);
+  // Records the keys of a Hold binding about to be pressed, or of a Toggle
+  // chord just completed. A key already claimed by another binding (a single
+  // key a chord now takes over) gives it up: a hold is released, a pending
+  // chord tap is dropped.
+  void ClaimKeys(const Modules::Binding* binding, uint32_t hardwareCode);
+  // Releases the binding a key holds, or taps the Toggle chord it waits for
+  // (unless fireTap is false: the tap is dropped), if no other key of it
+  // already did, and forgets the key. False if the key wasn't claimed.
+  bool ReleaseClaim(uint32_t hardwareCode, bool fireTap = true);
 
   // --- Chord Capture State ---
   std::map<UINT_PTR, System::DeviceType> m_dinputDeviceTypes;

@@ -498,7 +498,10 @@ bool InputManager::PublishKeyboardEvent(const KeyboardEvent& event, uint8_t prio
     // holds stay latched forever when focus moves mid-press. The return
     // value mirrors what the game saw at press time (blockInput), so press
     // and release reach the game as a consistent pair.
-    const bool holdActive = m_heldInputs.find(hardwareCode) != m_heldInputs.end();
+    auto claim = m_heldInputs.find(hardwareCode);
+    const bool holdActive = claim != m_heldInputs.end() && !claim->second.Toggle;
+    // A Toggle chord's tap is a tap too: it dies with the key's edge.
+    if (claim != m_heldInputs.end() && claim->second.Toggle) ReleaseClaim(hardwareCode, false);
     const bool blockFromGame = ProcessAndDecide(event, priority);
     if (!holdActive) {
       // The old consumed branch deliberately cleared wasDown together with
@@ -1036,8 +1039,13 @@ bool InputManager::HandleInputState(uint32_t hardwareCode, bool isDown, float va
 
     if (const auto* binding = Modules::KeyBindsManager::GetInstance().FindBestBinding(hardwareCode, PressType::Short)) {
       if (binding->Behavior == Modules::ActivationBehavior::Hold) {
+        ClaimKeys(binding, hardwareCode);
         Modules::KeyBindsManager::GetInstance().TriggerAction(hardwareCode, PressType::Short, Modules::TriggerEdge::Press);
-        SetHoldState(hardwareCode, PressType::Short);
+      } else if (dynamic_cast<const Modules::ChordInput*>(binding->Input.get())) {
+        // A Toggle chord taps on release: its keys are claimed now, while
+        // they're all down, so the first one up taps the chord and not
+        // whatever the other key is bound to alone.
+        ClaimKeys(binding, hardwareCode);
       }
     }
 
@@ -1336,11 +1344,7 @@ void InputManager::FlushOwnedInputs() {
 
     // Active hold: deliver the same release EvaluateActionLogic would have
     // delivered on the real key-up, then drop the hold entry.
-    auto held = m_heldInputs.find(code);
-    if (held != m_heldInputs.end()) {
-      Modules::KeyBindsManager::GetInstance().TriggerAction(code, held->second, Modules::TriggerEdge::Release);
-      m_heldInputs.erase(held);
-    }
+    ReleaseClaim(code, false);
 
     // Pending tap (short/toggle not yet fired): cancel it silently — the
     // release edge never fires because both edges are cleared together.
@@ -1435,7 +1439,43 @@ bool InputManager::IsPendingVirtualRelease(uint32_t hardwareCode) {
   return false;
 }
 
-void InputManager::SetHoldState(uint32_t hardwareCode, PressType type) { m_heldInputs[hardwareCode] = type; }
+void InputManager::ClaimKeys(const Modules::Binding* binding, uint32_t hardwareCode) {
+  auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
+  HeldInput held;
+  if (!keyBindsManager.LocateBinding(binding, held.ActionKey, held.BindingIndex)) return;
+  held.Toggle = binding->Behavior == Modules::ActivationBehavior::Toggle;
+
+  std::vector<uint32_t> codes{hardwareCode};
+  if (auto* chord = dynamic_cast<const Modules::ChordInput*>(binding->Input.get())) {
+    codes = chord->GetConstituentHardwareCodes();
+  }
+  for (uint32_t code : codes) {
+    auto it = m_heldInputs.find(code);
+    if (it != m_heldInputs.end() && (it->second.ActionKey != held.ActionKey || it->second.BindingIndex != held.BindingIndex)) {
+      ReleaseClaim(code, false);
+    }
+    m_heldInputs[code] = held;
+  }
+}
+
+bool InputManager::ReleaseClaim(uint32_t hardwareCode, bool fireTap) {
+  auto it = m_heldInputs.find(hardwareCode);
+  if (it == m_heldInputs.end()) return false;
+  HeldInput held = it->second;
+  m_heldInputs.erase(it);
+  if (held.Released) return true;
+
+  for (auto& [code, other] : m_heldInputs) {
+    if (other.ActionKey == held.ActionKey && other.BindingIndex == held.BindingIndex) other.Released = true;
+  }
+  auto& keyBindsManager = Modules::KeyBindsManager::GetInstance();
+  if (!held.Toggle) {
+    keyBindsManager.ReleaseBinding(held.ActionKey, held.BindingIndex);
+  } else if (fireTap) {
+    keyBindsManager.TapBinding(held.ActionKey, held.BindingIndex);
+  }
+  return true;
+}
 
 std::chrono::steady_clock::time_point InputManager::GetChordPressTimestamp(const std::vector<uint32_t>& codes) const {
   std::lock_guard<std::recursive_mutex> lock(m_mutex);
@@ -1458,13 +1498,13 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
 
   // --- Detect and Handle Release (for Short Press) ---
   if (!state.isDown && state.wasDown) {
-    auto it = m_heldInputs.find(hardwareCode);
-    if (it != m_heldInputs.end()) {
-      PressType originalPressType = it->second;
-      keyBindsManager.TriggerAction(hardwareCode, originalPressType, Modules::TriggerEdge::Release);
-      m_heldInputs.erase(it);
-    } else if (!state.longPressTriggered) {
-      keyBindsManager.TriggerAction(hardwareCode, PressType::Short, Modules::TriggerEdge::Press);
+    if (!ReleaseClaim(hardwareCode) && !state.longPressTriggered) {
+      // A tap fires on release, but a Hold binding only acts while held: it
+      // already had its press, and its release went through ReleaseClaim.
+      const auto* tapBinding = keyBindsManager.FindBestBinding(hardwareCode, PressType::Short);
+      if (!tapBinding || tapBinding->Behavior != Modules::ActivationBehavior::Hold) {
+        keyBindsManager.TriggerAction(hardwareCode, PressType::Short, Modules::TriggerEdge::Press);
+      }
     }
   }
   // --- Detect and Handle Hold (for Long Press) ---
@@ -1509,10 +1549,14 @@ void InputManager::EvaluateActionLogic(uint32_t hardwareCode, ButtonState& state
           }
 
           if (isLead) {
+            // The long press wins over a short Toggle chord tap pending on
+            // the same keys.
+            for (uint32_t code : keysToBlock) {
+              auto claim = m_heldInputs.find(code);
+              if (claim != m_heldInputs.end() && claim->second.Toggle) ReleaseClaim(code, false);
+            }
             if (longPressBinding->Behavior == Modules::ActivationBehavior::Hold) {
-              for (uint32_t code : keysToBlock) {
-                SetHoldState(code, PressType::Long);
-              }
+              ClaimKeys(longPressBinding, hardwareCode);
             }
 
             keyBindsManager.TriggerAction(hardwareCode, PressType::Long, Modules::TriggerEdge::Long);
