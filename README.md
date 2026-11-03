@@ -374,6 +374,23 @@ cmake --preset user-win-release
 cmake --build --preset user-win-release
 ```
 
+#### Skipping the bundled plugins
+
+By default the bundled plugins in `plugins/` (ExamplePlugin, MyPlugin, ...) are built along with the framework DLL. To build only the framework, turn off `SPF_BUILD_PLUGINS`:
+
+```bash
+cmake --preset user-win-release -DSPF_BUILD_PLUGINS=OFF
+cmake --build --preset user-win-release
+```
+
+Or set it permanently in your `CMakeUserPresets.json` (`base-user-env` → `cacheVariables`), which also applies to `cmake --workflow`:
+
+```json
+"cacheVariables": { "SPF_BUILD_PLUGINS": "OFF" }
+```
+
+> A `-D` value only lasts until the next `cmake --preset` run: the template's `base-user-env` sets `SPF_BUILD_PLUGINS` to `ON`, so configuring again without `-DSPF_BUILD_PLUGINS=OFF` builds the plugins again. Set it to `OFF` in your `CMakeUserPresets.json` to make it stick.
+
 ### Available User Presets
 
 Presets with the `user-` prefix include deployment paths. Choose the one for your platform and build system:

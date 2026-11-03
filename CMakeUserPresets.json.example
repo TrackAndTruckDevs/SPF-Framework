@@ -37,6 +37,10 @@
     "    Linux   : '/mnt/e/MyProjects/Release/${sourceDirName}/'",
     "    Default : ''  — no staging, nothing is copied",
     "",
+    "  SPF_BUILD_PLUGINS — build the bundled plugins in plugins/ (set in base-user-env):",
+    "    'ON'  : build spf-framework.dll + ExamplePlugin, MyPlugin, ... (default)",
+    "    'OFF' : build only spf-framework.dll (faster when working on the framework itself)",
+    "",
     "  Example paths: SPF_SIGN_CERT — code signing certificate (optional):",
     "    Linux   : `/mnt/projects/spf-certs/spf-cacert.pfx`",
     "    Windows : 'Z:/spf-certs/spf-cacert.pfx'",
@@ -50,6 +54,9 @@
       "hidden": true,
       "environment": {
         "CMAKE_RC_COMPILER": "x86_64-w64-mingw32-windres"
+      },
+      "cacheVariables": {
+        "SPF_BUILD_PLUGINS": "ON"
       }
     },
     {
@@ -395,6 +402,137 @@
       "name": "user-mingw-make-minsizerel",
       "configurePreset": "user-mingw-make-minsizerel",
       "displayName": "  \u00B7 Build: USER MinGW (Make) \u00b7 MinSizeRel"
+    }
+  ],
+
+  "workflowPresets": [
+    {
+      "name": "user-win-release",
+      "displayName": "\u2714 Workflow: USER VS 2022 \u00b7 Release",
+      "steps": [
+        { "type": "configure", "name": "user-win-release" },
+        { "type": "build", "name": "user-win-release" }
+      ]
+    },
+    {
+      "name": "user-win-debug",
+      "displayName": "  \u00B7 Workflow: USER VS 2022 \u00b7 Debug",
+      "steps": [
+        { "type": "configure", "name": "user-win-debug" },
+        { "type": "build", "name": "user-win-debug" }
+      ]
+    },
+    {
+      "name": "user-win-relwithdebinfo",
+      "displayName": "  \u00B7 Workflow: USER VS 2022 \u00b7 RelWithDebInfo",
+      "steps": [
+        { "type": "configure", "name": "user-win-relwithdebinfo" },
+        { "type": "build", "name": "user-win-relwithdebinfo" }
+      ]
+    },
+    {
+      "name": "user-win-minsizerel",
+      "displayName": "  \u00B7 Workflow: USER VS 2022 \u00b7 MinSizeRel",
+      "steps": [
+        { "type": "configure", "name": "user-win-minsizerel" },
+        { "type": "build", "name": "user-win-minsizerel" }
+      ]
+    },
+    {
+      "name": "user-ninja-release",
+      "displayName": "\u2714 Workflow: USER Ninja (MSVC) \u00b7 Release",
+      "steps": [
+        { "type": "configure", "name": "user-ninja-release" },
+        { "type": "build", "name": "user-ninja-release" }
+      ]
+    },
+    {
+      "name": "user-ninja-debug",
+      "displayName": "  \u00B7 Workflow: USER Ninja (MSVC) \u00b7 Debug",
+      "steps": [
+        { "type": "configure", "name": "user-ninja-debug" },
+        { "type": "build", "name": "user-ninja-debug" }
+      ]
+    },
+    {
+      "name": "user-ninja-relwithdebinfo",
+      "displayName": "  \u00B7 Workflow: USER Ninja (MSVC) \u00b7 RelWithDebInfo",
+      "steps": [
+        { "type": "configure", "name": "user-ninja-relwithdebinfo" },
+        { "type": "build", "name": "user-ninja-relwithdebinfo" }
+      ]
+    },
+    {
+      "name": "user-ninja-minsizerel",
+      "displayName": "  \u00B7 Workflow: USER Ninja (MSVC) \u00b7 MinSizeRel",
+      "steps": [
+        { "type": "configure", "name": "user-ninja-minsizerel" },
+        { "type": "build", "name": "user-ninja-minsizerel" }
+      ]
+    },
+    {
+      "name": "user-mingw-release",
+      "displayName": "\u2714 Workflow: USER MinGW (Ninja) \u00b7 Release",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-release" },
+        { "type": "build", "name": "user-mingw-release" }
+      ]
+    },
+    {
+      "name": "user-mingw-debug",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Ninja) \u00b7 Debug",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-debug" },
+        { "type": "build", "name": "user-mingw-debug" }
+      ]
+    },
+    {
+      "name": "user-mingw-relwithdebinfo",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Ninja) \u00b7 RelWithDebInfo",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-relwithdebinfo" },
+        { "type": "build", "name": "user-mingw-relwithdebinfo" }
+      ]
+    },
+    {
+      "name": "user-mingw-minsizerel",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Ninja) \u00b7 MinSizeRel",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-minsizerel" },
+        { "type": "build", "name": "user-mingw-minsizerel" }
+      ]
+    },
+    {
+      "name": "user-mingw-make-release",
+      "displayName": "\u2714 Workflow: USER MinGW (Make) \u00b7 Release",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-make-release" },
+        { "type": "build", "name": "user-mingw-make-release" }
+      ]
+    },
+    {
+      "name": "user-mingw-make-debug",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Make) \u00b7 Debug",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-make-debug" },
+        { "type": "build", "name": "user-mingw-make-debug" }
+      ]
+    },
+    {
+      "name": "user-mingw-make-relwithdebinfo",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Make) \u00b7 RelWithDebInfo",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-make-relwithdebinfo" },
+        { "type": "build", "name": "user-mingw-make-relwithdebinfo" }
+      ]
+    },
+    {
+      "name": "user-mingw-make-minsizerel",
+      "displayName": "  \u00B7 Workflow: USER MinGW (Make) \u00b7 MinSizeRel",
+      "steps": [
+        { "type": "configure", "name": "user-mingw-make-minsizerel" },
+        { "type": "build", "name": "user-mingw-make-minsizerel" }
+      ]
     }
   ]
 }

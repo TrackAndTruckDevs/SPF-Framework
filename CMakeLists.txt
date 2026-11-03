@@ -490,7 +490,15 @@ target_compile_definitions(SPF PRIVATE
 )
 
 # --- PLUGINS INCLUSION ---
-add_subdirectory(plugins)
+# Set SPF_BUILD_PLUGINS=OFF to build only the framework (spf-framework.dll) and skip
+# the bundled plugins (ExamplePlugin, MyPlugin, ...).
+#   cmake --preset <preset> -DSPF_BUILD_PLUGINS=OFF
+# or "SPF_BUILD_PLUGINS": "OFF" in your CMakeUserPresets.json cacheVariables.
+option(SPF_BUILD_PLUGINS "Build the bundled plugins in plugins/" ON)
+message(STATUS "  [PLUGINS]  SPF_BUILD_PLUGINS=${SPF_BUILD_PLUGINS}")
+if(SPF_BUILD_PLUGINS)
+    add_subdirectory(plugins)
+endif()
 
 # --- Code Signing ---
 # Set SPF_SIGN_CERT to your .pfx path in CMakeUserPresets.json
