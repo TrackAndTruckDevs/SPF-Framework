@@ -312,8 +312,8 @@ void MainWindow::RenderContent() {
 
     // --- Mode Toggle Row (Centered on new line) ---
     {
-      const float toggle_switch_width = 46.0f;
-      const float toggle_switch_height = 20.0f;
+      const float toggle_switch_width = Scaled(46.0f);
+      const float toggle_switch_height = Scaled(20.0f);
       const float toggle_radius = toggle_switch_height * 0.5f;
 
       ImVec2 userLabelSize = Typography::CalcTextSize(m_locUserMode.c_str(), TextStyle::Bold());
@@ -393,7 +393,7 @@ void MainWindow::RenderContent() {
       ImGui::SameLine();
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%s", status.renderer.c_str());
       ImGui::SameLine();
-      ImGui::Dummy(ImVec2(10.0f, 0.0f));
+      ImGui::Dummy(Scaled(ImVec2(10.0f, 0.0f)));
       ImGui::SameLine();
     }
 
@@ -414,7 +414,7 @@ void MainWindow::RenderContent() {
       Typography::Text(TextStyle::Bold().Color(fpsColor), "%.0f", fpsAvg);
       ImGui::SameLine();
 
-      ImGui::Dummy(ImVec2(10.0f, 0.0f));
+      ImGui::Dummy(Scaled(ImVec2(10.0f, 0.0f)));
       ImGui::SameLine();
 
       Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfFpsRollMinMax.c_str());
@@ -425,7 +425,7 @@ void MainWindow::RenderContent() {
       Typography::Text(TextStyle::Bold().Color(Colors::WHITE), "%.0f/%.0f", perf.GetRollingMinFPS(), perf.GetRollingMaxFPS());
       ImGui::SameLine();
 
-      ImGui::Dummy(ImVec2(10.0f, 0.0f));
+      ImGui::Dummy(Scaled(ImVec2(10.0f, 0.0f)));
       ImGui::SameLine();
 
       Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locPerfFpsGblMinMax.c_str());
@@ -602,7 +602,7 @@ void MainWindow::RenderPatronsPopup() {
       ImGui::PopStyleVar();
     }
 
-    ImGui::BeginChild("patrons_list_scroll_region", ImVec2(750, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("patrons_list_scroll_region", Scaled(ImVec2(750, 200)), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     if (!m_lastPatronsResult.has_value()) {
       Typography::Text(TextStyle::Regular().Wrapped().Padding(ImVec2(10.0f, 0.0f)), "Loading patrons...");
@@ -677,7 +677,7 @@ void MainWindow::RenderUpdatePopup() {
 
   if (ImGui::BeginPopupModal(m_locUpdatePopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     bool hasChangelog = m_lastUpdateInfo.has_value() && !m_lastUpdateInfo->content.markdown.empty();
-    ImVec2 childSize = hasChangelog ? ImVec2(575, 300) : ImVec2(450, 100);
+    ImVec2 childSize = hasChangelog ? Scaled(ImVec2(575, 300)) : Scaled(ImVec2(450, 100));
 
     ImGui::BeginChild("description_modals_update", childSize, false);
 
@@ -707,7 +707,7 @@ void MainWindow::RenderUpdatePopup() {
           ImGui::Spacing();
           ImGui::Separator();
           ImGui::Spacing();
-          ImGui::BeginChild("ChangelogScroll", ImVec2(0, 175), false, ImGuiWindowFlags_HorizontalScrollbar);
+          ImGui::BeginChild("ChangelogScroll", Scaled(ImVec2(0, 175)), false, ImGuiWindowFlags_HorizontalScrollbar);
           Typography::RenderMarkdownText(updateData.content.markdown, bodyStyle);
           ImGui::EndChild();
           ImGui::Spacing();
@@ -839,7 +839,7 @@ void MainWindow::RenderManualPopup() {
     std::string githubUrl = m_configService.GetValue("framework", "info.githubUrl", "").get<std::string>();
     std::string patreonUrl = m_configService.GetValue("framework", "info.patreonUrl", "").get<std::string>();
 
-    ImGui::BeginChild("ManualAnswer", ImVec2(575, 325), false);
+    ImGui::BeginChild("ManualAnswer", Scaled(ImVec2(575, 325)), false);
     if (ImGui::TreeNode(m_locFaqQ1.c_str())) {
       const std::string pluginsPath = PathManager::GetPluginsPath().string();
       Typography::RenderMarkdownText(fmt::format(fmt::runtime(m_locFaqA1), pluginsPath), TextStyle::Regular().Wrapped().Color(Colors::LIGHT_GRAY));
@@ -902,7 +902,7 @@ void MainWindow::RenderAboutPopup() {
   }
 
   if (ImGui::BeginPopupModal(m_locAboutPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::BeginChild("AboutPopupContent", ImVec2(575, 325), false);
+    ImGui::BeginChild("AboutPopupContent", Scaled(ImVec2(575, 325)), false);
 
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
     Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locAboutUsTitle.c_str());
@@ -984,7 +984,7 @@ void MainWindow::RenderLegalPopup() {
   }
 
   if (ImGui::BeginPopupModal(m_locLegalPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::BeginChild("LegalPopupContent", ImVec2(700, 400), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("LegalPopupContent", Scaled(ImVec2(700, 400)), false, ImGuiWindowFlags_HorizontalScrollbar);
 
     ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextAlign, ImVec2(0.5f, 0.5f));
     Typography::Text(TextStyle::H2().Separator().Color(Colors::GOLD), "%s", m_locLegalLicenseTitle.c_str());
@@ -1036,7 +1036,7 @@ void MainWindow::RenderShutdownPopup() {
   }
 
   if (ImGui::BeginPopupModal(m_locShutdownPopupTitle.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-    ImGui::BeginChild("ShutdownPopupContent", ImVec2(500, 200), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("ShutdownPopupContent", Scaled(ImVec2(500, 200)), false, ImGuiWindowFlags_HorizontalScrollbar);
     Typography::RenderMarkdownText(m_locShutdownPopupContent, TextStyle::Regular().Wrapped());
     ImGui::EndChild();
     ImGui::Separator();

@@ -4,6 +4,7 @@
 #include "SPF/SPF_API/SPF_UI_API.h"
 #include "SPF/UI/IWindow.hpp"
 #include "SPF/UI/MarkdownRenderer.hpp"
+#include "SPF/Utils/Signal.hpp"
 
 #include "nlohmann/json_fwd.hpp"
 
@@ -43,8 +44,15 @@ class WelcomeWindow : public IWindow {
  private:
   void InitializeResources();
   void UpdateLocalization();
+  void OnFrameworkLanguageChanged(const std::string& componentName);
   void RenderContent();
-  void RenderMarkdownContent();
+  void RenderStackedLayout();
+  void RenderTwoColumnLayout();
+  void RenderFirstInstallCards(float contentX, float contentWidth, bool twoColumnLayout);
+  void RenderUpdateCard(float contentX, float contentWidth);
+  void RenderPluginsPathRow(const std::string& path);
+  void RenderGoButton(float buttonX);
+  void RenderFooter(float x, float width, bool centered);
 
   std::string m_componentName;
   std::string m_windowId;
@@ -59,6 +67,15 @@ class WelcomeWindow : public IWindow {
   std::unique_ptr<Rendering::ITexture> m_logoTexture;
   MarkdownRenderer m_markdownRenderer;
   bool m_resourcesInitialized = false;
+
+  // --- Layout state measured on the previous frame ---
+  float m_lastLayoutHeight = 0.0f;   // Total height of logo/footer, used to center vertically
+  float m_gridCardHeights[4] = {};   // Content height of each grid card, used to equalize cards sharing a row
+  float m_introWidth = 0.0f;         // Rendered width of the intro paragraph, used to center it
+  float m_footerWidth = 0.0f;        // Rendered width of the footer, used to center it
+  float m_leftColumnHeight = 0.0f;   // Two-column layout: height of the logo/title/button column
+  float m_rightColumnHeight = 0.0f;  // Two-column layout: height of the cards column
+  float m_menuKeyTextHeight = 0.0f;  // Height of the menu-key card text, used to center it on the keycap
 
   // --- Localized Strings (Cached) ---
   std::string m_locTitle;
@@ -76,6 +93,11 @@ class WelcomeWindow : public IWindow {
   std::string m_locSection5Text;
   std::string m_locFooter;
   std::string m_locBtnGo;
+  std::string m_locMenuKey;
+  std::string m_locOpenFolder;
+
+  // Refreshes the cached strings above when the framework language changes while the window is open.
+  Utils::Sink<void(const std::string&)> m_langSink;
 };
 
 }  // namespace SPF::UI

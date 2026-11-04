@@ -33,7 +33,7 @@ struct VarRenderContext {
 
 static void RenderBlendedFloat(const char* label, float val, float minVal, float maxVal, const char* fmt, const std::function<void(float)>& setter) {
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
-  ImGui::SetNextItemWidth(180);
+  ImGui::SetNextItemWidth(Scaled(180));
   if (ImGui::SliderFloat(label, &val, minVal, maxVal, fmt)) {
     setter(val);
   }
@@ -43,7 +43,7 @@ static void RenderBlendedFloat(const char* label, float val, float minVal, float
 static void RenderBlendedVec3(const char* label, const Utils::Vector3& val, float maxVal, const char* fmt, const std::function<void(const Utils::Vector3&)>& setter) {
   float v[3] = {val.x, val.y, val.z};
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
-  ImGui::SetNextItemWidth(350);
+  ImGui::SetNextItemWidth(Scaled(350));
   if (ImGui::SliderFloat3(label, v, 0.0f, maxVal, fmt)) {
     setter({v[0], v[1], v[2]});
   }
@@ -58,7 +58,7 @@ static void RenderBlendedVec3(const char* label, const Utils::Vector3& val, floa
 static void RenderBlendedVec2(const char* label, const Utils::Vec2f& val, float maxVal, const char* fmt, const std::function<void(const Utils::Vec2f&)>& setter) {
   float v[2] = {val.x, val.y};
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
-  ImGui::SetNextItemWidth(280);
+  ImGui::SetNextItemWidth(Scaled(280));
   if (ImGui::SliderFloat2(label, v, 0.0f, maxVal, fmt)) {
     setter({v[0], v[1]});
   }
@@ -99,7 +99,7 @@ static void RenderFloatVar(VarRenderContext& ctx, const char* name, uint64_t cou
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
     }
 
-    ImGui::SetNextItemWidth(180);
+    ImGui::SetNextItemWidth(Scaled(180));
     if (ImGui::SliderFloat(label.c_str(), &v, minVal, maxVal, fmt)) {
       setter(i, v);
     }
@@ -155,7 +155,7 @@ static void RenderVec3Var(VarRenderContext& ctx, const char* name, uint64_t coun
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
     }
 
-    ImGui::SetNextItemWidth(350);
+    ImGui::SetNextItemWidth(Scaled(350));
     if (ImGui::SliderFloat3(label.c_str(), arr, 0.0f, maxVal, fmt)) {
       setter(i, {arr[0], arr[1], arr[2]});
     }
@@ -209,7 +209,7 @@ static void RenderTextureVar(VarRenderContext& ctx, const char* name, uint64_t c
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
     }
 
-    ImGui::SetNextItemWidth(280);
+    ImGui::SetNextItemWidth(Scaled(280));
     if (ImGui::InputText(label.c_str(), buf, sizeof(buf))) {
       setter(i, std::string(buf));
     }
@@ -256,7 +256,7 @@ static void RenderIntVar(VarRenderContext& ctx, const char* name, uint64_t count
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
     }
 
-    ImGui::SetNextItemWidth(180);
+    ImGui::SetNextItemWidth(Scaled(180));
     if (ImGui::SliderInt(label.c_str(), &v, minVal, maxVal)) {
       setter(i, v);
     }
@@ -312,7 +312,7 @@ static void RenderVec2Var(VarRenderContext& ctx, const char* name, uint64_t coun
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
     }
 
-    ImGui::SetNextItemWidth(280);
+    ImGui::SetNextItemWidth(Scaled(280));
     if (ImGui::SliderFloat2(label.c_str(), arr, 0.0f, maxVal, fmt)) {
       setter(i, {arr[0], arr[1]});
     }
@@ -339,7 +339,7 @@ static void RenderNextFloat(const char* label, float val, float minVal, float ma
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
   char l[64];
   snprintf(l, sizeof(l), loc.Get("climate_window.next_var_fmt").c_str(), nv, label);
-  ImGui::SetNextItemWidth(180);
+  ImGui::SetNextItemWidth(Scaled(180));
   if (ImGui::SliderFloat(l, &val, minVal, maxVal, fmt)) setter(val);
   ImGui::PopStyleColor();
 }
@@ -350,7 +350,7 @@ static void RenderNextVec3(const char* label, const Utils::Vector3& val, float m
   float arr[3] = {val.x, val.y, val.z};
   char l[64];
   snprintf(l, sizeof(l), loc.Get("climate_window.next_var_fmt").c_str(), nv, label);
-  ImGui::SetNextItemWidth(350);
+  ImGui::SetNextItemWidth(Scaled(350));
   if (ImGui::SliderFloat3(l, arr, 0.0f, maxVal, fmt)) setter({arr[0], arr[1], arr[2]});
   ImGui::SameLine();
   float norm[3] = {arr[0] / maxVal, arr[1] / maxVal, arr[2] / maxVal};
@@ -364,7 +364,7 @@ static void RenderNextVec2(const char* label, const Utils::Vec2f& val, float max
   float arr[2] = {val.x, val.y};
   char l[64];
   snprintf(l, sizeof(l), loc.Get("climate_window.next_var_fmt").c_str(), nv, label);
-  ImGui::SetNextItemWidth(280);
+  ImGui::SetNextItemWidth(Scaled(280));
   if (ImGui::SliderFloat2(l, arr, 0.0f, maxVal, fmt)) setter({arr[0], arr[1]});
   ImGui::PopStyleColor();
 }
@@ -374,7 +374,7 @@ static void RenderNextInt(const char* label, int32_t val, int32_t minVal, int32_
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
   char l[64];
   snprintf(l, sizeof(l), loc.Get("climate_window.next_var_fmt").c_str(), nv, label);
-  ImGui::SetNextItemWidth(180);
+  ImGui::SetNextItemWidth(Scaled(180));
   if (ImGui::SliderInt(l, &val, minVal, maxVal)) setter(val);
   ImGui::PopStyleColor();
 }
@@ -386,7 +386,7 @@ static void RenderNextTexture(const char* label, const std::string& val, const s
   snprintf(buf, sizeof(buf), "%s", val.c_str());
   char l[64];
   snprintf(l, sizeof(l), loc.Get("climate_window.next_var_fmt").c_str(), nv, label);
-  ImGui::SetNextItemWidth(280);
+  ImGui::SetNextItemWidth(Scaled(280));
   if (ImGui::InputText(l, buf, sizeof(buf))) setter(std::string(buf));
   ImGui::PopStyleColor();
 }
@@ -688,7 +688,7 @@ void ClimateWindow::RenderContent() {
   static float s_desired = current;
   ImGui::Text(m_locBadWeatherFactor.c_str(), current);
 
-  ImGui::SetNextItemWidth(260);
+  ImGui::SetNextItemWidth(Scaled(260));
   ImGui::SliderFloat(m_locFactor.c_str(), &s_desired, 0.0f, 1.0f, "%.3f");
   ImGui::SameLine();
   if (ImGui::Button(m_locSet.c_str())) {
@@ -722,7 +722,7 @@ void ClimateWindow::RenderContent() {
   ImGui::Spacing();
 
   auto actLabel = fmt::format(fmt::runtime(m_locSetActiveVariation), aName);
-  ImGui::SetNextItemWidth(250);
+  ImGui::SetNextItemWidth(Scaled(250));
   ImGui::SliderInt("##setActive", &setActiveVarIdx, 0, (int)(activeVarCount - 1));
   ImGui::SameLine();
   if (ImGui::Button(actLabel.c_str())) {
@@ -730,7 +730,7 @@ void ClimateWindow::RenderContent() {
   }
 
   auto nextLabel = fmt::format(fmt::runtime(m_locSetNextVariation), bName);
-  ImGui::SetNextItemWidth(250);
+  ImGui::SetNextItemWidth(Scaled(250));
   ImGui::SliderInt("##setNext", &setNextVarIdx, 0, (int)(nextVarCount - 1));
   ImGui::SameLine();
   if (ImGui::Button(nextLabel.c_str())) {
@@ -743,22 +743,22 @@ void ClimateWindow::RenderContent() {
   if (ImGui::CollapsingHeader(m_locSectionEnvProfile.c_str(), ImGuiTreeNodeFlags_None)) {
     {
       float v = svc.GetLampsOnElevation();
-      ImGui::SetNextItemWidth(200);
+      ImGui::SetNextItemWidth(Scaled(200));
       if (ImGui::SliderFloat(m_locLampsOnElevation.c_str(), &v, 0.0f, 90.0f, "%.1f°")) svc.SetLampsOnElevation(v);
     }
     {
       float v = svc.GetDayInYear();
-      ImGui::SetNextItemWidth(200);
+      ImGui::SetNextItemWidth(Scaled(200));
       if (ImGui::SliderFloat(m_locDayInYear.c_str(), &v, 1.0f, 366.0f, "%.0f")) svc.SetDayInYear(v);
     }
     {
       float v = svc.GetSummerTime();
-      ImGui::SetNextItemWidth(200);
+      ImGui::SetNextItemWidth(Scaled(200));
       if (ImGui::SliderFloat(m_locSummerTime.c_str(), &v, 0.0f, 2.0f, "%.1f")) svc.SetSummerTime(v);
     }
     {
       float v = svc.GetThunderstormProbability();
-      ImGui::SetNextItemWidth(200);
+      ImGui::SetNextItemWidth(Scaled(200));
       if (ImGui::SliderFloat(m_locThunderstormProbability.c_str(), &v, 0.0f, 1.0f, "%.3f")) svc.SetThunderstormProbability(v);
     }
   }
@@ -776,19 +776,19 @@ void ClimateWindow::RenderContent() {
     if (ImGui::CollapsingHeader(m_locSectionSun.c_str(), ImGuiTreeNodeFlags_None)) {
       {
         float v = svc.GetLowElevation(activeProf);
-        ImGui::SetNextItemWidth(200);
+        ImGui::SetNextItemWidth(Scaled(200));
         if (ImGui::SliderFloat(m_locSunLowElevation.c_str(), &v, -90.0f, 90.0f, "%.1f°")) svc.SetLowElevation(activeProf, v);
       }
       {
         float v = svc.GetHighElevation(activeProf);
-        ImGui::SetNextItemWidth(200);
+        ImGui::SetNextItemWidth(Scaled(200));
         if (ImGui::SliderFloat(m_locSunHighElevation.c_str(), &v, -90.0f, 90.0f, "%.1f°")) svc.SetHighElevation(activeProf, v);
       }
       {
         int32_t dir = svc.GetSunDirection(activeProf);
         const char* dirNames[] = {m_locSunDirectionForward.c_str(), m_locSunDirectionZenith.c_str(), m_locSunDirectionBackward.c_str()};
         int combo = 1 - dir;
-        ImGui::SetNextItemWidth(200);
+        ImGui::SetNextItemWidth(Scaled(200));
         if (ImGui::Combo(m_locSunDirection.c_str(), &combo, dirNames, IM_ARRAYSIZE(dirNames))) svc.SetSunDirection(activeProf, 1 - combo);
       }
       RenderVec3Var(

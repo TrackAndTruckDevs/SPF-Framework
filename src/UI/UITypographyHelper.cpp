@@ -33,9 +33,12 @@ ScopedStyle::ScopedStyle(const TextStyle& style) {
   if (style.fontKey) {
     ImFont* font = UIManager::GetInstance().GetFont(*style.fontKey);
     if (font) {
-      ImGui::PushFont(font);
+      ImGui::PushFont(font, style.fontSize.value_or(font->LegacySize));
       m_fontPushed = true;
     }
+  } else if (style.fontSize) {
+    ImGui::PushFont(nullptr, *style.fontSize);
+    m_fontPushed = true;
   }
 
   if (style.disabled) {
@@ -86,7 +89,8 @@ void Typography::TextV(const TextStyle& style, const char* fmt, va_list args) {
   // 1. Apply padding by adjusting cursor position
   if (style.padding.x != 0.0f || style.padding.y != 0.0f) {
     const ImVec2 cursorPos = ImGui::GetCursorPos();
-    ImGui::SetCursorPos(ImVec2(cursorPos.x + style.padding.x, cursorPos.y + style.padding.y));
+    const ImVec2 padding = Scaled(style.padding);  // Padding is given in 1080p pixels
+    ImGui::SetCursorPos(ImVec2(cursorPos.x + padding.x, cursorPos.y + padding.y));
   }
 
   // 2. Handle Text Wrapping
@@ -180,18 +184,18 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
 
   // 1. Apply Top Padding
   if (style.padding.y > 0.0f) {
-    ImGui::Dummy(ImVec2(0, style.padding.y));
+    ImGui::Dummy(ImVec2(0, Scaled(style.padding.y)));
   }
 
   // 2. Apply Left Padding using Indent (persists across NewLines)
   if (style.padding.x > 0.0f) {
-    ImGui::Indent(style.padding.x);
+    ImGui::Indent(Scaled(style.padding.x));
   }
 
   // 3. Handle Alignment (Approximation for simple blocks)
   if (style.align == TextAlign::Center || style.align == TextAlign::Right) {
     ImVec2 textSize = CalcTextSize(processedText.c_str(), style);
-    const float availableWidth = ImGui::GetContentRegionAvail().x - style.padding.x;
+    const float availableWidth = ImGui::GetContentRegionAvail().x - Scaled(style.padding.x);
     float offsetX = 0.0f;
     if (style.align == TextAlign::Center) {
       offsetX = (availableWidth - textSize.x) * 0.5f;
@@ -206,7 +210,7 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
   // 4. Handle Text Wrapping
   bool wrapPushed = false;
   if (style.wrap) {
-    float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x - style.padding.x;
+    float wrapPosX = ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x - Scaled(style.padding.x);
     ImGui::PushTextWrapPos(wrapPosX);
     wrapPushed = true;
   }
@@ -220,13 +224,20 @@ void Typography::RenderMarkdownText(const std::string& markdownText, const TextS
 
   // 6. Render using MarkdownRenderer
   static UI::MarkdownRenderer renderer;
+  float fontScale = 1.0f;
+  if (style.fontSize) {
+    ImFont* regular = UIManager::GetInstance().GetFont("regular");
+    if (regular && regular->LegacySize > 0.0f) fontScale = *style.fontSize / regular->LegacySize;
+  }
+  renderer.SetFontScale(fontScale);
   renderer.Render(processedText);
+  renderer.SetFontScale(1.0f);
 
   // Cleanup
   if (colorPushed > 0) ImGui::PopStyleColor(colorPushed);
   if (wrapPushed) ImGui::PopTextWrapPos();
-  if (style.padding.x > 0.0f) ImGui::Unindent(style.padding.x);
-  if (style.padding.y > 0.0f) ImGui::Dummy(ImVec2(0, style.padding.y));
+  if (style.padding.x > 0.0f) ImGui::Unindent(Scaled(style.padding.x));
+  if (style.padding.y > 0.0f) ImGui::Dummy(ImVec2(0, Scaled(style.padding.y)));
 
   ImGui::EndGroup();
 }

@@ -47,8 +47,11 @@ class BaseWindow : public IWindow {
   void SetVisibility(bool isVisible);
   void SetDocked(bool isDocked);
   int GetDockPriority() const;
+  /** @brief Position and size are in 1080p pixels; they are multiplied by the UI scale when the window is drawn. */
   void SetPosition(float x, float y);
   void SetSize(float width, float height);
+  /** @brief Called by the UIManager when the UI scale changes, so the window is re-placed at the new scale. */
+  void OnUIScaleChanged();
 
  protected:
   virtual void RenderContent() = 0;

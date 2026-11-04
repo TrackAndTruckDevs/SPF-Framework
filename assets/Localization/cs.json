@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "VÍTEJTE VE SVĚTĚ SPF FRAMEWORKU!",
     "intro_title": "Ahoj! Děkujeme, že jste si vybrali náš framework.",
-    "intro_text": "Vytvořili jsme **SPF Framework**, aby bylo vaše hraní v **ATS** a **ETS2** ještě zajímavější a správa pluginů co nejjednodušší.",
+    "intro_text": "Vytvořili jsme **SPF Framework**, abychom posunuli váš zážitek z **Euro Truck Simulator 2** a **American Truck Simulator** ještě dál a správu pluginů co nejvíce zjednodušili.",
     "section1": {
-      "title": "Jak otevřít menu frameworku?",
-      "text": "Stačí stisknout klávesu <#FFFFFF>{} **DELETE**</> na vaší klávesnici. Toto je váš hlavní ovládací panel."
+      "title": "Otevření nabídky",
+      "text": "Stiskněte tuto klávesu kdykoli a otevře se ovládací panel SPF."
     },
     "section2": {
       "title": "Instalace pluginů kompatibilních s SPF",
-      "text": "Jednoduše vložte složku pluginu s DLL do ` <#FFFFFF>{}</> ` Poté je aktivujte v sekci <#FFFFFF>**Správce pluginů**</>."
+      "text": "Vložte složku pluginu s DLL do složky níže a poté jej aktivujte v sekci <#FFFFFF>**Správce pluginů**</>."
     },
     "section3": {
       "title": "Nastavení",
@@ -1585,14 +1585,16 @@
     },
     "section4": {
       "title": "Pro vývojáře",
-      "text": "Pokud jste vývojář — podívejte se na náš <#00b3ff>{} [GitHub]({})</>, kde najdete dokumentaci a příklady použití API."
+      "text": "Chcete vytvořit vlastní plugin? Navštivte náš <#00b3ff>{} [GitHub]({})</>, kde najdete kompletní dokumentaci a funkční příklady API, které vám pomohou začít."
     },
     "section5": {
       "title": "Zůstaňte s námi",
-      "text": "Naše kontakty a odkazy na komunitu najdete v sekci <#FFFFFF>**O nás**</>."
+      "text": "Máte dotaz, nápad nebo jste narazili na chybu? Naše kontakty a odkazy na komunitu najdete v sekci <#FFFFFF>**O nás**</>. Rádi se vám ozveme!"
     },
     "footer": "*Vyvinuto s <#ff0000>{}</> týmem **Track & Truck Devs**. Podpořte nás na <#00b3ff>{} [Patreon]({})</>, abyste pomohli projektu růst!*",
-    "button_go": "JEDEME!"
+    "button_go": "JEDEME!",
+    "menu_key": "DELETE",
+    "open_folder": "Otevřít"
   },
   "notification_popup": {
     "title": "Oznámení"

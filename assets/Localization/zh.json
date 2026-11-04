@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "欢迎来到 SPF FRAMEWORK 的世界！",
     "intro_title": "你好！感谢您选择我们的框架。",
-    "intro_text": "我们创建了 **SPF Framework**，旨在让您在 **ATS** 和 **ETS2** 中的游戏体验更加有趣，并让插件管理变得尽可能简单。",
+    "intro_text": "我们打造 **SPF Framework**，旨在进一步提升您在 **Euro Truck Simulator 2** 和 **American Truck Simulator** 中的游戏体验，并让插件管理尽可能简单。",
     "section1": {
-      "title": "如何打开框架菜单？",
-      "text": "只需按下键盘上的 <#FFFFFF>{} **DELETE**</> 键。这是您的主控制面板。"
+      "title": "打开菜单",
+      "text": "随时按下此键即可打开 SPF 控制面板。"
     },
     "section2": {
       "title": "安装 SPF 兼容插件",
-      "text": "只需将包含 DLL 的插件文件夹放入 ` <#FFFFFF>{}</> `。然后在 <#FFFFFF>**插件管理器**</> 部分激活它们。"
+      "text": "将包含 DLL 的插件文件夹放入下方的文件夹，然后在 <#FFFFFF>**插件管理器**</> 部分激活它。"
     },
     "section3": {
       "title": "设置",
@@ -1585,14 +1585,16 @@
     },
     "section4": {
       "title": "开发者相关",
-      "text": "如果您是开发者，请查看我们的 <#00b3ff>{} [GitHub]({})</>，您可以在那里找到文档和 API 使用示例。"
+      "text": "想开发自己的插件？前往我们的 <#00b3ff>{} [GitHub]({})</>，获取完整的文档和可直接运行的 API 示例，助您快速上手。"
     },
     "section5": {
       "title": "保持联系",
-      "text": "您可以在 <#FFFFFF>**关于我们**</> 部分找到我们的联系方式和社区链接。"
+      "text": "有问题、想法或发现了 Bug？您可以在 <#FFFFFF>**关于我们**</> 部分找到我们的联系方式和社区链接。期待您的来信！"
     },
     "footer": "*由 **Track & Truck Devs** 团队倾情<#ff0000>{}</>打造。请在 <#00b3ff>{} [Patreon]({})</> 上支持我们，帮助项目成长！*",
-    "button_go": "出发！"
+    "button_go": "出发！",
+    "menu_key": "DELETE",
+    "open_folder": "打开"
   },
   "notification_popup": {
     "title": "通知"

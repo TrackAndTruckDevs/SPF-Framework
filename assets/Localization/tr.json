@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "SPF FRAMEWORK DÜNYASINA HOŞ GELDİNİZ!",
     "intro_title": "Merhaba! Framework'ümüzü seçtiğiniz için teşekkürler.",
-    "intro_text": "**SPF Framework**'ü, **ATS** ve **ETS2** oyun deneyiminizi daha ilginç hale getirmek ve eklenti yönetimini mümkün olduğunca basitleştirmek için oluşturduk.",
+    "intro_text": "**SPF Framework**'ü, **Euro Truck Simulator 2** ve **American Truck Simulator** deneyiminizi bir üst seviyeye taşımak ve eklenti yönetimini olabildiğince kolaylaştırmak için geliştirdik.",
     "section1": {
-      "title": "Framework menüsü nasıl açılır?",
-      "text": "Klavyenizdeki <#FFFFFF>{} **DELETE**</> tuşuna basmanız yeterlidir. Bu sizin ana kontrol panelinizdir."
+      "title": "Menüyü açma",
+      "text": "SPF kontrol panelini açmak için istediğiniz zaman bu tuşa basın."
     },
     "section2": {
       "title": "SPF uyumlu eklentilerin kurulumu",
-      "text": "Eklenti klasörünü DLL ile birlikte ` <#FFFFFF>{}</> ` içine yerleştirmeniz yeterlidir. Ardından bunları <#FFFFFF>**Eklenti Yöneticisi**</> bölümünden etkinleştirin."
+      "text": "Eklenti klasörünü DLL ile birlikte aşağıdaki klasöre yerleştirin, ardından <#FFFFFF>**Eklenti Yöneticisi**</> bölümünden etkinleştirin."
     },
     "section3": {
       "title": "Ayarlar",
@@ -1585,14 +1585,16 @@
     },
     "section4": {
       "title": "Geliştiriciler İçin",
-      "text": "Eğer bir geliştiriciyseniz — <#00b3ff>{} [GitHub]({})</> sayfamıza göz atın, orada dokümantasyon ve API kullanım örnekleri bulacaksınız."
+      "text": "Kendi eklentinizi mi geliştirmek istiyorsunuz? Başlamanız için eksiksiz dokümantasyon ve çalışan API örnekleri <#00b3ff>{} [GitHub]({})</> sayfamızda."
     },
     "section5": {
       "title": "Bizimle kalın",
-      "text": "İletişim bilgilerimizi ve topluluk bağlantılarımızı <#FFFFFF>**Hakkımızda**</> bölümünde bulabilirsiniz."
+      "text": "Bir sorunuz, fikriniz ya da bildirmek istediğiniz bir hata mı var? İletişim bilgilerimizi ve topluluk bağlantılarımızı <#FFFFFF>**Hakkımızda**</> bölümünde bulabilirsiniz. Sizden haber almaktan mutluluk duyarız!"
     },
     "footer": "*<#ff0000>{}</> ile **Track & Truck Devs** ekibi tarafından geliştirildi. Projenin büyümesine yardımcı olmak için bizi <#00b3ff>{} [Patreon]({})</> üzerinden destekleyin!*",
-    "button_go": "HADİ BAŞLAYALIM!"
+    "button_go": "HADİ BAŞLAYALIM!",
+    "menu_key": "DELETE",
+    "open_folder": "Aç"
   },
   "notification_popup": {
     "title": "Bildirimler"

@@ -1,4 +1,5 @@
 #include "SPF/UI/IMESupport.hpp"
+#include "SPF/UI/UIStyle.hpp"
 
 #include "SPF/Logging/LoggerFactory.hpp"
 
@@ -301,7 +302,7 @@ void IMESupport::Render() {
 
   ImGui::SetNextWindowPos(ImVec2(s_imeInputPos.x, s_imeInputPos.y + s_imeInputLineHeight + 4.0f));
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 6.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Scaled(ImVec2(8.0f, 6.0f)));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.9f));
   ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 0.8f));
@@ -323,13 +324,13 @@ void IMESupport::Render() {
       size_t total_pages = (s_candidatesUTF8.size() + s_candidatePageSize - 1) / s_candidatePageSize;
       size_t current_page = s_candidatePageStart / s_candidatePageSize;
 
-      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 6.0f));
+      ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, Scaled(ImVec2(10.0f, 6.0f)));
 
       ImVec2 item_pad(6.0f, 3.0f);
 
       for (size_t i = start_idx; i < end_idx; ++i) {
         if (i > start_idx) {
-          ImGui::SameLine(0.0f, 12.0f);
+          ImGui::SameLine(0.0f, Scaled(12.0f));
         }
 
         bool is_selected = (i == s_selectedCandidate);
@@ -395,7 +396,7 @@ void IMESupport::Render() {
         ImGui::GetWindowDrawList()->AddText(ImVec2(prev_min.x + btn_pad.x, prev_min.y + btn_pad.y), prev_text_color, "<");
         s_clickableAreas.push_back({prev_min, prev_max, -1});
 
-        ImGui::SameLine(0.0f, 12.0f);
+        ImGui::SameLine(0.0f, Scaled(12.0f));
 
         std::string page_str = "Page " + std::to_string(current_page + 1) + "/" + std::to_string(total_pages);
         ImVec2 page_size = ImGui::CalcTextSize(page_str.c_str());
@@ -404,7 +405,7 @@ void IMESupport::Render() {
         ImVec2 page_min = ImGui::GetItemRectMin();
         ImGui::GetWindowDrawList()->AddText(ImVec2(page_min.x, page_min.y + btn_pad.y), ImGui::GetColorU32(ImGuiCol_Text), page_str.c_str());
 
-        ImGui::SameLine(0.0f, 12.0f);
+        ImGui::SameLine(0.0f, Scaled(12.0f));
 
         bool has_next = (current_page + 1 < total_pages);
         ImVec2 next_size = ImGui::CalcTextSize(">");

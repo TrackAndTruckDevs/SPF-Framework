@@ -2,9 +2,30 @@
 
 #include "imgui.h"
 
+#include <algorithm>
+
 namespace SPF::UI {
+namespace {
+constexpr float kReferenceHeight = 1080.0f;
+constexpr float kMaxResolutionScale = 4.0f;
+float s_currentScale = 1.0f;
+}  // namespace
+
+float Style::GetScale() { return s_currentScale; }
+
+float Style::ComputeResolutionScale(float displayHeight) {
+  if (displayHeight <= 0.0f) return 1.0f;
+  return std::clamp(displayHeight / kReferenceHeight, 1.0f, kMaxResolutionScale);
+}
+
 void Style::ApplyGameStyle(float scaleFactor) {
+  if (scaleFactor <= 0.0f) scaleFactor = 1.0f;
+  s_currentScale = scaleFactor;
+
+  // Start from a fresh style: ScaleAllSizes() multiplies the current values, so re-applying on top of an already
+  // scaled style would compound the scales.
   ImGuiStyle& style = ImGui::GetStyle();
+  style = ImGuiStyle();
 
   // Colors
   style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -85,9 +106,9 @@ void Style::ApplyGameStyle(float scaleFactor) {
   style.WindowMenuButtonPosition = ImGuiDir_Right;
 
   // Scale all sizes
+  style.GrabMinSize = 12.0f;
   style.ScaleAllSizes(scaleFactor);
   style.MouseCursorScale = 1.0f;
-  style.GrabMinSize = 12.0f;
-  ImGui::GetIO().FontGlobalScale = scaleFactor;
+  style.FontScaleMain = scaleFactor;
 }
 }  // namespace SPF::UI

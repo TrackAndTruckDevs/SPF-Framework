@@ -248,7 +248,7 @@ void HandlePresent(IDXGISwapChain* pSwapChain) {
       DXGI_SWAP_CHAIN_DESC desc;
       pSwapChain->GetDesc(&desc);
       DXGIHook::MainWindow = desc.OutputWindow;
-      logger->Info("Game HWND captured: {}", static_cast<void*>(DXGIHook::MainWindow));
+      logger->Info("Game HWND captured: {} (backbuffer {}x{}, windowed: {})", static_cast<void*>(DXGIHook::MainWindow), desc.BufferDesc.Width, desc.BufferDesc.Height, desc.Windowed ? "yes" : "no");
 
       if (g_isInited) {
         DXGIHook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);
@@ -272,7 +272,7 @@ void HandlePresent(IDXGISwapChain* pSwapChain) {
           DXGI_SWAP_CHAIN_DESC desc;
           pSwapChain->GetDesc(&desc);
           DXGIHook::MainWindow = desc.OutputWindow;
-          logger->Info("Game HWND captured: {}", static_cast<void*>(DXGIHook::MainWindow));
+          logger->Info("Game HWND captured: {} (backbuffer {}x{}, windowed: {})", static_cast<void*>(DXGIHook::MainWindow), desc.BufferDesc.Width, desc.BufferDesc.Height, desc.Windowed ? "yes" : "no");
 
           if (g_isInited) {
             DXGIHook::OnResize.Call(pSwapChain, desc.BufferDesc.Width, desc.BufferDesc.Height);

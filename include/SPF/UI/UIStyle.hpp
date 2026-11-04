@@ -31,6 +31,25 @@ constexpr ImVec4 MAGENTA = ImVec4(1.00f, 0.00f, 1.00f, 1.00f);
 
 class Style {
  public:
+  /**
+   * @brief Rebuilds the framework style from scratch at the given scale.
+   * @details Always starts from a fresh ImGuiStyle, so applying a new scale never compounds with the previous one.
+   *          Fonts follow the scale through ImGuiStyle::FontScaleMain (crisp at any size since ImGui 1.92).
+   */
   static void ApplyGameStyle(float scaleFactor = 1.0f);
+
+  /** @brief Scale currently applied to the whole UI (resolution scale x user setting). */
+  static float GetScale();
+
+  /**
+   * @brief Scale derived from the screen resolution, 1080p being the reference.
+   * @details 1080p (and 2560x1080 ultrawide) -> 1.0, 1440p -> 1.33, 4K -> 2.0. Never below 1.0, so small screens keep
+   *          the sizes they always had.
+   */
+  static float ComputeResolutionScale(float displayHeight);
 };
+
+/** @brief Converts a size designed for 1080p into the current UI scale. Use it for every hard-coded pixel size. */
+inline float Scaled(float px) { return px * Style::GetScale(); }
+inline ImVec2 Scaled(const ImVec2& px) { return ImVec2(px.x * Style::GetScale(), px.y * Style::GetScale()); }
 }  // namespace SPF::UI

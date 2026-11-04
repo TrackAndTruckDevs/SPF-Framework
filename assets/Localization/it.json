@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "BENVENUTO NEL MONDO DI SPF FRAMEWORK!",
     "intro_title": "Ciao! Grazie per aver scelto il nostro framework.",
-    "intro_text": "Abbiamo creato **SPF Framework** per rendere il tuo gioco in **ATS** ed **ETS2** ancora più interessante e la gestione dei plugin il più semplice possibile.",
+    "intro_text": "Abbiamo creato **SPF Framework** per portare la tua esperienza in **Euro Truck Simulator 2** e **American Truck Simulator** ancora più lontano, e per rendere la gestione dei plugin il più semplice possibile.",
     "section1": {
-      "title": "Come aprire il menu del framework?",
-      "text": "Basta premere il tasto <#FFFFFF>{} **CANC**</> sulla tastiera. Questo è il tuo pannello di controllo principale."
+      "title": "Aprire il menu",
+      "text": "Premi questo tasto in qualsiasi momento per aprire il pannello di controllo di SPF."
     },
     "section2": {
       "title": "Installazione di plugin compatibili con SPF",
-      "text": "Basta inserire la cartella del plugin con la DLL in ` <#FFFFFF>{}</> `. Quindi attivali nella sezione <#FFFFFF>**Gestione Plugin**</>."
+      "text": "Inserisci la cartella del plugin con la DLL nella cartella qui sotto, quindi attivalo nella sezione <#FFFFFF>**Gestione Plugin**</>."
     },
     "section3": {
       "title": "Impostazioni",
@@ -1585,14 +1585,16 @@
     },
     "section4": {
       "title": "Per gli sviluppatori",
-      "text": "Se sei uno sviluppatore, dai un'occhiata al nostro <#00b3ff>{} [GitHub]({})</>, dove troverai la documentazione e gli esempi di utilizzo dell'API."
+      "text": "Vuoi creare il tuo plugin? Visita il nostro <#00b3ff>{} [GitHub]({})</> per la documentazione completa ed esempi funzionanti dell'API per iniziare."
     },
     "section5": {
       "title": "Resta con noi",
-      "text": "Puoi trovare i nostri contatti e i link alla community nella sezione <#FFFFFF>**Chi siamo**</>."
+      "text": "Hai una domanda, un'idea o un bug da segnalare? Trovi i nostri contatti e i link alla community nella sezione <#FFFFFF>**Chi siamo**</>. Saremo felici di sentirti!"
     },
     "footer": "*Sviluppato con <#ff0000>{}</> dal team **Track & Truck Devs**. Sostienici su <#00b3ff>{} [Patreon]({})</> per aiutare il progetto a crescere!*",
-    "button_go": "ANDIAMO!"
+    "button_go": "ANDIAMO!",
+    "menu_key": "CANC",
+    "open_folder": "Apri"
   },
   "notification_popup": {
     "title": "Notifiche"

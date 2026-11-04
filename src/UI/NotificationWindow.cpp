@@ -146,8 +146,8 @@ void NotificationWindow::RenderContent() {
   // 1. Render TOP notification
   for (auto& notif : m_notifications) {
     if (notif.mode == SPF_NOTIF_MODE_TOP) {
-      ImGui::SetNextWindowPos(ImVec2(viewPos.x + (viewSize.x - 500.0f) * 0.5f, viewPos.y + 50.0f), ImGuiCond_Always);
-      ImGui::SetNextWindowSize(ImVec2(500.0f, 0), ImGuiCond_Always);
+      ImGui::SetNextWindowPos(ImVec2(viewPos.x + (viewSize.x - Scaled(500.0f)) * 0.5f, viewPos.y + Scaled(50.0f)), ImGuiCond_Always);
+      ImGui::SetNextWindowSize(Scaled(ImVec2(500.0f, 0)), ImGuiCond_Always);
       RenderSingleNotification(notif, 0);
       break;  // Only one TOP supported
     }
@@ -159,11 +159,11 @@ void NotificationWindow::RenderContent() {
     if (notif.mode == SPF_NOTIF_MODE_STACK) stack.push_back(&notif);
   }
 
-  float currentY = viewPos.y + viewSize.y - 20.0f;
+  float currentY = viewPos.y + viewSize.y - Scaled(20.0f);
   for (int i = static_cast<int>(stack.size()) - 1; i >= 0; --i) {
     auto* notif = stack[i];
-    ImGui::SetNextWindowPos(ImVec2(viewPos.x + viewSize.x - 20.0f, currentY), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
-    ImGui::SetNextWindowSize(ImVec2(350.0f, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(viewPos.x + viewSize.x - Scaled(20.0f), currentY), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+    ImGui::SetNextWindowSize(Scaled(ImVec2(350.0f, 0)), ImGuiCond_Always);
 
     RenderSingleNotification(*notif, i);
 
@@ -171,7 +171,7 @@ void NotificationWindow::RenderContent() {
     std::string winName = "##notif_" + std::to_string(notif->handle);
     ImGuiWindow* window = ImGui::FindWindowByName(winName.c_str());
     if (window) {
-      currentY -= (window->Size.y + 10.0f);
+      currentY -= (window->Size.y + Scaled(10.0f));
     } else {
       currentY -= 100.0f;  // Guess height for first frame
     }
@@ -185,8 +185,8 @@ void NotificationWindow::RenderContent() {
 
       // Default: Centered horizontally, Above the cursor
       ImVec2 pivot = ImVec2(0.5f, 0.975f);
-      float winW = 300.0f;
-      float winH = 60.0f;
+      float winW = Scaled(300.0f);
+      float winH = Scaled(60.0f);
 
       ImGuiWindow* window = ImGui::FindWindowByName(winName.c_str());
       if (window) {
@@ -207,7 +207,7 @@ void NotificationWindow::RenderContent() {
       }
 
       ImGui::SetNextWindowPos(notif.popupPos, ImGuiCond_Always, pivot);
-      ImGui::SetNextWindowSize(ImVec2(300.0f, 0), ImGuiCond_Always);
+      ImGui::SetNextWindowSize(Scaled(ImVec2(300.0f, 0)), ImGuiCond_Always);
 
       RenderSingleNotification(notif, 0);
 
@@ -246,7 +246,7 @@ void NotificationWindow::RenderSingleNotification(NotificationData& notif, int i
   // Styling
   ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.08f, 0.1f, 0.94f));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Scaled(ImVec2(12.0f, 10.0f)));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 
   const char* icon = nullptr;
@@ -256,7 +256,7 @@ void NotificationWindow::RenderSingleNotification(NotificationData& notif, int i
 
   if (ImGui::Begin(windowName.c_str(), nullptr, flags)) {
     if (ImGui::BeginTable("##notif_layout", 2, ImGuiTableFlags_None)) {
-      ImGui::TableSetupColumn("icon", ImGuiTableColumnFlags_WidthFixed, 12.0f);
+      ImGui::TableSetupColumn("icon", ImGuiTableColumnFlags_WidthFixed, Scaled(12.0f));
       ImGui::TableSetupColumn("text", ImGuiTableColumnFlags_WidthStretch);
 
       ImGui::TableNextRow();
@@ -295,7 +295,7 @@ void NotificationWindow::RenderSingleNotification(NotificationData& notif, int i
       ImDrawList* drawList = ImGui::GetWindowDrawList();
       ImVec2 p_min = ImGui::GetCursorScreenPos();
       float avail_w = ImGui::GetContentRegionAvail().x;
-      float bar_h = 2.0f;
+      float bar_h = Scaled(2.0f);
 
       drawList->AddRectFilled(p_min, ImVec2(p_min.x + avail_w, p_min.y + bar_h), ImGui::GetColorU32(ImGuiCol_FrameBg), 1.0f);
 

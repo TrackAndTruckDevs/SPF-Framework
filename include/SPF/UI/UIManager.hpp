@@ -214,6 +214,8 @@ class UIManager : public Config::IConfigurable {
   std::unique_ptr<BindingDetailsPopup> m_bindingDetailsPopup;
 
   float m_uiScaleFactor = 1.0f;
+  float m_lastAppliedScale = -1.0f;                 // Effective UI scale last applied to the ImGui style (-1: none yet).
+  ImVec2 m_lastLoggedDisplaySize = ImVec2(0.0f, 0.0f);  // Resolution last written to the log.
 
   std::unordered_map<std::string, Events::OnPluginUpdateAvailable> m_pluginUpdates;
 

@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "SPF FRAMEWORK의 세계에 오신 것을 환영합니다!",
     "intro_title": "안녕하세요! 저희 프레임워크를 선택해 주셔서 감사합니다.",
-    "intro_text": "**SPF Framework**는 **ATS** 및 **ETS2**에서의 플레이를 더욱 흥미롭게 만들고 플러그인 관리를 최대한 단순하게 하기 위해 만들어졌습니다.",
+    "intro_text": "**SPF Framework**는 **Euro Truck Simulator 2**와 **American Truck Simulator**의 경험을 한 단계 끌어올리고, 플러그인 관리를 최대한 쉽게 만들기 위해 탄생했습니다.",
     "section1": {
-      "title": "프레임워크 메뉴를 여는 방법",
-      "text": "키보드의 <#FFFFFF>{} **DELETE**</> 키를 누르기만 하면 됩니다. 이것이 메인 제어판입니다."
+      "title": "메뉴 열기",
+      "text": "언제든지 이 키를 누르면 SPF 제어판이 열립니다."
     },
     "section2": {
       "title": "SPF 호환 플러그인 설치",
-      "text": "DLL이 포함된 플러그인 폴더를 ` <#FFFFFF>{}</> `에 넣기만 하면 됩니다. 그 후 <#FFFFFF>**플러그인 관리자**</> 섹션에서 활성화하십시오."
+      "text": "DLL이 포함된 플러그인 폴더를 아래 폴더에 넣은 다음 <#FFFFFF>**플러그인 관리자**</> 섹션에서 활성화하십시오."
     },
     "section3": {
       "title": "설정",
@@ -1585,14 +1585,16 @@
     },
     "section4": {
       "title": "개발자 정보",
-      "text": "개발자라면 저희 <#00b3ff>{} [GitHub]({})</>를 확인해 보세요. 문서와 API 사용 예시를 찾을 수 있습니다."
+      "text": "나만의 플러그인을 만들고 싶으신가요? <#00b3ff>{} [GitHub]({})</>에서 바로 시작할 수 있는 전체 문서와 실제로 동작하는 API 예제를 확인하세요."
     },
     "section5": {
       "title": "함께해요",
-      "text": "연락처와 커뮤니티 링크는 <#FFFFFF>**소개**</> 섹션에서 찾을 수 있습니다."
+      "text": "질문이나 아이디어가 있거나 버그를 발견하셨나요? 연락처와 커뮤니티 링크는 <#FFFFFF>**소개**</> 섹션에서 찾을 수 있습니다. 여러분의 의견을 기다립니다!"
     },
     "footer": "*Team **Track & Truck Devs**가 <#ff0000>{}</>를 담아 개발했습니다. 프로젝트 성장을 돕기 위해 <#00b3ff>{} [Patreon]({})</>에서 저희를 지원해 주세요!*",
-    "button_go": "출발!"
+    "button_go": "출발!",
+    "menu_key": "DELETE",
+    "open_folder": "열기"
   },
   "notification_popup": {
     "title": "알림"

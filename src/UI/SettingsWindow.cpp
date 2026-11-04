@@ -887,6 +887,7 @@ void SettingsWindow::RenderContent() {
 
   ImGui::Separator();
 
+  m_keybindsDrawerMinHeight = Scaled(35.0f);  // Follows the UI scale
   m_keybindsDrawerMaxHeight = ImGui::GetContentRegionAvail().y;
 
   // --- Main Settings Area (Child Window) ---
@@ -923,7 +924,7 @@ void SettingsWindow::RenderContent() {
                 systemDisplayName = systemName;
               }
 
-              ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 2.0f));  // Thinner header
+              ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, Scaled(ImVec2(6.0f, 2.0f)));  // Thinner header
               bool headerIsOpen = ImGui::CollapsingHeader(systemDisplayName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
               ImGui::PopStyleVar();
 
@@ -971,7 +972,7 @@ void SettingsWindow::RenderContent() {
   if (m_keybindsDrawerMinHeight <= m_keybindsDrawerMaxHeight) {
     m_keybindsDrawerHeight = std::clamp(m_keybindsDrawerHeight, m_keybindsDrawerMinHeight, m_keybindsDrawerMaxHeight);
   }
-  m_keybindsDrawerExpanded = (m_keybindsDrawerHeight > m_keybindsDrawerMinHeight + 5.0f);
+  m_keybindsDrawerExpanded = (m_keybindsDrawerHeight > m_keybindsDrawerMinHeight + Scaled(5.0f));
 
   // Custom rendering for the handle
   ImDrawList* draw_list = ImGui::GetWindowDrawList();
