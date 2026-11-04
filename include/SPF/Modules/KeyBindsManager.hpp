@@ -205,6 +205,31 @@ class KeyBindsManager : public Input::IInputConsumer, public Config::IConfigurab
   void TriggerAction(uint32_t hardwareCode, Input::PressType pressType, TriggerEdge edge = TriggerEdge::Press);
 
   /**
+   * @brief Finds the action and index of a binding returned by FindBestBinding,
+   *        so a hold can be released later without keeping the pointer.
+   */
+  bool LocateBinding(const Binding* binding, std::string& actionKey, size_t& index) const;
+
+  /**
+   * @brief Delivers the release edge to the Hold binding that took the press.
+   *
+   * @details The binding picked at release time can differ from the one picked
+   *          at press time: with a chord's other key already up, FindBestBinding
+   *          falls back to the single key, and the chord would stay held. Does
+   *          nothing if the binding is no longer a Hold one at that index (the
+   *          bindings were rebuilt, and rebuilt bindings start released).
+   */
+  void ReleaseBinding(const std::string& actionKey, size_t index);
+
+  /**
+   * @brief Fires the tap of the Toggle binding (a chord) whose keys were down,
+   *        for the same reason as ReleaseBinding: once a chord key is up, the
+   *        binding picked at release time can be the other key's alone. Does
+   *        nothing if the binding is no longer a Toggle one at that index.
+   */
+  void TapBinding(const std::string& actionKey, size_t index);
+
+  /**
    * @brief Gets the current normalized value (0.0 to 1.0 or -1.0 to 1.0) for an action.
    * This aggregates all active bindings for the action and returns the one with the highest absolute value.
    */
