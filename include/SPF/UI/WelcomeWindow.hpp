@@ -39,7 +39,7 @@ class WelcomeWindow : public IWindow {
   // Helpers
   void SetVisibility(bool visible) { m_isVisible = visible; }
   void SetMode(WelcomeMode mode) { m_mode = mode; }
-  void SetUpdateContent(const std::string& title, const std::string& changelogMarkdown);
+  void SetUpdateContent(const std::string& changelogMarkdown);
 
  private:
   void InitializeResources();
@@ -49,10 +49,11 @@ class WelcomeWindow : public IWindow {
   void RenderStackedLayout();
   void RenderTwoColumnLayout();
   void RenderFirstInstallCards(float contentX, float contentWidth, bool twoColumnLayout);
-  void RenderUpdateCard(float contentX, float contentWidth);
+  void RenderUpdateCard(float contentX, float contentWidth, float maxNotesHeight);
   void RenderPluginsPathRow(const std::string& path);
   void RenderGoButton(float buttonX);
   void RenderFooter(float x, float width, bool centered);
+  std::string GetVersionLabel() const;
 
   std::string m_componentName;
   std::string m_windowId;
@@ -61,8 +62,7 @@ class WelcomeWindow : public IWindow {
   bool m_wasVisibleLastFrame = false;
 
   WelcomeMode m_mode = WelcomeMode::FirstInstall;
-  std::string m_updateTitle;
-  std::string m_updateChangelog;
+  std::string m_updateChangelog;  // Server release notes, restyled for the update card
 
   std::unique_ptr<Rendering::ITexture> m_logoTexture;
   MarkdownRenderer m_markdownRenderer;
@@ -95,6 +95,10 @@ class WelcomeWindow : public IWindow {
   std::string m_locBtnGo;
   std::string m_locMenuKey;
   std::string m_locOpenFolder;
+  std::string m_locUpdateTitle;
+  std::string m_locUpdateText;
+  std::string m_locUpdateNotesTitle;
+  std::string m_locUpdateButton;
 
   // Refreshes the cached strings above when the framework language changes while the window is open.
   Utils::Sink<void(const std::string&)> m_langSink;

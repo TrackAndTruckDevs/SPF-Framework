@@ -1594,7 +1594,13 @@
     "footer": "*<#ff0000>{}</> ile **Track & Truck Devs** ekibi tarafından geliştirildi. Projenin büyümesine yardımcı olmak için bizi <#00b3ff>{} [Patreon]({})</> üzerinden destekleyin!*",
     "button_go": "HADİ BAŞLAYALIM!",
     "menu_key": "DELETE",
-    "open_folder": "Aç"
+    "open_folder": "Aç",
+    "update": {
+      "title": "SPF FRAMEWORK GÜNCEL!",
+      "text": "Bizimle kaldığın için teşekkürler! Son oturumundan bu yana nelerin değiştiğine göz at.",
+      "notes_title": "Neler yeni?",
+      "button": "DEVAM ET"
+    }
   },
   "notification_popup": {
     "title": "Bildirimler"

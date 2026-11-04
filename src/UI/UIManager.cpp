@@ -1154,7 +1154,7 @@ void UIManager::OnReleaseNotesReceived(const System::ChangelogData& data) {
   }
 
   if (welcomeWindow) {
-    welcomeWindow->SetUpdateContent(data.title, data.markdown);
+    welcomeWindow->SetUpdateContent(data.markdown);
     welcomeWindow->SetVisibility(true);
   }
 }

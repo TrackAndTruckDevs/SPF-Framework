@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <regex>
 #include <shellapi.h>
 #include <string>
 #include <system_error>
@@ -38,7 +39,8 @@ constexpr float kCardsTopOffset = 36.0f;  // Gap between intro and cards
 constexpr float kCardGap = 16.0f;         // Gap between cards
 constexpr float kCardRounding = 10.0f;
 constexpr ImVec2 kCardPadding = ImVec2(24.0f, 20.0f);
-constexpr float kIconTileSize = 48.0f;  // Red square behind the keyboard icon
+constexpr float kIconTileSize = 48.0f;  // Red square behind the keyboard / release notes icon
+constexpr float kIconTileGap = 20.0f;   // Gap between the icon tile and its text
 constexpr float kKeycapHeight = 52.0f;
 constexpr float kKeycapMinWidth = 96.0f;
 constexpr float kKeycapDepth = 4.0f;  // Visible "side" of the key
@@ -60,6 +62,17 @@ constexpr float kLeftIntroTopOffset = 18.0f;
 constexpr float kLeftButtonTopOffset = 36.0f;
 constexpr float kLeftFooterTopOffset = 28.0f;
 constexpr float kRightCardGap = 14.0f;
+
+// --- Update mode (version badge + scrollable release notes card) ---
+constexpr float kBadgeHeight = 32.0f;
+constexpr float kBadgePaddingX = 12.0f;
+constexpr float kBadgeRounding = 6.0f;
+constexpr float kBadgeTextSize = 15.0f;
+constexpr float kNotesMaxHeight = 420.0f;  // Notes taller than this scroll inside the card
+constexpr float kNotesMinHeight = 160.0f;
+constexpr float kNotesScrollbarSize = 6.0f;
+constexpr float kNotesScrollbarInset = 8.0f;  // Gap between the scrollbar and the card border
+constexpr float kNotesScrollInsetY = 10.0f;   // Gap between the scrollbar and the header line / card bottom
 
 // --- Typography (pixel sizes; fonts are scalable since ImGui 1.92) ---
 constexpr float kBodySize = 16.0f;       // Card text, intro, footer
@@ -92,6 +105,10 @@ constexpr ImVec4 kColOpenBgHovered = ImVec4(0.153f, 0.161f, 0.184f, 1.0f);
 constexpr ImVec4 kColOpenBgActive = ImVec4(0.086f, 0.090f, 0.106f, 1.0f);
 constexpr ImVec4 kColOpenBorder = ImVec4(0.180f, 0.188f, 0.212f, 1.0f);
 constexpr ImVec4 kColOpenText = ImVec4(0.788f, 0.804f, 0.827f, 1.0f);
+constexpr ImVec4 kColBadgeBorder = ImVec4(1.0f, 0.302f, 0.302f, 0.40f);
+constexpr ImVec4 kColScrollTrack = kColOpenBg;  // Same greys as the "Open" button and the keycap edge
+constexpr ImVec4 kColScrollGrab = kColKeyEdge;
+constexpr ImVec4 kColScrollGrabHovered = ImVec4(0.290f, 0.306f, 0.341f, 1.0f);
 
 /** @brief Text centered in a rect, drawn with the given style (font, size, colour). */
 void DrawCenteredText(ImDrawList* drawList, const ImVec2& min, const ImVec2& max, const char* text, const TextStyle& style) {
@@ -194,6 +211,42 @@ void DrawKeycap(ImDrawList* drawList, const ImVec2& pos, const ImVec2& size, con
   const ImVec2 textPos(pos.x + (size.x - textSize.x) * 0.5f, pos.y + (size.y - Scaled(kKeycapDepth) - textSize.y) * 0.5f);
   drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), textPos, ImGui::GetColorU32(Colors::WHITE), label);
 }
+
+/**
+ * @brief Restyles the server changelog for the update card.
+ * @details The shared markdown renderer draws headings and bold text in the body colour. Here section titles are shown
+ *          as bold white lines (same size as the text) and bold words in white, as on the welcome cards.
+ */
+std::string StyleChangelog(const std::string& markdown) {
+  static const std::regex kBold(R"(\*\*([^*\n]+)\*\*)");
+  static const std::regex kHeading(R"((^|\n)#{1,6}[ \t]+([^\n]*?)[ \t]*#*[ \t]*(?=\n|$))");
+  std::string out = std::regex_replace(markdown, kHeading, "$1<#F2F3F5>@@HEADING@@$2@@HEADING@@</>\n");
+  out = std::regex_replace(out, kBold, "<#FFFFFF>**$1**</>");
+  // Headings become bold lines; done after the bold pass so they are not wrapped in a second colour tag.
+  for (size_t pos = 0; (pos = out.find("@@HEADING@@", pos)) != std::string::npos;) out.replace(pos, 11, "**");
+  return out;
+}
+
+/** @brief Size of the version badge for the given label. */
+ImVec2 CalcBadgeSize(const char* label) {
+  const ImVec2 textSize = Typography::CalcTextSize(label, TextStyle::Bold().Size(kBadgeTextSize));
+  return ImVec2(std::ceil(textSize.x) + Scaled(kBadgePaddingX) * 2.0f, Scaled(kBadgeHeight));
+}
+
+/** @brief Draws the red-tinted version badge at the cursor (window-local x) and advances the cursor. */
+void RenderVersionBadge(float x, const char* label) {
+  const ImVec2 size = CalcBadgeSize(label);
+  ImGui::SetCursorPosX(std::floor(x));
+  const ImVec2 cursor = ImGui::GetCursorScreenPos();
+  const ImVec2 min(std::floor(cursor.x), std::floor(cursor.y));  // Whole pixels: a 1px border on a half pixel looks blurry
+  ImGui::SetCursorScreenPos(min);
+  const ImVec2 max(min.x + size.x, min.y + size.y);
+  ImDrawList* drawList = ImGui::GetWindowDrawList();
+  drawList->AddRectFilled(min, max, ImGui::GetColorU32(kColAccentSoft), Scaled(kBadgeRounding));
+  drawList->AddRect(min, max, ImGui::GetColorU32(kColBadgeBorder), Scaled(kBadgeRounding));
+  DrawCenteredText(drawList, min, max, label, TextStyle::Bold().Size(kBadgeTextSize).Color(Colors::WHITE));
+  ImGui::Dummy(size);
+}
 }  // namespace
 // ============================================================================
 
@@ -231,6 +284,11 @@ void WelcomeWindow::UpdateLocalization() {
   m_locBtnGo = loc.Get(comp, "welcome_window.button_go");
   m_locMenuKey = loc.Get(comp, "welcome_window.menu_key");
   m_locOpenFolder = loc.Get(comp, "welcome_window.open_folder");
+
+  m_locUpdateTitle = loc.Get(comp, "welcome_window.update.title");
+  m_locUpdateText = loc.Get(comp, "welcome_window.update.text");
+  m_locUpdateNotesTitle = loc.Get(comp, "welcome_window.update.notes_title");
+  m_locUpdateButton = loc.Get(comp, "welcome_window.update.button");
 }
 
 void WelcomeWindow::InitializeResources() {
@@ -309,14 +367,21 @@ void WelcomeWindow::RenderStackedLayout() {
 
   // 2. Title
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kTitleTopOffset));
-  Typography::Text(TextStyle::H1().Font("h1_large_bold").Color(kColTitle).Align(TextAlign::Center), "%s", m_locTitle.c_str());
+  const bool isUpdate = m_mode == WelcomeMode::FrameworkUpdate;
+  Typography::Text(TextStyle::H1().Font("h1_large_bold").Color(kColTitle).Align(TextAlign::Center), "%s", (isUpdate ? m_locUpdateTitle : m_locTitle).c_str());
 
-  // 3. Intro
-  if (m_mode == WelcomeMode::FirstInstall) {
+  // 3. Intro (first install) or version badge + thanks (update)
+  if (!isUpdate) {
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kIntroTopOffset));
     Typography::Text(TextStyle::Medium().Color(kColTitle).Align(TextAlign::Center), "%s", m_locIntroTitle.c_str());
     ImGui::Dummy(ImVec2(0.0f, Scaled(2.0f)));
     RenderCenteredMarkdown("##WelcomeIntro", m_locIntroText, TextStyle::Regular().Size(kBodySize).Color(kColBody), centerX, contentWidth, m_introWidth);
+  } else {
+    const std::string badge = GetVersionLabel();
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kIntroTopOffset));
+    RenderVersionBadge(centerX - CalcBadgeSize(badge.c_str()).x * 0.5f, badge.c_str());
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kIntroTopOffset));
+    RenderCenteredMarkdown("##WelcomeUpdateText", m_locUpdateText, TextStyle::Regular().Size(kBodySize).Color(kColBody), centerX, contentWidth, m_introWidth);
   }
 
   // 4. Cards
@@ -324,7 +389,8 @@ void WelcomeWindow::RenderStackedLayout() {
   if (m_mode == WelcomeMode::FirstInstall) {
     RenderFirstInstallCards(contentX, contentWidth, false);
   } else {
-    RenderUpdateCard(contentX, contentWidth);
+    const float maxNotesHeight = std::min(Scaled(kNotesMaxHeight), std::max(Scaled(kNotesMinHeight), std::floor(screenSize.y * 0.4f)));
+    RenderUpdateCard(contentX, contentWidth, maxNotesHeight);
   }
 
   // 5. Button + footer
@@ -358,9 +424,10 @@ void WelcomeWindow::RenderTwoColumnLayout() {
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kLeftTitleTopOffset));
     ImGui::PushTextWrapPos(leftX + Scaled(kLeftColumnWidth));
-    Typography::Text(TextStyle::H1().Font("h1_large_bold").Color(kColTitle), "%s", m_locTitle.c_str());
+    const bool isUpdate = m_mode == WelcomeMode::FrameworkUpdate;
+    Typography::Text(TextStyle::H1().Font("h1_large_bold").Color(kColTitle), "%s", (isUpdate ? m_locUpdateTitle : m_locTitle).c_str());
 
-    if (m_mode == WelcomeMode::FirstInstall) {
+    if (!isUpdate) {
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kLeftIntroTopOffset));
       Typography::Text(TextStyle::Medium().Color(kColTitle), "%s", m_locIntroTitle.c_str());
       ImGui::PopTextWrapPos();
@@ -368,6 +435,12 @@ void WelcomeWindow::RenderTwoColumnLayout() {
       RenderMarkdownBlock("##WelcomeIntro", m_locIntroText, TextStyle::Regular().Size(kBodySize).Color(kColBody), Scaled(kLeftColumnWidth));
     } else {
       ImGui::PopTextWrapPos();
+      const std::string badge = GetVersionLabel();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kLeftIntroTopOffset));
+      RenderVersionBadge(leftX, badge.c_str());
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kLeftIntroTopOffset));
+      ImGui::SetCursorPosX(leftX);
+      RenderMarkdownBlock("##WelcomeUpdateText", m_locUpdateText, TextStyle::Regular().Size(kBodySize).Color(kColBody), Scaled(kLeftColumnWidth));
     }
 
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Scaled(kLeftButtonTopOffset));
@@ -384,7 +457,9 @@ void WelcomeWindow::RenderTwoColumnLayout() {
   if (m_mode == WelcomeMode::FirstInstall) {
     RenderFirstInstallCards(rightX, Scaled(kRightColumnWidth), true);
   } else {
-    RenderUpdateCard(rightX, Scaled(kRightColumnWidth));
+    // The card always fits on screen: longer notes scroll inside it.
+    const float maxNotesHeight = std::min(Scaled(kNotesMaxHeight), std::max(Scaled(kNotesMinHeight), screenSize.y - Scaled(kMinMargin) * 2.0f - Scaled(80.0f)));
+    RenderUpdateCard(rightX, Scaled(kRightColumnWidth), maxNotesHeight);
   }
   ImGui::EndGroup();
   const float rightHeight = ImGui::GetItemRectSize().y;
@@ -420,7 +495,7 @@ void WelcomeWindow::RenderFirstInstallCards(float contentX, float contentWidth, 
     RenderCard("##WelcomeMenuKey", contentWidth, 0.0f, false, [&](float innerWidth) {
       const ImVec2 origin = ImGui::GetCursorScreenPos();
       const ImVec2 startPos = ImGui::GetCursorPos();
-      const float gap = Scaled(20.0f);
+      const float gap = Scaled(kIconTileGap);
       const ImVec2 keySize = CalcKeycapSize(m_locMenuKey.c_str());
       const float textX = startPos.x + Scaled(kIconTileSize) + gap;
       const float textWidth = innerWidth - Scaled(kIconTileSize) - gap * 2.0f - keySize.x;
@@ -569,17 +644,69 @@ void WelcomeWindow::RenderPluginsPathRow(const std::string& path) {
   ImGui::Dummy(ImVec2(width, Scaled(kPathRowHeight)));
 }
 
-void WelcomeWindow::RenderUpdateCard(float contentX, float contentWidth) {
+void WelcomeWindow::RenderUpdateCard(float contentX, float contentWidth, float maxNotesHeight) {
   ImGui::SetCursorPosX(contentX);
-  RenderCard("##WelcomeUpdate", contentWidth, 0.0f, true, [&](float) {
-    Typography::Text(TextStyle::H2().Color(kColTitle).Wrapped(), "%s", m_updateTitle.c_str());
-    ImGui::Dummy(ImVec2(0.0f, Scaled(4.0f)));
-    Typography::RenderMarkdownText(m_updateChangelog, TextStyle::Regular().Size(kBodySize).Wrapped().Color(kColBody));
-  });
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, kColCardBg);
+  ImGui::PushStyleColor(ImGuiCol_Border, kColCardBorder);
+  ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, Scaled(kCardRounding));
+  ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+  if (ImGui::BeginChild("##WelcomeUpdate", ImVec2(contentWidth, 0.0f), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    // --- Header: same tile, gap and padding as the menu-key card, centered, with a full-width line below ---
+    const TextStyle titleStyle = TextStyle::Bold().Size(kCardTitleSize).Color(kColTitle);
+    const ImVec2 titleSize = Typography::CalcTextSize(m_locUpdateNotesTitle.c_str(), titleStyle);
+    const float tileSize = Scaled(kIconTileSize);
+    const float gap = Scaled(kIconTileGap);
+    const float headerHeight = std::floor(Scaled(kCardPadding).y * 2.0f + std::max(tileSize, titleSize.y));
+    const float startX = std::floor(std::max(0.0f, contentWidth - (tileSize + gap + titleSize.x)) * 0.5f);
+
+    const ImVec2 cardPos = ImGui::GetWindowPos();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    const ImVec2 tileMin(std::floor(cardPos.x + startX), std::floor(cardPos.y + (headerHeight - tileSize) * 0.5f));
+    const ImVec2 tileMax(tileMin.x + tileSize, tileMin.y + tileSize);
+    drawList->AddRectFilled(tileMin, tileMax, ImGui::GetColorU32(kColAccentSoft), Scaled(kCardRounding));
+    DrawCenteredText(drawList, tileMin, tileMax, ICON_FA_FILE_LINES, TextStyle::Bold().Size(kMenuIconSize).Color(kColAccent));
+
+    ImGui::SetCursorPos(ImVec2(startX + tileSize + gap, std::floor((headerHeight - titleSize.y) * 0.5f)));
+    Typography::Text(titleStyle, "%s", m_locUpdateNotesTitle.c_str());
+
+    const float lineY = std::floor(cardPos.y + headerHeight) + 0.5f;  // +0.5: a 1px line exactly on one pixel row
+    drawList->AddLine(ImVec2(cardPos.x, lineY), ImVec2(cardPos.x + contentWidth, lineY), ImGui::GetColorU32(kColCardBorder));
+
+    // --- Notes: sized to their content up to maxNotesHeight, then scroll inside the card ---
+    // The notes child starts kNotesScrollInsetY below the line so the scrollbar never touches it or the card bottom.
+    const float insetY = Scaled(kNotesScrollInsetY);
+    ImGui::SetCursorPos(ImVec2(0.0f, headerHeight + 1.0f + insetY));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, kColScrollTrack);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, kColScrollGrab);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, kColScrollGrabHovered);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, kColScrollGrabHovered);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(Scaled(kCardPadding).x, Scaled(kCardPadding).y - insetY));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, Scaled(kNotesScrollbarSize));
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, Scaled(kNotesScrollbarSize) * 0.5f);
+
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(FLT_MAX, maxNotesHeight));
+    if (ImGui::BeginChild("##WelcomeUpdateNotes", ImVec2(contentWidth - Scaled(kNotesScrollbarInset), 0.0f), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding)) {
+      Typography::RenderMarkdownText(m_updateChangelog, TextStyle::Regular().Size(kBodySize).Wrapped().Color(kColBody));
+    }
+    ImGui::EndChild();
+    ImGui::Dummy(ImVec2(0.0f, insetY - ImGui::GetStyle().ItemSpacing.y));  // Bottom inset (ItemSpacing already added)
+
+    ImGui::PopStyleVar(4);
+    ImGui::PopStyleColor(5);
+  }
+  ImGui::EndChild();
+
+  ImGui::PopStyleVar(3);
+  ImGui::PopStyleColor(2);
 }
 
 void WelcomeWindow::RenderGoButton(float buttonX) {
-  const std::string label = std::string(ICON_FA_TRUCK_FAST) + " " + m_locBtnGo;
+  // Update mode: "CONTINUE ->" instead of the truck + "LET'S GO!".
+  const std::string label = m_mode == WelcomeMode::FrameworkUpdate ? m_locUpdateButton + " " + ICON_FA_ARROW_RIGHT : std::string(ICON_FA_TRUCK_FAST) + " " + m_locBtnGo;
 
   ImGui::PushStyleColor(ImGuiCol_Button, kColButton);
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kColButtonHovered);
@@ -614,10 +741,13 @@ void WelcomeWindow::RenderFooter(float x, float width, bool centered) {
   }
 }
 
-void WelcomeWindow::SetUpdateContent(const std::string& title, const std::string& changelogMarkdown) {
-  m_updateTitle = title;
-  m_updateChangelog = changelogMarkdown;
+void WelcomeWindow::SetUpdateContent(const std::string& changelogMarkdown) {
+  m_updateChangelog = StyleChangelog(changelogMarkdown);
   m_mode = WelcomeMode::FrameworkUpdate;
+}
+
+std::string WelcomeWindow::GetVersionLabel() const {
+  return "v" + Config::GetFrameworkManifestData().info.version.value_or("");
 }
 
 void WelcomeWindow::ApplySettings(const nlohmann::ordered_json& settings) {

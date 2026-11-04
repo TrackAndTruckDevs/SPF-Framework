@@ -1594,7 +1594,13 @@
     "footer": "*由 **Track & Truck Devs** 团队倾情<#ff0000>{}</>打造。请在 <#00b3ff>{} [Patreon]({})</> 上支持我们，帮助项目成长！*",
     "button_go": "出发！",
     "menu_key": "DELETE",
-    "open_folder": "打开"
+    "open_folder": "打开",
+    "update": {
+      "title": "SPF FRAMEWORK 已是最新版本！",
+      "text": "感谢您一直以来的支持！看看自上次使用以来有哪些变化。",
+      "notes_title": "新功能",
+      "button": "继续"
+    }
   },
   "notification_popup": {
     "title": "通知"

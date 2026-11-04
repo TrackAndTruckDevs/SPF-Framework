@@ -1594,7 +1594,13 @@
     "footer": "*Vyvinuto s <#ff0000>{}</> týmem **Track & Truck Devs**. Podpořte nás na <#00b3ff>{} [Patreon]({})</>, abyste pomohli projektu růst!*",
     "button_go": "JEDEME!",
     "menu_key": "DELETE",
-    "open_folder": "Otevřít"
+    "open_folder": "Otevřít",
+    "update": {
+      "title": "SPF FRAMEWORK JE AKTUÁLNÍ!",
+      "text": "Děkujeme, že jste s námi! Podívejte se, co se změnilo od vaší poslední relace.",
+      "notes_title": "Co je nového?",
+      "button": "POKRAČOVAT"
+    }
   },
   "notification_popup": {
     "title": "Oznámení"

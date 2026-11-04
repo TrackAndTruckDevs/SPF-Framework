@@ -1594,7 +1594,13 @@
     "footer": "*Desarrollado con <#ff0000>{}</> por el equipo **Track & Truck Devs**. ¡Apóyanos en <#00b3ff>{} [Patreon]({})</> para ayudar a que el proyecto crezca!*",
     "button_go": "¡VAMOS!",
     "menu_key": "SUPR",
-    "open_folder": "Abrir"
+    "open_folder": "Abrir",
+    "update": {
+      "title": "¡SPF FRAMEWORK ESTÁ ACTUALIZADO!",
+      "text": "¡Gracias por seguir con nosotros! Descubre qué ha cambiado desde tu última sesión.",
+      "notes_title": "¿Qué hay de nuevo?",
+      "button": "CONTINUAR"
+    }
   },
   "notification_popup": {
     "title": "Notificaciones"

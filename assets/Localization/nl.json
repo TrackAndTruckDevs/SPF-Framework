@@ -1594,7 +1594,13 @@
     "footer": "*Ontwikkeld met <#ff0000>{}</> door het **Track & Truck Devs** team. Steun ons op <#00b3ff>{} [Patreon]({})</> om het project te helpen groeien!*",
     "button_go": "LATEN WE GAAN!",
     "menu_key": "DEL",
-    "open_folder": "Openen"
+    "open_folder": "Openen",
+    "update": {
+      "title": "SPF FRAMEWORK IS BIJGEWERKT!",
+      "text": "Bedankt dat je bij ons blijft! Bekijk wat er is veranderd sinds je vorige sessie.",
+      "notes_title": "Wat is er nieuw?",
+      "button": "DOORGAAN"
+    }
   },
   "notification_popup": {
     "title": "Meldingen"

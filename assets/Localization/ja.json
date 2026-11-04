@@ -1594,7 +1594,13 @@
     "footer": "*Team **Track & Truck Devs** が <#ff0000>{}</> を込めて開発しました。プロジェクトの成長を支援するために、<#00b3ff>{} [Patreon]({})</> でのサポートをお願いします！*",
     "button_go": "出発！",
     "menu_key": "DELETE",
-    "open_folder": "開く"
+    "open_folder": "開く",
+    "update": {
+      "title": "SPF FRAMEWORK は最新です！",
+      "text": "いつもご利用ありがとうございます！前回のセッションからの変更点をご確認ください。",
+      "notes_title": "新機能",
+      "button": "続ける"
+    }
   },
   "notification_popup": {
     "title": "通知"
