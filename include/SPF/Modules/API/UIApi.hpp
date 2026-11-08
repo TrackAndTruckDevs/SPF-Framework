@@ -536,5 +536,8 @@ class UIApi {
   // --- Font Management ---
   static SPF_Font_Handle UI_LoadFontFromMemory(const char* name, const void* data, size_t data_size, const SPF_Font_Config* config);
   static SPF_Font_Handle UI_LoadFontFromFile(const char* name, const char* file_path, const SPF_Font_Config* config);
+
+  // --- UI Scale ---
+  static float UI_GetScale();
 };
 }  // namespace SPF::Modules::API
