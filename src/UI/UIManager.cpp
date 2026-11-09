@@ -11,6 +11,7 @@
 #include "SPF/Events/SystemEvents.hpp"
 #include "SPF/GameCamera/GameCameraDebugAnimation.hpp"
 #include "SPF/GameCamera/GameCameraManager.hpp"  // For animation input blocking
+#include "SPF/Hooks/DXGIHook.hpp"
 #include "SPF/Input/InputEvents.hpp"
 #include "SPF/Input/InputManager.hpp"
 #include "SPF/Localization/LocalizationManager.hpp"
@@ -61,6 +62,7 @@
 #include "SPF/UI/UIStyle.hpp"
 #include "SPF/UI/WelcomeWindow.hpp"  // Added for WelcomeWindow creation
 #include "SPF/Utils/Signal.hpp"
+#include "SPF/Utils/Windows.hpp"
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -538,15 +540,55 @@ void RenderWindow(IWindow* window, ImGuiID mainDockspaceId, bool isShellVisible)
   }
 }
 
+namespace {
+/** @brief GetDpiForWindow (Windows 10+), loaded at runtime because the SDK target is older. 0 when unavailable. */
+unsigned GetWindowDpi(HWND hwnd) {
+  using Fn = UINT(WINAPI*)(HWND);
+  static const Fn fn = reinterpret_cast<Fn>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleA("user32.dll"), "GetDpiForWindow")));
+  return fn ? fn(hwnd) : 0u;
+}
+}  // namespace
+
 void UIManager::Update() {
-  static float lastAppliedScale = -1.0f;
-  if (m_uiScaleFactor != lastAppliedScale) {
-    lastAppliedScale = m_uiScaleFactor;
+  // Effective scale = resolution scale (1080p reference) x user setting. Re-applied whenever either one changes,
+  // e.g. when the game switches resolution.
+  const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+  const bool displayKnown = displaySize.x > 0.0f && displaySize.y > 0.0f;  // Unknown (-1) before the first frame
+  const float effectiveScale = Style::ComputeResolutionScale(displaySize.y) * m_uiScaleFactor;
+  const bool resolutionChanged = displayKnown && (displaySize.x != m_lastLoggedDisplaySize.x || displaySize.y != m_lastLoggedDisplaySize.y);
+  if (effectiveScale != m_lastAppliedScale || resolutionChanged) {
     auto logger = LoggerFactory::GetInstance().GetLogger("UIManager");
     if (logger) {
-      logger->Info("Applying UI Scale: {}", m_uiScaleFactor);
+      if (displayKnown) {
+        logger->Info("UI scale: {:.2f} (resolution {}x{}, user setting {:.2f})", effectiveScale, displaySize.x, displaySize.y, m_uiScaleFactor);
+        // Diagnostics: the resolution above is the game window's client area as seen by this process. With Windows
+        // display scaling and a DPI-unaware game, it can differ from the real backbuffer / monitor resolution.
+        if (HWND hwnd = Hooks::DXGIHook::MainWindow) {
+          RECT client{};
+          GetClientRect(hwnd, &client);
+          HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+          MONITORINFOEXA info{};
+          info.cbSize = sizeof(info);
+          DEVMODEA mode{};
+          mode.dmSize = sizeof(mode);
+          if (monitor && GetMonitorInfoA(monitor, &info) && EnumDisplaySettingsA(info.szDevice, ENUM_CURRENT_SETTINGS, &mode)) {
+            logger->Info("Display diagnostics: client {}x{}, monitor rect {}x{}, monitor mode {}x{}, window DPI {}", client.right - client.left, client.bottom - client.top,
+                         info.rcMonitor.right - info.rcMonitor.left, info.rcMonitor.bottom - info.rcMonitor.top, mode.dmPelsWidth, mode.dmPelsHeight, GetWindowDpi(hwnd));
+          }
+        }
+      } else {
+        logger->Info("UI scale: {:.2f} (resolution not known yet, user setting {:.2f})", effectiveScale, m_uiScaleFactor);
+      }
     }
-    Style::ApplyGameStyle(m_uiScaleFactor);
+    if (displayKnown) m_lastLoggedDisplaySize = displaySize;
+  }
+  if (effectiveScale != m_lastAppliedScale) {
+    m_lastAppliedScale = effectiveScale;
+    Style::ApplyGameStyle(effectiveScale);
+    // Window positions and sizes are stored at 1080p scale: re-apply them at the new scale.
+    for (auto& window : m_windows) {
+      if (auto base = std::dynamic_pointer_cast<BaseWindow>(window)) base->OnUIScaleChanged();
+    }
   }
 
   // 1. Process unload queue at the beginning of the update phase
@@ -837,6 +879,9 @@ void UIManager::InitializeImGui() {
     m_uiScaleFactor = m_configService->GetValue("framework", "settings.scale", 1.0f).get<float>();
   }
   Style::ApplyGameStyle(m_uiScaleFactor);
+  // Fresh ImGui context: let Update() apply the resolution-based scale again, even if it did so for a previous context.
+  m_lastAppliedScale = -1.0f;
+  m_lastLoggedDisplaySize = ImVec2(0.0f, 0.0f);
 
   auto logger = SPF::Logging::LoggerFactory::GetInstance().GetLogger("UIManager");
   logger->Info("Loading and preparing embedded fonts...");
@@ -1109,7 +1154,7 @@ void UIManager::OnReleaseNotesReceived(const System::ChangelogData& data) {
   }
 
   if (welcomeWindow) {
-    welcomeWindow->SetUpdateContent(data.title, data.markdown);
+    welcomeWindow->SetUpdateContent(data.markdown);
     welcomeWindow->SetVisibility(true);
   }
 }

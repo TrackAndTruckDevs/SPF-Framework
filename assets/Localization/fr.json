@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "BIENVENUE DANS LE MONDE DE SPF FRAMEWORK !",
     "intro_title": "Bonjour ! Merci d'avoir choisi notre framework.",
-    "intro_text": "Nous avons créé **SPF Framework** pour rendre votre jeu dans **ATS** et **ETS2** encore plus intéressant, et la gestion des plugins aussi simple que possible.",
+    "intro_text": "Nous avons créé **SPF Framework** pour aller encore plus loin dans **Euro Truck Simulator 2** et **American Truck Simulator**, et rendre la gestion des plugins aussi simple que possible.",
     "section1": {
-      "title": "Comment ouvrir le menu du framework ?",
-      "text": "Appuyez simplement sur la touche <#FFFFFF>{} **SUPPR**</> de votre clavier. C'est votre panneau de contrôle principal."
+      "title": "Ouvrir le menu",
+      "text": "Appuyez sur cette touche à tout moment pour ouvrir le panneau de contrôle de SPF."
     },
     "section2": {
       "title": "Installation de plugins compatibles SPF",
-      "text": "Placez simplement le dossier du plugin avec la DLL dans ` <#FFFFFF>{}</> `. Activez-les ensuite dans la section <#FFFFFF>**Gestionnaire de plugins**</>."
+      "text": "Placez le dossier du plugin avec la DLL dans le dossier ci-dessous, puis activez-le dans la section <#FFFFFF>**Gestionnaire de plugins**</>."
     },
     "section3": {
       "title": "Paramètres",
@@ -1585,14 +1585,22 @@
     },
     "section4": {
       "title": "Pour les développeurs",
-      "text": "Si vous êtes un développeur — consultez notre <#00b3ff>{} [GitHub]({})</>, vous y trouverez la documentation et des exemples d'utilisation de l'API."
+      "text": "Envie de créer votre propre plugin ? Rendez-vous sur notre <#00b3ff>{} [GitHub]({})</> pour la documentation complète et des exemples concrets d'utilisation de l'API pour bien démarrer."
     },
     "section5": {
       "title": "Restez avec nous",
-      "text": "Vous trouverez nos contacts et les liens de la communauté dans la section <#FFFFFF>**À propos de nous**</>."
+      "text": "Une question, une idée ou un bug à signaler ? Vous trouverez nos contacts et les liens de la communauté dans la section <#FFFFFF>**À propos de nous**</>. Au plaisir de vous lire !"
     },
     "footer": "*Développé avec <#ff0000>{}</> par l'équipe **Track & Truck Devs**. Soutenez-nous sur <#00b3ff>{} [Patreon]({})</> pour aider le projet à grandir !*",
-    "button_go": "C'EST PARTI !"
+    "button_go": "C'EST PARTI !",
+    "menu_key": "SUPPR",
+    "open_folder": "Ouvrir",
+    "update": {
+      "title": "SPF FRAMEWORK EST À JOUR !",
+      "text": "Merci de rester avec nous ! Découvrez ce qui a changé depuis votre dernière session.",
+      "notes_title": "Quoi de neuf ?",
+      "button": "CONTINUER"
+    }
   },
   "notification_popup": {
     "title": "Notifications"

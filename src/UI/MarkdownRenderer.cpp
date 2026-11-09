@@ -59,6 +59,10 @@ int MarkdownRenderer::OnText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size
   return 0;
 }
 
+void MarkdownRenderer::PushScaledFont(ImFont* font) const {
+  ImGui::PushFont(font, font ? font->LegacySize * m_fontScale : 0.0f);
+}
+
 ImFont* MarkdownRenderer::GetFontForCurrentStyle() const {
   auto& ui = UIManager::GetInstance();
   if (m_style.hLevel == 1) return ui.GetFont("h1");
@@ -226,7 +230,7 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
         } else {
           Typography::Text(TextStyle::Medium().Color(Colors::GRAY), "%s", ICON_FA_CARET_RIGHT);
         }
-        ImGui::SameLine(0, 5.0f);
+        ImGui::SameLine(0, Scaled(5.0f));
         ImGui::BeginGroup();
         m_isAtStartOfLine = true;
       } else {
@@ -244,9 +248,9 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
         m_currentCodeBlockText.clear();
 
         ImFont* mono = UIManager::GetInstance().GetFont("monospace");
-        if (mono) ImGui::PushFont(mono);
+        if (mono) PushScaledFont(mono);
         ImGui::PushStyleColor(ImGuiCol_ChildBg, UI::Colors::CODE_BG);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Scaled(ImVec2(10, 10)));
 
         std::string child_id = "##CodeBlock" + std::to_string(m_codeBlockCounter++);
         ImGui::BeginChild(child_id.c_str(), ImVec2(-FLT_MIN, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
@@ -267,7 +271,7 @@ void MarkdownRenderer::HandleBlock(MD_BLOCKTYPE type, void* detail, bool enter) 
         ImGui::SetCursorPos(ImVec2(ImGui::GetStyle().WindowPadding.x, ImGui::GetStyle().WindowPadding.y));
 
         // Button font is already monospace here because we pop it only at the end of this block
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 1));  // Very small padding to make it compact
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, Scaled(ImVec2(4, 1)));  // Very small padding to make it compact
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 2.0f);
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 0.5f));
 
@@ -449,7 +453,7 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
     return;
   }
 
-  ImGui::PushFont(GetFontForCurrentStyle());
+  PushScaledFont(GetFontForCurrentStyle());
 
   bool colorPushed = false;
 
@@ -506,6 +510,7 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
     while (p < next_tag) {
       const char* atom_start = p;
       bool isNewline = false;
+      bool isSpace = false;
 
       if (*p == '\n' || *p == '\r') {
         isNewline = true;
@@ -514,6 +519,7 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
         else
           p++;
       } else if (*p == ' ' || *p == '\t') {
+        isSpace = true;
         while (p < next_tag && (*p == ' ' || *p == '\t')) p++;
       } else {
         // We consume all non-whitespace characters until next_tag or whitespace
@@ -533,6 +539,17 @@ void MarkdownRenderer::HandleText(MD_TEXTTYPE type, const char* text, MD_SIZE si
         float atom_width = ImGui::CalcTextSize(atom_start, p).x;
         float available = ImGui::GetContentRegionAvail().x;
         bool isCodeBlock = m_style.isCode && ImGui::GetCurrentWindow()->DC.TextWrapPos < 0.0f;
+
+        // Wrapped lines must not start with a space, otherwise they are shifted right compared to the line above.
+        // Happens when a space lands on the wrap point, e.g. the one following a bold or coloured segment.
+        if (isSpace && !isCodeBlock) {
+          if (m_isAtStartOfLine) continue;
+          if (atom_width > available) {
+            ImGui::NewLine();
+            m_isAtStartOfLine = true;
+            continue;
+          }
+        }
 
         if (!m_isAtStartOfLine && atom_width > available && !isCodeBlock) {
           ImGui::NewLine();

@@ -619,7 +619,7 @@ void ToolsWindow::RenderMailSection() {
     comboPreview = m_selectedMailText.empty() ? m_cachedMailGameSelectPrompt.c_str()
                                               : m_selectedMailText.c_str();
   }
-  ImGui::SetNextItemWidth(kMailFieldW);
+  ImGui::SetNextItemWidth(Scaled(kMailFieldW));
   const bool comboOpen = ImGui::BeginCombo("##mail_mode", comboPreview);
   if (comboOpen && !m_mailComboWasOpen) {
     // Shipped mail_text units are static per locale - rebuild the list only
@@ -672,8 +672,8 @@ void ToolsWindow::RenderMailSection() {
     ImGui::Spacing();
 
     ImGui::TextUnformatted(m_cachedMailOwner.c_str());
-    ImGui::SameLine(kMailLabelCol);
-    ImGui::SetNextItemWidth(kMailFieldW);
+    ImGui::SameLine(Scaled(kMailLabelCol));
+    ImGui::SetNextItemWidth(Scaled(kMailFieldW));
     ImGui::InputText("##mail_custom_owner", m_customMailOwnerBuf, sizeof(m_customMailOwnerBuf));
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
       ImGui::SetTooltip("%s", m_cachedMailOwnerTooltip.c_str());
@@ -681,8 +681,8 @@ void ToolsWindow::RenderMailSection() {
 
     ImGui::Spacing();
     ImGui::TextUnformatted(m_cachedMailTag.c_str());
-    ImGui::SameLine(kMailLabelCol);
-    ImGui::SetNextItemWidth(kMailFieldW);
+    ImGui::SameLine(Scaled(kMailLabelCol));
+    ImGui::SetNextItemWidth(Scaled(kMailFieldW));
     ImGui::InputText("##mail_custom_tag", m_customMailTagBuf, sizeof(m_customMailTagBuf));
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
       ImGui::SetTooltip("%s", m_cachedMailTagTooltip.c_str());
@@ -690,19 +690,19 @@ void ToolsWindow::RenderMailSection() {
 
     ImGui::Spacing();
     ImGui::TextUnformatted(m_cachedMailFrom.c_str());
-    ImGui::SameLine(kMailLabelCol);
-    ImGui::SetNextItemWidth(kMailFieldW);
+    ImGui::SameLine(Scaled(kMailLabelCol));
+    ImGui::SetNextItemWidth(Scaled(kMailFieldW));
     ImGui::InputText("##mail_custom_from", m_customMailFromBuf, sizeof(m_customMailFromBuf));
 
     ImGui::Spacing();
     ImGui::TextUnformatted(m_cachedMailSubject.c_str());
-    ImGui::SameLine(kMailLabelCol);
-    ImGui::SetNextItemWidth(kMailFieldW);
+    ImGui::SameLine(Scaled(kMailLabelCol));
+    ImGui::SetNextItemWidth(Scaled(kMailFieldW));
     ImGui::InputText("##mail_custom_subject", m_customMailSubjectBuf, sizeof(m_customMailSubjectBuf));
 
     ImGui::Spacing();
     ImGui::TextUnformatted(m_cachedMailBody.c_str());
-    ImGui::SetNextItemWidth(kMailFieldW);
+    ImGui::SetNextItemWidth(Scaled(kMailFieldW));
     ImGui::InputTextMultiline("##mail_custom_body", m_customMailBodyBuf, sizeof(m_customMailBodyBuf),
                               ImVec2(0.0f, ImGui::GetFrameHeight() * 5));
 
@@ -710,7 +710,7 @@ void ToolsWindow::RenderMailSection() {
     const bool canSendCustom = m_customMailOwnerBuf[0] != '\0' && m_customMailTagBuf[0] != '\0';
     ImGui::PushID("framework_mail_custom_send");
     ImGui::BeginDisabled(!canSendCustom);
-    if (Button(m_cachedMailCreateButton.c_str(), TextStyle::DefaultButton(), ImVec2(kMailFieldW, 0))) {
+    if (Button(m_cachedMailCreateButton.c_str(), TextStyle::DefaultButton(), ImVec2(Scaled(kMailFieldW), 0))) {
       mail.SendCustomMail(m_customMailFromBuf, m_customMailSubjectBuf, m_customMailBodyBuf,
                           m_customMailOwnerBuf, m_customMailTagBuf);
     }
@@ -738,7 +738,7 @@ void ToolsWindow::RenderMailSection() {
       // Raw template with $PLACEHOLDER$ tokens - exactly what the receiver's
       // Compose will substitute before showing the letter.
       ImGui::TextUnformatted(m_cachedMailGameTemplate.c_str());
-      ImGui::BeginChild("##mail_template", ImVec2(kMailFieldW, ImGui::GetFrameHeight() * 4), true);
+      ImGui::BeginChild("##mail_template", ImVec2(Scaled(kMailFieldW), ImGui::GetFrameHeight() * 4), true);
       ImGui::TextColored(Colors::VERY_LIGHT_BLUE, "%s: %s", m_cachedMailFrom.c_str(),
                          entry->from.c_str());
       ImGui::TextColored(Colors::VERY_LIGHT_BLUE, "%s: %s", m_cachedMailSubject.c_str(),
@@ -754,8 +754,8 @@ void ToolsWindow::RenderMailSection() {
         for (size_t i = 0; i < m_gameParamKeys.size(); ++i) {
           ImGui::PushID(static_cast<int>(i));
           ImGui::Text("$%s$", m_gameParamKeys[i].c_str());
-          ImGui::SameLine(kMailLabelCol);
-          ImGui::SetNextItemWidth(kMailParamW);
+          ImGui::SameLine(Scaled(kMailLabelCol));
+          ImGui::SetNextItemWidth(Scaled(kMailParamW));
           auto it = m_gameParamBufs.find(m_gameParamKeys[i]);
           if (it != m_gameParamBufs.end()) {
             ImGui::InputText("##mail_param", it->second.data(), it->second.size());
@@ -766,7 +766,7 @@ void ToolsWindow::RenderMailSection() {
       }
 
       ImGui::PushID("framework_mail_game_send");
-      if (Button(m_cachedMailSendButton.c_str(), TextStyle::DefaultButton(), ImVec2(kMailParamW, 0))) {
+      if (Button(m_cachedMailSendButton.c_str(), TextStyle::DefaultButton(), ImVec2(Scaled(kMailParamW), 0))) {
         Data::GameData::MailService::Params params;
         for (const std::string& key : m_gameParamKeys) {
           auto it = m_gameParamBufs.find(key);
@@ -821,11 +821,11 @@ void ToolsWindow::RenderMailList(bool pending) {
                         ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
                         ImVec2(0, ImGui::GetFrameHeight() * 6))) {
     ImGui::TableSetupScrollFreeze(0, 1);
-    ImGui::TableSetupColumn(m_cachedMailColId.c_str(), ImGuiTableColumnFlags_WidthFixed, 40.0f);
+    ImGui::TableSetupColumn(m_cachedMailColId.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(40.0f));
     ImGui::TableSetupColumn(m_cachedMailColName.c_str(), ImGuiTableColumnFlags_WidthStretch);
     ImGui::TableSetupColumn(m_cachedMailSubject.c_str(), ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn(m_cachedMailColRead.c_str(), ImGuiTableColumnFlags_WidthFixed, 70.0f);
-    ImGui::TableSetupColumn("##actions", ImGuiTableColumnFlags_WidthFixed, 175.0f);
+    ImGui::TableSetupColumn(m_cachedMailColRead.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(70.0f));
+    ImGui::TableSetupColumn("##actions", ImGuiTableColumnFlags_WidthFixed, Scaled(175.0f));
     ImGui::TableHeadersRow();
 
     ImGuiListClipper clipper;

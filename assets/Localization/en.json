@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "WELCOME TO THE WORLD OF SPF FRAMEWORK!",
     "intro_title": "Hello! Thank you for choosing our framework.",
-    "intro_text": "We created **SPF Framework** to make your game in **ATS** and **ETS2** even more interesting, and plugin management as simple as possible.",
+    "intro_text": "We built **SPF Framework** to take your **Euro Truck Simulator 2** and **American Truck Simulator** experience further, and to make plugin management as easy as it gets.",
     "section1": {
-      "title": "How to open the framework menu?",
-      "text": "Just press the <#FFFFFF>{} **DELETE**</> key on your keyboard. This is your main control panel."
+      "title": "Opening the menu",
+      "text": "Press this key anytime to open the SPF control panel."
     },
     "section2": {
-      "title": "Installing spf-compatible plugins",
-      "text": "Simply place the plugin folder with the DLL in ` <#FFFFFF>{}</> ` Then activate them in the <#FFFFFF>**Plugin Manager**</> section."
+      "title": "Installing SPF-compatible plugins",
+      "text": "Place the plugin folder with the DLL in the folder below, then activate it in the <#FFFFFF>**Plugin Manager**</> section."
     },
     "section3": {
       "title": "Settings",
@@ -1585,14 +1585,22 @@
     },
     "section4": {
       "title": "For Developers",
-      "text": "If you are a developer — check out our <#00b3ff>{} [GitHub]({})</>, where you will find documentation and live examples of API usage for writing your own plugin."
+      "text": "Want to build your own plugin? Head over to our <#00b3ff>{} [GitHub]({})</> for the full documentation and working API examples to get you started."
     },
     "section5": {
       "title": "Stay with us",
-      "text": "You can find our contacts and community links in the <#FFFFFF>**About Us**</> section."
+      "text": "Have a question, an idea or a bug to report? You'll find our contacts and community links in the <#FFFFFF>**About Us**</> section. We'd love to hear from you!"
     },
     "footer": "*Developed with <#ff0000>{}</> by the **Track & Truck Devs** team. Support us on <#00b3ff>{} [Patreon]({})</> to help the project grow!*",
-    "button_go": "LET'S GO!"
+    "button_go": "LET'S GO!",
+    "menu_key": "DELETE",
+    "open_folder": "Open",
+    "update": {
+      "title": "SPF FRAMEWORK IS UP TO DATE!",
+      "text": "Thanks for sticking with us! See what has changed since your last session.",
+      "notes_title": "What's new?",
+      "button": "CONTINUE"
+    }
   },
   "notification_popup": {
     "title": "Notifications"

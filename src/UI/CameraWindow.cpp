@@ -494,7 +494,7 @@ void CameraWindow::RenderContent() {
       float containerHeight = ImGui::GetFrameHeight() + 8.0f;
       float startX = (availWidth - containerWidth) * 0.5f;
 
-      ImGui::Dummy(ImVec2(0, 2.0f));  // Top margin
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));  // Top margin
       ImGui::SetCursorPosX(startX);
       drawContainerBg(containerWidth, containerHeight);
 
@@ -532,7 +532,7 @@ void CameraWindow::RenderContent() {
       Typography::Text(TextStyle::Regular(), "%s", label.c_str());
 
       ImGui::EndGroup();
-      ImGui::Dummy(ImVec2(0, 2.0f));  // Bottom margin
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));  // Bottom margin
       ImGui::PopID();
     } else {
       Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), m_locDataNotFound.c_str());
@@ -552,7 +552,7 @@ void CameraWindow::RenderContent() {
       float containerHeight = (rowHeight * 3.0f) + 12.0f;
       float startX = (availWidth - containerWidth) * 0.5f;
 
-      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
       ImGui::SetCursorPosX(startX);
       drawContainerBg(containerWidth, containerHeight);
 
@@ -597,7 +597,7 @@ void CameraWindow::RenderContent() {
       changed |= renderComponent(label_z, &z, default_vals ? std::optional<float>(default_vals->z) : std::nullopt, 2);
 
       ImGui::EndGroup();
-      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
 
       if (changed) setter(x, y, z);
       ImGui::PopID();
@@ -625,7 +625,7 @@ void CameraWindow::RenderContent() {
         float containerHeight = (rowHeight * 2.0f) + 12.0f;
         float startX = (availWidth - containerWidth) * 0.5f;
 
-        ImGui::Dummy(ImVec2(0, 2.0f));
+        ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
         ImGui::SetCursorPosX(startX);
         drawContainerBg(containerWidth, containerHeight);
 
@@ -675,7 +675,7 @@ void CameraWindow::RenderContent() {
         changed |= renderComponent(label_2, &v2, default_vals ? std::optional<float>(default_vals->y) : std::nullopt, 1);
 
         ImGui::EndGroup();
-        ImGui::Dummy(ImVec2(0, 2.0f));
+        ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
 
         if (changed) {
           if (is_rotation) {
@@ -699,7 +699,7 @@ void CameraWindow::RenderContent() {
       float containerHeight = ImGui::GetFrameHeight() + 8.0f;
       float startX = (availWidth - containerWidth) * 0.5f;
 
-      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
       ImGui::SetCursorPosX(startX);
       drawContainerBg(containerWidth, containerHeight);
 
@@ -714,7 +714,7 @@ void CameraWindow::RenderContent() {
       if (ImGui::Checkbox(label.c_str(), &current_state)) setter(current_state);
 
       ImGui::EndGroup();
-      ImGui::Dummy(ImVec2(0, 2.0f));
+      ImGui::Dummy(Scaled(ImVec2(0, 2.0f)));
     } else {
       Typography::Text(TextStyle::Regular().Disabled().Align(TextAlign::Center), "%s: %s", label.c_str(), m_locDataNotFound.c_str());
     }
@@ -770,55 +770,55 @@ void CameraWindow::RenderContent() {
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::InteriorCamera;
   }
-  // ImGui::SameLine(0.0f, 5.0f); //for Photo Camera
+  // ImGui::SameLine(0.0f, Scaled(5.0f)); //for Photo Camera
   // if (Button(m_locPhoto.c_str())) {
   //   m_gameCameraService.SwitchTo(GameCameraType::PhotoCamera);
   //   m_needsTabSwitch = true;
   //   m_activeTabType = GameCameraType::PhotoCamera;
   // }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locBehind.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BehindCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BehindCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locTop.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TopCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TopCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locCabin.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::CabinCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::CabinCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locWindow.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WindowCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WindowCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locBumper.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::BumperCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::BumperCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locWheel.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::WheelCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::WheelCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locTV.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::TVCamera);
     m_needsTabSwitch = true;
     m_activeTabType = GameCameraType::TVCamera;
   }
-  ImGui::SameLine(0.0f, 5.0f);
+  ImGui::SameLine(0.0f, Scaled(5.0f));
   if (Button(m_locDeveloperFreeCamera.c_str())) {
     m_gameCameraService.SwitchTo(GameCameraType::DeveloperFreeCamera);
     m_needsTabSwitch = true;
@@ -2511,7 +2511,7 @@ void CameraWindow::RenderContent() {
           ImGui::TextDisabled("%s", m_locEnableDebugCameraNotFound.c_str());
         }
 
-        ImGui::SameLine(0, 20);
+        ImGui::SameLine(0, Scaled(20));
 
         bool isGameUiVisible;
         if (debugCam->GetGameUiVisible(&isGameUiVisible)) {
@@ -2522,7 +2522,7 @@ void CameraWindow::RenderContent() {
           ImGui::TextDisabled("%s", m_locCleanUINotFound.c_str());
         }
 
-        ImGui::SameLine(0, 20);
+        ImGui::SameLine(0, Scaled(20));
 
         bool isHudVisible;
         if (debugCam->GetHudVisible(&isHudVisible)) {

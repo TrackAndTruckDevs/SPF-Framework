@@ -98,7 +98,7 @@ void EconomyWindow::RenderMoneyTab() {
   ImGui::Spacing();
 
   // --- Money operations ---
-  ImGui::SetNextItemWidth(220.0f);
+  ImGui::SetNextItemWidth(Scaled(220.0f));
   ImGui::InputScalar(m_locAmountLabel.c_str(), ImGuiDataType_S64, &m_amount, nullptr, nullptr, "%lld", ImGuiInputTextFlags_EnterReturnsTrue);
 
   if (ImGui::Button(m_locAdd.c_str())) {
@@ -159,7 +159,7 @@ void EconomyWindow::RenderLoansTab() {
     m_creditLimit = m_economyService.GetLoanLimit();
     m_creditLimitSeeded = true;
   }
-  ImGui::SetNextItemWidth(260.0f);
+  ImGui::SetNextItemWidth(Scaled(260.0f));
   ImGui::InputScalar(m_locLoansLimitLabel.c_str(), ImGuiDataType_S64, &m_creditLimit, nullptr, nullptr, "%lld");
   ImGui::SameLine();
   if (ImGui::Button(m_locLoansSetLimit.c_str())) {
@@ -236,15 +236,15 @@ void EconomyWindow::RenderLoansTab() {
       ImGui::Separator();
       ImGui::Spacing();
 
-      ImGui::SetNextItemWidth(260.0f);
+      ImGui::SetNextItemWidth(Scaled(260.0f));
       ImGui::InputScalar(m_locLoansColRemaining.c_str(), ImGuiDataType_S64, &m_editRemaining, nullptr, nullptr, "%lld");
-      ImGui::SetNextItemWidth(260.0f);
+      ImGui::SetNextItemWidth(Scaled(260.0f));
       ImGui::InputScalar(m_locLoansColAmount.c_str(), ImGuiDataType_S64, &m_editAmount, nullptr, nullptr, "%lld");
-      ImGui::SetNextItemWidth(260.0f);
+      ImGui::SetNextItemWidth(Scaled(260.0f));
       ImGui::InputScalar(m_locLoansColStartDay.c_str(), ImGuiDataType_U32, &m_editStartDay);
-      ImGui::SetNextItemWidth(260.0f);
+      ImGui::SetNextItemWidth(Scaled(260.0f));
       ImGui::InputScalar(m_locLoansColRate.c_str(), ImGuiDataType_Float, &m_editRate, nullptr, nullptr, "%.2f%%");
-      ImGui::SetNextItemWidth(260.0f);
+      ImGui::SetNextItemWidth(Scaled(260.0f));
       ImGui::InputScalar(m_locLoansColWeeks.c_str(), ImGuiDataType_U32, &m_editWeeks);
 
       if (ImGui::Button(m_locLoansSave.c_str())) {
@@ -279,7 +279,7 @@ void EconomyWindow::RenderLoansTab() {
     ImGui::TableSetupColumn(m_locLoansColAmount.c_str());
     ImGui::TableSetupColumn(m_locLoansColRate.c_str());
     ImGui::TableSetupColumn(m_locLoansColWeeks.c_str());
-    ImGui::TableSetupColumn(m_locLoansColAction.c_str(), ImGuiTableColumnFlags_WidthFixed, 70.0f);
+    ImGui::TableSetupColumn(m_locLoansColAction.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(70.0f));
     ImGui::TableHeadersRow();
 
     for (int32_t i = 0; i < offerCount; ++i) {
@@ -311,13 +311,13 @@ void EconomyWindow::RenderLoansTab() {
   ImGui::Separator();
   ImGui::Spacing();
 
-  ImGui::SetNextItemWidth(180.0f);
+  ImGui::SetNextItemWidth(Scaled(180.0f));
   ImGui::InputScalar((m_locLoansColAmount + "##new_amount").c_str(), ImGuiDataType_U64, &m_newLoanAmount);
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(110.0f);
+  ImGui::SetNextItemWidth(Scaled(110.0f));
   ImGui::InputFloat((m_locLoansColRate + "##new_rate").c_str(), &m_newLoanRate, 0.0f, 0.0f, "%.2f%%");
   ImGui::SameLine();
-  ImGui::SetNextItemWidth(90.0f);
+  ImGui::SetNextItemWidth(Scaled(90.0f));
   ImGui::InputScalar((m_locLoansColWeeks + "##new_weeks").c_str(), ImGuiDataType_U32, &m_newLoanWeeks);
   ImGui::SameLine();
   if (ImGui::Button((m_locLoansTake + "##new_loan").c_str())) {

@@ -22,6 +22,11 @@ class MarkdownRenderer {
    */
   void Render(const std::string& markdownText);
 
+  /**
+   * @brief Scales every font used by the renderer (1.0 = native font sizes).
+   */
+  void SetFontScale(float scale) { m_fontScale = scale > 0.0f ? scale : 1.0f; }
+
  private:
   // --- Rendering Context ---
   enum class AlertType {
@@ -66,6 +71,7 @@ class MarkdownRenderer {
 
   // --- Helpers ---
   ImFont* GetFontForCurrentStyle() const;
+  void PushScaledFont(ImFont* font) const;
   void ApplyStyleColor(bool push);
   void EnsureNewLine();
   void SetHref(const MD_ATTRIBUTE& attr);
@@ -81,6 +87,7 @@ class MarkdownRenderer {
   bool m_isInsideCodeBlock = false;        // Flag to distinguish block vs inline code
   bool m_isWaitingForAlertMarker = false;  // Flag to detect [!NOTE] etc.
   bool m_skipNextNewline = false;
+  float m_fontScale = 1.0f;
 };
 
 }  // namespace SPF::UI

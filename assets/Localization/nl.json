@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "WELKOM IN DE WERELD VAN SPF FRAMEWORK!",
     "intro_title": "Hallo! Bedankt voor het kiezen van ons framework.",
-    "intro_text": "We hebben **SPF Framework** gemaakt om je spel in **ATS** en **ETS2** nog interessanter te maken, en pluginbeheer zo eenvoudig mogelijk.",
+    "intro_text": "We hebben **SPF Framework** gebouwd om je ervaring in **Euro Truck Simulator 2** en **American Truck Simulator** naar een hoger niveau te tillen, en om het beheren van plugins zo eenvoudig mogelijk te maken.",
     "section1": {
-      "title": "Hoe open je het framework-menu?",
-      "text": "Druk gewoon op de <#FFFFFF>{} **DEL**</>-toets op je toetsenbord. Dit is je hoofdbedieningspaneel."
+      "title": "Het menu openen",
+      "text": "Druk op elk moment op deze toets om het SPF-configuratiescherm te openen."
     },
     "section2": {
       "title": "SPF-compatibele plugins installeren",
-      "text": "Plaats de plugin-map met de DLL gewoon in ` <#FFFFFF>{}</> `. Activeer ze vervolgens in de sectie <#FFFFFF>**Pluginbeheer**</>."
+      "text": "Plaats de plugin-map met de DLL in de onderstaande map en activeer hem daarna in de sectie <#FFFFFF>**Pluginbeheer**</>."
     },
     "section3": {
       "title": "Instellingen",
@@ -1585,14 +1585,22 @@
     },
     "section4": {
       "title": "Voor ontwikkelaars",
-      "text": "Als je een ontwikkelaar bent — bekijk dan onze <#00b3ff>{} [GitHub]({})</>, daar vind je documentatie en API-voorbeelden."
+      "text": "Wil je je eigen plugin bouwen? Ga naar onze <#00b3ff>{} [GitHub]({})</> voor de volledige documentatie en werkende API-voorbeelden om aan de slag te gaan."
     },
     "section5": {
       "title": "Blijf bij ons",
-      "text": "Je vindt onze contactgegevens en community-links in de sectie <#FFFFFF>**Over ons**</>."
+      "text": "Een vraag, een idee of een bug gevonden? Je vindt onze contactgegevens en community-links in de sectie <#FFFFFF>**Over ons**</>. We horen graag van je!"
     },
     "footer": "*Ontwikkeld met <#ff0000>{}</> door het **Track & Truck Devs** team. Steun ons op <#00b3ff>{} [Patreon]({})</> om het project te helpen groeien!*",
-    "button_go": "LATEN WE GAAN!"
+    "button_go": "LATEN WE GAAN!",
+    "menu_key": "DEL",
+    "open_folder": "Openen",
+    "update": {
+      "title": "SPF FRAMEWORK IS BIJGEWERKT!",
+      "text": "Bedankt dat je bij ons blijft! Bekijk wat er is veranderd sinds je vorige sessie.",
+      "notes_title": "Wat is er nieuw?",
+      "button": "DOORGAAN"
+    }
   },
   "notification_popup": {
     "title": "Meldingen"

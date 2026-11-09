@@ -311,7 +311,7 @@ void BindingDetailsPopup::Render() {
     auto& inputMgr = Input::InputManager::GetInstance();
     if (liveInput) {
       // Create physical space for the floating labels above the canvas
-      ImGui::Dummy(ImVec2(0, 40.0f));
+      ImGui::Dummy(Scaled(ImVec2(0, 40.0f)));
     }
 
     ImVec2 canvas_p = ImGui::GetCursorScreenPos();
@@ -730,7 +730,7 @@ void BindingDetailsPopup::Render() {
     ImGui::PopItemFlag();
 
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(150);
+    ImGui::SetNextItemWidth(Scaled(150));
     // Use the return value of SliderInt to detect changes made by dragging.
     if (ImGui::SliderInt("##pressthreshold", &m_currentPressThreshold, 50, 5000, "%d ms")) {
       valueChanged = true;

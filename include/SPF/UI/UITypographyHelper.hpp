@@ -26,6 +26,7 @@ struct TextStyle {
   bool strikethrough = false;
   bool underline = false;
   bool isSeparator = false;
+  std::optional<float> fontSize;  // Font size in pixels (unscaled). Unset = the font's native size.
 
   // --- Factory methods for common styles ---
   static TextStyle Regular();
@@ -48,6 +49,16 @@ struct TextStyle {
    */
   TextStyle& Font(const std::string& key) {
     fontKey = key;
+    return *this;
+  }
+
+  /**
+   * @brief Renders the text at a given pixel size (fonts are scalable since ImGui 1.92).
+   * @details Markdown scales every font it uses (headings, bold, code...) by size / regular font size.
+   * @param px Unscaled size in pixels.
+   */
+  TextStyle& Size(float px) {
+    fontSize = px;
     return *this;
   }
 

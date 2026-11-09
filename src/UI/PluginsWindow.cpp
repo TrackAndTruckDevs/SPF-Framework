@@ -257,7 +257,7 @@ void PluginsWindow::RenderContent() {
       }
 
       if (ImGui::BeginPopupModal(infoTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
-        ImGui::BeginChild("info_scroll_region", ImVec2(425, 90), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("info_scroll_region", Scaled(ImVec2(425, 90)), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locInfoPopupAuthor.c_str());
         ImGui::SameLine();
@@ -345,7 +345,7 @@ void PluginsWindow::RenderContent() {
       }
 
       if (ImGui::BeginPopupModal(descriptionTitle.c_str(), NULL, ImGuiWindowFlags_NoResize)) {
-        ImGui::BeginChild("description_scroll_region", ImVec2(500, 250), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("description_scroll_region", Scaled(ImVec2(500, 250)), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         std::string description;
         if (componentInfo.descriptionLiteral.has_value()) {

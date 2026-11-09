@@ -460,7 +460,7 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
   // --- Volume ---
   float volume = 0, finalVolume = 0;
   m_soundService.GetEventVolume(m_activeInstance, volume, finalVolume);
-  ImGui::SetNextItemWidth(200);
+  ImGui::SetNextItemWidth(Scaled(200));
   if (ImGui::SliderFloat(m_locVolume.c_str(), &volume, 0.0f, 10.0f, "%.2f")) {
     m_soundService.SetEventVolume(m_activeInstance, volume);
   }
@@ -468,7 +468,7 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
   // --- Pitch ---
   float pitch = 0, finalPitch = 0;
   m_soundService.GetEventPitch(m_activeInstance, pitch, finalPitch);
-  ImGui::SetNextItemWidth(200);
+  ImGui::SetNextItemWidth(Scaled(200));
   if (ImGui::SliderFloat(m_locPitch.c_str(), &pitch, -8.0f, 8.0f, "%.2f")) {
     m_soundService.SetEventPitch(m_activeInstance, pitch);
   }
@@ -509,12 +509,12 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
 
     if (ImGui::TreeNode("3D Attributes")) {
       if (m_has3DCache) {
-        const float colW = 100.0f;
+        const float colW = Scaled(100.0f);
         if (ImGui::BeginTable("##3dtable", 4, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX)) {
-          ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-          ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
-          ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
-          ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
+          ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Scaled(120.0f));
+          ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
+          ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
+          ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
           ImGui::TableHeadersRow();
 
           auto dragRow = [&](int row, const char* label, float* v) {
@@ -591,7 +591,7 @@ void SoundWindow::RenderInstanceControls(const std::string& eventPath, bool is3D
             for (const auto& p : ev.parameters) {
               float val = 0, fval = 0;
               m_soundService.GetEventParameterByName(m_activeInstance, p.name.c_str(), val, fval);
-              ImGui::SetNextItemWidth(200);
+              ImGui::SetNextItemWidth(Scaled(200));
               if (ImGui::SliderFloat(p.name.c_str(), &val, p.minimum, p.maximum, "%.2f")) {
                 if (isGameInstance) {
                   Fmod::FmodStudioHook::GetInstance().OverrideParameter(eventPath, p.name, val);
@@ -629,7 +629,7 @@ void SoundWindow::RenderTabEvents() {
   ImGui::Spacing();
 
   // --- Search filter ---
-  ImGui::SetNextItemWidth(300);
+  ImGui::SetNextItemWidth(Scaled(300));
   if (ImGui::InputTextWithHint("##search", m_locSearchFilter.c_str(), m_searchFilter, sizeof(m_searchFilter))) {
     if (std::strcmp(m_searchFilter, m_lastSearchFilter) != 0) {
       std::strncpy(m_lastSearchFilter, m_searchFilter, sizeof(m_lastSearchFilter));
@@ -967,10 +967,10 @@ void SoundWindow::RenderTabBuses() {
   if (ImGui::BeginTable("##busTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg, ImVec2(0, -ImGui::GetTextLineHeightWithSpacing()))) {
     ImGui::TableSetupScrollFreeze(0, 1);
     ImGui::TableSetupColumn(m_locBusPath.c_str(), ImGuiTableColumnFlags_WidthStretch, 0.5f);
-    ImGui::TableSetupColumn(m_locVolume.c_str(), ImGuiTableColumnFlags_WidthFixed, 140.0f);
-    ImGui::TableSetupColumn(m_locMute.c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);
-    ImGui::TableSetupColumn(m_locColFader.c_str(), ImGuiTableColumnFlags_WidthFixed, 140.0f);
-    ImGui::TableSetupColumn(m_locColBypass.c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);
+    ImGui::TableSetupColumn(m_locVolume.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(140.0f));
+    ImGui::TableSetupColumn(m_locMute.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(80.0f));
+    ImGui::TableSetupColumn(m_locColFader.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(140.0f));
+    ImGui::TableSetupColumn(m_locColBypass.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(80.0f));
     ImGui::TableHeadersRow();
 
     for (int si = 0; si < (int)m_busSortOrder.size(); ++si) {
@@ -1033,7 +1033,7 @@ void SoundWindow::RenderTabVCAs() {
     ImGui::Spacing();
 
     float vol = info.volume;
-    ImGui::SetNextItemWidth(300);
+    ImGui::SetNextItemWidth(Scaled(300));
     if (ImGui::SliderFloat(m_locVolume.c_str(), &vol, 0.0f, 10.0f, "%.2f")) {
       void* vcaHandle = m_soundService.GetVCAByPath(info.vcaPath.c_str());
       if (vcaHandle && m_soundService.SetVCAVolume(vcaHandle, vol)) {
@@ -1053,10 +1053,10 @@ void SoundWindow::RenderTabGlobalParams() {
   if (ImGui::BeginTable("##paramTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg, ImVec2(0, -ImGui::GetTextLineHeightWithSpacing()))) {
     ImGui::TableSetupScrollFreeze(0, 1);
     ImGui::TableSetupColumn(m_locColParameter.c_str(), ImGuiTableColumnFlags_WidthStretch, 0.4f);
-    ImGui::TableSetupColumn(m_locColType.c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);
-    ImGui::TableSetupColumn(m_locColRange.c_str(), ImGuiTableColumnFlags_WidthFixed, 140.0f);
-    ImGui::TableSetupColumn(m_locColDefault.c_str(), ImGuiTableColumnFlags_WidthFixed, 70.0f);
-    ImGui::TableSetupColumn(m_locColValue.c_str(), ImGuiTableColumnFlags_WidthFixed, 130.0f);
+    ImGui::TableSetupColumn(m_locColType.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(80.0f));
+    ImGui::TableSetupColumn(m_locColRange.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(140.0f));
+    ImGui::TableSetupColumn(m_locColDefault.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(70.0f));
+    ImGui::TableSetupColumn(m_locColValue.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(130.0f));
     ImGui::TableHeadersRow();
 
     for (size_t i = 0; i < m_globalParams.size(); ++i) {
@@ -1146,12 +1146,12 @@ void SoundWindow::RenderTabListener() {
       }
 
       if (m_hasListenerCache) {
-        const float colW = 100.0f;
+        const float colW = Scaled(100.0f);
         if (ImGui::BeginTable("##listenertable", 4, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoHostExtendX)) {
-          ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 120.0f);
-          ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
-          ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
-          ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, colW + 20.0f);
+          ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Scaled(120.0f));
+          ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
+          ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
+          ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, colW + Scaled(20.0f));
           ImGui::TableHeadersRow();
 
           auto dragRow = [&](int row, const char* lbl, float* v) {
@@ -1255,11 +1255,11 @@ void SoundWindow::RenderTabSoundRef() {
     } else if (ImGui::BeginTable("##ui_soundref", 6, ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY)) {
       ImGui::TableSetupScrollFreeze(0, 1);
       ImGui::TableSetupColumn(m_locSoundRefPath.c_str(), ImGuiTableColumnFlags_WidthStretch);
-      ImGui::TableSetupColumn(m_locSoundRefOrigin.c_str(), ImGuiTableColumnFlags_WidthFixed, 90.0f);
-      ImGui::TableSetupColumn(m_locSoundRefCategory.c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);
-      ImGui::TableSetupColumn(m_locSoundRefEnabled.c_str(), ImGuiTableColumnFlags_WidthFixed, 70.0f);
+      ImGui::TableSetupColumn(m_locSoundRefOrigin.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(90.0f));
+      ImGui::TableSetupColumn(m_locSoundRefCategory.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(80.0f));
+      ImGui::TableSetupColumn(m_locSoundRefEnabled.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(70.0f));
       ImGui::TableSetupColumn(m_locSoundRefSource.c_str(), ImGuiTableColumnFlags_WidthStretch);
-      ImGui::TableSetupColumn(m_locSoundRefEvent.c_str(), ImGuiTableColumnFlags_WidthFixed, 55.0f);
+      ImGui::TableSetupColumn(m_locSoundRefEvent.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(55.0f));
       ImGui::TableHeadersRow();
 
       for (const auto& entry : m_soundRefEntries) {

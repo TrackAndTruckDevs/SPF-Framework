@@ -1570,14 +1570,14 @@
   "welcome_window": {
     "title": "WITAJ W ŚWIECIE SPF FRAMEWORK!",
     "intro_title": "Cześć! Dziękujemy za wybranie naszego frameworka.",
-    "intro_text": "Stworzyliśmy **SPF Framework**, aby Twoja gra w **ATS** i **ETS2** była jeszcze ciekawsza, a zarządzanie wtyczkami tak proste, jak to tylko możliwe.",
+    "intro_text": "Stworzyliśmy **SPF Framework**, aby wynieść Twoje wrażenia z **Euro Truck Simulator 2** i **American Truck Simulator** na wyższy poziom, a zarządzanie wtyczkami uczynić tak proste, jak to tylko możliwe.",
     "section1": {
-      "title": "Jak otworzyć menu frameworka?",
-      "text": "Po prostu naciśnij klawisz <#FFFFFF>{} **DELETE**</> na klawiaturze. To Twój główny panel sterowania."
+      "title": "Otwieranie menu",
+      "text": "Naciśnij ten klawisz w dowolnym momencie, aby otworzyć panel sterowania SPF."
     },
     "section2": {
       "title": "Instalacja wtyczek kompatybilnych z spf",
-      "text": "Po prostu umieść folder wtyczki z plikiem DLL w ` <#FFFFFF>{}</> ` Następnie aktywuj je w sekcji <#FFFFFF>**Menedżer wtyczek**</>."
+      "text": "Umieść folder wtyczki z plikiem DLL w folderze poniżej, a następnie aktywuj ją w sekcji <#FFFFFF>**Menedżer wtyczek**</>."
     },
     "section3": {
       "title": "Ustawienia",
@@ -1585,14 +1585,22 @@
     },
     "section4": {
       "title": "Dla programistów",
-      "text": "Jeśli jesteś programistą — zajrzyj na nasz <#00b3ff>{} [GitHub]({})</>, gdzie znajdziesz dokumentację i przykłady użycia API."
+      "text": "Chcesz stworzyć własną wtyczkę? Zajrzyj na nasz <#00b3ff>{} [GitHub]({})</>, gdzie znajdziesz pełną dokumentację i działające przykłady API na dobry początek."
     },
     "section5": {
       "title": "Zostań z nami",
-      "text": "Nasze dane kontaktowe i linki do społeczności znajdziesz w sekcji <#FFFFFF>**O nas**</>."
+      "text": "Masz pytanie, pomysł lub błąd do zgłoszenia? Nasze dane kontaktowe i linki do społeczności znajdziesz w sekcji <#FFFFFF>**O nas**</>. Chętnie się z Tobą skontaktujemy!"
     },
     "footer": "*Opracowane z <#ff0000>{}</> przez zespół **Track & Truck Devs**. Wesprzyj nas na <#00b3ff>{} [Patreon]({})</>, aby pomóc projektowi rosnąć!*",
-    "button_go": "RUSZAJMY!"
+    "button_go": "RUSZAJMY!",
+    "menu_key": "DELETE",
+    "open_folder": "Otwórz",
+    "update": {
+      "title": "SPF FRAMEWORK JEST AKTUALNY!",
+      "text": "Dziękujemy, że jesteś z nami! Zobacz, co się zmieniło od Twojej ostatniej sesji.",
+      "notes_title": "Co nowego?",
+      "button": "DALEJ"
+    }
   },
   "notification_popup": {
     "title": "Powiadomienia"

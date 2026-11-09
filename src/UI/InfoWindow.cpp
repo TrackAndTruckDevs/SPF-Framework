@@ -175,7 +175,7 @@ void InfoWindow::RenderGameTab() {
         break;
       }
     }
-    ImGui::SetNextItemWidth(160.0f);
+    ImGui::SetNextItemWidth(Scaled(160.0f));
     if (ImGui::BeginCombo("##game_language", currentLang.c_str())) {
       for (int i = 0; i < (int)langList.size(); ++i) {
         if (ImGui::Selectable(langList[i].c_str(), i == currentIdx)) {
@@ -305,7 +305,7 @@ void InfoWindow::RenderVfsTab() {
   ImGui::TableSetupScrollFreeze(0, 1);
   ImGui::TableSetupColumn(m_locVfsColVpath.c_str(), ImGuiTableColumnFlags_WidthStretch, 30.0f);
   ImGui::TableSetupColumn(m_locVfsColPhysical.c_str(), ImGuiTableColumnFlags_WidthStretch, 55.0f);
-  ImGui::TableSetupColumn(m_locVfsColOrder.c_str(), ImGuiTableColumnFlags_WidthFixed, 60.0f);
+  ImGui::TableSetupColumn(m_locVfsColOrder.c_str(), ImGuiTableColumnFlags_WidthFixed, Scaled(60.0f));
   ImGui::TableHeadersRow();
 
   for (int p = 0; p < kPoolCount; ++p) {

@@ -106,7 +106,7 @@ void KeyCapturePopup::Render() {
     ImGui::OpenPopup(m_popupTitleKey.c_str());
   }
 
-  ImGui::SetNextWindowSize(ImVec2(450, 0), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSize(Scaled(ImVec2(450, 0)), ImGuiCond_Appearing);
   if (!ImGui::BeginPopupModal(m_popupTitleKey.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
     return;
   }
@@ -370,7 +370,7 @@ void KeyCapturePopup::Render() {
       ImGui::SameLine();
     }
 
-    if (Button(m_cancelButtonKey.c_str(), TextStyle::DefaultButton(), ImVec2(120, 0))) {
+    if (Button(m_cancelButtonKey.c_str(), TextStyle::DefaultButton(), Scaled(ImVec2(120, 0)))) {
       m_eventManager.System.OnRequestInputCaptureCancel.Call({});
       m_actionBeingEdited.reset();
       m_currentChordInputs.clear();

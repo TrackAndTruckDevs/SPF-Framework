@@ -2,6 +2,7 @@
 
 #include "SPF/Localization/LocalizationManager.hpp"  // Include the new icons header
 #include "SPF/UI/UIElements.hpp"                     // For Button
+#include "SPF/UI/UIStyle.hpp"
 
 #include "imgui.h"
 #include "nlohmann/json_fwd.hpp"
@@ -58,6 +59,8 @@ void BaseWindow::SetPosition(float x, float y) {
   m_posY = y;
   m_stateIsDirty = true;
 }
+
+void BaseWindow::OnUIScaleChanged() { m_stateIsDirty = true; }
 
 void BaseWindow::SetSize(float width, float height) {
   m_sizeW = width;
@@ -141,8 +144,8 @@ void BaseWindow::ApplySettings(const nlohmann::ordered_json& settings) {
   m_wasVisibleLastFrame = m_isVisible;
   m_wasCollapsedLastFrame = m_isCollapsed;
   m_wasDockedLastFrame = m_is_docked;
-  m_lastPosition = ImVec2(m_posX, m_posY);
-  m_lastSize = ImVec2(m_sizeW, m_sizeH);
+  m_lastPosition = Scaled(ImVec2(m_posX, m_posY));
+  m_lastSize = Scaled(ImVec2(m_sizeW, m_sizeH));
 
   m_stateIsDirty = true;
 }
@@ -201,8 +204,9 @@ void BaseWindow::Render() {
 
   bool isApplyingForcedState = m_stateIsDirty;
   ImGuiCond condition = m_stateIsDirty ? ImGuiCond_Always : ImGuiCond_Once;
-  ImGui::SetNextWindowPos(ImVec2(m_posX, m_posY), condition);
-  ImGui::SetNextWindowSize(ImVec2(m_sizeW, m_sizeH), condition);
+  // Position and size are stored at 1080p scale (see Style::ComputeResolutionScale) and converted to screen pixels here.
+  ImGui::SetNextWindowPos(Scaled(ImVec2(m_posX, m_posY)), condition);
+  ImGui::SetNextWindowSize(Scaled(ImVec2(m_sizeW, m_sizeH)), condition);
   ImGui::SetNextWindowCollapsed(m_isCollapsed, condition);
 
   m_stateIsDirty = false;
@@ -238,8 +242,8 @@ void BaseWindow::Render() {
         m_stateIsDirty = true;
 
         if (was_docked && !m_is_docked) {
-          ImVec2 current_pos = ImGui::GetWindowPos();
-          SetPosition(current_pos.x + 20, current_pos.y + 20);
+          const ImVec2 current_pos = ImGui::GetWindowPos();
+          SetPosition(current_pos.x / Style::GetScale() + 20.0f, current_pos.y / Style::GetScale() + 20.0f);
         }
       }
       ImGui::Separator();
@@ -280,8 +284,8 @@ void BaseWindow::SyncStateWithImGui() {
   // Sync position
   ImVec2 currentPos = ImGui::GetWindowPos();
   if (std::fabs(currentPos.x - m_lastPosition.x) > 0.1f || std::fabs(currentPos.y - m_lastPosition.y) > 0.1f) {
-    m_posX = currentPos.x;
-    m_posY = currentPos.y;
+    m_posX = currentPos.x / Style::GetScale();
+    m_posY = currentPos.y / Style::GetScale();
     m_lastPosition = currentPos;
   }
 
@@ -289,8 +293,8 @@ void BaseWindow::SyncStateWithImGui() {
   if (!isCollapsedNow) {
     ImVec2 currentSize = ImGui::GetWindowSize();
     if (std::fabs(currentSize.x - m_lastSize.x) > 0.1f || std::fabs(currentSize.y - m_lastSize.y) > 0.1f) {
-      m_sizeW = currentSize.x;
-      m_sizeH = currentSize.y;
+      m_sizeW = currentSize.x / Style::GetScale();
+      m_sizeH = currentSize.y / Style::GetScale();
       m_lastSize = currentSize;
     }
   }
