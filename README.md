@@ -1,8 +1,9 @@
 <p align="center">
-    <a href=""><img src="https://trucksimhub.top/assets/img/SPF-Framework_Logo.svg" alt="Logo SPF Framework" height="263px" /></a>
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/img/logo-dark.svg">
+        <img src=".github/img/logo-light.svg" alt="Logo SPF Framework" width="500">
+    </picture>
 </p>
-
-<h1 align="center">SPF Framework</h1>
 
 <p align="center">
     <a href="https://github.com/TrackAndTruckDevs/SPF-Framework/releases/latest/" target="_blank" title="SPF Framework releas"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/TrackAndTruckDevs/SPF-Framework"></a>
