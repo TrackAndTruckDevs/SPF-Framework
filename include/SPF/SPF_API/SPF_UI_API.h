@@ -4512,4 +4512,20 @@ typedef struct SPF_UI_API {
    */
   SPF_Font_Handle (*UI_LoadFontFromFile)(const char* name, const char* file_path, const SPF_Font_Config* config);
 
+  // --- UI Scale ---
+
+  /**
+   * @brief Returns the scale currently applied to the whole framework UI.
+   * @details The scale follows the game resolution, 1080p being the reference (1080p = 1.0, 1440p = 1.33,
+   *          4K = 2.0, never below 1.0), multiplied by the user's UI scale setting.
+   *          The framework already scales fonts, style sizes (padding, spacing, rounding...) and the default
+   *          size and position of registered windows. Multiply your own hard-coded pixel values by this scale
+   *          (image sizes, SameLine gaps, minimum widths...) so the plugin looks the same at every resolution.
+   * @note The scale can change at runtime (resolution or setting change): read it every frame, do not cache it.
+   * @note Added at the end of the table: a plugin calling it needs a framework that has it,
+   *       so set `Info_SetMinFrameworkVersion` accordingly.
+   * @return The current UI scale (1.0 at 1080p with the default setting).
+   */
+  float (*UI_GetScale)();
+
 } SPF_UI_API;

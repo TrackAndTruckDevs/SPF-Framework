@@ -1438,6 +1438,25 @@ Restores the previous font.
 **`void UI_SetWindowFontScale(float scale)`**
 Scales the text within the current window. Useful for accessibility or high-DPI adjustments.
 
+### UI Scale
+
+The framework UI follows the game resolution: it is designed for 1080p and grows with the screen (1440p = 1.33, 4K = 2.0, never below 1.0). The user's UI scale setting is applied on top.
+
+The framework already scales fonts, style sizes (padding, spacing, rounding...) and the default size and position of your registered windows. Only the pixel values you hard-code yourself need the scale.
+
+---
+**`float UI_GetScale()`**
+Returns the scale currently applied to the whole UI (resolution scale × user setting).
+*   **Usage:** Multiply your own hard-coded pixel values by it: image sizes, `UI_SameLine` gaps, minimum widths, custom drawing offsets.
+*   **Note:** The scale can change at runtime (resolution or setting change). Read it every frame instead of caching it.
+*   **Compatibility:** This function was added at the end of the API table. A plugin that calls it needs a framework that has it, so set `Info_SetMinFrameworkVersion` accordingly.
+*   **Example:**
+    ```c
+    const float scale = ui->UI_GetScale();
+    ui->UI_Image(logo_texture, 64.0f * scale, 64.0f * scale); // 64 px at 1080p, 128 px at 4K
+    ui->UI_SameLine(0.0f, 8.0f * scale);
+    ```
+
 ### Markdown Rendering
 
 The SPF Framework includes a built-in Markdown parser for rendering rich text documentation.
