@@ -59,9 +59,8 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
       uintptr_t addrMov = PatternFinder::Find(scanPos, 64, "[MOV r64, [rip+off32]]");
       if (phase.Step(addrMov, "TrafficManager pointer load", "RT")) {
         uintptr_t pTrafficManager = PatternFinder::GetRipAddress(addrMov, 3, 7);
-        uintptr_t trafficManagerAddr = *reinterpret_cast<uintptr_t*>(pTrafficManager);
-        owner.SetTrafficManagerAddr(trafficManagerAddr);
-        log.Info("--- [Phase 1] Found TrafficManager address at: {}", log.Rel(trafficManagerAddr));
+        owner.SetTrafficManagerPointerAddr(pTrafficManager);
+        log.Info("--- [Phase 1] Found TrafficManager pointer at: {} (currently {})", log.Rel(pTrafficManager), log.Rel(*reinterpret_cast<uintptr_t*>(pTrafficManager)));
 
         // Find ClearLocalVehicles call (CALL rel32)
         // * /--- Ghidra:(amtrucks_1_60.exe) Fun:(DebugCamera_HandleInput[14053e760]) ---/
@@ -272,7 +271,7 @@ bool ObjectManagerFinder::TryFindOffsets(GameObjectVehicleService& owner) {
   }
 
   // --- Final Readiness Check ---
-  m_isReady = owner.GetTrafficManagerAddr() != 0 && owner.GetPArrayObjectOffset() != 0 && owner.GetVehicleCountOffset() != 0 && owner.GetSpawnedVehicleStructSize() != 0 && owner.GetVehicleIdOffset() != 0 && owner.GetPatienceOffset() != 0 &&
+  m_isReady = owner.HasTrafficManagerPointer() && owner.GetPArrayObjectOffset() != 0 && owner.GetVehicleCountOffset() != 0 && owner.GetSpawnedVehicleStructSize() != 0 && owner.GetVehicleIdOffset() != 0 && owner.GetPatienceOffset() != 0 &&
               owner.GetSafetyOffset() != 0 && owner.GetTargetSpeedOffset() != 0 && owner.GetSpeedLimitOffset() != 0 && owner.GetLaneSpeedInputOffset() != 0 && owner.GetLocalPlayerControllerOffset() != 0 &&
               owner.GetPlayerVehicleInControllerOffset() != 0 && owner.GetVehicleSubObjectOffset() != 0 && owner.GetVtableGetCurrentSpeedOffset() != 0 && owner.GetVtableGetAccelerationOffset() != 0;
 

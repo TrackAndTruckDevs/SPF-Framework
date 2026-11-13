@@ -34,7 +34,7 @@ void GameObjectVehicleService::Reset() {
   logger->Info("Game Object Vehicle Service has been reset.");
 
   m_isInitialized = false;
-  m_pTrafficManagerAddr = 0;
+  m_ppTrafficManager = 0;
   m_trafficManagerAdjustment = 0;
   m_localPlayerControllerOffset = 0;
   m_playerVehicleInControllerOffset = 0;
@@ -127,6 +127,9 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
 
   // 1. Get vehicle count
   uintptr_t trafficManager = GetTrafficManagerAddr();
+  if (trafficManager == 0) {
+    return vehicleInfo;
+  }
   uint32_t vehicleCount = *reinterpret_cast<uint32_t*>(trafficManager + m_vehicleCountOffset);
   if (vehicleCount == 0 || vehicleCount > 500) {  // Sanity check
     return vehicleInfo;
@@ -194,22 +197,22 @@ std::vector<GameObjectVehicleService::VehicleFullInfo> GameObjectVehicleService:
 uintptr_t GameObjectVehicleService::GetPlayerVehiclePtr() const {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("GameObjectVehicleService");
 
-  uintptr_t trafficManager = GetTrafficManagerAddr();
-  if (trafficManager == 0 || m_localPlayerControllerOffset == 0 || m_playerVehicleInControllerOffset == 0) {
+  if (m_localPlayerControllerOffset == 0 || m_playerVehicleInControllerOffset == 0) {
     return 0;
   }
 
-  // 1. Get the local player controller pointer
-  uintptr_t pControllerAddr = trafficManager + m_localPlayerControllerOffset;
-  uintptr_t pController = *reinterpret_cast<uintptr_t*>(pControllerAddr);
-  if (!pController) {
-    logger->Warn("GetPlayerVehiclePtr: Player Controller is NULL at 0x{:X}", pControllerAddr);
-    return 0;
+  // Plugins poll this every frame, and in the main menu there's no traffic
+  // manager (or no controller while one loads): that's logged on change only,
+  // as the truck going away.
+  uintptr_t pVehicle = 0;
+  if (uintptr_t trafficManager = GetTrafficManagerAddr()) {
+    // 1. Get the local player controller pointer
+    uintptr_t pController = *reinterpret_cast<uintptr_t*>(trafficManager + m_localPlayerControllerOffset);
+    // 2. Get the player's vehicle (Actor) pointer from the controller
+    if (pController) {
+      pVehicle = *reinterpret_cast<uintptr_t*>(pController + m_playerVehicleInControllerOffset);
+    }
   }
-
-  // 2. Get the player's vehicle (Actor) pointer from the controller
-  uintptr_t pVehicleAddr = pController + m_playerVehicleInControllerOffset;
-  uintptr_t pVehicle = *reinterpret_cast<uintptr_t*>(pVehicleAddr);
 
   static uintptr_t lastLoggedVehicle = 0;
   if (pVehicle != lastLoggedVehicle) {

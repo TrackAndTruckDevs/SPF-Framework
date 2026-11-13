@@ -93,14 +93,18 @@ typedef uint32_t (*SPF_Veh_GetAllHandles_t)(SPF_VehicleHandle* out_handles, uint
 
 /**
  * @brief Gets the raw memory address of the global Traffic Manager object.
- * @return The absolute memory address (uintptr_t).
+ * @details Read live from the game on each call. The game replaces the object
+ *          on a profile switch and has none in the main menu, so don't keep
+ *          the address: the old object's memory gets freed and reused.
+ * @return The absolute memory address (uintptr_t), or 0 if there is none.
  */
 typedef uintptr_t (*SPF_Veh_GetTrafficManagerPtr_t)();
 
 /**
  * @brief Gets the raw memory address of the Local Player Controller.
  * This object resides within the Traffic Manager and controls the player's truck.
- * @return The absolute memory address (uintptr_t).
+ * @details Like the Traffic Manager's, read live: don't keep it.
+ * @return The absolute memory address (uintptr_t), or 0 if there is none.
  */
 typedef uintptr_t (*SPF_Veh_GetLocalPlayerControllerPtr_t)();
 

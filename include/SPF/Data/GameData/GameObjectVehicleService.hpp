@@ -41,10 +41,20 @@ class GameObjectVehicleService : public IWorldScopedService {
   bool TryFinalizeWorldInit() override { return TryFindAllOffsets(); }
 
   // --- Public Getters ---
+  /**
+   * @brief Reads the game's traffic manager pointer, live.
+   * @details The game replaces the object on a profile switch and clears its
+   * pointer while in the main menu, so it's never cached: the old object's
+   * memory gets freed and reused, and following it crashes.
+   * @return The object's address, or 0 if there is none right now.
+   */
   uintptr_t GetTrafficManagerAddr() const {
-    if (m_pTrafficManagerAddr == 0) return 0;
-    return m_pTrafficManagerAddr + m_trafficManagerAdjustment;
+    if (m_ppTrafficManager == 0) return 0;
+    const uintptr_t trafficManager = *reinterpret_cast<const uintptr_t*>(m_ppTrafficManager);
+    if (trafficManager == 0) return 0;
+    return trafficManager + m_trafficManagerAdjustment;
   }
+  bool HasTrafficManagerPointer() const { return m_ppTrafficManager != 0; }
   uintptr_t GetLocalPlayerControllerAddr() const;
   uintptr_t GetPArrayObjectOffset() const { return m_pArrayObjectOffset; }
   uintptr_t GetVehicleCountOffset() const { return m_vehicleCountOffset; }
@@ -67,7 +77,8 @@ class GameObjectVehicleService : public IWorldScopedService {
   std::vector<VehicleFullInfo> GetAllVehiclesFullInfo() const;
 
   // --- Public Setters (for use by finder implementations) ---
-  void SetTrafficManagerAddr(uintptr_t ptr) { m_pTrafficManagerAddr = ptr; }
+  /** @brief Sets the address of the game's global holding the traffic manager pointer. */
+  void SetTrafficManagerPointerAddr(uintptr_t ppTrafficManager) { m_ppTrafficManager = ppTrafficManager; }
 
   void SetTrafficManagerAdjustment(intptr_t adj) { m_trafficManagerAdjustment = adj; }
 
@@ -106,7 +117,7 @@ class GameObjectVehicleService : public IWorldScopedService {
   void RegisterFinders();
 
   bool m_isInitialized = false;
-  uintptr_t m_pTrafficManagerAddr = 0;
+  uintptr_t m_ppTrafficManager = 0;
   intptr_t m_trafficManagerAdjustment = 0;
   uintptr_t m_localPlayerControllerOffset = 0;
   uintptr_t m_playerVehicleInControllerOffset = 0;

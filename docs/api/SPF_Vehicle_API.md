@@ -75,11 +75,14 @@ Fills an array with handles for all active vehicles. Returns the actual number o
 
 ---
 **`uintptr_t Veh_GetTrafficManagerPtr()`**
-Returns the raw memory address of the global Traffic Manager object.
+Returns the raw memory address of the global Traffic Manager object, or 0 if
+there is none (in the main menu). It's read live from the game on each call:
+the game replaces the object on a profile switch, so don't keep the address.
 
 ---
 **`uintptr_t Veh_GetLocalPlayerControllerPtr()`**
-Returns the raw memory address of the Local Player Controller.
+Returns the raw memory address of the Local Player Controller, or 0 if there
+is none. Read live like the Traffic Manager's: don't keep it.
 
 ### Framework & Service Status
 
