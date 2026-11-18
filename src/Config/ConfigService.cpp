@@ -1023,7 +1023,8 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
   }
   std::sort(pluginComponents.begin(), pluginComponents.end());
 
-  auto process_source = [&](const nlohmann::ordered_json& settings, const std::string& componentName) {
+  // isUserSource: true for the player's settings.json, false for manifest defaults.
+  auto process_source = [&](const nlohmann::ordered_json& settings, const std::string& componentName, bool isUserSource) {
     if (settings.is_null()) return;
 
     for (const auto& group : settings.items()) {
@@ -1087,7 +1088,10 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
           }
         }
 
-        if (!successful_keys.empty()) {
+        // An empty user list is a valid choice and overrides manifest defaults.
+        const bool playerClearedAction = isUserSource && keys_to_assign->empty();
+
+        if (!successful_keys.empty() || playerClearedAction) {
           if (!finalConfig.contains(group.key())) {
             finalConfig[group.key()] = nlohmann::ordered_json::object();
           }
@@ -1114,7 +1118,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
           nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
           const auto* userSettings = GetSettings(userJson, systemName);
           if (userSettings) {
-            process_source(*userSettings, "framework");
+            process_source(*userSettings, "framework", true);
           }
         }
       } catch (const std::exception& e) {
@@ -1134,7 +1138,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
             nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
             const auto* userSettings = GetSettings(userJson, systemName);
             if (userSettings) {
-              process_source(*userSettings, componentName);
+              process_source(*userSettings, componentName, true);
             }
           }
         } catch (const std::exception& e) {
@@ -1146,13 +1150,13 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
 
   report.InfoMessages.push_back("Pass 3: Processing manifest for framework...");
   if (m_manifests.count("framework")) {
-    process_source(GetSystemSettingsAsJson(m_manifests.at("framework"), systemName, m_manifests.at("framework")), "framework");
+    process_source(GetSystemSettingsAsJson(m_manifests.at("framework"), systemName, m_manifests.at("framework")), "framework", false);
   }
 
   report.InfoMessages.push_back("Pass 4: Processing manifests for ACTIVE plugins...");
   for (const auto& componentName : pluginComponents) {
     if (isPluginActive(componentName) && m_manifests.count(componentName)) {
-      process_source(GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework")), componentName);
+      process_source(GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework")), componentName, false);
     }
   }
 
@@ -1168,7 +1172,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
             nlohmann::ordered_json userJson = nlohmann::ordered_json::parse(file);
             const auto* userSettings = GetSettings(userJson, systemName);
             if (userSettings) {
-              process_source(*userSettings, componentName);
+              process_source(*userSettings, componentName, true);
             }
           }
         } catch (const std::exception& e) {
@@ -1181,7 +1185,7 @@ void ConfigService::MergePrioritySystem(const std::string& systemName, Initializ
   report.InfoMessages.push_back("Pass 6: Processing manifests for DISABLED plugins...");
   for (const auto& componentName : pluginComponents) {
     if (!isPluginActive(componentName) && m_manifests.count(componentName)) {
-      process_source(GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework")), componentName);
+      process_source(GetSystemSettingsAsJson(m_manifests.at(componentName), systemName, m_manifests.at("framework")), componentName, false);
     }
   }
 
