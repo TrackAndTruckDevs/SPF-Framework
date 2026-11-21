@@ -187,10 +187,10 @@ void InfoWindow::RenderGameTab() {
   }
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameExePath.c_str());
-  ImGui::TextWrapped("%s", info.exePath.string().c_str());
+  ImGui::TextWrapped("%s", (const char*)info.exePath.u8string().c_str());
 
   Typography::Text(TextStyle::Bold().Color(Colors::GRAY), "%s", m_locGameRootPath.c_str());
-  ImGui::TextWrapped("%s", info.rootPath.string().c_str());
+  ImGui::TextWrapped("%s", (const char*)info.rootPath.u8string().c_str());
 
   if (ImGui::TreeNode(m_locGameCommandLine.c_str())) {
     std::string cmd;

@@ -139,6 +139,19 @@ class PathManager {
    */
   static std::string ResolveVirtualPath(const char* virtualPath);
 
+  /**
+   * @brief Builds a path from a UTF-8 string (game memory strings are UTF-8).
+   * @note Never use std::filesystem::path(std::string) for such strings: MSVC decodes it with the
+   *       ANSI code page and throws on DBCS locales (e.g. Big5) for non-ASCII paths.
+   */
+  static std::filesystem::path FromUtf8(const std::string& utf8);
+
+  /**
+   * @brief Returns the path as a UTF-8 string. Use instead of path::string(), which converts to the
+   *        ANSI code page and throws when a character is not representable.
+   */
+  static std::string ToUtf8(const std::filesystem::path& path);
+
  private:
   static std::filesystem::path m_basePath;
   static std::filesystem::path m_frameworkDllPath;

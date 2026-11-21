@@ -110,7 +110,7 @@ void EnvironmentManager::DetectStaticGame() {
   // We already know ResolveVirtualPath is stable.
   std::string baseScsPath = PathManager::ResolveVirtualPath("");
   if (!baseScsPath.empty()) {
-    m_game.rootPath = std::filesystem::path(baseScsPath).parent_path().make_preferred();
+    m_game.rootPath = PathManager::FromUtf8(baseScsPath).parent_path().make_preferred();
   } else {
     // Fallback to EXE location logic: bin/win_x64/amtrucks.exe -> parent is win_x64, parent is bin, parent is root
     m_game.rootPath = m_game.exePath.parent_path().parent_path().parent_path();
@@ -178,14 +178,14 @@ void EnvironmentManager::RefreshDynamicStatus() {
   if (musicStr.empty()) {
     m_game.musicPath = homeDir.empty() ? "" : (homeDir / "music").make_preferred();
   } else {
-    m_game.musicPath = std::filesystem::path(musicStr).make_preferred();
+    m_game.musicPath = PathManager::FromUtf8(musicStr).make_preferred();
   }
 
   std::string screenshotStr = PathManager::ResolveVirtualPath("/home/screenshot");
   if (screenshotStr.empty()) {
     m_game.screenshotPath = homeDir.empty() ? "" : (homeDir / "screenshot").make_preferred();
   } else {
-    m_game.screenshotPath = std::filesystem::path(screenshotStr).make_preferred();
+    m_game.screenshotPath = PathManager::FromUtf8(screenshotStr).make_preferred();
   }
 
   // 3. VR & Hardware

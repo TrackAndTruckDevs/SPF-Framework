@@ -4,6 +4,7 @@
 #include "SPF/Data/GameData/GameObjectSessionService.hpp"
 #include "SPF/Logging/LoggerFactory.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -70,6 +71,15 @@ void PathManager::Init(HMODULE module) {
   std::filesystem::create_directories(m_localizationPath);
 }
 
+std::filesystem::path PathManager::FromUtf8(const std::string& utf8) {
+  return std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(utf8.data()), utf8.size()));
+}
+
+std::string PathManager::ToUtf8(const std::filesystem::path& path) {
+  const std::u8string u8 = path.u8string();
+  return std::string(reinterpret_cast<const char*>(u8.data()), u8.size());
+}
+
 const std::filesystem::path& PathManager::GetBasePath() { return m_basePath; }
 const std::filesystem::path& PathManager::GetFrameworkDllPath() { return m_frameworkDllPath; }
 const std::filesystem::path& PathManager::GetPluginsPath() { return m_pluginsPath; }
@@ -99,8 +109,8 @@ std::filesystem::path PathManager::GetSCSUserDir() {
   std::string homePath = ResolveVirtualPath("/home");
   if (!homePath.empty()) {
     // Normalizing separators to be consistent
-    cachedPath = std::filesystem::path(homePath).make_preferred();
-    logger->Info("Successfully resolved /home to: '{}'", cachedPath.string());
+    cachedPath = FromUtf8(homePath).make_preferred();
+    logger->Info("Successfully resolved /home to: '{}'", ToUtf8(cachedPath));
     return cachedPath;
   }
 
@@ -191,11 +201,11 @@ std::filesystem::path PathManager::GetCurrentProfilePath() {
 
   // 7. Convert Display Name to HEX and combine: Home + SubDir + HexName
   std::string hexName = StringToHex(displayName);
-  m_cachedProfilePath = (std::filesystem::path(homePhysical) / profilesSubDir / hexName).make_preferred();
+  m_cachedProfilePath = (FromUtf8(homePhysical) / profilesSubDir / hexName).make_preferred();
   m_cachedProfileName = displayName;
   m_lastProfileAddr = profile;
 
-  logger->Info("Active profile identified: '{}' (Type: {}), Path: '{}'", displayName, profileType, m_cachedProfilePath.string());
+  logger->Info("Active profile identified: '{}' (Type: {}), Path: '{}'", displayName, profileType, ToUtf8(m_cachedProfilePath));
 
   return m_cachedProfilePath;
 }
@@ -256,7 +266,11 @@ std::string PathManager::ResolveVirtualPath(const char* virtualPath) {
         if (strcmp(vpathStr, virtualPath) == 0) {
           if (physPath && IsValidPointer((uintptr_t)physPath)) {
             hasLoggedUfsTree = true;  // Mark as logged after first successful match
-            return std::filesystem::path(physPath).make_preferred().string();
+            // Keep the game's UTF-8 bytes as-is: round-tripping through std::filesystem::path(const char*)
+            // uses the ANSI code page and throws on DBCS locales (crash on zh-TW with 'OneDrive/文件').
+            std::string result(physPath);
+            std::replace(result.begin(), result.end(), '/', '\\');
+            return result;
           }
         }
       }

@@ -59,7 +59,7 @@ int EnvironmentApi::Env_GetFrameworkBuildType(SPF_Environment_Handle* h, char* o
 
 int EnvironmentApi::Env_GetFrameworkConfiguration(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetFrameworkInfo().configuration, out, size); }
 
-int EnvironmentApi::Env_GetFrameworkLoaderPath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetFrameworkInfo().loaderPath.string(), out, size); }
+int EnvironmentApi::Env_GetFrameworkLoaderPath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::EnvironmentManager::GetInstance().GetFrameworkInfo().loaderPath), out, size); }
 
 // Section 2: Game
 int EnvironmentApi::Env_GetGameName(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetGameInfo().name, out, size); }
@@ -72,9 +72,9 @@ uint32_t EnvironmentApi::Env_GetGameSteamAppId(SPF_Environment_Handle* h) { retu
 
 bool EnvironmentApi::Env_IsSteamVersion(SPF_Environment_Handle* h) { return System::EnvironmentManager::GetInstance().GetGameInfo().isSteamVersion; }
 
-int EnvironmentApi::Env_GetGameExePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetGameInfo().exePath.string(), out, size); }
+int EnvironmentApi::Env_GetGameExePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::EnvironmentManager::GetInstance().GetGameInfo().exePath), out, size); }
 
-int EnvironmentApi::Env_GetGameRootPath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetGameInfo().rootPath.string(), out, size); }
+int EnvironmentApi::Env_GetGameRootPath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::EnvironmentManager::GetInstance().GetGameInfo().rootPath), out, size); }
 
 int EnvironmentApi::Env_GetGameCommandLine(SPF_Environment_Handle* h, char* out, int size) {
   std::wstring wcmd = System::EnvironmentManager::GetInstance().GetGameInfo().commandLine;
@@ -88,17 +88,17 @@ int EnvironmentApi::Env_GetGameCommandLine(SPF_Environment_Handle* h, char* out,
 }
 
 // Section 3: Paths
-int EnvironmentApi::Env_GetFrameworkBasePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::GetBasePath().string(), out, size); }
+int EnvironmentApi::Env_GetFrameworkBasePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetBasePath()), out, size); }
 
-int EnvironmentApi::Env_GetSCSUserDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::GetSCSUserDir().string(), out, size); }
+int EnvironmentApi::Env_GetSCSUserDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetSCSUserDir()), out, size); }
 
-int EnvironmentApi::Env_GetSCSModsDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::GetSCSModsDir().string(), out, size); }
+int EnvironmentApi::Env_GetSCSModsDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetSCSModsDir()), out, size); }
 
-int EnvironmentApi::Env_GetCurrentProfilePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::GetCurrentProfilePath().string(), out, size); }
+int EnvironmentApi::Env_GetCurrentProfilePath(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetCurrentProfilePath()), out, size); }
 
-int EnvironmentApi::Env_GetSCSMusicDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetGameInfo().musicPath.string(), out, size); }
+int EnvironmentApi::Env_GetSCSMusicDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::EnvironmentManager::GetInstance().GetGameInfo().musicPath), out, size); }
 
-int EnvironmentApi::Env_GetSCSScreenshotsDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetGameInfo().screenshotPath.string(), out, size); }
+int EnvironmentApi::Env_GetSCSScreenshotsDir(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::PathManager::ToUtf8(System::EnvironmentManager::GetInstance().GetGameInfo().screenshotPath), out, size); }
 
 // Section 4: System
 int EnvironmentApi::Env_GetOSName(SPF_Environment_Handle* h, char* out, int size) { return SafeCopyString(System::EnvironmentManager::GetInstance().GetSystemInfo().osName, out, size); }
@@ -123,27 +123,27 @@ bool EnvironmentApi::Env_IsSteamOverlayDllLoaded(SPF_Environment_Handle* h) { re
 // Section 6: Sandboxing
 int EnvironmentApi::Env_GetPluginDir(SPF_Environment_Handle* h, char* out, int size) {
   if (!h) return 0;
-  return SafeCopyString(System::PathManager::GetPluginDir(h->pluginName).string(), out, size);
+  return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetPluginDir(h->pluginName)), out, size);
 }
 
 int EnvironmentApi::Env_GetPluginConfigDir(SPF_Environment_Handle* h, char* out, int size) {
   if (!h) return 0;
-  return SafeCopyString(System::PathManager::GetPluginConfigDir(h->pluginName).string(), out, size);
+  return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetPluginConfigDir(h->pluginName)), out, size);
 }
 
 int EnvironmentApi::Env_GetPluginLocalizationDir(SPF_Environment_Handle* h, char* out, int size) {
   if (!h) return 0;
-  return SafeCopyString(System::PathManager::GetPluginLocalizationDir(h->pluginName).string(), out, size);
+  return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetPluginLocalizationDir(h->pluginName)), out, size);
 }
 
 int EnvironmentApi::Env_GetPluginLogsDir(SPF_Environment_Handle* h, char* out, int size) {
   if (!h) return 0;
-  return SafeCopyString(System::PathManager::GetPluginLogsDir(h->pluginName).string(), out, size);
+  return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetPluginLogsDir(h->pluginName)), out, size);
 }
 
 int EnvironmentApi::Env_GetPluginDataDir(SPF_Environment_Handle* h, char* out, int size) {
   if (!h) return 0;
-  return SafeCopyString(System::PathManager::GetPluginDataDir(h->pluginName).string(), out, size);
+  return SafeCopyString(System::PathManager::ToUtf8(System::PathManager::GetPluginDataDir(h->pluginName)), out, size);
 }
 
 bool EnvironmentApi::Env_CreatePath(SPF_Environment_Handle* h, const char* path) {
