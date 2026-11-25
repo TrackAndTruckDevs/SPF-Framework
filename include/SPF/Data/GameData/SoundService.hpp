@@ -349,7 +349,8 @@ private:
   void BuildSoundRefVfsCatalog();
   void InstallSoundRefLoadConfigHook();
   void RemoveSoundRefLoadConfigHook();
-  static void HookedSoundRefLoadConfig(void* event);
+  // The game's loader returns whether the sound loaded, and its callers check it.
+  static bool HookedSoundRefLoadConfig(void* event);
   void InstallSystemUpdateHook();
   void RemoveSystemUpdateHook();
   // Returns FMOD_RESULT (an int-sized enum) — must match Studio::System::update.

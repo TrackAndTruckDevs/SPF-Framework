@@ -2743,22 +2743,23 @@ int SoundService::HookedSystemUpdate(void* system) {
   return result;
 }
 
-void SoundService::HookedSoundRefLoadConfig(void* event) {
+bool SoundService::HookedSoundRefLoadConfig(void* event) {
   SoundService& self = GetInstance();
+  bool result = false;
   if (self.m_loadConfigTrampoline != nullptr) {
-    reinterpret_cast<void (*)(void*)>(self.m_loadConfigTrampoline)(event);
+    result = reinterpret_cast<bool (*)(void*)>(self.m_loadConfigTrampoline)(event);
   }
   self.m_gameThreadId.store(::GetCurrentThreadId());
   // The original LoadConfig always rewrites event+source from the .soundref
   // file — invalidate regardless of whether an override is registered below.
   self.InvalidateSoundRefSnapshot();
 
-  if (!self.m_isInitialized || event == nullptr) return;
-  if (self.m_soundEventSourceOffset == 0) return;
-  if (!Hooks::GameTools::PrismStringResolver::GetInstance().IsInstalled()) return;
+  if (!self.m_isInitialized || event == nullptr) return result;
+  if (self.m_soundEventSourceOffset == 0) return result;
+  if (!Hooks::GameTools::PrismStringResolver::GetInstance().IsInstalled()) return result;
 
   std::string path = self.GetSoundEventPath(event);
-  if (path.empty()) return;
+  if (path.empty()) return result;
 
   std::string overrideSource;
   std::string originalSource;
@@ -2766,7 +2767,7 @@ void SoundService::HookedSoundRefLoadConfig(void* event) {
   {
     std::lock_guard<std::mutex> lock(self.m_soundRefMutex);
     auto it = self.m_soundRefOverrides.find(path);
-    if (it == self.m_soundRefOverrides.end()) return;
+    if (it == self.m_soundRefOverrides.end()) return result;
     overrideSource = it->second;
     auto histIt = self.m_soundRefOriginals.find(path);
     if (histIt == self.m_soundRefOriginals.end()) {
@@ -2781,7 +2782,7 @@ void SoundService::HookedSoundRefLoadConfig(void* event) {
       originalSource = histIt->second;
     }
   }
-  if (overrideSource.empty()) return;
+  if (overrideSource.empty()) return result;
 
   void* field = reinterpret_cast<char*>(event) + self.m_soundEventSourceOffset;
   auto& prism = Hooks::GameTools::PrismStringResolver::GetInstance();
@@ -2792,6 +2793,7 @@ void SoundService::HookedSoundRefLoadConfig(void* event) {
   auto logger = Logging::LoggerFactory::GetInstance().GetLogger("SoundService");
   logger->Info("SoundRef LoadConfig hook '{}' preRawLen={} preBufOk={} orig='{}' -> '{}' set={}", path, rawLen, bufOk, originalSource, overrideSource, ok);
   if (originalUnknown) logger->Warn("SoundRef LoadConfig hook '{}': original source not recorded (current equals override)", path);
+  return result;
 }
 
 std::vector<void*> SoundService::FindSoundEventsByPath(const std::string& soundrefPath) {
